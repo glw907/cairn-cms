@@ -21,7 +21,7 @@ A concept is its adapter entry, plus a manifest run when its directory already h
    reads **New Events**. `dir` sits under `src/content`, and each entry sits directly in it.
 2. **Manifest**: if the directory already holds entries, run `npx cairn-manifest` (scaffold script
    `cairn:manifest`) and commit `src/content/.cairn/index.json`. Never hand-write manifest rows. An
-   entry that fails validation is skipped (logs `content.entry_invalid` `scope: manifest`), and the
+   entry that fails validation is skipped (logs `content.entry_invalid`), and the
    bin exits 1 unless the entry is a draft.
 
 The content module's one glob and the `cairnManifest` plugin both read `/src/content/**/*.md`, so

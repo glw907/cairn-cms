@@ -127,8 +127,8 @@ describe('buildSiteManifest undeclared frontmatter keys', () => {
       .map((call) => call[0] as Record<string, unknown>)
       .filter((record) => record.event === 'content.entry_invalid');
     expect(records).toHaveLength(2);
+    expect(records[0]).not.toHaveProperty('scope');
     expect(records[0]).toMatchObject({
-      scope: 'manifest',
       concept: 'posts',
       path: '/src/content/posts/2026-01-05-broken.md',
       draft: true,

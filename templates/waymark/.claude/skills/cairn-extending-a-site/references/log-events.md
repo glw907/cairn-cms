@@ -61,7 +61,7 @@ Contents:
 | `content.field_behavior_failed` | warn | `field`, `owner`, `error` | A `behavior.validate` threw; the field counted as valid and the save went through. `owner` is the concept id or directive name. Fix the validator. |
 | `content.field_unmarked` | warn | `concept`, `field` | A multiselect named `tags`, `freetags`, or `categories` and no `taxonomy: true` field, so the tag index is empty. Mark the field. |
 | `content.field_undeclared` | warn | `concept`, `keys` | Manifest build found frontmatter keys the concept does not declare. Validation drops them; a save or publish keeps them in the file. |
-| `content.entry_invalid` | warn | `scope`, `concept`, `path`, `draft`, `errors` | `scope: manifest`: the manifest skipped it (drafts too), so the admin list omits it. |
+| `content.entry_invalid` | warn | `concept`, `path`, `draft`, `errors` | The manifest skipped it (drafts too), so the admin list omits it. |
 | `content.directive_unknown` | warn | `concept`, `path`, `name` | Manifest build found a block directive that no registered component or slot names, and neither `include` nor `figure`. A typo, usually. The build goes on. |
 
 ## Config

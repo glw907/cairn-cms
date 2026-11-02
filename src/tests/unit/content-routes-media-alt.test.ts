@@ -377,7 +377,7 @@ describe('mediaAltApply', () => {
     await expect(routes.mediaAltPropagateAction(applyEvent({ hash: HASH }))).rejects.toMatchObject({ status: 303 });
 
     const rebuilt = manifestEntryFromFile(concept, { path, raw: gh.read('main', path)! });
-    expect(rebuilt.summary).not.toBe(seeded.summary);
+    expect(rebuilt.excerpt).not.toBe(seeded.excerpt);
     expect(parseManifest(gh.read('main', MANIFEST_PATH)!).entries[0]).toEqual(rebuilt);
   });
 

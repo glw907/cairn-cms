@@ -22,24 +22,24 @@ export default {
 };
 `;
 
-const adapter = (extraField: string) => `import { defineAdapter, defineFieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
+const adapter = (extraField: string) => `import { defineAdapter, fields, parseSiteConfig } from '@glw907/cairn-cms';
 export const cairn = defineAdapter({
   rendering: { render: ({ body }) => Promise.resolve(body) },
   email: { from: 'cms@test.example' },
   content: {
     posts: {
       dir: 'src/content/posts',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         ${extraField}
-      }),
+      },
     },
   },
 });
 export const siteConfig = parseSiteConfig('siteName: Test\\n');
 `;
 
-const GALLERY_ADAPTER = adapter("gallery: fields.array(fields.image({ label: 'Image' })),");
+const GALLERY_ADAPTER = adapter("gallery: fields.array({ item: fields.image({ label: 'Image' }), label: 'Items' }),");
 const HERO_ADAPTER = adapter("hero: fields.image({ label: 'Hero' }),");
 
 const GALLERY_POST =
@@ -70,7 +70,8 @@ afterAll(() => {
 /** Commit the manifest the corpus builds, with every `mediaRefs` key removed: a manifest generated
  *  before the field existed. */
 async function seedPreFieldManifest(dir: string): Promise<void> {
-  const built = JSON.parse(await buildManifestFromVite(OPTS, dir)) as { entries: Record<string, unknown>[] };
+  const { manifest } = await buildManifestFromVite(OPTS, dir);
+  const built = JSON.parse(manifest) as { entries: Record<string, unknown>[] };
   for (const entry of built.entries) delete entry.mediaRefs;
   const out = join(dir, 'src/content/.cairn/index.json');
   mkdirSync(dirname(out), { recursive: true });

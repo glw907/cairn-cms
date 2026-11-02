@@ -4,7 +4,6 @@ import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const wiring = {
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
@@ -17,14 +16,14 @@ const adapter = defineAdapter({
     posts: {
       dir: 'src/content/posts',
       routing: 'feed',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
-      }),
+      },
     },
     pages: {
       dir: 'src/content/pages',
-      fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
+      fields: { title: fields.text({ label: 'Title', required: true }) },
     },
   },
   ...wiring,
@@ -58,7 +57,7 @@ describe('createSiteResolver', () => {
         content: {
           site: {
             dir: 'src/content/site',
-            fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
+            fields: { title: fields.text({ label: 'Title', required: true }) },
           },
         },
       }),

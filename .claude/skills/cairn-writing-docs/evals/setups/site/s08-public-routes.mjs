@@ -62,10 +62,10 @@ export default function setup(root) {
       label: 'Notes',
       singular: 'note',
       routing: 'feed',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
-      }),
+      },
     }),
     // The Fragments concept`,
   );

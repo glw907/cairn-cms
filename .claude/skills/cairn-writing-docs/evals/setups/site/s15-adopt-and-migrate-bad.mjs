@@ -14,7 +14,7 @@ export default defineConfig({
   plugins: [sveltekit({ adapter: adapter() })],
 });
 `,
-  'src/lib/cairn.config.ts': `import { defineAdapter, defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
+  'src/lib/cairn.config.ts': `import { defineAdapter, defineConcept, fields } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
   content: {
@@ -23,10 +23,10 @@ export const cairn = defineAdapter({
       label: 'Posts',
       singular: 'post',
       routing: 'feed',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
-      }),
+      },
     }),
   },
 });

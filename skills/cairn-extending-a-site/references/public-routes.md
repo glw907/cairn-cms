@@ -100,6 +100,7 @@ add the menu under `menus.<menuName>` in the site config, and read it in a serve
 | Message | Fix |
 |---|---|
 | `expected input to be a string or buffer` | Glob needs `query: '?raw'`, `import: 'default'`, `eager: true` |
+| `cairn: <n> invalid entries:` then `<concept>/<id>: <field>: <message>` | Fix the line's field, filename, or `cairn:` link, or mark the entry `draft: true` |
 | `cairn: <n> invalid frontmatter field(s):` then `<dir>/<id>: <field>: <message>` | Fix the field or mark the entry `draft: true` |
 | `cairn: permalink "<p>" resolves to both "<a>" and "<b>"` | Change one slug or permalink |
 | `cairn: link target "cairn:<concept>/<id>" not found` | Fix or remove the body link |

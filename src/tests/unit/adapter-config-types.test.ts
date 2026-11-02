@@ -4,13 +4,12 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { defineConcept } from '../../lib/content/concepts.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import type { AiPosture, CairnAdapter } from '../../lib/content/types.js';
 
 const posts = defineConcept({
   dir: 'src/content/posts',
-  fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+  fields: { title: fields.text({ label: 'Title' }) },
   summaryFields: ['title'],
 });
 
@@ -28,7 +27,7 @@ describe('defineConcept', () => {
     expect(posts.summaryFields).toEqual(['title']);
     defineConcept({
       dir: 'src/content/pages',
-      fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: { title: fields.text({ label: 'Title' }) },
       // @ts-expect-error 'nope' is not a declared field
       summaryFields: ['nope'],
     });

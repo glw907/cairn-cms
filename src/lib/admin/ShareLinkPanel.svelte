@@ -190,7 +190,7 @@ entry's minted link from surviving onto another entry's panel.
         disabled={shareBusy}
         onclick={mintPreview}
       >
-        {#if shareBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Minting…{:else}Share preview link{/if}
+        {#if shareBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Creating…{:else}Share preview link{/if}
       </button>
       <button
         type="button"

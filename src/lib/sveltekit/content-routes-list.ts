@@ -163,7 +163,7 @@ export function createListActions(ctx: ContentRoutesContext) {
         rows.map((e) =>
           pendingIds.has(e.id)
             ? pendingRow(concept, e.id, 'edited', backend)
-            : { id: e.id, title: e.title, date: e.date ?? null, draft: e.draft, status: 'published' as const, summary: e.summary ?? null },
+            : { id: e.id, title: e.title, date: e.date ?? null, draft: e.draft, status: 'published' as const, summary: e.excerpt ?? null },
         ),
       );
       const listed = new Set(rows.map((e) => e.id));

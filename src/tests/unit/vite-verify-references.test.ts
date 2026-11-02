@@ -29,7 +29,7 @@ export default {
 };
 `;
 
-const ADAPTER = `import { defineAdapter, defineFieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
+const ADAPTER = `import { defineAdapter, fields, parseSiteConfig } from '@glw907/cairn-cms';
 export const cairn = defineAdapter({
   rendering: { render: ({ body }) => Promise.resolve(body) },
   email: { from: 'cms@test.example' },
@@ -37,14 +37,14 @@ export const cairn = defineAdapter({
   content: {
     posts: {
       dir: 'src/content/posts',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         author: fields.reference({ concept: 'pages', label: 'Author' }),
-      }),
+      },
     },
     pages: {
       dir: 'src/content/pages',
-      fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
+      fields: { title: fields.text({ label: 'Title', required: true }) },
     },
   },
 });
@@ -72,15 +72,14 @@ const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
 };
 
-// Seed the committed manifest from the corpus itself, so verifyManifest (which runs FIRST in the
-// verify-mode resultExpr) passes and the build reaches verifyReferences. buildManifestFromVite (write
-// mode) does NOT run verifyReferences, so it happily serializes a manifest that still carries a
-// dangling edge, which is exactly what the dangling test needs to isolate the reference gate.
+// Seed the committed manifest from the corpus itself, so only the fault under test can fail the
+// verify. buildManifestFromVite (write mode) runs no verify, so it happily serializes a manifest that
+// still carries a dangling edge, which is exactly what the dangling test needs to isolate the gate.
 async function seedManifest(dir: string): Promise<void> {
-  const serialized = await buildManifestFromVite(OPTS, dir);
+  const { manifest } = await buildManifestFromVite(OPTS, dir);
   const out = join(dir, 'src/content/.cairn/index.json');
   mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, serialized);
+  writeFileSync(out, manifest);
 }
 
 describe('verifyReferences wired into the manifest build', () => {
@@ -105,6 +104,39 @@ describe('verifyReferences wired into the manifest build', () => {
     });
     await seedManifest(dir);
     await expect(verifyManifestFromVite(OPTS, dir)).resolves.toBeUndefined();
+  }, 30000);
+});
+
+describe('a content fault reads as itself over a stale manifest', () => {
+  /** A project whose committed manifest holds no rows, so `verifyManifest` alone would call it stale. */
+  function staleProject(content: Record<string, string>): string {
+    return tempProject({
+      'vite.config.ts': PLUGIN_CONFIG,
+      'src/lib/cairn.config.ts': ADAPTER,
+      'src/content/.cairn/index.json': '{\n  "version": 1,\n  "entries": []\n}\n',
+      ...content,
+    });
+  }
+
+  /** The verify's failure message. */
+  async function verifyFailure(dir: string): Promise<string> {
+    const failure = await verifyManifestFromVite(OPTS, dir).then(
+      () => new Error('the verify passed'),
+      (err: Error) => err,
+    );
+    return failure.message;
+  }
+
+  it('reports an invalid non-draft entry ahead of the stale verdict', async () => {
+    const message = await verifyFailure(staleProject({ 'src/content/posts/Bad_Name.md': '---\ntitle: Hello\n---\nBody.\n' }));
+    expect(message).toMatch(/invalid entries/);
+    expect(message).not.toMatch(/content manifest is stale/);
+  }, 30000);
+
+  it('reports a dangling cairn: link ahead of the stale verdict', async () => {
+    const message = await verifyFailure(staleProject({ 'src/content/posts/hello.md': '---\ntitle: Hello\n---\n[a](cairn:pages/ghost)\n' }));
+    expect(message).toMatch(/content link is dangling: posts\/hello links to pages\/ghost/);
+    expect(message).not.toMatch(/content manifest is stale/);
   }, 30000);
 });
 

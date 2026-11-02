@@ -50,7 +50,7 @@ export interface ContentSummary {
    *  normalized frontmatter. Held in a separate record so a nominated key cannot collide with a
    *  typed summary field. Empty when the concept declares no `summaryFields`.
    */
-  fields: Record<string, unknown>;
+  summaryFields: Record<string, unknown>;
 }
 
 /**
@@ -152,7 +152,7 @@ export function createContentIndex<F = Record<string, unknown>>(
       excerpt: buildExcerpt(body, { description: asString(raw.description) }),
       wordCount: wordCount(body),
       draft,
-      fields: summaryFieldValues,
+      summaryFields: summaryFieldValues,
       frontmatter: result.data as F,
       body,
     });

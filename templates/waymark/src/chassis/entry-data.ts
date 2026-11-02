@@ -1,11 +1,7 @@
 // This site's one entry-data augmentation: the reference-edge resolution `(site)/[...path]`'s
 // entryLoad and `(site)/preview/[token]`'s loadPreview both apply on top of the engine's
 // `EntryData`/`PreviewData` shape, factored here so the two routes cannot drift apart on it.
-import {
-  resolveReferences,
-  buildSiteDescriptors,
-  type ResolvedReference,
-} from '@glw907/cairn-cms/delivery';
+import { resolveReferences, buildSiteDescriptors, type EntryRef } from '@glw907/cairn-cms/delivery';
 import { site } from './content.js';
 import { cairn } from '#theme/cairn.config.js';
 
@@ -29,9 +25,9 @@ interface WithConceptAndEntry {
  */
 export function withReferences<T extends WithConceptAndEntry>(
   data: T,
-): T & { references: Record<string, ResolvedReference | ResolvedReference[]> } {
+): T & { references: Record<string, EntryRef | EntryRef[]> } {
   const descriptor = descriptorById.get(data.concept);
-  const references: Record<string, ResolvedReference | ResolvedReference[]> = descriptor
+  const references: Record<string, EntryRef | EntryRef[]> = descriptor
     ? resolveReferences(site, descriptor, data.entry.frontmatter)
     : {};
   return { ...data, references };

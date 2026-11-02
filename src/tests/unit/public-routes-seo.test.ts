@@ -4,30 +4,29 @@ import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.j
 import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const [posts] = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
     routing: 'feed',
     permalink: '/:year/:month/:day/:slug',
-    fields: defineFieldset({
+    fields: {
       title: fields.text({ label: 'Title', required: true }),
       date: fields.date({ label: 'Date' }),
       description: fields.textarea({ label: 'Description' }),
       image: fields.text({ label: 'Social image' }),
       robots: fields.text({ label: 'Robots' }),
       author: fields.text({ label: 'Author' }),
-    }),
+    },
   },
 });
 const [pages] = normalizeConcepts({
   pages: {
     dir: 'src/content/pages',
-    fields: defineFieldset({
+    fields: {
       title: fields.text({ label: 'Title', required: true }),
       robots: fields.text({ label: 'Robots' }),
-    }),
+    },
   },
 });
 

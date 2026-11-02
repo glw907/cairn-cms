@@ -8,19 +8,19 @@ export default function setup(root) {
   mkdirSync(join(root, 'src/theme'), { recursive: true });
   writeFileSync(
     join(root, 'src/theme/cairn.config.ts'),
-    `import { defineAdapter, defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
+    `import { defineAdapter, defineConcept, fields } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
   content: {
     events: defineConcept({
       dir: 'src/content/events',
       label: 'Events',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         endDate: fields.date({ label: 'End date' }),
         location: fields.text({ label: 'Location' }),
-      }),
+      },
     }),
   },
 });

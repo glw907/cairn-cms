@@ -58,7 +58,6 @@ export type {
   SiteResolver,
   TypedSiteResolver,
   UntypedSiteResolver,
-  ResolvedReference,
 } from './site-resolver.js';
 export { buildSiteDescriptors } from './site-descriptors.js';
 export { buildExcerpt } from '../content/excerpt.js';
@@ -78,4 +77,4 @@ export { buildSiteManifest, buildNewlyPublished } from './manifest.js';
 // `parseManifest`'s canonical home is `.`, beside `formatManifest`; a recorded R4 re-export here
 // because `buildNewlyPublished`'s `before`/`after` pair is the typed shape it produces.
 export { parseManifest } from '../content/manifest.js';
-export type { Manifest, ManifestEntry } from '../content/manifest.js';
+export type { Manifest, ManifestEntry, EntryRef, SiteManifestBuild, ManifestProblem } from '../content/manifest.js';

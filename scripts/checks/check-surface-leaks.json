@@ -229,30 +229,6 @@
       "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1): /sveltekit re-renders SlotDef through its own InferFieldset instantiation."
     },
     {
-      "name": "StandardResult",
-      "subpath": ".",
-      "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md's 'Two written exclusions' bullet names it, alongside RemoveIndex/ValueOf, as structurally identical in standing to DictionaryAddFailure/TidyFailure and hands this rider the decision. RULED here: folded into the same one standing-unverdicted class."
-    },
-    {
-      "name": "StandardResult",
-      "subpath": "/delivery",
-      "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above: /delivery re-renders InferFieldset through its own instantiation."
-    },
-    {
-      "name": "StandardResult",
-      "subpath": "/delivery/data",
-      "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above: /delivery/data re-renders InferFieldset through its own instantiation."
-    },
-    {
-      "name": "StandardResult",
-      "subpath": "/sveltekit",
-      "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above: /sveltekit re-renders InferFieldset through its own instantiation."
-    },
-    {
       "name": "TidyFailure",
       "subpath": "/sveltekit",
       "model": "type-checker",

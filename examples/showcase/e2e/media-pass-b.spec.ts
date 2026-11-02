@@ -179,7 +179,7 @@ test('replace round-trip: a new file repoints both references and keeps the old 
   await applyButton.click();
   await expect(page).toHaveURL(/\/admin\/media\?replaced=1/);
   // The flash text renders twice (sr-only live region + visible alert); scope to the visible alert.
-  await expect(page.locator('.alert-success')).toHaveText('Asset replaced.');
+  await expect(page.locator('.alert-success')).toHaveText('Image replaced.');
 
   // Both entries' committed markdown now reference the NEW hash, no longer the old one.
   await expect(async () => {

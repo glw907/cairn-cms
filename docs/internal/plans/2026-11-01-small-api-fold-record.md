@@ -120,3 +120,25 @@ F17 offered three options: an unexported helper (A), the fixed format with the y
 No ratified document changes meaning, so no erratum. The run sheet is unchanged: "rewriting the leak gate" stays under "May not", and T6 retires one model as R3 rules.
 
 The planning session owes the executor and conductor prompts (mechanics 25). They name the CI verdict per accepted task and `cairn-cms-9b`.
+
+## Verification read
+
+`2026-11-01-small-api-fold-verification.md`, 13 findings. 12 applied, 1 refused. Path stays 540. Each was checked against `origin/main` before applying. No design change, and the script is unchanged.
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | T14's script can undo T14's refusal tests | Applied. T14 reads `'components' in rendering`, words the message to miss the script, and writes the test through `const stale`. |
+| 2 | T7 row hits on a correct tree | Applied. Row is `src/lib/media-seed`. T7 acceptance adds the `package.json` grep, which prints only `:186` today. |
+| 3 | Narrowed T4 row reaches `docs/internal` | Applied. `engine-rulings.md:123` confirmed. |
+| 4 | T5's `ContentRoutesConfig` fallback can't build | Applied by ruling. Both readers use `CairnAdminConfig['tidy']`, the same type at `cairn-admin.ts:47`, and `chassis/cairn.server.ts` joins T5's Files. This supersedes data 17's fold above. |
+| 5 | T3's lane goes red on `newly-published.md` | Applied. T3 Files, `:11,37`. |
+| 6 | Quoted `resolveDb` line contradicts its sentence | Applied. `config.resolveDb?.(...)`. |
+| 7 | Two gates read T4's new surface | Applied. `check-options.mjs:318` confirmed. T4 names `PlainSectionAction`, adds the allowlist row and the doc comment. |
+| 8 | Two `rendering` shorthands missing | Applied. T14 hand edits. |
+| 9 | False claims in a published doc comment | Applied. T4 "Doc comments", with `admin-action.ts`'s passages. |
+| 10 | T3 row's unlisted false match | Applied. Known false matches. |
+| 11 | Setup's branch isn't on origin | Applied by ruling. Header Branch line. The planning session pushes before launch. |
+| 12 | Script write missing from the pre-flight list | Applied. T14 list and hand edits. The restored label is also a listed T14 false match, which the finding's fold left out. |
+| 13 | Header's design figure doesn't match the sheet | Refused by ruling. The launch prompt set "design estimate about 330; plan ceiling 840". |
+
+Also from the planning session: the first push comes after T1 and opens the draft PR. "First push" under `## Tasks` says so, and T6's `ciWait` pushes to that open PR.

@@ -73,6 +73,7 @@ func readAdminMountText(s Snapshot) (text string, found bool, err error) {
 var adminMountShape = Check{
 	ID:        "admin.mount-shape",
 	PassTitle: "Custom /admin mount is complete",
+	SkipTitle: "Custom /admin mount",
 	Condition: spine.ConditionAdminMountIncomplete,
 	Run: func(s Snapshot) Result {
 		text, found, err := readAdminMountText(s)

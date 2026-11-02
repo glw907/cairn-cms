@@ -24,6 +24,21 @@ func TestEveryCheckDeclaresAPassTitle(t *testing.T) {
 	}
 }
 
+// TestEveryCheckDeclaresASkipTitle asserts a SKIP line prints a neutral subject, never the
+// registry title, which names a failure.
+func TestEveryCheckDeclaresASkipTitle(t *testing.T) {
+	for _, c := range checks {
+		t.Run(c.ID, func(t *testing.T) {
+			if c.SkipTitle == "" {
+				t.Fatalf("check %q declares no SkipTitle", c.ID)
+			}
+			if got := c.lineTitle(StatusSkip); got != c.SkipTitle {
+				t.Errorf("lineTitle(StatusSkip) = %q, want %q", got, c.SkipTitle)
+			}
+		})
+	}
+}
+
 // TestFiveConfigCheckLabelsMatchRegistryTitle asserts every one of the eight checks landed so far,
 // five config checks plus the three heuristic checks, has a label() equal to its condition's
 // title in the embedded registry mirror, read fresh through spine.TextFor rather than assumed. A

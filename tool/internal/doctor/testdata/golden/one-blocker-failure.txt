@@ -1,5 +1,5 @@
 FAIL  Wrangler bindings are missing: missing EMAIL (send_email) and AUTH_DB (d1_databases)
-SKIP  Media bucket binding is missing: no media assets configured
+SKIP  Media bucket binding: no media assets configured
 PASS  Workers Logs has a sink: observability.enabled is true
 PASS  Trusted origins keep SvelteKit's origin check: no csrf.trustedOrigins entries in vite.config.ts, so SvelteKit's default origin check covers every route (heuristic text read)
 PASS  Site config validates: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
@@ -7,7 +7,7 @@ PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is https://example.com (wran
 PASS  No site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
 PASS  Custom /admin mount is complete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
 PASS  Framework dependencies meet the engine floor: @sveltejs/kit 3.0.0 and svelte 5.56.10 satisfy the engine peer ranges
-SKIP  Guard is missing the declared role vocabulary: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
+SKIP  Guard role vocabulary: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
 PASS  The stated AI posture is the served one: no AI posture is stated (aiPosture is unset). https://example.com/robots.txt carries no AI-crawler directives, consistent with stating nothing.
 
 Wrangler bindings are missing failed.

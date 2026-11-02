@@ -23,6 +23,7 @@ const (
 var configSiteConfig = Check{
 	ID:        "config.site-config",
 	PassTitle: "Site config validates",
+	SkipTitle: "Site config",
 	Condition: spine.ConditionConfigSiteConfigInvalid,
 	Run: func(s Snapshot) Result {
 		outcome, err := s.siteConfig()

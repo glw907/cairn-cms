@@ -15,6 +15,9 @@ type Check struct {
 	// PassTitle is the label a PASS line prints. A condition's registry title names the failure
 	// ("Wrangler bindings are missing"), which reads as a contradiction beside PASS.
 	PassTitle string
+	// SkipTitle is the label a SKIP line prints: the subject alone, since a skipped check reached
+	// no verdict and the registry title would assert a failure that did not happen.
+	SkipTitle string
 	// Condition is the cairn-doctor condition id this check's failure raises. A check whose
 	// failure raises no catalogued condition leaves this spine.ConditionNone.
 	Condition spine.Condition
@@ -120,11 +123,14 @@ func (c Check) label() string {
 	return conditionText(c.Condition).Title
 }
 
-// lineTitle returns the title a report line prints for status: the PassTitle on a PASS when the
-// check declares one, otherwise the registry label.
+// lineTitle returns the title a report line prints for status: the PassTitle on a PASS or the
+// SkipTitle on a SKIP when the check declares one, otherwise the registry label.
 func (c Check) lineTitle(status Status) string {
 	if status == StatusPass && c.PassTitle != "" {
 		return c.PassTitle
+	}
+	if status == StatusSkip && c.SkipTitle != "" {
+		return c.SkipTitle
 	}
 	return c.label()
 }

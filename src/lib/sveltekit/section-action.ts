@@ -126,7 +126,7 @@ export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
   db: NonNullable<Db>;
 };
 
-const UNAVAILABLE_MESSAGE = 'This section is not available.';
+const UNAVAILABLE_MESSAGE = 'This section is not available. Let your site developer know.';
 
 /**
  * What `createSectionAction` returns: the per-call-site wrapper, curried over the handler's

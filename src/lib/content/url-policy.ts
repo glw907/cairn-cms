@@ -42,7 +42,7 @@ export function resolvePermalink(
       const parts = dateParts(entry.date);
       if (!parts) {
         throw new Error(
-          `cairn: concept "${descriptor.id}" permalink pattern uses :${token}, but entry "${entry.id}" has no valid date`,
+          `cairn: concept "${descriptor.id}" permalink pattern uses :${token}, but entry "${entry.id}" has no valid date. Give the entry a date, or drop :${token} from the pattern.`,
         );
       }
       if (token === 'year') return parts.year;

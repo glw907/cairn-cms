@@ -317,7 +317,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       // The default-branch head read distinguishes a first save from a re-save; a null is the
       // unreadable-default-branch case the create cannot recover from, so fail with the 500.
       const mainHead = await backend.branchHead(backend.defaultBranch);
-      if (mainHead === null) throw error(500, 'Cannot read the default branch');
+      if (mainHead === null) throw error(500, "Your changes weren't saved. Try again, and tell your site's developer if this keeps happening.");
       await backend.createBranch(branch, backend.defaultBranch);
     }
 
@@ -466,7 +466,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
   async function publishAllAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     const first = runtime.concepts[0];
-    if (!first) throw error(404, 'No content types configured');
+    if (!first) throw error(404, 'This site declares no content types. Add one to the adapter\'s concepts.');
     const backend = ctx.resolveBackend(event);
     const listPage = `/admin/${first.id}`;
 

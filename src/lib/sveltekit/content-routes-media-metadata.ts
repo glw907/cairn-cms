@@ -259,7 +259,7 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     try {
       payload = JSON.parse(await event.request.text());
     } catch {
-      return fail(400, { error: 'Could not read the replace request.', hash: '', usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
+      return fail(400, { error: 'Could not read the replace request. Reload the page and try again.', hash: '', usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
     }
     const oldHash = String(payload.oldHash ?? '');
     const newHash = String(payload.newHash ?? '');

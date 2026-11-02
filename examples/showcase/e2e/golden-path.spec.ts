@@ -511,8 +511,8 @@ test('the component round-trips: place a callout, the caret enables Edit block, 
   // Put the text cursor inside the callout block by clicking its opener line.
   await editor.locator('.cm-line', { hasText: '::::callout[A worked example]' }).click();
 
-  // The caret-on-component gate flips the control to enabled, with the active-state label.
-  const editEnabled = page.getByRole('button', { name: 'Edit the block at the cursor' });
+  // The caret-on-component gate flips the control to enabled, with the action text as its description.
+  const editEnabled = page.getByRole('button', { name: 'Edit block' });
   await expect(editEnabled).toBeEnabled({ timeout: 5000 });
 
   // Activate Edit block: the dialog opens straight into the configure step in edit mode. The header

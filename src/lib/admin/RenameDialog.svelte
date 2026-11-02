@@ -69,7 +69,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
   let renaming = $state(false);
 </script>
 
-<svelte:window onpageshow={() => (renaming = false)} />
+<svelte:window onpageshow={(e) => { if (e.persisted) renaming = false; }} />
 
 {#if trigger}
   <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" onclick={open}>

@@ -978,10 +978,9 @@ island.
       editableArbiter.next();
     };
   });
-  // The Edit-block control's accessible name and tooltip. Enabled, the one text names the action.
-  // Unavailable, the name stays one stable "Edit block" and the reason rides in the tooltip, which
-  // Tooltip points aria-describedby at, so the name never changes under a screen-reader user and
-  // every reason is still announced. The reasons are honest about why, including when Preview hides
+  // The Edit-block control's tooltip. The accessible name is always "Edit block"; this text, enabled
+  // or not, rides in the tooltip, which Tooltip points aria-describedby at, so the name never
+  // changes under a screen-reader user and every state's text is still announced. The reasons are honest about why, including when Preview hides
   // the Write surface (the Write pane stays mounted under Preview, so editable survives the tab
   // switch, and the reason must not promise an action Preview has made inert). editReason, driven
   // purely by the caret, is unaffected by Preview: an unsafe block stays unsafe, and switching to
@@ -1002,7 +1001,6 @@ island.
   // this state (aria-disabled, not the native disabled attribute), so its reason reaches assistive
   // technology; the dead click is made inert in editBlock().
   const editBlockUnavailable = $derived(insertDisabled || !editable);
-  const editBlockLabel = $derived(editBlockUnavailable ? 'Edit block' : editBlockReason);
   // Activate edit: parse the block into form values, then open the dialog in edit mode over the
   // stored source range. Guarded by editable AND the preview-mode disable, so the control is inert
   // unless the gate passed and the editor is on the Write tab. The def, range, and markdown all come
@@ -1319,10 +1317,15 @@ island.
 
   // The banner and the polite live region read this one string. Removing the reference covers an
   // absent target, which has nothing to publish.
-  const referenceNotice = $derived.by(() => {
+  const referenceBody = $derived.by(() => {
     const many = referenceWarning.includes(',');
-    return `Saved. Note: this entry references ${many ? 'entries' : 'an entry'} (${referenceWarning}) not yet published. Publish ${many ? 'them' : 'it'} or remove the ${many ? 'references' : 'reference'} before you publish this entry.`;
+    return `Note: this entry references ${many ? 'entries' : 'an entry'} (${referenceWarning}) not yet published. Publish ${many ? 'them' : 'it'} or remove the ${many ? 'references' : 'reference'} before you publish this entry.`;
   });
+  const referenceNotice = $derived(`Saved. ${referenceBody}`);
+  // The draft clause, shared by the banner and the announcement, singular or plural by target count.
+  const draftBody = $derived(
+    `Note: this entry links to ${draftWarning.includes(',') ? 'entries' : 'an entry'} that visitors can't reach yet (${draftWarning}).`,
+  );
 
   // The one transient feedback strip under the sticky header.
   // A saved flash with a draft or reference warning yields to the warning alert below.
@@ -1342,9 +1345,8 @@ island.
   // the errors. The visible banners below keep their styling but drop their roles, so a message
   // is announced once.
   const politeMessage = $derived.by(() => {
-    const draftNotice = `Saved. This entry links to entries that visitors can't reach yet: ${draftWarning}.`;
-    if (draftWarning && referenceWarning) return `${draftNotice} ${referenceNotice}`;
-    if (draftWarning) return draftNotice;
+    if (draftWarning && referenceWarning) return `Saved. ${draftBody} ${referenceBody}`;
+    if (draftWarning) return `Saved. ${draftBody}`;
     if (referenceWarning) return referenceNotice;
     return flash;
   });
@@ -2021,12 +2023,12 @@ island.
 </div>
 {#if draftWarning}
   <div class="alert alert-warning mb-4 type-body">
-    Saved. Note: this entry links to {draftWarning.includes(',') ? 'entries' : 'an entry'} that visitors can't reach yet ({draftWarning}).
+    Saved. {draftBody}
   </div>
 {/if}
 {#if referenceWarning}
   <div class="alert alert-warning mb-4 type-body">
-    {referenceNotice}
+    {draftWarning ? referenceBody : referenceNotice}
   </div>
 {/if}
 
@@ -2133,7 +2135,7 @@ island.
                 class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
                 class:cursor-not-allowed={editBlockUnavailable}
                 aria-haspopup="dialog"
-                aria-label={editBlockLabel}
+                aria-label="Edit block"
                 aria-disabled={editBlockUnavailable}
                 onclick={editBlock}
               >

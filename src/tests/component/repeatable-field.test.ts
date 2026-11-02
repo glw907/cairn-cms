@@ -9,6 +9,7 @@ import { frontmatterFromForm } from '../../lib/content/frontmatter.js';
 // The compiled admin sheet, so the wrapper's computed display is the real one (the wrapper is
 // classless; only the sheet decides whether `hidden` holds).
 import '../../../dist/admin/cairn-admin.css';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 // The shared pass-through props a container caller threads down; the media and reference props are
 // empty here because these cases exercise the repeatable mechanics (keyed rows, add/remove/reorder,
@@ -55,12 +56,16 @@ describe('RepeatableField', () => {
     expect(list.getAttribute('role')).toBe('list');
     // The compiled sheet scopes every rule under the admin theme root.
     document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    const sheet = document.createElement('style');
+    sheet.textContent = compiledAdminCss;
+    document.head.appendChild(sheet);
     try {
       const style = getComputedStyle(list);
       expect(style.listStyleType).toBe('none');
       expect(style.paddingLeft).toBe('0px');
     } finally {
       document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
     }
   });
   it('keeps an edited row and its focus when an earlier row is removed (B1)', async () => {

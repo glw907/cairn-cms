@@ -16,13 +16,11 @@ Contents:
 
 1. Dependencies: `@glw907/cairn-cms` (dependency), `@cloudflare/workers-types` `^5` (dev
    dependency, a required peer). `ERESOLVE` means the app still pins `@sveltejs/kit` `^2`.
-2. `vite.config.ts`: `ssr: { noExternal: ['@glw907/cairn-cms'] }`. The engine ships `.svelte`
-   source that the site's Svelte plugin must compile.
-3. `src/app.d.ts`: `import '@glw907/cairn-cms/ambient';` above `declare global`. It types
+2. `src/app.d.ts`: `import '@glw907/cairn-cms/ambient';` above `declare global`. It types
    `App.Locals` and declares `__CAIRN_DEV_BUILD__`.
-4. Imports: SvelteKit 3 throws on `$lib`. Use the `package.json` `imports` map
+3. Imports: SvelteKit 3 throws on `$lib`. Use the `package.json` `imports` map
    (`"#lib/*": "./src/lib/*"`), and import site modules as `#lib/<file>.js`. Add the map if absent.
-5. A custom route that needs a binding reads it from `cloudflare:workers` (adapter 8 declares no
+4. A custom route that needs a binding reads it from `cloudflare:workers` (adapter 8 declares no
    `App.Platform`), typed by `wrangler types --include-runtime=false`.
 
 ## Site config, adapter, content
@@ -59,8 +57,8 @@ Done when `npm run check` and `npm run build` pass. A build failure table is in
 1. `src/lib/cairn.server.ts`: `runtime = composeRuntime({ adapter: cairn, siteConfig })` and
    `admin = createCairnAdmin({ runtime, auth: { bootstrapOwner: { email, displayName } } })`.
 2. Mount the catch-all and layout (`references/admin-access.md`).
-3. `npm install -D @glw907/cairn-cms-dev @types/node`; add `@glw907/cairn-cms-dev` to
-   `ssr.noExternal` (without it `/admin` answers 500 under `vite dev`).
+3. `npm install -D @glw907/cairn-cms-dev @types/node`. The `cairnManifest` plugin
+   already adds both packages to `ssr.noExternal`, so `vite.config.ts` needs no line for them.
 4. `src/hooks.server.ts`:
 
    ```ts

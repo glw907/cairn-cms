@@ -169,7 +169,7 @@ export function resolveConsumerVite(root: string): string {
  */
 // WATCH: stripping 'cairn-manifest' also drops its `config` hook, so the nested server does not
 // define __CAIRN_DEV_BUILD__. That is harmless while nothing in the config module's graph reads the
-// global; revisit if one does.
+// global; revisit if one does. The `ssr.noExternal` half of the hook is restored by cairnVirtualOnly.
 const NESTED_SERVER_STRIPPED = new Set([
   'cairn-manifest',
   'vite-plugin-sveltekit-adapter-cloudflare-virtual-workers-module',
@@ -227,6 +227,16 @@ export async function buildManifestFromVite(opts: CairnManifestOptions, root: st
 /** The configured site-facts path, app-root-relative (no leading slash), for joining and display. */
 
 
+/**
+ * The packages Vite must process rather than externalize: the engine ships `.svelte` and TS source,
+ *  and the dev backend ships JavaScript importing `cloudflare:workers`, a scheme Node's loader
+ *  rejects. Vite's `mergeConfig` concatenates array values, so a site's own list is kept.
+ */
+const CAIRN_NO_EXTERNAL = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
+
+/** The config both the plugin and the nested verify server contribute. */
+const CAIRN_SSR_CONFIG = { ssr: { noExternal: CAIRN_NO_EXTERNAL } };
+
 /** The global the dev-backend gate reads at every call site, defined by the plugin's `config` hook. */
 const DEV_BUILD_DEFINE = '__CAIRN_DEV_BUILD__';
 
@@ -253,7 +263,8 @@ async function e2eFlagSet(mode: string): Promise<boolean> {
  * Its `config` hook defines `__CAIRN_DEV_BUILD__`: `true` under `vite dev` and in a build with
  * `VITE_CAIRN_E2E=1` (read from the process env and the working directory's `.env` files), `false`
  * otherwise, so a guarded dev-backend branch folds out of a deployed Worker. A `define` the site
- * already sets for the name wins.
+ * already sets for the name wins. The hook also adds `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`
+ * to `ssr.noExternal`, merged with any list the site sets, so a site's config names neither.
  *
  * Beside the content manifest it verifies `site-facts.json` in `buildStart`, on every build. The
  * file carries `version` (always `1`) and, omitted when the adapter declares none, `mediaBucketBinding`
@@ -281,12 +292,12 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
     // mints owner sessions must never compile into a deployed Worker). Vite substitutes the name as
     // a literal into each module that reads it, so each guarded branch folds where it is written.
     // A define the site already set wins in either plugin order: Vite merges a hook's result over
-    // the config so far, so the hook returns nothing once the name is present. The hook starts no
+    // the config so far, so the hook leaves the define out once the name is present. The hook starts no
     // nested server, only reads the flag through the site's `loadEnv`.
     async config(config, { command, mode }) {
-      if (config.define && DEV_BUILD_DEFINE in config.define) return;
+      if (config.define && DEV_BUILD_DEFINE in config.define) return CAIRN_SSR_CONFIG;
       const flagged = command === 'serve' || (await e2eFlagSet(mode));
-      return { define: { [DEV_BUILD_DEFINE]: JSON.stringify(flagged) } };
+      return { define: { [DEV_BUILD_DEFINE]: JSON.stringify(flagged) }, ...CAIRN_SSR_CONFIG };
     },
     configResolved(config) {
       // Capture the resolved app root so the nested server loads the same config the build did.
@@ -461,6 +472,8 @@ function findCairnOptions(plugins: unknown): CairnManifestOptions | null {
 function cairnVirtualOnly(source: string): Plugin {
   return {
     name: 'cairn-manifest-virtual',
+    // The stripped cairnManifest plugin took its config hook with it; Vite merges this the same way.
+    config: () => CAIRN_SSR_CONFIG,
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID;
     },

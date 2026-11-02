@@ -48,6 +48,11 @@ the requester's `CF-Connecting-IP` address, so everyone behind one shared addres
 budget; set it generously. A limited request reads `throttled`, the same answer as the send
 cooldown, and logs `auth.rate_limited`. An absent binding or header lets every request through.
 
+The engine sets `Strict-Transport-Security: max-age=63072000` on every admin response, but a
+Cloudflare zone's own HSTS setting overrides it. Three sites on older engines returned their
+zone's value instead. If the zone's policy differs from this one, the zone's wins, so set the
+policy you want in the zone. This reference cannot confirm that a current engine behaves the same.
+
 ## Gate a custom screen
 
 The guard admits any signed-in session to `/admin/**` and decides no per-route authorization.

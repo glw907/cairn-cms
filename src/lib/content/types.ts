@@ -249,7 +249,7 @@ export interface MediaConfig {
  *  raw markdown body, the same way; a site's render need not read it unless it wants to vary
  *  fragment resolution. `concept` and `frontmatter` carry the entry's context for an entry render and
  *  are absent for the standalone component-insert preview. The render must forward `resolveFragment`
- *  beside `resolve` and `resolveMedia`: one that drops it publishes each `::include` as literal text
+ *  beside `resolveLink` and `resolveMedia`: one that drops it publishes each `::include` as literal text
  *  with no error.
  * @public
  */
@@ -438,7 +438,7 @@ export interface CairnRuntime {
   supportContact?: string;
   /**
    * The site's one renderer: the editor preview and every public page call it (design decision 4).
-   *  The build passes a site-resolver-backed `resolve`/`resolveMedia` pair, the preview manifest-backed
+   *  The build passes a site-resolver-backed `resolveLink`/`resolveMedia` pair, the preview manifest-backed
    *  ones.
    */
   render: SiteRender;

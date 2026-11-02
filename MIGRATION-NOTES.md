@@ -218,7 +218,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Stop querying logs for the media resolver-absent event.** `CHANGELOG.md` names it, and it is gone.
 - **Replace `createSiteIndexes(adapter, config, globs, opts)` with `createSiteResolver(adapter, files)`.** Pass one `import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true })`.
 - **Use the returned value as `site`, and read each concept through `site.concept('posts')` where you read `indexes.posts`.** Drop any `SiteIndexes` or `SiteGlobs` import.
-- **Drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`.** It takes `configModule` alone.
+- **Drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`.** It takes `configModule` alone, so move a generated file at a custom path to `src/content/.cairn/`.
 - **Remove `validate: false` and fix the entries it hid.** The resolver always validates.
 - **Call `site.paths()` where you called `site.entries()`, and `site.concept(id).adjacent(entryId)` where you called `site.adjacent`.**
 - **Drop the config argument from any `buildSiteDescriptors` or `buildSiteManifest` call.**

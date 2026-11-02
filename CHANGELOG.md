@@ -189,7 +189,7 @@
 
   Consumers must: delete `publicBase`, `urlForm`, `maxUploadBytes`, `allowedTypes`, and
   `transformations` from the media config, and retire a media route mounted at a `publicBase` other
-  than `/media`.
+  than `/media`, and any `srcset` or `sizes` use.
 
   Consumers must: call `createMediaResolver(media, manifest, { strict })` in that order and drop any
   `normalizeAssets` call, and drop any `ResolvedAssetConfig` import.
@@ -217,7 +217,8 @@
   Consumers must: use the returned value as `site`, read each concept through `site.concept('posts')`
   where you read `indexes.posts`, and drop any `SiteIndexes` or `SiteGlobs` import.
 
-  Consumers must: drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`.
+  Consumers must: drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`, and move
+  a generated file at a custom path to `src/content/.cairn/`.
 
   Consumers must: remove `validate: false` and fix the entries it hid.
 
@@ -814,8 +815,6 @@
   Consumers must: expect `buildNewlyPublished` to omit a renamed entry, and drop any workaround that
   filtered renames by key.
 
-- **The editor preview honors a moved media path.** `manifestMediaResolver` takes the site's media
-  base, so an image in the preview resolves under it instead of `/media`.
 - **A throwing `attention` function no longer fails the admin shell load.** The shell catches the
   throw or rejection, renders no badges for that request, and logs `admin.attention_failed` with the
   error. A site no longer needs its own try/catch around the function.

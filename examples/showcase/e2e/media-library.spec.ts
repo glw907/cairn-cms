@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
+import { clickWhenHydrated } from './editor-helpers.js';
 
 // The media Phase 3c Media Library, end to end against the running showcase behind the fake backend
 // (the fake R2 double in the Worker env and the fake-github recorder, the same harness the other media
@@ -134,7 +135,7 @@ test('the detail slide-over: the grouped where-used reads published for the used
   const grid = page.getByRole('listbox', { name: 'Media library' });
 
   // Open the used asset's detail. The slide-over is a labelled region.
-  await grid.getByText(USED.name, { exact: true }).click();
+  await clickWhenHydrated(grid.getByRole('option', { name: new RegExp(`^${USED.name}\\.`) }));
   const usedPanel = page.getByRole('region', { name: `${USED.name} details` });
   await expect(usedPanel).toBeVisible();
   // Where-used groups it under "Published on the site" with a link to the seed post's editor.

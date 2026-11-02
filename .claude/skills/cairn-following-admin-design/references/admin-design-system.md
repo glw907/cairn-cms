@@ -681,7 +681,7 @@ alongside the component recipes above and below it.
   for the title and the header's ink New button (the ONE create affordance on a populated list, the
   old trailing foot row that duplicated it and read as a content row was removed 2026-07-15),
   `ListToolbar` for the search box, the two independent segmented filters (a pick-one publish-state
-  partition — All, Pending edits, Published — and an orthogonal Hidden toggle, each carrying a live
+  partition — All, Unpublished changes, Published — and an orthogonal Hidden toggle, each carrying a live
   count from the loaded set; the axes are independent, so a published-but-hidden entry counts in
   both Published and Hidden), and the count line, `AdminTable` for the sortable ONE-LINE-row table
   shell (the sortable `th`s are the screen's own markup in the `header` snippet; a filtered-to-zero

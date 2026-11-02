@@ -141,6 +141,7 @@ describe('renameAction: reference repoint and cross-branch refusal (Task 12)', (
   });
 
   it('(b) refuses (409) naming the branch when a THIRD-PARTY open branch references the target', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const manifest = JSON.stringify({ version: 1, entries: [entry('posts', 'target')] });
     const gh = new GithubDouble({
       main: { [MANIFEST_PATH]: manifest, [TARGET_PATH]: '---\ntitle: Target\n---\nbody' },
@@ -151,10 +152,41 @@ describe('renameAction: reference repoint and cross-branch refusal (Task 12)', (
     const out = await rename(gh, 'target', 'renamed');
     expect(out.status).toBe(409);
     expect(out.error).toContain('posts/other-post');
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.rename_refused', editor: 'ed@t', concept: 'posts', id: 'target', reason: 'branch_references', count: 1 }));
     // No commit landed: target still exists, no renamed file.
     expect(gh.read('main', TARGET_PATH)).toContain('title: Target');
     expect(gh.read('main', 'src/content/posts/renamed.md')).toBeNull();
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+  });
+
+  it('refuses (409) and logs pending_edits when the entry has its own open branch', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = JSON.stringify({ version: 1, entries: [entry('posts', 'target')] });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifest, [TARGET_PATH]: '---\ntitle: Target\n---\nbody' } });
+    gh.createBranch('cairn/posts/target', 'main');
+    const out = await rename(gh, 'target', 'renamed');
+    expect(out.status).toBe(409);
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.rename_refused', editor: 'ed@t', concept: 'posts', id: 'target', reason: 'pending_edits' }));
+  });
+
+  it('refuses (409) and logs reference_check_failed when a branch read throws', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = JSON.stringify({ version: 1, entries: [entry('posts', 'target')] });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifest, [TARGET_PATH]: '---\ntitle: Target\n---\nbody' } });
+    gh.createBranch('cairn/posts/bad-branch', 'main');
+    gh.commit('cairn/posts/bad-branch', 'src/content/posts/bad-branch.md', '---\ntitle: Bad\n---\nbody');
+    gh.install();
+    const realFetch = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('bad-branch.md')) return Promise.reject(new Error('boom'));
+      return realFetch(input, init);
+    }));
+    const routes = createContentRoutes({ runtime: runtime() });
+    const result = (await routes.renameAction(renameEvent('target', 'renamed'))) as unknown as { status: number };
+    expect(result.status).toBe(409);
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.reference_check_failed', editor: 'ed@t', concept: 'posts', id: 'target', action: 'rename' }));
+    expect(warn.mock.calls.map((c) => (c[0] as { event: string }).event)).not.toContain('entry.rename_refused');
   });
 
   it('(c) a MAIN inbound does NOT trip the branch refusal (the published row has no .branch)', async () => {

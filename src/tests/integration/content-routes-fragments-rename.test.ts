@@ -127,6 +127,7 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
   });
 
   it('refuses (409) naming the entry when only a pending branch includes the fragment (#137)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
@@ -139,11 +140,13 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
     const out = await rename(routes, 'fragments', 'welcome', 'new-welcome');
     expect(out.status).toBe(409);
     expect(out.error).toContain('posts/2026-05-hi');
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.rename_refused', editor: 'ed@t', concept: 'fragments', id: 'welcome', reason: 'branch_includes', count: 1 }));
     expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
     expect(gh.read('main', 'src/content/fragments/new-welcome.md')).toBeNull();
   });
 
   it('keeps today\'s 409 when the rename collides with an existing fragment id', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
@@ -158,6 +161,7 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
     const out = await rename(routes, 'fragments', 'welcome', 'taken');
     expect(out.status).toBe(409);
     expect(out.error).toMatch(/already exists/i);
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.rename_refused', editor: 'ed@t', concept: 'fragments', id: 'welcome', reason: 'address_taken' }));
     // No commit landed: both fragments still exist at their original paths.
     expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
     expect(gh.read('main', 'src/content/fragments/taken.md')).toContain('title: Taken');

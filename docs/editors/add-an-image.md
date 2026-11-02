@@ -15,8 +15,8 @@ The panel opens next to your cursor.
 
 ```repro
 story: media/insert-panel
-alt: Reproduction of the Insert image panel, with an Upload an image button and a search box that lists the site's existing images.
-caption: The Insert image panel opens next to the cursor with Upload an image above a search box and the list of the site's images.
+alt: Reproduction of the Insert image panel, with an Upload image button and a search box that lists the site's existing images.
+caption: The Insert image panel opens next to the cursor with Upload image above a search box and the list of the site's images.
 ```
 
 You can also skip the panel. When you paste an image or drag an image file into the draft, the editor opens the upload form directly.
@@ -33,7 +33,7 @@ A reused image brings along the alt text saved with it in the library. A row mar
 
 ## Upload a new image
 
-1. In the **Insert image** panel, select **Upload an image**.
+1. In the **Insert image** panel, select **Upload image**.
 1. Choose the file in the window that opens. The upload form appears with a small preview of your image.
 1. In the **Name** field, type a name you'd recognize later. The library lists the image under this name.
 1. Under **Alt text**, select **Write a description** and type a short description, or select **Mark as decorative**.

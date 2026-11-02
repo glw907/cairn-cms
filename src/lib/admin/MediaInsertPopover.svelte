@@ -404,7 +404,7 @@ rule). The CSRF token is read from the admin context.
             class="btn btn-primary btn-sm w-full"
             onclick={() => fileInput?.click()}
           >
-            Upload an image
+            Upload image
           </button>
           <input
             bind:this={fileInput}

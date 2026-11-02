@@ -260,7 +260,8 @@ export function boundDictionaryChunks(body: ReadableStream<Uint8Array>): Readabl
   );
 }
 
-async function createEngine(message: InitMessage): Promise<SpellEngine> {
+/** Load the wasm engine from the two asset URLs in the init message; rejects when either fetch fails. */
+export async function createEngine(message: InitMessage): Promise<SpellEngine> {
   // The browser class accepts fetch Responses for both assets and streams the dictionary into wasm
   // memory in chunks, so the 1.5MB corpus is never held as one JS string. Import the class module
   // directly, not the package's `browser/index.js` UMD bundle: that bundle's UMD prelude references
@@ -277,39 +278,56 @@ async function createEngine(message: InitMessage): Promise<SpellEngine> {
     fetch(message.wasmUrl),
     fetch(message.dictionaryUrl),
   ]);
+  // A 404 body is an HTML page, not a dictionary; fail here so the main thread degrades on `error`.
+  for (const response of [wasmResponse, dictionaryResponse]) {
+    if (!response.ok) throw new Error(`spellcheck asset ${response.url} failed: ${response.status}`);
+  }
   await instance.prepareSpellchecker(wasmResponse, new Response(boundDictionaryChunks(dictionaryResponse.body!)));
   return createWasmEngine(instance, latest);
 }
 
-// The module-scope wiring runs only inside a Worker, where `self` and `addEventListener` exist. It is
-// guarded so this module imports cleanly in node (the unit test imports the handler factory and the
-// engine seam without a Worker context). On `init` it constructs the real wasm engine and a handler
-// bound to it; every other message is delegated to the handler, which posts back through `self`.
-if (typeof self !== 'undefined' && typeof (self as unknown as Worker).addEventListener === 'function') {
-  const worker = self as unknown as Worker;
-  const post: Post = (message) => worker.postMessage(message);
-
+/**
+ * The Worker's message router. `init` loads the engine through the injected loader. A message that
+ * lands before the handler exists is held when it is `addWord` or `ignoreWord` (neither needs the
+ * engine) and replayed into the handler before `ready` posts, so the site dictionary sent beside
+ * `init` is in place for the first check. A `check` or `suggest` before ready answers `error`.
+ */
+export function createWorkerMessageHandler(
+  load: (message: InitMessage) => Promise<SpellEngine>,
+  post: Post,
+): (message: InboundMessage) => void {
   let handler: ReturnType<typeof createSpellcheckHandler> | null = null;
+  const queued: Array<AddWordMessage | IgnoreWordMessage> = [];
+  const fail = (err: unknown) => post({ type: 'error', detail: err instanceof Error ? err.message : String(err) });
 
-  worker.addEventListener('message', (event: MessageEvent<InboundMessage>) => {
-    const message = event.data;
+  return (message) => {
     try {
       if (message.type === 'init') {
-        void createEngine(message)
+        void load(message)
           .then((engine) => {
-            handler = createSpellcheckHandler(engine);
+            const ready = createSpellcheckHandler(engine);
+            for (const held of queued.splice(0)) ready.handle(held, post);
+            handler = ready;
             post({ type: 'ready' });
           })
-          .catch((err) => {
-            post({ type: 'error', detail: err instanceof Error ? err.message : String(err) });
-          });
+          .catch(fail);
       } else if (!handler) {
-        post({ type: 'error', detail: 'spellchecker not ready' });
+        if (message.type === 'addWord' || message.type === 'ignoreWord') queued.push(message);
+        else post({ type: 'error', detail: 'spellchecker not ready' });
       } else {
         handler.handle(message, post);
       }
     } catch (err) {
-      post({ type: 'error', detail: err instanceof Error ? err.message : String(err) });
+      fail(err);
     }
-  });
+  };
+}
+
+// The module-scope wiring runs only inside a Worker, where `self` and `addEventListener` exist. It is
+// guarded so this module imports cleanly in node (the unit test imports the router and the handler
+// factory without a Worker context).
+if (typeof self !== 'undefined' && typeof (self as unknown as Worker).addEventListener === 'function') {
+  const worker = self as unknown as Worker;
+  const receive = createWorkerMessageHandler(createEngine, (message) => worker.postMessage(message));
+  worker.addEventListener('message', (event: MessageEvent<InboundMessage>) => receive(event.data));
 }

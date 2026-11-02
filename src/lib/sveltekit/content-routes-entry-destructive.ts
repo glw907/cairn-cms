@@ -110,6 +110,29 @@ interface RenameFailure {
 export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
   const { runtime } = ctx;
 
+  /** Log one policy refusal of a delete or rename; `count` is omitted where the site counts nothing. */
+  function logRefused(
+    event: 'entry.delete_refused' | 'entry.rename_refused',
+    editor: Editor,
+    concept: ConceptDescriptor,
+    id: string,
+    reason: string,
+    count?: number,
+  ): void {
+    log.warn(event, { editor: editor.email, concept: concept.id, id, reason, ...(count === undefined ? {} : { count }) });
+  }
+
+  /** Log one fail-closed read fault of a delete or rename, whatever status the site answers. */
+  function logCheckFailed(editor: Editor, concept: ConceptDescriptor, id: string, action: 'delete' | 'rename', err: unknown): void {
+    log.warn('entry.reference_check_failed', {
+      editor: editor.email,
+      concept: concept.id,
+      id,
+      action,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   /**
    * The shared delete core. Block-until-clean: refuse while inbound links exist (naming them), else
    *  commit the file removal and the manifest patch in one commit. The inbound recheck here is the
@@ -131,8 +154,9 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     const manifest = await ctx.readManifest(backend);
     const inbound = inboundLinks(manifest, concept.id, id);
     if (inbound.length) {
+      logRefused('entry.delete_refused', editor, concept, id, 'inbound_links', inbound.length);
       return fail(409, {
-        error: `Cannot delete ${id}: ${inbound.length} ${inbound.length === 1 ? 'page links' : 'pages link'} to it.`,
+        error: `Cannot delete ${id}: ${inbound.length} ${inbound.length === 1 ? 'entry links' : 'entries link'} to it.`,
         inboundLinks: inbound,
         id,
       } satisfies DeleteFailure);
@@ -145,6 +169,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     if (concept.id === FRAGMENTS_CONCEPT_ID) {
       const includers = inboundIncludes(manifest, id);
       if (includers.length) {
+        logRefused('entry.delete_refused', editor, concept, id, 'inbound_includes', includers.length);
         return fail(409, {
           error: `Cannot delete ${id}: ${includers.length} ${includers.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first.`,
           inboundLinks: includers,
@@ -155,7 +180,8 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       let pending: EntryRef[];
       try {
         pending = await pendingIncluders(backend, runtime.concepts, id);
-      } catch {
+      } catch (err) {
+        logCheckFailed(editor, concept, id, 'delete', err);
         return fail(503, {
           error: 'Could not verify where this fragment is included. Try again.',
           inboundLinks: [],
@@ -163,6 +189,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
         } satisfies DeleteFailure);
       }
       if (pending.length) {
+        logRefused('entry.delete_refused', editor, concept, id, 'pending_includes', pending.length);
         return fail(409, {
           error: `Cannot delete ${id}: ${pending.length} ${pending.length === 1 ? 'entry includes' : 'entries include'} it in unpublished edits. Remove the include first.`,
           inboundLinks: pending,
@@ -180,7 +207,8 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     let refIndex: Awaited<ReturnType<typeof buildReferenceIndex>>;
     try {
       refIndex = await buildReferenceIndex(backend, runtime.concepts, manifest, { strict: true });
-    } catch {
+    } catch (err) {
+      logCheckFailed(editor, concept, id, 'delete', err);
       return fail(503, {
         error: 'Could not verify where this entry is referenced. Try again.',
         inboundLinks: [],
@@ -198,6 +226,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
         permalink: row.permalink ?? '',
       }));
       const n = referencingEntries.length;
+      logRefused('entry.delete_refused', editor, concept, id, 'inbound_references', n);
       return fail(409, {
         error: `Cannot delete ${id}: ${n} ${n === 1 ? 'entry references' : 'entries reference'} it.`,
         inboundLinks: referencingEntries,
@@ -288,6 +317,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     // Pending edits on the branch are keyed to the old id; renaming underneath them would strand
     // them, so refuse until the editor publishes or discards.
     if ((await backend.branchHead(pendingBranch(concept.id, id))) !== null) {
+      logRefused('entry.rename_refused', editor, concept, id, 'pending_edits');
       return fail(409, { error: 'This entry has unpublished edits. Publish or discard them, then rename.' } satisfies RenameFailure);
     }
 
@@ -312,6 +342,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     // concurrent-rename race where another editor renamed onto this path between load and submit.
     const clobber = await backend.readFile(newPath, backend.defaultBranch);
     if (clobber !== null) {
+      logRefused('entry.rename_refused', editor, concept, id, 'address_taken');
       return fail(409, { error: 'An entry with that address already exists.' } satisfies RenameFailure);
     }
 
@@ -327,7 +358,8 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     let refIndex: Awaited<ReturnType<typeof buildReferenceIndex>>;
     try {
       refIndex = await buildReferenceIndex(backend, runtime.concepts, manifest, { strict: true });
-    } catch {
+    } catch (err) {
+      logCheckFailed(editor, concept, id, 'rename', err);
       return fail(409, { error: 'Could not verify references. Try again.' } satisfies RenameFailure);
     }
 
@@ -343,6 +375,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       .map((row) => `${row.concept}/${row.id}`);
     if (conflictBranches.length > 0) {
       const names = [...new Set(conflictBranches)].join(', ');
+      logRefused('entry.rename_refused', editor, concept, id, 'branch_references', new Set(conflictBranches).size);
       return fail(409, { error: `Another editor has unpublished edits referencing this entry: ${names}. Ask them to publish or discard, then rename.` } satisfies RenameFailure);
     }
 
@@ -353,11 +386,13 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       let pending: EntryRef[];
       try {
         pending = await pendingIncluders(backend, runtime.concepts, id);
-      } catch {
+      } catch (err) {
+        logCheckFailed(editor, concept, id, 'rename', err);
         return fail(409, { error: 'Could not verify includes. Try again.' } satisfies RenameFailure);
       }
       if (pending.length) {
         const names = [...new Set(pending.map((r) => `${r.concept}/${r.id}`))].join(', ');
+        logRefused('entry.rename_refused', editor, concept, id, 'branch_includes', new Set(pending.map((r) => `${r.concept}/${r.id}`)).size);
         return fail(409, { error: `Another editor has unpublished edits including this fragment: ${names}. Ask them to publish or discard, then rename.` } satisfies RenameFailure);
       }
     }

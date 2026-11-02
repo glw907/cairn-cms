@@ -22,6 +22,8 @@ on:
       - 'scripts/checks/shipped-anchors.json'
       - 'scripts/checks/fixtures/consumers-must/**'
       - 'schema/**'
+      - 'migrations/**'
+      - 'templates/waymark/migrations/**'
     tags: ['tool/v*']
   pull_request:
     paths:
@@ -36,6 +38,8 @@ on:
       - 'scripts/checks/shipped-anchors.json'
       - 'scripts/checks/fixtures/consumers-must/**'
       - 'schema/**'
+      - 'migrations/**'
+      - 'templates/waymark/migrations/**'
   workflow_dispatch:
 
 defaults:

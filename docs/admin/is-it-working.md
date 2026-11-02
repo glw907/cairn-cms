@@ -81,6 +81,7 @@ The following table maps each report title to its section and to the command tha
 | Framework dependencies | [Meet the dependency floors](#meet-the-dependency-floors) | `cairn doctor` |
 | AI posture | [Make the stated AI posture effective](#make-the-stated-ai-posture-effective) | `cairn doctor` |
 | Guard role vocabulary | [Provision the auth store](#provision-the-auth-store) | `cairn doctor` |
+| Auth store migrations | [Provision the auth store](#provision-the-auth-store) | `cairn doctor` |
 | Sign-in database | [Provision the auth store](#provision-the-auth-store) | No command |
 | Custom /admin mount | [Wire the admin mount](#wire-the-admin-mount) | `cairn doctor` |
 | GitHub App | [Install the GitHub App](#install-the-github-app) | No command |
@@ -183,7 +184,7 @@ A PASS covers only those two files. It says nothing about a policy set in a modu
 
 ## Provision the auth store
 
-Six conditions concern the database that records who may sign in. No command checks the first five. The sixth, `auth.role-wiring-missing`, is the one `cairn doctor` reports.
+Seven conditions concern the database that records who may sign in. `cairn doctor` reports two of them, `config.migrations-missing` and `auth.role-wiring-missing`. No command checks the other five.
 
 **`auth.store-unreachable`, a blocker.** The `AUTH_DB` database is missing, lacks the sign-in tables, or holds no owner row, so nobody can sign in. No command checks this condition, and a real failure almost always means a site wired by hand.
 
@@ -197,11 +198,15 @@ Six conditions concern the database that records who may sign in. No command che
 
 **Ask a developer:** copy `migrations/0001_roles.sql` into the site's migrations folder and apply it the same way.
 
+**`config.migrations-missing`, a warning.** The site's migrations folder lacks a file the installed package ships and the sign-in database needs, such as `0000_auth.sql` or `0004_login_nonce.sql`, so `wrangler` never applies it. The report names each missing file. The check reads file names only. A PASS means the files were copied, not that `wrangler` applied them. A SKIP means the site declares no `AUTH_DB` binding. The roles, audit, and preview migrations are optional, so their absence never fails the check.
+
+**Ask a developer:** copy each listed file from the package's `migrations` folder into the folder that `AUTH_DB`'s `migrations_dir` names, `migrations` by default, and run `npx wrangler d1 migrations apply <db> --remote`.
+
 **`auth.unknown-role`, a warning.** An editor's row carries a role the site doesn't declare, usually after a pruned configuration or a hand-edited row. That person can sign in, but the guard refuses everything else.
 
 **Act:** set the person to a role your site declares, on the **Editors** screen. [Invite editors](./invite-editors.md) shows how.
 
-**`auth.role-wiring-missing`, a warning.** The site declares custom roles, but its guard was never given them and falls back to `owner` and `editor`. Anyone with another role signs in and is refused everywhere. A SKIP on this check, as in the report above, means the site declares no custom roles.
+**`auth.role-wiring-missing`, a warning.** The site declares custom roles, but its guard was never passed the runtime, so the guard can't read those roles. At this engine version the site fails at startup with a `TypeError`. A SKIP on this check, as in the report above, means the site declares no custom roles.
 
 **Ask a developer:** The [admin access guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/admin-access.md) describes the wiring.
 

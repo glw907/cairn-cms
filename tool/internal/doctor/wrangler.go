@@ -13,6 +13,9 @@ type WranglerFacts struct {
 	HasEmailBinding bool
 	// HasAuthDB reports whether a d1_databases binding named AUTH_DB is declared.
 	HasAuthDB bool
+	// AuthDBMigrationsDir is the AUTH_DB entry's migrations_dir, as written. Empty means the key
+	// is absent, so wrangler's default, migrations, applies. Meaningful only when HasAuthDB is true.
+	AuthDBMigrationsDir string
 	// ObservabilityEnabled reports whether observability.enabled is true.
 	ObservabilityEnabled bool
 	// HasPublicOrigin reports whether vars.PUBLIC_ORIGIN was declared. PublicOrigin is read
@@ -71,6 +74,9 @@ func factsFromToml(text string) WranglerFacts {
 	facts := WranglerFacts{}
 	section := ""
 	var d1Binding *string
+	// d1MigrationsDir is buffered with the binding because migrations_dir may precede binding
+	// inside the block.
+	var d1MigrationsDir string
 	var r2Binding *string
 
 	// flushD1 tracks only the binding name: the database id is not a carried fact, since no check
@@ -78,8 +84,10 @@ func factsFromToml(text string) WranglerFacts {
 	flushD1 := func() {
 		if d1Binding != nil && *d1Binding == "AUTH_DB" {
 			facts.HasAuthDB = true
+			facts.AuthDBMigrationsDir = d1MigrationsDir
 		}
 		d1Binding = nil
+		d1MigrationsDir = ""
 	}
 	flushR2 := func() {
 		if r2Binding != nil {
@@ -111,6 +119,8 @@ func factsFromToml(text string) WranglerFacts {
 			facts.HasEmailBinding = true
 		case section == "[[d1_databases]]" && key == "binding":
 			d1Binding = str
+		case section == "[[d1_databases]]" && key == "migrations_dir" && str != nil:
+			d1MigrationsDir = *str
 		case section == "[[r2_buckets]]" && key == "binding" && str != nil:
 			r2Binding = str
 		case section == "[observability]" && key == "enabled" && strings.HasPrefix(value, "true"):

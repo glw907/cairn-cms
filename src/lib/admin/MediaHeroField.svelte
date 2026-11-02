@@ -456,7 +456,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <!-- The one state worth a gentle note: a decorative hero with a caption. A soft inline line,
              never a block. (Defensive; the resting empty-caption branch above usually wins.) -->
         <p class="pl-[3.875rem] type-meta text-muted">
-          This hero is marked decorative, so screen readers skip it; the caption still shows to everyone.
+          This lead image is marked decorative, so screen readers skip it; the caption still shows to everyone.
         </p>
       {/if}
     </div>
@@ -584,7 +584,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <label class="flex flex-col gap-label">
           <span class="type-body font-medium">Caption <span class="font-normal text-muted">(optional)</span></span>
           <input class="input input-sm w-full" bind:value={workCaption} aria-label="Caption" />
-          <span class="type-meta text-muted">Shown under the hero if the template uses it. This is not the alt text.</span>
+          <span class="type-meta text-muted">Shown under the lead image if the template uses it. This is not the alt text.</span>
         </label>
 
         <p class="type-label leading-snug text-muted">

@@ -198,6 +198,20 @@ describe('mintPreview', () => {
     });
   });
 
+  it('answers the access refusal for a denied key that names no concept, and unknown-concept for an unmapped one', async () => {
+    ghWithDraft().install();
+    const ghostTarget = { concept: 'ghosts', entryId: ID };
+    const deniedGhost = defineAccess(ROLES, { ghosts: ['publisher'] });
+    const refusal = await expectHttpError(() =>
+      mintPreview(runtime({ access: deniedGhost }), {}, mintEvent({ role: 'other-editor' }), ghostTarget),
+    );
+    expect(refusal.status).toBe(403);
+    // Known behavior: an unmapped nonexistent id carries no rule, so access admits and the lookup answers.
+    expect(await mintPreview(runtime({ access: DENY_POSTS }), {}, mintEvent({ role: 'other-editor' }), ghostTarget)).toEqual({
+      outcome: 'unknown-concept',
+    });
+  });
+
   it('refuses a none-capability session the same way the engine’s own actions do', async () => {
     ghWithDraft().install();
     const refusal = await expectHttpError(() =>
@@ -293,6 +307,19 @@ describe('revokePreview', () => {
     expect(refusal.status).toBe(403);
   });
 
+  it('answers the access refusal for a denied key that names no concept, and unknown-concept for an unmapped one', async () => {
+    const ghostTarget = { concept: 'ghosts', entryId: ID };
+    const deniedGhost = defineAccess(ROLES, { ghosts: ['publisher'] });
+    const refusal = await expectHttpError(() =>
+      revokePreview(runtime({ access: deniedGhost }), revokeEvent({ role: 'other-editor' }), ghostTarget),
+    );
+    expect(refusal.status).toBe(403);
+    // Known behavior: an unmapped nonexistent id carries no rule, so access admits and the lookup answers.
+    expect(await revokePreview(runtime({ access: DENY_POSTS }), revokeEvent({ role: 'other-editor' }), ghostTarget)).toEqual({
+      outcome: 'unknown-concept',
+    });
+  });
+
   it('refuses an editor the access map denies', async () => {
     const refusal = await expectHttpError(() =>
       revokePreview(runtime({ access: DENY_POSTS }), revokeEvent({ role: 'other-editor' }), TARGET),
@@ -334,7 +361,7 @@ describe('previewMintAction', () => {
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/no unpublished draft/i);
     // conventions pass, Task 5: previewMintAction now declares ActionFailure<ContentFormFailure>
-    // (the flattened, all-optional type); this holds the key set a PreviewMintFailure carried.
+    // (the flattened type); this holds the key set a PreviewMintFailure carried.
     expect(Object.keys(result.data)).toEqual(['error']);
   });
 
@@ -357,6 +384,18 @@ describe('previewMintAction', () => {
       editor: 'ed@t',
       expiresAt: result.expiresAt,
     });
+  });
+
+  it('writes no preview_tokens row when the site has no PUBLIC_ORIGIN', async () => {
+    const gh = ghWithManifest();
+    gh.createBranch(BRANCH, 'main');
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+    await expect(
+      withTestEnv({ PUBLIC_ORIGIN: undefined }, () => routes.previewMintAction(actionEvent(ID))),
+    ).rejects.toThrow(/PUBLIC_ORIGIN/);
+    const rows = await db.prepare('SELECT COUNT(*) AS n FROM preview_tokens').first<{ n: number }>();
+    expect(rows?.n).toBe(0);
   });
 
   it('mints two independently valid rows for two calls (multi-reviewer sharing)', async () => {
@@ -463,7 +502,7 @@ describe('previewRevokeAction', () => {
       expect(result.status).toBe(500);
       expect(result.data.error).toContain('migrations/0003_preview.sql');
       // conventions pass, Task 5: previewRevokeAction now declares ActionFailure<ContentFormFailure>
-      // (the flattened, all-optional type); this holds the key set a PreviewMintFailure carried.
+      // (the flattened type); this holds the key set a PreviewMintFailure carried.
       expect(Object.keys(result.data)).toEqual(['error']);
     } finally {
       await db.exec(

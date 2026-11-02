@@ -113,7 +113,7 @@ describe('saveAction', () => {
     expect(result.data.brokenLinks).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
     // conventions pass, Task 5: saveAction now declares ActionFailure<ContentFormFailure> (the
-    // flattened, all-optional type); this holds the key set a SaveFailure carried.
+    // flattened type); this holds the key set a SaveFailure carried.
     expect(Object.keys(result.data).sort()).toEqual(['body', 'brokenLinks', 'error']);
   });
 
@@ -158,7 +158,7 @@ describe('saveAction', () => {
       saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
     expect(result.status).toBe(400);
-    expect(result.data.error).toMatch(/1 missing page/i);
+    expect(result.data.error).toMatch(/1 missing entry/i);
     expect(result.data.brokenLinks).toContain('cairn:pages/gone');
     // No commit: the only fetch is the manifest read, no POST to /git/trees.
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);

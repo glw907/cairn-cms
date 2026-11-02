@@ -234,10 +234,10 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
         <span class="text-muted"
           >Stored as
           <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">{newSlug}</code>
-          &middot; editors see the name, entries keep the slug</span
+          &middot; editors see the name, entries keep the stored form</span
         >
       {:else}
-        <span class="text-muted">Editors see the name; entries keep a short slug.</span>
+        <span class="text-muted">Editors see the name; entries keep a short stored form.</span>
       {/if}
     </div>
   </section>

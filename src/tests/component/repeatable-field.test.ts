@@ -5,6 +5,10 @@ import RepeatableField from '../../lib/admin/RepeatableField.svelte';
 import TwoRepeatableFields from './_TwoRepeatableFields.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 import type { ArrayField } from '../../lib/content/fields.js';
+import { frontmatterFromForm } from '../../lib/content/frontmatter.js';
+// The compiled admin sheet, so the wrapper's computed display is the real one (the wrapper is
+// classless; only the sheet decides whether `hidden` holds).
+import '../../../dist/admin/cairn-admin.css';
 
 // The shared pass-through props a container caller threads down; the media and reference props are
 // empty here because these cases exercise the repeatable mechanics (keyed rows, add/remove/reorder,
@@ -187,5 +191,87 @@ describe('RepeatableField scopes focus to its own instance', () => {
     await expect.poll(() => listB.querySelectorAll('[data-cairn-row-remove]').length).toBe(1);
     expect(listB.contains(document.activeElement)).toBe(true);
     expect(listFor('a').contains(document.activeElement)).toBe(false);
+  });
+});
+
+describe('RepeatableField keeps a collapsed row in the form', () => {
+  /** Moves the rendered list into a real form, the way the editor's form owns it. */
+  function intoForm(): HTMLFormElement {
+    const form = document.createElement('form');
+    document.body.appendChild(form);
+    form.appendChild(document.querySelector('fieldset')!);
+    return form;
+  }
+
+  const requiredFaq = {
+    ...faq,
+    item: { type: 'object', fields: { q: { type: 'text', label: 'Q', required: true }, a: { type: 'textarea', label: 'A' } } },
+  } as NamedField & ArrayField;
+
+  it('submits a collapsed object row through a real FormData', async () => {
+    await render(RepeatableField, {
+      field: faq,
+      name: 'faq',
+      rows: [{ q: 'first', a: 'one' }, { q: 'second', a: 'two' }],
+      ...shared(),
+    });
+    const data = frontmatterFromForm([faq], new FormData(intoForm()));
+    expect(data.faq).toEqual([{ q: 'first', a: 'one' }, { q: 'second', a: 'two' }]);
+  });
+
+  it('submits a collapsed text leaf row through a real FormData', async () => {
+    await render(RepeatableField, {
+      field: aliases,
+      name: 'aliases',
+      rows: ['x', 'y'],
+      ...shared(),
+    });
+    const data = frontmatterFromForm([aliases], new FormData(intoForm()));
+    expect(data.aliases).toEqual(['x', 'y']);
+  });
+
+  it('opens a collapsed row whose required control is empty when the form reports validity', async () => {
+    await render(RepeatableField, {
+      field: requiredFaq,
+      name: 'faq',
+      rows: [{ q: '', a: '' }],
+      ...shared(),
+    });
+    const form = intoForm();
+    const toggle = form.querySelector('[data-cairn-row-toggle]')!;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(form.reportValidity()).toBe(false);
+    await expect.poll(() => toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('hides the collapsed body by computed style', async () => {
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    try {
+      await render(RepeatableField, {
+        field: faq,
+        name: 'faq',
+        rows: [{ q: 'first', a: '' }],
+        ...shared(),
+      });
+      const wrapper = document.querySelector('[data-cairn-row-body]')!.parentElement as HTMLElement;
+      await expect.element(page.elementLocator(wrapper)).not.toBeVisible();
+      document.querySelector<HTMLButtonElement>('[data-cairn-row-toggle]')!.click();
+      await expect.element(page.elementLocator(wrapper)).toBeVisible();
+    } finally {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  });
+
+  it('drops the key once every row is removed', async () => {
+    await render(RepeatableField, {
+      field: faq,
+      name: 'faq',
+      rows: [{ q: 'first', a: 'one' }],
+      ...shared(),
+    });
+    const form = intoForm();
+    form.querySelector<HTMLButtonElement>('[data-cairn-row-remove]')!.click();
+    await expect.poll(() => form.querySelectorAll('[data-cairn-row]').length).toBe(0);
+    expect('faq' in frontmatterFromForm([faq], new FormData(form))).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 <!--
 @component
-The Media Library's Push-alt review dialog (the rev.2 mockup Push-alt flow): a native modal
+The Media Library's Apply-default-alt review dialog (the rev.2 mockup flow): a native modal
 `<dialog>` (native focus trap + Escape), NO light dismiss. Alt fill is reversible and frequent
 (never the alertdialog register) with no typed-slug gate; apply is always enabled. It relies on
 the native `<dialog>` role and `aria-labelledby`, with no redundant role or `aria-modal` (the
@@ -47,7 +47,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
   // The CSRF token getter comes from the admin context, re-fetched independently of the host.
   const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
 
-  // --- the Push-alt flow: a one-step review dialog (the everyday register) over the pinned asset ---
+  // --- the apply-default-alt flow: a one-step review dialog (the everyday register) over the pinned asset ---
   // Alt propagation pushes the asset's default alt into published placements that lack it, with one
   // bucket-level opt-in to also overwrite placements that carry a custom alt. It is reversible and
   // frequent, so the dialog carries no alertdialog role and no typed-slug gate; apply is always
@@ -133,6 +133,11 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
   // The three buckets, flattened from the plan's entries: each row carries its entry title, the
   // placement kind (the pill, left off the nested well, whose heading names it), and the placement's
   // before/after. Grouping by bucket keeps each well self-contained, the way the mockup lays them out.
+  // The display word for a placement kind. The wire value 'hero' stays; the editor reads "lead image".
+  const KIND_LABELS: Record<string, string> = { hero: 'lead image' };
+  function kindLabel(kind: string): string {
+    return KIND_LABELS[kind] ?? kind;
+  }
   type AltRow = { title: string; kind: AltPlacement['kind']; before: string; after: string; key: string };
   function altRows(bucket: AltPlacement['bucket']): AltRow[] {
     const rows: AltRow[] = [];
@@ -201,7 +206,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
         <div class="flex-1">
           <h2 id="cairn-ml-alt-title" class="type-heading font-bold font-[family-name:var(--font-display)]">
             {#if altStep === 'blocked'}
-              Push alt is on hold
+              Applying default alt is on hold
             {:else}
               Fill alt on {altCounts.willFill} {altCounts.willFill === 1 ? 'placement' : 'placements'}
             {/if}
@@ -251,7 +256,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div class="flex items-center gap-1.5">
                           <span class="truncate type-meta font-semibold">{row.title}</span>
-                          <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
+                          <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide text-muted">{kindLabel(row.kind)}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline gap-1.5 type-meta leading-snug">
                           <span class="text-muted">(no alt)</span>
@@ -277,10 +282,10 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                 {/if}
               </div>
 
-              <!-- The body-vs-hero caveat, anchored beside will-fill where the surprised author looks. -->
+              <!-- The body-vs-lead-image caveat, anchored beside will-fill where the surprised author looks. -->
               <div class="flex items-start gap-2 px-0.5 type-meta leading-relaxed">
                 <TriangleAlertIcon class="mt-0.5 h-3.5 w-3.5 flex-none cairn-text-warning" aria-hidden="true" />
-                <span>A body image has no place to record decorative, so an empty body image always reads as a gap to fill. Only a hero can be skipped as decorative.</span>
+                <span>A body image has no place to record decorative, so an empty body image always reads as a gap to fill. Only a lead image can be skipped as decorative.</span>
               </div>
             {/if}
 
@@ -324,7 +329,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div class="flex items-center gap-1.5">
                           <span class="truncate type-meta font-semibold">{row.title}</span>
-                          <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
+                          <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide text-muted">{kindLabel(row.kind)}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline gap-1.5 type-meta leading-snug">
                           {#if altOverwrite}
@@ -353,7 +358,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="type-meta font-semibold">Marked decorative, skipped</div>
-                    <div class="mt-px type-label leading-snug text-muted">A hero set as decorative on purpose. It is left without alt.</div>
+                    <div class="mt-px type-label leading-snug text-muted">A lead image set as decorative on purpose. It is left without alt.</div>
                   </div>
                   <span class="flex-none type-meta font-bold tabular-nums text-muted">{altSkipRows.length}</span>
                 </div>
@@ -361,7 +366,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                   {#each altSkipRows as row (row.key)}
                     <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 type-meta text-muted first:border-t-0">
                       <span class="truncate">{row.title}</span>
-                      <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide">{row.kind}</span>
+                      <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide">{kindLabel(row.kind)}</span>
                     </li>
                   {/each}
                 </ul>

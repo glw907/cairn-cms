@@ -6,6 +6,7 @@ PASS  Site config validates: parsed (per-concept URL policy lives on the adapter
 PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is https://example.com (wrangler vars)
 PASS  No site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
 PASS  Custom /admin mount is complete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
+SKIP  Auth store migrations: no AUTH_DB binding declared, so no auth store migrations are expected
 PASS  Framework dependencies meet the engine floor: @sveltejs/kit 3.0.0 and svelte 5.56.10 satisfy the engine peer ranges
 SKIP  Guard role vocabulary: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
 PASS  The stated AI posture is the served one: no AI posture is stated (aiPosture is unset). https://example.com/robots.txt carries no AI-crawler directives, consistent with stating nothing.
@@ -15,4 +16,4 @@ Wrangler bindings are missing failed.
   Fix: Declare the send_email binding as EMAIL and the d1_databases binding as AUTH_DB in wrangler.jsonc (or wrangler.toml), then re-deploy.
   Docs: https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings
 
-8 passed, 1 failed, 2 skipped, 0 info, 0 unchecked
+8 passed, 1 failed, 3 skipped, 0 info, 0 unchecked

@@ -63,7 +63,7 @@ describe('deleteAction', () => {
     expect(result.data.inboundLinks.map((l) => l.id)).toEqual(['b']);
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
     // conventions pass, Task 5: deleteAction now declares ActionFailure<ContentFormFailure> (the
-    // flattened, all-optional type); this holds the key set a DeleteRefusal carried.
+    // flattened type); this holds the key set a DeleteRefusal carried.
     expect(Object.keys(result.data).sort()).toEqual(['error', 'id', 'inboundLinks']);
   });
 

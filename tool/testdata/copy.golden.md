@@ -130,7 +130,7 @@ Checks run in this order, each with the severity its failure carries:
   config.bindings blocker, config.media-bucket warning, config.observability warning,
   config.csrf-trusted-origins warning, config.site-config blocker, config.public-origin blocker,
   config.no-referrer-blanket warning, admin.mount-shape (never fails),
-  config.dependency-floors blocker, auth.role-wiring warning, ai.posture-effective warning.
+  config.migrations warning, config.dependency-floors blocker, auth.role-wiring warning, ai.posture-effective warning.
 
 Each check settles to PASS, FAIL, SKIP, INFO, or UNCHECKED. FAIL is CRITICAL for a blocker and
 WARNING for a warning; UNCHECKED is UNKNOWN (the input could not be observed); the rest are OK.
@@ -349,6 +349,7 @@ Name the check that entry holds
 - %s carries %d "User-agent: *" groups%s. cairn's output writes one such group, so a second came from somewhere ahead of it, and this check cannot see what or assert why. A managed robots.txt prepending to the origin's is the common source, so the zone's robots.txt and AI Crawl Control settings are where to look first.
 - %s carries a Content-Signal directive cairn did not write, so something other than this engine is writing directives into the served file. The file carries one "User-agent: *" group, so this is not the prepend shape a managed robots.txt produces, and this check cannot see what wrote it.
 - %s has no lockfile parser, so the dependency floors were not checked
+- %s holds every required package migration; the files were copied, not proved applied
 - %s resolves to %s, below the engine floor %s
 - %s resolves to %s, outside the engine peer range %s
 - %s satisfy the engine peer ranges
@@ -364,6 +365,7 @@ Name the check that entry holds
 - , along with a Content-Signal directive cairn did not write
 - ; %s is plain http, so it also admits a network attacker on that origin
 - AUTH_DB (d1_databases)
+- AUTH_DB's migrations_dir is outside the site directory or is not a readable folder, so it was not read
 - EMAIL (send_email)
 - EMAIL and AUTH_DB are declared
 - PUBLIC_ORIGIN is %s (%s)
@@ -388,6 +390,7 @@ Name the check that entry holds
 - neither %s nor %s found, so the guard role wiring cannot be checked
 - neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (%s); see %s
 - no AI posture is stated (aiPosture is unset)
+- no AUTH_DB binding declared, so no auth store migrations are expected
 - no createAuthGuard call found in %s (heuristic text read); the guard may be wired in another module
 - no csrf.trustedOrigins entries in %s, so SvelteKit's default origin check covers every route (heuristic text read)
 - no custom roles declared; the guard fallback owner/editor already matches the vocabulary
@@ -412,7 +415,9 @@ Name the check that entry holds
 - serve strict-origin-when-cross-origin (or same-origin) as the site default
 - svelte.config.js is still present, so a csrf key in it could not be checked; move the SvelteKit config into the sveltekit() call in the Vite config and delete the file
 - the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
-- the adapter declares custom roles (%s) but createAuthGuard in %s is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
+- the adapter declares custom roles (%s) but createAuthGuard in %s is not passed { runtime }; this engine raises a TypeError on a missing runtime, so the guard cannot read the site's roles (heuristic text read)
+- the installed package's migrations folder could not be read, so the site's copies were not compared
+- the migrations directory %s is missing %s from the package
 - the resolved origin's /robots.txt did not return 200
 - the resolved public origin does not parse as an http or https URL
 - wrangler vars

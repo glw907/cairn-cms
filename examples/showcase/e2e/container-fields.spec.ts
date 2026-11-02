@@ -4,8 +4,8 @@ import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
 // The v2 container fields (posts.faq = array(object), posts.gallery = array(image)) end to end against
 // the running showcase behind the fake backend (the fake-github recorder plus the fake R2 double on
 // the Worker env, the same harness the reference and media specs use). The container fields live behind
-// the Details slide-over (carry-forward #4a: a field e2e must open Details before the field is in the
-// DOM), so each part opens it first.
+// the Details slide-over, so each part opens it first. The aside stays mounted, so the fields are in the
+// DOM before Details opens; the panel only reveals them.
 //
 // Part A drives the repeatable-row editor in a fresh, self-contained post: add an FAQ row, fill its
 // question and answer, add a SECOND row, reorder the two, remove one, save, reload, and assert the
@@ -52,7 +52,8 @@ test('the FAQ array(object) round-trips: add two rows, reorder, remove one, save
     timeout: 2000,
   });
 
-  // Open the Details slide-over FIRST: the FAQ container is not in the DOM until the panel opens.
+  // Open the Details slide-over FIRST: the aside stays mounted, so the fields are in the DOM already,
+  // but the panel must be open for them to be reachable.
   await page.getByRole('button', { name: 'Details', exact: true }).click();
 
   // The FAQ list renders its labeled Add control. Add the first row; the row auto-expands and the
@@ -164,4 +165,136 @@ test('the gallery array(image) round-trips: add an image row, save, reload, the 
   await page.locator('[data-cairn-row]').first().locator('[data-cairn-row-toggle]').click();
   await expect(page.locator('input[name="gallery.0.src"]')).toHaveValue(reference);
   await expect(page.locator('input[name="gallery.0.alt"]')).toHaveValue(GALLERY_ALT);
+});
+
+/** Creates a fresh post through the header dialog and returns its id, with title and body filled. */
+async function freshPost(page: import('@playwright/test').Page, title: string): Promise<string> {
+  const slug = `collapsed-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  await page.goto('/admin/posts');
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
+  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
+  await expect(createDialog).toBeVisible();
+  await createDialog.locator('input[name="title"]').fill(title);
+  await createDialog.locator('input[name="slug"]').fill(slug);
+  await createDialog.getByRole('button', { name: 'Create' }).click();
+  await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
+  const id = new URL(page.url()).pathname.split('/').pop() ?? '';
+  await fillTitleWhenHydrated(page, title);
+  await page.locator('.cm-content').click();
+  await page.keyboard.type('A body for the collapsed round-trip.');
+  await expect(page.locator('input[name="body"]')).toHaveValue(
+    'A body for the collapsed round-trip.',
+    {
+      timeout: 2000,
+    },
+  );
+  return id;
+}
+
+const saveButton = (page: import('@playwright/test').Page) =>
+  page.locator('.navbar').getByRole('button', { name: 'Save', exact: true });
+
+/**
+ * Discard a never-published post from its edit page. The e2e run shares one in-memory corpus, and
+ * the admin list shows ten rows, so a leaked post can push another spec's post off the first page.
+ */
+async function discardFreshPost(page: import('@playwright/test').Page): Promise<void> {
+  await page.locator('.navbar').getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('button', { name: 'Discard changes' }).click();
+  const dialog = page.locator('dialog[aria-labelledby="cairn-discard-dialog-title"]');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Discard', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/posts$/, { timeout: 10_000 });
+}
+
+test('collapsed FAQ rows survive a save that only changes the title', async ({ page }) => {
+  const id = await freshPost(page, 'Collapsed FAQ');
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
+  await page.getByRole('button', { name: 'Add FAQ' }).click();
+  await page.locator('input[name="faq.0.question"]').fill('What is cairn?');
+  await page.locator('textarea[name="faq.0.answer"]').fill('A markdown-first CMS.');
+  await page.getByRole('button', { name: 'Add FAQ' }).click();
+  await page.locator('input[name="faq.1.question"]').fill('Who is it for?');
+  await page.locator('textarea[name="faq.1.answer"]').fill('Small calm sites.');
+  await saveButton(page).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  // A fresh load: every row collapsed, Details closed, Save asleep.
+  await page.goto(`/admin/posts/${id}`);
+  await expect(saveButton(page)).toBeDisabled();
+  await fillTitleWhenHydrated(page, 'Collapsed FAQ renamed');
+  await expect(saveButton(page)).toBeEnabled();
+  await saveButton(page).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  await page.goto(`/admin/posts/${id}`);
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
+  await expect(page.locator('[data-cairn-row]')).toHaveCount(2);
+  const toggles = page.locator('[data-cairn-row-toggle]');
+  await toggles.nth(0).click();
+  await toggles.nth(1).click();
+  await expect(page.locator('input[name="faq.0.question"]')).toHaveValue('What is cairn?');
+  await expect(page.locator('textarea[name="faq.0.answer"]')).toHaveValue('A markdown-first CMS.');
+  await expect(page.locator('input[name="faq.1.question"]')).toHaveValue('Who is it for?');
+  await expect(page.locator('textarea[name="faq.1.answer"]')).toHaveValue('Small calm sites.');
+  await discardFreshPost(page);
+});
+
+test('a collapsed gallery image survives a save that only changes the title', async ({ page }) => {
+  const id = await freshPost(page, 'Collapsed Gallery');
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
+  await page.getByRole('button', { name: 'Add Gallery' }).click();
+  await page.locator('[data-cairn-row]').first().getByRole('button', { name: 'Add image' }).click();
+  const dialog = page.locator('dialog[aria-labelledby^="cairn-hero-title"][open]');
+  await expect(dialog).toBeVisible();
+  await dialog
+    .locator('input[type="file"]')
+    .setInputFiles({ name: 'switchback.png', mimeType: 'image/png', buffer: PNG_BUFFER });
+  await expect(dialog.getByText('Describe it')).toBeVisible({ timeout: 15_000 });
+  await dialog.getByText('Describe it').click();
+  await dialog.getByLabel('Alt text description').fill(GALLERY_ALT);
+  await dialog.getByRole('button', { name: 'Use this image' }).click();
+  await expect(dialog).toBeHidden();
+  const reference = await page.locator('input[name="gallery.0.src"]').inputValue();
+  await saveButton(page).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  await page.goto(`/admin/posts/${id}`);
+  await expect(saveButton(page)).toBeDisabled();
+  await fillTitleWhenHydrated(page, 'Collapsed Gallery renamed');
+  await saveButton(page).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  await page.goto(`/admin/posts/${id}`);
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
+  await expect(page.locator('[data-cairn-row]')).toHaveCount(1);
+  await page.locator('[data-cairn-row-toggle]').first().click();
+  await expect(page.locator('input[name="gallery.0.src"]')).toHaveValue(reference);
+  await expect(page.locator('input[name="gallery.0.alt"]')).toHaveValue(GALLERY_ALT);
+  await discardFreshPost(page);
+});
+
+test('an answer edited then collapsed still saves (collapsed edit)', async ({ page }) => {
+  const id = await freshPost(page, 'Collapsed Edit');
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
+  await page.getByRole('button', { name: 'Add FAQ' }).click();
+  await page.locator('input[name="faq.0.question"]').fill('What is cairn?');
+  await page.locator('textarea[name="faq.0.answer"]').fill('Old answer.');
+  await saveButton(page).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  await page.goto(`/admin/posts/${id}`);
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
+  const toggle = page.locator('[data-cairn-row-toggle]').first();
+  await toggle.click();
+  await page.locator('textarea[name="faq.0.answer"]').fill('New answer.');
+  await toggle.click();
+  await saveButton(page).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  await page.goto(`/admin/posts/${id}`);
+  await page.getByRole('button', { name: 'Details', exact: true }).click();
+  await page.locator('[data-cairn-row-toggle]').first().click();
+  await expect(page.locator('textarea[name="faq.0.answer"]')).toHaveValue('New answer.');
+  await discardFreshPost(page);
 });

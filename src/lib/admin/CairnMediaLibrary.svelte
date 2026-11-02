@@ -417,11 +417,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     );
   }
 
-  // --- the alt editor's describe/decorative model (the 2b capture-card model) ---
-  // Seeded from the selected asset each time the slide-over opens: a non-empty alt is "describe", an
-  // empty alt is "decorative" only when the author last chose it, else unset. The Library has no
-  // stored decorative flag, so an empty alt reads as unset (needs-alt), matching MediaCaptureCard.
-  let altMode = $state<'describe' | 'decorative' | null>(null);
+  // --- the default alt box ---
+  // Seeded from the selected asset each time the slide-over opens. The Library has no stored
+  // decorative flag, so an empty alt reads as unset (needs-alt), matching MediaCaptureCard.
   let altText = $state('');
   let nameInput = $state('');
   let slugInput = $state('');
@@ -430,14 +428,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     const a = selected;
     if (!a) return;
     altText = a.alt;
-    altMode = a.alt.trim() !== '' ? 'describe' : null;
     nameInput = a.displayName;
     slugInput = a.slug;
   });
-  // The submitted alt: a described image carries its text, a decorative or left-blank submits empty
-  // (matching MediaCaptureCard's needs-alt-debt model).
-  const submittedAlt = $derived(altMode === 'describe' ? altText : '');
-
   // --- the roving tabindex over the grid's visible tiles ---
   // One tabstop for the listbox: the active index is the only option with tabindex 0; arrows,
   // Home, and End move it; Enter/Space activate. The active index is clamped as filtering changes
@@ -658,14 +651,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   {#snippet emptyUploadAction()}
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
       <button type="button" class="btn btn-sm btn-neutral tracking-small-semibold" onclick={(e) => uploadDialogRef?.openUpload(e.currentTarget as HTMLElement)}>
-        <UploadIcon class="h-4 w-4" aria-hidden="true" /> Upload an image
+        <UploadIcon class="h-4 w-4" aria-hidden="true" /> Upload image
       </button>
       <span class="type-meta">or drop a file anywhere on this page</span>
     </div>
   {/snippet}
   <EmptyState
     heading="No media yet"
-    message="Upload an image and it shows up here, ready to drop into a post or set as a hero."
+    message="Upload an image and it shows up here, ready to drop into a post or set as a lead image."
     action={emptyUploadAction}
   />
 {:else}
@@ -1020,28 +1013,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <input class="input input-sm font-[family-name:var(--font-editor)]" name="slug" bind:value={slugInput} autocomplete="off" />
         </label>
 
-        <!-- The alt editor: the describe/decorative radiogroup (the 2b model) plus the alt field.
-             Alt is debt: Save is never gated on it, and a left-blank or a decorative both submit an
-             empty alt. The submitted value rides a hidden input so the disabled-or-absent textarea
-             never strands the field. -->
-        <fieldset class="flex flex-col gap-2" aria-describedby="cairn-ml-alt-note">
-          <legend class="type-meta font-medium">Default alt text</legend>
-          <p id="cairn-ml-alt-note" class="type-meta text-muted">
-            The default for the next time this image is placed. It does not change the alt on pages that already use it. You can save without it and add it later.
-          </p>
-          <input type="hidden" name="alt" value={submittedAlt} />
-          <label class="flex cursor-pointer items-center gap-2">
-            <input type="radio" class="radio radio-sm" name="cairn-ml-alt-mode" value="describe" bind:group={altMode} />
-            <span class="type-body">Describe it</span>
-          </label>
-          {#if altMode === 'describe'}
-            <textarea class="textarea textarea-sm ml-6 w-[calc(100%-1.5rem)]" aria-label="Alt text description" rows="2" bind:value={altText}></textarea>
-          {/if}
-          <label class="flex cursor-pointer items-center gap-2">
-            <input type="radio" class="radio radio-sm" name="cairn-ml-alt-mode" value="decorative" bind:group={altMode} />
-            <span class="type-body">Decorative</span>
-          </label>
-        </fieldset>
+        <!-- The default alt box. Alt is debt: Save is never gated on it, and a blank box posts an
+             empty alt. The box posts its own value, so what the editor sees is what saves. -->
+        <div class="flex flex-col gap-label">
+          <label for="cairn-ml-alt" class="type-meta font-medium">Default alt text</label>
+          <span id="cairn-ml-alt-note" class="type-meta text-muted">
+            The default for the next time this image is placed. It does not change the alt on entries that already use it. You can save without it and add it later.
+          </span>
+          <textarea id="cairn-ml-alt" class="textarea textarea-sm w-full" name="alt" aria-describedby="cairn-ml-alt-note" rows="2" bind:value={altText}></textarea>
+        </div>
 
         {#if updateError}
           <p role="alert" class="type-meta text-[var(--cairn-error-ink)]">{updateError}</p>
@@ -1123,7 +1103,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </dl>
       </div>
 
-      <!-- The actions block (rev.2 decision 7): two quiet text-weight entry points (Replace, Push alt)
+      <!-- The actions block (rev.2 decision 7): two quiet text-weight entry points (Replace, Apply default alt)
            above the existing danger-bordered Delete. The quiet controls are button:not(.btn) levelled
            rows, lighter than a bordered button; each carries aria-haspopup="dialog". -->
       <div class="flex flex-col gap-1 border-t border-[var(--cairn-card-border)] pt-4">
@@ -1146,7 +1126,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           onclick={(e) => altFillDialogRef?.open(asset, e.currentTarget)}
         >
           <MegaphoneIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
-          Push alt to placements
+          Apply default alt to entries
         </button>
         <button type="button" class="btn btn-sm mt-1.5 border-[var(--cairn-error-border)] text-[var(--cairn-error-ink)]" onclick={openDeleteDialog}>
           <Trash2Icon class="h-4 w-4" aria-hidden="true" /> Delete
@@ -1180,7 +1160,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <h2 id="cairn-ml-delete-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Delete {asset.displayName}?</h2>
           <p id="cairn-ml-delete-desc" class="mt-1 type-meta leading-relaxed text-muted">
             {#if deleteInUse}
-              Deleting this breaks the image in {breakingRows.length} {breakingRows.length === 1 ? 'entry' : 'entries'}. Type the name to delete it anyway.
+              Deleting this breaks the image in {breakingRows.length} {breakingRows.length === 1 ? 'entry' : 'entries'}. Type the address to delete it anyway.
             {:else}
               No references found. Deleting this changes nothing readers see.
             {/if}

@@ -93,7 +93,7 @@ export const fixtureFields: NamedField[] = [
   { name: 'title', label: 'Title', type: 'text', required: true },
   { name: 'draft', label: 'Hidden', type: 'boolean' },
   { name: 'date', label: 'Date', type: 'date', required: true },
-  { name: 'tags', label: 'Tags', type: 'multiselect', taxonomy: true, options: ['trail-guide', 'gear', 'community-news'] },
+  { name: 'tags', label: 'Tags', type: 'multiselect', taxonomy: true, options: ['how-to', 'gear', 'community-news'] },
   { name: 'lead', label: 'Lead picture', type: 'image', seo: true },
 ];
 
@@ -106,7 +106,7 @@ export const fixtureFields: NamedField[] = [
  * nothing.
  */
 export const FIXTURE_BODY = [
-  'The north ridge trailhead is twenty minutes off the highway, and the last mile of it is gravel.',
+  'The east entrance is twenty minutes off the highway, and the last mile of it is gravel.',
   '',
   '## Before you go',
   '',
@@ -172,13 +172,12 @@ export function editPageProps(): Record<string, unknown> {
       title: ENTRY.title,
       date: ENTRY.date,
       draft: false,
-      tags: ['trail-guide'],
+      tags: ['how-to'],
     },
     body: FIXTURE_BODY,
     title: ENTRY.title,
     isNew: false,
-    saved: false,
-    renamed: false,
+    flash: null,
     // The Address group shows the date-stripped id, the way a dated concept's edit load composes
     // it, so the pictured URL cannot drift from the entry the story opens.
     slug: ENTRY.id.replace(/^\d{4}-\d{2}-\d{2}-/, ''),
@@ -190,9 +189,7 @@ export function editPageProps(): Record<string, unknown> {
     inboundLinks: [],
     pending: false,
     published: true,
-    publishedFlash: false,
     publishActions: [],
-    discardedFlash: false,
     // Non-null with no stylesheets: the frame links nothing (a docs page fetches no site CSS), and
     // the "preview shows unstyled markup" hint an unset knob renders stays off a reader's screen.
     preview: { stylesheets: [] },

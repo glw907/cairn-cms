@@ -87,8 +87,7 @@ function postProps(over = {}) {
       body: 'The body.',
       title: 'Hello',
       isNew: false,
-      saved: false,
-      renamed: false,
+      flash: null,
       error: null,
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
@@ -99,9 +98,7 @@ function postProps(over = {}) {
       inboundLinks: [],
       pending: false,
       published: true,
-      publishedFlash: false,
       publishActions: [],
-      discardedFlash: false,
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
       siteDictionary: [],
@@ -306,7 +303,7 @@ describe('EditPage', () => {
   });
 
   it('shows a saved confirmation', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/saved/i);
   });
@@ -315,7 +312,7 @@ describe('EditPage', () => {
     const originalUrl = appPage.url;
     appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?drafts=pages/about');
     try {
-      const screen = await render(EditPage, postProps({ saved: true }));
+      const screen = await render(EditPage, postProps({ flash: 'saved' }));
       const warning = screen.container.querySelector('.alert-warning');
       expect(warning?.textContent ?? '').toContain('pages/about');
       // The saved flash yields to the draft warning, so one strip shows.
@@ -342,7 +339,7 @@ describe('EditPage', () => {
   });
 
   it('shows no draft-link warning without the drafts flag', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     expect(screen.container.querySelector('.alert-warning')).toBeNull();
     expect(screen.container.querySelector('.alert-success')).not.toBeNull();
   });
@@ -352,7 +349,7 @@ describe('EditPage', () => {
     __setBuilding(true);
     __setPrerenderingUrl('http://localhost/admin/posts/2026-05-hello?drafts=pages/about');
     try {
-      const screen = await render(EditPage, postProps({ saved: true }));
+      const screen = await render(EditPage, postProps({ flash: 'saved' }));
       // A component that reads page.url.searchParams unconditionally during prerendering throws
       // (SvelteKit's real "Cannot access url.searchParams on a page with prerendering enabled"
       // guard); rendering without throwing is the proof the guard fires.
@@ -753,7 +750,7 @@ describe('EditPage', () => {
     const screen = await render(EditPage, postProps());
     // The Address group lives in the details slide-over; open it to reach the control.
     await screen.getByRole('button', { name: 'Details' }).click();
-    await expect.element(screen.getByRole('button', { name: /change url/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /change address/i })).toBeInTheDocument();
   });
 
   it('surfaces a rename collision error', async () => {
@@ -767,20 +764,20 @@ describe('EditPage', () => {
   });
 
   it('announces a rename success naming the new slug through the polite live region', async () => {
-    const screen = await render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
+    const screen = await render(EditPage, postProps({ flash: 'renamed', slug: 'new-slug' }));
     const region = screen.container.querySelector('[aria-live="polite"]');
     expect(region).not.toBeNull();
     expect(region!.textContent ?? '').toMatch(/new-slug/);
   });
 
   it('shows a rename success banner', async () => {
-    const screen = await render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
+    const screen = await render(EditPage, postProps({ flash: 'renamed', slug: 'new-slug' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/new-slug/);
   });
 
   it('announces a saved message through a persistent live region', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     const region = screen.container.querySelector('[aria-live="polite"]');
     expect(region).not.toBeNull();
     expect(region!.textContent ?? '').toMatch(/saved/i);
@@ -801,7 +798,7 @@ describe('EditPage', () => {
     // The action result the page receives after a blocked save. The shared error summary rides
     // along but the page renders only the richer broken-links banner, never a second alert.
     (props as Record<string, unknown>).form = {
-      error: 'This page links to 1 missing page.',
+      error: 'This entry links to 1 missing entry.',
       brokenLinks: ['cairn:pages/gone'],
       body: props.data.body,
     };
@@ -818,7 +815,7 @@ describe('EditPage', () => {
   it('seeds the editor from the returned form body after a blocked save', async () => {
     const props = postProps({ body: 'old committed text' });
     (props as Record<string, unknown>).form = {
-      error: 'This page links to 1 missing page.',
+      error: 'This entry links to 1 missing entry.',
       brokenLinks: ['cairn:pages/gone'],
       body: 'edited [gone](cairn:pages/gone) text',
     };
@@ -833,7 +830,7 @@ describe('EditPage', () => {
     // unambiguous: task 3's defect rendered "This posts could not be deleted."
     const props = postProps();
     (props as Record<string, unknown>).form = {
-      error: 'Cannot delete 2026-05-hi: 1 page links to it.',
+      error: 'Cannot delete 2026-05-hi: 1 entry links to it.',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
       id: '2026-05-hi',
     };
@@ -850,7 +847,7 @@ describe('EditPage', () => {
   it('re-announces a repeated identical delete refusal in the assertive live region', async () => {
     const props = postProps();
     (props as Record<string, unknown>).form = {
-      error: 'Cannot delete 2026-05-hi: 1 page links to it.',
+      error: 'Cannot delete 2026-05-hi: 1 entry links to it.',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
       id: '2026-05-hi',
     };
@@ -865,7 +862,7 @@ describe('EditPage', () => {
     await screen.rerender({
       ...props,
       form: {
-        error: 'Cannot delete 2026-05-hi: 1 page links to it.',
+        error: 'Cannot delete 2026-05-hi: 1 entry links to it.',
         inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
         id: '2026-05-hi',
       },
@@ -903,7 +900,7 @@ describe('EditPage', () => {
     // naming an include here would send the author hunting for one that does not exist.
     const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragments', singular: 'Fragment' });
     (props as Record<string, unknown>).form = {
-      error: 'Cannot delete welcome: 1 page links to it.',
+      error: 'Cannot delete welcome: 1 entry links to it.',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
       id: 'welcome',
     };
@@ -921,7 +918,7 @@ describe('EditPage', () => {
     const props = postProps();
     props.data.body = 'see [gone](cairn:pages/gone) here';
     (props as Record<string, unknown>).form = {
-      error: 'This page links to 1 missing page.',
+      error: 'This entry links to 1 missing entry.',
       brokenLinks: ['cairn:pages/gone'],
       body: props.data.body,
     };
@@ -1058,7 +1055,7 @@ describe('EditPage', () => {
   });
 
   it('shows a published confirmation strip', async () => {
-    const screen = await render(EditPage, postProps({ publishedFlash: true }));
+    const screen = await render(EditPage, postProps({ flash: 'published' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/published/i);
   });
@@ -1067,7 +1064,7 @@ describe('EditPage', () => {
     const screen = await render(
       EditPage,
       postProps({
-        publishedFlash: true,
+        flash: 'published',
         publishActions: [{ label: 'Announce', href: '/admin/team/announce?post=2026-05-hello' }],
       }),
     );
@@ -1076,7 +1073,7 @@ describe('EditPage', () => {
   });
 
   it('renders no publish-action links when the site declares none (absent-config no-op)', async () => {
-    const screen = await render(EditPage, postProps({ publishedFlash: true, publishActions: [] }));
+    const screen = await render(EditPage, postProps({ flash: 'published', publishActions: [] }));
     expect(screen.container.querySelector('a.link-primary')).toBeNull();
   });
 
@@ -1084,7 +1081,7 @@ describe('EditPage', () => {
     const screen = await render(
       EditPage,
       postProps({
-        publishedFlash: false,
+        flash: null,
         publishActions: [{ label: 'Announce', href: '/admin/team/announce?post=2026-05-hello' }],
       }),
     );
@@ -1092,7 +1089,7 @@ describe('EditPage', () => {
   });
 
   it('shows a discarded confirmation strip', async () => {
-    const screen = await render(EditPage, postProps({ discardedFlash: true }));
+    const screen = await render(EditPage, postProps({ flash: 'discarded' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/discarded/i);
   });
@@ -1386,7 +1383,7 @@ describe('EditPage', () => {
   });
 
   it('shows Saved after a save lands with nothing edited', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     await expect
       .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
       .toBe('Saved');
@@ -1839,7 +1836,7 @@ describe('EditPage', () => {
   });
 
   it('renders the feedback strip directly under the band', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
     const flash = screen.container.querySelector('.cairn-feedback')!;
     expect(flash).not.toBeNull();
@@ -1930,6 +1927,27 @@ describe('EditPage', () => {
     expect(author.validity.valueMissing).toBe(true);
   });
 
+  it('leaves Details closed while an earlier title is also invalid, and opens it once the title is filled', async () => {
+    const props = postProps({
+      isNew: true,
+      fields: [
+        { type: 'text', name: 'title', label: 'Title', required: true },
+        { type: 'text', name: 'author', label: 'Author', required: true },
+      ] satisfies NamedField[],
+      frontmatter: { title: '', author: '' },
+    });
+    const screen = await render(EditPage, { ...props });
+    const aside = screen.container.querySelector('aside')!;
+    const title = screen.container.querySelector<HTMLInputElement>('input[name="title"]')!;
+    await screen.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect.poll(() => document.activeElement === title).toBe(true);
+    expect(aside.hasAttribute('hidden')).toBe(true);
+    title.value = 'Hello';
+    title.dispatchEvent(new Event('input', { bubbles: true }));
+    await screen.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect.poll(() => aside.hasAttribute('hidden')).toBe(false);
+  });
+
   it('adds Discard changes to the overflow menu while pending', async () => {
     const screen = await render(EditPage, postProps({ pending: true }));
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
@@ -1964,6 +1982,21 @@ describe('EditPage', () => {
     await expect.poll(() => document.activeElement === el).toBe(true);
   });
 
+  it('returns focus to More actions when the discard confirm closes', async () => {
+    const screen = await render(EditPage, postProps({ pending: true }));
+    const trigger = screen.getByRole('button', { name: 'More actions' });
+    await trigger.click();
+    await screen.getByRole('button', { name: 'Discard changes' }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-discard-dialog-title"]',
+    )!;
+    expect(dialog.open).toBe(true);
+    await userEvent.keyboard('{Escape}');
+    await expect.poll(() => dialog.open).toBe(false);
+    const el = trigger.element() as HTMLElement;
+    await expect.poll(() => document.activeElement === el).toBe(true);
+  });
+
   it('drives the header overflow as a popover with aria-expanded and Escape', async () => {
     const screen = await render(EditPage, postProps());
     const trigger = screen.getByRole('button', { name: 'More actions' });
@@ -1977,9 +2010,9 @@ describe('EditPage', () => {
     expect(menu.matches(':popover-open')).toBe(false);
   });
 
-  it('keeps the sidebar groups to Change URL plus the Share preview pair', async () => {
+  it('keeps the sidebar groups to Change address plus the Share preview pair', async () => {
     const screen = await render(EditPage, postProps({ pending: true }));
-    // The panel header adds a Close button; the field groups themselves carry Change URL plus the
+    // The panel header adds a Close button; the field groups themselves carry Change address plus the
     // Share preview group's mint and revoke controls (spec part 3, "Public preview for a
     // non-editor"), and no other action.
     const close = screen.container.querySelector('aside button[aria-label="Close details"]');
@@ -1988,7 +2021,7 @@ describe('EditPage', () => {
       (b) => b.getAttribute('aria-label') !== 'Close details',
     );
     expect(groupButtons.map((b) => b.textContent?.trim())).toEqual([
-      'Change URL',
+      'Change address',
       'Share preview link',
       'Revoke all links',
     ]);
@@ -2144,23 +2177,23 @@ describe('EditPage', () => {
     );
   });
 
-  it('shows the address and opens the rename dialog from its Change URL button', async () => {
+  it('shows the address and opens the rename dialog from its Change address button', async () => {
     const screen = await render(EditPage, postProps());
     const aside = screen.container.querySelector('aside')!;
     expect(aside.querySelector('code')?.textContent).toBe('/hello');
-    // Open the slide-over so the Address group's Change URL control is in the a11y tree.
+    // Open the slide-over so the Address group's Change address control is in the a11y tree.
     await screen.getByRole('button', { name: 'Details' }).click();
-    await screen.getByRole('button', { name: /change url/i }).click();
+    await screen.getByRole('button', { name: /change address/i }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
       'dialog[aria-labelledby="cairn-rename-dialog-title"]',
     )!;
     expect(dialog.open).toBe(true);
   });
 
-  it('drops Change URL from the header overflow menu', async () => {
+  it('drops Change address from the header overflow menu', async () => {
     const screen = await render(EditPage, postProps());
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
-    expect(menu.textContent ?? '').not.toContain('Change URL');
+    expect(menu.textContent ?? '').not.toContain('Change address');
   });
 
   it('shows the name treatment for a non-routable concept, keeping the rename affordance', async () => {
@@ -2172,7 +2205,7 @@ describe('EditPage', () => {
     expect(aside.querySelector('code')?.textContent).toBe('welcome');
     await screen.getByRole('button', { name: 'Details' }).click();
     await expect.element(screen.getByRole('button', { name: /^rename$/i })).toBeInTheDocument();
-    expect(aside.textContent ?? '').not.toMatch(/change url/i);
+    expect(aside.textContent ?? '').not.toMatch(/change address/i);
   });
 
   it('keeps a routable concept\'s Address block byte-identical', async () => {
@@ -2182,7 +2215,7 @@ describe('EditPage', () => {
     expect(legends).toContain('Address');
     expect(aside.querySelector('code')?.textContent).toBe('/hello');
     await screen.getByRole('button', { name: 'Details' }).click();
-    await expect.element(screen.getByRole('button', { name: /change url/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /change address/i })).toBeInTheDocument();
   });
 
   it('flags unsaved changes when the hoisted title receives input', async () => {
@@ -2200,12 +2233,12 @@ describe('EditPage', () => {
   const flashCases = [
     {
       name: 'saved',
-      over: { saved: true },
+      over: { flash: 'saved' as const },
       message: 'Saved. Your site keeps showing the published version until you publish.',
     },
-    { name: 'published', over: { publishedFlash: true }, message: 'Published. The live site is rebuilding.' },
-    { name: 'discarded', over: { discardedFlash: true }, message: 'Changes discarded.' },
-    { name: 'renamed', over: { renamed: true, slug: 'new-slug' }, message: 'The URL is now new-slug.' },
+    { name: 'published', over: { flash: 'published' as const }, message: 'Published. The live site is rebuilding.' },
+    { name: 'discarded', over: { flash: 'discarded' as const }, message: 'Changes discarded.' },
+    { name: 'renamed', over: { flash: 'renamed' as const, slug: 'new-slug' }, message: 'The address is now new-slug.' },
   ];
   for (const { name, over, message } of flashCases) {
     it(`renders the ${name} flash as the one feedback strip`, async () => {
@@ -2221,14 +2254,6 @@ describe('EditPage', () => {
       expect(leaves.some((el) => el.closest('[aria-live="polite"]'))).toBe(true);
     });
   }
-
-  it('shows one strip even when several flash flags arrive together', async () => {
-    const screen = await render(EditPage, postProps({ saved: true, renamed: true }));
-    expect(screen.container.querySelectorAll('.alert-success').length).toBe(1);
-    expect(screen.container.querySelector('.cairn-feedback')?.textContent?.trim()).toBe(
-      'Saved. Your site keeps showing the published version until you publish.',
-    );
-  });
 
   it('shows the word count in the editor card footer', async () => {
     const screen = await render(EditPage, postProps({ body: '' }));

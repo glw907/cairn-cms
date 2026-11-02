@@ -53,7 +53,7 @@ export interface ReproStory {
    * desk pathname (`isDeskRoute` reads exactly three segments with a declared concept in the
    * second, and off that path the shell renders office chrome instead, which moves the sidebar
    * breakpoint and drops the narrow band compaction) or the pending-publish set (the topbar's
-   * "Publish site (N)" trigger and its confirm dialog render only while `pendingEntries` resolves
+   * "Publish all (N)" trigger and its confirm dialog render only while `pendingEntries` resolves
    * non-empty). `ReproContext` merges this once, non-reactively, over its fixture payload
    * before the first render; a story for which the office-default payload already renders
    * correctly leaves it absent. Ignored by a `bare` story.

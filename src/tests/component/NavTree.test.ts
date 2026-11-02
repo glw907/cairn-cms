@@ -76,7 +76,14 @@ describe('NavTree', () => {
 
   it('shows a saved confirmation', async () => {
     const screen = await render(NavTree, { data: data({ saved: true }) });
-    await expect.element(screen.getByText(/navigation saved/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/navigation saved/i).first()).toBeInTheDocument();
+  });
+
+  it('fills the saved status region only after mount, and the visible alert carries no role', async () => {
+    const screen = await render(NavTree, { data: data({ saved: true }) });
+    const status = screen.container.querySelector('[role="status"]');
+    await expect.poll(() => status?.textContent).toBe('Navigation saved.');
+    expect(screen.container.querySelector('.alert-success')?.hasAttribute('role')).toBe(false);
   });
 
   it('mounts the saved status region before any save happens, empty', async () => {

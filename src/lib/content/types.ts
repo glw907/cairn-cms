@@ -117,7 +117,7 @@ export interface ConceptConfig<R extends Record<string, FieldDescriptor> = Recor
    *  get a public page and a sitemap entry; a `'feed'` concept's permalink may also use the date
    *  tokens, and its index sorts newest first (an undated concept's sorts by title). An `'embedded'`
    *  concept has no public page and no sitemap entry, but keeps a directory, fields, and an admin list
-   *  and editor, which label its identifier **Name** and offer **Rename** rather than **Change URL**.
+   *  and editor, which label its identifier **Name** and offer **Rename** rather than **Change address**.
    *  Which entries reach an RSS or JSON feed is the site's feed route's choice.
    */
   routing?: 'feed' | 'page' | 'embedded';

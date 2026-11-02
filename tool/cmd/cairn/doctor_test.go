@@ -38,19 +38,23 @@ func doctorCleanWranglerJSONC(origin string) string {
 }`
 }
 
-// doctorCleanSiteFiles writes the file set every one of cairn doctor's eleven checks passes or
+// doctorCleanSiteFiles writes the file set every one of cairn doctor's twelve checks passes or
 // skips cleanly against, the command-level twin of internal/doctor's report_test.go fixture.
 // A case that wants exactly one failing check copies this map and overwrites one entry.
 func doctorCleanSiteFiles(origin string) map[string]string {
 	return map[string]string{
-		"wrangler.jsonc":                              doctorCleanWranglerJSONC(origin),
-		"vite.config.ts":                              "import { sveltekit } from '@sveltejs/kit/vite';\nexport default { plugins: [sveltekit({})] };\n",
-		"src/hooks.server.ts":                         "import { createAuthGuard } from '@glw907/cairn-cms';\nexport const handle = createAuthGuard();\n",
-		"src/theme/site.config.yaml":                  "siteName: Test Site\n",
-		"src/routes/admin/+layout.svelte":             "<!-- CairnAdminShell --><script>runtime.shellLoad()</script>",
-		"src/content/.cairn/site-facts.json":          `{"version":1}`,
-		"node_modules/@glw907/cairn-cms/package.json": `{"peerDependencies": {}}`,
-		"package-lock.json":                           `{"packages":{}}`,
+		"wrangler.jsonc":                                                 doctorCleanWranglerJSONC(origin),
+		"vite.config.ts":                                                 "import { sveltekit } from '@sveltejs/kit/vite';\nexport default { plugins: [sveltekit({})] };\n",
+		"src/hooks.server.ts":                                            "import { createAuthGuard } from '@glw907/cairn-cms';\nexport const handle = createAuthGuard();\n",
+		"src/theme/site.config.yaml":                                     "siteName: Test Site\n",
+		"src/routes/admin/+layout.svelte":                                "<!-- CairnAdminShell --><script>runtime.shellLoad()</script>",
+		"src/content/.cairn/site-facts.json":                             `{"version":1}`,
+		"node_modules/@glw907/cairn-cms/migrations/0000_auth.sql":        "-- auth\n",
+		"node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql": "-- nonce\n",
+		"migrations/0000_auth.sql":                                       "-- auth\n",
+		"migrations/0004_login_nonce.sql":                                "-- nonce\n",
+		"node_modules/@glw907/cairn-cms/package.json":                    `{"peerDependencies": {}}`,
+		"package-lock.json":                                              `{"packages":{}}`,
 	}
 }
 
@@ -160,7 +164,7 @@ func TestDoctorExitCodes(t *testing.T) {
 
 // TestDoctorOutsideACairnSitePrintsOneLineAndExitsUnknown is the fifth test: a directory
 // carrying neither a wrangler config nor a package.json naming @glw907/cairn-cms earns one line
-// and exit 3, never a wall of eleven failures.
+// and exit 3, never a wall of twelve failures.
 func TestDoctorOutsideACairnSitePrintsOneLineAndExitsUnknown(t *testing.T) {
 	dir := t.TempDir()
 

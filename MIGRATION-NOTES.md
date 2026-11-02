@@ -196,6 +196,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Read `data.flash` in place of `saved`, `renamed`, `publishedFlash`, and `discardedFlash`.** A hand-built `EditData` sets `flash: null`, or one of `'saved'`, `'renamed'`, `'published'`, or `'discarded'`. The settings, vocabulary, and nav `saved` flags stay.
+- **Treat `ContentFormFailure.error` as a required string.** A hand-built failure sets it, and a `form` prop that also carries a success result uses `Partial<ContentFormFailure>`.
 - **Unwrap `defineFieldset` on each concept.** `fields: defineFieldset({ ... })` becomes `fields: { ... }`, and the import goes. A check `defineFieldset` ran now runs at `defineConcept`.
 - **Move `refine` and `behavior` onto the concept.** Each sits beside `fields` on `defineConcept` in place of `defineFieldset`'s second argument.
 - **Read a concept's `fields` as the plain record.** `posts.fields.fields`, `.validate`, and `.behavior` are gone. Pass `ConceptConfig` the record type, and remove any `FieldsetConfig` import.

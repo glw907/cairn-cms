@@ -135,7 +135,7 @@ describe('mintPreview', () => {
     return gh;
   }
 
-  it('mints for an authorized editor with a pending draft, defaulting to a seven-day TTL', async () => {
+  it('mints for an authorized editor with a pending draft, for seven days', async () => {
     ghWithDraft().install();
     const before = Date.now();
     const result = await mintPreview(runtime(), mintEvent(), TARGET);

@@ -177,7 +177,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
         concept: concept.id,
         id,
         branch: priorPending,
-        error: err instanceof Error ? err.message : String(err),
+        error: (err instanceof Error ? err.message : String(err)).slice(0, 300),
       });
       return fail(503, saveRefusal("Couldn't read the current version of this entry. Try saving again.", body));
     }

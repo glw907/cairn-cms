@@ -45,7 +45,8 @@ renders `CairnAdminShell` (`@glw907/cairn-cms/admin`) over `data.shell`. The roo
 To rate limit sign-in link requests, bind a Workers `RateLimit` in `wrangler.jsonc` and pass
 `auth: { rateLimit: (env) => env.LOGIN_LIMITER as RateLimitLike | undefined }`. The limit keys on
 the requester's `CF-Connecting-IP` address, so everyone behind one shared address draws on one
-budget; set it generously. A limited request reads `throttled`, the same answer as the send
+budget; set it generously, and pick a `simple.period` the binding allows (10 or 60 seconds,
+[Cloudflare's rate-limit binding docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)). A limited request reads `throttled`, the same answer as the send
 cooldown, and logs `auth.rate_limited`. An absent binding or header lets every request through.
 
 The engine sets `Strict-Transport-Security: max-age=63072000` on every admin response, but a

@@ -61,7 +61,7 @@ async function guardedEvent(role: 'owner' | 'steward', routeId: string, post = f
     .run();
   // The store keeps only the id's digest, so the row goes in through createSession. Passing the
   // same id as the prior one replaces the row a second call for this role would otherwise collide with.
-  await createSession(db, `sid-${role}`, email, Date.now() + 10_000, Date.now(), `sid-${role}`);
+  await createSession(db, `sid-${role}`, email, Date.now() + 10_000, Date.now(), [`sid-${role}`]);
   const jar = makeCookies({ [sessionCookieName(true)]: `sid-${role}`, ...(post ? { [csrfCookieName(true)]: 'MATCH' } : {}) });
   const url = `https://test.dev${routeId}`;
   const request = post

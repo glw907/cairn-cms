@@ -49,7 +49,8 @@ export interface AuthRoutesConfig {
    * generous limit, well above what a full roster signing in at once would use. A limited request
    * answers `throttled`, the same answer as the send cooldown. Degrade-to-open: an unresolved
    * binding, a request with no `CF-Connecting-IP` header, or a limiter that fails lets the
-   * request through. Read the binding by name, as in
+   * request through. So does a resolver that throws, a SvelteKit `redirect()` or `error()` included:
+   * the throw is not propagated, it degrades open and is logged as `auth.rate_limit_failed`. Read the binding by name, as in
    * `(env) => env.LOGIN_LIMITER as RateLimitLike | undefined`.
    */
   rateLimit?: (env: Readonly<Record<string, unknown>>) => RateLimitLike | undefined;
@@ -156,11 +157,23 @@ function mintOrReusePendingNonce(event: CairnEvent): string {
 }
 
 /**
+ * The loggable form of a limiter failure: the error's name and a fixed message, capped at 300
+ * characters. Limiter-supplied text is never logged, since a limiter may echo its key in any
+ * encoding and no masking of the literal address would catch every form. A thrown value with no
+ * string name (a SvelteKit `redirect()` or `error()` object included) logs as `non-error throw`.
+ */
+function describeLimiterFailure(error: unknown): string {
+  const name = (error as { name?: unknown } | null)?.name;
+  const label = typeof name === 'string' && name ? name : 'non-error throw';
+  return label === 'non-error throw' ? label : `${label}: rate limit call failed`.slice(0, 300);
+}
+
+/**
  * Whether the site's sign-in rate limit refuses this request. Degrade-to-open throughout: no
  * resolver, no `CF-Connecting-IP` header, no binding, a throwing resolver, or a failed limiter
  * call answers false. An absent header skips the limiter rather than keying on a fallback, so a
- * missing address can never become one bucket every such request shares. Neither record carries
- * the address, and a failure's error text has it masked, since a limiter may echo its key.
+ * missing address can never become one bucket every such request shares. The address is bounded
+ * to 64 characters in the key, and neither record carries it.
  */
 async function signInRateLimited(
   event: CairnEvent,
@@ -171,7 +184,7 @@ async function signInRateLimited(
   if (!address) return false;
   let error: unknown;
   try {
-    const result = await resolveRateLimit(resolve(env), `login:${address}`);
+    const result = await resolveRateLimit(resolve(env), `login:${address.slice(0, 64)}`);
     if (result.outcome === 'limited') {
       log.warn('auth.rate_limited', { scope: 'login' });
       return true;
@@ -181,8 +194,7 @@ async function signInRateLimited(
   } catch (err) {
     error = err;
   }
-  const message = (error instanceof Error ? error.message : String(error)).split(address).join('[address]');
-  log.warn('auth.rate_limit_failed', { scope: 'login', error: message.slice(0, 300) });
+  log.warn('auth.rate_limit_failed', { scope: 'login', error: describeLimiterFailure(error) });
   return false;
 }
 
@@ -409,10 +421,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // A re-login from a browser that still holds a session replaces that row rather than adding
     // a second one. The prior id is read here, after the consume returned an email, so a failed
     // confirm changes nothing, and under both cookie-name forms, as logoutAction reads it.
-    const priorId =
-      event.cookies.get(sessionCookieName(secure)) ?? event.cookies.get(sessionCookieName(!secure));
+    const priorIds = [sessionCookieName(secure), sessionCookieName(!secure)]
+      .map((name) => event.cookies.get(name))
+      .filter((value): value is string => !!value);
     const id = generateSessionId();
-    await createSession(db, id, email, now + SESSION_TTL_MS, now, priorId);
+    await createSession(db, id, email, now + SESSION_TTL_MS, now, priorIds);
     log.info('auth.session.created', { email });
     // The nonce has done its job; a spent pending cookie left in the browser would outlive the
     // token it was bound to. `secure` here is the same variable the pending cookie was read

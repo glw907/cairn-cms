@@ -180,7 +180,8 @@ Each entry gives the rule for what belongs in a directory. Individual files move
 list here, so when the map and the tree disagree, trust the tree and fix the map.
 
 - `src/lib/`: the shipped library. A directory is public exactly when `package.json`'s `exports`
-  map points a subpath into it; `audit` and `media-seed` are reachable only through a `bin`.
+  map points a subpath into it; `audit` is reachable only through a `bin`. The media seed lives in
+  `packages/cairn-cms-dev/src/media-seed/`.
   `npm run check:surface` gates the public surface.
 - `src/tests/`: the vitest projects (`unit/`, `integration/`, `component/`) plus `fixtures/`.
   `lab/` holds engine apparatus that supports development and must never ship in the package.

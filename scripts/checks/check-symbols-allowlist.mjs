@@ -8,7 +8,7 @@
 // bare token; an export carries just the identifier, not its resolved subpath).
 export const ALLOWLIST = new Set([
   // Third-party CLI flags: npm, npx' passthrough to a script, wrangler, and cairn's other
-  // CLIs (cairn-audit, cairn-media-seed), none of which this gate resolves against
+  // CLIs (cairn-audit, and cairn-media-seed from the dev package), none of which this gate resolves against
   // (only `packages/create-cairn-site`'s parser is ground truth here).
   'cli-flag:--prefix', // npm's flag, not create-cairn-site's
   'cli-flag:--local', // wrangler d1's flag

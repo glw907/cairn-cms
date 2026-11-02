@@ -399,8 +399,9 @@ of `dist/` through `scripts/checks/dts-exports.mjs`. A rebuild that overlaps a r
 once, then `npm test` alone, and run the `check:*` scripts before it or after it.
 
 The opposite failure is a stale `dist/`. The packaged-bin tests (`media-seed.test.ts` and its
-siblings) check `existsSync('dist/<tool>/bin.js')` and skip when it is absent, so `npm test` never
-forces a build. When a `dist/` from an earlier session exists, they run against the old bin, and a
+siblings) check `existsSync('dist/<tool>/bin.js')` and skip when it is absent (the media seed's two
+files assert the bin exists instead, at `packages/cairn-cms-dev/dist/media-seed/bin.js`), so
+`npm test` never forces a build. When a `dist/` from an earlier session exists, they run against the old bin, and a
 new `--help` or any other bin-level change fails with an exit code that looks like a regression. Run
 `npm run package` right before the targeted run whenever the change touches a `src/lib/*/bin.ts`.
 Any `check:*` script that packages first has the same effect.
@@ -441,7 +442,7 @@ Vitest's SSR transform tolerates a named import that the target module does not 
 `undefined`), so a unit test can pass while `node scripts/checks/x.mjs` dies with a `SyntaxError`.
 Run a new script once directly with `node` before trusting its unit test.
 
-The shipped bins (`src/lib/audit/bin.ts`, `media-seed/bin.ts`, `guidance/bin.ts`, `vite/bin.ts`)
+The shipped bins (`src/lib/audit/bin.ts`, `packages/cairn-cms-dev/src/media-seed/bin.ts`, `guidance/bin.ts`, `vite/bin.ts`)
 end in an unguarded top-level `await main()`. Importing anything from one in a unit test runs the
 whole CLI. Put a new pure helper in the sibling module the bin already imports, and have both the
 bin and the test import it from there.

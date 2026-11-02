@@ -660,6 +660,11 @@ describe('settings view', () => {
 /** A Backend whose every method throws, standing in for an unanticipated failure (a GitHub
  *  outage, a bug) deep inside an action's own call chain: exactly the class the ecxc save 500
  *  proved reachable. */
+/** Throws on every call, except it lets a save's prior read of the entry file find nothing. */
+function throwingAfterPriorRead(): Backend {
+  return { ...throwingBackend(), branchHead: async () => null, readFile: async (path) => (path.endsWith('2026-05-01-hi.md') ? null : throwingBackend().readFile(path, 'main')) };
+}
+
 function throwingBackend(message = 'boom: github unreachable'): Backend {
   const boom = (): never => {
     throw new Error(message);
@@ -701,7 +706,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   it('a throwing save action on the edit view logs the concept, id, and editor, and returns fail(500) with the calm copy', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
-    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingAfterPriorRead() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = (await admin.actions.save(event)) as { status?: number; data?: { error?: string } };
     expect(result.status).toBe(500);
@@ -723,7 +728,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     // nothing about the fail(500) response.
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
-    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingAfterPriorRead() } };
     const result = (await admin.actions.save(event)) as { status?: number; data?: { error?: string } };
     expect(result.status).toBe(500);
     expect(result.data?.error).toBe(CALM_COPY);

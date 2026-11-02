@@ -1252,8 +1252,15 @@ island.
 
   // A save whose frontmatter references an absent or draft target carries ?refs=<concept/id list>,
   // the advisory reference warning the save threads through (mirroring ?drafts=). It never blocks the
-  // save; the build's verifyReferences is the integrity authority, so this is informational only.
+  // save; the build's verifyReferences is the integrity authority, so this only advises.
   const referenceWarning = $derived(failedInPlace ? '' : redirectFlagList('refs'));
+
+  // The banner and the polite live region read this one string. "Remove" covers an absent target,
+  // which has nothing to publish.
+  const referenceNotice = $derived.by(() => {
+    const many = referenceWarning.includes(',');
+    return `Saved. Note: this entry references ${many ? 'entries' : 'an entry'} (${referenceWarning}) not yet published. Publish or remove ${many ? 'them' : 'it'} before you publish this entry.`;
+  });
 
   // The one transient feedback strip under the sticky header. The redirect flags are mutually
   // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
@@ -1275,7 +1282,7 @@ island.
   // is announced once.
   const politeMessage = $derived.by(() => {
     if (draftWarning) return `Saved. This page links to unpublished pages: ${draftWarning}.`;
-    if (referenceWarning) return `Saved. This page references unpublished entries: ${referenceWarning}.`;
+    if (referenceWarning) return referenceNotice;
     return flash;
   });
   const assertiveMessage = $derived.by(() => {
@@ -1953,7 +1960,7 @@ island.
 {/if}
 {#if referenceWarning}
   <div class="alert alert-warning mb-4 type-body">
-    Saved. Note: this entry references {referenceWarning.includes(',') ? 'entries' : 'an entry'} ({referenceWarning}) not yet published. Publish {referenceWarning.includes(',') ? 'them' : 'it'} first.
+    {referenceNotice}
   </div>
 {/if}
 

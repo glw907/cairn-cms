@@ -879,6 +879,8 @@
 
   Consumers must: move a `refine` or `behavior` from `defineFieldset`'s second argument onto the concept.
 
+  Consumers must: read a concept's `fields` as the plain record, pass `ConceptConfig` the record type, and remove any `FieldsetConfig` import.
+
 - **A field's `default` takes the type of its value, and `fields.array` takes one options bag.** Text,
   textarea, url, select, icon, date, and reference take a string, number takes a number, boolean takes a
   boolean, and multiselect takes a list. Image, object, and array take none. `initialValues` writes no key
@@ -897,6 +899,8 @@
   Consumers must: read `summary.summaryFields` in place of `summary.fields`.
 
   Consumers must: rename `InboundLink` and `ResolvedReference` to `EntryRef`, and read `.excerpt` in place of `.summary` on a reference.
+
+  Consumers must: read `.excerpt` in place of `.summary` on a `ManifestEntry`.
 
   Consumers must: run `npx cairn-manifest` and commit `src/content/.cairn/index.json`.
 
@@ -1088,7 +1092,8 @@
   loses a race says `This entry changed since you opened it.`, the settings and navigation screens say
   `These settings changed since you opened them.`, and the media screens say
   `The media library changed since you opened it.` A share link shows `Creating…` while it's made, and a
-  reference to an unpublished entry says to publish it first.
+  reference to an unpublished or missing entry says to publish or remove it, in the banner and to a
+  screen reader alike.
 
   Consumers must: nothing.
 

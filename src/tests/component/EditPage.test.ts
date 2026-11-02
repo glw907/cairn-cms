@@ -325,6 +325,22 @@ describe('EditPage', () => {
     }
   });
 
+  it.each([
+    ['refs=pages/about', 'an entry (pages/about) not yet published. Publish or remove it before'],
+    ['refs=pages/about,pages/team', 'entries (pages/about, pages/team) not yet published. Publish or remove them before'],
+  ])('tells the banner and the live region the same reference warning for %s', async (query, expected) => {
+    const originalUrl = appPage.url;
+    appPage.url = new URL(`http://localhost/admin/posts/2026-05-hello?${query}`);
+    try {
+      const screen = await render(EditPage, postProps({ saved: true }));
+      const banner = screen.container.querySelector('.alert-warning')?.textContent?.trim() ?? '';
+      expect(banner).toContain(expected);
+      expect(screen.container.querySelector('[aria-live="polite"]')?.textContent).toBe(banner);
+    } finally {
+      appPage.url = originalUrl;
+    }
+  });
+
   it('shows no draft-link warning without the drafts flag', async () => {
     const screen = await render(EditPage, postProps({ saved: true }));
     expect(screen.container.querySelector('.alert-warning')).toBeNull();

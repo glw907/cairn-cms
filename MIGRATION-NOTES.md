@@ -198,11 +198,12 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 - **Unwrap `defineFieldset` on each concept.** `fields: defineFieldset({ ... })` becomes `fields: { ... }`, and the import goes. A check `defineFieldset` ran now runs at `defineConcept`.
 - **Move `refine` and `behavior` onto the concept.** Each sits beside `fields` on `defineConcept` in place of `defineFieldset`'s second argument.
+- **Read a concept's `fields` as the plain record.** `posts.fields.fields`, `.validate`, and `.behavior` are gone. Pass `ConceptConfig` the record type, and remove any `FieldsetConfig` import.
 - **Stop reading `'~standard'` and `StandardInput`.** Both are gone.
 - **Pass `fields.array` one bag.** `fields.array(item, { label })` becomes `fields.array({ item, label })`, and `label` is required.
 - **Give each `default` its field's type.** A number field takes a number, a boolean field a boolean, and a multiselect a list. Remove a `default` from an `image`, `object`, or `array` field, since it no longer compiles.
 - **Read `summary.summaryFields` in place of `summary.fields`.** A `ContentSummary` has no `fields` key now.
-- **Rename `InboundLink` and `ResolvedReference` to `EntryRef`, and read `.excerpt` in place of `.summary` on a reference.** `EntrySummary.summary`, the admin list row, and `FeedItem.summary` stay.
+- **Rename `InboundLink` and `ResolvedReference` to `EntryRef`, and read `.excerpt` in place of `.summary` on a reference and a `ManifestEntry`.** `EntrySummary.summary`, the admin list row, and `FeedItem.summary` stay.
 - **Regenerate `index.json`.** Run `npx cairn-manifest` and commit `src/content/.cairn/index.json`, whose `summary` key is now `excerpt`.
 - **Read `.manifest` from `buildSiteManifest`'s result.** It returns `{ manifest, problems }`.
 - **Fix what the manifest build now refuses.** Remove a leading or trailing slash from a concept's `dir`, rename an entry file whose stem is anything but lowercase letters, digits, and single hyphens, and replace a `cairn:` href the build names with an inline `[text](cairn:concept/id)` link to an entry that exists.

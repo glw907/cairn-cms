@@ -44,10 +44,10 @@ describe('buildSiteManifest', () => {
     expect(guide?.links).toEqual([{ concept: 'pages', id: 'about' }]);
   });
 
-  it('carries a summary on each built entry', () => {
+  it('carries an excerpt on each built entry', () => {
     const { manifest } = buildSiteManifest(adapter, files);
     const about = manifest.entries.find((e) => e.id === 'about');
-    // No description, so the summary is the body excerpt.
+    // No description, so the excerpt comes from the body.
     expect(about?.excerpt).toBe('Hi.');
   });
 

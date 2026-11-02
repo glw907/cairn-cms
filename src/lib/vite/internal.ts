@@ -209,18 +209,11 @@ export async function stripNestedServerPlugins(plugins: PluginOption): Promise<P
 }
 
 /**
- * Verify the committed manifest against the corpus from a Vite context, throwing on drift. The bin
- *  and the plugin share this. Given a running dev server, it loads the verify module the plugin
- *  serves there; otherwise it evaluates the module in a nested server.
+ * Verify the committed manifest against the corpus by evaluating the verify module in a nested
+ *  server, throwing on drift. Only a build verifies: a dev start regenerates instead.
  */
-export async function verifyManifestFromVite(
-  opts: CairnManifestOptions,
-  root: string,
-  server?: ViteDevServer,
-): Promise<void> {
-  const source = virtualSource(opts, 'verify');
-  if (server) await loadFromDevServer(server, VIRTUAL_ID, source, root);
-  else await evalVirtual(source, root);
+export async function verifyManifestFromVite(opts: CairnManifestOptions, root: string): Promise<void> {
+  await evalVirtual(virtualSource(opts, 'verify'), root);
 }
 
 /** A regenerated manifest, serialized and ready to write, with the problems its build met. */
@@ -331,12 +324,10 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       devServer = server;
     },
     resolveId(id) {
-      if (id === VIRTUAL_ID) return RESOLVED_ID;
       if (id === WRITE_VIRTUAL_ID) return WRITE_RESOLVED_ID;
       if (id === ADAPTER_FACTS_VIRTUAL_ID) return ADAPTER_FACTS_RESOLVED_ID;
     },
     load(id) {
-      if (id === RESOLVED_ID) return virtualSource(opts, 'verify');
       if (id === WRITE_RESOLVED_ID) return virtualSource(opts, 'write');
       if (id === ADAPTER_FACTS_RESOLVED_ID) return adapterFactsSource(opts);
     },
@@ -376,17 +367,16 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
 type StartChecks = { manifestError: string } | { siteFacts: SiteFactsCheck; regenerated?: string };
 
 /**
- * Run the manifest verify and, when it passes, the site-facts check, through the dev server when one
- *  is given and a nested server otherwise. A drift is returned rather than thrown, so a memoized run
- *  reports to every buildStart that awaits it.
+ * Run the manifest verify and, when it passes, the site-facts check, through a nested server. A
+ *  drift is returned rather than thrown, so a memoized run reports to every buildStart that awaits it.
  */
-async function runStartChecks(opts: CairnManifestOptions, root: string, server?: ViteDevServer): Promise<StartChecks> {
+async function runStartChecks(opts: CairnManifestOptions, root: string): Promise<StartChecks> {
   try {
-    await verifyManifestFromVite(opts, root, server);
+    await verifyManifestFromVite(opts, root);
   } catch (err) {
     return { manifestError: err instanceof Error ? err.message : String(err) };
   }
-  return { siteFacts: await checkSiteFacts(opts, root, server) };
+  return { siteFacts: await checkSiteFacts(opts, root) };
 }
 
 /**

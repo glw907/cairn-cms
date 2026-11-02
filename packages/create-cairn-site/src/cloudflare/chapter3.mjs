@@ -51,7 +51,7 @@ import { ensureAccountId } from './account.mjs';
 import { ensureApiToken, CHAPTER3_PERMISSION_KEYS } from './prefill.mjs';
 import { makeApi } from './api.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
-import { deleteApiToken } from './chapter2.mjs';
+import { deleteApiToken, hasOpenEmailDecline } from './chapter2.mjs';
 import { confirmHostname } from './hostname.mjs';
 import { defaultResolve } from './dns.mjs';
 import { githubRequest } from '../github/api.mjs';
@@ -732,6 +732,11 @@ const WATCH_DETAIL =
  * a step already in CHAPTER3_RESUMABLE_STEPS additionally skips connect and trigger, both of which
  * are otherwise safe to repeat.
  *
+ * A `--yes` run without `--connect` whose record carries an open email decline skips the
+ * admission and returns `builds-skipped`: not a terminal step, no step written, no consent or
+ * decline recorded, so the email offer stays open. A record that already carries chapter 3's
+ * own evidence (`alreadyAdmitted`) never reaches that check and still connects.
+ *
  * A connect-time authorization refusal, a reconcile OAuth denial, and every wait-kind park (an
  * authorization park, `builds-reconcile-parked`, `build-not-started`, `build-running`, a hostname
  * still propagating) are returned, never thrown, and `step` is left untouched wherever no hop
@@ -935,8 +940,20 @@ export async function runChapter3({
   // --- Admission: only asked once, per the chapter-3-owned signals above.
   if (!alreadyAdmitted) {
     let consented = false;
+    let skipped = false;
     await runStep(frame, 'Connect to Workers Builds', ADMISSION_DETAIL, async () => {
       log(ADMISSION_DETAIL);
+      // Connecting Builds ends the email offer for good, so a `--yes` run that left email
+      // undecided does not make that choice for its owner. `--connect` is an explicit opt-in.
+      if (args.yes && !args.connect && hasOpenEmailDecline(record)) {
+        skipped = true;
+        log(
+          'Skipping Workers Builds: --yes was given while email sign-in is still off, and ' +
+            'connecting Builds ends the offer to turn it on. Turn email on first, or re-run ' +
+            'with --connect to connect Builds anyway.',
+        );
+        return;
+      }
       if (args.yes) {
         consented = true;
         return;
@@ -945,6 +962,7 @@ export async function runChapter3({
       if (isCancel(answer)) exitOnCancel();
       consented = Boolean(answer);
     });
+    if (skipped) return { outcome: 'builds-skipped' };
     if (!dryRun && !consented) {
       const declineErr = cloudflareError('builds-connect-declined', { dir });
       log(declineErr.message);

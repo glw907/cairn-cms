@@ -82,7 +82,7 @@ function manualClock(): CheckClock & { set(ms: number): void; fire(index: number
   };
 }
 
-const creds = (installationId = 'i') => ({ appId: '123', installationId, privateKeyB64: keyB64 });
+const creds = (installationId = 'i', repo = 'site') => ({ appId: '123', installationId, repo, privateKeyB64: keyB64 });
 
 /** Settle every pending microtask and macrotask once, so a chain that can advance has. */
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -97,11 +97,23 @@ describe('the live token check classifies each mint outcome', () => {
     [401, 'key_refused'],
     [404, 'installation_not_found'],
     [403, 'installation_suspended'],
+    [422, 'token_request_refused'],
     [500, 'unreachable'],
   ])('a %i from GitHub reads %s', async (status, reason) => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status }));
     const check = createLiveTokenCheck(manualClock(), () => {});
     expect(await check(creds())).toEqual({ ok: false, detail: reason });
+  });
+
+  it('gives two repositories on one installation separate verdicts', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: 't' }), { status: 201 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 422 }));
+    const check = createLiveTokenCheck(manualClock(), () => {});
+    expect(await check(creds('shared', 'one'))).toEqual({ ok: true });
+    expect(await check(creds('shared', 'two'))).toEqual({ ok: false, detail: 'token_request_refused' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('a thrown network error reads unreachable', async () => {

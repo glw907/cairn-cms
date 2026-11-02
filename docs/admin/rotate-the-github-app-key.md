@@ -111,11 +111,21 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
    Check that the path names the new PEM file and that no `Out-File` step intervened under Windows PowerShell 5.1, and then push again.
 
-3. If `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: <status>`, GitHub refused the signed request.
+3. If `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: 401`, GitHub refused the signed request.
 
-   The error page comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
+   Status 401 is the one status that blames the key. The error page comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 
-4. If `/healthz` answers 503 with the detail `health check failed`, the check itself hit an error.
+4. If `/healthz?live=1` reports the detail `token_request_refused`, or a `github.unreachable` record carries any status other than 401, the key isn't at fault. Don't replace it.
+
+   GitHub accepted the key and refused the request for a token. A 404 or a 403 can mean the installation, and a 422 can mean the repository. Check three things:
+
+   - The `repo` in your site's `createGithubApp` call matches the repository's current name on GitHub.
+   - The App's installation includes that repository. On [GitHub's installations page](https://github.com/settings/installations), open the App and check the repository access.
+   - The App holds Contents read and write permission. Check the permissions on the App's settings page.
+
+   A plain `/healthz` stays `ok: true` in this case, because that check never requests a token.
+
+5. If `/healthz` answers 503 with the detail `health check failed`, the check itself hit an error.
 
    The page doesn't show the error. In Workers Logs, query records whose `event` field is `health.failed`. Its `error` field holds the message.
 

@@ -31,7 +31,7 @@ export interface HealthData {
     /**
      * The live installation-token mint, present only on a `?live=1` request that had a GitHub App
      * and a key to mint with. A failure's `detail` is `key_refused`, `installation_not_found`,
-     * `installation_suspended`, or `unreachable`.
+     * `installation_suspended`, `token_request_refused` (GitHub refused the request, a 422), or `unreachable`.
      */
     githubAppToken?: { ok: boolean; detail?: string };
   };
@@ -77,12 +77,13 @@ const CALLER_GRACE_MS = 500;
 
 const UNREACHABLE: TokenCheck = { ok: false, detail: 'unreachable' };
 
-/** Map a failed mint onto its class. Total: anything that is not a 401, 403, or 404 is unreachable. */
+/** Map a failed mint onto its class. Total: anything that is not a 401, 403, 404, or 422 is unreachable. */
 function classifyMintFailure(error: unknown): GithubTokenCheckReason {
   if (error instanceof InstallationTokenError) {
     if (error.status === 401) return 'key_refused';
     if (error.status === 404) return 'installation_not_found';
     if (error.status === 403) return 'installation_suspended';
+    if (error.status === 422) return 'token_request_refused';
   }
   return 'unreachable';
 }
@@ -130,7 +131,7 @@ export function createLiveTokenCheck(
 ): (creds: AppCredentials) => Promise<TokenCheck> {
   const states = new Map<string, InstallationState>();
   return async function check(creds: AppCredentials): Promise<TokenCheck> {
-    const key = `${creds.appId}/${creds.installationId}`;
+    const key = `${creds.appId}/${creds.installationId}/${creds.repo}`;
     let state = states.get(key);
     if (!state) {
       state = {};
@@ -226,6 +227,7 @@ async function runHealthChecks(event: CairnEvent, runtime: CairnRuntime): Promis
     checks.githubAppToken = await liveTokenCheck({
       appId: provider.appId,
       installationId: provider.installationId,
+      repo: provider.repo,
       privateKeyB64: key,
     });
   }

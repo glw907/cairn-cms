@@ -43,7 +43,6 @@
     "check:readiness": "npm run package && node scripts/checks/check-readiness.mjs",
     "check:tool-conditions": "npm run package && node scripts/checks/check-tool-conditions.mjs",
     "check:tool-heuristics": "node scripts/checks/check-tool-heuristics.mjs",
-    "check:tool-release": "node scripts/checks/check-tool-release.mjs",
     "check:docs": "node scripts/checks/docs-links.mjs",
     "check:rulings-format": "node scripts/checks/check-rulings-format.mjs",
     "check:consumers-must": "node scripts/checks/check-consumers-must.mjs",

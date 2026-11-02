@@ -283,10 +283,10 @@ describe('scanTree, by what exists', () => {
 
   it('scans the admin and editors directories and the front-door index', () => {
     const result = scanTree(
-      tree({ 'docs/admin/a-page.md': BAD_IMAGE, 'docs/editors/b.md': '# B\n', 'docs/README.md': BAD_IMAGE }),
+      tree({ 'docs/admin/a-page.md': BAD_IMAGE, 'docs/editors/b.md': '# B\n', 'docs/why-cairn.md': BAD_IMAGE }),
     );
     expect(result.filesScanned).toBe(3);
-    expect(result.violations.map((v: { file: string }) => v.file).sort()).toEqual(['docs/README.md', 'docs/admin/a-page.md']);
+    expect(result.violations.map((v: { file: string }) => v.file).sort()).toEqual(['docs/admin/a-page.md', 'docs/why-cairn.md']);
   });
 
   it('leaves a docs tree outside the published directories unscanned', () => {

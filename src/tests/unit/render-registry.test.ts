@@ -143,7 +143,7 @@ describe('defineRegistry icon guard', () => {
           },
         ],
       }),
-    ).toThrow('cairn: component "c" sets defaultIconByRole but declares no type:\'icon\' attribute');
+    ).toThrow('cairn: block "c" sets defaultIconByRole but declares no type:\'icon\' attribute');
   });
   it('rejects a component that takes the reserved "figure" name', () => {
     const build = () =>
@@ -159,8 +159,8 @@ describe('defineRegistry icon guard', () => {
       });
     // Keeps the core substring so any consumer matching it still passes.
     expect(build).toThrow('reserved directive name handled by the engine render step');
-    // Names the colliding component so the developer can find it.
-    expect(build).toThrow('component "figure"');
+    // Names the colliding block so the developer can find it.
+    expect(build).toThrow('block "figure"');
     // Points at the fix: remove it (engine now covers it) or rename it.
     expect(build).toThrow(/remove it/);
     expect(build).toThrow(/rename it/);
@@ -179,8 +179,8 @@ describe('defineRegistry icon guard', () => {
       });
     // Keeps the core substring so any consumer matching it still passes.
     expect(build).toThrow('reserved directive name handled by the engine render step');
-    // Names the colliding component so the developer can find it.
-    expect(build).toThrow('component "include"');
+    // Names the colliding block so the developer can find it.
+    expect(build).toThrow('block "include"');
     // Points at the fix: remove it (engine now covers it) or rename it.
     expect(build).toThrow(/remove it/);
     expect(build).toThrow(/rename it/);

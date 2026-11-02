@@ -63,7 +63,7 @@ describe('buildSiteResolver validation', () => {
     });
     let message = '';
     try {
-      createSiteResolver([bad]);
+      buildSiteResolver([bad]);
     } catch (e) {
       message = (e as Error).message;
     }
@@ -76,7 +76,7 @@ describe('buildSiteResolver validation', () => {
       '/src/content/posts/2024-03-16-b.md': '---\ntitle: B\ndraft: false\n---\nBody.',
       '/src/content/posts/2024-03-17-c.md': '---\ntitle: C\ndraft:\n---\nBody.',
     });
-    expect(() => createSiteResolver([ok])).not.toThrow();
+    expect(() => buildSiteResolver([ok])).not.toThrow();
   });
 
   it('reports a declared draft boolean once', () => {

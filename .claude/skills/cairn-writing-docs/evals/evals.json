@@ -216,16 +216,15 @@
           "regex": "\\b10 most recent|most recent 10 versions"
         },
         {
-          "type": "read",
-          "path": "src/lib/sveltekit/content-routes-shared.ts",
-          "beforeEdit": true
-        },
-        {
           "type": "bash",
           "pattern": "check:docs-gate"
         }
       ],
       "judge": [
+        {
+          "n": 4,
+          "text": "Before the first edit to any docs page, the transcript shows the content of src/lib/sveltekit/content-routes-shared.ts line 160 (the HISTORY_LIMIT constant), whether by a file read, a grep, or a sed output."
+        },
         {
           "n": 1,
           "text": "The diff changes only the sentence pair that states the version cap in docs/editors/publish-and-history.md: no other line of any docs page differs apart from those sentences' own words. A stray file outside docs/ that holds gate output does not count."
@@ -294,7 +293,7 @@
       "judge": [
         {
           "n": 1,
-          "text": "A search for the old bound (25) across docs/ and src/lib ran after the edits, and no hit it shows still describes the entry history cap outside history records (docs/specs, docs/plans, docs/research, docs/internal, released CHANGELOG sections)."
+          "text": "Every hit for the old bound (25) on the entry history cap across docs/ and src/lib, found by a search that ran before or after the edits, was changed in the final tree or is a history record (docs/specs, docs/plans, docs/research, docs/internal, released CHANGELOG sections). A search after the edits is not required."
         },
         {
           "n": 2,

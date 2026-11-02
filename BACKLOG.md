@@ -3,11 +3,23 @@
 > Project issue tracker. Managed by `/log-issue`.
 
 ## High
+- [ ] **#211** Keep a collapsed repeatable row on save `#bug` `#cairn-cms` *(2026-11-01)*
+  Saving an entry deletes every repeatable row the editor left collapsed. `expanded` seeds empty (`src/lib/admin/RepeatableField.svelte:98`), the row body renders only when expanded (`:264`), and no hidden input carries a collapsed row, while `decodeRows` builds rows only from submitted keys (`src/lib/content/frontmatter.ts:85`). A throwaway component test mounted the field in a form with two seeded rows, a text item and an object item in turn: `new FormData(form)` held no entry and `frontmatterFromForm` returned `{}`. The only carry-over in `content-routes-entry-write.ts` restores undeclared keys, so the declared array leaves the file. Proved at the form and read through the route, not run end to end. Fix candidates: keep the row body mounted and hidden, which also lets `onFormInvalid` reach it, or post each collapsed row as hidden inputs. Found by the field-values close review (#176); it predates that PR.
+  Placement: Pass 5.
+
 - [ ] **#203** Scope the App's installation and its minted token to the one repository `#improvement` `#cairn-cms` *(2026-11-01)*
   The install prompt and the `installation-not-covering-repo` remedy steer a first run to "All repositories" (`packages/create-cairn-site/src/github/install.mjs:237`, `packages/create-cairn-site/src/github/catalogue.mjs:132-134`), while the App holds `contents: write`, `administration: write`, and `workflows: write` (`packages/create-cairn-site/src/github/manifest.mjs:58-62`) and the engine mints unscoped installation tokens (`src/lib/github/signing.ts:87` POSTs `/access_tokens` with no `repositories` or `permissions` body). A token minted for one site can then write, administer, and change workflows on every repository the owner's account holds. Options: scope the minted token to the one repository and `contents: write`, and/or keep "Only select repositories" as the default advice, and add a closing-block line telling the owner to narrow the installation (`docs/admin/create-your-site.md:88` already says to). An `auth-data` engine change and a product and security call. Found by the scaffold-setup pass's security review (H1).
   Placement: Pass 1a.
 
 ## Medium
+- [ ] **#212** Tell an entry form's editor a field's bounds and keep the error on screen `#improvement` `#cairn-cms` *(2026-11-01)*
+  `FieldInput.svelte` renders `minlength`, `maxlength`, `min`, and `max`, but no hint states a bound, so an editor learns it by hitting it, and `aria-describedby` is unset when `help` is. A native bubble is the only report: it fades, and nothing marks the control afterward. A server refusal shows `.alert-error` (`EditPage.svelte:1828`) with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:130`), so each side can refuse what the other accepts. `ComponentForm.svelte:317` already has the `aria-invalid` shape, and DaisyUI's `validator` and `validator-hint` are unused here. Two controls invalid at once open the details aside over a focused title at 320 and 390 wide (`EditPage.svelte:341`). Found by the field-values close review (#176), WCAG 3.3.1, 3.3.2, and 4.1.3.
+  Placement: Pass 5.
+
+- [ ] **#213** Refuse contradictory bounds at `defineFieldset` `#bug` `#cairn-cms` *(2026-11-01)*
+  Nothing refuses `min > max`, `length` beside a conflicting `min` or `max`, or a non-calendar date bound. With `{ length: 5, max: 3 }` the form invites 5 characters and the save refuses every value (`field-rules.ts:21-23`), and `min > max` now reaches the markup as `minlength` above `maxlength`, which HTML forbids. A malformed date `min` is ignored by the browser while the save still compares it. Found by the field-values close review (#176).
+  Placement: Cleanup round.
+
 - [ ] **#210** Refuse a failed spellcheck asset fetch `#bug` `#cairn-cms` *(2026-11-01)*
   `createEngine` at `src/lib/admin/spellcheck-worker.ts:276` never checks `.ok`, so a 404 dictionary loads the error page as the corpus and the worker reports `ready` with an engine that knows almost no words. Found by the #174 review; it predates that PR.
   Placement: Pass 5.
@@ -137,6 +149,18 @@
   Placement: Final engine batch, small API slice.
 
 ## Low
+- [ ] **#216** Trace the EditorToolbar tab sizing retry `#bug` `#cairn-cms` *(2026-11-01)*
+  `EditorToolbar > Write/Preview tab sizing (design ratchet D3 item 6) > keeps each tab its own width across the selected/unselected swap` retried in `test` on all six task heads of #176, including the first, which touched no toolbar code. A test that needs a retry on every run hides a real regression in the tab width. Not traced.
+  Placement: Cleanup round.
+
+- [ ] **#215** Bake the scaffold template before a fresh worktree's workspace test `#improvement` `#cairn-cms` *(2026-11-01)*
+  `npm test -w packages/create-cairn-site` fails six tests with "no template found" on a new worktree until `npm run prepack -w packages/create-cairn-site` runs, because the setup command in `cairn-running-passes` doesn't bake it. Met in the field-values pass (#176). A task that reads the six as its own failures loses time, so either the test bakes on demand or the setup line names the step.
+  Placement: Cleanup round.
+
+- [ ] **#214** Handle a BOM in the media rewriters `#bug` `#cairn-cms` *(2026-11-01)*
+  `repointMediaRef` (`src/lib/content/media-rewrite.ts:321`) and `fillAltForHash` (`:572`) call `splitFrontmatter` with no BOM strip, so a BOM file gets no frontmatter edit, while `parseMarkdown` and `references.ts` both strip it. A repoint then leaves the old hash in the hero `src`. Found by the field-values close review (#176); it predates that PR.
+  Placement: Cleanup round.
+
 - [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)*
   `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
   Placement: After the release.

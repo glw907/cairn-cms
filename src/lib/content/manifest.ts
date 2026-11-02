@@ -1,7 +1,7 @@
 // cairn-cms: the content manifest, a committed JSON projection of the corpus (content-graph
 // design). The files in git stay the source of truth; the manifest exists so request-time admin
 // code reads the content graph without an N+1 GitHub crawl. The build regenerates and verifies
-// it; the save path patches one entry and commits it with the content in one commit. Each entry
+// it; publish patches one entry and commits it with the content in one commit. Each entry
 // carries its identity and its outbound cairn: edges, so the manifest is the link graph.
 import { parseMarkdown } from './frontmatter.js';
 import { buildExcerpt } from './excerpt.js';
@@ -437,7 +437,7 @@ export function verifyReferences(manifest: Manifest): void {
 
 /**
  * Replace the entry with the same concept and id, or add it. Order does not matter, since
- *  formatManifest sorts. This is the save path's incremental patch.
+ *  formatManifest sorts. This is publish's incremental patch.
  *
  * Invariant: a `publishedAt` already held for that concept and id survives the replacement. The
  *  replacement row is re-derived from a content file, which can never carry the stamp, so without

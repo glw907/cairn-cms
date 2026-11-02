@@ -170,4 +170,5 @@ visible island).
 | Content renders without markup | Not in the registry `createRenderer` received, or a name mismatch |
 | No boundary in the HTML | `hydrate` unset |
 | Boundary, fallback stays, runtime never loads | `hasIslands` false or no `afterNavigate` call |
-| Runtime loads, fallback stays | Not scrolled to (visible), registry key mismatch, bad props JSON, or the component threw on mount (all silent) |
+| Runtime loads, fallback stays, console silent | Not scrolled to (visible), or a registry key mismatch |
+| Runtime loads, fallback stays, console error names the island | Bad props JSON, or the component threw on mount |

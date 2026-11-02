@@ -348,7 +348,7 @@ export function verifyManifest(built: Manifest, committedRaw: string, adapter?: 
   const committed = parseManifest(committedRaw);
   const nestedShape = adapter !== undefined
     && Object.values(adapter.content).some(
-      (concept) => concept !== undefined && declaresNestedImage(Object.values(concept.fields.fields)),
+      (concept) => concept !== undefined && declaresNestedImage(Object.values(concept.fields)),
     );
   const allowMediaRefsDrop = predatesMediaRefs(committed) && !nestedShape;
   const committedByKey = new Map(committed.entries.map((e) => [keyOf(e), e]));

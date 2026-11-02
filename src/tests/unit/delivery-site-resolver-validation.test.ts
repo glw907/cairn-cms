@@ -3,13 +3,12 @@ import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.j
 import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
     routing: 'feed',
-    fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
+    fields: { title: fields.text({ label: 'Title', required: true }) },
   },
 })[0];
 
@@ -53,7 +52,7 @@ describe('buildSiteResolver validation', () => {
       posts: {
         dir: 'src/content/posts',
         routing: 'feed',
-        fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
+        fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) },
       },
     })[0];
     const ci = (files: Record<string, string>) => ({ descriptor: d, index: createContentIndex(fromGlob(files), d) });
@@ -84,7 +83,7 @@ describe('buildSiteResolver validation', () => {
       posts: {
         dir: 'src/content/posts',
         routing: 'feed',
-        fields: defineFieldset({ draft: fields.boolean({ label: 'Draft' }) }),
+        fields: { draft: fields.boolean({ label: 'Draft' }) },
       },
     })[0];
     const index = createContentIndex(fromGlob({ '/src/content/posts/2024-03-16-q.md': '---\ndraft: "true"\n---\nB.' }), d);
@@ -97,7 +96,7 @@ describe('buildSiteResolver validation', () => {
       posts: {
         dir: 'src/content/posts',
         routing: 'feed',
-        fields: defineFieldset({ draft: fields.text({ label: 'Draft' }) }),
+        fields: { draft: fields.text({ label: 'Draft' }) },
       },
     })[0];
     const index = createContentIndex(fromGlob({ '/src/content/posts/2024-03-16-q.md': '---\ndraft: "true"\n---\nB.' }), d);

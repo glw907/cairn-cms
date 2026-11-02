@@ -8,7 +8,6 @@ import { buildUsageIndex } from '../../lib/media/usage.js';
 import { planBulkDelete } from '../../lib/media/bulk-delete-plan.js';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import { manifestEntryFromFile, type Manifest } from '../../lib/content/manifest.js';
 import { extractMediaRefs } from '../../lib/content/media-refs.js';
@@ -30,7 +29,7 @@ function concept(extra: Record<string, FieldDescriptor>): ConceptDescriptor {
   return normalizeConcepts({
     posts: {
       dir: 'src/content/posts',
-      fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }), ...extra }),
+      fields: { title: fields.text({ label: 'Title', required: true }), ...extra },
     },
   })[0];
 }

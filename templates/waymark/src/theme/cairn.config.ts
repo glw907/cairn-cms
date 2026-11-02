@@ -7,7 +7,6 @@
 import {
   createRenderer,
   defineRegistry,
-  defineFieldset,
   fields,
   defineAdapter,
   defineConcept,
@@ -75,7 +74,7 @@ export const cairn = defineAdapter({
       singular: 'post',
       summaryFields: ['description'],
       routing: 'feed',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         // The post files carry a description the SEO head reads; declare it so it survives the
@@ -118,7 +117,7 @@ export const cairn = defineAdapter({
         // A repeatable image: array(image) exercising the leaf-array editor arm, each row a hero-style
         // image field whose structured value round-trips through save and reload.
         gallery: fields.array(fields.image({ label: 'Image' }), { label: 'Gallery' }),
-      }),
+      },
     }),
     pages: defineConcept({
       dir: 'src/content/pages',
@@ -127,10 +126,10 @@ export const cairn = defineAdapter({
       // back to `label` and read "New Pages" instead (the same fallback `posts` names above).
       singular: 'page',
       routing: 'page',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         robots: fields.text({ label: 'Robots' }),
-      }),
+      },
     }),
     // The Fragments concept (the reusable-content design): keyed right after pages, per the
     // documented convention, so the flat zero-config nav places it beside the other authored
@@ -143,9 +142,9 @@ export const cairn = defineAdapter({
       label: 'Fragments',
       singular: 'fragment',
       routing: 'embedded',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
-      }),
+      },
     }),
   },
   // finalize.mjs matches this line character for character (TEMPLATE_GITHUB_APP_LITERAL)

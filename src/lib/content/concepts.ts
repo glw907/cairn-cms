@@ -64,8 +64,8 @@ export function resolveRouting(routing: ConceptConfig['routing'], id: string): R
 }
 
 /**
- * Declare a concept while preserving its fieldset type for typed reads, and validate its URL policy at
- * declaration so a bad permalink or datePrefix fails at module load rather than at a defaulted render.
+ * Declare a concept while preserving its field record's type for typed reads, and validate its fields
+ * and URL policy at declaration so a bad declaration fails at module load rather than at a defaulted render.
  * Mirrors {@link defineAdapter}; the validation is the build-independent net for a concept with no entries.
  * @remarks
  * Defaults, resolved when the engine composes the runtime: `routing` is `'page'`; `permalink` is
@@ -78,21 +78,25 @@ export function resolveRouting(routing: ConceptConfig['routing'], id: string): R
  * reserved for `::include` and must use `routing: 'embedded'`, or compose throws.
  * @throws When `permalink` does not start with `/`, uses an unknown token, or uses a date token on
  * an undated concept; when `datePrefix` is not `year`, `month`, or `day`; or when `routing` is
- * unrecognized.
+ * unrecognized; when a `text` or `textarea` `pattern` is malformed; when containers nest deeper than
+ * one level, an `array` item is another `array`, a `reference` or an `seo` image sits inside a
+ * container, or a field key contains a dot; when more than one top-level image sets `seo` or more
+ * than one multiselect sets `taxonomy`; or when `behavior` names an undeclared field.
  * @public
  */
 export function defineConcept<const C extends ConceptConfig>(
   concept: C & {
     /** Frontmatter keys to surface on each `ContentSummary.fields`, each one a key of this concept's `fields`. */
-    summaryFields?: readonly (keyof C['fields']['fields'] & string)[];
+    summaryFields?: readonly (keyof C['fields'] & string)[];
   },
 ): C {
   const id = concept.label ?? concept.dir;
+  defineFieldset(concept.fields, { refine: concept.refine, behavior: concept.behavior });
   validateUrlPolicy(
     id,
     { permalink: concept.permalink, datePrefix: concept.datePrefix },
     resolveRouting(concept.routing, id).dated,
-    concept.fields.fields,
+    concept.fields,
   );
   return concept;
 }
@@ -186,7 +190,7 @@ export function normalizeConcepts(
         `cairn: concept id "${id}" names an engine view under /admin; choose another id (reserved: ${[...RESERVED_VIEW_IDS].join(', ')})`,
       );
     }
-    const fs = config.fields;
+    const fs = defineFieldset(config.fields, { refine: config.refine, behavior: config.behavior });
     const summaryFields = config.summaryFields ?? [];
     const declared = new Set(Object.keys(fs.fields));
     const undeclared = summaryFields.find((key) => !declared.has(key));
@@ -236,8 +240,8 @@ export function normalizeConcepts(
       fields,
       schema: fs,
       summaryFields,
-      // The concept id is the owner label a field-behavior diagnostic needs; a fieldset is a
-      // standalone object a site may share across concepts, so it cannot supply one itself.
+      // The concept id is the owner label a field-behavior diagnostic needs, and the fieldset
+      // carries no id of its own.
       validate: (frontmatter, body) => {
         const result = fs.validate(frontmatter, body, id);
         // The engine reads `draft` as a flag whatever kind the concept declares it as (or none), so a

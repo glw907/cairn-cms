@@ -18,7 +18,6 @@ import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import { composeRuntime } from '../../lib/content/compose.js';
 import { createGithubApp } from '../../lib/index.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { testSiteConfig } from '../unit/_content-fixture.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
@@ -32,7 +31,7 @@ const access = defineAccess(roles, {
   '/admin/y': ['steward'],
 });
 const adapter: CairnAdapter = {
-  content: { pages: { dir: 'src/content/pages', routing: 'page', fields: defineFieldset({}) } },
+  content: { pages: { dir: 'src/content/pages', routing: 'page', fields: {} } },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@test' },
   rendering: { render: ({ body }) => Promise.resolve(body) },

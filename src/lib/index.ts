@@ -53,7 +53,6 @@ export { composeRuntime } from './content/compose.js';
 export type { ComposeInput } from './content/compose.js';
 export { parseMarkdown } from './content/frontmatter.js';
 export { defineAdapter } from './content/adapter.js';
-export type { StandardInput } from './content/standard-schema.js';
 // The Contract v2 field vocabulary: the one live field system.
 export { fields } from './content/fields.js';
 export type { FieldDescriptor } from './content/fields.js';
@@ -74,12 +73,10 @@ export type {
   ReferenceField,
   ArrayField,
 } from './content/fields.js';
-export { defineFieldset } from './content/fieldset.js';
 export type {
   Fieldset,
   InferFieldset,
-  FieldsetConfig,
-  // `FieldsetConfig.behavior` and `Fieldset.behavior` name these.
+  // `ConceptConfig.behavior` and `Fieldset.behavior` name these.
   BehaviorTable,
   FieldBehavior,
 } from './content/fieldset.js';

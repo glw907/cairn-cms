@@ -37,19 +37,19 @@ export default {
 };
 `;
 
-const ADAPTER_NO_FACTS = `import { defineAdapter, defineFieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
+const ADAPTER_NO_FACTS = `import { defineAdapter, fields, parseSiteConfig } from '@glw907/cairn-cms';
 export const cairn = defineAdapter({
   rendering: { render: ({ body }) => Promise.resolve(body) },
   email: { from: 'cms@test.example' },
   content: {
-    posts: { dir: 'src/content/posts', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }) },
-    pages: { dir: 'src/content/pages', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }) },
+    posts: { dir: 'src/content/posts', fields: { title: fields.text({ label: 'Title', required: true }) } },
+    pages: { dir: 'src/content/pages', fields: { title: fields.text({ label: 'Title', required: true }) } },
   },
 });
 export const siteConfig = parseSiteConfig('siteName: Test\\n');
 `;
 
-const ADAPTER_FULL = `import { defineAdapter, defineFieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
+const ADAPTER_FULL = `import { defineAdapter, fields, parseSiteConfig } from '@glw907/cairn-cms';
 export const cairn = defineAdapter({
   rendering: { render: ({ body }) => Promise.resolve(body) },
   email: { from: 'cms@test.example' },
@@ -58,8 +58,8 @@ export const cairn = defineAdapter({
   roles: { owner: 'owner', staff: { capability: 'editor', home: '/admin/staff' } },
   aiPosture: 'decline',
   content: {
-    posts: { dir: 'src/content/posts', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }) },
-    pages: { dir: 'src/content/pages', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }) },
+    posts: { dir: 'src/content/posts', fields: { title: fields.text({ label: 'Title', required: true }) } },
+    pages: { dir: 'src/content/pages', fields: { title: fields.text({ label: 'Title', required: true }) } },
   },
 });
 export const siteConfig = parseSiteConfig('siteName: Test\\n');

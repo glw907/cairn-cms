@@ -1,5 +1,6 @@
 import { describe, it, expectTypeOf } from 'vitest';
 import { fields } from '../../lib/content/fields.js';
+import { defineConcept } from '../../lib/content/concepts.js';
 import { defineFieldset, type InferFieldset } from '../../lib/content/fieldset.js';
 
 const fs = defineFieldset({
@@ -10,7 +11,24 @@ const fs = defineFieldset({
 });
 type T = InferFieldset<typeof fs>;
 
+const plain = defineConcept({
+  dir: 'src/content/plain',
+  fields: {
+    title: fields.text({ label: 'Title', required: true }),
+    count: fields.number({ label: 'Count' }),
+    status: fields.select({ label: 'Status', options: ['draft', 'published'] }),
+  },
+});
+
 describe('Infer', () => {
+  it('reads a plain-record concept the same way', () => {
+    expectTypeOf<InferFieldset<(typeof plain)['fields']>>().toEqualTypeOf<{
+      title: string;
+      count?: number;
+      status?: 'draft' | 'published';
+    }>();
+  });
+
   it('maps required/optional and value types', () => {
     expectTypeOf<T>().toEqualTypeOf<{
       title: string;

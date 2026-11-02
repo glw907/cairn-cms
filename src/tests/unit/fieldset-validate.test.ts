@@ -25,10 +25,6 @@ describe('fieldset.validate', () => {
     expect(fs.validate({ title: 'Hi', status: 'nope' }, '').ok).toBe(false);
     expect(fs.validate({ title: 'Hi', site: 'not a url' }, '').ok).toBe(false);
   });
-  it('exposes Standard Schema with a single-segment path', () => {
-    const issues = (fs['~standard'].validate({ frontmatter: { title: '' }, body: '' }) as any).issues;
-    expect(issues[0].path).toEqual(['title']);
-  });
 });
 
 describe('fieldset.validate edge cases', () => {

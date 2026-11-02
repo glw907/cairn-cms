@@ -80,7 +80,7 @@ the option union.
 
 ## Cross-field rules
 
-A fieldset takes a second argument with two hooks:
+`defineConcept` takes two hooks beside `fields`:
 
 - **`refine(data, body)`**: the default for a rule that compares fields (an end date before a start
   date). It runs only after every field check passes, receives the coerced data, and returns a map
@@ -95,28 +95,24 @@ A refused save shows one banner with the first message, beside no field, so writ
 a complete sentence an editor can act on.
 
 ```ts
-import { defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
+import { defineConcept, fields } from '@glw907/cairn-cms';
 
 export const events = defineConcept({
   dir: 'src/content/events',
   label: 'Events',
   singular: 'event',
-  fields: defineFieldset(
-    {
-      title: fields.text({ label: 'Title', required: true }),
-      date: fields.date({ label: 'Start date', required: true }),
-      endDate: fields.date({ label: 'End date' }),
-      location: fields.text({ label: 'Location' }),
-      capacity: fields.number({ label: 'Capacity' }),
-      signupUrl: fields.url({ label: 'Signup link' }),
-    },
-    {
-      refine: (data) =>
-        typeof data.date === 'string' && typeof data.endDate === 'string' && data.endDate < data.date
-          ? { endDate: "The end date can't be before the start date." }
-          : undefined,
-    },
-  ),
+  fields: {
+    title: fields.text({ label: 'Title', required: true }),
+    date: fields.date({ label: 'Start date', required: true }),
+    endDate: fields.date({ label: 'End date' }),
+    location: fields.text({ label: 'Location' }),
+    capacity: fields.number({ label: 'Capacity' }),
+    signupUrl: fields.url({ label: 'Signup link' }),
+  },
+  refine: (data) =>
+    typeof data.date === 'string' && typeof data.endDate === 'string' && data.endDate < data.date
+      ? { endDate: "The end date can't be before the start date." }
+      : undefined,
 });
 ```
 

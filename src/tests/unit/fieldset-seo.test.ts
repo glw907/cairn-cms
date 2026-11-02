@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { defineFieldset, fields } from '../../lib/index.js';
+import { fields } from '../../lib/index.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
 describe('fieldset SEO-image guard', () => {
   it('throws when two image fields both set seo: true', () => {

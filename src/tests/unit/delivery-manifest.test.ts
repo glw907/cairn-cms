@@ -4,12 +4,11 @@ import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { createLinkResolver, createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const adapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
-    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) } },
+    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
@@ -25,8 +24,8 @@ const files = {
 // A posts concept whose validate requires a non-empty title, so an empty-title file fails.
 const requiredTitleAdapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
-    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) } },
+    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
@@ -75,8 +74,8 @@ describe('createLinkResolver', () => {
   it('treats a cairn: ref to a non-routable concept as a miss (the dangling-link backstop)', () => {
     const fragmentsAdapter = defineAdapter({
       content: {
-        pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
-        fragments: { dir: 'src/content/fragments', label: 'Fragments', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+        pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
+        fragments: { dir: 'src/content/fragments', label: 'Fragments', routing: 'embedded', fields: { title: fields.text({ label: 'Title' }) } },
       },
       backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
       email: { from: 'a@b.c' },

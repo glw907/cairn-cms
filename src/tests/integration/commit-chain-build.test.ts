@@ -13,7 +13,6 @@ import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { createGithubApp } from '../../lib/index.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
@@ -46,7 +45,7 @@ const adapter = defineAdapter({
   content: {
     posts: {
       dir: 'src/content/posts',
-      fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
+      fields: { title: fields.text({ label: 'Title', required: true }) },
     },
   },
 });

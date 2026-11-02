@@ -41,7 +41,6 @@ export interface EditorsData {
 
 /**
  * Configuration for `createEditorRoutes`: the composed runtime.
- * @beta
  */
 export interface EditorRoutesConfig {
   /**
@@ -60,7 +59,6 @@ export interface EditorRoutesConfig {
  *  vocabulary and answers an unknown one with a `fail()` form error, never a silent coercion to
  *  `'editor'`; every refusal answers through `fail()`. A hand-mounted route registers the actions
  *  as `editorAdd`, `editorRemove`, and `editorSetRole`, the names the view posts.
- * @beta
  */
 export function createEditorRoutes(config: EditorRoutesConfig): EditorRoutes {
   const vocabulary: RolesDeclaration = config.runtime.roles ?? DEFAULT_ROLES;
@@ -167,7 +165,6 @@ export function createEditorRoutes(config: EditorRoutesConfig): EditorRoutes {
  *  the declaration emit this contract requires) but never re-exported from the `/sveltekit`
  *  barrel, since `ManageEditors.svelte` reads its `error` field loosely and no other module has a
  *  reason to import the name directly (`convention-internal-sibling-comment`).
- * @beta
  */
 export interface EditorRoutes {
   editorsLoad: (event: CairnEvent) => Promise<EditorsData>;

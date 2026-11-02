@@ -167,13 +167,13 @@
       "name": "Manifest",
       "subpath": "/delivery",
       "home": ".",
-      "reason": "R4 closure: `buildSiteManifest`, `buildNewlyPublished`, `parseManifest` name it on this subpath."
+      "reason": "R4 closure: `buildSiteManifest` names it on this subpath."
     },
     {
       "name": "ManifestEntry",
       "subpath": "/delivery",
       "home": ".",
-      "reason": "R4 closure: `buildNewlyPublished`, `Manifest` name it on this subpath."
+      "reason": "R4 closure: `Manifest` names it on this subpath."
     },
     {
       "name": "MultiselectField",
@@ -198,12 +198,6 @@
       "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
-    },
-    {
-      "name": "parseManifest",
-      "subpath": "/delivery",
-      "home": ".",
-      "reason": "A re-export from the stated canonical home, not a second home: `parseManifest`'s home moves to `.` beside `formatManifest`, its codec partner, and stays importable here so `buildNewlyPublished`'s `before`/`after` pair has a validator on the same subpath that consumes it."
     },
     {
       "name": "ReferenceEdge",
@@ -353,7 +347,7 @@
       "name": "CairnRuntime",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `createContentRoutes`, `loadPreview`, `createMediaRoute` name it on this subpath."
+      "reason": "R4 closure: `loadPreview`, `createMediaRoute` name it on this subpath."
     },
     {
       "name": "Capability",

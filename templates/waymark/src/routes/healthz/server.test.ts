@@ -21,6 +21,7 @@ describe('healthz route', () => {
     const res = await GET(event);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(payload);
+    expect(health.loadHealth).toHaveBeenCalledWith(event, { runtime: {} });
   });
 
   it('answers 503 with the payload when the check is not ok', async () => {

@@ -158,6 +158,11 @@
 
 ### Changed
 
+- **`loadPreview` and `loadHealth` take the event first and an options bag.** They now read
+  `loadPreview(event, { runtime, publicRoutes })` and `loadHealth(event, { runtime })`.
+
+  Consumers must: change the `/preview/[token]` route to `loadPreview(event, { runtime, publicRoutes })` and the health route to `loadHealth(event, { runtime })`, then run `npm run check`, because `vite build` does not type-check and a stale call fails only at runtime.
+
 - **`createSectionAction` takes no `resolveDb` for an action with no binding.** With the key omitted
   the handler runs with no `ctx.db`, and the new `PlainSectionAction` type names the wrapper it
   returns. `createSectionAction({ resolveDb: () => env.APP_DB })` is the recipe and types `ctx.db`
@@ -913,6 +918,20 @@
   Consumers must: nothing.
 
 ### Removed
+
+- **The per-route factories, the preview mint pair, and `buildNewlyPublished` leave the public surface.**
+  `/sveltekit` drops `createContentRoutes`, `createAuthRoutes`, `createEditorRoutes`, `mintPreview`, and
+  `revokePreview`, with the `ContentRoutes`, `AuthRoutes`, `EditorRoutes`, `EditorRoutesConfig`,
+  `PreviewMintOutcome`, and `PreviewRevokeOutcome` types. No site needs them, since `createCairnAdmin`
+  composes the routes and the editor's Share preview group mints and revokes. `/delivery` and the root
+  drop `parseManifest`, and `buildNewlyPublished` is deleted. `createNavRoutes` stays public.
+
+  Consumers must: mount the admin through `createCairnAdmin` in place of `createContentRoutes`, `createAuthRoutes`, and `createEditorRoutes`, and drop any import of `mintPreview`, `revokePreview`, `parseManifest`, and `buildNewlyPublished`.
+
+- **A preview link's lifetime is fixed at seven days.** `PreviewTokenConfig` and the `preview` option on
+  `createCairnAdmin` are gone.
+
+  Consumers must: remove `preview` from your `createCairnAdmin` config.
 
 - **The public surface drops what a site never mounts or calls.** `/admin` now exports `CairnAdmin`,
   `CairnAdminShell`, and `CsrfField`, since those are all a site mounts. `/delivery` drops the feed,

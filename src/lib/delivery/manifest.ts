@@ -7,7 +7,7 @@ import { fromGlob } from './content-index.js';
 import { parseMarkdown } from '../content/frontmatter.js';
 import { log } from '../log/index.js';
 import { emptyManifest, manifestEntryFromFile } from '../content/manifest.js';
-import type { Manifest, ManifestEntry } from '../content/manifest.js';
+import type { Manifest } from '../content/manifest.js';
 import type { CairnAdapter } from '../content/types.js';
 
 /**
@@ -49,30 +49,4 @@ export function buildSiteManifest(adapter: CairnAdapter, files: Record<string, s
     }
   }
   return manifest;
-}
-
-/**
- * The `after` entries a deploy just carried across the first-publish transition: the entry is
- *  currently live (non-draft), carries a `publishedAt` stamp, and that stamp value appears on no
- *  `before` row. Newness is the stamp's, not the key's: `stampFirstPublish` issues a stamp at the
- *  first publish and every later save carries it, so a rename (new key, same stamp) is not new, the
- *  peers of one first-publish batch (one shared stamp, one commit) each are, and an entry deleted
- *  and recreated gets a fresh stamp and reads as new. A drafted entry can carry a stamp forward
- *  (`upsertEntry` preserves it through a save that flips `draft` back to `true`), so the draft check
- *  is what excludes a currently unpublished entry. A legacy non-draft entry with no stamp is never
- *  returned, and an entry present only in `before` (deleted in `after`) is never returned.
- *
- * `before: null` means no prior manifest is known and returns every currently-live stamped entry in
- *  `after`, the full fan-out. A consumer wiring announce-on-publish persists the prior manifest across
- *  deploys and passes `null` only when that full fan-out is actually wanted.
- *
- * Pure and node-safe: no I/O, no clock read, so a caller supplies both manifests and the result is
- *  deterministic. The engine performs no network sends; a consumer diffs and then acts.
- * @public
- */
-export function buildNewlyPublished(before: Manifest | null, after: Manifest): ManifestEntry[] {
-  // A null `before` has no stamps, so every currently-live stamped entry in `after` reads as new.
-  const priorStamps = new Set<string>();
-  for (const e of before?.entries ?? []) if (e.publishedAt) priorStamps.add(e.publishedAt);
-  return after.entries.filter((e) => !e.draft && !!e.publishedAt && !priorStamps.has(e.publishedAt));
 }

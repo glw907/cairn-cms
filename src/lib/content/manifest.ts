@@ -170,7 +170,6 @@ const REGEN = " The manifest is generated: run npx cairn-manifest, and don't edi
  *  every reader (the save guard, the delete path, the preview) sees a well-formed graph or a clear
  *  error. The build regenerates the manifest, so a real file is always canonical; this guards a
  *  hand-edited or truncated one.
- * @public
  */
 export function parseManifest(raw: string): Manifest {
   const data = JSON.parse(raw) as unknown;

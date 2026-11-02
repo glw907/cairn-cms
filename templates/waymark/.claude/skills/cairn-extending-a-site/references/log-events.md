@@ -65,7 +65,7 @@ Contents:
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `preview.token.minted` | info | `concept`, `id`, `editor`, `expiresAt` | A link was minted (built-in action or `mintPreview`). Never the token. |
+| `preview.token.minted` | info | `concept`, `id`, `editor`, `expiresAt` | A link was minted. Never the token. |
 | `preview.token.revoked` | info | `concept`, `id`, `editor`, `count` | All links for an entry were revoked. |
 | `preview.cleanup_failed` | warn | `concept`, `id`, `error` | Best-effort link clear after delete, discard, or rename hit a D1 error. A missing binding or table is silent. |
 | `preview.refused` | warn | `reason`; `concept`, `id` on `row_invalid`, `draft_invalid`, `branch_gone`; `binding` on `bindings_missing` | Checked in order: `bindings_missing` (no `AUTH_DB`, answers 503), `table_missing` (apply `0003_preview.sql`), `unknown` (no row: revoked, deleted, renamed, never-published discard), `expired`, `row_invalid` (stored concept or id no longer valid), `draft_invalid` (draft fails validation), `branch_gone` (branch and published file both gone). Every other answer is an identical 404. |

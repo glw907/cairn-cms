@@ -16,7 +16,6 @@ import { normalizePublishActions, type PublishActionEntry } from './publish-acti
 import { commitFailure, type CommitLogFields } from './commit-log.js';
 import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
-import type { PreviewTokenConfig } from './preview.js';
 import { env } from './workers-env.js';
 // Deliberately absent from the imports above: @anthropic-ai/sdk. It is server-only (it carries the
 // API-key path and must never reach a browser bundle), and it is an OPTIONAL peer dependency, so a
@@ -269,11 +268,6 @@ export interface ContentRoutesConfig {
     editor: Editor;
     event: CairnEvent;
   }) => AttentionItem[] | Promise<AttentionItem[]>;
-  /**
-   * The preview-link lifetime `previewMintAction` mints against. Absent resolves to
-   *  {@link PreviewTokenConfig}'s default (seven days).
-   */
-  preview?: PreviewTokenConfig;
 }
 
 /**

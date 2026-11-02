@@ -42,26 +42,6 @@ export const actions = admin.actions;
 renders `CairnAdminShell` (`@glw907/cairn-cms/admin`) over `data.shell`. The root layout above
 `/admin` must carry no chrome (header, footer, width cap).
 
-Hand-mounted routes use the four per-route factories `createCairnAdmin` wraps:
-`createAuthRoutes`, `createContentRoutes`, `createEditorRoutes`, `createNavRoutes`. Register each
-handler under the action name the view posts (`?/save`, `?/editorAdd`, ...); a `default` action
-receives no named post.
-
-```ts
-// src/routes/admin/editors/+page.server.ts
-import { createEditorRoutes } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '#lib/cairn.server.js';
-
-const editors = createEditorRoutes({ runtime });
-
-export const load = editors.editorsLoad;
-export const actions = {
-  editorAdd: editors.editorAddAction,
-  editorRemove: editors.editorRemoveAction,
-  editorSetRole: editors.editorSetRoleAction,
-};
-```
-
 ## Gate a custom screen
 
 The guard admits any signed-in session to `/admin/**` and decides no per-route authorization.

@@ -16,8 +16,8 @@
 // this file directly) sees the same names at the same path.
 //
 // The factory comes in two: `createContentRoutesInternal`, whose wide shape the single-mount
-// composer drives, and the public `createContentRoutes`, whose declared return is the narrow
-// `ContentRoutes` a hand-mounting site can wire. The narrowing is deliberate and enumerated on
+// composer drives, and `createContentRoutes`, whose declared return is the narrow
+// `ContentRoutes` view. The narrowing is deliberate and enumerated on
 // `ContentRoutes` itself; `check:surface` pins the narrow shape as the public contract.
 import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesConfig } from './content-routes-context.js';
@@ -121,15 +121,14 @@ export function createContentRoutesInternal(config: ContentRoutesConfig) {
 type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
 
 /**
- * What `createContentRoutes` returns: the load and action vocabulary a site can mount by hand. The
- *  member list is the deliberate public narrowing and each member's type is read from the internal
+ * What `createContentRoutes` returns: the load and action vocabulary of the hand-mount shape,
+ *  which `createCairnAdmin` replaces for a site. The member list is the deliberate narrowing and each member's type is read from the internal
  *  shape, never copied. The key order mirrors the historical single-factory shape (routes interleave
  *  by admin surface, not by the internal domain split above), which `check:surface` pins as the
- *  public contract.
+ *  contract.
  *
  * Ten media-janitorial actions are absent on purpose. They are reachable only from the engine's
- *  Media Library screen, so a site that wants them mounts `createCairnAdmin` instead of wiring them
- *  one by one.
+ *  Media Library screen, so they sit outside this view.
  *
  * The narrowing is TYPE-LEVEL, not a runtime boundary. `createContentRoutes` returns the internal
  *  object itself, so all thirty-five members are still present at runtime: a spread
@@ -138,7 +137,7 @@ type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
  *  What the narrowing withdraws is the SUPPORTED seam, not the reachability, which is why the
  *  removal is a documented capability change rather than a security fix.
  *
- * Member contracts a hand-mounting site relies on (each implementing function carries the full
+ * Member contracts (each implementing function carries the full
  *  detail): a save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and never
  *  touches the default branch. `publishAction` validates and holds the posted form like a save,
  *  then copies it to the default branch with its manifest row in one commit, deleting the branch
@@ -152,7 +151,6 @@ type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
  *  `tidyAction` are fetch actions on the upload transport and read the route's `concept` param,
  *  answering 404 on a route without one. A hand-mounted route registers each action under the name
  *  its view posts (`?/save`, `?/publish`, and the rest).
- * @beta
  */
 export type ContentRoutes = Pick<
   InternalContentRoutes,
@@ -184,9 +182,8 @@ export type ContentRoutes = Pick<
 >;
 
 /**
- * Build the admin content routes a site mounts by hand, closed over `config.runtime`. The
- *  returned object is the internal one, presented through the narrow `ContentRoutes` view.
- * @beta
+ * Build the admin content routes, closed over `config.runtime`. The returned object is the
+ *  internal one, presented through the narrow `ContentRoutes` view.
  */
 export function createContentRoutes(config: ContentRoutesConfig): ContentRoutes {
   return createContentRoutesInternal(config);

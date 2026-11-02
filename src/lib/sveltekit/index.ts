@@ -1,6 +1,6 @@
 // cairn-cms: the public `/sveltekit` barrel. Everything a SvelteKit site wires into its routes:
-// factories, wrappers, guards, and the data types they exchange. The guard plus the auth, editor,
-// content, and health route factories and functions. An admin Svelte component belongs on
+// factories, wrappers, guards, and the data types they exchange. The guard, the admin composer,
+// and the route loaders a site mounts itself. An admin Svelte component belongs on
 // `/admin` instead, even though a site also wires it into a route: this barrel is server
 // logic only, never a `.svelte` file.
 export {
@@ -14,23 +14,11 @@ export {
   type IdentityFailure,
 } from './guard.js';
 export {
-  createAuthRoutes,
   NO_PENDING_REQUEST_ERROR,
   type AuthRoutesConfig,
   type LoginRequestOutcome,
-  type AuthRoutes,
 } from './auth-routes.js';
-export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';
-export { createContentRoutes, type ContentRoutes } from './content-routes.js';
-export {
-  mintPreview,
-  revokePreview,
-  loadPreview,
-  type PreviewMintOutcome,
-  type PreviewRevokeOutcome,
-  type PreviewTokenConfig,
-  type PreviewData,
-} from './preview.js';
+export { loadPreview, type PreviewData } from './preview.js';
 // createMediaRoute is singular, not createMediaRoutes, because it mounts one kit handler for the
 // single media catch-all route and returns a kit RequestHandler, the interop carve-out's form.
 export { createMediaRoute, type MediaRouteConfig } from './media-route.js';
@@ -109,7 +97,7 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // Every remaining type a factory or wrapper's signature names is re-exported here so a site
 // importing only from this subpath can still name the value it holds, except two documented
 // cross-subpath exceptions that stay on `/delivery` alone: `PublicRoutesConfig`, which
-// `loadPreview`'s second parameter names, and `EntryData`, which `PreviewData` extends.
+// `loadPreview`'s options bag names, and `EntryData`, which `PreviewData` extends.
 // `CairnRuntime`'s structural body in turn names most of the rest below it, the same
 // recursive closure `/delivery` and root carry.
 //

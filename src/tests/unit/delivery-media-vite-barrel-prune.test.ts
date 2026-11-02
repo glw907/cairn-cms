@@ -24,6 +24,8 @@ const DELIVERY_DEMOTED = [
   'buildRobots',
   'renderJsonLdScript',
   'composeEntryData',
+  'buildNewlyPublished',
+  'parseManifest',
 ];
 
 // The /delivery keep list, from the audit verdicts doc's delivery section, minus the seven

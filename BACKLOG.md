@@ -39,6 +39,9 @@
 - [ ] **#258** Make the fast lane catch a test that reads a file list or directory at run time `#improvement` `#cairn-cms` *(2026-11-01)*
   Two reds on PR #181 came from tests the related-unit selection never ran. `check-leaks.test.ts` reads `package.json` `files` and needs a scan profile for each packed path, and `gate-tier.test.ts` lists `examples/showcase/e2e` and needs every spec mapped in `gate-table.json`. Both implementers' lanes were green, and a plain `npx vitest run --project unit` caught each. Fix candidate: add those two tests to the lane when `package.json` `files`, `examples/showcase/e2e/`, or `gate-table.json` changes. Same family as #252.
   Placement: Cleanup round.
+- [ ] **#265** Decide whether `createNavRoutes` stays public `#improvement` `#cairn-cms` *(2026-11-02)*
+  The other per-route factories left the barrels, but `createNavRoutes` stayed public and outside that ruling, and no site mounts it. Decide whether to hide it the same way.
+  Placement: Pass 8.
 - [ ] **#246** Decide whether a long-lived Worker key should keep admin permissions `#improvement` `#cairn-cms` *(2026-11-01)*
   The Worker still holds a key for an App with `administration: write` and `workflows: write`, and the setup tool tells the user to choose "All repositories". A stolen `GITHUB_APP_PRIVATE_KEY_B64` can mint an unscoped token that reaches every repository in the installation, including repository deletion. Decide whether the Worker's key keeps those permissions or setup uses a separate App. Geoff's ruling keeps "All repositories" at `packages/create-cairn-site/src/github/install.mjs:237`; #203 tells the owner to narrow the installation afterward. Found by the pass 1a security read.
   Placement: Cleanup round.

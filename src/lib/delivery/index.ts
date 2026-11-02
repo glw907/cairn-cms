@@ -63,9 +63,7 @@ export type { SeoInput, SeoMeta } from './seo.js';
 export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from './responses.js';
-export { buildSiteManifest, buildNewlyPublished } from './manifest.js';
-// `buildNewlyPublished`'s `before`/`after` pair is the shape `parseManifest` produces.
-export { parseManifest } from '../content/manifest.js';
+export { buildSiteManifest } from './manifest.js';
 export type { Manifest, ManifestEntry } from '../content/manifest.js';
 export { createPublicRoutes } from './public-routes.js';
 export type { PublicRoutesConfig, PublicRoutes, EntryData, EntryDataOverrides } from './public-routes.js';

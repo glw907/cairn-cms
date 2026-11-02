@@ -9,7 +9,7 @@ only applies the migration.
 Two unrelated seams share the word. `CairnRuntime.preview` (`PreviewConfig`, set by the adapter's
 `editor.preview`) styles the admin editor's own preview pane, resolved per entry as
 `EditData.preview`, and carries no token. The public preview token family below is a separate
-subsystem. They never interact. `createCairnAdmin({ preview: { ttlMs } })` is the token family.
+subsystem. They never interact.
 
 ## Set it up
 
@@ -29,7 +29,7 @@ subsystem. They never interact. `createCairnAdmin({ preview: { ttlMs } })` is th
    import { publicRoutesConfig } from '#chassis/public-routes.js';
 
    export const prerender = false;
-   export const load: PageServerLoad = (event) => loadPreview(runtime, publicRoutesConfig, event);
+   export const load: PageServerLoad = (event) => loadPreview(event, { runtime, publicRoutes: publicRoutesConfig });
    ```
 
    `prerender = false` is required (a prerendered copy would ship a token; `loadPreview` throws at
@@ -38,8 +38,8 @@ subsystem. They never interact. `createCairnAdmin({ preview: { ttlMs } })` is th
 4. In `+page.svelte`, render `<PreviewBanner preview={data.preview} />` from
    `@glw907/cairn-cms/public`, then the entry pages' article view with canonical, `og:url`, and the
    twin link left out. The banner reads `--cairn-preview-bg`, `-border`, `-fg`, `-link`, `-radius`.
-5. Optional lifetime: `createCairnAdmin({ ..., preview: { ttlMs } })`, one minute to thirty days
-   (default seven days). Out of range throws `PreviewTokenConfig:` at mint.
+
+A link lives seven days, a fixed lifetime with no option.
 
 A parent layout's `load` runs for the preview route and its data reaches an anonymous link holder.
 Keep privileged values out of shared layouts or branch on `route.id`. Suppress analytics and error
@@ -53,11 +53,3 @@ discarding a never-published entry clears its links; revoke clears all. Every no
 the same 404 (a missing `AUTH_DB` is 503), and every response carries `cache-control: private,
 no-store`, `x-robots-tag: noindex, nofollow`, `referrer-policy: no-referrer`. The `preview.refused`
 record's `reason` is the diagnosis; see `references/log-events.md`.
-
-## Mint from a custom screen
-
-`mintPreview(runtime, { ttlMs }, event, { concept, entryId })` and
-`revokePreview(runtime, event, { concept, entryId })` run the built-in checks (editor, concept,
-access map, id, then draft for a mint). Session or map refusals throw; an unknown concept, bad id, or
-missing draft returns as `outcome`. On `outcome === 'minted'`, build the link as
-`${env.PUBLIC_ORIGIN}/preview/${result.token}` with `env` from `cloudflare:workers`.

@@ -57,11 +57,6 @@ export interface CairnAdminConfig {
    *  `ContentRoutesConfig['attention']`.
    */
   attention?: ContentRoutesConfig['attention'];
-  /**
-   * Forwarded to the content routes verbatim: the preview-link lifetime `mintPreview` mints
-   *  against. See `ContentRoutesConfig['preview']`.
-   */
-  preview?: ContentRoutesConfig['preview'];
 }
 
 /**
@@ -108,7 +103,6 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     tidy: config.tidy,
     navFilter: config.navFilter,
     attention: config.attention,
-    preview: config.preview,
   });
   const editors = createEditorRoutes({ runtime });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.

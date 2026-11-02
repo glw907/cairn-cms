@@ -1,7 +1,7 @@
 // cairn-cms: the public preview link's mint and revoke actions, which hand a
 // pending draft to a reader who is not an editor. createPreviewActions closes over the shared ContentRoutesContext
 // (content-routes-context.ts), built once per call by createContentRoutesInternal;
-// createContentRoutes, the public entry point, is only a thin wrapper around it.
+// createContentRoutes is only a thin wrapper around it.
 import { error, fail, type ActionFailure } from '@sveltejs/kit';
 import { requireOrigin } from '../env.js';
 import { mintPreview, revokePreview, type PreviewMintOutcome, type PreviewRevokeOutcome } from './preview.js';
@@ -45,8 +45,7 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
    *  who is not an editor. This action is the route half of `mintPreview` (preview.ts): it names the
    *  target from the route's params and dresses each outcome in the refusal this screen
    *  speaks, while the entry-scoped authorization, the draft check, the token hygiene, and the
-   *  `preview.token.minted` log all live in `mintPreview` itself, so the engine's route and a
-   *  site's custom mint run the identical sequence and log the identical event.
+   *  `preview.token.minted` log all live in `mintPreview` itself.
    *
    *  Returns the minted URL and expiry directly (no redirect), so the edit screen's share
    *  affordance can show and copy it in place. The URL is built from `PUBLIC_ORIGIN`, never the
@@ -67,7 +66,7 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
     // it) until its TTL expires it, rather than the misconfiguration being caught up front.
     let result: PreviewMintOutcome;
     try {
-      result = await mintPreview(ctx.runtime, ctx.deps.preview ?? {}, event, { concept: conceptId, entryId: id });
+      result = await mintPreview(ctx.runtime, event, { concept: conceptId, entryId: id });
     } catch (err) {
       if (isMissingTableError(err)) return missingPreviewTableFailure();
       throw err;
@@ -102,8 +101,7 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
    *  mis-shared-link remedy. This action is the route half of `revokePreview` (preview.ts): it
    *  names the target from the route's params and dresses each outcome in the refusal this
    *  screen speaks, while the entry-scoped authorization, the delete, and the
-   *  `preview.token.revoked` log all live in `revokePreview` itself, so the engine's route and
-   *  a site's custom revoke run the identical sequence and log the identical event. Idempotent:
+   *  `preview.token.revoked` log all live in `revokePreview` itself. Idempotent:
    *  revoking with no minted links succeeds with a count of zero. The engine ships this affordance
    *  to every upgraded site's edit screen regardless of adoption, so a missing `preview_tokens`
    *  table answers the same actionable refusal minting does, naming the migration, rather than a

@@ -39,7 +39,6 @@ Read only the reference for the job at hand.
 | Mount the admin, gate a custom screen or action, roles and access map, refusal shape, audit table | `references/admin-access.md` |
 | A second audience: a role, or a token flow of your own on `/auth-crypto` | `references/second-sign-in-group.md` |
 | Replace magic links with Cloudflare Access | `references/cloudflare-access.md` |
-| Announce newly published posts after deploy | `references/newly-published.md` |
 | Turn on tidy; set the AI training posture | `references/tidy-and-ai-posture.md` |
 | Run `cairn-audit` and fix its findings | `references/audit.md` |
 | Diagnose a failure: logs first | `references/debug.md` |

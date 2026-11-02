@@ -94,21 +94,20 @@ Readiness checklist:
   commit, with the first Builds deploy watched to `success` end to end against a live scratch site
   (the account's existing 907-life Builds usage was left untouched throughout). **T4d shipped the
   localhost console and T5 split, leaving one open item: T5a'**, the browser door's public-repo
-  half (the public template repo, the Deploy button, C3 `--template` compatibility), which rides
-  release one's cut. **Pass D is done** (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-08-14-pass-d-docs-reset.md`,
-  post-mortem appended there); the tool and template still publish in the same cut as release
-  one.
+  half (the public template repo, the Deploy button, C3 `--template` compatibility), which comes
+  after the release. **Pass D is done** (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-08-14-pass-d-docs-reset.md`,
+  post-mortem appended there); the tool is tagged at the stable cut, and the template repo and
+  Deploy button come after the release.
 
   **T5 split at execution** (Geoff, 2026-08-13). **T5a is done**: the sync script that generates the
   template repo wholesale from the bake plus an overlay, its GitHub Actions wiring (a release job,
   a manual dispatch, and a weekly drift cron), a build gate that proves the tree the sync would
-  push actually builds, and the deploy guide's three-door framing. **T5a' waits for release one**:
+  push actually builds, and the deploy guide's three-door framing. **T5a' waits for the release**:
   the public repo, its first sync, the live button spike, the spike-derived overlay content and
   completion checklist, and the C3 `--template` verification. The reason is a finding, not a
   scheduling preference: the bake emits the showcase's current tree while the emitted engine spec
   resolves to the last published version, so a template synced today imports engine symbols the
-  registry does not serve. Release one resolves it by definition, and the ordering above already
-  put the template repo in that cut.
+  registry does not serve. The release resolves it by definition, and the template repo follows it.
 
   **Why the console is its own pass** (Geoff, 2026-08-11): it was bundled with email because the
   email chapter was assumed to have a long wait worth watching, and the research found that
@@ -142,7 +141,7 @@ Readiness checklist:
   `createPreviewRoute(runtime): RequestHandler` reservation is superseded by the shipped
   `loadPreview`, a site-mounted `Load` under R1's grammar; see
   `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-06-history-revert-preview-design.md`, "Part 3"), holding
-  unpublished for release one. Release intent (Geoff, 2026-08-01): the three bundle into one
+  unpublished for the release. Release intent (Geoff, 2026-08-01): the three bundle into one
   release, the next cut after the ASC-seams window publishes, however many passes they take to
   land.
 
@@ -158,18 +157,18 @@ same way: ship it, batch its `Consumers must:` line, and let this note stand as 
 rather than re-litigating it pass by pass.
 
 **Clean breaks, no aliases, until the Waymark rebuilds land (Geoff, 2026-09-27).** Every
-consumer site (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub) is to be
+consumer site (ecxc-ski, 907-life, aksailingclub-org, cairn-pub) is to be
 rebuilt from the Waymark theme, re-skinned to each site's personality. A site rebuilt from the
 template carries no migration burden, so a breaking rename (the `./components` to `./admin`
 case) is cheap now: take the clean break with one `Consumers must:` line rather than a
 compatibility alias or a compromise that keeps a confusing name or seam. Once the rebuilt sites
-are live, each break costs one migration per site again, so re-check this with Geoff when the first
+are live, each break costs one upgrade per site again, so re-check this with Geoff when the first
 rebuilt site goes live.
 
 **Promote the two public theme rules to error tier (theme identity pass C, 2026-09-29; a roadmap
 intent, not a shipped promise).** `theme-conformance` and `theme-contrast` ship at advisory tier on a
 consumer, and the changelog makes no promise about their tier. Promote both to error at the first
-minor cut after all five sites (the four consumer sites and cairn.pub) report zero advisory
+minor cut after all four sites (ecxc-ski, 907-life, aksailingclub-org, and cairn.pub) report zero advisory
 findings from them, counted by the `cairn-releasing` step that runs the audit's public scope over each
 site at every cut. `public-literals` stays advisory. A site that reports findings is asked to clear
 them first; no calendar date is attached.
@@ -179,16 +178,17 @@ scale heuristic, and switch the numbers to their compatibility meaning (patch = 
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
 `cairn-release-process-and-versioning` memory.
 
-### The pre-beta pass series, now the one-release path (organized 2026-08-01; rewritten 2026-10-09)
+### The pre-beta pass series and the release (organized 2026-08-01; rewritten 2026-10-09)
 
 The 2026-08-01 series recommended two releases: release one carrying everything that impacts a
 current consumer site, then release two as `1.0.0-beta.1`. Geoff's 2026-10-07 rulings replace that
-shape. **One release follows docs stage 5, and it is a `0.x` minor, the old "release one".**
+shape. **The release follows docs stage 5, and it is a `0.x` minor, the old "release one".**
 `1.0.0-beta.1` cannot be that cut: beta waits for the new ASC site and ecxc by Geoff's 2026-08-26
-ruling ("Toward 1.0"), and no site migrates before the release, so the sites reach the release first
-and the beta follows their migrations. Engine passes land on `main` and never release. The path, with
-each pass in its slot, is the sequence in `docs/STATUS.md`. "Release one" elsewhere in this file
-means the one release.
+ruling ("Toward 1.0"), and no site rebuilds before the release, so the sites reach the release first
+and the beta follows their rebuilds. Engine passes land on `main` and never release. The sequence:
+run the whole pass sheet, and that release is the first; 907.life's rebuild drives the next release;
+each later site rebuild may drive its own. "The release" elsewhere in this file means that first
+release.
 
 What the old series carried, as it stands:
 
@@ -209,15 +209,15 @@ What the old series carried, as it stands:
     which makes the changelog convention a parseable shape so the `cairn` tool's cross-site upgrade verb
     can read it. It is scoped forward-only with no backfill of the historical entries, which is why it
     has to land before the release rather than after. **Contract landed** (tool-gates): the
-    grammar and `check:consumers-must` are in, ruled contract only, forward-only, and no verb; the
-    `migrate` wording is left to pass 8's R9. The release also carries the admin design items P2 the zero-state
+    grammar and `check:consumers-must` are in, ruled contract only, forward-only, and no verb. The
+    release also carries the admin design items P2 the zero-state
     pass, P3 the admin at the viewport extremes, and P4 the sign-in touchpoints with the
     keyboard-and-screen-reader walkthrough (the release is now the forcing function the public beta
     was). The editors arm's screenshots show the zero states and the sign-in screens, so stage 4's
     close pulls forward whichever of these changes what they show.
   - **After the release:** P5, the `CairnMediaLibrary` split. It changes no page, and it needs its own
     designed pass against the `admin-visual` baseline and the e2e media suite.
-- **After the release and the site migrations:** the widened go-public pass, the dress rehearsal, and
+- **After the release and the site rebuilds:** the widened go-public pass, the dress rehearsal, and
   `1.0.0-beta.1` itself, under the beta gate below.
 
 ### The beta gate — DECIDED (Geoff, 2026-07-02; step 10 is now mechanics)
@@ -420,17 +420,16 @@ The original decision framing, for the record:
   What remains owed here is the editors arm's rebuild (stage 4), which renders in
   cairn-pub against the built seam.
 
-- **The template repo's pre-release notice comes off when `create-cairn-site` publishes.**
+- **The template repo's pre-release notice stays until the Deploy button ships, after the release.**
   `packages/create-cairn-site/template-repo/README.md` still opens "generated, pre-release" and
-  defers the Deploy button and completion checklist to a live button verification. `0.95.0` was
-  written to retire it (the obligation rides that release's own changelog entry), and the release
-  deliberately did not: the tool is held on the defects below, and the live button spike that
-  supplies the replacement content is unrun, so dropping the notice would promise a button that
-  does not exist. A `WATCH` comment sits on the notice itself. Retire both in the change that
-  publishes the tool.
+  defers the Deploy button and completion checklist to a live button verification. The tool is
+  tagged at the stable cut and the template repo and button come after the release, so publishing
+  the tool no longer retires the notice: the live button spike supplies the replacement content,
+  and dropping the notice before then would promise a button that does not exist. A `WATCH`
+  comment sits on the notice itself. Retire both in the change that ships the button.
 
 - **Four first-run defects in `create-cairn-site`, found by the 2026-08-17 capture run, all
-  owed before release one publishes the tool.** The run took four invocations to reach a live
+  owed before the release publishes the tool.** The run took four invocations to reach a live
   site where the plan expected one, and only a live run could have surfaced the first two. The
   fourth surfaced later, at the pass's own register gate, reading the committed fixture against
   the tool's behavior. The evidence throughout is the committed fixtures under
@@ -649,7 +648,7 @@ The original decision framing, for the record:
   existence or ownership probe. The consent copy does print the derived names, and frames reuse as
   reassurance ("deploying again later updates it") rather than warning that an existing resource
   belonging to a different site will be taken over. T3's review named this and proposed three
-  fixes; none landed. Account-safety, and it outlives the Node CLI. **After the one release:** the
+  fixes; none landed. Account-safety, and it outlives the Node CLI. **After the release:** the
   scaffold setup pass added a copy warning at the consent step (#177) and left the existence probe
   here, so it lands once the real install has shown how a resume that crashed before its record saved
   looks to the probe.
@@ -1297,7 +1296,7 @@ The original decision framing, for the record:
   generated site so the filtered read still resolves locally. That same pass should also
   re-record every transcript fixture under `packages/create-cairn-site/test/fixtures/transcripts/`:
   the `01-*` fixtures still print "Node 22 or later" and `03-doctor-credentialed` predates the
-  `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: after the one
+  `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: after the
   release, since the design needs a live first deploy to see the order the secrets arrive in.
 
 - **`.toolkit-toolbar-select`'s and `.toolkit-toolbar-facet`'s edges fall under the WCAG 1.4.11
@@ -1635,10 +1634,10 @@ The original decision framing, for the record:
   repeatable slots render bare text inputs regardless of `itemFields`; the fix is an
   image-typed repeatable-slot widget in `ComponentForm` or an `image` carve-in for component
   attributes, an additive contract change and its own designed task given the phase-3a focus
-  hazard). The launch component set is complete without it; the aksailingclub migration's
+  hazard). The launch component set is complete without it; the aksailingclub rebuild's
   photo debt revisits this after launch.
   (2) **Inline icons** — the directive vocabulary is container-only by design, so the shipped icon
-  component is block-level; the aksailingclub migration's 99x inline usage needs either a site-level
+  component is block-level; the aksailingclub rebuild's 99x inline usage needs either a site-level
   render plugin (charter-clean, the default answer) or a deliberate engine decision to admit text
   directives (a design question, not a task). Figure needs no component at all: the engine owns
   `:::figure` natively, and the name is reserved — the docs pass records this.

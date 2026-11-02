@@ -87,8 +87,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
         {/if}
       </p>
       <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-           display: flex, which strips the implicit list role in WebKit/VoiceOver
-           (cairn-audit's list-role rule, rendered mode). -->
+           display: flex, which strips the implicit list role in WebKit/VoiceOver. -->
       <ul class="menu w-full" role="list">
         {#each inboundLinks as link (link.concept + '/' + link.id)}
           <li role="listitem">

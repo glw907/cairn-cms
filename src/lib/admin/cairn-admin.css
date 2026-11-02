@@ -1723,12 +1723,11 @@
    component (EditPage's status pill, the CairnAdminShell brand-band CMS pill,
    ReferenceField/MediaCaptureCard/ManageEditors's bare chips).
    KNOWN INTERACTION, stated rather than fixed: the tinted band's upper bound (1.47:1) sits
-   under `chip-ground-collision`'s 1.5:1 advisory floor (chip-ground-collision.ts:102), so a
-   `quiet`/`warning` chip on some row/theme pairs measures as an advisory "camouflaged" finding by
-   design. That rule is already advisory (its reshape, `audit-cli-chip-ground-collision-rendered-
-   rule`, engine-rulings.md) pending a chroma-aware repair that can tell a hue-distinct low-contrast
-   tint from a truly invisible one; that repair is not reopened here, the position is only recorded
-   so a measured "violation" here reads as expected rather than as a regression.
+   under a 1.5:1 advisory ground-collision floor, so a
+   `quiet`/`warning` chip on some row/theme pairs measures below it by design. The floor is
+   advisory pending a chroma-aware repair that can tell a hue-distinct low-contrast tint from a
+   truly invisible one; that repair is not reopened here, the position is only recorded so a
+   measured shortfall here reads as expected rather than as a regression.
    PINNED unlayered rule 6 of 14 (gate match: `.cairn-chip-outline`); bug it prevents: a hand-built
    chip reading as a clickable button (full-strength border) or sitting under the audit's 3:1 floor. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-outline {

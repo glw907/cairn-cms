@@ -4,7 +4,7 @@
 // [aria-pressed='true'], [aria-checked='true'], a non-false non-empty [aria-current], and a
 // checked radio styled as a join segment. Every color comparison resolves through the shared
 // resolveColor oracle, every state read through the shared styleOf probe, and the hairline's own
-// contrast numbers are painted and composited through the audit's own color module, never
+// contrast numbers are painted and composited through the shared `_canvas-color` helpers, never
 // hand-rolled.
 import { describe, expect, it } from 'vitest';
 import { composite, contrastRatio as rgbaContrastRatio, type Rgba } from '../unit/_canvas-color.js';
@@ -190,7 +190,7 @@ describe.each(THEMES)('the selected segment (%s)', (theme) => {
   // The seed hairline values, measured against the pair table's own hairline rows: the hairline
   // composited on base-100 against base-100, and the same hairline against the resting sibling's
   // 22% edge composited on base-100. Both painted through the shared canvas oracle and measured
-  // through the audit's own composite/contrastRatio, never hand-rolled.
+  // through the shared `_canvas-color` composite/contrastRatio, never hand-rolled.
   it('clears 3:1 on both pair-table rows, moved in lightness from the seed where the seed falls short', () => {
     const { el, cleanup } = mount(theme, '<button class="join-item btn btn-active">Save</button>');
     try {

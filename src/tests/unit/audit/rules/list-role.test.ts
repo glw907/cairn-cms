@@ -210,10 +210,10 @@ describe('list-role', () => {
     expect(findings[0].message).not.toContain('@layer');
   });
 
-  // The item-level remedy, aligned with the rendered rule's own: when the cause is an item's own
-  // display change, the message also recommends role="listitem" on the affected items, grounded in
-  // the same HTML-AAM parent-relationship hedge the rendered rule carries.
-  it('recommends role="listitem" too when the cause is an item display change, matching the rendered rule', () => {
+  // The item-level remedy: when the cause is an item's own display change, the message also
+  // recommends role="listitem" on the affected items, grounded in the HTML-AAM
+  // parent-relationship hedge.
+  it('recommends role="listitem" too when the cause is an item display change', () => {
     const findings = check(component('<ul class="list"><li class="list-row">One</li></ul>\n'));
     expect(findings[0].message).toContain('role="listitem"');
     expect(findings[0].message).toContain("HTML-AAM's implicit li-to-listitem mapping");

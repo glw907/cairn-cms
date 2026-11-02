@@ -447,8 +447,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   <div data-testid="cairn-pk-group-heading" class="px-2 pb-1.5 type-label font-semibold uppercase tracking-[0.08em] text-muted">{group.heading}</div>
                 {/if}
                 <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-                     display: flex, which strips the implicit list role in WebKit/VoiceOver
-                     (cairn-audit's list-role rule, rendered mode). -->
+                     display: flex, which strips the implicit list role in WebKit/VoiceOver. -->
                 <ul class="menu w-full p-0" role="list">
                   {#each group.defs as def (def.name)}
                     <li role="listitem">

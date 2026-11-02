@@ -13,7 +13,7 @@ shape), with `badge-outline` supplying the inherited-border box model every regi
 top of. `badge-outline` retired from cairn's tree on its own: it compiles to an explicit
 background and border color that can match one of
 AdminTable's zebra stripe colors, so a ghost chip melts into whichever row shares that color,
-and neither it nor the un-tuned `badge-outline` clears the audit's 3:1 border-contrast floor in
+and neither it nor the un-tuned `badge-outline` clears cairn's 3:1 border-contrast floor in
 both themes. `register` supplies the three documented recipes instead: `'quiet'` (the default) tints
 the ground with a low-contrast wash off the admin theme's content token, for a settled state
 (a signup's Confirmed, say) that should recede rather than compete; `'warning'` tints the same
@@ -71,9 +71,9 @@ the office's three-word vocabulary never needs).
      *  for a transient or reversible absence (a removable tag, a not-yet-confirmed suggestion).
      *  `'quiet'`'s and `'warning'`'s tinted grounds resolve only inside the admin theme root and
      *  are unguarded against a base-300-derived ground (e.g. a `.table-zebra` row-hover), where
-     *  they can drop under the 1.5 ground-collision advisory floor (chip-ground-collision.ts).
+     *  they can drop under the 1.5 ground-collision advisory floor.
      *  `'outline'`'s hairline inherits its color from the chip's ancestor, so it can drop
-     *  under the audit's 3:1 border-contrast floor inside a muted-text ancestor (verify a new
+     *  under cairn's 3:1 border-contrast floor inside a muted-text ancestor (verify a new
      *  call site). */
     register?: StatusChipRegister;
     /** Optional explanatory text for a tone a label alone does not fully carry (e.g. "full
@@ -119,7 +119,7 @@ the office's three-word vocabulary never needs).
 
   /* OUTLINE (second generation): demotes
      badge-outline's full-strength `border-color: currentColor` (reads as a button, not a status
-     marker) to a hairline that clears the audit's 3:1 border-contrast floor in both themes
+     marker) to a hairline that clears cairn's 3:1 border-contrast floor in both themes
      (light card 3.579, light page 3.506, dark card 4.951, dark page 5.254; measured against both
      zebra stripes and both page grounds). `background-color: transparent` is stated explicitly
      rather than left to badge-outline's default, so this recipe matches cairn-admin.css's

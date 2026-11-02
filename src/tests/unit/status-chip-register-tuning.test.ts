@@ -10,7 +10,7 @@ import { composite, contrastRatio, relativeLuminance, resolveColors, type Rgba, 
 // `warning` register's own ink holds a >= 4.5:1 text floor (WCAG 1.4.3) against its own tinted
 // fill. 3 registers x 2 themes x 2 grounds = 12 combinations, measured by canvas readback (paint
 // the resolved color string, then read the pixel back), the same technique `resolveColors`
-// already gives every rendered audit rule, because `getComputedStyle` alone hands back an
+// already gives the admin palette tests, because `getComputedStyle` alone hands back an
 // unresolved `oklch()`/`color-mix()` string no regex can compare.
 const FILL_BAND: [number, number] = [1.16, 1.47];
 const OUTLINE_BORDER_FLOOR = 3;
@@ -44,7 +44,7 @@ const CASES: GroundCase[] = [
 
 /** One chip's painted fill, ink, and border, each resolved to exact sRGB, plus the ground it
  *  sits on. Reads the real compiled sheet through a real page, the same substrate every other
- *  chip proof in this repo (status-chip-register-parity.test.ts, chip-ground-collision.ts) uses. */
+ *  chip proof in this repo (status-chip-register-parity.test.ts) uses. */
 async function readChip(
   registerClass: string,
   { theme, groundVar }: GroundCase,

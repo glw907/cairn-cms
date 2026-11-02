@@ -16,6 +16,17 @@ describe('buildSitemap', () => {
     const about = xml.slice(xml.indexOf('/about'));
     expect(about).not.toContain('<lastmod>');
   });
+
+  const many = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ loc: `https://example.com/p/${i}` }));
+  it('builds a sitemap of exactly 50,000 URLs', () => {
+    expect(buildSitemap(many(50_000))).toContain('<loc>https://example.com/p/49999</loc>');
+  });
+  it('throws past 50,000 URLs, naming the count', () => {
+    expect(() => buildSitemap(many(50_001))).toThrow(
+      'cairn: the sitemap has 50001 URLs, and a sitemap file may list 50,000. List fewer URLs in this route.',
+    );
+  });
 });
 
 describe('buildRobots', () => {

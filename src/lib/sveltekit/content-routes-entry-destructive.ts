@@ -231,7 +231,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       log.info('commit.succeeded', commitFields);
     } catch (err) {
       return ctx.commitFailure(commitFields, err, {
-        error: 'This file changed since you opened it. Reload and try again.',
+        error: 'This entry changed since you opened it. Reload and try again.',
         inboundLinks: [],
         id,
       } satisfies DeleteFailure);
@@ -479,7 +479,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       log.info('commit.succeeded', commitFields);
     } catch (err) {
       return ctx.commitFailure(commitFields, err, {
-        error: 'This file changed since you opened it. Reload and try again.',
+        error: 'This entry changed since you opened it. Reload and try again.',
       } satisfies RenameFailure);
     }
     // Keyed to the OLD id: renaming refuses above while a pending branch exists, so a live preview

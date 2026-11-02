@@ -90,7 +90,7 @@ export function replacementToken(slug: string, hash: string): string {
 /** The fail(503) message every media action returns when the site declares no assets block. */
 export const MEDIA_DISABLED_MESSAGE = 'Media is not enabled for this site.';
 /** The fail(409) message every action that read-modify-commits media.json answers a conflict with. */
-export const MANIFEST_CONFLICT_MESSAGE = 'The media manifest changed since you opened it. Reload and try again.';
+export const MANIFEST_CONFLICT_MESSAGE = 'The media library changed since you opened it. Reload and try again.';
 /**
  * The fail(409) message the two actions that rewrite entry bodies (replace-in-place, alt fill)
  *  answer a conflict with. Names the site rather than the manifest, since what moved under the

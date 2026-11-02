@@ -12,7 +12,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('commitFailure', () => {
   it('answers a conflict in place with fail(409, payload), never a redirect', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const payload = { error: 'This file changed since you opened it.', brokenLinks: [], body: 'b' };
+    const payload = { error: 'This entry changed since you opened it.', brokenLinks: [], body: 'b' };
     const result = commitFailure(fields, new CommitConflictError('src/content/posts/hi.md'), payload);
     expect(result.status).toBe(409);
     expect(result.data).toBe(payload);

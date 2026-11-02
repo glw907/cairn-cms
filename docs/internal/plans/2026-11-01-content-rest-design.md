@@ -43,8 +43,8 @@ Each call is the plan's reading. All are reversible before a release.
 7. **`buildSiteManifest` returns `{ manifest, problems }`.** It has no caller outside the plugin's
    virtual module and three test files, so one name carries the report instead of a second builder.
    `ManifestProblem` carries `concept`, `id`, `path`, `draft`, and `errors`, and three checks feed it: the
-   validator, the stem rule, and the body scan. It lives in `content/manifest.ts`, which can't import
-   `ContentProblem` from `delivery/`.
+   validator, the stem rule, and the body scan. It and `SiteManifestBuild` live in `content/manifest.ts`, which
+   can't import `ContentProblem` from `delivery/`.
 8. **`verifyEntries(problems)` is a new public function beside `verifyManifest`.** The generated source
    runs in the site's graph, so it reaches only public subpaths. It goes with the other two when pass 3
    hides them. `verifyReferences` gains the body-link check, so no third verifier appears.
@@ -64,7 +64,8 @@ Each call is the plan's reading. All are reversible before a release.
     page reports the fault. `vite build` stays strict. No hook runs this on a hot update.
 13. **The summary line and exit code follow ergonomics 5.** `index.json: 15 entries, 2 changed;
     site-facts.json unchanged; 1 invalid: posts/hello: title: Title is required`. A draft's problem reads
-    `1 invalid draft:` and exits 0.
+    `1 invalid draft:` and exits 0. Many problems show the first plus `(+N more)`, and a mix of draft and
+    non-draft problems carries both clauses.
 14. **The chip reads `No references`.** The filter's "No references found" beside the 28px checkbox can
     overlap a narrow tile, and the shorter word agrees with the filter and is narrower than today's chip.
 15. **One stale-head wording.** Each condition reads "<thing> changed since you opened it", and the
@@ -72,6 +73,9 @@ Each call is the plan's reading. All are reversible before a release.
     the flashes and the two table headers, so the media library says "image" throughout.
 16. **`content.directive_unknown` lands in the Go tool too.** `TestEventVocabularyMatchesEngine` compares
     the sets, and #241 says the fast lane won't catch a miss.
+17. **Dev keeps failing on a stale `site-facts.json`.** Ergonomics 4 and the sheet scope only the manifest, so
+    `this.error` on a stale facts file stays under `vite dev`. An adapter edit can still stop a dev start until
+    `cairn-manifest` runs.
 
 ## Files
 

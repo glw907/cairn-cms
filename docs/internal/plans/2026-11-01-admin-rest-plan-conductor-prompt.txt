@@ -28,7 +28,6 @@ Merge order: yours, across the slices. T1 lands BACKLOG #237, which is High and 
 
 - If another slice merged first: tell the executor to merge `origin/main`, keep both `## Unreleased` entries, run `npm run emit:template` and `npm run check:surface -- --update`, regenerate the doctor goldens from `tool/` (`go test ./internal/doctor -run TestGolden -update`), and rerun the fast lane. A conflicting PR fires no `pull_request` CI, so give that word at the first conflict.
 - Known neighbors: PR #181 (`p1-p8`) changes `CairnAdminShell.svelte` at `:31` and `:83`, distant from T5's lines. `content-rest` shares `EditPage.svelte:1951` and `:1956`, `CairnMediaLibrary.svelte`, `content-routes-entry-write.ts`, and `MediaHeroField.svelte:607`. It had no plan on disk at this writing, so whichever lands second merges the strings by hand.
-- Two strings in `content-rest`'s reach follow #193's table: if it lands first, T5's rows for those lines read as a merge, and if it lands second, its executor keeps the ruled words.
 - `check:consumers-must` is live. This slice's one line is `Consumers must: read data.flash in place of saved, renamed, publishedFlash, and discardedFlash.`
 
 BACKLOG numbers: a new item takes the next free number on `main` at merge. The PR names its placeholders. Two new items are planned: the Discard and Rename double-submit gap, and `help` on a block attribute.
@@ -51,6 +50,6 @@ The packet's Background carries:
 
 Add whatever the PR's `## Decisions` lists beyond these.
 
-Sheet notes for you, no action owed here: pass 5 ends with this slice. Pass 7's refused-form cluster gains #180's claim 5 and #238's remainder, and both stay open in `BACKLOG.md` with `Placement: Pass 7`. The planner's commits were replayed on `main` when PRs #178 and #180 merged during review, and every citation was rechecked at 16a081668. The fold agent and the reviewer ran no repo test, since the planning worktree has no `node_modules`.
+Sheet notes for you, no action owed here: pass 5 ends with this slice. Pass 7's refused-form cluster gains #180's claim 5 and #238's remainder, and both stay open in `BACKLOG.md` with `Placement: Pass 7`. The planner's commits were replayed on `main` when PRs #178 and #180 merged during review, and each citation in a file those PRs changed was rechecked at 16a081668. The fold agent and the reviewer ran no repo test, since the planning worktree has no `node_modules`.
 
 After the merge: pull the checkout per `pass-core`, delete the branches `worktree-admin-rest` and `worktree-admin-rest-run` and both worktrees, and update STATUS in a batch. No bump and no publish.

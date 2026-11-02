@@ -250,7 +250,7 @@ Every dispatch to `cairn-implementer` carries:
   `deleteEntry`. A policy refusal is `entry.delete_refused` or `entry.rename_refused`, with
   `{ editor, concept, id, reason, count }`. `count` is absent where the site counts nothing. A fail-closed
   read fault is `entry.reference_check_failed`, with `{ editor, concept, id, action, error }`, whatever status the
-  site answers, per the `refused`/`failed` split at `events.ts:12-16`.
+  site answers, per the `refused`/`failed` split at `events.ts:10-14`.
 
   | Site | Event | `reason` or `action` |
   |---|---|---|

@@ -7,7 +7,6 @@ Contents:
 - [Static rule ids](#static-rule-ids)
 - [The log rules](#the-log-rules)
 - [Scope and suppress](#scope-and-suppress)
-- [The rendered pass](#the-rendered-pass)
 - [Exit code 2](#exit-code-2)
 
 ## Run and read
@@ -35,8 +34,7 @@ Two findings a new admin list meets most:
   `inline-flex`; daisyUI `.list-row` is `grid`). VoiceOver stops announcing it as a list. Fix: add
   `role="list"` to the list and `role="listitem"` to each item whose class changed its display. A
   hidden item (`hidden`) does not count, and a list with another explicit role is exempt. The static
-  rule sees only an element's own classes; the rendered pass catches a parent selector such as
-  `.menu :where(li)`.
+  rule sees only an element's own classes, so a parent selector such as `.menu :where(li)` escapes it.
 - **`stock-default-hazards`.** A stock daisyUI pattern cairn's recipes replace. `badge-ghost` (any
   element) becomes a chip register: `StatusChip` from `@glw907/cairn-cms/admin-toolkit`, or the
   `cairn-chip-quiet`, `cairn-chip-warning`, or `cairn-chip-outline` class. A bare focus-driven
@@ -118,24 +116,7 @@ reason. A directive with no reason, or one that silences nothing, is itself an u
 <the element the finding names>
 ```
 
-## The rendered pass
-
-`cairn-audit --rendered` drives Chromium over a running site in both themes.
-
-1. `npm i -D playwright && npx playwright install chromium`; build and serve the site
-   (`npm run preview`, port 4173 on the scaffold). Set `BASE_URL` if it serves elsewhere.
-2. Sign in, copy `cairn_session` (`__Host-cairn_session` on https), and
-   `export CAIRN_AUDIT_COOKIES='cairn_session=<id>'`. Without it the run refuses with exit 2 rather
-   than audit the sign-in card. A `cairn-admin-theme` entry is refused.
-3. The default pages are `/admin/posts`, `/admin/pages`, `/admin/vocabulary`, `/admin/media`,
-   `/admin/editors`, `/admin/login`. A site with other concept names sets `rendered.pages` (keep
-   `/admin/login` in it); `rendered.extraPages` adds custom screens. A page answering outside 2xx
-   exits 2.
-4. Exempt a deliberate rendered finding with a `rendered.allowlist` entry: `page`, `selector`,
-   `reason`, and `rule`. Without `rule`, a stale or dead entry reports at error tier.
-
 ## Exit code 2
 
 The message after `cairn-audit:` names the cause: a missing scope root, sheet, or config file; a
-missing `daisyui` or `tailwindcss` peer; Playwright not installed; `BASE_URL` unreachable;
-`CAIRN_AUDIT_COOKIES` missing or malformed; a page outside 2xx; a bad `--fail-on` value.
+missing `daisyui` or `tailwindcss` peer; a bad `--fail-on` value.

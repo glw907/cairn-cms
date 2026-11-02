@@ -274,7 +274,8 @@
   chassis files no longer carry maintainer provenance comments. Two `cairn-audit` outputs change
   with it: a rule message now prints an absolute GitHub URL where it printed a path into the
   maintainer docs, and `norms card` prints new reference text for the `--cairn-card-border` row, a
-  noun phrase that opens "the card-shell hairline decision: ...".
+  noun phrase that opens "the card-shell hairline decision: ...". The `norms` query this entry
+  describes was removed later in the same release.
 
   Consumers must: nothing, unless a script matches on the old message or `norms` text.
 
@@ -731,6 +732,21 @@
   Consumers must: nothing.
 
 ### Removed
+
+- **The rendered audit: `cairn-audit --rendered`, `cairn-audit norms`, and the `rendered` config
+  section.** `cairn-audit` is static-only. The browser rules are gone (`border-contrast`,
+  `chip-ground-collision`, `container-inset-asymmetry`, `field-edge-alignment`, `focus-renders`,
+  `form-font-parity`, `interactive-contrast`, `list-role` (the browser rule; the static `list-role` stays), `motion-reduced-delay`, `norms-bands`,
+  `one-filled-action`, `panel-width`, `relational-spacing`, `screen-anatomy`, `touch-targets`,
+  `viewport-overflow`, `weight-budget`), as are `rendered.pages`,
+  `rendered.allowlist`, the norms manifest with its `norms:generate` and `norms:check` scripts, the
+  `CAIRN_AUDIT_COOKIES` variable, the showcase `check:cairn:rendered` script, and the `norms.yml`
+  workflow. The packaged skills no longer teach the rendered audit. An old `rendered` key in
+  `cairn-audit.config.json` is ignored, like any unknown key.
+
+  Consumers must: drop `cairn-audit --rendered`, `cairn-audit norms`, and any `check:cairn:rendered`
+  script from your scripts and CI; delete a `rendered` section from `cairn-audit.config.json`; remove
+  Playwright if the audit was its only use.
 
 - **`FieldBehavior.itemLabel`.** A field's `behavior` table carries only `validate`. An array row's
   label comes from `itemLabel` on the `array` field descriptor, which is unchanged.

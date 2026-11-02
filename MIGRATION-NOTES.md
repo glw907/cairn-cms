@@ -196,6 +196,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Drop the rendered audit from your scripts, CI, and config.** `cairn-audit` is static-only now. Remove `cairn-audit --rendered`, `cairn-audit norms`, and any `check:cairn:rendered` script, and delete a `rendered` section from `cairn-audit.config.json` (an old `rendered` key is ignored, like any unknown key). `CAIRN_AUDIT_COOKIES` no longer does anything. Remove Playwright if the audit was its only use.
 - **Expect an admin save to keep keys your fieldset does not declare.** A key dropped from a fieldset now stays in old files, so remove it from the file by hand when you mean to delete it. A bare YAML date such as `updated: 2026-01-01` is written back as `2026-01-01T00:00:00.000Z`. A save also fails closed with a 503 when the prior file cannot be read or parsed.
 - **Expect a publish onto a live entry's address to be refused.** Move one of the two entries first. A log query on `publish.address_collided` reads `heldByConcept` and `heldById` now.
 - **Expect `buildNewlyPublished` to omit a renamed entry.** Newness is stamp membership, so a rename that carries its stamp no longer reads as a first publish. Drop any workaround that filtered renames by key.

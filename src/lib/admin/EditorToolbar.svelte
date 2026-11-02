@@ -373,8 +373,7 @@ stays pinned at the row's right end, reachable at every width.
       </div>
     </div>
     <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at display: flex,
-         which strips the implicit list role in WebKit/VoiceOver (cairn-audit's list-role rule,
-         rendered mode). The divider <li> keeps its role="separator" instead: a deliberate,
+         which strips the implicit list role in WebKit/VoiceOver. The divider <li> keeps its role="separator" instead: a deliberate,
          different reading, not a listitem. -->
     <ul
       bind:this={moreMenu}
@@ -456,8 +455,7 @@ stays pinned at the row's right end, reachable at every width.
          buttons, with the active pick carried by aria-pressed and the check glyph. Deliberately
          NOT the ARIA menu pattern: menu roles promise interactions this list does not have. -->
     <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at display: flex,
-         which strips the implicit list role in WebKit/VoiceOver (cairn-audit's list-role rule,
-         rendered mode). -->
+         which strips the implicit list role in WebKit/VoiceOver. -->
     <ul
       bind:this={deviceMenu}
       popover="auto"

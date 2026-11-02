@@ -1657,8 +1657,7 @@ island.
         </button>
       </Tooltip>
       <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-           display: flex, which strips the implicit list role in WebKit/VoiceOver (cairn-audit's
-           list-role rule, rendered mode). The two menu-divider <li> keep their role="separator"
+           display: flex, which strips the implicit list role in WebKit/VoiceOver. The two menu-divider <li> keep their role="separator"
            instead: that role is a deliberate, different reading, not a listitem. -->
       <ul
         bind:this={actionsMenu}

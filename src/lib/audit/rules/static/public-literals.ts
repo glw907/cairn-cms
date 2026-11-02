@@ -76,7 +76,7 @@ export const publicLiterals: StaticRule = {
           line: lineAt(file.source, start),
           start,
           end,
-          message: `<style lang="${lang}"> is an unparsed style block, not audited: the audit reads CSS, not a preprocessor's input, so no literal in it is checked. Write the block in CSS, or check its output in the rendered audit`,
+          message: `<style lang="${lang}"> is an unparsed style block, not audited: the audit reads CSS, not a preprocessor's input, so no literal in it is checked. Write the block in CSS so the audit can read it`,
         });
       }
       const themeRoot = inThemeRoot(file.file);

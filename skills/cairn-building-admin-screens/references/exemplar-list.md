@@ -31,13 +31,13 @@ expandable rows, chips, and a pagination footer, all from the toolkit with no be
 </PageHeader>
 ```
 
-- `PageHeader` alone satisfies `screen-anatomy`'s `h1` and header check; the table's card is
-  the `card-shell` region the rule also wants.
+- `PageHeader` alone supplies the one `h1` and the header; the table's card is the `card-shell`
+  region.
 - The eyebrow names the sidebar section the screen sits under.
 - Leave `meta` unset when a toolbar shows the count line; two count lines race each other.
 - The create action is the screen's one fill, in the header's `action` slot. An inline create
-  form with a filled submit below the header reads as a buried primary action to
-  `screen-anatomy`; move it into a dialog the header button opens.
+  form with a filled submit below the header reads as a buried primary action;
+  move it into a dialog the header button opens.
 
 ## The toolbar
 

@@ -80,8 +80,8 @@ with a state hairline on the segment's border in both themes. It keys on all fiv
 forms: `.btn-active`, `aria-pressed="true"`, `aria-checked="true"`, `aria-current` (unless
 `false` or empty), and a checked radio. A color variant, `btn-outline`, and `btn-dash` keep their
 fill and ink, so a `join-item btn btn-primary` selected segment stays primary. The check
-glyph, where the control shows one, is the screen's job. `npx cairn-audit norms <role>`
-prints the measured values.
+glyph, where the control shows one, is the screen's job. The
+"Write this, get this" table in the `cairn-building-admin-screens` skill gives the values.
 
 ## Open opportunity, not yet built
 

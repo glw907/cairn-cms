@@ -261,13 +261,12 @@ export function checkWorkerCondition(exportsMap) {
 
 // The anti-leak gate. `vertical-metrics` is the worked example: nothing named it in a registry, and
 // it shipped anyway at 66.6 KB of dist, because svelte-package emits everything reachable under
-// src/lib whether or not an export subpath names it. A registry index (rules/static/index.ts,
-// rules/rendered/index.ts) is the one place a rule module opts into shipping, so a module the walk
-// below cannot reach from either index is either an unregistered rule (add it to the registry) or
+// src/lib whether or not an export subpath names it. The registry index (rules/static/index.ts)
+// is the one place a rule module opts into shipping, so a module the walk
+// below cannot reach from it is either an unregistered rule (add it to the registry) or
 // engine apparatus that has no business under src/lib at all (move it out).
 const RULE_REGISTRIES = {
   static: { indexPath: 'src/lib/audit/rules/static/index.ts', distPrefix: 'dist/audit/rules/static/' },
-  rendered: { indexPath: 'src/lib/audit/rules/rendered/index.ts', distPrefix: 'dist/audit/rules/rendered/' },
 };
 
 // NodeNext specifiers name the emitted `.js`, never the `.ts` source they resolve to, so the walk
@@ -334,19 +333,17 @@ function reachableBasenamesUnder(seen, dirPrefix) {
 }
 
 /**
- * Check a packed file list: every module under `dist/audit/rules/static/` or
- * `dist/audit/rules/rendered/` must be reachable from its registry (the basenames
+ * Check a packed file list: every module under `dist/audit/rules/static/` must be reachable
+ * from its registry (the basenames
  * {@link reachableBasenamesUnder} computed by walking that registry's index.ts). A registry index
  * and any helper a registered rule imports, transitively, pass by construction; a module nothing in
  * the registry reaches fails.
  * @param {string[]} filePaths the paths npm would include in the tarball
  * @param {Set<string>} reachableStaticBasenames basenames reachable from rules/static/index.ts
- * @param {Set<string>} reachableRenderedBasenames basenames reachable from rules/rendered/index.ts
  * @returns {{ ok: true, count: number } | { ok: false, error: string }}
  */
-export function checkRuleReachability(filePaths, reachableStaticBasenames, reachableRenderedBasenames) {
+export function checkRuleReachability(filePaths, reachableStaticBasenames) {
   const staticRe = new RegExp(`^${RULE_REGISTRIES.static.distPrefix}([^/]+)\\.js$`);
-  const renderedRe = new RegExp(`^${RULE_REGISTRIES.rendered.distPrefix}([^/]+)\\.js$`);
   const offenders = [];
   let checked = 0;
   for (const path of filePaths) {
@@ -354,12 +351,6 @@ export function checkRuleReachability(filePaths, reachableStaticBasenames, reach
     if (staticMatch) {
       checked += 1;
       if (!reachableStaticBasenames.has(staticMatch[1])) offenders.push(path);
-      continue;
-    }
-    const renderedMatch = renderedRe.exec(path);
-    if (renderedMatch) {
-      checked += 1;
-      if (!reachableRenderedBasenames.has(renderedMatch[1])) offenders.push(path);
     }
   }
   if (offenders.length > 0) {
@@ -367,7 +358,7 @@ export function checkRuleReachability(filePaths, reachableStaticBasenames, reach
       ok: false,
       error:
         `the packed tarball ships ${offenders.join(', ')} from a rule directory with nothing in its ` +
-        'registry (rules/static/index.ts or rules/rendered/index.ts) reaching it; register the rule ' +
+        'registry (rules/static/index.ts) reaching it; register the rule ' +
         'there, or move the module out of src/lib if it is lab apparatus rather than a shipped rule',
     };
   }
@@ -375,10 +366,10 @@ export function checkRuleReachability(filePaths, reachableStaticBasenames, reach
 }
 
 /**
- * {@link checkRuleReachability}'s two reachable-basename sets, computed by walking the real
- * filesystem from each registry's index.ts.
+ * {@link checkRuleReachability}'s reachable-basename set, computed by walking the real
+ * filesystem from the registry's index.ts.
  * @param {string} root the repo root
- * @returns {{ static: Set<string>, rendered: Set<string> }}
+ * @returns {{ static: Set<string> }}
  */
 function reachableRuleBasenames(root) {
   /** @param {string} relPath */
@@ -396,7 +387,7 @@ function reachableRuleBasenames(root) {
     const seen = walkModuleGraph(indexPath, readSource);
     result[name] = reachableBasenamesUnder(seen, srcPrefix);
   }
-  return /** @type {{ static: Set<string>, rendered: Set<string> }} */ (result);
+  return /** @type {{ static: Set<string> }} */ (result);
 }
 
 /**
@@ -482,7 +473,7 @@ function main() {
   }
 
   const reachable = reachableRuleBasenames(ROOT);
-  const reachabilityResult = checkRuleReachability(files, reachable.static, reachable.rendered);
+  const reachabilityResult = checkRuleReachability(files, reachable.static);
   if (!reachabilityResult.ok) {
     console.error(`check-package-files: ${reachabilityResult.error}`);
     process.exitCode = 1;

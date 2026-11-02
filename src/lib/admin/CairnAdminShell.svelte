@@ -834,7 +834,7 @@ a screen reader announces it once.
             <nav aria-label="Breadcrumb" class="breadcrumbs ms-0 min-w-0 max-w-full p-0 type-body">
               <!-- role="list"/"listitem": the .breadcrumbs > ul > li descendant selector renders
                    every crumb at display: flex, which strips the implicit list role in
-                   WebKit/VoiceOver (cairn-audit's list-role rule, rendered mode). -->
+                   WebKit/VoiceOver. -->
               <ul class="min-w-0" role="list">
                 {#each crumbs as crumb (crumb.href ?? crumb.label)}
                   <li class="min-w-0" role="listitem">
@@ -966,8 +966,7 @@ a screen reader announces it once.
                order, since the combobox pattern moves the active option through
                aria-activedescendant rather than real DOM focus, while the href/onclick still fires
                normally on a real click. daisyUI's .menu :where(li) renders every item at
-               display: flex, which strips the implicit listitem role in WebKit/VoiceOver
-               (cairn-audit's list-role rule, rendered mode); role="presentation" is explicit either
+               display: flex, which strips the implicit listitem role in WebKit/VoiceOver; role="presentation" is explicit either
                way. -->
           <ul
             bind:this={paletteList}
@@ -1088,8 +1087,7 @@ a screen reader announces it once.
 
         {#snippet navItemList(items: NavItem[], extraClass: string = '')}
           <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-               display: flex, which strips the implicit list role in WebKit/VoiceOver
-               (cairn-audit's list-role rule, rendered mode). -->
+               display: flex, which strips the implicit list role in WebKit/VoiceOver. -->
           <ul class={`menu menu-sm w-full gap-0.5 p-0 ${extraClass}`} role="list">
             {#each items as item, i (i)}
               {@const att = attentionFor(item.href)}

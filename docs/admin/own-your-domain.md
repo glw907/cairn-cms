@@ -44,6 +44,8 @@ The change spreads across the internet gradually, which is called propagation, a
 
 DNS records are the entries that tell the internet where your domain's web traffic and mail go. Your domain probably carries records that have nothing to do with cairn, and mail records are the most common. Before the switch, the command reads the records your domain has today and shows them to you. It copies them into the new Cloudflare zone only after you confirm. The list comes from a fixed set of lookups, so it can miss a record the lookups never asked about. Compare it with what you know.
 
+Neither the site nor `cairn doctor` can see or check the zone's Minimum TLS Version setting, the oldest version of the TLS protocol that Cloudflare accepts from a visitor. The default is old, because [TLS 1.0 is the version that Cloudflare sets by default](https://developers.cloudflare.com/ssl/reference/protocols/). In the dashboard, open **SSL/TLS**, then **Edge Certificates**, and set the Minimum TLS Version to 1.2, as [Cloudflare's Minimum TLS Version page](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/minimum-tls/) describes.
+
 ```mermaid
 flowchart LR
   accTitle: Diagram of one Cloudflare zone carrying two unrelated record groups
@@ -87,6 +89,8 @@ Your Workers Paid plan was confirmed at the deploy step, so this step doesn't as
 A new domain has no sending history, so mail providers can take a while to trust it. If someone's first sign-in link doesn't arrive at once, this delay is the usual reason. It isn't a sign that anything is broken.
 
 Onboarding also writes a DMARC record, a mail-policy entry, at `_dmarc.yourdomain` with the policy `p=reject`. The policy asks receivers to reject mail that claims to come from your domain without authenticating. The record covers every sender on the domain, not only cairn, and it stays even if you turn sending off later. Before you turn on sign-in email, list the services that already send as your domain, such as a newsletter tool, a ticketing system, or a mailing list. Follow each one's instructions for authenticating against your domain's mail records, and do the same for any you add afterward. Otherwise a receiver rejects its mail.
+
+The running site reads none of your SPF, DKIM, or DMARC records, so a broken record never shows up as a site error. Only `cairn doctor` looks at them. It checks that a DMARC record with a real policy exists, that an SPF record names Cloudflare's mail servers, and that a DKIM record answers under one of a short list of common selector names. A DKIM record under any other name goes unseen, so a missing result there doesn't prove the record is absent.
 
 ### You know it worked when
 

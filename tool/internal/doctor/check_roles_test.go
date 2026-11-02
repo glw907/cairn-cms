@@ -59,7 +59,7 @@ func TestAuthRoleWiring(t *testing.T) {
 				"src/hooks.server.ts":                `export const handle = createAuthGuard({ from: 'x' });`,
 			},
 			wantStatus: StatusFail,
-			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.ts is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)",
+			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.ts is not passed { runtime }; this engine raises a TypeError on a missing runtime, so the guard cannot read the site's roles (heuristic text read)",
 		},
 		{
 			name: "pass: wired, called with a roles argument",
@@ -112,7 +112,7 @@ func TestAuthRoleWiringNamesHooksPath(t *testing.T) {
 			name:       "fail: unwired in a .js hooks module",
 			files:      map[string]string{"src/hooks.server.js": `export const handle = createAuthGuard();`},
 			wantStatus: StatusFail,
-			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.js is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)",
+			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.js is not passed { runtime }; this engine raises a TypeError on a missing runtime, so the guard cannot read the site's roles (heuristic text read)",
 		},
 	}
 	for _, tt := range tests {

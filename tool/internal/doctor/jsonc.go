@@ -51,6 +51,7 @@ func factsFromConfig(config map[string]any) WranglerFacts {
 	for _, entry := range asObjectSlice(config["d1_databases"]) {
 		if entry["binding"] == "AUTH_DB" {
 			facts.HasAuthDB = true
+			facts.AuthDBMigrationsDir, _ = entry["migrations_dir"].(string)
 			break
 		}
 	}

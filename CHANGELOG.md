@@ -13,6 +13,13 @@
 
   Consumers must: update any test that quotes a renamed label.
 
+- **A `config.migrations-missing` diagnostic condition (a warning)** names a site whose
+  migrations directory lacks a migration the package ships, which `cairn doctor` now checks. The
+  `auth.role-wiring-missing` text also stops claiming that an unwired guard falls back to the default
+  roles: a `createAuthGuard` call with no runtime raises a `TypeError`.
+
+  Consumers must: nothing.
+
 - **`scripts/checks/api-surface.md` ships in the package.** The snapshot holds the exact signature of
   every export, and `cairn-extending-a-site` now routes a lookup to
   `node_modules/@glw907/cairn-cms/scripts/checks/api-surface.md`. `check:package` fails a tarball

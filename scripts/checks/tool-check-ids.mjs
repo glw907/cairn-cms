@@ -9,7 +9,7 @@
 // quoting a retired id reads as history, not a hallucination; dropping an id from this file
 // entirely, once no doc cites it, is the retirement's last step.
 
-/** The eleven check ids the Go tool's `cairn doctor` currently raises. */
+/** The twelve check ids the Go tool's `cairn doctor` currently raises. */
 export const TOOL_CHECK_IDS = [
   'config.bindings',
   'config.observability',
@@ -20,6 +20,7 @@ export const TOOL_CHECK_IDS = [
   'config.dependency-floors',
   'admin.mount-shape',
   'config.media-bucket',
+  'config.migrations',
   'auth.role-wiring',
   'ai.posture-effective',
 ];

@@ -196,6 +196,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Expect `auth.link.sent` from the default Cloudflare sender.** Log queries that used `auth.token.minted` to mean the email went out should use `auth.link.sent`. A custom `send` writes no such record and logs for itself.
+- **Rename `.steps` and `.step` to `.start-steps` and `.start-step`** in any site CSS that selects the Help screen's getting-started list.
 - **Read `data.flash` in place of `saved`, `renamed`, `publishedFlash`, and `discardedFlash`.** A hand-built `EditData` sets `flash: null`, or one of `'saved'`, `'renamed'`, `'published'`, or `'discarded'`. The settings, vocabulary, and nav `saved` flags stay.
 - **Treat `ContentFormFailure.error` as a required string.** A hand-built failure sets it, and a `form` prop that also carries a success result uses `Partial<ContentFormFailure>`.
 - **Unwrap `defineFieldset` on each concept.** `fields: defineFieldset({ ... })` becomes `fields: { ... }`, and the import goes. A check `defineFieldset` ran now runs at `defineConcept`.

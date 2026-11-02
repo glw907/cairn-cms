@@ -2,6 +2,19 @@
 
 ### Added
 
+- **The dev backend serves an empty site.** `devBackendHandle` accepts `content: 'empty'`, an in-memory
+  repo holding only a `site.config.yaml` with a `siteName`, so every concept lists nothing and the
+  first-run screens render under `wrangler dev`. The showcase starts a second server for it, selected
+  by the `CAIRN_DEV_CONTENT` Worker var.
+
+  Consumers must: nothing.
+
+- **The default Cloudflare sender logs `auth.link.sent`.** The record carries the `email` and the
+  `messageId` Cloudflare returned, so an owner can follow a sign-in email past the engine. A custom
+  `send` logs for itself.
+
+  Consumers must: nothing.
+
 - **A slot's help and a field's bounds show under the control.** `SlotDef.help` renders under the slot in the
   insert form, and the control is described by it. A text, textarea, or number field with `min`, `max`, or
   `length` shows the bound (`3 to 80 characters.`) after its help, and keeps the validity mark after the
@@ -199,6 +212,18 @@
   unmigrated `AUTH_DB`, say.
 
 ### Changed
+
+- **Navigation, Tags, and Help have designed zero states.** With no menu items or tags, the screens show
+  the shared empty state, and Save appears once there is something to save. Adding the first menu item
+  moves focus to its label field. The Help getting-started list uses `.start-steps` and `.start-step`, so
+  DaisyUI's Steps styles no longer break the panel.
+
+  Consumers must: nothing.
+
+- **The sign-in email has a new layout.** It shows the site's name, a **Sign in** button, the link
+  written out, the expiry, and an ignore line, with a matching plain-text part. The subject is unchanged.
+
+  Consumers must: nothing.
 
 - **`mintPreview` and `revokePreview` check access before they look up the concept.** A role the access
   map denies a key gets the 403 whether or not the key names a concept; an unmapped nonexistent id still

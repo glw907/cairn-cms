@@ -94,8 +94,8 @@ export interface DevBackendConfig {
  * to a non-local host, it refuses every path with a 503 and logs `guard.refused`, the same record
  * the engine guard writes for the same condition.
  * @param config - {@link DevBackendConfig}; `runtime` carries the site's access map, attached to
- * `locals.cairnAccess` beside the minted editor, and `content` picks the working tree or the seeded
- * fixtures.
+ * `locals.cairnAccess` beside the minted editor, and `content` picks the working tree, the seeded
+ * fixtures, or an empty site.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  * @throws when `content` is `'repository'` (the default) under workerd, naming `content: 'fixtures'`.
  */

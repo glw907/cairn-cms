@@ -11,6 +11,12 @@ describe('supportsEffort', () => {
     expect(supportsEffort('claude-sonnet-5-20260115')).toBe(true);
   });
 
+  it('supports the 5.5 family and Fable 5', () => {
+    expect(supportsEffort('claude-sonnet-5-5')).toBe(true);
+    expect(supportsEffort('claude-haiku-5-5')).toBe(true);
+    expect(supportsEffort('claude-fable-5-1')).toBe(true);
+  });
+
   it('supports claude-opus-5', () => {
     expect(supportsEffort('claude-opus-5')).toBe(true);
   });

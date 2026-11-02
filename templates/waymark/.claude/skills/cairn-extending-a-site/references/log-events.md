@@ -114,7 +114,7 @@ These never carry document content or an API key.
 | `dictionary.added` | info | `editor`, `wordCount`, `retried` | Dictionary add committed. |
 | `dictionary.add_conflict` | warn | `editor`, `wordCount` | Second conflict; the client retries on the next save. |
 | `tidy.succeeded` | info | `editor`, `model`, `tokens` | Tidy returned a corrected document. |
-| `tidy.failed` | warn | `editor`, `model`, `reason` | Non-retryable, 503: `auth` (key rejected 401/403, marks the key unhealthy), `sdk_missing` (install `@anthropic-ai/sdk`), `invalid_request` (400, usually a bad `tidy.model`). Retryable, 502: `timeout` (deadline fired; raise `timeoutMs`), `abort`, `model` (rate limit, overload, server, network). |
+| `tidy.failed` | warn | `editor`, `model`, `reason` | Non-retryable, 503: `auth` (key rejected 401/403, marks the key unhealthy), `sdk_missing` (install `@anthropic-ai/sdk`), `invalid_request` (400, usually a bad `tidy.model`). Non-retryable, 413: `truncated` (the model hit the output cap; the editor tidies a selection). Retryable, 502: `timeout` (deadline fired; raise `timeoutMs`), `abort`, `model` (rate limit, overload, server, network). |
 | `tidy.refused` | warn | `editor`, `model` | Model refused the text (422). |
 | `tidy.empty` | warn | `editor`, `model` | Model returned nothing (502, retryable). |
 

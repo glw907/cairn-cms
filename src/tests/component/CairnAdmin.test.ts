@@ -26,7 +26,6 @@ function shell(): AdminShellData {
     csrf: 'test-csrf',
     pendingEntries: Promise.resolve(null),
     attention: {},
-    mediaBase: '/media',
   };
 }
 
@@ -242,7 +241,7 @@ describe('form-action contract', () => {
       render: ({ body }) => Promise.resolve(body),
       manifestPath: 'src/content/.cairn/index.json',
       mediaManifestPath: 'src/content/.cairn/media.json',
-      resolvedAssets: { enabled: false },
+      media: { enabled: false },
     vocabulary: [],
     };
   }

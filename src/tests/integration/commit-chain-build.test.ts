@@ -21,7 +21,7 @@ import { parseSiteConfig } from '../../lib/nav/site-config.js';
 import { formatManifest, parseManifest, verifyManifest, verifyReferences } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import { testEvent } from '../helpers/test-event.js';
 import { withTestEnv } from '../helpers/with-test-env.js';
 
@@ -34,14 +34,9 @@ const SECOND_PATH = 'src/content/posts/second.md';
 const OLD_HASH = '0000000000000aaa';
 const NEW_HASH = '0000000000000bbb';
 
-const MEDIA_ON: ResolvedAssetConfig = {
+const MEDIA_ON: ResolvedMediaConfig = {
   enabled: true,
   bucketBinding: 'MEDIA_BUCKET',
-  publicBase: '/media',
-  urlForm: 'slug',
-  maxUploadBytes: 25 * 1024 * 1024,
-  allowedTypes: ['image/jpeg'],
-  transformations: false,
 };
 
 const adapter = defineAdapter({
@@ -87,7 +82,7 @@ function runtime(): CairnRuntime {
     render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
-    resolvedAssets: MEDIA_ON,
+    media: MEDIA_ON,
     vocabulary: [],
     siteConfigPath: 'src/lib/site.config.yaml',
   };

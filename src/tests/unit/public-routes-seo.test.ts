@@ -54,6 +54,7 @@ const routes = createPublicRoutes({
   origin: 'https://x.test',
   siteName: 'X Site',
   description: 'Site default description.',
+  resolveMedia: null,
   defaultImage: '/og/default.png',
   feeds: { rss: 'https://x.test/feed.xml', json: 'https://x.test/feed.json' },
 });

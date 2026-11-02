@@ -331,7 +331,7 @@ const ADAPTER_MISPLACEMENTS: Readonly<Record<string, string>> = {
   backend: 'cairn: "backend" belongs in cairn.config.ts (createGithubApp(...)), not site.config.yaml',
   email: 'cairn: "email" belongs in cairn.config.ts (the adapter\'s SenderConfig), not site.config.yaml',
   rendering: 'cairn: "rendering" belongs in cairn.config.ts (the adapter\'s render subsystem), not site.config.yaml',
-  media: 'cairn: "media" belongs in cairn.config.ts (the adapter\'s AssetConfig), not site.config.yaml',
+  media: 'cairn: "media" belongs in cairn.config.ts (the adapter\'s MediaConfig), not site.config.yaml',
   editor: 'cairn: "editor" belongs in cairn.config.ts (the adapter\'s preview/nav/supportContact knobs), not site.config.yaml',
 };
 

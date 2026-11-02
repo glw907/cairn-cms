@@ -6,7 +6,6 @@
 import { redirect, error } from '@sveltejs/kit';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../admin/markdown-reference.js';
-import { DEFAULT_MEDIA_BASE } from '../admin/media-base-context.js';
 import { PENDING_PREFIX } from '../content/pending.js';
 import { emptyManifest } from '../content/manifest.js';
 import { log } from '../log/index.js';
@@ -88,13 +87,6 @@ export type AdminShellData =
        *  cannot see it. Empty when the site configures no dep.
        */
       attention: Record<string, { count: number; label: string }>;
-      /**
-       * The delivery base every descendant media surface composes its thumbnail `src` under, resolved
-       *  from the runtime's `assets.publicBase` when media is on, or the `/media` default otherwise.
-       *  `CairnAdminShell` hands this down through the media-base context, so a site whose media lives
-       *  at a non-default path gets working thumbnails without every reader threading the base itself.
-       */
-      mediaBase: string;
     };
 
 /**
@@ -244,7 +236,6 @@ export function createShellActions(ctx: ContentRoutesContext) {
         pendingEntries,
         ...(event.locals.cairnBackend?.ephemeral ? { contentEphemeral: true as const } : {}),
         attention,
-        mediaBase: runtime.resolvedAssets.enabled ? runtime.resolvedAssets.publicBase : DEFAULT_MEDIA_BASE,
       },
     };
   }

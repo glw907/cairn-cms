@@ -315,10 +315,10 @@
       "reason": "R4 closure: `SiteConfig` names it on this subpath."
     },
     {
-      "name": "AssetConfig",
+      "name": "MediaConfig",
       "subpath": "/media",
       "home": ".",
-      "reason": "R4 closure: `normalizeAssets` names it on this subpath."
+      "reason": "R4 closure: `createMediaResolver` names it on this subpath."
     },
     {
       "name": "MediaResolve",
@@ -345,7 +345,7 @@
       "reason": "R4 closure: `FieldDescriptor` names it on this subpath."
     },
     {
-      "name": "AssetConfig",
+      "name": "MediaConfig",
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `CairnRuntime` names it on this subpath."

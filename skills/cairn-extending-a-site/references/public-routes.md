@@ -25,8 +25,9 @@ Contents:
   `'https://showcase.test'`), and the build writes it into canonicals, `og:url`, feeds, and the
   sitemap. `PUBLIC_ORIGIN` in `wrangler.jsonc` is the Worker's runtime value for the same host.
   Setup writes both values, then rebuilds. A hand change to the domain edits both, then rebuilds.
-- One exported `PublicRoutesConfig` (`site`, `render`, `origin`, `siteName`, `description`, plus
-  `defaultImage`, `feeds`, `resolveMedia`, `assetsEnabled`) shared by every route.
+- One exported `PublicRoutesConfig` (`site`, `render`, `origin`, `siteName`, `description`,
+  the required `resolveMedia` with `null` for a site with no media, plus `defaultImage` and
+  `feeds`) shared by every route.
 
 ## Entry pages and the head
 
@@ -54,8 +55,8 @@ targets are dropped, so guard absent keys.
 The head reads `description` always, and `image`, `robots`, `author` only when the fieldset declares
 them. The hero and social image come from the key `image` alone: declare
 `image: fields.image({ label: 'Hero image', seo: true })` (one `seo` image per concept). Set
-`defaultImage` only to a file that exists; the scaffold leaves it unset. Setting
-`resolveMedia` turns hero resolution on.
+`defaultImage` only to a file that exists; the scaffold leaves it unset. A
+`resolveMedia` other than `null` turns hero resolution on.
 
 Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` with
 `routes.markdownEntries()` and `markdownResponse({ body })` from `routes.markdownLoad({ url })`, and

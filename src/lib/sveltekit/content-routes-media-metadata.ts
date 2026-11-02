@@ -324,7 +324,7 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
    *
    *  No R2 operation: the new bytes were already stored put-first by the upload action, and the old
    *  bytes are KEPT (the old row stays in media.json), so this action writes only to git and never
-   *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only.
+   *  resolves the bucket binding. It guards `media.enabled` for the media-off case only.
    */
   async function mediaReplaceAction(event: CairnEvent): Promise<ActionFailure<MediaReplaceFailure>> {
     const editor = requireEditor(event);
@@ -378,7 +378,7 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     // Media-enabled guard only: replace does no R2 write (the new bytes are already stored, the old
     // bytes are kept), so there is no bucket binding to resolve. Media-off still refuses before any
     // git write.
-    if (!runtime.resolvedAssets.enabled) {
+    if (!runtime.media.enabled) {
       return fail(503, { error: MEDIA_DISABLED_MESSAGE, hash: oldHash, usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
     }
 
@@ -573,7 +573,7 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     }
 
     // Media-enabled guard only: alt fill does no R2 write, so there is no bucket binding to resolve.
-    if (!runtime.resolvedAssets.enabled) {
+    if (!runtime.media.enabled) {
       return fail(503, { error: MEDIA_DISABLED_MESSAGE, hash } satisfies MediaAltPropagateFailure);
     }
 

@@ -54,10 +54,10 @@ export const ROOT_EXTRAS = ['cairnManifest'];
  * A declaring type the walk excludes: data passed to a page, descriptors, registries, and engine
  * component props by suffix, plus the runtime objects and vendored protocol types a root's
  * parameters reach but a developer never writes (the composed runtime, the site resolver, the
- * resolved asset config, a media manifest row, Standard Schema and its input shape).
+ * resolved media config, a media manifest row, Standard Schema and its input shape).
  */
 export const EXCLUDED_TYPE =
-  /(Data|Descriptor|Registry|Props)$|^(CairnRuntime|SiteResolver|ResolvedAssetConfig|MediaEntry|StandardSchemaV1|StandardInput)$/;
+  /(Data|Descriptor|Registry|Props)$|^(CairnRuntime|SiteResolver|ResolvedMediaConfig|MediaEntry|StandardSchemaV1|StandardInput)$/;
 
 const LEAF_FLAGS =
   ts.TypeFlags.Any |

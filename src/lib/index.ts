@@ -37,7 +37,7 @@ export type {
   SenderConfig,
   NavMenuConfig,
   PreviewConfig,
-  AssetConfig,
+  MediaConfig,
   ConceptDescriptor,
   CairnRuntime,
   SiteRender,

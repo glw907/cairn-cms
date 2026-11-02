@@ -14,7 +14,7 @@ import { formatManifest } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { EntryData, PublicRoutesConfig } from '../../lib/delivery/public-routes.js';
-import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import { serializeMediaManifest } from '../../lib/media/manifest.js';
 import { runtime as baseRuntime, postsConcept as basePostsConcept, contentEvent } from '../unit/_content-harness.js';
@@ -76,6 +76,7 @@ function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutes
     origin: ORIGIN,
     siteName: 'Test',
     description: 'Test description.',
+    resolveMedia: null,
     ...overrides,
   };
 }
@@ -90,6 +91,7 @@ function mediaRenderPublicConfig(overrides: Partial<PublicRoutesConfig> = {}): P
     origin: ORIGIN,
     siteName: 'Test',
     description: 'Test description.',
+    resolveMedia: null,
     ...overrides,
   };
 }
@@ -420,18 +422,13 @@ describe('loadPreview: the draft render', () => {
       main: { [MEDIA_PATH]: serializeMediaManifest({}) },
     });
     gh.install();
-    const resolvedAssets: ResolvedAssetConfig = {
+    const media: ResolvedMediaConfig = {
       enabled: true,
       bucketBinding: 'BUCKET',
-      publicBase: '/media',
-      urlForm: 'slug',
-      maxUploadBytes: 1,
-      allowedTypes: [],
-      transformations: false,
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = (await loadPreview(runtime({ resolvedAssets }), publicConfig(), event)) as PreviewData;
+    const data = (await loadPreview(runtime({ media }), publicConfig(), event)) as PreviewData;
     expect(data.heroImage?.url).toBe(`/media/photo.${hash}.webp`);
   });
 
@@ -462,19 +459,14 @@ describe('loadPreview: the draft render', () => {
       main: { [MEDIA_PATH]: serializeMediaManifest({}) },
     });
     gh.install();
-    const resolvedAssets: ResolvedAssetConfig = {
+    const media: ResolvedMediaConfig = {
       enabled: true,
       bucketBinding: 'BUCKET',
-      publicBase: '/media',
-      urlForm: 'slug',
-      maxUploadBytes: 1,
-      allowedTypes: [],
-      transformations: false,
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
     const data = (await loadPreview(
-      runtime({ resolvedAssets }),
+      runtime({ media }),
       mediaRenderPublicConfig(),
       event,
     )) as PreviewData;
@@ -536,18 +528,13 @@ describe('PreviewData: the type and runtime shape contract', () => {
       },
     });
     gh.install();
-    const resolvedAssets: ResolvedAssetConfig = {
+    const media: ResolvedMediaConfig = {
       enabled: true,
       bucketBinding: 'BUCKET',
-      publicBase: '/media',
-      urlForm: 'slug',
-      maxUploadBytes: 1,
-      allowedTypes: [],
-      transformations: false,
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = await loadPreview(runtime({ resolvedAssets }), publicConfig(), event);
+    const data = await loadPreview(runtime({ media }), publicConfig(), event);
 
     // newer/older are unconditional keys on EntryData (always assigned, possibly undefined);
     // heroImage is the one truly optional (conditionally spread) key, populated above.

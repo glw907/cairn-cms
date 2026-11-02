@@ -230,34 +230,14 @@ export interface PreviewConfig {
 export type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
 
 /**
- * A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads,
- *  content-addressed storage, and Cloudflare Images variants. Omitting it leaves media off. The
- *  engine normalizes this into a `ResolvedAssetConfig`.
+ * A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads and
+ *  content-addressed storage, served at `/media`. Omitting it leaves media off. The engine
+ *  normalizes this into a `ResolvedMediaConfig`.
  * @public
  */
-export interface AssetConfig {
+export interface MediaConfig {
   /** The R2 bucket binding name on the Worker, e.g. "MEDIA_BUCKET". Required when a site declares media. */
   bucketBinding: string;
-  /** The delivery base path. Defaults to "/media". */
-  publicBase?: string;
-  /**
-   * Whether the public URL carries the slug (`/media/<slug>.<hash>.<ext>`) or stays opaque
-   *  (`/media/<aa>/<hash>.<ext>`). Defaults to "slug".
-   */
-  urlForm?: 'slug' | 'opaque';
-  /** The maximum accepted upload size in bytes. Defaults to 25 MB. */
-  maxUploadBytes?: number;
-  /** The accepted upload MIME types. Defaults to the common web image types. */
-  allowedTypes?: string[];
-  /**
-   * Whether Cloudflare Image Transformations are enabled for the zone (default false). The feature
-   *  is a per-zone setting that the dashboard or API turns on; it cannot be flipped from a Worker. With
-   *  it off, the media resolver serves the bare full-size delivery path, so
-   *  thumbnails stay correct (full-size-but-correct) rather than pointing at a dead /cdn-cgi/image URL.
-   *  It governs only the responsive `srcset` a rendered image gets beside its full-size `src`. Set it
-   *  `true` only after enabling Transformations on the zone.
-   */
-  transformations?: boolean;
 }
 
 /**
@@ -326,7 +306,7 @@ export interface CairnAdapter {
     islands?: IslandRegistry;
   };
   /** R2-backed media (seam 4): the bucket binding and image variants. Absent leaves media off. */
-  media?: AssetConfig;
+  media?: MediaConfig;
   /**
    * The site's stated stance toward AI training crawlers. Absent (the default) emits nothing: the
    *  engine states no posture the site did not declare. See {@link AiPosture} for what each value
@@ -478,7 +458,7 @@ export interface CairnRuntime {
    * The adapter's asset config resolved once at compose: `{ enabled: false }` for a no-media site,
    *  otherwise the filled config the upload, storage, delivery, and resolver paths read.
    */
-  resolvedAssets: import('../media/config.js').ResolvedAssetConfig;
+  media: import('../media/config.js').ResolvedMediaConfig;
   registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;
@@ -502,7 +482,7 @@ export interface CairnRuntime {
   publishActions?: PublishActionEntry[];
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
-  assets?: AssetConfig;
+  assets?: MediaConfig;
   /**
    * The editor's spellcheck dictionary file, resolved once at compose from the site config's
    *  `spellcheck.dialect` (defaulting to US English). The edit load threads it onto EditData and the

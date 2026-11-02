@@ -239,7 +239,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     // below and, carried on SaveHold, the publish commit, so both reuse the same content with no
     // second read. When media is off or no records arrive, nothing touches media.json.
     let mediaChange: FileChange | undefined;
-    if (runtime.resolvedAssets.enabled) {
+    if (runtime.media.enabled) {
       const records = parseMediaEntries(form.get('media'));
       if (records.length > 0) {
         const baseRaw = await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch);

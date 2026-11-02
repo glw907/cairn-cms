@@ -7,7 +7,7 @@ import { serializeMarkdown, frontmatterFromForm } from '../../lib/content/frontm
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
 import { fields } from '../../lib/content/fields.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
-import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
@@ -33,19 +33,14 @@ function runtime(): CairnRuntime {
   });
 }
 
-const MEDIA_ON: ResolvedAssetConfig = {
+const MEDIA_ON: ResolvedMediaConfig = {
   enabled: true,
   bucketBinding: 'MEDIA_BUCKET',
-  publicBase: '/media',
-  urlForm: 'slug',
-  maxUploadBytes: 25 * 1024 * 1024,
-  allowedTypes: ['image/jpeg'],
-  transformations: false,
 };
 
 /** A runtime with media enabled (or off), for the media-targets projection cases. */
-function mediaRuntime(assets: ResolvedAssetConfig): CairnRuntime {
-  return { ...runtime(), mediaManifestPath: MEDIA_PATH, resolvedAssets: assets };
+function mediaRuntime(assets: ResolvedMediaConfig): CairnRuntime {
+  return { ...runtime(), mediaManifestPath: MEDIA_PATH, media: assets };
 }
 
 /** A stored-asset row, the media.json value shape; only slug/ext/contentType reach EditData. */

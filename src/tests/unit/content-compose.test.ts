@@ -27,9 +27,9 @@ describe('composeRuntime', () => {
     expect(composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig }).assets).toBeUndefined();
     const withMedia: CairnAdapter = {
       ...testAdapter,
-      media: { bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' },
+      media: { bucketBinding: 'MEDIA_BUCKET' },
     };
-    expect(composeRuntime({ adapter: withMedia, siteConfig: testSiteConfig }).assets).toEqual({ bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' });
+    expect(composeRuntime({ adapter: withMedia, siteConfig: testSiteConfig }).assets).toEqual({ bucketBinding: 'MEDIA_BUCKET' });
   });
 
   // The tag vocabulary is the enforcement seam's source: composeRuntime validates the site config's

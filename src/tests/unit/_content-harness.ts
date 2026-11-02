@@ -48,7 +48,7 @@ export function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
+    media: { enabled: false },
     vocabulary: [],
     siteConfigPath: 'src/lib/site.config.yaml',
     ...overrides,

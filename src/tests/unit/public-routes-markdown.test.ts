@@ -52,6 +52,7 @@ const routes = createPublicRoutes({
   origin: 'https://x.test',
   siteName: 'X Site',
   description: 'Site default description.',
+  resolveMedia: null,
 });
 
 describe('createPublicRoutes markdownEntries', () => {

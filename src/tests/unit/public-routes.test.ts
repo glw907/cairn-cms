@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createPublicRoutes, composeEntryData } from '../../lib/delivery/public-routes.js';
-import { log } from '../../lib/log/index.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
@@ -29,7 +28,7 @@ const site = createSiteResolver([
   { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
 ]);
 
-const routes = createPublicRoutes({ site, render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
+const routes = createPublicRoutes({ site, render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`), origin: 'https://example.com', siteName: 'Test', description: 'Test description.', resolveMedia: null });
 
 describe('createPublicRoutes entryLoad', () => {
   it('resolves a dated Posts URL to its entry by pathname', async () => {
@@ -124,16 +123,18 @@ describe('createPublicRoutes entryLoad', () => {
     const a = await unresolved.entryLoad({ url: new URL('https://example.com/hero') });
     expect(a.heroImage).toBeUndefined();
 
-    // Media off: no resolveMedia dep at all, still undefined and no throw.
+    // Media off: a null resolveMedia derives no hero and the entry still renders.
     const off = createPublicRoutes({
       site: createSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
       render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     });
     const b = await off.entryLoad({ url: new URL('https://example.com/hero') });
     expect(b.heroImage).toBeUndefined();
+    expect(b.html).toBe('<r>Hero body.</r>');
   });
 
   it('emits og:image from a resolved structured hero plus twitter:image:alt', async () => {
@@ -176,6 +177,7 @@ describe('createPublicRoutes entryLoad', () => {
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     });
 
     const data = await stringRoutes.entryLoad({ url: new URL('https://example.com/legacy') });
@@ -237,7 +239,7 @@ describe('createPublicRoutes entryLoad', () => {
           { path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' },
         ], pages) },
       ]);
-      return createPublicRoutes({ site: linkSite, render: ({ body, resolveLink, resolveMedia }) => render({ body, resolveLink, resolveMedia }), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
+      return createPublicRoutes({ site: linkSite, render: ({ body, resolveLink, resolveMedia }) => render({ body, resolveLink, resolveMedia }), origin: 'https://example.com', siteName: 'Test', description: 'Test description.', resolveMedia: null });
     }
 
     const ok = await linkRoutes('[about](cairn:pages/about)').entryLoad({ url: new URL('https://example.com/home') });
@@ -264,6 +266,7 @@ describe('createPublicRoutes entryLoad', () => {
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     });
 
     await recordingRoutes.entryLoad({ url: new URL('https://example.com/about') });
@@ -290,6 +293,7 @@ describe('createPublicRoutes entryLoad', () => {
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     });
 
     const data = await fragmentRoutes.entryLoad({ url: new URL('https://example.com/about') });
@@ -306,6 +310,7 @@ describe('composeEntryData', () => {
     origin: 'https://example.com',
     siteName: 'Test',
     description: 'Test description.',
+    resolveMedia: null,
   };
 
   it('produces output identical to entryLoad when called with no overrides', async () => {
@@ -330,6 +335,7 @@ describe('composeEntryData', () => {
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     };
     const home = linkSite.byPermalink('/home')!;
 
@@ -358,6 +364,7 @@ describe('composeEntryData', () => {
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     };
     const about = fragmentSite.byPermalink('/about')!;
 
@@ -392,45 +399,5 @@ describe('composeEntryData', () => {
         ref.hash === '0123456789abcdef' ? '/media/overridden.webp' : undefined,
     });
     expect(data.heroImage?.url).toBe('/media/overridden.webp');
-  });
-});
-
-describe('createPublicRoutes media.resolver_absent', () => {
-  afterEach(() => vi.restoreAllMocks());
-
-  function build(deps: { assetsEnabled?: boolean; withResolver?: boolean }) {
-    return createPublicRoutes({
-      site,
-      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
-      origin: 'https://example.com',
-      siteName: 'Test',
-      description: 'Test description.',
-      ...(deps.assetsEnabled !== undefined ? { assetsEnabled: deps.assetsEnabled } : {}),
-      ...(deps.withResolver ? { resolveMedia: () => undefined } : {}),
-    });
-  }
-
-  it('warns once at construction when media is on but no resolver was wired', () => {
-    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    build({ assetsEnabled: true });
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    const [event, fields] = warnSpy.mock.calls[0];
-    expect(event).toBe('media.resolver_absent');
-    // The event's own existence is the whole diagnostic: it fires only in the misconfigured
-    // case, so a field that can hold one value would say nothing the record does not.
-    expect(fields).toBeUndefined();
-  });
-
-  it('does not warn when a resolver is wired (the correctly configured case)', () => {
-    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    build({ assetsEnabled: true, withResolver: true });
-    expect(warnSpy).not.toHaveBeenCalled();
-  });
-
-  it('does not warn when media is off (assetsEnabled false or absent)', () => {
-    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    build({ assetsEnabled: false });
-    build({});
-    expect(warnSpy).not.toHaveBeenCalled();
   });
 });

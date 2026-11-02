@@ -499,7 +499,7 @@ when the remediation pass lands.
 - **Reopens on:** A reviewed design that is not a per-keystroke formatting coach (the review discarded it as the Clippy pattern).
 
 ## runtime-publicmediaresolver: a `runtime.publicMediaResolver` member  (decline, 2026-06-24, adversarial review)
-- **Reopens on:** A measured need the `media.resolver_absent` warn event at `createPublicRoutes` construction does not cover (the member inverts the prerender and Worker boundary).
+- **Reopens on:** A measured need the required `PublicRoutesConfig.resolveMedia` does not cover (the member inverts the prerender and Worker boundary).
 
 ## media-library-type-facet: a hidden Images/Documents filter in `CairnMediaLibrary`  (decline, 2026-07-20, admin-toolkit review-fixes round)
 - **Reopens on:** A second stored asset type ships; `ListToolbarFilter`'s `promoted: false` seam covers the hidden-until-needed shape.

@@ -15,13 +15,9 @@ import {
   defineAccess,
   // cairn-template:exclude-end
   createGithubApp,
-  type AssetConfig,
+  type MediaConfig,
 } from '@glw907/cairn-cms';
-import {
-  normalizeAssets,
-  createMediaResolver,
-  readCommittedManifest,
-} from '@glw907/cairn-cms/media';
+import { createMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import { siteIslands } from './islands/registry.js';
 import { proseTypography } from '#chassis/render.js';
 import { icons } from './icons.js';
@@ -54,27 +50,22 @@ const mediaManifest = readCommittedManifest(
   import.meta.glob('../content/.cairn/media.json', { eager: true, import: 'default' }),
 );
 
-// The media R2 binding, hoisted once and fed to both normalizeAssets below and the adapter's
+// The media R2 binding, hoisted once and fed to both createMediaResolver below and the adapter's
 // media: member, so the binding name lives in exactly one place rather than two literals that
 // could drift apart.
-const media: AssetConfig = { bucketBinding: 'MEDIA_BUCKET' };
+const media: MediaConfig = { bucketBinding: 'MEDIA_BUCKET' };
 
-// The default public media resolver, backing the public build over the committed manifest. The
-// preview path injects its resolveMedia from the edit page's mediaTargets; this default keeps a
-// published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
-// public route can inject the same resolver for the frontmatter hero, one source of truth.
-const resolvedAssets = normalizeAssets(media);
-export const publicMediaResolver = createMediaResolver(mediaManifest, resolvedAssets);
+// The site's one media resolver, backing the public build over the committed manifest. The preview
+// path injects its resolveMedia from the edit page's mediaTargets; this default keeps a published
+// `media:` reference from throwing when no per-call resolver is supplied. Exported so the public
+// route can inject the same resolver for the frontmatter hero, one source of truth.
+export const resolveMedia = createMediaResolver(media, mediaManifest);
 
 const renderer = createRenderer({
   components: registry,
   remarkPlugins: proseTypography,
-  resolveMedia: publicMediaResolver,
+  resolveMedia,
 });
-
-// Whether media is configured on. The public route threads it as `assetsEnabled` so the engine logs
-// `media.resolver_absent` if a future edit drops the resolveMedia wiring while media stays on.
-export const mediaEnabled = resolvedAssets.enabled;
 
 export const cairn = defineAdapter({
   content: {
@@ -196,7 +187,7 @@ export const cairn = defineAdapter({
   // Routing verifies a sender address, not a domain owned by inference, so deriving one from a
   // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
   email: { from: 'cms@showcase.test' },
-  // The media R2 binding (hoisted above so this and normalizeAssets share one literal). The fake
+  // The media R2 binding (hoisted above so this and createMediaResolver share one literal). The fake
   // R2 double rides the Worker env in dev; a real site binds it in wrangler.jsonc and mounts the
   // /media delivery route.
   media,

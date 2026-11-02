@@ -1,6 +1,41 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
+ * Wait until hydration has attached a delegated `onclick` to the element.
+ *
+ * Svelte 5 stores a delegated handler in a map on the element under a symbol key
+ * (`element[event_symbol].click`, `delegated()` in `internal/client/dom/elements/events.js`).
+ * Server-rendered markup is visible and actionable before that assignment, so a click at first
+ * actionability on a loaded page can land on a dead element. A non-delegated handler such as
+ * `onchange` is attached the same hydration step but is not visible to this probe, so wait on an
+ * element that also carries an `onclick`.
+ * @param target - The element whose `onclick` must be attached.
+ */
+export async function awaitClickHandler(target: Locator): Promise<void> {
+  await expect
+    .poll(() =>
+      target.evaluate((el) =>
+        Object.getOwnPropertySymbols(el).some(
+          (s) =>
+            typeof (el as unknown as Record<symbol, { click?: unknown }>)[s]?.click === 'function',
+        ),
+      ),
+    )
+    .toBe(true);
+}
+
+/**
+ * Click an element once hydration has attached its delegated `onclick`.
+ *
+ * It adds no re-click and replaces no assertion.
+ * @param target - The element to click.
+ */
+export async function clickWhenHydrated(target: Locator): Promise<void> {
+  await awaitClickHandler(target);
+  await target.click();
+}
+
+/**
  * Open the header's create dialog and return it, clicking again until it is open.
  *
  * The button's `onclick` attaches on hydration, and the markup shows about 130 ms before that,
@@ -21,7 +56,6 @@ export async function openCreateDialog(page: Page, name = 'New post'): Promise<L
     });
     if (!isOpen) {
       attempt += 1;
-      // create-dialog-trace: drop once the cause is recorded.
       const handler = await button.evaluate(
         (el) => Object.getOwnPropertySymbols(el).length > 0,
         undefined,

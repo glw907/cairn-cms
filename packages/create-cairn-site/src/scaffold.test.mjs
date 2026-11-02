@@ -517,7 +517,7 @@ test('the hand-over block names the baked agent guidance and cairn-guidance chec
 test('the doctor reminder prints the exact go install literal and release-page URL', () => {
   const text = handoverText({ dir: 'alpine-club' });
   assert.ok(
-    text.includes('go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest'),
+    text.includes('go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest'),
     'the doctor reminder must print the exact go install command for the cairn tool',
   );
   assert.ok(

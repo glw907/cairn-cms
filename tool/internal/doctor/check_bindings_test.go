@@ -3,7 +3,7 @@ package doctor
 import (
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // TestConfigBindings is table-driven over config.bindings's three reachable statuses: pass (both

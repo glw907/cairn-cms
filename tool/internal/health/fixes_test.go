@@ -13,8 +13,8 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // declaredConditions is the whole domain of engine condition ids health's checks can ever

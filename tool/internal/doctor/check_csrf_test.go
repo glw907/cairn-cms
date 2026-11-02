@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // viteConfigWith wraps a csrf option block in the Kit 3 shape: the whole SvelteKit config inside

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 const (

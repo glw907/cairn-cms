@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // publishStaleWindow is how long a "cairn/*" edit branch may sit unpublished before the check

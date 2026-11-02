@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // conditionCase is one check driven to one representative verdict, with the condition that

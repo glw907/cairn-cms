@@ -12,7 +12,7 @@ Both paths put a `cairn` binary on your `PATH`.
 **`go install`**, if you have a Go toolchain:
 
 ```sh
-go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
+go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest
 ```
 
 This needs Go 1.26 or newer. A `go install` build carries no commit, so `cairn --version` prints

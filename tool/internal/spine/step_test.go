@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // recordStepLiteral matches a "step" object key holding a quoted literal, the shape every real

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // State is a health check's read-side verdict.

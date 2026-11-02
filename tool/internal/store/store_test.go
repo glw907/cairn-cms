@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 )
 
 // TestListSkipsMalformedAndRetired is the 2.0 seam test named in the ADR's

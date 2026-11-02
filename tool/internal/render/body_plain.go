@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // The plain body's keys. Every line is one fact behind one of these, lowercase, followed by a

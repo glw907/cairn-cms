@@ -14,9 +14,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
-	"github.com/glw907/cairn-cms/tool/internal/store"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/store"
 )
 
 // routedRoundTripper serves one canned body per request path prefix, so a discovery test can

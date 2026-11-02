@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install-check proves a published tag installs on a machine that holds no copy of this
 # repository: two containers, each with an empty module cache, each running
-# `go install github.com/glw907/cairn-cms/tool/cmd/cairn@<version>` and then the binary.
+# `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@<version>` and then the binary.
 #
 # The two differ in one variable, which is the whole point. The first runs the current Go image
 # with the default GOTOOLCHAIN, so Go downloads whatever toolchain the module asks for and the
@@ -27,7 +27,7 @@ esac
 # check green while proving nothing about the floor an operator actually meets.
 MINIMUM_IMAGE="docker.io/library/golang:1.26"
 DEFAULT_IMAGE="docker.io/library/golang:latest"
-MODULE="github.com/glw907/cairn-cms/tool/cmd/cairn"
+MODULE="github.com/glw907/cairn-cms/tool/v2/cmd/cairn"
 
 if ! command -v podman >/dev/null 2>&1; then
 	echo "install-check: podman is not installed" >&2

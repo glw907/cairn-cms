@@ -247,7 +247,7 @@ export function handoverText({ dir }) {
     "watch it appear on the site. The scaffold's dev script turns the stand-in on.",
     '',
     'Run `cairn doctor` any time to check what is set up and what is still missing. Install it ' +
-      'with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the release ' +
+      'with `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest` or from the release ' +
       'page at https://github.com/glw907/cairn-cms/releases.',
     '',
     'A workflow at .github/workflows/check.yml runs `npm run check:cairn` on every push, so',

@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/exe"
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/logx"
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/exe"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/logx"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // builtBinary builds cairn once per test run and returns its path. The falsification table below

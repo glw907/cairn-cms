@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/glw907/cairn-cms/tool/internal/adopt"
-	"github.com/glw907/cairn-cms/tool/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/adopt"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/spf13/cobra"
 )
 

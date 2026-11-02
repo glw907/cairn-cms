@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/logx"
-	"github.com/glw907/cairn-cms/tool/internal/render"
-	"github.com/glw907/cairn-cms/tool/internal/version"
+	"github.com/glw907/cairn-cms/tool/v2/internal/logx"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/version"
 	"github.com/spf13/cobra"
 )
 

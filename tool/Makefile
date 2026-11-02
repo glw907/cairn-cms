@@ -4,7 +4,7 @@
 # dependency-free of tooling.
 
 BINARY := cairn
-MODULE := github.com/glw907/cairn-cms/tool
+MODULE := github.com/glw907/cairn-cms/tool/v2
 GOLANGCI := tools/bin/golangci-lint
 GOVULNCHECK := tools/bin/govulncheck
 

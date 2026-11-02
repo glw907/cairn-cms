@@ -1,4 +1,4 @@
-module github.com/glw907/cairn-cms/tool
+module github.com/glw907/cairn-cms/tool/v2
 
 go 1.26.0
 

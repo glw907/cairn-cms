@@ -92,7 +92,7 @@ function closingInfoLines(state) {
     ],
     doctorLine:
       'Run `cairn doctor` any time to check what is set up and what is still missing. Install ' +
-      'it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the ' +
+      'it with `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest` or from the ' +
       'release page at https://github.com/glw907/cairn-cms/releases.',
   };
 }

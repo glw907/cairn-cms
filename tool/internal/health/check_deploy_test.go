@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // deployRoute pairs a request path substring with the status and body a deployRoundTripper

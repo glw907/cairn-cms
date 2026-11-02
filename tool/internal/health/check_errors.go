@@ -6,9 +6,9 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/glw907/cairn-cms/tool/internal/logs"
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // errorsCheck counts the error-level records the site's cairn engine wrote over Options.LogWindow,

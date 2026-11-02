@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/glw907/cairn-cms/tool/internal/render"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
-	"github.com/glw907/cairn-cms/tool/internal/store"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/store"
 	"github.com/spf13/cobra"
 )
 

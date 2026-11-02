@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/logs"
-	"github.com/glw907/cairn-cms/tool/internal/render/fixtures"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // decodeSite unmarshals a marshalled site payload into a generic map, the shape a consumer that

@@ -1,6 +1,6 @@
 package doctor
 
-import "github.com/glw907/cairn-cms/tool/internal/spine"
+import "github.com/glw907/cairn-cms/tool/v2/internal/spine"
 
 const (
 	// detailObservabilityOff is config.observability's fail detail.

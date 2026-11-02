@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // aiCrawlerTokens are AI_CRAWLERS's tokens (src/lib/delivery/ai-crawlers.ts), lowercased for

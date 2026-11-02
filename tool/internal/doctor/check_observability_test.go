@@ -3,7 +3,7 @@ package doctor
 import (
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // TestConfigObservability is table-driven over config.observability's three reachable statuses:

@@ -13,7 +13,7 @@ import (
 )
 
 // testOnlySymbols are corpus.go's two exported entry points. They read the fixture corpus out of
-// the repository working tree, which a `go install github.com/glw907/cairn-cms/tool/cmd/cairn@v*`
+// the repository working tree, which a `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@v*`
 // build has no copy of, so a non-test caller would ship a binary that fails on a clean machine
 // in a way no test in this module could observe.
 var testOnlySymbols = []string{"RepoRoot", "Corpus"}
@@ -23,8 +23,8 @@ var testOnlySymbols = []string{"RepoRoot", "Corpus"}
 // reads internal/health's message tables to regenerate a golden, and mangen shells out to `go
 // build` to harvest a command tree.
 var secondaryCommands = []string{
-	"github.com/glw907/cairn-cms/tool/cmd/copylist",
-	"github.com/glw907/cairn-cms/tool/cmd/mangen",
+	"github.com/glw907/cairn-cms/tool/v2/cmd/copylist",
+	"github.com/glw907/cairn-cms/tool/v2/cmd/mangen",
 }
 
 // TestCorpusResolverHasNoNonTestCaller walks every non-test Go file in the module and fails on any
@@ -80,7 +80,7 @@ func TestCorpusResolverHasNoNonTestCaller(t *testing.T) {
 // absent from the shipped binary's dependency graph, which is what lets a release archive and
 // a `go install` build carry neither.
 func TestSecondaryCommandsAreNotLinkedIntoCairn(t *testing.T) {
-	const cairn = "github.com/glw907/cairn-cms/tool/cmd/cairn"
+	const cairn = "github.com/glw907/cairn-cms/tool/v2/cmd/cairn"
 	out, err := exec.Command("go", "list", "-deps", cairn).Output()
 	if err != nil {
 		t.Fatalf("go list -deps %s: %v", cairn, err)
@@ -89,7 +89,7 @@ func TestSecondaryCommandsAreNotLinkedIntoCairn(t *testing.T) {
 
 	// A typo in either import path would make the assertion vacuous, so confirm the graph this
 	// test is reading is the real one before asserting what is missing from it.
-	if !slices.Contains(deps, "github.com/glw907/cairn-cms/tool/internal/providers") {
+	if !slices.Contains(deps, "github.com/glw907/cairn-cms/tool/v2/internal/providers") {
 		t.Fatalf("go list -deps %s reported %d packages and not this one", cairn, len(deps))
 	}
 	for _, command := range secondaryCommands {

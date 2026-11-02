@@ -3,7 +3,7 @@ package doctor
 import (
 	"strconv"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // Status is one check's settled result: the five-word vocabulary a directory preflight

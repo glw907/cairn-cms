@@ -4,9 +4,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/render/fixtures"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // TestSeverityClassCoversEveryShippedCheck asserts every id in health.All has a class

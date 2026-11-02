@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/render"
-	"github.com/glw907/cairn-cms/tool/internal/store"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/store"
 )
 
 // twoGroupRoutes returns the Cloudflare routes for an account holding two Workers, one with a

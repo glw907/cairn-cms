@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // credExpiryWindow is how far ahead of a GitHub fine-grained token's expiry the creds check

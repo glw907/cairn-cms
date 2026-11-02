@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // TestParseAckEntry covers --ack's grammar: <check-id>=<YYYY-MM-DD>, an already-expired date

@@ -205,6 +205,14 @@
 
 ### Changed
 
+- **`EntryData` is typed from the site resolver.** `EntryData<S>` is a union over the adapter's concepts,
+  so narrowing on `data.concept` types `data.entry.frontmatter` from that concept's fields.
+  `PublicRoutesConfig<S>`, `PublicRoutes<S>`, and `createPublicRoutes` carry the resolver type, and with
+  no argument each stays the untyped form. `loadPreview` still returns that form, and `PreviewData` is now
+  an intersection type, not an interface.
+
+  Consumers must: narrow on `data.concept` before reading a field one concept declares if your `PublicRoutesConfig` has no annotation, since its `entryLoad` data is now typed. Annotate the config `PublicRoutesConfig<typeof site>` to take the same narrowing, or leave a `PublicRoutesConfig` annotation in place to change nothing.
+
 - **The `/delivery` response helpers take a `build` prefix.** They read `buildRssResponse`,
   `buildJsonFeedResponse`, `buildSitemapResponse`, `buildRobotsResponse`, and `buildMarkdownResponse`, and
   their behavior doesn't change.

@@ -173,16 +173,16 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; summaryFields: { [x: string]: unknown } }
 - `createFragmentResolver`: (site: UntypedSiteResolver) => FragmentResolve
 - `createLinkResolver`: (site: UntypedSiteResolver) => LinkResolve
-- `createPublicRoutes`: (config: PublicRoutesConfig) => PublicRoutes
+- `createPublicRoutes`: <S extends SiteResolver>(config: PublicRoutesConfig<S>) => PublicRoutes<S>
 - `createSiteResolver`: <const A extends CairnAdapter>(adapter: A, files: Record<string, string>) => SiteResolver<A>
-- `EntryData`: { concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
+- `EntryData`: S extends TypedSiteResolver<infer A extends CairnAdapter> ? { [K in keyof A["content"] & string]: ConceptEntryData<K, ConceptFrontmatter<A, K>> }[keyof A["content"] & string] : ConceptEntryData<string, Record<string, unknown>>
 - `EntryDataOverrides`: { resolveLink?: LinkResolve; resolveFragment?: FragmentResolve; resolveMedia?: MediaResolve }
 - `EntryRef`: { concept: string; id: string; title: string; permalink: string; excerpt?: string }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
 - `ManifestProblem`: { concept: string; id: string; path: string; draft: boolean; errors: { [x: string]: string } }
-- `PublicRoutes`: { entryLoad: (event: { url: URL }) => Promise<EntryData>; entries: () => { path: string }[]; markdownEntries: () => { path: string }[]; markdownLoad: (event: { url: URL }) => Promise<{ body: string }> }
-- `PublicRoutesConfig`: { site: UntypedSiteResolver; render: (input: RenderInput) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia: MediaResolve | null }
+- `PublicRoutes`: { entryLoad: (event: { url: URL }) => Promise<EntryData<S>>; entries: () => { path: string }[]; markdownEntries: () => { path: string }[]; markdownLoad: (event: { url: URL }) => Promise<{ body: string }> }
+- `PublicRoutesConfig`: { site: S; render: (input: RenderInput) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia: MediaResolve | null }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `resolveImageUrl`: (image: string, origin: string) => string | undefined
 - `resolveReferences`: (site: UntypedSiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, EntryRef | EntryRef[]>
@@ -273,7 +273,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `IdentityResolver`: { resolve: (event: CairnEvent) => Promise<ResolvedIdentity | IdentityFailure>; logoutUrl: string; label?: string }
 - `ListData`: { conceptId: string; label: string; singular: string; dated: boolean; routable: boolean; entries: EntrySummary[]; error: string | null; formError: string | null; publishedAll: number | null }
 - `loadHealth`: (event: CairnEvent, { runtime }: { runtime: CairnRuntime }) => Promise<HealthData>
-- `loadPreview`: (event: CairnEvent, { runtime, publicRoutes }: { runtime: CairnRuntime; publicRoutes: PublicRoutesConfig }) => Promise<PreviewData>
+- `loadPreview`: (event: CairnEvent, { runtime, publicRoutes }: { runtime: CairnRuntime; publicRoutes: PublicRoutesConfig<UntypedSiteResolver> }) => Promise<PreviewData>
 - `LoginRequestOutcome`: { outcome: "sent" } | { outcome: "send-error" } | { outcome: "throttled" }
 - `MediaLibraryData`: { assets: MediaLibraryEntry[]; usage: { [x: string]: MediaUsageInfo }; error: string | null; flash: "deleted" | "updated" | "replaced" | "altPropagated" | "bulkDeleted" | "orphansPurged" | "uploaded" | null }
 - `MediaRouteConfig`: { runtime: CairnRuntime }
@@ -287,7 +287,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavRoutesConfig`: { runtime: CairnRuntime }
 - `NO_PENDING_REQUEST_ERROR`: "no-pending-request"
 - `PlainSectionAction`: <T>(handler: (args: { event: CairnEvent; form: FormData; ctx: Omit<SectionActionContext<unknown>, "db"> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>>
-- `PreviewData`: { preview: { state: "draft" | "published"; expiresAt: string; published: { permalink: string } | null }; concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
+- `PreviewData`: ConceptEntryData<string, Record<string, unknown>> & { preview: { state: "draft" | "published"; expiresAt: string; published: { permalink: string } | null } }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `requireAccess`: (event: CairnEvent, target?: string) => Editor
 - `requireOwner`: (event: CairnEvent) => Editor

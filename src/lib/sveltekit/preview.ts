@@ -176,7 +176,7 @@ export async function revokePreview(
  *  `EntryData` field breaks this build rather than a consuming site's.
  * @public
  */
-export interface PreviewData extends EntryData {
+export type PreviewData = EntryData & {
   preview: {
     /** `'draft'` while the shared branch is still open; `'published'` once it is gone. */
     state: 'draft' | 'published';
@@ -189,7 +189,7 @@ export interface PreviewData extends EntryData {
      */
     published: { permalink: string } | null;
   };
-}
+};
 
 /** A 256-bit `generateToken` value, base64url with no padding: exactly 43 characters. */
 const TOKEN_SHAPE_RE = /^[A-Za-z0-9_-]{43}$/;

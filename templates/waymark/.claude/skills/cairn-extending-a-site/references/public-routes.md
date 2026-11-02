@@ -47,6 +47,14 @@ export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 The page renders `CairnHead` (`@glw907/cairn-cms/public`) with `seo={data.seo}`, then
 `{@html data.html}`. `titleTemplate` applies only when `title` is undefined.
 
+`entryLoad` returns `EntryData<typeof site>`, a union over the adapter's concepts, so narrowing on
+`data.concept` types `data.entry.frontmatter` from that concept's fields: inside
+`if (data.concept === 'posts')`, `data.entry.frontmatter.image` is the posts field's value.
+
+A `PublicRoutesConfig` with no type argument gives the untyped `EntryData`, where `concept` is a
+string and the frontmatter a record. Every typed value assigns to it, and `loadPreview` returns that
+untyped form, so a template shared with the preview route takes `EntryData` as its prop type.
+
 To show reference fields, return `references` from the same load:
 `resolveReferences(site, descriptor, data.entry.frontmatter)` with the descriptor from
 `buildSiteDescriptors(cairn)` matched on `data.concept`. A scaffold's `withReferences`

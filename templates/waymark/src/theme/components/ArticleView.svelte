@@ -23,7 +23,11 @@ identically) depends on everything else staying byte-for-byte the same. -->
   import { formatDate } from '#chassis/date.js';
 
   interface Props {
-    /** The composed entry data, plus the reference-edge resolution `#chassis/entry-data.js` layers on. */
+    /**
+     * The composed entry data, plus the reference-edge resolution `#chassis/entry-data.js` layers on.
+     * Untyped on purpose: `loadPreview` returns the default `EntryData`, so this template takes the
+     * shape both of its routes assign to, and it checks the raw `image` value at runtime below.
+     */
     data: EntryData & { references: Record<string, EntryRef | EntryRef[]> };
     /** True on the preview route: suppresses canonical, og:url, and the `.md` twin link. Defaults to false (the public route). */
     preview?: boolean;
@@ -72,7 +76,7 @@ identically) depends on everything else staying byte-for-byte the same. -->
    */
   const rawHeroFallback = $derived.by(() => {
     if (data.heroImage) return undefined;
-    const value = (data.entry.frontmatter as Record<string, unknown>).image;
+    const value = data.entry.frontmatter.image;
     if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
     const field = value as RawImageField;
     if (typeof field.src !== 'string' || !/^https?:\/\//.test(field.src)) return undefined;

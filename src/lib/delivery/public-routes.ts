@@ -6,12 +6,13 @@
 // code from globs, so it stays in the prerender graph and out of the runtime Worker.
 // `@sveltejs/kit` loads only on a 404 path, so `/delivery` imports under plain Node with no kit.
 import type { ContentSummary, ContentEntry } from './content-index.js';
-import type { SiteResolver } from './site-resolver.js';
+import type { SiteResolver, TypedSiteResolver } from './site-resolver.js';
 import { buildSeoMeta } from './seo.js';
 import type { SeoMeta } from './seo.js';
 import { readSeoFields, resolveImageUrl } from './seo-fields.js';
 import { createLinkResolver, createFragmentResolver } from './site-resolver.js';
-import type { SiteRender } from '../content/types.js';
+import type { CairnAdapter, ConceptConfig, SiteRender } from '../content/types.js';
+import type { InferFieldset } from '../content/fieldset.js';
 import type { LinkResolve } from '../content/links.js';
 import type { FragmentResolve, MarkedFragmentResolve } from '../render/resolve-include.js';
 import type { MediaResolve } from '../render/resolve-media.js';
@@ -21,9 +22,12 @@ import { parseMediaToken } from '../media/reference.js';
  * Injected dependencies for the public loaders.
  * @public
  */
-export interface PublicRoutesConfig {
-  /** The site resolver `createSiteResolver` returns, which the loaders look each path up in. */
-  site: SiteResolver;
+export interface PublicRoutesConfig<S extends SiteResolver = SiteResolver> {
+  /**
+   * The site resolver `createSiteResolver` returns, which the loaders look each path up in. Its type
+   *  is what `createPublicRoutes` types `entryLoad`'s {@link EntryData} from.
+   */
+  site: S;
   /** The site's render function, applied to each entry's body. */
   render: SiteRender;
   /** The site's origin, prefixed to each permalink for the canonical URL and other absolute links. */
@@ -57,15 +61,12 @@ export interface PublicRoutesConfig {
   resolveMedia: MediaResolve | null;
 }
 
-/**
- * One entry's data: the detail entry, its rendered html, and its canonical URL.
- * @public
- */
-export interface EntryData {
+/** One entry's data under concept id `C`, with frontmatter of type `F`. */
+export interface ConceptEntryData<C extends string = string, F = Record<string, unknown>> {
   /** The concept id the entry belongs to, for a template that renders more than one concept. */
-  concept: string;
+  concept: C;
   /** The raw entry, frontmatter and body, for a field this projection does not surface. */
-  entry: ContentEntry;
+  entry: ContentEntry<F>;
   /** The body already run through the site's `render`; the template never renders markdown itself. */
   html: string;
   /** The entry's absolute, origin-anchored URL, for SEO tags and feed links that must not be relative. */
@@ -85,6 +86,26 @@ export interface EntryData {
    */
   heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string };
 }
+
+/** Concept `K`'s frontmatter, read from its fieldset the way `TypedSiteResolver.concept` reads it. */
+type ConceptFrontmatter<A extends CairnAdapter, K extends keyof A['content']> =
+  NonNullable<A['content'][K]> extends ConceptConfig<infer F> ? InferFieldset<F> : Record<string, unknown>;
+
+/**
+ * One entry's data: the detail entry, its rendered html, and its canonical URL. For a site resolver
+ *  built from a declared adapter this is a union over the adapter's concepts, so narrowing on
+ *  `concept` types `entry.frontmatter` from that concept's fieldset. With no argument, or a resolver
+ *  no adapter types, `concept` is a string and the frontmatter a plain record. Every arm of the
+ *  union assigns to the untyped default, so a helper that takes any site's data names `EntryData`.
+ * @remarks
+ * The parameter is the resolver, not the adapter, because TypeScript cannot infer an adapter back
+ * through the `SiteResolver` conditional. Name a site's data as `EntryData<typeof site>`.
+ * @public
+ */
+export type EntryData<S extends SiteResolver = SiteResolver> =
+  S extends TypedSiteResolver<infer A>
+    ? { [K in keyof A['content'] & string]: ConceptEntryData<K, ConceptFrontmatter<A, K>> }[keyof A['content'] & string]
+    : ConceptEntryData;
 
 /**
  * Derive the hero projection from an entry's frontmatter, without mutating it (locked decision 5).
@@ -216,14 +237,17 @@ export async function composeEntryData(
  * Build the public route resolver for a site's unified index.
  * @scaffold
  */
-export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
+export function createPublicRoutes<S extends SiteResolver>(config: PublicRoutesConfig<S>): PublicRoutes<S> {
   const { site } = config;
 
   /** One entry by request path, rendered through the site renderer, or a 404. */
-  async function entryLoad(event: { url: URL }): Promise<EntryData> {
+  async function entryLoad(event: { url: URL }): Promise<EntryData<S>> {
     const entry = site.byPermalink(event.url.pathname);
     if (!entry) throw (await import('@sveltejs/kit')).error(404, `Not found: ${event.url.pathname}`);
-    return composeEntryData(config, entry);
+    // The cast is the one boundary between the runtime and the typed shape: byPermalink carries no
+    // concept in its type, and the conditional cannot resolve while `S` is open. The entry came from
+    // a validated index under its own concept, so its frontmatter is that concept's fieldset output.
+    return (await composeEntryData(config, entry)) as unknown as EntryData<S>;
   }
 
   /** Prerender enumeration: one `{ path }` per entry across every concept. */
@@ -287,8 +311,8 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
  *  a build against `main` produced.
  * @scaffold
  */
-export interface PublicRoutes {
-  entryLoad: (event: { url: URL }) => Promise<EntryData>;
+export interface PublicRoutes<S extends SiteResolver = SiteResolver> {
+  entryLoad: (event: { url: URL }) => Promise<EntryData<S>>;
   entries: () => { path: string }[];
   markdownEntries: () => { path: string }[];
   markdownLoad: (event: { url: URL }) => Promise<{ body: string }>;

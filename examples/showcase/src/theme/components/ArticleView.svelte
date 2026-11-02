@@ -79,7 +79,8 @@ identically) depends on everything else staying byte-for-byte the same. -->
   const rawHeroFallback = $derived.by(() => {
     if (data.heroImage) return undefined;
     // Only the concepts that declare an `image` field carry one; the `in` test narrows the union to them.
-    const value: unknown = 'image' in data.entry.frontmatter ? data.entry.frontmatter.image : undefined;
+    const value: unknown =
+      'image' in data.entry.frontmatter ? data.entry.frontmatter.image : undefined;
     if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
     const field = value as RawImageField;
     if (typeof field.src !== 'string' || !/^https?:\/\//.test(field.src)) return undefined;

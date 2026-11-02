@@ -68,7 +68,8 @@ describe('ManageEditors', () => {
     expect(hidden('Role')).toBe(true);
     const nameCell = screen.container.querySelector('tbody tr td')!;
     const stacked = [...nameCell.querySelectorAll('.sm\\:hidden')].map((el) => el.textContent?.trim());
-    expect(stacked).toEqual(['owner@t', 'owner']);
+    // Each stacked value carries a screen-reader-only name, standing in for its hidden column header.
+    expect(stacked).toEqual(['Email: owner@t', 'Role: owner']);
   });
 
   it('disables the remove control for the acting owner (anti-lockout affordance)', async () => {

@@ -72,7 +72,7 @@
   Sweep 2026-10-31: A site's own mint should not rebuild the link from a host-controlled origin. Moving `requireOrigin` first also fixes #122. `src/lib/sveltekit/preview.ts:166`, `content-routes-preview.ts:60-66,88,96`.
   Placement: Final engine batch, admin and tidy. Friction entry 26 (`extender`), boundary test class3, page none.
   Merged #122: On a site with no `PUBLIC_ORIGIN`, the built-in mint writes the token row before it fails:... (the same reorder fixes it).
-- [ ] **#116** Validate preview.ttlMs when the admin is constructed `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
+- [ ] **#116** Validate preview.ttlMs when the admin is constructed `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   A bad `preview.ttlMs` passes `createCairnAdmin` and fails only when an editor first mints: `resolveTtlMs` runs inside `mintPreview`, after the authorization checks, and `previewMintAction` catches only the missing-table error, so the editor gets an uncaught `PreviewTokenConfig:` error instead of a refusal on the panel. The function's own comment compares it to `defineRoles`, which fails at declaration. Fix: validate the option when `createCairnAdmin` or `createContentRoutes` is constructed (`src/lib/sveltekit/preview.ts:73-77,144`, `src/lib/sveltekit/cairn-admin.ts:118`; found while writing the share-a-draft-preview page, 2026-10-12).
   Sweep 2026-10-31: A config typo reaches an editor as an uncaught error when it could fail at startup. `src/lib/sveltekit/preview.ts:77,144`, `cairn-admin.ts:118`.
   Placement: Final engine batch, admin and tidy. Friction entry 27 (`extender`), boundary test class3, page none.
@@ -81,7 +81,7 @@
   Sweep 2026-10-31: The audit reports clean against the sign-in card, the exact silent green its refusals exist to stop. `src/lib/audit/rendered.ts:305-314`, `config.ts:85`.
   Placement: Final engine batch, admin and tidy. Friction entry 32 (`extender`), boundary test class1 batched (harness design), page run-cairn-audit-on-your-site.
 - [ ] **#136** Log refused entry deletes and renames `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  An entry delete or rename refused for an inbound reference leaves no log record, while a media delete refused for the same reason logs `media.delete_refused` with the referencing count. `content-routes-entry-destructive.ts` logs only `entry.discarded` and `commit.succeeded`, so the editor's banner is the only trace of a 409 or a fail-closed 503, and a developer has no event to filter on in Workers Logs. Fix candidate: log an `entry.delete_refused` and an `entry.rename_refused` with the reason and the blocker count, and add their rows to `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/log-events.md` (`src/lib/sveltekit/content-routes-entry-destructive.ts:127-157,272-295`; found while writing the link-content-with-references page, 2026-10-12).
+  An entry delete or rename refused for an inbound reference leaves no log record, while a media delete refused for the same reason logs `media.delete_refused` with the referencing count. `content-routes-entry-destructive.ts` logs only `entry.discarded` and `commit.succeeded`, so the editor's banner is the only trace of a 409 or a fail-closed 503, and a developer has no event to filter on in Workers Logs. Fix candidate: add `entry.delete_refused` and `entry.rename_refused` to `src/lib/log/events.ts` with the reason and the blocker count, log them at the refusals in `src/lib/sveltekit/content-routes-entry-destructive.ts`, and add their rows to `skills/cairn-extending-a-site/references/log-events.md` (found while writing the link-content-with-references page, 2026-10-12).
   Sweep 2026-10-31: The repo's rule gives a diagnosable path an event, and a refusal leaves no trace today. `content-routes-entry-destructive.ts:166,183,398`; compare `media.delete_refused` at `content-routes-media-delete.ts:181`.
   Placement: Final engine batch, admin and tidy. Friction entry 55 (`extender`), boundary test class1 batched (budget, first after the cut), page debug-your-site.
 - [ ] **#143** Render a slot's help text in the insert form `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
@@ -137,7 +137,7 @@
 - [ ] **#32** Remove `RoutingRule.inFeeds` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)* *(swept 2026-10-31)*
   `src/lib/content/types.ts:329` declares it and `concepts.ts:34-36` writes it; nothing in `src/lib` reads it. Wiring it would contradict feed membership being the site's choice. Remove it with a `Consumers must:` line, and retire the ROADMAP entry on engine-provided `inFeeds` views.
   Placement: Final engine batch.
-- [ ] **#24** Update the engine's owner-editor fallback wording `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-20)* *(swept 2026-10-31)*
+- [ ] **#24** Update the engine's owner-editor fallback wording `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-20)* *(swept 2026-11-01)*
   `src/lib/diagnostics/conditions.ts:173-174`, its mirror `tool/internal/spine/conditions.json:57-58`, and `tool/internal/doctor/check_roles.go:13-16,28-30` with `check_roles_test.go:62,115` describe the owner-and-editor fallback as current. A guard with no runtime now throws (`src/lib/sveltekit/guard.ts:60,183`), so say the fallback holds only on older engines.
   Placement: Final engine batch.
 
@@ -220,9 +220,6 @@
   `src/lib/content/manifest.ts:3-4` and `:430` say the save path patches the manifest; only publish commits it (`content-routes-entry-write.ts:368,506`).
   Placement: Final engine batch.
   Friction entry 6 (2b close, page none): The `src/lib/content/manifest.ts:1-5` header still says "the save path patches one entry and commits it with the content in one commit", but a save commits no manifest; publish patches it (`src/lib/sveltekit/content-routes-entry-write.ts:92,358`). Fix the comment in the next engine pass that touches the file (found while writing the content-model page, 2026-10-12).
-- [ ] **#96** Fix the comment above the no-pending-request redirect `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-31)* *(swept 2026-10-31)*
-  `src/lib/sveltekit/auth-routes.ts:355-359` says a cookie-less browser gets `no-pending-request` only after failing against a bound row, but `:360-363` redirects with it for any failed consume when no cookie is present. The reference text now matches the code; the comment does not. An `auth-data` path, so it waits for a pass that touches it. Found by the docs finalization pass 1 whole-branch review.
-  Placement: Final engine batch.
 - [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)* *(swept 2026-10-31)*
   The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it.
   Placement: After the release.
@@ -242,8 +239,8 @@
   `packages/create-cairn-site` is `0.0.0` in the repository, `npm view create-cairn-site` answers E404, and `docs/admin/create-your-site.md` and the root `README.md` open with `npx create-cairn-site`, so the command does not work from a registry until the package is published. The manifest, tarball contents, leak scan, and the `publish-create-site` job in `publish.yml` have landed; the job has never run. What remains is the release act: publish the first version by hand, set up npm trusted publishing for the package, watch the first OIDC run of `publish-create-site`, and run the real install.
   Placement: The one release.
 
-- [ ] **#198** Refresh the stale `buildSitemapView` entry in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)*
-  `scripts/checks/check-self-use-allowlist.json:86` keeps `buildSitemapView` on the allowlist as an export the showcase did not call. The showcase's sitemap route now calls it, so the entry may be removable. The path is on the `runner` map, so the scaffold template pass left it.
+- [ ] **#198** Refresh the stale `buildSitemapView` entry in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+  `scripts/checks/check-self-use-allowlist.json:86` keeps `buildSitemapView` on the allowlist as an export the showcase did not call. The showcase's sitemap route now calls it (`examples/showcase/src/routes/sitemap.xml/+server.ts:17`), so the entry is removable. `findViolations` never flags a stale entry, so nothing forces the cleanup. The path is on the `runner` map, so the scaffold template pass left it.
   Placement: Final engine batch.
 
 - [ ] **#196** Close the practices review's open findings on the packaged guidance `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
@@ -280,6 +277,8 @@
 - **#165** A dated filename whose prefix does not match the concept's `datePrefix` keeps date digits in its public...: Migration-only, cosmetic, and visible at the first URL check. The entry still works. (Geoff, 2026-10-31)
 
 ## Done
+- [x] **#96** Fix the comment above the no-pending-request redirect `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-31 → 2026-11-01)*
+  done: 106561156 rewrote the comment; `src/lib/sveltekit/auth-routes.ts:372-377` now says "whatever the cause", matching the redirect at `:378-382`.
 - [x] **#42** Give a scaffolded site one public origin `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24 → 2026-11-01)*
   A scaffolded site keeps `ORIGIN = 'https://showcase.test'` (`templates/waymark/src/chassis/content.ts:36`), so its sitemap, robots `Sitemap:` line, and feed URLs point at a placeholder host after deploy; `writePublicOrigin` (`packages/create-cairn-site/src/cloudflare/config.mjs:133`) rewrites only `wrangler.jsonc`. Give setup one origin source, written when `PUBLIC_ORIGIN` is, with a test.
   Placement: Scaffold pass.

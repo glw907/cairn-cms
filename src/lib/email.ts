@@ -2,7 +2,6 @@
 // send_email binding; production passes `cloudflareSend`, which calls env.EMAIL.send
 // (Cloudflare Email Sending, arbitrary recipients).
 import type { EmailAttachment, EmailRecipient } from './auth/types.js';
-import type { SenderConfig } from './content/types.js';
 import type { CairnEnv } from './env.js';
 import { CairnError } from './diagnostics/index.js';
 import { escapeHtml } from './escape.js';
@@ -54,7 +53,8 @@ export type SendMagicLink = (env: CairnEnv, message: MagicLinkMessage) => Promis
 export function buildMagicLinkMessage(input: {
   to: string;
   siteName: string;
-  sender: SenderConfig;
+  /** The runtime's `SenderConfig`, spelled structurally: this module loads in the site-shaped type program, which must not reach the render pipeline through `content/types`. */
+  sender: { from: string; replyTo?: string };
   link: string;
 }): MagicLinkMessage {
   const { to, siteName, sender, link } = input;

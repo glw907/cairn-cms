@@ -196,6 +196,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Delete the options that are gone.** Remove `spellcheck:` from `site.config.yaml`, which now fails with "unrecognized key", and remove `sanitizeSchema`, `unsafeDisableSanitize`, `anchorRel`, `editor.siteConfigPath`, `preview.bodyClass`, `byConcept[...].bodyClass`, and `includeSubDomains` wherever your config sets them. Move a site config that lived elsewhere to `src/theme/site.config.yaml`. The admin's HSTS header is `max-age=63072000` alone, and a browser replaces its cached policy with it on each admin response. A site that relied on `includeSubDomains` checks the header a deployed `/admin` response carries before it counts on a zone-level pin.
+- **Stub a Workers user agent in a test that matches a log record object.** Outside Workers a record prints as one JSON string, so a `console` spy that compares an object stops matching under Node.
 - **Say block for the `:::` unit.** Rename `defineComponent` to `defineBlock`, `ComponentDef` to `BlockDef`, `ComponentRegistry` to `BlockRegistry`, and `ComponentContext` to `BlockContext`. Stored entries and the directive grammar don't change, so no content moves.
 - **Pass `blocks` as an array.** `createRenderer({ components: registry })` becomes `createRenderer({ blocks })`, and `rendering: { components: registry }` becomes `rendering: { blocks }`. The engine builds the registry, so drop a `defineRegistry` call that only fed these two. A registry you keep takes `defineRegistry({ blocks })`. Read `rendering.blocks` as an array, not through `.defs`, `.names`, or `.get`. A leftover `components` key, or a registry passed as `createRenderer`'s config, throws at load and names `blocks`. Run `npm run check` afterward: `vite build` doesn't type-check.
 - **Rename `markdown-components.ts` to `markdown-blocks.ts`.** A scaffolded site renames the file under `src/theme`, renames its `components` export to `blocks`, and updates each import.
@@ -211,7 +213,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Remove `preview` from your `createCairnAdmin` config.** A preview link now lives a fixed seven days, and `PreviewTokenConfig` is gone.
 - **Stop importing the admin views, the feed and sitemap builders, and the other internals.** `/admin` now holds `CairnAdmin`, `CairnAdminShell`, and `CsrfField`. `/delivery` drops `buildRssFeed`, `buildJsonFeed`, `buildSitemap`, `buildRobots`, `composeEntryData`, and `renderJsonLdScript`; use `buildRssResponse`, `buildJsonFeedResponse`, `buildSitemapResponse`, and `buildRobotsResponse`. The root drops `formatManifest`, `verifyManifest`, `verifyReferences`, and `resolveCapability`, so a test that resolved a capability writes the literal `'owner'`, `'editor'`, or `'none'`. `/admin-toolkit` drops `formatTimestamp`. `/sveltekit` drops `requireEditor`, so an all-editors route takes an access-map key naming `editor` and calls `requireAccess`.
 - **Replace `createAdminAction` with `createSectionAction`.** `AdminActionOptions` and the `access` option go with it. Add an access-map rule for the action's target, since an empty map refuses everyone, owner included. An action with no binding writes `createSectionAction({})`, and its handler gets no `ctx.db`. A refusal now returns `fail(403, { error })` in place of throwing, so the page reads `form.error`.
-- **Import from `/delivery` in place of `/delivery/data`.** The subpath is gone, and `/delivery` now loads under plain Node, so a script can use it directly.
+- **Move each `/delivery/data` import to the name's one subpath.** The subpath is gone. A delivery name imports from `/delivery`, which now loads under plain Node, so a script can use it directly. A content-model or adapter type, such as `SiteConfig`, `Manifest`, or `ConceptConfig`, imports from `@glw907/cairn-cms`.
 - **Import `CairnHead` from `/public`.** `/delivery/head` is gone.
 - **Import `BlockContext` from `@glw907/cairn-cms`.** `/render` is gone, and `/sveltekit` no longer carries the type.
 - **Rename `IdentityRefusal` to `IdentityFailure`.** The type is the refusal arm of `IdentityResolver.resolve`'s return, so change it in any resolver you write. Nothing else changed.
@@ -412,7 +414,6 @@ The setup tool's changes ask nothing of an existing site. In the showcase and th
 the `ORIGIN` constant in `content.ts` became an import of `publicOrigin` from
 `src/theme/cairn.config.ts`, which `create-cairn-site` now writes with the site's real address. A site
 that keeps its own origin constant still builds, and it can adopt the import when it likes.
-- **Delete the options that are gone.** Remove `spellcheck:` from `site.config.yaml`, which now fails with "unrecognized key", and remove `sanitizeSchema`, `unsafeDisableSanitize`, `anchorRel`, `editor.siteConfigPath`, `preview.bodyClass`, `byConcept[...].bodyClass`, and `includeSubDomains` wherever your config sets them. Move a site config that lived elsewhere to `src/theme/site.config.yaml`. The admin's HSTS header is `max-age=63072000` alone, so pin subdomains at the zone.
 See [`CHANGELOG.md`](./CHANGELOG.md#unreleased).
 
 ## 0.98.0

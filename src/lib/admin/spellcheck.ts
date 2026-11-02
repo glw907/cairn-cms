@@ -381,7 +381,7 @@ export function createSpellWorker(): SpellWorker {
 // from CONSUMER app code; the library's source cannot self-import by package name, so it uses the
 // portable `new URL('./asset', import.meta.url)` form Vite resolves inside dependencies too. The
 // showcase E2E proves the whole chain through the real consumer build; if resolution ever fails there,
-// only these two URL lines change. The dictionary filename is the dialect-resolved one the main thread
+// only these two URL lines change. The dictionary filename is the one the main thread
 // passes in; the wasm filename is fixed.
 
 /** The real wasm asset URL, resolved module-relative the same way the worker is. */
@@ -394,8 +394,7 @@ export function resolveWasmUrl(): string {
  *  `new URL(..., import.meta.url)`. The literal path is load-bearing. A templated `new URL` makes Vite
  *  and rolldown treat the directory as a glob and parse every sibling module to build it, including the
  *  `.svelte` components that still carry `lang="ts"` in `dist`, and the glob parser chokes on the TS
- *  syntax and breaks the consumer build. This set mirrors the dialect map in `nav/site-config.ts`; add
- *  one line per new shipped dialect dictionary.
+ *  syntax and breaks the consumer build. Add one line per new shipped dictionary.
  */
 const DICTIONARY_URLS: Record<string, () => string> = {
   'dictionary-en-us.txt': () =>
@@ -437,7 +436,7 @@ export interface SpellcheckOptions {
    */
   siteWords?: ReadonlyArray<string>;
   /**
-   * The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt". The source resolves it to
+   * The dictionary filename, e.g. "dictionary-en-us.txt". The source resolves it to
    *  a real asset URL and posts it in the Worker's `init`. Defaults to US English.
    */
   dictionaryFile?: string;
@@ -570,7 +569,7 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   const arbiter = arbitrateChecked();
   // The wasm and dictionary URLs the Worker fetches, resolved module-relative unless the caller
   // overrides them (a test injecting a fake Worker passes canned URLs). The dictionary filename is the
-  // dialect-resolved one; the wasm filename is fixed.
+  // one; the wasm filename is fixed.
   const assetUrls = options.assetUrls ?? {
     wasmUrl: resolveWasmUrl(),
     dictionaryUrl: resolveDictionaryUrl(options.dictionaryFile ?? 'dictionary-en-us.txt'),

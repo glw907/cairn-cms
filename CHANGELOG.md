@@ -278,7 +278,7 @@
 
   Consumers must: nothing.
 
-- **`mintPreview` and `revokePreview` check access before they look up the concept.** A role the access
+- **The preview mint and revoke actions check access before they look up the concept.** A role the access
   map denies a key gets the 403 whether or not the key names a concept; an unmapped nonexistent id still
   answers `unknown-concept`. The mint action reads `PUBLIC_ORIGIN` before it mints, so a site without one
   writes no `preview_tokens` row, and a refused editor on that site gets a generic failure.
@@ -310,10 +310,11 @@
   Consumers must: nothing.
 
 - **`/delivery` loads under plain Node, so `/delivery/data` is gone.** The route loaders resolve
-  `@sveltejs/kit` with a dynamic import on their 404 paths, and `/delivery` carries every name
-  `/delivery/data` did.
+  `@sveltejs/kit` with a dynamic import on their 404 paths. Its delivery names stay on `/delivery`, and
+  its content-model and adapter types, such as `SiteConfig`, `Manifest`, and `ConceptConfig`, import from
+  `@glw907/cairn-cms`.
 
-  Consumers must: change each `@glw907/cairn-cms/delivery/data` import to `@glw907/cairn-cms/delivery`.
+  Consumers must: change each `@glw907/cairn-cms/delivery/data` import to the name's one subpath, `@glw907/cairn-cms/delivery` for a delivery name and `@glw907/cairn-cms` for a content-model or adapter type.
 
 - **`CairnHead` moves to `/public`, beside `PreviewBanner`.** `/delivery/head` is gone.
 
@@ -1154,7 +1155,7 @@
   Consumers must: mount the admin through `createCairnAdmin` in place of `createContentRoutes`, `createAuthRoutes`, and `createEditorRoutes`, and drop any import of `mintPreview`, `revokePreview`, `parseManifest`, and `buildNewlyPublished`.
 
 - **A preview link's lifetime is fixed at seven days.** `PreviewTokenConfig` and the `preview` option on
-  `createCairnAdmin` are gone.
+  `createCairnAdmin` are gone, and `createCairnAdmin` throws on a leftover `preview` key.
 
   Consumers must: remove `preview` from your `createCairnAdmin` config.
 
@@ -1285,7 +1286,7 @@
   `Strict-Transport-Security` header is `max-age=63072000` alone and subdomain pinning belongs at the zone.
   `FormatCivilDateOptions` drops `intlOptions`; the Media Library's date still reads month and day.
 
-  Consumers must: delete `sanitizeSchema`, `unsafeDisableSanitize`, `anchorRel`, `editor.siteConfigPath`, `bodyClass`, and `includeSubDomains` from your config, and pin subdomains to HTTPS at the zone.
+  Consumers must: delete `sanitizeSchema`, `unsafeDisableSanitize`, `anchorRel`, `editor.siteConfigPath`, `bodyClass`, and `includeSubDomains` from your config, and move a site config that lived elsewhere to `src/theme/site.config.yaml`.
 
 - **`spellcheck:` leaves `site.config.yaml`.** The dialect block configured a dictionary list that held one
   entry, so the editor always uses US English. A site config that still carries the key now fails with

@@ -98,7 +98,7 @@ island.
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
     data: EditData & { siteName: string };
-    /** The site's component registry, for the insert palette. */
+    /** The site's block registry, for the insert palette. */
     registry?: BlockRegistry;
     /** The site's design-accurate render pipeline; the preview pane renders its output, which the floored pipeline already sanitized. */
     render?: SiteRender;

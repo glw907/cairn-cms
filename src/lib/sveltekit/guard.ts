@@ -526,8 +526,8 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * `SectionActionOptions.target` carries for its POST half.
  *
  * A `none`-capability session is admitted only when the matched rule names its role explicitly
- * (see `canReach`). A route that wants the zero-config any-editor behavior calls
- * {@link requireSession} instead of this helper.
+ * (see `canReach`). A route every editor may reach takes a map rule naming their roles:
+ * {@link requireSession} only authenticates, so it would admit a `none` session too.
  * @public
  */
 export function requireAccess(event: CairnEvent, target?: string): Editor {

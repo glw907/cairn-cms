@@ -5,8 +5,7 @@
 // logic stays testable apart from the CLI. It prints a one-line summary to stdout. Bad flags go to
 // stderr with exit 2; a write failure exits 1; a finished write with an invalid non-draft entry exits
 // 1; any other run exits 0. The codes go through process.exitCode, never process.exit, so a piped
-// stdout flushes the whole report before the process ends, the same rule its two sibling bins
-// (cairn-audit, cairn-media-seed) already follow.
+// stdout flushes the whole report before the process ends, the same rule cairn-audit follows.
 import { writeManifest, writeSiteFacts } from './internal.js';
 import { formatManifestSummary, manifestExitCode, parseArgs, USAGE } from './assemble.js';
 

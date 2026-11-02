@@ -986,7 +986,7 @@ describe('MarkdownEditor', () => {
     const btn = foldBtn(screen.container)!;
     expect(btn.tagName).toBe('BUTTON');
     expect(btn.getAttribute('aria-expanded')).toBe('true');
-    expect(btn.getAttribute('aria-label')).toBe('panel section');
+    expect(btn.getAttribute('aria-label')).toBe('panel block');
     // Clicking it hides the body and the closer.
     await userEvent.click(btn);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
@@ -1002,10 +1002,10 @@ describe('MarkdownEditor', () => {
     // opener's fence machinery is gone, replaced by the one chip naming the raw directive, the
     // title, and the hidden-line count. aria-label carries the title too, for parity with sighted
     // authors who now read it only on the chip.
-    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel block, “Day pass”, 3 lines, hidden');
     expect(pill.textContent).toBe('panel · “Day pass” · 3 lines');
     await expect.poll(() => foldBtn(screen.container)?.getAttribute('aria-expanded')).toBe('false');
-    expect(foldBtn(screen.container)?.getAttribute('aria-label')).toBe('panel section');
+    expect(foldBtn(screen.container)?.getAttribute('aria-label')).toBe('panel block');
     // Clicking the pill restores the hidden lines and the body text still mirrors to the form.
     await userEvent.click(pill);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
@@ -1195,7 +1195,7 @@ describe('MarkdownEditor', () => {
     // The body never rendered open; the pill and the gutter button already read collapsed.
     expect(lineWith(screen.container, 'body one')).toBeFalsy();
     const pill = foldPill(screen.container)!;
-    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel block, “Day pass”, 3 lines, hidden');
     expect(foldBtn(screen.container)?.getAttribute('aria-expanded')).toBe('false');
     // The fold is view-only: the hidden field still mirrors the full, untouched source.
     expect(hiddenValue(screen.container)).toBe(FOLD_DOC);
@@ -1219,12 +1219,12 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     // The gutter's open-state name is registry-labeled too, the same resolution the pill uses.
-    expect(foldBtn(screen.container)!.getAttribute('aria-label')).toBe('Info Panel section');
+    expect(foldBtn(screen.container)!.getAttribute('aria-label')).toBe('Info Panel block');
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
     expect(pill.textContent).toBe('Info Panel · “Day pass” · 3 lines');
-    expect(pill.getAttribute('aria-label')).toBe('Info Panel section, “Day pass”, 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('Info Panel block, “Day pass”, 3 lines, hidden');
     // The registry's `use` line still rides the pill's native tooltip; the opener's own
     // {title="..."} attribute now rides the visible chip text and the aria-label instead.
     expect(pill.title).toBe('Use to set supporting details apart from the main flow.');
@@ -1242,7 +1242,7 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
     expect(pill.textContent).toBe('panel · “Day pass” · 3 lines');
-    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel block, “Day pass”, 3 lines, hidden');
     expect(pill.hasAttribute('title')).toBe(false);
   });
 
@@ -1261,7 +1261,7 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
     expect(pill.textContent).toBe('Info Panel · 2 lines');
-    expect(pill.getAttribute('aria-label')).toBe('Info Panel section, 2 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('Info Panel block, 2 lines, hidden');
   });
 
   it('truncates a long registry label with a span the title and the hidden-line count sit outside of', async () => {

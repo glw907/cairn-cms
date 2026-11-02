@@ -176,7 +176,7 @@ alt: Reproduction of an entry with a collapsed block shown as a pill between two
 caption: The pill names the block, shows its title in quotation marks, and counts the lines it holds.
 ```
 
-Selecting a collapsed block's pill opens it. The arrow in the margin does the same, and its tooltip reads **Unfold this block** or **Fold this block**. Ctrl+Shift+[ folds the block at the cursor, and Ctrl+Shift+] opens it. If you move the cursor into a collapsed block or edit it, the block opens again.
+Selecting a collapsed block's pill opens it. The arrow in the margin does the same, and its tooltip starts with **Unfold this block** or **Fold this block**. Ctrl+Shift+[ folds the block at the cursor, and Ctrl+Shift+] opens it. If you move the cursor into a collapsed block or edit it, the block opens again.
 
 ## Check spelling and style
 

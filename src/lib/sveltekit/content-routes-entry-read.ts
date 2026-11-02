@@ -127,7 +127,7 @@ export interface EditData {
    */
   preview: ResolvedPreview | null;
   /**
-   * The spellcheck dictionary file for the site's configured dialect (default US English), resolved
+   * The spellcheck dictionary file (US English), resolved
    *  once at compose. The editor resolves it to a real asset URL on the main thread and hands that URL
    *  to the spellcheck Worker's `init`, the same way `mediaLibrary` is threaded in. Just the filename,
    *  e.g. "dictionary-en-us.txt".
@@ -495,7 +495,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       published,
       publishActions: resolvePublishActions(ctx.publishActions, { concept: concept.id, id }),
       preview: resolvePreview(runtime.preview, concept.id),
-      // composeRuntime always resolves this from the site config's dialect; default a hand-built
+      // composeRuntime always sets this to the default dictionary; default a hand-built
       // runtime that omits it to the US English dictionary so the editor always has a real filename.
       spellcheckDictionary: runtime.spellcheckDictionary ?? DEFAULT_DICTIONARY_FILE,
       // The committed personal-dictionary words, normalized to the canonical sorted, deduplicated set

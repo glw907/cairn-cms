@@ -97,6 +97,11 @@ function fakeHistoryBackend(): Backend {
 afterEach(() => vi.restoreAllMocks());
 
 describe('createCairnAdmin load dispatch', () => {
+  it('refuses a stale preview key, which would otherwise lengthen a link with no error', () => {
+    const stale = { runtime: runtime(), preview: { ttlMs: 3_600_000 } };
+    expect(() => createCairnAdmin(stale)).toThrow(/no `preview` key/);
+  });
+
   it('throws 404 for a path the parser does not recognize', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     await expect(admin.load(adminEvent('/admin/bogus'))).rejects.toMatchObject({ status: 404 });

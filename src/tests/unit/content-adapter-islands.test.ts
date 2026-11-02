@@ -35,6 +35,11 @@ describe('defineAdapter island consistency', () => {
     expect(() => defineAdapter(adapterWith(baseRendering(blocks)))).toThrow(/poll/);
   });
 
+  it('refuses a reserved block name at boot, for a site that hand-writes render', () => {
+    const blocks = [{ name: 'figure', label: '', description: '', build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }) }] satisfies BlockDef[];
+    expect(() => defineAdapter(adapterWith(baseRendering(blocks)))).toThrow(/reserved directive name/);
+  });
+
   it('throws when an island entry has no hydrate component', () => {
     expect(() => defineAdapter(adapterWith({ ...baseRendering([]), islands: { ghost: liveStub } }))).toThrow(/ghost/);
   });

@@ -46,10 +46,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   import type { MediaLibraryEntry } from '../media/library-entry.js';
   import type { MediaLibraryData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { UsageEntry } from '../media/usage.js';
-  import { publicPath } from '../media/naming.js';
+  import { DEFAULT_MEDIA_BASE, publicPath } from '../media/naming.js';
   import { formatMediaToken } from '../media/reference.js';
   import { MEDIA_BASE_CONTEXT_KEY } from './media-base-context.js';
-  import { DEFAULT_MEDIA_BASE } from '../media/naming.js';
   import { segmentTintClass } from './segmented-control.js';
   import { confirmGateMatches } from './typed-confirm.js';
   import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';

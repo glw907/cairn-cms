@@ -426,7 +426,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             />
           </div>
           <p class="sr-only" role="status" aria-live="polite">
-            {filtered.length} {filtered.length === 1 ? 'block' : 'blocks'} match
+            {filtered.length} {filtered.length === 1 ? 'block matches' : 'blocks match'}
           </p>
         {/if}
 

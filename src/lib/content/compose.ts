@@ -25,7 +25,7 @@ const DEFAULT_SUPPORT_CONTACT = 'https://cairn.pub/help';
 
 /**
  * The input to {@link composeRuntime}. `siteConfig` is required: it is the canonical home for the
- *  site name, the spellcheck dialect, and the tidy block, so they can never be silently dropped.
+ *  site name and the tidy block, so they can never be silently dropped.
  * @public
  */
 export interface ComposeInput {

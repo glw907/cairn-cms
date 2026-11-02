@@ -2,6 +2,7 @@
 // widens each concept's schema type away and breaks typed reads. defineAdapter captures the adapter
 // through a `const` type parameter, so each concept's concrete ConceptSchema<F> survives for the
 // full-auto typed reads in createSiteResolver, while still checking the adapter against the contract.
+import { defineRegistry } from '../render/registry.js';
 import type { KeyedNavLayout } from '../sveltekit/admin-nav.js';
 import type { CairnAdapter } from './types.js';
 
@@ -29,8 +30,9 @@ function assertIslandsConsistent(rendering: CairnAdapter['rendering']): void {
  * reads as optional with no cast, and `editor.navLayout` checks each `screen` against the declared
  * concepts and the engine's screens.
  * @throws When a block declares `hydrate` with no `rendering.islands` entry, when `rendering.islands`
- * holds a name no block hydrates, or when `rendering` holds a `components` key. A site's build is
- * `vite build`, which does not type-check, so that key would otherwise publish a site with no blocks.
+ * holds a name no block hydrates, when `defineRegistry` refuses `rendering.blocks`, or when
+ * `rendering` holds a `components` key. A site's build is `vite build`, which does not type-check,
+ * so that key would otherwise publish a site with no blocks.
  * @public
  */
 export function defineAdapter<const A extends CairnAdapter>(
@@ -46,6 +48,9 @@ export function defineAdapter<const A extends CairnAdapter>(
     throw new Error('cairn: the `components` key under `rendering` is gone. Pass your block definitions as `blocks`, an array.');
   }
   assertIslandsConsistent(adapter.rendering);
+  // A reserved block name fails here, at boot, not on the first edit-screen render, which is where
+  // the admin builds its registry for a site that hand-writes `render`.
+  defineRegistry({ blocks: adapter.rendering.blocks ?? [] });
   // keyof A is unresolved here, so the compiler cannot see the unset keys are simply absent at runtime.
   return adapter as A & Omit<CairnAdapter, keyof A>;
 }

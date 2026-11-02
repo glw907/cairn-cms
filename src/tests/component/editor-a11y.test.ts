@@ -74,14 +74,14 @@ describe('fold-control name stays in sync with an in-place directive rename', ()
     });
     await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
     const before = container.querySelector('.cm-cairn-fold-btn')!.getAttribute('aria-label');
-    expect(before).toBe('note section');
+    expect(before).toBe('note block');
     await expect.poll(() => typeof api?.replaceRange).toBe('function');
     // Rename the opener in place: same span, same fold state, caret lands on the opener line.
     const from = doc.indexOf('note');
     api!.replaceRange(from, from + 'note'.length, 'warning');
     await expect
       .poll(() => container.querySelector('.cm-cairn-fold-btn')?.getAttribute('aria-label'), COLD_START)
-      .toBe('warning section');
+      .toBe('warning block');
   });
 });
 

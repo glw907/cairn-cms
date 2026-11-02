@@ -8,8 +8,8 @@ export interface SecurityHeaderOptions {
    * Send no Strict-Transport-Security header at all, for a rejection page. Such a page states no
    *  policy: RFC 6797 section 8.1 has a UA replace its cached policy whenever a received header
    *  conveys different information, so a header from a page any cross-site request can reach
-   *  would rewrite what the guarded path pinned, including a subdomain pin set at the zone. The
-   *  https-required page is served over http, where the RFC forbids the header outright.
+   *  would rewrite what the guarded path pinned. The https-required page is served over http,
+   *  where the RFC forbids the header outright.
    */
   omitHsts?: boolean;
 }
@@ -24,7 +24,7 @@ export interface SecurityHeaderOptions {
  * `meta` tag: a site's outer handle or a zone rule that sets `no-referrer` site-wide would
  * otherwise lock every editor out, and the browser takes the last-processed meta. Only an
  * `app.html` meta placed after `%sveltekit.head%` overrides cairn's.
- * Strict-Transport-Security carries `max-age` alone, since subdomain pinning belongs at the zone;
+ * Strict-Transport-Security carries `max-age` alone, so the engine pins no subdomains;
  * `opts.omitHsts` drops the header entirely. The `Cache-Control` header
  * (the same `private, no-store` spelling `preview.ts` already uses) is unconditional: every
  * admin response this runs against embeds the CSRF token and the signed-in editor's identity,

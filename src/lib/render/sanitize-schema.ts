@@ -60,7 +60,7 @@ export function buildSanitizeSchema(registry: BlockRegistry): Schema {
  * Force a `rel` value on every target="_blank" anchor, to prevent reverse-tabnabbing.
  * hast-util-sanitize runs no per-node hook, so this small transform carries the behavior the old
  * DOMPurify preview pass enforced, now on the delivered output as well. The value is the renderer's
- fixed `noopener noreferrer`. It runs after the component dispatch, so it covers a component-built
+ * fixed `noopener noreferrer`. It runs after the block dispatch, so it covers a block-built
  * anchor, but before the site's own `rehypePlugins`, which a trusted site owns.
  */
 export function rehypeAnchorRel() {

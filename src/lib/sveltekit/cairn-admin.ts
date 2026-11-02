@@ -432,8 +432,13 @@ export interface CairnAdminRoutes {
  * Build the single-mount admin bundle a site's catch-all `/admin/[...path]` route exports: the
  *  narrow, declared {@link CairnAdminRoutes} view over {@link createCairnAdminInternal}'s wide
  *  return.
+ * @throws When `config` holds a `preview` key. The option set a preview link's lifetime, and
+ *  ignoring it would hand a site that shortened that lifetime longer-lived links with no error.
  * @public
  */
 export function createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes {
+  if ('preview' in config) {
+    throw new Error('cairn: createCairnAdmin has no `preview` key. A preview link has a fixed lifetime, so remove it.');
+  }
   return createCairnAdminInternal(config);
 }

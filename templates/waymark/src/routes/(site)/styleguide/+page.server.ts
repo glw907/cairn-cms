@@ -82,7 +82,7 @@ A centered figure holds the measure of the text.
 The horizontal rule above is a plain hairline.
 `;
 
-/** One registered component's rendered sample. */
+/** One registered block's rendered sample. */
 interface BlockSample {
   name: string;
   label: string;

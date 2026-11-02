@@ -105,7 +105,7 @@ Swapping the editor stays a one-file change.
      *  when off the lint compartment reconfigures to empty (the underlines vanish, the Worker stays
      *  idle). The footer toggle drives this. */
     spellcheck?: boolean;
-    /** The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt", from EditData. The
+    /** The dictionary filename, e.g. "dictionary-en-us.txt", from EditData. The
      *  source resolves it to a real asset URL and hands it to the spellcheck Worker's init. Defaults to
      *  US English. */
     spellcheckDictionary?: string;
@@ -166,7 +166,7 @@ Swapping the editor stays a one-file change.
      *  turns this on for the real entry-editing surface. The safety invariant governs a fold this
      *  creates exactly as it governs a manual one: a touch or an edit reaching it springs it open. */
     foldOnMount?: boolean;
-    /** The site's component registry. The fold pill and the gutter fold control resolve a folded
+    /** The site's block registry. The fold pill and the gutter fold control resolve a folded
      *  block's directive name through it, so a block reads its human `label` (falling back to the
      *  raw directive name for an engine-native directive like `include`, or one the registry does
      *  not carry); the pill's tooltip also carries the matched component's `use` line, when it has
@@ -770,7 +770,7 @@ Swapping the editor stays a one-file change.
     // posture Preview takes). The compartment starts empty and the tidyMode effect swaps this in.
     tidyReadonlyExt = [stateMod.EditorState.readOnly.of(true), viewMod.EditorView.editable.of(false)];
     // Build the spellcheck extension once: the lint source resolves the dictionary asset URL from the
-    // dialect-resolved filename and posts it to the Worker's init. The compartment starts with the
+    // filename and posts it to the Worker's init. The compartment starts with the
     // extension only when spellcheck is on, so a site that opens with it off never spins up the Worker.
     spellcheckExt = await spellcheckMod.cairnSpellcheck({
       dictionaryFile: spellcheckDictionary,

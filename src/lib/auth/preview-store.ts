@@ -2,8 +2,7 @@
 // statements only. No ORM. Follows the D1 access idiom in src/lib/auth/store.ts exactly: each
 // function takes the AUTH_DB binding plus primitives, so it is testable against a real local D1
 // and free of SvelteKit. This module is internal, never exported from any package subpath: a
-// site reaches it only through mintPreview and the mint/revoke actions
-// (src/lib/sveltekit/preview.ts).
+// site reaches it only through the mint and revoke actions (src/lib/sveltekit/preview.ts).
 import type { D1Database } from '@cloudflare/workers-types';
 
 type PreviewTokenCols = {

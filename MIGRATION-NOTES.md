@@ -267,8 +267,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   which is now a build error. `v2` replaces the `config.csrf-disable` check with
   `config.csrf-trusted-origins` and retires three ids, so a script that matches on them needs changing:
   `config.csrf-disable`, `config.csrf-disable-missing`, and `auth.csrf-origin-mismatch`.
-- **Stop matching on `auth.channel.delivery_inline`.** The event retired, since the module's
-  `waitUntil` is always defined. `guard.refused` also carries no `origin` reason, because
+- **Stop matching on `auth.channel.delivery_inline`.** The event retired with the auth channel.
+  `guard.refused` also carries no `origin` reason, because
   SvelteKit's check refuses a cross-origin form POST before the guard runs.
 - **Re-run `npx cairn-guidance install` if your site uses the `cairn-extend` skill.** This release
   drops cairn's narrative guides and its two front-door pages until each set is rebuilt, so the

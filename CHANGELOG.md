@@ -323,9 +323,8 @@
 
 - **The engine reads the Worker's bindings from `cloudflare:workers`, not `event.platform`.**
   Adapter 8 passes no `platform`, so `env` and `waitUntil` come from the module. One internal module
-  is the engine's only `cloudflare:workers` import, and no Node-context entry reaches it. The guard,
-  the auth channel, and the admin routes read `env` there; `waitUntil` is always
-  defined, so the auth channel's inline-await branch is gone. The dev flag `CAIRN_DEV_BACKEND` and
+  is the engine's only `cloudflare:workers` import, and no Node-context entry reaches it. The guard
+  and the admin routes read `env` there; `waitUntil` is always defined. The dev flag `CAIRN_DEV_BACKEND` and
   `PUBLIC_ORIGIN` are read from the Worker env alone, with no `process.env` fallback, and no engine
   code touches `env` or `withEnv` while a build prerenders. The dev backend layers its doubles with
   `withEnv`, so they reach engine and site reads alike. `CairnPlatformBindings` and
@@ -656,8 +655,7 @@
   `EditorRoutesConfig.roles`.** `runtime` carries both, so each factory's separate options are gone
   (see the `{ runtime }` entry under Changed).
 - **`PlatformContext`, `CairnEvent`'s `platform` member and `Env` parameter, and the
-  `auth.channel.delivery_inline` log event.** The auth channel hands delivery and its sweep to the
-  module's `waitUntil`, which is always defined, so no deployment takes the inline branch. A site that
+  `auth.channel.delivery_inline` log event.** The event retired with the auth channel. A site that
   matched on `auth.channel.delivery_inline` needs changing.
 - **The guard's non-admin Origin check, the `auth.csrf-origin-mismatch` condition, and
   `guard.refused`'s `origin` reason.** SvelteKit's own check refuses the request before the guard runs.
@@ -3555,7 +3553,7 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   compare never runs against a secret in TypeScript. The binding is value-bound, not
   presence-only: a browser with a pending login of its own still cannot confirm another browser's
   token. The cookie is set unconditionally and identically on all four `requestAction` exits
-  (sent, the non-editor neutral answer, throttled, send-failed), before anything branches on
+  (send-ok, the non-editor neutral answer, throttled, send-failed), before anything branches on
   allowlist membership, so the response headers carry no membership oracle; it is reused while
   unexpired rather than rotated, so a throttled resend leaves the link already in the inbox
   confirmable; and it is deleted on a successful confirm and at logout only, never on a failed

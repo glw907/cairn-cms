@@ -1318,10 +1318,10 @@ island.
   });
 
   // The one transient feedback strip under the sticky header.
-  // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
+  // A saved flash with a draft or reference warning yields to the warning alert below.
   const flash = $derived.by(() => {
     if (failedInPlace) return '';
-    if (data.flash === 'saved' && !draftWarning)
+    if (data.flash === 'saved' && !draftWarning && !referenceWarning)
       return 'Saved. Your site keeps showing the published version until you publish.';
     if (data.flash === 'published') return 'Published. The live site is rebuilding.';
     if (data.flash === 'discarded') return 'Changes discarded.';
@@ -1335,7 +1335,9 @@ island.
   // the errors. The visible banners below keep their styling but drop their roles, so a message
   // is announced once.
   const politeMessage = $derived.by(() => {
-    if (draftWarning) return `Saved. This entry links to entries that visitors can't reach yet: ${draftWarning}.`;
+    const draftNotice = `Saved. This entry links to entries that visitors can't reach yet: ${draftWarning}.`;
+    if (draftWarning && referenceWarning) return `${draftNotice} ${referenceNotice}`;
+    if (draftWarning) return draftNotice;
     if (referenceWarning) return referenceNotice;
     return flash;
   });

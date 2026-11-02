@@ -338,6 +338,27 @@ describe('EditPage', () => {
     }
   });
 
+  it('shows one notice for a save with a reference warning, and announces both warnings when both are set', async () => {
+    const originalUrl = appPage.url;
+    appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?refs=pages/about');
+    try {
+      const screen = await render(EditPage, postProps({ flash: 'saved' }));
+      expect(screen.container.querySelector('.alert-success')).toBeNull();
+      expect(screen.container.querySelectorAll('.alert-warning, .alert-success')).toHaveLength(1);
+    } finally {
+      appPage.url = originalUrl;
+    }
+    appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?drafts=pages/team&refs=pages/about');
+    try {
+      const screen = await render(EditPage, postProps({ flash: 'saved' }));
+      const live = screen.container.querySelector('[aria-live="polite"]')?.textContent ?? '';
+      expect(live).toContain('pages/team');
+      expect(live).toContain('pages/about');
+    } finally {
+      appPage.url = originalUrl;
+    }
+  });
+
   it('shows no draft-link warning without the drafts flag', async () => {
     const screen = await render(EditPage, postProps({ flash: 'saved' }));
     expect(screen.container.querySelector('.alert-warning')).toBeNull();

@@ -263,7 +263,7 @@ Regenerate with `go test ./internal/doctor -run TestGolden -update`, run in `too
 only SKIP titles move. `copy.golden.md` holds no pass titles, so `SkipTitle` doesn't move it.
 
 For R3, delete every tracked file under `tool/docs/design/render-reference/` except `measurements.txt`,
-65 files. In `tool/docs/design/README.md`, the bullet that opens "[`render-reference/`](render-reference/)
+65 files. In `tool/docs/design/README.md`, the bullet that opens "`render-reference/`
 is iteration 3 of the mockups" and the section `## The render reference` shrink to what remains: the
 frames live at the `pre-agent-first` tag, `measurements.txt` stays because `glyph.go`, `glyph_test.go`,
 and `width.go` cite it, and the goldens in `tool/internal/render/testdata` are the acceptance record.

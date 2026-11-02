@@ -138,6 +138,7 @@
           "golden-path.spec.ts",
           "admin-error-page.spec.ts",
           "edit-save-failure.spec.ts",
+          "refused-forms.spec.ts",
           "admin-shell-sidebar.spec.ts",
           "admin-nav-layout.spec.ts",
           "admin-referrer.spec.ts",

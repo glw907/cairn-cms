@@ -143,6 +143,7 @@ async function deleteFromList(
   if (opts.allowGone && (await button.count()) === 0) return;
   await expect(button).toHaveCount(1);
   await button.click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete this post' }).click();
   await expect(page.getByRole('link', { name: title, exact: true })).toHaveCount(0);
 }
 

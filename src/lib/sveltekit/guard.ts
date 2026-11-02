@@ -207,9 +207,11 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
  * `locals.cairnAccess` gets `runtime.access`, or an empty map when the adapter declares none. A
  * role absent from the vocabulary still authenticates, at `none` capability, and logs
  * `auth.role.unknown`. Under identity mode `locals.cairnIdentity` is set on every admin path;
- * otherwise a value an earlier handle wrote there is deleted. The resolved response then gets the
- * admin security headers, `Strict-Transport-Security` included; the refusal pages and the login
- * redirect carry no `Strict-Transport-Security`.
+ * otherwise a value an earlier handle wrote there is deleted. A value an earlier handle wrote to
+ * `locals.cairnEditor` is deleted on `/admin/login` and `/admin/auth/confirm`, which resolve no
+ * session. The resolved response then gets the admin security headers,
+ * `Strict-Transport-Security` included; the refusal pages and the login redirect carry no
+ * `Strict-Transport-Security`.
  * @throws Error at construction when `identity.logoutUrl` is neither a safe root-relative path nor
  *  an absolute `https:` URL.
  * @remarks
@@ -417,7 +419,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
       event.locals.cairnAccess = access ?? {};
     } else {
       // A public admin path resolves no session, so a value here came from a handle sequenced before
-      // the guard. Nothing on these paths reads it, and clearing it keeps it from reading as resolved.
+      // the guard. Clearing it keeps the action failure log from naming an editor nobody verified.
       delete event.locals.cairnEditor;
     }
     const response = await resolve(event);

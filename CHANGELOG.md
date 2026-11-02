@@ -697,11 +697,15 @@
   Consumers must: if your site manages its roster outside `/admin/editors`, have your own SQL on
   `AUTH_DB` do what `deleteEditor`, `setEditorRole`, `removeOwnerIfNotLast`, and `demoteOwnerIfNotLast`
   did. Trim and lowercase the email before it matches or writes the `editor` table, since a shadow row
-  counts as an owner yet can never sign in. Count owners inside the one `DELETE` or `UPDATE`, as
-  `AND (role NOT IN (...) OR (SELECT COUNT(*) FROM editor WHERE role IN (...)) > 1)`, listing every
-  role with owner capability, so a missed name or a concurrent write can't strand the roster. After a
-  removal, delete the person's rows from `session` and `magic_token` by `email`, and from
-  `preview_tokens` by `editor`, so their sessions and preview links die with them.
+  counts as an owner yet can never sign in. Count owners inside the one `DELETE`, as
+  `AND (role NOT IN (...) OR (SELECT COUNT(*) FROM editor WHERE role IN (...)) > 1)`, so a concurrent
+  write can't strand the roster. In an `UPDATE`, add `OR ? = 1`, bound to whether the new role has
+  owner capability, so the last owner can still move to another owner-level role. List every role with
+  owner capability, since a missed name miscounts the owners. Only when the `DELETE` changed a row,
+  which `meta.changes` reports, delete the person's rows from `session` and `magic_token` by `email`,
+  so a refused removal keeps its sessions. Then delete from `preview_tokens` by `editor` in a statement
+  of its own and ignore a "no such table" error: that table exists only after `0003_preview.sql`, and
+  one missing table fails a whole D1 batch.
 
   Consumers must: stop importing `resolveOwnerLevelRoles` from the root barrel; no public subpath
   carries it now, so derive owner-capability roles from your own role vocabulary.

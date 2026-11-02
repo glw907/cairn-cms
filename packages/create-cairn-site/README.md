@@ -267,8 +267,9 @@ Your way back in is `npx create-cairn-site --dir <dir> --sign-in`, which writes 
 link straight into your site's database without touching email. Each one lasts 30 days, so nothing
 expires out from under you while you decide. Running the command again re-offers turning on email
 sign-in until you connect Workers Builds. Once Builds is connected, the command no longer offers
-it, so turn sign-in email on first. `--yes` consents to the Builds chapter, so a `--yes` run
-without `--email` declines email and connects Builds in the same run.
+it, so turn sign-in email on first. A `--yes` run without `--email` declines email and then skips
+the Builds chapter, so the offer stays open. To turn email on, run the command again from a
+terminal, or pass `--email` with `--yes`. To connect Builds anyway, pass `--connect`.
 
 ### What it does
 
@@ -306,7 +307,10 @@ Builds, so every commit to your default branch deploys itself, no laptop involve
 interactive by default: it asks whether you want to connect. Unlike the domain and email
 chapters, `--yes` alone consents to this one rather than skipping it, since there is nothing
 about connecting a repository that costs money or commits you to anything ongoing, so an
-unattended run connects the repository and creates the trigger with no extra flag. It stops one
+unattended run connects the repository and creates the trigger with no extra flag. The exception
+is a run that declined sign-in email: connecting Builds ends the email offer, so `--yes` skips
+this chapter unless you pass `--connect`. A run that already saved a Builds token from an earlier
+`--connect` still connects. It stops one
 hop short of the end: the config commit needs the sign-in click described below, and `--yes`
 never opens a browser, so an unattended run parks there and prints the command to finish
 interactively. Running the command again later, from a site that already finished this run,

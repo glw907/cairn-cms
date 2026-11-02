@@ -43,6 +43,7 @@ Read only the reference for the job at hand.
 | Run `cairn-audit` and fix its findings | `references/audit.md` |
 | Diagnose a failure: logs first | `references/debug.md` |
 | Look up a log event, its level, fields, and reasons | `references/log-events.md` |
+| Replace a scaffolded site's sample content and identity | `references/make-it-yours.md` |
 | Check work before calling it done | `references/preflight.md` |
 
 ## Habits that hold everywhere

@@ -32,6 +32,15 @@ test('the public header renders every top-level entry declared in menus.primary,
   }
 });
 
+// The home intro is the site's own description, so a scaffolded site's owner changes it in
+// site.config.yaml rather than in the page.
+test('the home intro reads description from site.config.yaml', async ({ page }) => {
+  const config = parseSiteConfig(readFileSync(configPath, 'utf-8'));
+  expect(config.description).toBeTruthy();
+  await page.goto('/');
+  await expect(page.locator('h1 + p')).toHaveText(config.description!);
+});
+
 // The load lives in the ROOT +layout.server.ts precisely so the +error.svelte mount of SiteHeader
 // gets the same nav; if that load ever stopped running for the error render, the header's `?? []`
 // fallback would mask the regression as a silently empty nav. This locks the contract.

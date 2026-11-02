@@ -4,8 +4,10 @@ menus:
   primary:
     - label: Writing
       url: /
+    # cairn-template:exclude-start
     - label: Styleguide
       url: /styleguide
+    # cairn-template:exclude-end
     - label: Admin
       url: /admin
   # /admin/nav edits only menus.primary (createNavRoutes is bound to that one menu), so this

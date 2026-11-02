@@ -265,6 +265,8 @@ reflows its neighboring characters.
     event.preventDefault();
     filter.onChange(filter.options[next].value);
     radios[next]?.focus();
+    // Focus alone leaves a partly visible option clipped; scrolling honors the row's scroll-padding.
+    radios[next]?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   }
 </script>
 
@@ -507,6 +509,25 @@ reflows its neighboring characters.
     overflow-x: auto;
     padding: 4px;
     margin: -4px;
+  }
+
+  /* Below sm the join scrolls, and the sticky `::after` is its scroll cue: an empty gradient to the
+     app background (base-200, so it vanishes where the join does not overflow) that covers the clipped edge at scroll start. At scroll end it rests past the last
+     option, so it covers nothing. It takes no pointer events, and the row's `scroll-padding-right`
+     lets `scrollIntoView` bring a focused option to the cue's start rather than under it. */
+  @media (width < 40rem) {
+    .toolkit-toolbar-segmented {
+      scroll-padding-right: 2rem;
+    }
+
+    .toolkit-toolbar-segmented::after {
+      content: '';
+      position: sticky;
+      right: 0;
+      flex: 0 0 2rem;
+      pointer-events: none;
+      background: linear-gradient(to right, transparent, var(--color-base-200));
+    }
   }
 
   /* The per-option count: visually secondary to its label, opacity-dimmed (not a separate

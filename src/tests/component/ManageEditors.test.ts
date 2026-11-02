@@ -59,6 +59,18 @@ describe('ManageEditors', () => {
     expect(editorBadge?.classList.contains('cairn-chip-outline')).toBe(false);
   });
 
+  it('hides the Email and Role columns below sm and stacks both under the name', async () => {
+    const screen = await render(ManageEditors, { data: data(), form: null });
+    const headers = [...screen.container.querySelectorAll('th')];
+    const hidden = (label: string) =>
+      headers.find((th) => th.textContent?.trim() === label)?.classList.contains('hidden');
+    expect(hidden('Email')).toBe(true);
+    expect(hidden('Role')).toBe(true);
+    const nameCell = screen.container.querySelector('tbody tr td')!;
+    const stacked = [...nameCell.querySelectorAll('.sm\\:hidden')].map((el) => el.textContent?.trim());
+    expect(stacked).toEqual(['owner@t', 'owner']);
+  });
+
   it('disables the remove control for the acting owner (anti-lockout affordance)', async () => {
     const screen = await render(ManageEditors, { data: data(), form: null });
     const selfRemove = screen.getByRole('button', { name: /remove owner one/i });

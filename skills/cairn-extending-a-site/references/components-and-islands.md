@@ -22,6 +22,12 @@ A hand-built site passes the same array to `createRenderer({ blocks })` and `ren
 passes `rendering={cairn.rendering}` to `CairnAdmin` (no `blocks` in it, no **Insert block** button).
 The engine builds the registry from the array.
 
+`createRenderer` also takes `remarkPlugins` and `rehypePlugins`. A remark plugin runs after
+cairn's remark steps (include, directive stamp, `cairn:` links, figures, `media:`) and before the
+conversion to rehype. A rehype plugin runs last of all, after the sanitize floor, block dispatch,
+slugs, code highlighting, link `rel`, and the table wrap. Its output is not sanitized and gets no
+forced `rel`.
+
 - `name`, `label`, `description`, `build` are required. `figure` and `include` are reserved.
 - `attributes` map to single-value field types only (`text`, `textarea`, `number`, `select`, `url`,
   `date`, `boolean`, `icon`); others throw at load.

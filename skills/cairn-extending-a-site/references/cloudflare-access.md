@@ -118,6 +118,10 @@ After that: the guard awaits `resolve` on every guarded request (no caching), th
 duration replaces cairn's 30-day session, sign-out clears cairn cookies and redirects to
 `logoutUrl`, and a revocation takes effect only where Access sits in the request path.
 
+Under the resolver the guard sets `event.locals.cairnIdentity = { label, logoutUrl }` on every
+`/admin/**` path, so a custom admin route can read who the gate admitted. The magic-link request
+action and the confirm load and action answer 404, and the login load returns `{ identity: { label } }`.
+
 Verify on the deployed site: a rostered editor reaches the shell; Workers Logs shows no
 `guard.refused` `reason: identity` and no `auth.identity.unknown`; sign-out lands on the logout URL;
 an unauthenticated `GET /admin/login` redirects to the team domain; `/admin` on `workers.dev` and

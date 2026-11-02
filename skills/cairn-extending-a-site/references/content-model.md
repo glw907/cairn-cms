@@ -150,7 +150,10 @@ links, media refs, reference edges, tags, includes, `publishedAt`). The `cairnMa
 regenerates it once at dev start, warning `cairn-manifest: regenerated` and a summary, and fails a
 build on drift (`content manifest is stale`).
 After any content edit outside the admin, run `npx cairn-manifest` and commit the result; it also
-writes `site-facts.json` and keeps first-publish stamps.
+writes `site-facts.json` and keeps first-publish stamps. The manifest's media refs include an image
+nested in an object or an `array`; a site that declares one regenerates once with
+`npx cairn-manifest`, or the build fails with `content manifest is stale`. A site that calls
+`verifyManifest` directly passes its adapter as the third argument.
 
 ## References, body links, includes
 

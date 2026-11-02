@@ -54,6 +54,10 @@ Cloudflare zone's own HSTS setting overrides it. Three sites on older engines re
 zone's value instead. If the zone's policy differs from this one, the zone's wins, so set the
 policy you want in the zone. This reference cannot confirm that a current engine behaves the same.
 
+Every admin response the guard resolves also carries `X-Robots-Tag: noindex, nofollow`,
+`X-Frame-Options: DENY`, `Referrer-Policy: strict-origin`, and `Cache-Control: private, no-store`.
+A site adds none of them.
+
 ## Gate a custom screen
 
 The guard admits any signed-in session to `/admin/**` and decides no per-route authorization.

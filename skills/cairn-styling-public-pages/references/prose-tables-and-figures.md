@@ -1,6 +1,6 @@
 # Tables and figures
 
-The engine wraps every table in a labeled, keyboard-reachable scroll region, `table-scroll`. Figures carry a placement class when the author names one.
+The engine wraps every table in a labeled, keyboard-reachable scroll region, `table-scroll`. A site that wraps its tables itself passes `createRenderer({ tableScroll: false })` to drop the wrap; the default is `true`. Figures carry a placement class when the author names one.
 
 Rendered markup:
 

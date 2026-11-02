@@ -5,6 +5,15 @@
 ## High
 
 ## Medium
+- [ ] **#330** Check the consolidated `## Unreleased` changelog for entries whose option is absent from source `#bug` `#docs` *(2026-11-02)*
+  The release sweep's finders found two entries describing code that `src/lib` does not contain: `editor.siteConfigPath` and `editor.nav.configPath` (`compose.ts:59` hard-codes the default; `CHANGELOG.md:143` says both were removed), and `sanitizeSchema` with `unsafeDisableSanitize` (only `buildSanitizeSchema(registry)` exists in `src/lib/render/sanitize-schema.ts`). One finder reported each; no verifier read them. Grep each against `main` and prune or correct the entry before the cut.
+  Placement: Before the release.
+- [ ] **#329** Say which skill owns an edit to the packaged skills under `skills/` `#improvement` `#docs-process` *(2026-11-02)*
+  `cairn-writing-docs` excludes "the packaged skills", and `.claude/rules/docs.md` loads it only for `docs/`. The release sweep's gaps landed mostly in `skills/`, with no skill to route the edit through, and `docs-fact-checker` takes only `docs/editors` and `docs/admin` pages. Name the owner (extend `cairn-writing-docs` or add a skill) and say how a skill edit is fact-checked.
+  Placement: After the release.
+- [ ] **#328** State adapter 8's missing edge cache on `media.md`, once the Cloudflare side is confirmed `#improvement` `#docs` *(2026-11-02)*
+  Verified in `adapter-cloudflare` 8.0.0 `files/worker.js`: the worker never touches the Cache API, so a Worker-rendered `/media` response or SSR page gets no adapter-level edge cache. `media.md:102` states only the one-year immutable `Cache-Control`, and `MIGRATION-NOTES.md` (Unreleased) tells a rebuilt site to add its own caching. What a site should add (a Cache Rule, or Cache-Control with a zone cache setting) is an external Cloudflare fact no verifier confirmed, so the page waits on that.
+  Placement: After the release.
 - [ ] **#327** Stop `npm update --save` rewriting a workspace's peer ranges `#improvement` `#tooling` *(2026-11-02)*
   On the root manifest, `npm update --save` rewrote `packages/cairn-cms-dev`'s `peerDependencies` (`"*"` to `file:../..`, `^3` to `^3.1.1`), and a failing `prepare` (`npm run package`) rolled the install back with a SyntaxError and no hint of the cause. `standards:dependency-upgrade` step 4 should say to run `--ignore-scripts` first and to diff every workspace `package.json`.
   Placement: After the release.

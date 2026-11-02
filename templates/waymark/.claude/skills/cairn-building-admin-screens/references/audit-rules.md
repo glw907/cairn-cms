@@ -69,6 +69,7 @@ Error tier unless marked.
 | `list-role` | a `ul`, `ol`, or `menu` with no role whose marker is suppressed (`list-none`, or an item with `flex`, `grid`, `block`, `inline-flex`) | `role="list"` on the list and `role="listitem"` on each item whose class changed its display |
 | `log-event-grammar` | a log call's literal event name is reserved or not `area[.subject].verb_phrase` | rename the event |
 | `log-secret-field` | a log call's fields key matches a redacted key name | drop the field; keep the value out of the message too |
+| `public-route-prerender` (advisory) | a public `+page.svelte` outside `src/routes/admin` that no `prerender` export reaches | `export const prerender = true` (or `false`) in its `+page.ts` or a layout above |
 | `public-literals`, `theme-conformance`, `theme-contrast` (advisory) | public files only, never an admin screen | see the public styling skill |
 
 Motion values: the five durations are `--cairn-dur-instant` (70ms), `-quick` (110ms), `-base`

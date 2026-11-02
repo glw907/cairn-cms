@@ -13,6 +13,7 @@ import { motionProperty } from './motion-property.js';
 import { motionVocabulary } from './motion-vocabulary.js';
 import { noUncompiledClass } from './no-uncompiled-class.js';
 import { publicLiterals } from './public-literals.js';
+import { publicRoutePrerender } from './public-route-prerender.js';
 import { radiusScale } from './radius-scale.js';
 import { reducedMotion } from './reduced-motion.js';
 import { stockDefaultHazards } from './stock-default-hazards.js';
@@ -46,6 +47,7 @@ export function staticRules(): StaticRule[] {
     logEventGrammar,
     logSecretField,
     publicLiterals,
+    publicRoutePrerender,
     themeConformance,
     themeContrast,
   ];

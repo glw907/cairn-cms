@@ -205,6 +205,26 @@
 
 ### Changed
 
+- **`cairn-media-seed` moves to `@glw907/cairn-cms-dev`.** The engine no longer installs the bin, and the
+  dev package ships it with the same command name and flags. A site that doesn't run the seed sees no
+  change.
+
+  Consumers must: add `@glw907/cairn-cms-dev` as a dev dependency at the engine's version if you run `cairn-media-seed`.
+
+- **Config errors name the next step.** The `navLayout` unknown-screen and missing-`navMenu` errors, the
+  unknown permalink token errors, and the undeclared-field errors list the valid values. A `CairnError`
+  message now ends with its registry remediation, so `AUTH_DB binding is not configured` says how to
+  declare the binding. The nav and site-config errors an editor reads keep their exact text.
+
+  Consumers must: nothing.
+
+- **A log record prints as one JSON line outside Workers.** Under `vite dev` or in a Node script, the
+  logger prints `JSON.stringify(record)`, so an `Error` or `Headers` value prints as `{}` and a `BigInt`
+  takes the `<unserializable>` fallback. On Workers a record stays an object, so Workers Logs reads it as
+  before.
+
+  Consumers must: nothing.
+
 - **`mintPreview` and `revokePreview` check access before they look up the concept.** A role the access
   map denies a key gets the 403 whether or not the key names a concept; an unmapped nonexistent id still
   answers `unknown-concept`. The mint action reads `PUBLIC_ORIGIN` before it mints, so a site without one

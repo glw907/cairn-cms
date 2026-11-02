@@ -162,7 +162,8 @@ function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean,
     for (const match of pattern.matchAll(/:(\w+)/g)) {
       const token = match[1];
       if (!KNOWN_TOKENS.has(token)) {
-        throw new Error(`cairn: concept "${id}" permalink "${pattern}" uses unknown token ":${token}"; use one of :slug, :year, :month, :day`);
+        const tokens = [...KNOWN_TOKENS].map((known) => `:${known}`).join(', ');
+        throw new Error(`cairn: concept "${id}" permalink "${pattern}" uses unknown token ":${token}"; use one of ${tokens}`);
       }
       if (DATE_TOKENS.has(token) && !dated) {
         throw new Error(

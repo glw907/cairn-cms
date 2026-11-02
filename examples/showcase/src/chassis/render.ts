@@ -44,7 +44,7 @@ export function headRow(title: ElementContent[], icon?: Element, level: number =
  * so inline code, fenced code blocks, and link URLs (held as node attributes, never as text) are
  * structurally exempt, and already-curly input passes through unchanged (it only rewrites
  * straight ASCII marks). A theme wires it once through
- * `createRenderer(registry, { remarkPlugins: proseTypography })`; both the public render and the
- * editor's live preview read the one `renderMarkdown` that composes, so both inherit it.
+ * `createRenderer({ components, remarkPlugins: proseTypography })`; both the public render and the
+ * editor's live preview read the one `render` that composes, so both inherit it.
  */
 export const proseTypography: PluggableList = [[remarkSmartypants, { dashes: 'oldschool' }]];

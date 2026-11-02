@@ -8,6 +8,7 @@
 // descriptors are plain data so a `load` function can hand them across the server-to-client
 // boundary to the editor form.
 import type { ComponentRegistry } from '../render/registry.js';
+import type { RenderInput } from '../render/pipeline.js';
 import type { IconSet } from '../render/glyph.js';
 import type { IslandRegistry } from '../islands/types.js';
 import type { BackendProvider } from '../github/backend.js';
@@ -262,7 +263,7 @@ export interface AssetConfig {
 /**
  * The site's one renderer (design decision 4): the editor preview and every public page call it.
  *  Entry-aware so a custom renderer can vary output by concept or frontmatter; the default reads only
- *  `body` plus the resolvers. `resolve` rewrites cairn: links to live permalinks (the build passes a
+ *  `body` plus the resolvers. `resolveLink` rewrites cairn: links to live permalinks (the build passes a
  *  site-resolver-backed resolver, the preview a manifest-backed one); `resolveMedia` resolves media:
  *  references the same way. `resolveFragment` resolves an `::include` directive's fragment id to its
  *  raw markdown body, the same way; a site's render need not read it unless it wants to vary
@@ -272,14 +273,7 @@ export interface AssetConfig {
  *  with no error.
  * @public
  */
-export type SiteRender = (input: {
-  body: string;
-  concept?: string;
-  frontmatter?: Record<string, unknown>;
-  resolve?: LinkResolve;
-  resolveMedia?: import('../render/resolve-media.js').MediaResolve;
-  resolveFragment?: import('../render/resolve-include.js').FragmentResolve;
-}) => Promise<string>;
+export type SiteRender = (input: RenderInput) => Promise<string>;
 
 /**
  * The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`, in six

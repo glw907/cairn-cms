@@ -1,7 +1,7 @@
 // cairn-cms: the media: reference resolver, an mdast step in the render pipeline. It mirrors the
 // cairn: link resolver in ./resolve-links.ts: it runs before remark-rehype, so the rewritten src
 // passes through the sanitize floor exactly as any other image. The per-call resolver is read off
-// the VFile (set by renderMarkdown), so the processor is still built once. A miss either marks the
+// the VFile (set by render), so the processor is still built once. A miss either marks the
 // image broken (preview) or throws (build), decided by the injected resolver.
 import { visit } from 'unist-util-visit';
 import type { VFile } from 'vfile';

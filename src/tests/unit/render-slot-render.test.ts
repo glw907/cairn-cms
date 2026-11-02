@@ -33,8 +33,8 @@ describe('slot render path', () => {
       attributes: { tone: 'warning' },
       slots: { title: 'Heads up', body: 'Be careful here.', points: ['First', 'Second'] },
     });
-    const { renderMarkdown } = createRenderer(registry);
-    const html = await renderMarkdown(md);
+    const { render } = createRenderer({ components: registry });
+    const html = await render({ body: md });
     expect(html).toContain('class="callout callout-warning"');
     expect(html).toContain('class="callout-title">Heads up');
     expect(html).toContain('Be careful here.');

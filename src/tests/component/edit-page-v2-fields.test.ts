@@ -132,3 +132,22 @@ describe('EditPage container field arms', () => {
     expect(toggle?.textContent).toContain('How?');
   });
 });
+
+describe('EditPage date bounds', () => {
+  it('refuses a stored date below min at the form and fires invalid', async () => {
+    const p = props();
+    const data = {
+      ...p.data,
+      fields: [{ type: 'date', name: 'when', label: 'When', min: '2026-01-01' }] as NamedField[],
+      frontmatter: { when: '2025-06-01' },
+    };
+    const page = await render(EditPage, { ...p, data });
+    await openDetails(page);
+    const form = document.querySelector('form') as HTMLFormElement;
+    const input = document.querySelector<HTMLInputElement>('input[name="when"]')!;
+    let invalid = 0;
+    input.addEventListener('invalid', () => invalid++);
+    expect(form.checkValidity()).toBe(false);
+    expect(invalid).toBe(1);
+  });
+});

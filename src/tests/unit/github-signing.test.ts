@@ -66,6 +66,7 @@ describe('installationToken', () => {
     const token = await installationToken({
       appId: '3847496',
       installationId: '135372268',
+      repo: 'site',
       privateKeyB64: btoa(PKCS1_PEM),
     });
     expect(token).toBe('ghs_install');
@@ -74,10 +75,28 @@ describe('installationToken', () => {
     );
   });
 
+  it('scopes the token to the one repository with contents write', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ token: 'ghs_install' }), { status: 201 }),
+    );
+    await installationToken({
+      appId: '1',
+      installationId: '2',
+      repo: 'site',
+      privateKeyB64: btoa(PKCS1_PEM),
+    });
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
+    expect(JSON.parse(init.body as string)).toEqual({
+      repositories: ['site'],
+      permissions: { contents: 'write' },
+    });
+  });
+
   it('throws on a non-OK token exchange', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('forbidden', { status: 403 }));
     await expect(
-      installationToken({ appId: '1', installationId: '2', privateKeyB64: btoa(PKCS1_PEM) }),
+      installationToken({ appId: '1', installationId: '2', repo: 'site', privateKeyB64: btoa(PKCS1_PEM) }),
     ).rejects.toThrow(/403/);
   });
 
@@ -86,6 +105,7 @@ describe('installationToken', () => {
     const error = await installationToken({
       appId: '1',
       installationId: '2',
+      repo: 'site',
       privateKeyB64: btoa(PKCS1_PEM),
     }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(InstallationTokenError);
@@ -96,7 +116,7 @@ describe('installationToken', () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockImplementation(async () => new Response(JSON.stringify({ token: 'ghs_install' }), { status: 201 }));
-    const creds = { appId: '1', installationId: '2', privateKeyB64: btoa(PKCS1_PEM) };
+    const creds = { appId: '1', installationId: '2', repo: 'site', privateKeyB64: btoa(PKCS1_PEM) };
     const signal = new AbortController().signal;
     await installationToken(creds, signal);
     await installationToken(creds);

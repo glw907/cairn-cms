@@ -33,9 +33,7 @@ export default defineConfig({
   // build (no flag) folds the backend out; this flagged build keeps it in for the specs, which
   // exercise the real production output path.
   //
-  // Three things reach workerd only by this command. The members fixture's D1 is the local
-  // `MEMBER_DB` the migration step creates, so the specs read the same binding a deployment would.
-  // `--var CAIRN_DEV_BACKEND:1` is the dev-backend opt-in; an OS environment variable never reaches
+  // Two things reach workerd only by this command. `--var CAIRN_DEV_BACKEND:1` is the dev-backend opt-in; an OS environment variable never reaches
   // the worker, and the flag stays out of wrangler.jsonc and any .dev.vars file so no later
   // unflagged serve inherits it. `--var PUBLIC_ORIGIN` overrides wrangler.jsonc's origin so minted
   // preview links follow E2E_PORT, since the file's origin belongs to the flag-free `preview`
@@ -44,7 +42,6 @@ export default defineConfig({
   webServer: {
     command: [
       'VITE_CAIRN_E2E=1 npm run build',
-      'npx wrangler d1 migrations apply MEMBER_DB --local',
       `npx wrangler dev --port ${E2E_PORT} --inspector-port ${Number(E2E_PORT) + 1} --var CAIRN_DEV_BACKEND:1 --var PUBLIC_ORIGIN:http://localhost:${E2E_PORT}`,
     ].join(' && '),
     port: Number(E2E_PORT),

@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import type { MagicLinkLoginData } from '../../lib/sveltekit/auth-routes.js';
 import { testEvent } from '../helpers/test-event.js';
+import { runtime } from './_content-harness.js';
 
-const branding = { siteName: 'Test Site', from: 'cms@test' };
+const rt = runtime({ siteName: 'Test Site' });
 
 function event(search = '') {
   const headers: Record<string, string> = {};
@@ -16,7 +17,7 @@ function event(search = '') {
 
 describe('auth page loads', () => {
   it('loginLoad returns the site name and no error by default', async () => {
-    const { loginLoad } = createAuthRoutes({ branding });
+    const { loginLoad } = createAuthRoutes({ runtime: rt });
     // No locals.cairnIdentity on this event, so loginLoad's runtime result is always the
     // magic-link variant; the cast reflects that, not a widening of the declared return type.
     const data = (await loginLoad(event())) as MagicLinkLoginData;
@@ -25,13 +26,13 @@ describe('auth page loads', () => {
   });
 
   it('loginLoad surfaces the expired error from the query', async () => {
-    const { loginLoad } = createAuthRoutes({ branding });
+    const { loginLoad } = createAuthRoutes({ runtime: rt });
     const data = (await loginLoad(event('?error=expired'))) as MagicLinkLoginData;
     expect(data.error).toBe('expired');
   });
 
   it('confirmLoad returns the token, site name, error, and sets Referrer-Policy', async () => {
-    const { confirmLoad } = createAuthRoutes({ branding });
+    const { confirmLoad } = createAuthRoutes({ runtime: rt });
     const ev = event('?token=abc');
     const data = await confirmLoad(ev);
     expect(data).toMatchObject({ token: 'abc', siteName: 'Test Site', error: null });

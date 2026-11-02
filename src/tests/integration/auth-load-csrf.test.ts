@@ -6,8 +6,9 @@ import { csrfCookieName } from '../../lib/auth/crypto.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
 import { testEvent } from '../helpers/test-event.js';
 import { withTestEnv } from '../helpers/with-test-env.js';
+import { runtime } from '../unit/_content-harness.js';
 
-const routes = createAuthRoutes({ branding: { siteName: 'Test', from: 'a@b.c' } });
+const routes = createAuthRoutes({ runtime: runtime() });
 
 function loadEvent(url: string, cookies: CookieJar) {
   return testEvent({ url, cookies });

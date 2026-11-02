@@ -25,8 +25,7 @@ files exist only to drive the engine's tests and never belong in the tree the CL
 `.cairn-template.json`'s `exclude` list keeps them out of that tree. `src/routes/probe-craft` is
 the admin design lab, and `src/routes/(site)/+layout.server.ts` is a fixture load returning
 `siteLayoutSentinel`, which `e2e/preview.spec.ts` uses to prove what a group layout leaks into a
-preview page's payload. The `../../members` traversals a few showcase files carry are fixture-only
-too, and they already live in files the exclude list drops. The exclude list also drops the
+preview page's payload. The exclude list also drops the
 thirteen `src/content/posts/2025-*.md` posts, kept out not as fixtures but so a site
 `create-cairn-site` produces ships fourteen sample posts instead of the engine's larger
 development set.

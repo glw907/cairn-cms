@@ -111,11 +111,27 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
    Check that the path names the new PEM file and that no `Out-File` step intervened under Windows PowerShell 5.1, and then push again.
 
-3. If `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: <status>`, GitHub refused the signed request.
+3. If `/healthz?live=1` reports the detail `key_refused`, or `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: 401`, GitHub refused the signed request.
 
-   The error page comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
+   A 401 means GitHub refused the signed request, and the error page comes from that refusal. The request also carries the App id, so first confirm that the `appId` in your site's `createGithubApp` call matches the App's settings page. If it matches, roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 
-4. If `/healthz` answers 503 with the detail `health check failed`, the check itself hit an error.
+4. If `/healthz?live=1` reports the detail `installation_not_found`, `installation_suspended`, `token_request_refused`, or `unreachable`, or a `github.unreachable` record carries any status other than 401, check the causes below first and leave the key alone for now.
+
+   For the first three details, GitHub most likely accepted the key and refused the request for a token. That reading comes from GitHub's REST documentation. The request names the repository and the permissions. A 404 or a 403 can mean the installation or a stale `repo`, and a 422 can mean the repository or the permissions.
+
+   An `unreachable` detail or a 5xx status is different. GitHub gave no verdict on the key, so don't replace it yet. Either can be a GitHub outage: check [GitHub's status page](https://www.githubstatus.com) first.
+
+   If GitHub is up, check five things:
+
+   - The `repo` in your site's `createGithubApp` call matches the repository's current name on GitHub.
+   - The App's installation includes that repository. On [GitHub's installations page](https://github.com/settings/installations), open the App and check the repository access.
+   - The App holds Contents read and write permission. Check the permissions on the App's settings page.
+   - The installation isn't suspended. Check its status on [GitHub's installations page](https://github.com/settings/installations).
+   - The `installationId` in your site's `createGithubApp` call matches the App's installation. The id is the last part of the installation page's URL on GitHub.
+
+   A plain `/healthz` stays `ok: true` in this case, because that check never requests a token.
+
+5. If `/healthz` answers 503 with the detail `health check failed`, the check itself hit an error.
 
    The page doesn't show the error. In Workers Logs, query records whose `event` field is `health.failed`. Its `error` field holds the message.
 

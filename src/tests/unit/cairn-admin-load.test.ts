@@ -113,7 +113,7 @@ describe('createCairnAdmin load dispatch', () => {
 });
 
 describe('public views', () => {
-  it('serves the login page bare, with branding derived from the runtime', async () => {
+  it('serves the login page bare, with the site name from the runtime', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const data = await admin.load(adminEvent('/admin/login', { editor: null }));
     expect(data.view).toBe('login');
@@ -126,12 +126,12 @@ describe('public views', () => {
     expect('layout' in data).toBe(false);
   });
 
-  it('applies deps.auth.branding to the login page, overriding the runtime-derived default', async () => {
-    const admin = createCairnAdmin({ runtime: runtime(), auth: { branding: { siteName: 'Overridden Site', from: 'x@test' } } });
+  it('serves the runtime siteName on the login page', async () => {
+    const admin = createCairnAdmin({ runtime: { ...runtime(), siteName: 'Example Site' } });
     const data = await admin.load(adminEvent('/admin/login', { editor: null }));
     expect(data.view).toBe('login');
     if (data.view !== 'login') throw new Error('narrowing');
-    expect((data.page as MagicLinkLoginData).siteName).toBe('Overridden Site');
+    expect((data.page as MagicLinkLoginData).siteName).toBe('Example Site');
   });
 
   it('serves the confirm page with the token and sets Referrer-Policy', async () => {

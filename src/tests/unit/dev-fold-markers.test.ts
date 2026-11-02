@@ -33,7 +33,7 @@ describe('scripts/checks/dev-fold-markers.txt', () => {
     }
   });
 
-  it('carries the dev-backend markers plus createChannelDb', () => {
+  it('carries the dev-backend markers', () => {
     const lines = markerLines();
     expect(lines).toEqual([
       'editor@showcase.test',
@@ -47,7 +47,6 @@ describe('scripts/checks/dev-fold-markers.txt', () => {
       'createFakeAnthropic',
       'lastRecordedCommit',
       'committedFile',
-      'createChannelDb',
     ]);
   });
 });

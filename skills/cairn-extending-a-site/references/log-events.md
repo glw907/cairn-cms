@@ -17,7 +17,6 @@ Contents:
 - [Roster and roles](#roster-and-roles)
 - [Dictionary and tidy](#dictionary-and-tidy)
 - [Custom admin actions and audit](#custom-admin-actions-and-audit)
-- [Auth channel](#auth-channel)
 - [Health, GitHub, Turnstile](#health-github-turnstile)
 - [Refusals that leave no cairn record](#refusals-that-leave-no-cairn-record)
 
@@ -103,7 +102,6 @@ Contents:
 | `editor.added` | info | `owner`, `target`, `role`, `capability` | Owner added an editor. |
 | `editor.removed` | info | `owner`, `target` | Owner removed an editor. |
 | `editor.role_changed` | info | `owner`, `target`, `role`, `capability` | Owner changed a role. |
-| `editor.bootstrapped` | info | `email` | The `bootstrapOwner` request inserted the first owner row. |
 
 ## Dictionary and tidy
 
@@ -135,31 +133,11 @@ These never carry document content or an API key.
 | `audit.sink.call_failed` | error | `path`, `action`, `entity`, `entityId`, `editor`, `error` | The site's `locals.cairnAuditSink` threw or rejected. The action stands; fix the sink. |
 | `audit.sink.write_failed` | error | `reason`, `actor`, `action`, `entity`, `entityId`, `detail`, `error` | `createD1AuditSink` failed to persist: `coercion_failed`, `prepare_failed`, `insert_rejected`, `wait_until_failed`. The only surviving copy of the row. |
 
-## Auth channel
-
-`correlationId` is a pseudonym (first 16 hex of the salted identity hash), never the subject.
-
-| Event | Level | Fields | Meaning |
-|---|---|---|---|
-| `auth.channel.requested` | info or warn | `correlationId` (absent on `challenge_failed`), `outcome` | `outcome`: `delivered`, `unknown` (contact not on the roster `lookup` reads), `cooldown`, `challenge_failed`, `suppressed`, `lookup_failed` (warn: `lookup` threw). |
-| `auth.channel.send_failed` | error | `correlationId`, `error` | `deliver` threw; the pending row is deleted and the charge refunded. |
-| `auth.channel.send_cleanup_failed` | error | `correlationId`, `error` | The cleanup after a failed `deliver` also threw. |
-| `auth.channel.confirmed` | info or error | `correlationId`, `outcome` (`empty_subject_fault` on error) | Code consumed. Error branch: the stored subject is an empty string (roster data fault). |
-| `auth.channel.locked` | warn | `correlationId` | Per-code attempt cap exceeded. |
-| `auth.channel.escalated` | warn | `correlationId` | Failure threshold exceeded and the challenge also failed; answers `challenge-required`. |
-| `auth.channel.ceiling_exceeded` | error | `correlationId` | Identity send ceiling exceeded; delivery still proceeds. |
-| `auth.channel.session.created` | info | `correlationId` | Session minted. |
-| `auth.channel.session.destroyed` | info | `correlationId` | Live row destroyed by logout, confirm's orphan cleanup, or a `verify`-refused revocation. |
-| `auth.channel.salt_unavailable` | warn | `path` (`logout` or `revoke`), `error` | Teardown finished but the pseudonym could not be derived, so the destroyed record was skipped. |
-| `auth.channel.rate_limited` | warn | `action`, `correlationId` | Over the optional limit; answers `throttled`. |
-| `auth.channel.rate_limit_absent` | warn | `action`, `correlationId` | Limit binding resolved to nothing; degrades to open. |
-| `auth.channel.rate_limit_failed` | warn | `action`, `correlationId`, `error` | `key()` or `limit()` threw; degrades to open. |
-
 ## Health, GitHub, Turnstile
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `github.unreachable` | warn | `scope` (`shell`, `help`, `publish_advisories`, `health`), `error` (not on `health`), `reason` (`health` only) | A best-effort GitHub read failed and the screen degraded. On `health`: `key_refused` (401), `installation_not_found` (404), `installation_suspended` (403), `unreachable`. |
+| `github.unreachable` | warn | `scope` (`shell`, `help`, `publish_advisories`, `health`), `error` (not on `health`), `reason` (`health` only) | A best-effort GitHub read failed and the screen degraded. On `health`: `key_refused` (401), `installation_not_found` (404), `installation_suspended` (403), `token_request_refused` (422: the repository is not in the installation, the App lacks Contents write, `repo` is stale, or GitHub throttled the request), `unreachable`. |
 | `health.failed` | error | `error` | `loadHealth` threw; the route answers 503 while this keeps the message. |
 | `turnstile.verify_failed` | warn | `reason`; `tokenLength`, `error`, `status`, `codes`, `expected`/`actual` per reason | `missing_secret` (blank secret, checked first), `invalid_input` (no or bad token), `request_failed`, `bad_status`, `unparseable`, `rejected` (non-routine error code: rotated or wrong secret), `hostname_mismatch`, `action_mismatch`. A routine bot rejection logs nothing. |
 

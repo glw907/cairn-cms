@@ -9,4 +9,3 @@ createFakeR2
 createFakeAnthropic
 lastRecordedCommit
 committedFile
-createChannelDb

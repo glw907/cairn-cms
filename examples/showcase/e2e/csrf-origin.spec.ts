@@ -1,6 +1,5 @@
 import { test, expect, type Page, type Response } from '@playwright/test';
 import {
-  FACTORY_ORIGIN_FRAGMENT,
   KIT_CROSS_SITE_BODY,
   ORIGINS,
   rewriteAdminDocument,
@@ -8,35 +7,30 @@ import {
 } from './csrf-helpers.js';
 
 // SvelteKit's Origin check runs on every route of the served build, admin included, because the
-// site carries no csrf config. The members request form is the probe for the pair below: the auth
-// channel also answers 403 on an origin mismatch (its compare), so only Kit's exact body proves
-// the framework refused, and a status alone would pass with the check switched off.
+// site carries no csrf config. The admin sign-in form is the probe for the pair below: only
+// Kit's exact body proves the framework refused, and a status alone would pass with the check
+// switched off.
 
-test('a form posted from the other host name is refused by the framework, not the auth channel', async ({
-  page,
-}) => {
-  await page.goto(`${ORIGINS.loopback}/members/login`);
-  await page.locator('#member-contact').fill('csrf-pair@showcase.test');
+test('a form posted from the other host name is refused by the framework', async ({ page }) => {
+  await page.goto(`${ORIGINS.loopback}/admin/login`);
+  await page.locator('input[name="email"]').fill('csrf-pair@showcase.test');
   const response = await submitNatively(
     page,
     page.locator('form[action="?/request"]'),
-    `${ORIGINS.named}/members/login?/request`,
+    `${ORIGINS.named}/admin/login?/request`,
   );
   expect(response.status()).toBe(403);
-  const body = await response.text();
-  expect(body).toBe(KIT_CROSS_SITE_BODY);
-  expect(body).not.toContain(FACTORY_ORIGIN_FRAGMENT);
+  expect(await response.text()).toBe(KIT_CROSS_SITE_BODY);
 });
 
-test("the same submission from the form's host name reaches the members form", async ({ page }) => {
-  await page.goto(`${ORIGINS.named}/members/login`);
-  await page.locator('#member-contact').fill('csrf-pair@showcase.test');
+test("the same submission from the form's host name passes the framework check", async ({
+  page,
+}) => {
+  await page.goto(`${ORIGINS.named}/admin/login`);
+  await page.locator('input[name="email"]').fill('csrf-pair@showcase.test');
   const response = await submitNatively(page, page.locator('form[action="?/request"]'));
   expect(response.status()).toBe(200);
-  const body = await response.text();
-  expect(body).not.toContain(KIT_CROSS_SITE_BODY);
-  expect(body).not.toContain(FACTORY_ORIGIN_FRAGMENT);
-  await expect(page.getByRole('status')).toContainText('A code was sent.');
+  expect(await response.text()).not.toContain(KIT_CROSS_SITE_BODY);
 });
 
 test('a same-origin admin Save passes the framework check', async ({ page }) => {

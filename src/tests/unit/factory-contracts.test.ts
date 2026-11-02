@@ -84,8 +84,11 @@ function typeOnlyCairnAdminInternalContract(runtime: CairnRuntime): void {
 void typeOnlyCairnAdminInternalContract;
 
 // createAuthRoutes: AuthRoutes replaces the retired `ReturnType<typeof createAuthRoutes>` alias.
-function typeOnlyAuthRoutesContract(): void {
-  const auth: AuthRoutes = createAuthRoutes({ branding: { siteName: 'Site', from: 'noreply@example.com' } });
+function typeOnlyAuthRoutesContract(runtime: CairnRuntime): void {
+  const auth: AuthRoutes = createAuthRoutes({ runtime });
+  // The magic-link identity comes from the runtime; a per-call branding override is not an option.
+  // @ts-expect-error branding is not a member of AuthRoutesConfig
+  createAuthRoutes({ runtime, branding: { siteName: 'Site', from: 'noreply@example.com' } });
   const roundTrip: ReturnType<typeof createAuthRoutes> = auth;
   void roundTrip;
 }

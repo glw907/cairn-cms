@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createInstallationTokenCache } from '../../lib/github/signing.js';
 
-const creds = { appId: '1', installationId: '2', privateKeyB64: 'x' };
+const creds = { appId: '1', installationId: '2', repo: 'site', privateKeyB64: 'x' };
 
 describe('installation token cache (Unit 3)', () => {
   it('mints once and reuses the token within the TTL', async () => {
@@ -30,6 +30,15 @@ describe('installation token cache (Unit 3)', () => {
     const get = createInstallationTokenCache(mint, () => 1000);
     expect(await get({ ...creds, installationId: 'a' })).toBe('ghs_a');
     expect(await get({ ...creds, installationId: 'b' })).toBe('ghs_b');
+    expect(mint).toHaveBeenCalledTimes(2);
+  });
+
+  it('holds separate tokens for two repositories on one installation', async () => {
+    const mint = vi.fn(async (c: typeof creds) => `ghs_${c.repo}`);
+    const get = createInstallationTokenCache(mint, () => 1000);
+    expect(await get({ ...creds, repo: 'one' })).toBe('ghs_one');
+    expect(await get({ ...creds, repo: 'two' })).toBe('ghs_two');
+    expect(await get({ ...creds, repo: 'one' })).toBe('ghs_one');
     expect(mint).toHaveBeenCalledTimes(2);
   });
 

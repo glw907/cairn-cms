@@ -5,5 +5,3 @@ export * from './fake-r2.js';
 export * from './fake-anthropic.js';
 export { devBackendHandle } from './handle.js';
 export type { DevBackendConfig } from './handle.js';
-export { createChannelDb } from './channel-db.js';
-export type { ChannelDb, ChannelSession, ChannelStatement } from './channel-db.js';

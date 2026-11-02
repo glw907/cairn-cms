@@ -144,8 +144,8 @@ wired, tightens two access edges, and regenerates the manifest. Do these in orde
    route it names. Remove a role you dropped from `defineRoles` from every access rule, or keep it
    declared: a rule naming an undeclared role now fails at server start.
 7. Key alerting for a missing Turnstile secret on `missing_secret`, not `invalid_input`.
-8. If you passed a full `auth.branding` without `replyTo`, check the adapter's `email` group: the
-   runtime's `replyTo` applies now.
+8. Delete `auth.branding` from `createCairnAdmin` if you pass it. `CairnAdminConfig.auth` takes only
+   `send` now.
 9. Optionally, answer 503 from `/healthz` when `ok` is false, and apply `0001_roles.sql` if you declare
    custom roles on a site scaffolded before the scaffold shipped it.
 10. Run `npm run check`, then `npm run build`, and expect both to exit 0. Run `cairn doctor` and expect
@@ -291,7 +291,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   external.
 - **Serve `strict-origin-when-cross-origin` or `strict-origin` if your site sets `no-referrer`
   site-wide.** Under `no-referrer` a browser sends `Origin: null` on a form POST, and SvelteKit's
-  check refuses your forms and `createAuthChannel` forms. cairn's admin documents pin
+  check refuses your forms. cairn's admin documents pin
   `strict-origin` with a header and a meta tag, so the admin keeps working unless a meta placed
   after `%sveltekit.head%` in `app.html` overrides it.
 - **Have a server-to-server POST carry a `Content-Type`.** SvelteKit 3 refuses a POST with no
@@ -301,8 +301,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   which is now a build error. `v2` replaces the `config.csrf-disable` check with
   `config.csrf-trusted-origins` and retires three ids, so a script that matches on them needs changing:
   `config.csrf-disable`, `config.csrf-disable-missing`, and `auth.csrf-origin-mismatch`.
-- **Stop matching on `auth.channel.delivery_inline`.** The event retired, since the module's
-  `waitUntil` is always defined. `guard.refused` also carries no `origin` reason, because
+- **Stop matching on `auth.channel.delivery_inline`.** The event retired with the auth channel.
+  `guard.refused` also carries no `origin` reason, because
   SvelteKit's check refuses a cross-origin form POST before the guard runs.
 - **Re-run `npx cairn-guidance install` if your site uses the `cairn-extend` skill.** This release
   drops cairn's narrative guides and its two front-door pages until each set is rebuilt, so the
@@ -343,10 +343,6 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Key Turnstile alerting on `missing_secret` for a missing secret.** `turnstile.verify_failed` with
   `reason: 'invalid_input'` now means a bad token only. A blank or non-string secret logs
   `missing_secret`.
-- **Expect the runtime's reply address when a full `auth.branding` left it out.** `auth.branding` is a
-  partial merged over the runtime's `siteName`, `from`, and `replyTo`, and branding can't clear a
-  member. To send no reply address, remove it from the adapter's `email` group or send through a custom
-  `auth.send`.
 - **Expect a calm conflict from publish and publish-all.** Both, and the Media Library's writes and
   the dictionary add, now fail closed when another commit lands on the default branch while they read
   their snapshots. The entry stays held on its branch, and publishing again succeeds.
@@ -363,6 +359,14 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   `auth.store-roles-unmigrated`. Once the file sits in the site's `migrations` directory, any
   automated `wrangler d1 migrations apply`, a deploy pipeline's included, runs it and rebuilds
   `editor` the same way, so carry site-added columns across before you copy it in.
+
+- **Drop `/auth-channel`, `migrations-channel`, and `createChannelDb`.** The second auth store is gone, with `originMatches`, `isDeployedHost`, and `src/lib/log.ts` in the scaffold. Delete the `src/lib/log.ts` of a site scaffolded earlier if nothing else imports it.
+- **Drop `/auth-store`, delete the `auth.bootstrapOwner` option, and seed the owner row before you deploy if the `editor` table may be empty.** The option is now a type error, and nothing creates the first owner on a first request. `skills/cairn-extending-a-site/references/adopt-cairn.md` carries the seed step, and `create-cairn-site` seeds its own owner. `resolveOwnerLevelRoles` also left the root barrel, so derive owner-capability roles from your own role vocabulary.
+- **Replace the guarded roster writes if your site manages its roster outside `/admin/editors`.** `deleteEditor`, `setEditorRole`, `removeOwnerIfNotLast`, and `demoteOwnerIfNotLast` went with `/auth-store`, so your own SQL on `AUTH_DB` must do what they did. Trim and lowercase the email before it matches or writes the `editor` table, since a shadow row counts as an owner yet can never sign in. Count owners inside the one `DELETE`, as `AND (role NOT IN (...) OR (SELECT COUNT(*) FROM editor WHERE role IN (...)) > 1)`, so a concurrent write can't strand the roster. In an `UPDATE`, add `OR ? = 1`, bound to whether the new role has owner capability, so the last owner can still move to another owner-level role. List every role with owner capability, since a missed name miscounts the owners. Only when the `DELETE` changed a row, which `meta.changes` reports, delete the person's rows from `session` and `magic_token` by `email`, so a refused removal keeps its sessions. Then delete from `preview_tokens` by `editor` in a statement of its own and ignore a "no such table" error: that table exists only after `0003_preview.sql`, and one missing table fails a whole D1 batch.
+- **Delete `auth.branding` and stop importing `AuthBranding`.** The site name and sender come from the adapter's `email` group and the site config. To send a different name or from address, change the built message in a custom `auth.send`, which receives it. That reaches the email only: the login and confirm pages now show the site config's name. To send no reply address, remove `replyTo` from the adapter's `email` group or use a custom `auth.send`. `CairnAdminConfig.auth` is `{ send? }` now.
+- **Pass `{ runtime }` to `createAuthRoutes`, rename `RequestOutcome` to `LoginRequestOutcome`, and rename `tokensMatch` to `compareTokens`.** The outcome has no `sent` member now, so branch on `outcome === 'sent'`, which the neutral answer for an unknown address also returns.
+- **Stop matching on the 13 `auth.channel.*` log events and on `editor.bootstrapped`.** All 14 left `CAIRN_LOG_EVENTS`.
+- **Grant the App Contents read and write, and set `repo` to the repository's current name.** The engine mints its installation token for that one repository and `contents: write` only. A stale name followed GitHub's redirect before, and the mint is now expected to refuse it; `/healthz?live=1` reports a 422 as `token_request_refused`.
 
 The setup tool's changes ask nothing of an existing site. In the showcase and the scaffold template,
 the `ORIGIN` constant in `content.ts` became an import of `publicOrigin` from

@@ -14,11 +14,11 @@ export interface RefusalOptions {
   isPending: () => boolean;
   /** Writes the screen's pending flag. */
   setPending: (pending: boolean) => void;
-  /** Runs once a request is about to be sent, before the flag is raised. */
-  onStart?: () => void;
   /**
-   * Runs for every result that is not a redirect, after the flag clears and before `update()`.
-   * An `error` result arrives here and nowhere else, since it is never applied to the page.
+   * Runs for every result that is not a redirect, once `update()` has applied it and the flag has
+   * cleared, so a screen keyed on its own state never remounts an alert for the previous `form`. An
+   * `error` result arrives here and nowhere else, since it is never applied to the page, and so does
+   * an `update()` that rejects, as an `error` result carrying the rejection's message.
    */
   onResult?: (result: SettledResult, formElement: HTMLFormElement) => void;
   /** Refresh every load after a refusal, for a screen whose data decides who can act. */
@@ -29,10 +29,11 @@ export interface RefusalOptions {
  * Build the `use:enhance` submit function for one form on a screen. A repeat submit while the
  * flag is raised is cancelled, since Kit's `enhance` has no guard of its own. A redirect leaves the
  * screen with a document load, so an expired session still lands on sign-in and the page rereads
- * everything. A `success` or `failure` goes through Kit's `update()`, which keeps the screen
- * mounted. An `error` is not applied: `applyAction` would replace the screen with the error page
- * and take the working copy with it, so it reaches `onResult` and the screen shows
- * {@link FAILURE_NOTICE} instead.
+ * everything; the flag stays raised for it, and a back-forward-cache restore of the screen clears
+ * it. A `success` or `failure` goes through Kit's `update()`, which keeps the screen mounted, and
+ * the flag stays raised until that settles. An `error` is not applied: `applyAction` would replace
+ * the screen with the error page and take the working copy with it, so it reaches `onResult` and
+ * the screen shows {@link FAILURE_NOTICE} instead.
  */
 export function refusalSubmit(options: RefusalOptions): SubmitFunction {
   return ({ cancel }) => {
@@ -40,22 +41,38 @@ export function refusalSubmit(options: RefusalOptions): SubmitFunction {
       cancel();
       return;
     }
-    options.onStart?.();
     options.setPending(true);
     return async ({ result, update, formElement }) => {
       if (result.type === 'redirect') {
+        window.addEventListener(
+          'pageshow',
+          (event) => {
+            if (event.persisted) options.setPending(false);
+          },
+          { once: true },
+        );
         window.location.assign(result.location);
         return;
       }
+      let settled: SettledResult = result;
+      if (result.type !== 'error') {
+        try {
+          await update(options.refreshAllOnFailure && result.type === 'failure' ? { refreshAll: true } : undefined);
+        } catch (error) {
+          settled = { type: 'error', error: { status: 500, message: error instanceof Error ? error.message : String(error) } };
+        }
+      }
       options.setPending(false);
-      options.onResult?.(result, formElement);
-      if (result.type === 'error') return;
-      await update(options.refreshAllOnFailure && result.type === 'failure' ? { refreshAll: true } : undefined);
+      options.onResult?.(settled, formElement);
     };
   };
 }
 
-/** A mount-time action: focus the element without scrolling, for a refusal that has just appeared. */
+/**
+ * A mount-time action: focus the element, for a refusal that has just appeared. The admin sheet
+ * gives every `[tabindex]` element a `scroll-margin-top`, so the scroll the focus brings clears the
+ * sticky topbar.
+ */
 export function focusOnMount(node: HTMLElement): void {
-  node.focus({ preventScroll: true });
+  node.focus();
 }

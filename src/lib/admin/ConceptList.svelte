@@ -221,7 +221,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // that goes through navigates away, so the flag clears only on a refusal.
   let creating = $state(false);
   // Whether the last result belongs to the create form. `ContentFormFailure` has no discriminator,
-  // so the create form's own callback sets this, and closing the dialog clears it.
+  // so the create form's own callback sets this, and closing the dialog clears it. A result that
+  // lands after the dialog closed leaves it unset, so the refusal shows in the page banner.
   let createRefused = $state(false);
   // The notice for a create request that failed outright. A fresh object per failure keys the
   // dialog's alert, so a repeat failure takes focus again.
@@ -232,7 +233,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     isPending: () => creating,
     setPending: (pending) => (creating = pending),
     onResult: (result) => {
-      createRefused = true;
+      createRefused = createDialog?.open ?? false;
       createNotice = result.type === 'error' ? { text: FAILURE_NOTICE } : null;
     },
   });
@@ -297,6 +298,44 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       ? null
       : ((form && form !== closedCreateForm ? form.error : undefined) ?? data.formError),
   );
+
+  // The one lifecycle outcome to announce (the visible alerts below keep their styling). A blocked
+  // delete leads, then the publish-all survivor's relayed formError, then a load error. A refused
+  // create stays out: its alert takes focus, which speaks it. The delete announcement carries the
+  // blocker count, so a screen reader hears the magnitude before navigating to the list.
+  const lifecycleError = $derived.by(() => {
+    if (!deleteRefused) return data.formError ?? data.error ?? '';
+    const count = deleteRefused.inboundLinks.length;
+    const blocker =
+      deleteRefused.inboundKind === 'include'
+        ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
+        : `${count} ${count === 1 ? 'entry links' : 'entries link'} to it.`;
+    return `This ${refusedNoun} could not be deleted. ${blocker}`;
+  });
+
+  // The polite live region's text re-announces only when it changes, so a repeated identical error
+  // would go silent. An invisible nonce flips on every fresh outcome so the region text always
+  // mutates and the screen reader speaks again. This screen, EditPage, and TidyReview each hand-roll
+  // this few-line nonce idiom; the other admin screens move focus to their refusal instead. The
+  // nonce is a zero-width space and is never voiced.
+  let announceNonce = $state(0);
+  function nonce(): string {
+    return announceNonce % 2 === 0 ? '' : '​';
+  }
+  // The outcome's source is the `form` a delete refusal arrives on, else the `data` a load hands
+  // over. The nonce bumps once per fresh source, and a create refusal does not re-announce a load
+  // error. The first run bumps too: a refusal that arrived with a full-page post is heard when
+  // hydration changes the region's text. The guard reads a plain non-reactive `lastSource`, which
+  // keeps the bump from firing on the re-render it causes and the effect from looping.
+  let lastSource: unknown;
+  $effect(() => {
+    const source = deleteRefused ? form : data;
+    if (source !== lastSource) {
+      lastSource = source;
+      if (lifecycleError) announceNonce++;
+    }
+  });
+  const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 </script>
 
 <!-- The office natural-measure rule (design arc 2026-07-15): a document list composes at 3xl
@@ -315,6 +354,9 @@ Filtering, sorting, and paging run over the loaded entries in component state.
      {#if}-gated role element inserted fresh is announced inconsistently, so the visible alert
      below keeps its styling without a role and the message is announced once. -->
 <div class="sr-only" aria-live="polite">{publishedAllMessage}</div>
+<!-- One persistent polite region announces the lifecycle errors, re-announcing a repeat through the
+     nonce. The visible alerts below keep their styling and carry no live `role`. -->
+<div class="sr-only" aria-live="polite">{liveError}</div>
 {#if publishedAllMessage}
   <div class="alert alert-success mb-4 type-body">{publishedAllMessage}</div>
 {/if}
@@ -327,8 +369,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 
 {#if deleteRefused}
   <!-- A `?/delete` was refused: name the blockers up front, matching the editor's refusal banner,
-       so the author sees why without re-opening a dialog. The box carries no role or label (a bare
-       div with an aria-label gets no accessible name).
+       so the author sees why without re-opening a dialog. The polite region above announces it, so
+       the box itself carries no role or label (a bare div with an aria-label gets no accessible name).
        `flex-col` was inert: daisyUI's `.alert` is `display: grid`, laying its three children out as
        grid columns (an icon-plus-message alert's intended shape). Below `sm`, `grid-flow-row`
        plus a single-column template stack the title, the body paragraph, and the link list instead

@@ -975,7 +975,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
     <div class="flex flex-col gap-5 overflow-y-auto p-4 pb-8">
       <!-- The large preview, object-fit contain on the quiet mat, with the broken-image affordance. -->
-      <div class="flex aspect-[16/10] items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
+      <div class="flex aspect-[16/10] shrink-0 items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
         {#if brokenHashes.has(asset.hash)}
           <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">
             <ImageOffIcon class="h-8 w-8" aria-hidden="true" />

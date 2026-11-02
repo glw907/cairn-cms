@@ -135,49 +135,49 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
             {editor.displayName}
             <!-- Below sm the Email and Role columns hide, so both stack under the name instead of
                  dropping off the row (ConceptList's date column does the same). -->
-            <span class="block break-all type-meta font-normal text-muted sm:hidden">{editor.email}</span>
-            <span class="badge mt-1 sm:hidden {roleBadge(editor.role)}">{editor.role}</span>
+            <span class="block break-all type-meta font-normal text-muted sm:hidden"><span class="sr-only">{'Email: '}</span>{editor.email}</span>
+            <span class="badge mt-1 sm:hidden {roleBadge(editor.role)}"><span class="sr-only">{'Role: '}</span>{editor.role}</span>
           </td>
           <td class="hidden sm:table-cell">{editor.email}</td>
           <td class="hidden sm:table-cell">
             <span class="badge {roleBadge(editor.role)}">{editor.role}</span>
           </td>
           <td>
-           <div class="flex flex-wrap justify-end gap-2">
-            {#if isDefaultVocabulary}
-              <form method="POST" action="?/editorSetRole" use:enhance={submitRole}>
+            <div class="flex flex-wrap justify-end gap-2">
+              {#if isDefaultVocabulary}
+                <form method="POST" action="?/editorSetRole" use:enhance={submitRole}>
+                  <CsrfField />
+                  <input type="hidden" name="email" value={editor.email} />
+                  <input type="hidden" name="role" value={editor.role === 'owner' ? 'editor' : 'owner'} />
+                  <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf || busy} aria-busy={busy} aria-label={`Toggle role for ${editor.displayName}`}>
+                    {editor.role === 'owner' ? 'Make editor' : 'Make owner'}
+                  </button>
+                </form>
+              {:else}
+                <form method="POST" action="?/editorSetRole" class="flex items-center gap-1" use:enhance={submitRole}>
+                  <CsrfField />
+                  <input type="hidden" name="email" value={editor.email} />
+                  <select
+                    class="select select-xs"
+                    name="role"
+                    disabled={isSelf}
+                    aria-label={`Change role for ${editor.displayName}`}
+                  >
+                    {#each data.vocabulary as entry (entry.role)}
+                      <option value={entry.role} selected={entry.role === editor.role}>{roleOptionLabel(entry)}</option>
+                    {/each}
+                  </select>
+                  <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf || busy} aria-busy={busy}>Change</button>
+                </form>
+              {/if}
+              <form method="POST" action="?/editorRemove" use:enhance={submitRemove}>
                 <CsrfField />
                 <input type="hidden" name="email" value={editor.email} />
-                <input type="hidden" name="role" value={editor.role === 'owner' ? 'editor' : 'owner'} />
-                <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf || busy} aria-busy={busy} aria-label={`Toggle role for ${editor.displayName}`}>
-                  {editor.role === 'owner' ? 'Make editor' : 'Make owner'}
+                <button type="submit" class="btn btn-ghost btn-xs text-error" disabled={isSelf || busy} aria-busy={busy} aria-label={`Remove ${editor.displayName}`}>
+                  Remove
                 </button>
               </form>
-            {:else}
-              <form method="POST" action="?/editorSetRole" class="flex items-center gap-1" use:enhance={submitRole}>
-                <CsrfField />
-                <input type="hidden" name="email" value={editor.email} />
-                <select
-                  class="select select-xs"
-                  name="role"
-                  disabled={isSelf}
-                  aria-label={`Change role for ${editor.displayName}`}
-                >
-                  {#each data.vocabulary as entry (entry.role)}
-                    <option value={entry.role} selected={entry.role === editor.role}>{roleOptionLabel(entry)}</option>
-                  {/each}
-                </select>
-                <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf || busy} aria-busy={busy}>Change</button>
-              </form>
-            {/if}
-            <form method="POST" action="?/editorRemove" use:enhance={submitRemove}>
-              <CsrfField />
-              <input type="hidden" name="email" value={editor.email} />
-              <button type="submit" class="btn btn-ghost btn-xs text-error" disabled={isSelf || busy} aria-busy={busy} aria-label={`Remove ${editor.displayName}`}>
-                Remove
-              </button>
-            </form>
-           </div>
+            </div>
           </td>
         </tr>
       {/each}

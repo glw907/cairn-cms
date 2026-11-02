@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import type { ContentFormFailure, ContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
 import type { ActionFailure } from '@sveltejs/kit';
-import type { InboundLink } from '../../lib/content/manifest.js';
+import type { EntryRef } from '../../lib/content/manifest.js';
 import type { UsageEntry } from '../../lib/media/usage.js';
 
 // The one runtime test in this compile-only file (vitest fails a `.test.ts` declaring no suite);
@@ -38,7 +38,7 @@ function typeOnlyArmAssignability(): void {
   const mediaBulkFailure: { error: string } = { error: 'media off' };
   const tidyFailure: { error: string } = { error: 'csrf' };
   const saveFailure: { error: string; brokenLinks: string[]; body: string } = { error: 'e', brokenLinks: [], body: 'b' };
-  const deleteRefusal: { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' | 'include'; id: string } = {
+  const deleteRefusal: { error: string; inboundLinks: EntryRef[]; inboundKind?: 'link' | 'include'; id: string } = {
     error: 'e',
     inboundLinks: [],
     id: 'x',

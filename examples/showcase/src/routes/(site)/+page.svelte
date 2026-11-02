@@ -74,8 +74,8 @@
       <h2 class="lead__title">
         <a href={data.featured.permalink}>{data.featured.title}</a>
       </h2>
-      {#if data.featured.fields.description}
-        <p class="lead__excerpt">{data.featured.fields.description}</p>
+      {#if data.featured.summaryFields.description}
+        <p class="lead__excerpt">{data.featured.summaryFields.description}</p>
       {/if}
       <a href={data.featured.permalink} class="lead__link">
         Read the post<span aria-hidden="true"> &rarr;</span>

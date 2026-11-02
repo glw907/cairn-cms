@@ -18,13 +18,13 @@ for that field, though not for the `.md` twin link, which this component derives
 no other rendering: the fidelity claim (a minted preview and its eventual public page render
 identically) depends on everything else staying byte-for-byte the same. -->
 <script lang="ts">
-  import type { EntryData, ResolvedReference } from '@glw907/cairn-cms/delivery';
+  import type { EntryData, EntryRef } from '@glw907/cairn-cms/delivery';
   import { CairnHead } from '@glw907/cairn-cms/delivery/head';
   import { formatDate } from '#chassis/date.js';
 
   interface Props {
     /** The composed entry data, plus the reference-edge resolution `#chassis/entry-data.js` layers on. */
-    data: EntryData & { references: Record<string, ResolvedReference | ResolvedReference[]> };
+    data: EntryData & { references: Record<string, EntryRef | EntryRef[]> };
     /** True on the preview route: suppresses canonical, og:url, and the `.md` twin link. Defaults to false (the public route). */
     preview?: boolean;
     /**
@@ -51,11 +51,11 @@ identically) depends on everything else staying byte-for-byte the same. -->
       : data.seo,
   );
 
-  // The resolved author edge: a single reference projects to one ResolvedReference, so the template
+  // The resolved author edge: a single reference projects to one EntryRef, so the template
   // reads its title and permalink. Undefined when the entry sets no author.
-  const author = $derived(data.references.author as ResolvedReference | undefined);
+  const author = $derived(data.references.author as EntryRef | undefined);
   // The resolved related edges: an array(reference) projects to a list, rendered as links.
-  const related = $derived((data.references.related as ResolvedReference[] | undefined) ?? []);
+  const related = $derived((data.references.related as EntryRef[] | undefined) ?? []);
 
   /** The raw frontmatter `image` object, loosely typed: only the two fields the fallback below reads. */
   interface RawImageField {

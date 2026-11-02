@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { defineFieldset, fields } from '../../lib/index.js';
+import { fields } from '../../lib/index.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
 describe('fieldset taxonomy-marker guard', () => {
   it('throws when two multiselect fields both set taxonomy: true', () => {
@@ -49,7 +50,7 @@ describe('fieldset taxonomy-marker guard', () => {
 
   it('forbids a taxonomy marker inside an array', () => {
     expect(() =>
-      defineFieldset({ rows: fields.array(fields.multiselect({ label: 'Topics', taxonomy: true })) }),
+      defineFieldset({ rows: fields.array({ item: fields.multiselect({ label: 'Topics', taxonomy: true }), label: 'Items' }) }),
     ).toThrow(/taxonomy/i);
   });
 });

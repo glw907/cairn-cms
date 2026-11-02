@@ -61,6 +61,17 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('MediaReplaceDialog: the formats line', () => {
+  it('names what ingestFile takes, GIF included and AVIF left out', async () => {
+    const screen = await mount();
+    const component = screen.component as unknown as { open: (asset: MediaLibraryEntry, origin?: HTMLElement | null) => void };
+    component.open(entry());
+    const dialog = screen.container.querySelector('[data-testid="cairn-replace-dialog"]') as HTMLDialogElement;
+    await expect.poll(() => dialog.open).toBe(true);
+    expect(dialog.textContent).toContain('PNG, JPEG, WebP, GIF, or HEIC.');
+  });
+});
+
 describe('MediaReplaceDialog: the upload step working status region', () => {
   it('mounts before any upload happens, empty, distinct from the review-impact region', async () => {
     const screen = await mount();

@@ -335,7 +335,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       return ctx.commitFailure(
         commitFields,
         err,
-        saveRefusal('This file changed since you opened it. Re-read the draft and save again.', body),
+        saveRefusal('This entry changed since you opened it. Re-read the draft and save again.', body),
       );
     }
     return { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange, mainHead: guardedHead };

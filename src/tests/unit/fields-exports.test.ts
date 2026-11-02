@@ -4,12 +4,10 @@ import type {
   FieldDescriptor,
   Fieldset,
   InferFieldset,
-  FieldsetConfig,
   NamedField,
   ImageValue,
-  StandardInput,
 } from '../../lib/index.js';
-import type { BehaviorTable, FieldBehavior } from '../../lib/content/fieldset.js';
+import { defineFieldset, type BehaviorTable, type FieldBehavior } from '../../lib/content/fieldset.js';
 import type {
   TextField,
   TextareaField,
@@ -28,10 +26,6 @@ describe('v2 field vocabulary package exports', () => {
     expect(typeof cairn.fields.select).toBe('function');
   });
 
-  it('exports defineFieldset from the main entry', () => {
-    expect(typeof cairn.defineFieldset).toBe('function');
-  });
-
   it('omits initialValues from the root barrel but keeps it reachable from its module', async () => {
     expect('initialValues' in cairn).toBe(false);
     const fieldsetModule = await import('../../lib/content/fieldset.js');
@@ -39,13 +33,12 @@ describe('v2 field vocabulary package exports', () => {
   });
 
   it('exports the v2 field types', () => {
-    const set = cairn.defineFieldset({
+    const set = defineFieldset({
       title: cairn.fields.text({ label: 'Title', required: true }),
     });
     expectTypeOf(set).toMatchTypeOf<Fieldset>();
     expectTypeOf<InferFieldset<typeof set>>().toEqualTypeOf<{ title: string }>();
     expectTypeOf<FieldDescriptor>().toMatchTypeOf<{ label?: string }>();
-    expectTypeOf<FieldsetConfig>().toMatchTypeOf<{ refine?: unknown }>();
     expectTypeOf<BehaviorTable>().toEqualTypeOf<Record<string, FieldBehavior>>();
     expectTypeOf<FieldBehavior>().toMatchTypeOf<{ validate?: unknown }>();
   });
@@ -64,7 +57,6 @@ describe('v2 field vocabulary package exports', () => {
     expectTypeOf<ImageField>().toMatchTypeOf<{ type: 'image' }>();
     expectTypeOf<NamedField>().toMatchTypeOf<{ name: string }>();
     expectTypeOf<ImageValue>().toMatchTypeOf<{ src: string }>();
-    expectTypeOf<StandardInput>().toMatchTypeOf<{ body: string }>();
   });
 
   it('has no email or datetime builder', () => {

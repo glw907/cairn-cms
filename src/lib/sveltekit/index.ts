@@ -162,7 +162,7 @@ export type { CairnRef } from '../content/links.js';
 export type { MediaRef } from '../media/reference.js';
 export type { Capability, RolesDeclaration, RoleDeclaration } from '../auth/roles.js';
 export type { Editor } from '../auth/types.js';
-export type { InboundLink } from '../content/manifest.js';
+export type { EntryRef } from '../content/manifest.js';
 export type { NavNode, VocabularyEntry, TidyConventions, TidyConfig } from '../nav/site-config.js';
 export type { RepoFile, CommitAuthor } from '../github/types.js';
 export type { FileChange } from '../github/repo.js';

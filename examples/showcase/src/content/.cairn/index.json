@@ -6,7 +6,7 @@
       "concept": "fragments",
       "title": "Trail safety notice",
       "permalink": "/fragments/trail-safety-notice",
-      "summary": "Check current avalanche and trail conditions before you set out, and carry the ten essentials above treeline.",
+      "excerpt": "Check current avalanche and trail conditions before you set out, and carry the ten essentials above treeline.",
       "draft": false,
       "links": []
     },
@@ -15,7 +15,7 @@
       "concept": "pages",
       "title": "About",
       "permalink": "/about",
-      "summary": "This is Waymark, cairn's starter template, running here as the engine's development showcase. Every post and page on this site is deliberate placeholder content that a real site replaces. Each post…",
+      "excerpt": "This is Waymark, cairn's starter template, running here as the engine's development showcase. Every post and page on this site is deliberate placeholder content that a real site replaces. Each post…",
       "draft": false,
       "links": [],
       "includes": [
@@ -27,7 +27,7 @@
       "concept": "pages",
       "title": "The Trail Crew",
       "permalink": "/the-trail-crew",
-      "summary": "The small crew who write the trail notes on this showcase: three people who split the season between guidebook research, gear testing, and the actual walking. Like the rest of this showcase, this…",
+      "excerpt": "The small crew who write the trail notes on this showcase: three people who split the season between guidebook research, gear testing, and the actual walking. Like the rest of this showcase, this…",
       "draft": false,
       "links": []
     },
@@ -37,7 +37,7 @@
       "title": "Starting a cold morning right",
       "date": "2025-01-11",
       "permalink": "/posts/cold-start",
-      "summary": "A note on why the first ten minutes at a frozen trailhead matter more than any mile after them.",
+      "excerpt": "A note on why the first ten minutes at a frozen trailhead matter more than any mile after them.",
       "draft": false,
       "links": [],
       "tags": [
@@ -51,7 +51,7 @@
       "title": "Watching for icefall on the north face",
       "date": "2025-02-08",
       "permalink": "/posts/icefall-watch",
-      "summary": "Late-winter thaw cycles are loosening ice on the north-face gully, and the safe window is shorter than the forecast suggests.",
+      "excerpt": "Late-winter thaw cycles are loosening ice on the north-face gully, and the safe window is shorter than the forecast suggests.",
       "draft": false,
       "links": [],
       "tags": [
@@ -65,7 +65,7 @@
       "title": "Mud season starts on the lower switchbacks",
       "date": "2025-03-08",
       "permalink": "/posts/mud-season-begins",
-      "summary": "The lower switchbacks have gone soft with the thaw, and staying on the durable line matters more than usual this week.",
+      "excerpt": "The lower switchbacks have gone soft with the thaw, and staying on the durable line matters more than usual this week.",
       "draft": false,
       "links": [],
       "tags": [
@@ -79,7 +79,7 @@
       "title": "The creek crossing runs high this week",
       "date": "2025-04-05",
       "permalink": "/posts/creek-crossing",
-      "summary": "Snowmelt has pushed the main creek crossing above its usual line, and the safer ford sits a quarter mile upstream.",
+      "excerpt": "Snowmelt has pushed the main creek crossing above its usual line, and the safer ford sits a quarter mile upstream.",
       "draft": false,
       "links": [],
       "tags": [
@@ -93,7 +93,7 @@
       "title": "The wildflower window opens on the meadow loop",
       "date": "2025-05-03",
       "permalink": "/posts/wildflower-window",
-      "summary": "The meadow loop's lupine and paintbrush have started blooming a week earlier than last year.",
+      "excerpt": "The meadow loop's lupine and paintbrush have started blooming a week earlier than last year.",
       "draft": false,
       "links": [],
       "tags": [
@@ -107,7 +107,7 @@
       "title": "Breaking in a new pair of boots the slow way",
       "date": "2025-05-31",
       "permalink": "/posts/new-boots-review",
-      "summary": "A pair of stiff leather boots earned their fit over six short walks before the first real day on trail.",
+      "excerpt": "A pair of stiff leather boots earned their fit over six short walks before the first real day on trail.",
       "draft": false,
       "links": [],
       "tags": [
@@ -120,7 +120,7 @@
       "title": "A long light loop around the solstice",
       "date": "2025-06-28",
       "permalink": "/posts/solstice-loop",
-      "summary": "Sixteen hours of daylight this week made room for a loop that would feel rushed any other month.",
+      "excerpt": "Sixteen hours of daylight this week made room for a loop that would feel rushed any other month.",
       "draft": false,
       "links": [],
       "tags": [
@@ -134,7 +134,7 @@
       "title": "Reading the afternoon thunderheads",
       "date": "2025-07-26",
       "permalink": "/posts/afternoon-thunder",
-      "summary": "A predictable early-afternoon storm pattern this week means the ridge is only safe to be on before noon.",
+      "excerpt": "A predictable early-afternoon storm pattern this week means the ridge is only safe to be on before noon.",
       "draft": false,
       "links": [],
       "tags": [
@@ -147,7 +147,7 @@
       "title": "Taking the low-water route across the flats",
       "date": "2025-08-23",
       "permalink": "/posts/low-water-route",
-      "summary": "The creek across the flats has dropped enough this week to skip the footbridge detour entirely.",
+      "excerpt": "The creek across the flats has dropped enough this week to skip the footbridge detour entirely.",
       "draft": false,
       "links": [],
       "tags": [
@@ -161,7 +161,7 @@
       "title": "First color on the aspen bench",
       "date": "2025-09-20",
       "permalink": "/posts/first-color",
-      "summary": "The aspen bench turned gold almost overnight this week, and the cooler mornings are worth planning around.",
+      "excerpt": "The aspen bench turned gold almost overnight this week, and the cooler mornings are worth planning around.",
       "draft": false,
       "links": [],
       "tags": [
@@ -175,7 +175,7 @@
       "title": "Sharing the trail during hunting season",
       "date": "2025-10-18",
       "permalink": "/posts/hunting-season-notes",
-      "summary": "Rifle season opened this week on the ridge, and the usual route needs a few adjustments until it closes.",
+      "excerpt": "Rifle season opened this week on the ridge, and the usual route needs a few adjustments until it closes.",
       "draft": false,
       "links": [],
       "tags": [
@@ -189,7 +189,7 @@
       "title": "What actually earns its place once snow starts",
       "date": "2025-11-15",
       "permalink": "/posts/early-snow-gear",
-      "summary": "The first real snow of the season sorted out which pieces of kit were worth carrying all along.",
+      "excerpt": "The first real snow of the season sorted out which pieces of kit were worth carrying all along.",
       "draft": false,
       "links": [],
       "tags": [
@@ -203,7 +203,7 @@
       "title": "Route-finding in the short days",
       "date": "2025-12-13",
       "permalink": "/posts/solstice-dark",
-      "summary": "With less than nine hours of daylight, the margin for a wrong turn on the ridge loop has gotten thin.",
+      "excerpt": "With less than nine hours of daylight, the margin for a wrong turn on the ridge loop has gotten thin.",
       "draft": false,
       "links": [],
       "tags": [
@@ -217,7 +217,7 @@
       "title": "Hello, cairn",
       "date": "2026-01-15",
       "permalink": "/posts/hello",
-      "summary": "The first showcase post, and a placeholder demonstrating the hero image, gallery, FAQ, and related-post fields together.",
+      "excerpt": "The first showcase post, and a placeholder demonstrating the hero image, gallery, FAQ, and related-post fields together.",
       "draft": false,
       "links": [
         {
@@ -251,7 +251,7 @@
       "title": "A second post",
       "date": "2026-02-20",
       "permalink": "/posts/second",
-      "summary": "A placeholder proving the archive and feed list more than one entry.",
+      "excerpt": "A placeholder proving the archive and feed list more than one entry.",
       "draft": false,
       "links": [],
       "tags": [
@@ -265,7 +265,7 @@
       "title": "A post with a callout",
       "date": "2026-03-10",
       "permalink": "/posts/callout",
-      "summary": "A placeholder exercising the callout directive and the shared trail-safety fragment.",
+      "excerpt": "A placeholder exercising the callout directive and the shared trail-safety fragment.",
       "draft": false,
       "links": [],
       "includes": [
@@ -278,7 +278,7 @@
       "title": "The reading surface",
       "date": "2026-04-05",
       "permalink": "/posts/the-reading-surface",
-      "summary": "A working tour of every element this theme styles, written as the markdown an author actually types.",
+      "excerpt": "A working tour of every element this theme styles, written as the markdown an author actually types.",
       "draft": false,
       "links": [
         {
@@ -300,7 +300,7 @@
       "title": "Spring thaw on the lower loop",
       "date": "2026-05-01",
       "permalink": "/posts/spring-thaw",
-      "summary": "Snowmelt opens the lower loop early this year — placeholder trail notes exercising the topics filter's Trail Reports and Weather tags.",
+      "excerpt": "Snowmelt opens the lower loop early this year — placeholder trail notes exercising the topics filter's Trail Reports and Weather tags.",
       "draft": false,
       "links": [],
       "tags": [
@@ -314,7 +314,7 @@
       "title": "Getting your boot fit right",
       "date": "2026-05-08",
       "permalink": "/posts/boot-fit",
-      "summary": "A quick checklist for dialing in a comfortable boot, one of several placeholder posts that pad the archive past its first page.",
+      "excerpt": "A quick checklist for dialing in a comfortable boot, one of several placeholder posts that pad the archive past its first page.",
       "draft": false,
       "links": [],
       "tags": [
@@ -327,7 +327,7 @@
       "title": "The ridge route, end to end",
       "date": "2026-05-15",
       "permalink": "/posts/ridge-route",
-      "summary": "A full traverse of the ridge with notes on the cruxes, placeholder trail notes carrying the Routes tag.",
+      "excerpt": "A full traverse of the ridge with notes on the cruxes, placeholder trail notes carrying the Routes tag.",
       "draft": false,
       "links": [],
       "tags": [
@@ -341,7 +341,7 @@
       "title": "Layering for shoulder season",
       "date": "2026-05-22",
       "permalink": "/posts/layering",
-      "summary": "What to wear when the mornings bite and the afternoons bake — placeholder trail notes pairing the Gear and Weather tags.",
+      "excerpt": "What to wear when the mornings bite and the afternoons bake — placeholder trail notes pairing the Gear and Weather tags.",
       "draft": false,
       "links": [],
       "tags": [
@@ -355,7 +355,7 @@
       "title": "Reading the first frost",
       "date": "2026-05-29",
       "permalink": "/posts/first-frost",
-      "summary": "Early-season frost and what it tells you about the snowpack, placeholder trail notes carrying the Season Notes tag.",
+      "excerpt": "Early-season frost and what it tells you about the snowpack, placeholder trail notes carrying the Season Notes tag.",
       "draft": false,
       "links": [],
       "tags": [
@@ -369,7 +369,7 @@
       "title": "The valley loop in a morning",
       "date": "2026-06-05",
       "permalink": "/posts/valley-loop",
-      "summary": "A relaxed loop you can finish before lunch — another placeholder entry filling out the archive's second page.",
+      "excerpt": "A relaxed loop you can finish before lunch — another placeholder entry filling out the archive's second page.",
       "draft": false,
       "links": [],
       "tags": [
@@ -382,7 +382,7 @@
       "title": "A pack list that travels light",
       "date": "2026-06-12",
       "permalink": "/posts/pack-list",
-      "summary": "Trimming the kit down to what actually earns its weight, placeholder trail notes rounding out the Gear tag.",
+      "excerpt": "Trimming the kit down to what actually earns its weight, placeholder trail notes rounding out the Gear tag.",
       "draft": false,
       "links": [],
       "tags": [
@@ -396,7 +396,7 @@
       "title": "Catching the storm window",
       "date": "2026-06-19",
       "permalink": "/posts/storm-window",
-      "summary": "Timing a route around an incoming weather window — placeholder trail notes pairing the Routes and Weather tags.",
+      "excerpt": "Timing a route around an incoming weather window — placeholder trail notes pairing the Routes and Weather tags.",
       "draft": false,
       "links": [],
       "tags": [
@@ -410,7 +410,7 @@
       "title": "Late-season notes from the high col",
       "date": "2026-06-26",
       "permalink": "/posts/late-season",
-      "summary": "What changes up high as the season turns over, placeholder trail notes rounding out the Season Notes tag.",
+      "excerpt": "What changes up high as the season turns over, placeholder trail notes rounding out the Season Notes tag.",
       "draft": false,
       "links": [],
       "tags": [
@@ -424,7 +424,7 @@
       "title": "On trail mix and small comforts",
       "date": "2026-07-03",
       "permalink": "/posts/trail-mix",
-      "summary": "The little rituals that keep a long day pleasant — the last of the placeholder trail notes filling out the topics-filter fixtures.",
+      "excerpt": "The little rituals that keep a long day pleasant — the last of the placeholder trail notes filling out the topics-filter fixtures.",
       "draft": false,
       "links": [],
       "tags": [

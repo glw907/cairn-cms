@@ -70,6 +70,16 @@ function hiddenValues(container: HTMLElement) {
   return { src: get('src'), alt: get('alt'), caption: get('caption'), decorative: get('decorative') };
 }
 
+describe('MediaHeroField formats line', () => {
+  it('names what ingestFile takes, GIF included and AVIF left out', async () => {
+    const screen = await mount();
+    const line = Array.from(screen.container.querySelectorAll('span.type-meta')).find((el) =>
+      /HEIC/.test(el.textContent ?? ''),
+    );
+    expect(line?.textContent).toContain('PNG, JPEG, WebP, GIF, or HEIC.');
+  });
+});
+
 describe('MediaHeroField resting state', () => {
   it('renders the resting row from a described value: thumbnail, name, Described chip, caption preview', async () => {
     const screen = await mount({

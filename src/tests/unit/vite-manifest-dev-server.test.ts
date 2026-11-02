@@ -1,4 +1,4 @@
-// The cairnManifest plugin's two verify paths. Under `vite dev` it must verify through the dev
+// The cairnManifest plugin's two start paths. Under `vite dev` it must regenerate through the dev
 // server already running and never create a second Vite server: a nested server carries the site's
 // own plugins, and closing it runs their closeServer hooks, where adapter-cloudflare's disposes the
 // platform proxy the running dev server shares through a global. Under `vite build` its buildStart
@@ -7,13 +7,37 @@
 // drives the real plugin object's hooks against a throwaway site whose `vite` package is a fake that
 // counts createServer calls and records each nested server's plugin names, so a nested server
 // shows up as a count rather than a real server start.
-import { describe, it, expect, afterAll, beforeEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { describe, it, expect, afterAll, afterEach, beforeEach, vi } from 'vitest';
+import { mkdtempSync, mkdirSync, readFileSync, statSync, utimesSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ViteDevServer } from 'vite';
 import { cairnManifest } from '../../lib/vite/internal.js';
+import { formatManifestSummary, manifestExitCode, type ManifestReport } from '../../lib/vite/assemble.js';
+import { formatManifest, type ManifestEntry, type ManifestProblem } from '../../lib/content/manifest.js';
 
 const WORKTREE = process.cwd();
+
+function entry(over: Partial<ManifestEntry> = {}): ManifestEntry {
+  return { id: 'hello', concept: 'posts', title: 'Hello', permalink: '/posts/hello', draft: false, links: [], ...over };
+}
+
+function problem(over: Partial<ManifestProblem> = {}): ManifestProblem {
+  return {
+    concept: 'posts',
+    id: 'hello',
+    path: 'src/content/posts/hello.md',
+    draft: false,
+    errors: { title: 'Title is required' },
+    ...over,
+  };
+}
+
+/** The serialized manifest every fake load regenerates unless a case says otherwise. */
+const BUILT = formatManifest({ version: 1, entries: [entry()] });
+
+/** What a write-mode virtual module exports as `result`. */
+const writeResult = (manifest = BUILT, problems: ManifestProblem[] = []): string =>
+  JSON.stringify({ manifest, problems });
 
 const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
@@ -32,7 +56,8 @@ const CONFIGS = '__cairnNestedViteServerConfigs';
 const ADAPTER_WORKERS = 'vite-plugin-sveltekit-adapter-cloudflare-virtual-workers-module';
 
 // The fake's loaded config mirrors a real site's: sveltekit() is async, so the adapter's plugins
-// arrive inside a pending array, beside the cairnManifest plugin itself.
+// arrive inside a pending array, beside the cairnManifest plugin itself. Its one nested result stands
+// in for each virtual module: the write path parses it, and parseAdapterFacts drops its unknown keys.
 const FAKE_VITE = `
 async function flat(p) {
   const v = await p;
@@ -58,7 +83,7 @@ export async function createServer(config) {
   const virtualOnly = plugins.find((p) => p.name === 'cairn-manifest-virtual');
   (globalThis.${CONFIGS} ??= []).push(await virtualOnly?.config?.({}, { command: 'serve', mode: 'development' }));
   return {
-    environments: { ssr: { runner: { import: async () => ({ result: '{}' }) } } },
+    environments: { ssr: { runner: { import: async () => ({ result: ${JSON.stringify(writeResult())} }) } } },
     close: async () => {},
   };
 }
@@ -86,6 +111,16 @@ function tempSite(): string {
 afterAll(() => {
   for (const dir of made) rmSync(dir, { recursive: true, force: true });
 });
+
+afterEach(() => vi.restoreAllMocks());
+
+const manifestPath = (dir: string): string => join(dir, 'src', 'content', '.cairn', 'index.json');
+
+/** Backdate the committed manifest, so a later write shows in its mtime. */
+function backdate(dir: string): number {
+  utimesSync(manifestPath(dir), 1000, 1000);
+  return statSync(manifestPath(dir)).mtimeMs;
+}
 
 beforeEach(() => {
   (globalThis as Record<string, unknown>)[COUNTER] = 0;
@@ -162,41 +197,191 @@ async function serve(dir: string, server: ViteDevServer, ctx: ReturnType<typeof 
 }
 
 describe('cairnManifest under vite dev', () => {
-  it("verifies the manifest and the site facts through the running server's SSR module runner, creating no nested server", async () => {
+  /** A dev server regenerating `manifest` with `problems`, its adapter declaring no facts. */
+  const regenerating = (manifest = BUILT, problems: ManifestProblem[] = []): ReturnType<typeof liveServer> =>
+    liveServer(async (id) => ({ result: id === 'virtual:cairn-manifest/write' ? writeResult(manifest, problems) : '{}' }));
+
+  it("regenerates the manifest and checks the site facts through the running server's SSR module runner, creating no nested server", async () => {
     const dir = tempSite();
-    const { server, loaded, ssrLoadModuleCalls } = liveServer(async (id) => ({
-      result: id === 'virtual:cairn-manifest' ? 'ok' : '{}',
-    }));
+    writeFileSync(manifestPath(dir), BUILT);
+    const { server, loaded, ssrLoadModuleCalls } = regenerating();
     const ctx = fakeContext();
 
     await serve(dir, server, ctx);
 
     expect(nestedServers()).toBe(0);
-    expect(loaded).toEqual(['virtual:cairn-manifest', 'virtual:cairn-manifest/adapter-facts']);
+    expect(loaded).toEqual(['virtual:cairn-manifest/write', 'virtual:cairn-manifest/adapter-facts']);
     expect(ssrLoadModuleCalls).toEqual([]);
     expect(ctx.warnings).toEqual([]);
   });
 
-  it('a manifest drift the running server reports still fails dev start through this.error', async () => {
+  it('writes a stale manifest once, warns one line, and never loads the verify module', async () => {
     const dir = tempSite();
-    const { server } = liveServer(async (id) => {
-      if (id === 'virtual:cairn-manifest') throw new Error('manifest drift: posts/hello');
-      return { result: '{}' };
-    });
+    writeFileSync(manifestPath(dir), formatManifest({ version: 1, entries: [entry({ title: 'Stale' })] }));
+    const { server, loaded } = regenerating();
+    const ctx = fakeContext();
 
-    await expect(serve(dir, server, fakeContext())).rejects.toThrow(/manifest drift: posts\/hello/);
+    await serve(dir, server, ctx);
+
+    expect(readFileSync(manifestPath(dir), 'utf8')).toBe(BUILT);
+    expect(ctx.warnings).toEqual(['cairn-manifest: regenerated index.json: 1 entry, 1 changed']);
+    expect(loaded).not.toContain('virtual:cairn-manifest');
     expect(nestedServers()).toBe(0);
   });
 
-  it('falls back to the nested verify server when the SSR environment is not runnable in Node', async () => {
+  it('a second start over the same bytes writes nothing and warns nothing', async () => {
+    const dir = tempSite();
+    await serve(dir, regenerating().server, fakeContext());
+    const mtime = backdate(dir);
+    const ctx = fakeContext();
+
+    await serve(dir, regenerating().server, ctx);
+
+    expect(statSync(manifestPath(dir)).mtimeMs).toBe(mtime);
+    expect(ctx.warnings).toEqual([]);
+  });
+
+  it('watchChange with no second buildStart writes nothing', async () => {
+    const dir = tempSite();
+    const plugin = resolvedPlugin(dir, 'serve');
+    await (plugin.configureServer as (s: ViteDevServer) => unknown)(regenerating().server);
+    await buildStart(plugin, fakeContext());
+    writeFileSync(manifestPath(dir), 'edited after start');
+
+    (plugin.watchChange as () => void)();
+
+    expect(readFileSync(manifestPath(dir), 'utf8')).toBe('edited after start');
+  });
+
+  it('a dev start with a problem starts and names it, even over current bytes', async () => {
+    const dir = tempSite();
+    writeFileSync(manifestPath(dir), BUILT);
+    const ctx = fakeContext();
+
+    await serve(dir, regenerating(BUILT, [problem()]).server, ctx);
+
+    expect(ctx.warnings).toEqual([
+      'cairn-manifest: regenerated index.json: 1 entry, 0 changed; 1 invalid: posts/hello: title: Title is required',
+    ]);
+  });
+
+  it('counts a committed stamped entry as unchanged and keeps its bytes', async () => {
+    const dir = tempSite();
+    const stamped = formatManifest({ version: 1, entries: [entry({ publishedAt: '2026-08-01T12:00:00.000Z' })] });
+    writeFileSync(manifestPath(dir), stamped);
+    const mtime = backdate(dir);
+    const ctx = fakeContext();
+
+    await serve(dir, regenerating().server, ctx);
+
+    expect(statSync(manifestPath(dir)).mtimeMs).toBe(mtime);
+    expect(ctx.warnings).toEqual([]);
+  });
+
+  it('warns on a rewrite that changes bytes and no row', async () => {
+    const dir = tempSite();
+    writeFileSync(manifestPath(dir), JSON.stringify(JSON.parse(BUILT)));
+    const ctx = fakeContext();
+
+    await serve(dir, regenerating().server, ctx);
+
+    expect(readFileSync(manifestPath(dir), 'utf8')).toBe(BUILT);
+    expect(ctx.warnings).toEqual(['cairn-manifest: regenerated index.json: 1 entry, 0 changed']);
+  });
+
+  it.each([
+    ['absent', null],
+    ['unparseable', 'not json'],
+  ])('counts every entry as changed when the committed file is %s', async (_label, committed) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const dir = tempSite();
+    if (committed !== null) writeFileSync(manifestPath(dir), committed);
+    const built = formatManifest({ version: 1, entries: [entry(), entry({ id: 'other', permalink: '/posts/other' })] });
+    const ctx = fakeContext();
+
+    await serve(dir, regenerating(built).server, ctx);
+
+    expect(ctx.warnings).toEqual(['cairn-manifest: regenerated index.json: 2 entries, 2 changed']);
+  });
+
+  it('a stale site-facts file still fails dev start through this.error', async () => {
+    const dir = tempSite();
+    const { server } = liveServer(async (id) => ({
+      result: id === 'virtual:cairn-manifest/write' ? writeResult() : '{"aiPosture":"decline"}',
+    }));
+
+    await expect(serve(dir, server, fakeContext())).rejects.toThrow(/site-facts\.json is stale/);
+  });
+
+  it('an error from the load still fails dev start through this.error', async () => {
+    const dir = tempSite();
+    const { server } = liveServer(async (id) => {
+      if (id === 'virtual:cairn-manifest/write') throw new Error('adapter would not load');
+      return { result: '{}' };
+    });
+
+    await expect(serve(dir, server, fakeContext())).rejects.toThrow(/adapter would not load/);
+    expect(nestedServers()).toBe(0);
+  });
+
+  it('falls back to the nested server when the SSR environment is not runnable in Node', async () => {
     const dir = tempSite();
     const { server, ssrLoadModuleCalls } = liveServer(async () => ({ result: '{}' }), false);
 
     await serve(dir, server, fakeContext());
 
-    // One nested server for the manifest verify, one for the site-facts check.
+    // One nested server for the manifest regeneration, one for the site-facts check.
     expect(nestedServers()).toBe(2);
     expect(ssrLoadModuleCalls).toEqual([]);
+    expect(readFileSync(manifestPath(dir), 'utf8')).toBe(BUILT);
+  });
+});
+
+describe('formatManifestSummary', () => {
+  const report = (problems: ManifestProblem[] = []): ManifestReport => ({
+    entries: 15,
+    changed: 2,
+    written: true,
+    problems,
+  });
+
+  it('reads the counts alone when no problem exists, omitting an undefined facts clause', () => {
+    expect(formatManifestSummary(report())).toBe('index.json: 15 entries, 2 changed');
+  });
+
+  it('names one problem after the facts clause', () => {
+    expect(formatManifestSummary(report([problem()]), false)).toBe(
+      'index.json: 15 entries, 2 changed; site-facts.json unchanged; 1 invalid: posts/hello: title: Title is required',
+    );
+  });
+
+  it('reads a draft problem as an invalid draft', () => {
+    expect(formatManifestSummary(report([problem({ draft: true })]), true)).toBe(
+      'index.json: 15 entries, 2 changed; site-facts.json changed; 1 invalid draft: posts/hello: title: Title is required',
+    );
+  });
+
+  it('shows the first of many problems plus a count, with a clause for each kind', () => {
+    const live = Array.from({ length: 40 }, (_, i) => problem({ id: i === 0 ? 'hello' : `p${i}` }));
+    const drafts = [problem({ id: 'd1', draft: true }), problem({ id: 'd2', draft: true })];
+
+    expect(formatManifestSummary(report([...drafts, ...live]))).toBe(
+      'index.json: 15 entries, 2 changed; 40 invalid: posts/hello: title: Title is required (+39 more); ' +
+        '2 invalid drafts: posts/d1: title: Title is required (+1 more)',
+    );
+  });
+});
+
+describe('manifestExitCode', () => {
+  const report = (problems: ManifestProblem[]): ManifestReport => ({ entries: 1, changed: 0, written: false, problems });
+
+  it('is 0 with no problem and with only a draft problem', () => {
+    expect(manifestExitCode(report([]))).toBe(0);
+    expect(manifestExitCode(report([problem({ draft: true })]))).toBe(0);
+  });
+
+  it('is 1 when a problem is non-draft', () => {
+    expect(manifestExitCode(report([problem({ draft: true }), problem()]))).toBe(1);
   });
 });
 

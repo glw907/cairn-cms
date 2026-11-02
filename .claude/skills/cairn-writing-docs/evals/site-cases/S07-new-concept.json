@@ -2,7 +2,7 @@
   "id": "S07-new-concept",
   "suite": "site",
   "fixture": "site",
-  "seam": "defineConcept, defineFieldset, the adapter's content map, createSiteResolver, the manifest plugin",
+  "seam": "defineConcept, the adapter's content map, createSiteResolver, the manifest plugin",
   "bar": 4,
   "prompt": "The trail crew runs events and wants to manage them in the admin the way they manage posts. Add an Events section where an editor can create an event with a title, a start date, an optional end date, an optional location, an optional capacity (a whole number), and an optional signup link. An end date earlier than the start date must be refused with a message the editor can read. Two events already exist as markdown files in src/content/events and should show in the admin list. The new button should read \"New event\". Finish when the site type-checks and builds.",
   "setup": "setups/site/s07-new-concept.mjs",
@@ -17,7 +17,7 @@
     "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/define-an-adapter-and-schema.md#add-a-concept (the registrations: adapter content map and regenerated manifest)"
   ],
   "expectations": [
-    "The adapter's content map gains an events concept with dir src/content/events, a plural label, singular 'event', and a defineFieldset of title, date, endDate, location, capacity (number), and signupUrl (url).",
+    "The adapter's content map gains an events concept with dir src/content/events, a plural label, singular 'event', and a plain field record of title, date, endDate, location, capacity (number), and signupUrl (url).",
     "Only title and date are required; endDate, capacity, location, and signupUrl are optional.",
     "A refine on the fieldset (or a behavior validate on endDate) returns a readable sentence keyed to endDate when the end date is before the start date.",
     "The events concept's dir sits under src/content, so the site's one content glob and the cairnManifest plugin pick it up with no further registration.",

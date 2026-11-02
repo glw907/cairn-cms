@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 
 interface PostFm {
   title: string;
@@ -12,10 +11,10 @@ interface PostFm {
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
-    fields: defineFieldset({
+    fields: {
       title: fields.text({ label: 'Title' }),
       description: fields.textarea({ label: 'Description' }),
-    }),
+    },
   },
 })[0];
 

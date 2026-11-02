@@ -2,7 +2,7 @@ import { describe, it, expect, expectTypeOf } from 'vitest';
 import { createGithubApp } from '../../lib/index.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset, type InferFieldset } from '../../lib/content/fieldset.js';
+import { type InferFieldset } from '../../lib/content/fieldset.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
 const adapter = defineAdapter({
@@ -10,10 +10,10 @@ const adapter = defineAdapter({
     posts: {
       dir: 'src/content/posts',
       routing: 'feed',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
-      }),
+      },
     },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
@@ -24,7 +24,7 @@ const adapter = defineAdapter({
 describe('defineAdapter', () => {
   it('returns the adapter unchanged at runtime', () => {
     expect(adapter.content.posts?.dir).toBe('src/content/posts');
-    expect(Object.keys(adapter.content.posts?.fields.fields ?? {})).toEqual(['title', 'date']);
+    expect(Object.keys(adapter.content.posts?.fields ?? {})).toEqual(['title', 'date']);
   });
 
   it('is assignable to CairnAdapter', () => {

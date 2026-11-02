@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { buildSiteResolver, resolveReferences, createFragmentResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 
 const [posts] = normalizeConcepts({
@@ -11,10 +10,10 @@ const [posts] = normalizeConcepts({
     routing: 'feed',
     permalink: '/:year/:month/:day/:slug',
     datePrefix: 'day',
-    fields: defineFieldset({ date: fields.date({ label: 'Date' }) }),
+    fields: { date: fields.date({ label: 'Date' }) },
   },
 });
-const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: defineFieldset({}) } });
+const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: {} } });
 
 function site() {
   return buildSiteResolver([
@@ -56,12 +55,12 @@ describe('buildSiteResolver', () => {
         routing: 'feed',
         permalink: '/:slug',
         datePrefix: 'day',
-        fields: defineFieldset({
+        fields: {
           author: fields.reference({ concept: 'pages', label: 'Author' }),
-          related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
-        }),
+          related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Related post' }), label: 'Related' }),
+        },
       },
-      pages: { dir: 'g', fields: defineFieldset({}) },
+      pages: { dir: 'g', fields: {} },
     });
     const s = buildSiteResolver([
       {
@@ -87,11 +86,12 @@ describe('buildSiteResolver', () => {
       concept: 'pages',
       title: 'Jane Doe',
       permalink: '/jane-doe',
-      summary: 'Author page.',
+      excerpt: 'Author page.',
     });
     expect(resolved.related).toEqual([
-      { id: 'a-post', concept: 'posts', title: 'A Post', permalink: '/a-post', summary: 'A post body.' },
+      { id: 'a-post', concept: 'posts', title: 'A Post', permalink: '/a-post', excerpt: 'A post body.' },
     ]);
+    expect(resolved.author).not.toHaveProperty('summary');
   });
 
   it('drops an unresolved reference id, leaving the array in target order', () => {
@@ -101,12 +101,12 @@ describe('buildSiteResolver', () => {
         routing: 'feed',
         permalink: '/:slug',
         datePrefix: 'day',
-        fields: defineFieldset({
+        fields: {
           author: fields.reference({ concept: 'pages', label: 'Author' }),
-          related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
-        }),
+          related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Related post' }), label: 'Related' }),
+        },
       },
-      pages: { dir: 'g', fields: defineFieldset({}) },
+      pages: { dir: 'g', fields: {} },
     });
     const s = buildSiteResolver([
       {
@@ -128,7 +128,7 @@ describe('buildSiteResolver', () => {
 
     expect(resolved.author).toBeUndefined();
     expect(resolved.related).toEqual([
-      { id: 'a-post', concept: 'posts', title: 'A Post', permalink: '/a-post', summary: 'A post body.' },
+      { id: 'a-post', concept: 'posts', title: 'A Post', permalink: '/a-post', excerpt: 'A post body.' },
     ]);
   });
 
@@ -139,9 +139,9 @@ describe('buildSiteResolver', () => {
         routing: 'feed',
         permalink: '/:slug',
         datePrefix: 'day',
-        fields: defineFieldset({ author: fields.reference({ concept: 'pages', label: 'Author' }) }),
+        fields: { author: fields.reference({ concept: 'pages', label: 'Author' }) },
       },
-      pages: { dir: 'g', fields: defineFieldset({}) },
+      pages: { dir: 'g', fields: {} },
     });
     const s = buildSiteResolver([
       { descriptor: postsRef, index: createContentIndex([], postsRef) },
@@ -168,7 +168,7 @@ describe('buildSiteResolver', () => {
       fragments: {
         dir: 'f',
         routing: 'embedded',
-        fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+        fields: { title: fields.text({ label: 'Title' }) },
       },
     });
     const s = buildSiteResolver([
@@ -188,9 +188,9 @@ describe('buildSiteResolver', () => {
   });
 
   it('throws on a permalink collision across concepts, naming both ids', () => {
-    const [p2] = normalizeConcepts({ pages: { dir: 'g', permalink: '/dup', fields: defineFieldset({}) } });
+    const [p2] = normalizeConcepts({ pages: { dir: 'g', permalink: '/dup', fields: {} } });
     const [q2] = normalizeConcepts({
-      posts: { dir: 'p', routing: 'feed', permalink: '/dup', fields: defineFieldset({}) },
+      posts: { dir: 'p', routing: 'feed', permalink: '/dup', fields: {} },
     });
     expect(() =>
       buildSiteResolver([
@@ -206,7 +206,7 @@ describe('createFragmentResolver', () => {
     fragments: {
       dir: 'f',
       routing: 'embedded',
-      fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: { title: fields.text({ label: 'Title' }) },
     },
   });
 

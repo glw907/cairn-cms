@@ -36,13 +36,13 @@ export const testAdapter: CairnAdapter = {
     posts: {
       dir: 'src/content/posts',
       routing: 'feed',
-      fields: postFieldset,
+      fields: postFieldset.fields,
     },
     pages: {
       label: 'Site Pages',
       dir: 'src/content/pages',
       routing: 'page',
-      fields: pageFieldset,
+      fields: pageFieldset.fields,
     },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),

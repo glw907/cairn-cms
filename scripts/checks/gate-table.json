@@ -45,6 +45,29 @@
     ]
   },
   "noCheck": [".gitattributes", "knip.jsonc"],
+  "unitSelectable": [
+    "src/",
+    "docs/",
+    "BACKLOG.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "MIGRATION-NOTES.md",
+    "README.md",
+    "ROADMAP.md",
+    ".vale/",
+    ".vale.ini",
+    ".tellgrader.json"
+  ],
+  "toolInputs": [
+    "src/lib/log/events.ts",
+    "scripts/checks/fixtures/consumers-must/cases.json",
+    "docs/admin/",
+    "schema/",
+    "examples/showcase/src/theme/site.config.yaml",
+    "packages/create-cairn-site/src/",
+    "packages/create-cairn-site/fixtures/",
+    "scripts/checks/shipped-anchors.json"
+  ],
   "scriptsTestOnly": [
     "scripts/ci/",
     "scripts/test/",

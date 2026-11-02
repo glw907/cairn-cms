@@ -23,9 +23,9 @@ that file as its changelog input (`cairn-releasing` step 3). The release cut ren
 
 ## Immediate next action
 
-Pass 8, `cleanup`, is PR #188 on branch `worktree-cleanup-run`: in progress, T17 landed (the reset,
-the backlog closures, this file). T18 closes it: the whole-branch review, the security read, and the
-fact-check of the docs lines the run touched. Pass 9, the release, follows the merge; its cut starts
+Pass 8, `cleanup`, is PR #188 on branch `worktree-cleanup-run`, PR-ready: the reviews are folded, the
+live smoke passed, and the docs lines are fact-checked. The conductor merges it as a merge commit, so
+the pre-reset SHA above stays reachable. Pass 9, the release, follows the merge; its cut starts
 from every dependency's newest production version and publishes a `tool/v2` tag, which
 `go install ...@latest` needs.
 
@@ -40,8 +40,9 @@ fixed in this pass.
 ## Open decisions and watches
 
 - `BACKLOG.md` lists open items, each with a `Placement` line, and `## Won't do` holds Geoff's
-  rulings. A full backlog sweep of at most 40 items runs after T17 and writes a triage file for the
-  sitting; it lands nothing.
+  rulings. The full backlog sweep ran at the close of pass 8 and wrote
+  `~/.local/state/cairn-agent-first/2026-11-02-backlog-triage.json` for the sitting (four drop rows,
+  fifteen defer rows); it landed nothing.
 - Docs: the human gate design is approved and unbuilt, outside this run. The 94 boundary-test
   verdicts and the capture runbook are at the `pre-agent-first` tag.
 - Routines: sveltejs/kit#17368 merged on 2026-10-14, so its routine (`trig_01KPzLTU7rzLMQUp2y6bjZtm`)

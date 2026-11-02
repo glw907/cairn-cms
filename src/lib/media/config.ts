@@ -29,7 +29,7 @@ export function normalizeMedia(media: MediaConfig | undefined): ResolvedMediaCon
   if (media === undefined) return { enabled: false };
 
   if (!media.bucketBinding) {
-    throw new Error('cairn: a media block must name its R2 bucket binding');
+    throw new Error("cairn: media needs bucketBinding, the R2 binding's name from wrangler.jsonc, such as 'MEDIA_BUCKET'.");
   }
 
   return { enabled: true, bucketBinding: media.bucketBinding };

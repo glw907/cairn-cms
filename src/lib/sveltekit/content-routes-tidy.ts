@@ -149,7 +149,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     try {
       payload = JSON.parse(await event.request.text());
     } catch {
-      return fail(400, { error: 'Could not read the tidy request.' } satisfies TidyFailure);
+      return fail(400, { error: 'Could not read the tidy request. Reload the page and try again.' } satisfies TidyFailure);
     }
     const text = typeof payload.text === 'string' ? payload.text : '';
     if (text.length === 0) {

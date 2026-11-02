@@ -189,6 +189,29 @@ describe('commitFiles', () => {
     expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
+  it('retries through the double when a commit lands in the window, keeping both files', async () => {
+    const gh = new GithubDouble({ main: { 'a.md': 'old' } });
+    gh.install();
+    let racedHead = '';
+    gh.beforeNextRefPatch(() => {
+      gh.commit('main', 'raced.md', 'raced');
+      racedHead = gh.headSha('main');
+    });
+
+    await commitFiles(
+      REPO,
+      [{ path: 'a.md', content: 'new' }],
+      { message: 'm', author: { name: 'n', email: 'e' } },
+      'tok',
+    );
+
+    expect(gh.read('main', 'a.md')).toBe('new');
+    expect(gh.read('main', 'raced.md')).toBe('raced');
+    expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(2);
+    const commitPosts = gh.calls.filter((c) => c.method === 'POST' && /\/git\/commits$/.test(c.url));
+    expect((commitPosts[1].body as { parents: string[] }).parents).toEqual([racedHead]);
+  });
+
   describe('expectedHead (fail-closed commit)', () => {
     it('commits in a single attempt when the head matches expectedHead', async () => {
       const gh = new GithubDouble({ main: { 'a.md': 'old' } });

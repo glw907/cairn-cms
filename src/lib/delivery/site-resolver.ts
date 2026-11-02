@@ -113,7 +113,7 @@ export function buildSiteResolver(concepts: ConceptIndex[]): UntypedSiteResolver
       const existing = byPath.get(summary.permalink);
       if (existing) {
         throw new Error(
-          `cairn: permalink "${summary.permalink}" resolves to both "${existing.id}" and "${summary.id}"`,
+          `cairn: permalink "${summary.permalink}" resolves to both "${existing.id}" and "${summary.id}". Change one slug or the permalink pattern.`,
         );
       }
       byPath.set(summary.permalink, { index, id: summary.id });
@@ -243,7 +243,7 @@ export function resolveReferences(
 export function createLinkResolver(site: SiteResolver): LinkResolve {
   return (ref) => {
     const url = site.routable(ref.concept) ? site.concept(ref.concept)?.byId(ref.id)?.permalink : undefined;
-    if (!url) throw new Error(`cairn: link target "cairn:${ref.concept}/${ref.id}" not found`);
+    if (!url) throw new Error(`cairn: link target "cairn:${ref.concept}/${ref.id}" not found. Fix or remove the body link.`);
     return url;
   };
 }
@@ -270,7 +270,7 @@ export function createFragmentResolver(site: SiteResolver): FragmentResolve {
       );
     }
     const body = fragments.byId(id)?.body;
-    if (body == null) throw new Error(`cairn: fragment "${id}" not found`);
+    if (body == null) throw new Error(`cairn: fragment "${id}" not found. Fix the ::include name, or add the fragment.`);
     return body;
   };
 }

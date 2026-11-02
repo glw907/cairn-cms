@@ -7,7 +7,7 @@ import { buildRobots } from './robots.js';
 import type { AiPosture } from '../content/types.js';
 
 /**
- * An RSS 2.0 feed response, served as `application/rss+xml; charset=utf-8` and with no cache
+ * An RSS 2.0 feed response, served as `application/rss+xml; charset=utf-8` on a Worker-rendered route and with no cache
  *  header, so a site that wants one sets it at the route.
  * @public
  */
@@ -18,7 +18,7 @@ export function rssResponse(channel: FeedChannel, items: FeedItem[]): Response {
 }
 
 /**
- * A JSON Feed 1.1 response, served as `application/feed+json; charset=utf-8` and with no cache
+ * A JSON Feed 1.1 response, served as `application/feed+json; charset=utf-8` on a Worker-rendered route and with no cache
  *  header, so a site that wants one sets it at the route.
  * @public
  */
@@ -29,7 +29,7 @@ export function jsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Respo
 }
 
 /**
- * A sitemap response, served as `application/xml; charset=utf-8` and with no cache header, so a
+ * A sitemap response, served as `application/xml; charset=utf-8` on a Worker-rendered route and with no cache header, so a
  *  site that wants one sets it at the route.
  * @public
  */

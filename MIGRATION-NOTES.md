@@ -168,7 +168,7 @@ these steps, in order, after step 3:
    needed `<script>` into a registered component or an island.
 4. Delete your `devBuildDefine` plugin and the `__CAIRN_DEV_BUILD__` declaration in `app.d.ts`.
    The `cairnManifest()` plugin defines the flag, and `@glw907/cairn-cms/ambient` declares it.
-5. Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine.
+5. Delete the `ssr.noExternal` line from `vite.config.ts`. The `cairnManifest()` plugin adds the engine and `@glw907/cairn-cms-dev` to it.
 6. Drop `seedContent` from `devBackendHandle`. Pass `content: 'fixtures'` when the dev backend runs
    under `wrangler dev`, or to keep the seeded dev content.
 7. Run `npm run check`, then `npm run build`, and expect both to exit 0.
@@ -202,6 +202,29 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Remove an `allowedTypes` entry outside `image/jpeg`, `image/png`, `image/webp`, `image/gif`, and `image/avif`.** `normalizeAssets` now throws at startup on one, naming it.
 - **Use `createMediaResolver(..., { strict: true })` to fail a build on a missing asset.** It replaces a hand-written throwing wrapper, and the typed `actions.mediaLibraryUpload` replaces a cast.
 - **Expect `buildSitemapView` to drop `noindex` entries.** A concept whose fieldset declares `robots` no longer lists an entry marked `noindex` in the sitemap. A site that wants one listed anyway builds that row into `extraRoutes`. A site built from the scaffold can copy the new `src/routes/sitemap.xml/+server.ts`, which uses `buildSitemapView` and takes `lastmod` from `updated`.
+- **Declare `navLayout` inline on `defineAdapter`.** A `navLayout` built in a separate constant annotated `NavLayout` is refused, because its `screen` is wide.
+- **Correct any misspelled `summaryFields` key or `navLayout` `screen`.** A `summaryFields` key must be a field of its concept, and a `screen` must be one of the engine's six ids or a `content` key. A misspelling now fails `npm run check`. A cast around `cairn.aiPosture` is no longer needed.
+- **Pass `createRenderer` one object.** `createRenderer(registry, options)` becomes `createRenderer({ components, resolveMedia, ... })`.
+- **Call `render({ body, ...opts })` in place of `renderMarkdown(md, opts)`.** `renderDocument` takes the same input, named `RenderInput`.
+- **Stop reading `remarkPlugins` and `rehypePlugins` off the renderer.** The options that feed them stay on `createRenderer`.
+- **Rename `resolve` to `resolveLink` on any `ResolveOptions` or `SiteRender` you write.**
+- **Write `render: renderer.render` in the adapter's `rendering` group.**
+- **Rename `AssetConfig` to `MediaConfig` and reduce the value to `{ bucketBinding }`.**
+- **Delete `publicBase`, `urlForm`, `maxUploadBytes`, `allowedTypes`, and `transformations` from the media config.** The cap is fixed at 25 MB and the types at the five web image types. Retire a media route mounted anywhere but `/media`, and any `srcset` or `sizes` use.
+- **Call `createMediaResolver(media, manifest, { strict })` in that order.** It normalizes inside, so drop any `normalizeAssets` call.
+- **Read `runtime.media` where you read `runtime.resolvedAssets`.**
+- **Pass `resolveMedia` to `createPublicRoutes` as a resolver or `null`, and drop `assetsEnabled`.**
+- **Stop reading `data.mediaBase`, and drop the `urlForm` argument from any `publicPath` call.**
+- **Stop querying logs for the media resolver-absent event.** `CHANGELOG.md` names it, and it is gone.
+- **Replace `createSiteIndexes(adapter, config, globs, opts)` with `createSiteResolver(adapter, files)`.** Pass one `import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true })`.
+- **Drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`.** It takes `configModule` alone.
+- **Remove `validate: false` and fix the entries it hid.** The resolver always validates.
+- **Call `site.paths()` where you called `site.entries()`, and `site.concept(id).adjacent(entryId)` where you called `site.adjacent`.**
+- **Drop the config argument from any `buildSiteDescriptors` or `buildSiteManifest` call.**
+- **Keep every concept `dir` under `src/content`, and every markdown file under a concept's `dir`.** A concept `dir` outside it, or a file under none, now throws.
+- **Pass `rendering={cairn.rendering}` to `CairnAdmin`, and drop `render`, `registry`, and `icons`.**
+- **Stop reading `runtime.registry`.**
+- **Delete the engine's `ssr.noExternal` line from `vite.config.ts`.** The `cairnManifest()` plugin owns it.
 
 - **Run `npx cairn-guidance install`; it removes the four old skill directories.** The packaged skills have new names: `cairn-extend` is `cairn-extending-a-site`, `cairn-public` is `cairn-styling-public-pages`, `cairn-admin-screens` is `cairn-building-admin-screens`, and `cairn-consult` is `cairn-consulting-the-engine`. `install` deletes an old file whose hash matches a version the package shipped. It keeps and names an edited file, and reports an old directory it has no `MANIFEST` entry for, so delete those by hand under `.claude/skills/`; both name sets load until you do. Rewrite any project instruction that names an old skill.
 - **Read upgrade steps from `MIGRATION-NOTES.md` and JSON schemas from `schema/`.** The extend, reference, and Claude Code docs tracks are gone: each export's doc comment carries its contract, and the packaged skills teach each job. A script that read the reference track's schema directory reads `schema/` in the installed package, each `$id` unchanged. Re-run `npx cairn-guidance install` so your copy of the skills drops links to the removed pages.
@@ -209,7 +232,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Remove `itemLabel` from any `behavior` table, rename any concept whose id names an engine view, and make publish-action labels unique.** `itemLabel` stays on the `array` field descriptor. Composition now throws on a concept id of `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings`, and on two publish actions that share a label.
 - **Return a `tagNames` array from every `sanitizeSchema` callback.** The callback now gets a copy of the safe schema, and the engine strips `script` after it returns, so a callback can no longer admit author script. Use a registered component or island for that markup, or `unsafeDisableSanitize` to turn the floor off.
 - **Delete your `devBuildDefine` plugin and `__CAIRN_DEV_BUILD__` declaration.** The `cairnManifest()` plugin defines the flag now and `/ambient` declares it. A site that keeps both still builds, because a define the site sets wins.
-- **Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`.** The package ships built JavaScript that imports `cloudflare:workers`. Without the entry, `vite dev` hands it to Node, which rejects the scheme, and `/admin` answers 500.
+- **Leave `@glw907/cairn-cms-dev` out of `ssr.noExternal` in `vite.config.ts`.** The package ships built JavaScript that imports `cloudflare:workers`, and the `cairnManifest()` plugin adds it to the list, so `vite dev` does not hand it to Node.
 - **Drop `seedContent` from `devBackendHandle`, and pass `content: 'fixtures'` when the dev backend runs under `wrangler dev`.** The option never did anything, and the dev backend now serves your site's content from the working tree by default. That mode needs a filesystem, so it throws under workerd.
 - **Pass `content: 'fixtures'` to keep the seeded dev content.** A site that runs the dev backend without ever naming `seedContent` now sees its entries instead of the sample posts. Edits stay in memory either way, and the admin says so in one persistent notice.
 - **Upgrade to SvelteKit 3, `@sveltejs/adapter-cloudflare` 8, Svelte 5.57.1, and Wrangler 4.118.**

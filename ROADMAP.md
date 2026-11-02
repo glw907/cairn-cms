@@ -384,14 +384,6 @@ The original decision framing, for the record:
   width so it stops being responsive at all. **Trigger: the editors rewrite, which is the first pass
   to publish a callout-carrying reproduction.**
 
-- **`cairn-audit`'s rendered focus-indicator rule passes vacuously on a page with no tab stops.**
-  `src/lib/audit/rules/rendered/focus-renders.ts:181` returns `[]` when the tab order is empty, which is
-  indistinguishable from "checked everything and found nothing". Containment makes this reachable for the
-  first time: point the audit at a `/repro` route and every tab stop is gone, so the rule reports green
-  having checked nothing. The repo's own preference is a gate that fails over a note that waits, so the
-  fix is to report "no tab stops to check" as its own outcome rather than folding it into no-findings.
-  Found at the containment pass's review gate. **Trigger: the next pass that touches `cairn-audit`.**
-
 - **The story suite proves the media reproductions against images it never serves.** Nothing maps
   `/repro-assets/*` in the browser test project, so every fixture image 404s during the engine's own
   story-mount run and `CairnMediaLibrary`'s `onerror` swaps the tile for its "Image missing" block,
@@ -691,9 +683,6 @@ The original decision framing, for the record:
   - No gate checks a `docs/internal/...` path cited in a comment under `src/lib`; the design-arc log
     moved to `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/` and nothing flagged the stale citations in `EditorToolbar.svelte`
     and `EditPage.svelte`. A check that every cited path exists would catch the next move.
-  - The sample outputs in `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md` (the `norms card` output near line 598 and
-    the border-contrast exemption sample) are hand-copied from `src/lib/audit/norms.ts` and
-    `src/lib/audit/border-contrast.ts`; nothing ties them, and they drifted once into a merge conflict.
   - `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS`,
     `scripts/checks/check-leaks.mjs:473`; only `templates/waymark` is a template root), and its `src`
     ships in the package's `files`. Trigger: before that package's first publish. **Done in the
@@ -1378,93 +1367,6 @@ The original decision framing, for the record:
   migration rather than a migration of its own. Found by the pass's review gate while confirming the
   lockout defect the store fix closed.
 
-- **Cairn's own admin's error tier is clean (design infrastructure Pass 3, 2026-07-29).** The advisory-tier
-  debt this pass did not touch stands unchanged:
-  - **Advisory, `border-contrast` (132 of the 210 in three classes).** Table row
-    dividers are `base-content` at 5% alpha, reading 1.10 light and 1.14 dark, 70 findings and the
-    largest single class in the corpus: a rule whose whole job is separating rows, doing almost
-    none of it.
-  - **Advisory, `weight-budget` (2, both true positives and the only two in the corpus).**
-    `/admin/login` renders no `<main>` landmark at all, a real landmark gap rather than an audit
-    inconvenience. `/admin/media`'s content region renders three font weights against the two-weight
-    budget, all three genuine card content: filename 500, reference badge 600, status-chip label
-    400. **Sequencing hazard, do not lose:** fixing the login landmark immediately creates two new
-    `screen-anatomy` false positives, because that rule's only working exemption today is an
-    accidental `if (!mainEl) return null`. Give `screen-anatomy` a positive scope predicate first.
-
-- **The rendered rules' own calibration follow-ups** (design infrastructure Pass 2, 2026-07-28). All six advisory rules stay advisory (`chip-ground-collision`
-  joined the group this pass, demoted in from error tier; see below), and the evidence for promotion
-  is not close, so what remains is repair rather than promotion.
-  `interactive-contrast` is a demotion candidate and the only one that gates: 3 findings on a
-  consumer home page, all false positives, and 0 on cairn's own tree. `border-contrast` is the most
-  repairable of the advisory five, but its exemption keys on the literal string
-  `--cairn-card-border`, which no consumer can reach structurally. `screen-anatomy` judges every
-  drawer-less page an office screen, so every consumer page in existence. `touch-targets` omits WCAG
-  2.5.8's spacing exception, which would exempt the 62x16 sort button at its measured 47px nearest
-  neighbour.
-
-- **The rule repairs Task 18's review gate confirmed but deferred** (design infrastructure Pass 2,
-  2026-07-28). Six defects the gate found were fixed with fixtures; these six were confirmed and
-  left, each because closing it is a scope expansion or loosens a gating rule and deserves its own
-  adversarial pass rather than a gate-stage edit. Each is documented at the code, so a reader meets
-  it in context.
-  - `touch-targets` samples one 390px viewport, and SC 2.5.8 carries no viewport qualifier. Borrow
-    `viewport-overflow`'s width list; the cost of leaving it is a control that passes at 390 and
-    fails at 320 going unmeasured.
-  - `touch-targets` and `interactive-contrast` hold different definitions of a control. The first
-    misses `textarea`, `<area>`, the widget roles, and a `tabindex`-plus-handler custom control; the
-    second carries a wider list plus a `cursor: pointer` fallback. One shared selector in the page
-    helpers is the repair. Widening a gating rule's net changes the measured baseline, which is why
-    it is not taken here.
-  - `touch-targets` collapses findings per selector signature, so a count is a count of shapes.
-    `interactive-contrast` deliberately refuses the same idiom. Two error-tier rules disagreeing on
-    this means a developer cannot read either count as a remediation estimate.
-  - `chip-ground-collision`'s overlapping-painter test is a bounding-box intersection with no
-    paint-order reading, and daisyUI paints a background-image on every `.btn`, so any chip
-    overlapping a button or an icon downgrades from a gating error to an advisory. Narrowing it
-    loosens the downgrade path on a gating rule.
-  - `border-contrast`'s `RATIFIED_HAIRLINE_FLOOR` is a literal 1.15 sitting 0.04 under the pairing
-    its own doc calls invariant, so a consumer re-tune that softens the hairline more than roughly
-    4% re-reports every `.card-shell` on every page. Derive the floor from the page's own resolved
-    token pairing instead of pinning cairn's number, which also closes the consumer-reachability
-    asymmetry the friction log records.
-  - `resolveColors` returns `null` for both an empty string and a color the browser refused, so
-    `resolveGround` composites a refused color away as if the layer painted nothing. The repair is
-    separate sentinels at that boundary, the way `probeSelectors` already separates "nothing
-    matched" from "the browser refused this selector". Fixing it inside `resolveGround` is wrong and
-    two pinned fixtures in `color.test.ts` demonstrate it.
-  - `weight-budget`'s title-band clause exempts `PageHeader`'s whole caller-authored action slot,
-    and its heading test matches a heading anywhere in the header's subtree. Narrow the clause to
-    the heading's own flow.
-  - `derivedSides` forces two style recalcs plus a scroll per bordered element, run twice per page.
-    Batching the sentinel probe onto `documentElement` costs one recalc instead of N. Wall-clock
-    only, on a consumer's CI.
-
-- **The design ratchet's own reviewer-triage rule repairs (D2, 2026-07-31)**, filed as promotion
-  prerequisites rather than fixed at the gate.
-  `field-edge-alignment`'s clustering compares each control's left edge only to the PREVIOUS
-  member in the sorted sequence, not to a fixed column anchor, so a chain of sub-`CLUSTER_GAP_PX`
-  gaps can drift a whole run into one merged column (a false positive on a legitimate
-  multi-column stagger) while a single gap over 80px splits what was really one staggered column
-  into two (a silent miss). Its finding message also always recommends `register="stacked"`,
-  a real remedy only for a control composed inside `FieldLabel`, and a wrong one for a control
-  the rule matches (`.input`/`.select`/`.textarea`) that was never wrapped that way.
-  `container-inset-asymmetry` reads a raw inset with no floor, so an absolutely positioned or
-  negative-margin child can drive the computed inset negative and the asymmetry math with it;
-  clamp with `Math.max(0, inset)` on each side. `one-filled-action` reimplements its own
-  unescaped `selectorFor` instead of the shared `helpers.signature` the other rendered rules
-  install, so its surface key is not reliably a parseable CSS selector, and it keys a surface as
-  `` `${selector}#${landmarks.indexOf(landmark)}` ``, which prints the sentinel `#-1` whenever the
-  topmost open layer is itself a `nav`/`aside` landmark (`landmarks` is queried from the layer
-  root's descendants only, so the layer's own root element is never in the list its own index is
-  read against). `form-font-parity` (already advisory, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md`) walks
-  only the first `[data-theme='cairn-admin']`/`[data-theme='cairn-admin-dark']` wrapper on the
-  page, so a page mounting more than one is only partly checked. Its explicit-face exemption net's
-  three named gaps, variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
-  and Tailwind 4's `font-(family-name:--x)` shorthand, closed in the conformance pass, 2026-09-01;
-  the rule stays advisory, and the multi-wrapper walk limitation above is the one gap this line still
-  files.
-
 - **Three design-system gaps found in the same triage.** The legend padding
   reset (`cairn-admin.css`'s `base` layer, design ratchet Task 1) is repaired per call site
   rather than structurally: `ComponentForm.svelte` carries its own `px-1` on the one legend that
@@ -1526,19 +1428,6 @@ The original decision framing, for the record:
   the 0.91.1 hotfix pass; full detail in the ASC repo's trial log).** The
   rest were verified against the code (or against ASC's own adversarially-verified evidence) at
   the fold:
-  - **The rendered audit's identity guard and its non-2xx precondition leave a hole between
-    them, and the status flattening opens it (harness, high).** The 0.91.0 post-hydration
-    identity guard catches a swap (SSR identity vs settled identity); a configured path that was
-    never a route SSRs the consumer's 404 and hydrates the same 404, so the identities agree and
-    the guard passes it. The only check that would catch it is the non-2xx precondition
-    (`rendered.ts`), which the admin-shell status flattening (kit#12987 entry below) defeats:
-    ASC's twelve-page run would have measured a 404 as a real screen had a configured path been
-    wrong. Remedy candidates from the filing: read the page's own embedded status, or compare
-    settled identity against the requested route rather than only against what the server sent.
-  - **The rendered summary's two totals are computed differently (DX, low).** The advisories
-    total counts printed lines while the suppressed total is `(xN)`-weighted, so a reader
-    hand-reconciling ASC's 393 advisories against 217 suppressed finds a discrepancy that has no
-    meaning. Pick one convention for both.
   - **A CodeMirror decoration throw on a consumer edit desk (defect, medium).** ASC's
     `/admin/bulletins/2026-03-membership-open` throws `Ranges must be added sorted by 'from'
     position and 'startSide'` at 1440 in both themes; the editor still mounts and stays reactive,
@@ -1811,21 +1700,6 @@ The original decision framing, for the record:
   the provisioning-script entry above names as non-provisionable (App creation and installation);
   the difference is that this one is about telling an operator the wall is still up.
 
-- **`cairn-audit`'s rendered page-identity guard passes a route that renders an error page.**
-  Surfaced 2026-08-05 by the `cairn-pub` migration, the same report. The guard compares a page's
-  settled DOM against the identity its server-rendered response carried, which catches a route that
-  hydrates into different chrome. It cannot catch a route that renders the same error page in both
-  captures: on that run `/admin/signups` was returning the site's public error page under a valid
-  session, the two captures agreed, every rule ran against the error page under the screen's name,
-  and the run reported zero errors across all seven pages. The findings read as wrong only to a
-  human scanning them (`header.site-header`, an accent-filled "Return to homepage"), which is the
-  reading a gate exists to spare. Candidate: assert a 2xx response status on the no-JavaScript
-  baseline capture the harness already takes, and report a non-2xx as a harness finding at error
-  tier the way a stale allowlist entry is. The config docs already promise the run fails on "any
-  configured page rendering outside 2xx", so this is closer to a defect than a feature; the case
-  that escapes is a page whose framework answers 200 and renders an error boundary, which is
-  exactly what SvelteKit did here.
-
 - **A narrowed, manifest-backed resolver for `loadPreview` (filed 2026-08-06, preview pass).** The
   shipped v1 hands `loadPreview` the site's own `PublicRoutesConfig`, globbed build-time corpus
   included, so the never-prerendered preview route pulls that whole corpus into the deployed
@@ -2016,12 +1890,6 @@ The original decision framing, for the record:
   Comment density runs 0.49 against `go/build`'s 0.37 (dated incident narratives, per-function
   catalogue citations, rebuttals of designs nobody wrote). Trigger: the next tool pass that
   edits `tool/internal/health` for its own reasons.
-
-- **`viewport-overflow`'s settle check waits the full 500 ms on a page with a scroll-driven
-  animation (0.98.0 cut).** A page carrying `animation-timeline: scroll()` keeps an animation
-  running and finite, so the settle check never sees the page go quiet and every finding on such a
-  page carries the "may be transient" suffix. Fix: exclude animations whose timeline is not a
-  `DocumentTimeline` from the settle check. Trigger: a consumer reports the noise.
 
 - **`rounded-t-full` and the other side forms of `full` pass `radius-scale` silently on a `badge`
   (theme identity pass B, 2026-09-29).** The rule flags `rounded-full` on an element that carries

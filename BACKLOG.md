@@ -8,6 +8,12 @@
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#218** Decide whether a long-lived Worker key should keep admin permissions `#improvement` `#cairn-cms` *(2026-11-01)*
+  The Worker still holds a key for an App with `administration: write` and `workflows: write`, and the setup tool tells the user to choose "All repositories". A stolen `GITHUB_APP_PRIVATE_KEY_B64` can mint an unscoped token that reaches every repository in the installation, including repository deletion. Decide whether the Worker's key keeps those permissions or setup uses a separate App. Geoff's ruling keeps "All repositories" at `packages/create-cairn-site/src/github/install.mjs:237`; #203 tells the owner to narrow the installation afterward. Found by the pass 1a security read.
+  Placement: Cleanup round.
+- [ ] **#217** Rate limit the sign-in endpoints by client address `#improvement` `#cairn-cms` *(2026-11-01)*
+  Pre-existing. The engine's request and confirm endpoints have no per-address limit, and `throttled` is a membership oracle (`src/lib/sveltekit/auth-routes.ts:177-252`, `:206`, a posture its comment calls deliberate): posting one address twice within 60 seconds returns `throttled` for an editor and `sent` for anyone else. An attacker can send one email per minute per editor indefinitely, and each new issue deletes the editor's live link (`issueToken`, `src/lib/auth/store.ts:107`). Add an optional `RateLimitLike` binding on request and confirm, keyed on client address. Found by the pass 1a security read.
+  Placement: Pass 7, sign-in messages.
 - [ ] **#216** Confirm a publish through the scoped token on the real install `#improvement` `#cairn-cms` *(2026-11-01)*
   The rc.2 install proves only a scaffolded App, which holds `contents`, `administration`, and `workflows`, while the App `adopt-cairn.md` teaches holds Contents alone. At the sitting, publish an entry through the token `installationToken` now mints (`repositories` plus `contents: write`). A ref write refused for workflows stops for Geoff, who is at that sitting, with the cause in hand; no fallback is written now. Found by pass 1a.
   Placement: Release, real install.
@@ -167,6 +173,9 @@
   Placement: Final engine batch, small API slice.
 
 ## Low
+- [ ] **#219** Weigh the session residuals in `AUTH_DB` and the confirm page `#improvement` `#cairn-cms` *(2026-11-01)*
+  Session ids are stored raw in D1 (`src/lib/auth/store.ts:241`), an earlier session row isn't deleted on re-login (`src/lib/sveltekit/auth-routes.ts:359-360`), `confirmLoad` embeds the raw token in the HTML (`auth-routes.ts:288`), and the CSP is only `frame-ancestors`, with no `script-src`. A stolen database or an injected script reaches a live session or link. Found by the pass 1a security read.
+  Placement: Cleanup round.
 - [ ] **#215** Trace a worktree cross-read in `sveltekit-mount-contract-reshape.test.ts` `#bug` `#cairn-cms` *(2026-11-01)*
   In one fast lane the test failed to load `dist/sveltekit/index.d.ts` from another worktree's path (`agent-a44abf19e72fe71b6`), then passed alone and on a full rerun. The cause is not traced; a shared cache across worktrees is the first thing to check. Found by pass 1a.
   Placement: Cleanup round.

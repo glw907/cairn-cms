@@ -1953,7 +1953,7 @@ island.
 {/if}
 {#if referenceWarning}
   <div class="alert alert-warning mb-4 type-body">
-    Saved. Note: this page references {referenceWarning.includes(',') ? 'entries' : 'an entry'} ({referenceWarning}) not yet published, which the build will flag until published.
+    Saved. Note: this entry references {referenceWarning.includes(',') ? 'entries' : 'an entry'} ({referenceWarning}) not yet published. Publish {referenceWarning.includes(',') ? 'them' : 'it'} first.
   </div>
 {/if}
 

@@ -34,7 +34,6 @@ describe('fieldset.validate', () => {
 describe('fieldset.validate edge cases', () => {
   const edge = defineFieldset({
     n: fields.number({ label: 'N' }), // unbounded, so no max masks a non-finite value
-    contact: fields.email({ label: 'Contact' }),
   });
 
   it('rejects a non-finite number', () => {
@@ -42,12 +41,6 @@ describe('fieldset.validate edge cases', () => {
     expect(edge.validate({ n: '-Infinity' }, '').ok).toBe(false);
     expect(edge.validate({ n: '1e400' }, '').ok).toBe(false); // overflows to Infinity
     expect(edge.validate({ n: '42' }, '')).toEqual({ ok: true, data: { n: 42 } });
-  });
-
-  it('rejects an email with more than one at-sign', () => {
-    expect(edge.validate({ contact: 'a@@b.c' }, '').ok).toBe(false);
-    expect(edge.validate({ contact: 'a@b@c.d' }, '').ok).toBe(false);
-    expect(edge.validate({ contact: 'a@b.c' }, '')).toEqual({ ok: true, data: { contact: 'a@b.c' } });
   });
 });
 
@@ -79,28 +72,10 @@ describe('fieldset date bounds (v1 parity)', () => {
 });
 
 describe('fieldset parsed-YAML input symmetry', () => {
-  const fs = defineFieldset({ n: fields.number({ label: 'N', min: 0 }), t: fields.datetime({ label: 'T' }) });
+  const fs = defineFieldset({ n: fields.number({ label: 'N', min: 0 }) });
   it('accepts a parsed numeric value, not only a form string', () => {
     expect(fs.validate({ n: 5 }, '')).toEqual({ ok: true, data: { n: 5 } });  // a number, not '5'
     expect(fs.validate({ n: 0 }, '')).toEqual({ ok: true, data: { n: 0 } });  // 0 is a real value, not empty
-  });
-});
-
-// `validateField`'s default arm absorbs text, textarea, datetime, and icon (the only four arms
-// left once boolean/multiselect/image/object/array are handled by their own `if` and
-// number/select/url/email/date/reference by their own `case`). text/textarea are covered above and
-// icon in fields-icon.test.ts; this pins datetime, the one arm with no dedicated test anywhere.
-describe('fieldset datetime field (default-arm absorption)', () => {
-  const fs = defineFieldset({ when: fields.datetime({ label: 'When' }) });
-  it('validates a plain string as-is and drops an empty optional', () => {
-    expect(fs.validate({ when: '2026-06-26T14:30' }, '')).toEqual({ ok: true, data: { when: '2026-06-26T14:30' } });
-    expect(fs.validate({}, '')).toEqual({ ok: true, data: {} });
-  });
-  it('fails a required, empty datetime', () => {
-    const req = defineFieldset({ when: fields.datetime({ label: 'When', required: true }) });
-    const r = req.validate({}, '');
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors).toEqual({ when: 'When is required' });
   });
 });
 
@@ -113,6 +88,17 @@ describe('fieldset multiselect lone scalar', () => {
   it('a present scalar satisfies required (no misleading "is required")', () => {
     expect(req.validate({ tags: 'news' }, '')).toEqual({ ok: true, data: { tags: ['news'] } });
     expect(req.validate({ tags: '' }, '').ok).toBe(false);
+  });
+});
+
+describe('fieldset multiselect creatable', () => {
+  const closed = defineFieldset({ topics: fields.multiselect({ label: 'T', options: ['a'] }) });
+  const open = defineFieldset({ topics: fields.multiselect({ label: 'T', options: ['a'], creatable: true }) });
+  it('keeps a value outside options when creatable', () => {
+    expect(open.validate({ topics: ['new'] }, '')).toEqual({ ok: true, data: { topics: ['new'] } });
+  });
+  it('still refuses an unknown value when not creatable', () => {
+    expect(closed.validate({ topics: ['new'] }, '').ok).toBe(false);
   });
 });
 
@@ -204,8 +190,8 @@ describe('fieldset reference and array(reference)', () => {
     });
   });
 
-  it('coerces a YAML-parsed Date element to its canonical id, never TZ-shifted garbage', () => {
-    expect(fs.validate({ author: 'jane-doe', related: [new Date('2026-01-02T00:00:00Z')] }, '')).toEqual({
+  it('keeps a date-shaped id element as the string it was written', () => {
+    expect(fs.validate({ author: 'jane-doe', related: ['2026-01-02'] }, '')).toEqual({
       ok: true,
       data: { author: 'jane-doe', related: ['2026-01-02'] },
     });
@@ -278,7 +264,7 @@ describe('fieldset refine', () => {
 
 // validateField's switch over field.type is exhaustive over FieldDescriptor at compile time; the
 // default arm is reachable only via an unsafe cast (a descriptor type the union does not name). It
-// must degrade to the same bare-string, no-further-validation value the datetime/icon arms return,
+// must degrade to the same bare-string, no-further-validation value the icon arm returns,
 // never throw, since this runs on the save-validation request path.
 describe('validateField default arm (an out-of-union descriptor, cast through unknown)', () => {
   it('degrades to a trimmed bare-string value rather than throwing', () => {
@@ -294,5 +280,24 @@ describe('validateField default arm (an out-of-union descriptor, cast through un
     const mystery = { type: 'mystery', label: 'Mystery' } as unknown as FieldDescriptor;
     const mysteryFieldset = defineFieldset({ mystery });
     expect(mysteryFieldset.validate({}, '')).toEqual({ ok: true, data: {} });
+  });
+});
+
+describe('fieldset date time of day and boolean strictness', () => {
+  const fs = defineFieldset({ d: fields.date({ label: 'D' }), b: fields.boolean({ label: 'B' }) });
+  it('refuses a time of day, naming the day as written', () => {
+    for (const d of ['2024-03-15 20:00:00 -08:00', '2024-03-15T20:00:00Z']) {
+      const r = fs.validate({ d }, '');
+      expect(r.ok ? [] : (r.issues ?? []).map((i) => i.message)).toEqual(['D has a time of day. Write the date alone: 2024-03-15']);
+    }
+    expect(fs.validate({ d: '2024-13-45' }, '').ok).toBe(false);
+  });
+  it('stores true, omits the empty readings, and refuses anything else', () => {
+    expect(fs.validate({ b: true }, '')).toEqual({ ok: true, data: { b: true } });
+    for (const b of [false, undefined, null, '']) expect(fs.validate({ b }, '')).toEqual({ ok: true, data: {} });
+    for (const b of ['true', 'yes', 1, 0]) {
+      const r = fs.validate({ b }, '');
+      expect(r.ok ? [] : (r.issues ?? []).map((i) => i.message)).toEqual(['B must be true or false']);
+    }
   });
 });

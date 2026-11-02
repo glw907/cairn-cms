@@ -24,7 +24,7 @@ registry from its exported `components` list. Adding one takes two edits there: 
 
 - `name`, `label`, `description`, `build` are required. `figure` and `include` are reserved.
 - `attributes` map to single-value field types only (`text`, `textarea`, `number`, `select`, `url`,
-  `email`, `date`, `datetime`, `boolean`, `icon`); others throw at load.
+  `date`, `boolean`, `icon`); others throw at load.
 - `slots`: `title` is the bracketed label, `body` the unmarked content, any other name a nested
   `:::name` region. `kind` is `inline`, `markdown`, or `repeatable`. `required` affects only the
   insert form.

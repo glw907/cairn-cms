@@ -41,11 +41,9 @@ describe('rewriteFrontmatterReference', () => {
         rewriteFrontmatterReference(doc('author: jane-doe'), 'author', 'jane-doe', '123'),
       ).frontmatter.author,
     ).toBe('123');
-    expect(
-      typeof parseMarkdown(
-        rewriteFrontmatterReference(doc('author: jane-doe'), 'author', 'jane-doe', '2026-01-02'),
-      ).frontmatter.author,
-    ).toBe('string');
+    const dated = rewriteFrontmatterReference(doc('author: jane-doe'), 'author', 'jane-doe', '2026-01-02');
+    expect(dated).toContain('author: 2026-01-02\n');
+    expect(parseMarkdown(dated).frontmatter.author).toBe('2026-01-02');
     expect(
       typeof parseMarkdown(
         rewriteFrontmatterReference(doc('author: jane-doe'), 'author', 'jane-doe', '2026'),
@@ -113,9 +111,9 @@ describe('rewriteFrontmatterReference', () => {
     );
   });
 
-  // A significant id (`123`, `true`, `null`, `2026`, `2026-01-02`) is committed single-quoted by
-  // serializeMarkdown. The token regex matches inside the existing quotes, so a naive splice nests a
-  // fresh quote pair and js-yaml throws for the whole file. These cover the real on-disk quoted form,
+  // A significant id (`123`, `true`, `null`, `2026`) is committed single-quoted by serializeMarkdown; a
+  // date-shaped id (`2026-01-02`) reads as a string, so it is written bare. The token regex matches inside the existing quotes, so a naive splice nests a
+  // fresh quote pair and the file no longer parses. These cover the real on-disk quoted form,
   // rebuilt with serializeMarkdown so the input reflects what is actually committed.
   const significantIds = ['123', 'true', 'null', '2026', '2026-01-02'];
   const body = 'Body text.\n';
@@ -167,9 +165,9 @@ describe('extractReferenceEdges', () => {
     ]);
   });
 
-  it('canonicalizes a Date element to its id edge', () => {
+  it('reads a date-shaped id element as its id edge', () => {
     expect(
-      extractReferenceEdges({ related: [new Date('2026-01-02T00:00:00Z')] }, fields),
+      extractReferenceEdges({ related: ['2026-01-02'] }, fields),
     ).toEqual([{ field: 'related', concept: 'posts', id: '2026-01-02' }]);
   });
 

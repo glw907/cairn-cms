@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -189,36 +191,30 @@ func TestEngineCheckAPIForbiddenIsUnknownNotOK(t *testing.T) {
 	}
 }
 
-// TestSectionHasActionableConsumersMust covers the word-boundary rule: a "Consumers must:" clause
-// is non-actionable only when its text, trimmed and compared case-insensitively, begins with
-// the whole word "nothing" (end of text, or a period, semicolon, comma, space, or parenthesis
-// right after it). A qualified "nothing" clause ("nothing; a site already on the old name keeps
-// working.") is still non-actionable, while a clause that merely contains the word later, or
-// whose text does not lead with it, is actionable.
+// TestSectionHasActionableConsumersMust reads the corpus the JS checker shares, so the two
+// readers cannot drift on what counts as an actionable "Consumers must:" line.
 func TestSectionHasActionableConsumersMust(t *testing.T) {
-	cases := []struct {
-		name    string
-		section string
-		want    bool
-	}{
-		{"bare nothing with a trailing period", "Consumers must: nothing.", false},
-		{"capitalized nothing with no trailing period", "Consumers must: Nothing", false},
-		{"nothing qualified by a semicolon clause", "Consumers must: nothing; a site already on the old name keeps working.", false},
-		{"nothing qualified by a following sentence", "Consumers must: nothing at runtime.", false},
-		{"an actionable instruction", "Consumers must: rename X to Y.", true},
-		{"nothing appears mid-clause, not as the lead word", "Consumers must: run the migration, nothing else changes.", true},
-		{"no such line", "no such line", false},
-		{"a clause containing a version number", "Consumers must: bump to 0.97.0 and rename X.", true},
-		{"a clause wrapped across lines", "Consumers must: replace any\nhand-authored helper with the new one.", true},
-		{"two Consumers must lines in one section, one actionable", "- first bullet.\n\n  Consumers must: nothing.\n\n- second bullet.\n\n  Consumers must: rename X to Y.\n", true},
-		{"two clauses sharing one paragraph, the second actionable", "A change landed in two halves. Consumers must: nothing.\n  The second half renamed a symbol. Consumers must: rename `Foo` to `Bar`.\n", true},
-		{"nothingness starts with nothing but is a different word", "Consumers must: nothingness is not a word we use, so rename `Foo`.", true},
-		{"a backtick-wrapped mention of the convention, not a clause", "This section carries every `Consumers must:` line from the release notes for reference.", false},
+	raw, err := os.ReadFile("../../../scripts/checks/fixtures/consumers-must/cases.json")
+	if err != nil {
+		t.Fatalf("read corpus: %v", err)
+	}
+	var cases []struct {
+		Name       string `json:"name"`
+		Section    string `json:"section"`
+		Actionable bool   `json:"actionable"`
+	}
+	if err := json.Unmarshal(raw, &cases); err != nil {
+		t.Fatalf("parse corpus: %v", err)
+	}
+	if len(cases) == 0 {
+		t.Fatal("corpus is empty")
 	}
 	for _, tt := range cases {
-		if got := sectionHasActionableConsumersMust(tt.section); got != tt.want {
-			t.Errorf("%s: sectionHasActionableConsumersMust(%q) = %v, want %v", tt.name, tt.section, got, tt.want)
-		}
+		t.Run(tt.Name, func(t *testing.T) {
+			if got := sectionHasActionableConsumersMust(tt.Section); got != tt.Actionable {
+				t.Errorf("sectionHasActionableConsumersMust(%q) = %v, want %v", tt.Section, got, tt.Actionable)
+			}
+		})
 	}
 }
 

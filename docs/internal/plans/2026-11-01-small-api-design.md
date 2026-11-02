@@ -27,8 +27,8 @@ the framework this package is built on. `surfaceSubpaths()` skips the key, so th
 surface row, and no semver promise. Its header comment says that. One entry beats a copy of the media
 helpers in the dev package, since `r2Key` validates with the regexes it would have to duplicate.
 
-Probed on a copy of `dist` at `f89fe83be`, with a key named `./internal/manifest`. Plain Node imported the
-entry and printed `function 4`. `publint --strict` printed `All good!`. `attw`, with the rules
+Probed on a copy of `dist` at `f89fe83be`, with a key named `./internal/manifest` holding the first four
+names, so T3's dist test proves the eight. Plain Node imported the entry and printed `function 4`. `publint --strict` printed `All good!`. `attw`, with the rules
 `check:package` ignores, printed `No problems found`.
 
 **`/delivery` free of kit at load.** Resolve `error` with `(await import('@sveltejs/kit')).error` on the two
@@ -39,14 +39,15 @@ therefore not expected to fire.
 
 **The leak gate.** `deriveTypeCheckerLeaks` is global already: `exportedAnywhere` at
 `check-surface-leaks.mjs:247-248` admits a type exported from any subpath. `deriveRendererLeaks` is the
-per-subpath model, and its `:396` line, `if (other === home || name in model[other]) continue;`, would flag
-every type that loses a re-export. Retire the renderer model and its registry rows. This also answers the
-`cleanup-one-import-path` reopen condition: the gate follows a type across subpaths.
+per-subpath model. The review's simulation found no new leak with that model still on, so the reason to
+retire it isn't a false positive. A type inlined across subpaths is now legal, and the per-subpath check the
+model held is what the one-path rule in `check:surface` replaces. Retire the renderer model and its registry
+rows. This also answers the `cleanup-one-import-path` reopen condition: the gate follows a type across subpaths.
 
-**`createAdminAction`'s file.** The export goes from `sveltekit/index.ts`, and `AdminActionOptions` loses
-`isDev` and `access`. `section-action.ts:232` passes neither, as `design.md`'s E4 correction expects, so
-`admin-action.ts` keeps the handler argument and its one internal caller. `UnauditedActionError` and the
-`AdminAction*` audit types stay public, per the design's "What stays".
+**`createAdminAction`'s file.** The export goes from `sveltekit/index.ts`. `AdminActionOptions` and the `deps`
+parameter go, and the dev check reads `DEV` from `esm-env` directly. `section-action.ts:232` passes neither
+option, as `design.md`'s E4 correction expects, so `admin-action.ts` keeps the handler argument and its one
+internal caller. `UnauditedActionError` and the audit types stay public, per the design's "What stays".
 
 **Internal `Component*` files keep their names.** `ROADMAP.md`'s rename lists the public API, UI strings,
 docs, and the scaffold file. It doesn't list `ComponentForm.svelte`, `ComponentInsertDialog.svelte`, or
@@ -67,6 +68,17 @@ it goes. `siteConfigPath` goes from the adapter; `runtime.siteConfigPath` stays,
 
 **`createNavRoutes`.** It's outside E9's list. It stays public, and T5 files a backlog item.
 
+**`resolveDb`.** Two overloads make `ctx.db` conditional: with a resolver it's the resolved binding, and with
+the key omitted it doesn't exist. `createSectionAction<Env, D1Database>({})` doesn't compile. The runtime branches
+on `'resolveDb' in config`. Probed with `tsc --strict` against the `dist` types. The sheet's answer stays the
+fallback: if a conditional type fails, type it optional and document the narrowing.
+
+**`intlOptions`.** The public option goes and the Media Library keeps its short date through an unexported
+formatter. This pass removes names, not behavior, so no screen changes and no product choice arises.
+
+**A stale `components` key.** `createRenderer` and `defineAdapter` throw on it, naming `blocks`. A missed rename
+would otherwise publish a site with no blocks and a green build. This is a refusal, not a shim.
+
 ## Class
 
 The sheet says `ordinary` plus `runner`. The path map disagrees for three edits: `auth-routes.ts:240` (shape 8),
@@ -83,8 +95,9 @@ both fall with E9. `tokensMatch`, which is pass 1a's. #200, whose files this pas
 
 ## End-to-end check
 
-The showcase builds and its suite passes on the new names. A scaffolded site installs from the packed tarball through
-`check:template`. `check:surface` fails on a name added to a second subpath, proved by a fixture in `check-surface.test.ts`.
+The showcase builds and its suite passes on the new names. `check:template` proves the template matches a bake of the
+showcase, and CI proves a scaffolded site from the packed tarball. `check:surface` fails on a name added to a second
+subpath, proved by a fixture in `check-surface.test.ts` and a one-time mutation recorded in the PR.
 
 ## Steps only Geoff can do
 

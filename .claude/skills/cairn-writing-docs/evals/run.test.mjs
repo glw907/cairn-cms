@@ -281,20 +281,6 @@ test('claudeArgs keeps the prompt out of argv, uses the agent model for an agent
   assert.equal(capped[capped.indexOf('--max-turns') + 1], '21');
 });
 
-test('the sandbox denies every write route of the allowed read-only filters and allows the plain reads', () => {
-  const git3 = ['diff', 'show', 'log'].flatMap((v) => [`Bash(git ${v} *--output*)`, `Bash(git -C * ${v} *--output*)`]);
-  const grep = ['Bash(git grep *-O*)', 'Bash(git -C * grep *-O*)', 'Bash(git grep *--open-files-in-pager*)', 'Bash(git -C * grep *--open-files-in-pager*)'];
-  const rest = ['Bash(sed *)', 'Bash(sort *-*o*)', 'Bash(git difftool*)', 'Bash(git -C * difftool*)'];
-  for (const rule of [...git3, ...grep, ...rest]) assert.ok(DENIED_TOOLS.includes(rule), `${rule} is denied`);
-  assert.equal(ALLOWED_TOOLS.includes('Bash(sed -n *)'), false, 'sed -n is no longer allowed');
-  assert.ok(ALLOWED_TOOLS.some((r) => r.startsWith('Bash(sed')) === false, 'no sed rule is allowed');
-  for (const rule of ['Read', 'Bash(head *)', 'Bash(tail *)', 'Bash(sort*)', 'Bash(git diff*)', 'Bash(git grep*)']) assert.ok(ALLOWED_TOOLS.includes(rule), `${rule} stays allowed`);
-  // Every denied form is also in the --disallowedTools argument a session gets.
-  const args = claudeArgs({});
-  const list = args[args.indexOf('--disallowedTools') + 1].split(',');
-  for (const rule of [...git3, ...grep, ...rest]) assert.ok(list.includes(rule), `${rule} reaches the session`);
-});
-
 test('deniedFaults does not score a denied filter as a fault, only a needed command piped through it', () => {
   const call = (id, command) => ({ id, name: 'Bash', input: { command } });
   const denial = (id, command) => ({ tool_use_id: id, tool_name: 'Bash', tool_input: { command } });

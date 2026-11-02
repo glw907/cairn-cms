@@ -106,6 +106,13 @@ describe('vocabularyLoad', () => {
     expect(data.unlisted).toEqual([{ value: 'extra', count: 1 }]);
   });
 
+  it('reads the saved flash from ?saved=1 and is false without it', async () => {
+    seeded();
+    const routes = createContentRoutes({ runtime: runtime() });
+    expect((await routes.vocabularyLoad(loadEvent('?saved=1'))).saved).toBe(true);
+    expect((await routes.vocabularyLoad(loadEvent())).saved).toBe(false);
+  });
+
   it('degrades the usage overlay to empty when the cross-branch read throws, keeping the list visible', async () => {
     // The config read succeeds (the raw GET serves the YAML); the branch listing throws, which the
     // non-strict buildTagUsageIndex rethrows (listBranches is outside its per-branch catch). The load

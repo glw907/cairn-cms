@@ -61,8 +61,9 @@ function mediaEntry(hash: string, slug: string): MediaEntry {
   };
 }
 
-function editEvent(id: string, search = '') {
+function editEvent(id: string, search = '', env?: Record<string, unknown>) {
   return contentEvent({
+    ...(env ? { env } : {}),
     url: `https://t.example/admin/posts/${id}${search}`,
     params: { concept: 'posts', id },
     editor: { email: 'e@t', displayName: 'E', role: 'editor', capability: 'editor' },
@@ -759,6 +760,8 @@ describe('editLoad taxonomy enforcement', () => {
 });
 
 describe('editLoad tidy projection: truthful visibility on a cached-unhealthy key (Task 5)', () => {
+  const KEY = { ANTHROPIC_API_KEY: 'sk-test' };
+
   function tidyRuntime(): CairnRuntime {
     return { ...runtime(), tidy: { enabled: true, model: 'claude-sonnet-4-6', conventions: {} } };
   }
@@ -766,15 +769,22 @@ describe('editLoad tidy projection: truthful visibility on a cached-unhealthy ke
   it('reads enabled when tidy is on and the key-health cache is clean', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const routes = createContentRoutes({ runtime: tidyRuntime() });
-    const data = await routes.editLoad(editEvent('2026-05-hello'));
+    const data = await routes.editLoad(editEvent('2026-05-hello', '', KEY));
     expect(data.tidy.enabled).toBe(true);
+  });
+
+  it('hides the Tidy control when tidy is on but no key is bound', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const routes = createContentRoutes({ runtime: tidyRuntime() });
+    const data = await routes.editLoad(editEvent('2026-05-hello'));
+    expect(data.tidy.enabled).toBe(false);
   });
 
   it('hides the Tidy control when the cache says the key is unhealthy', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     markKeyUnhealthy();
     const routes = createContentRoutes({ runtime: tidyRuntime() });
-    const data = await routes.editLoad(editEvent('2026-05-hello'));
+    const data = await routes.editLoad(editEvent('2026-05-hello', '', KEY));
     expect(data.tidy.enabled).toBe(false);
   });
 
@@ -784,7 +794,7 @@ describe('editLoad tidy projection: truthful visibility on a cached-unhealthy ke
     vi.useFakeTimers();
     vi.setSystemTime(11 * 60 * 1000);
     const routes = createContentRoutes({ runtime: tidyRuntime() });
-    const data = await routes.editLoad(editEvent('2026-05-hello'));
+    const data = await routes.editLoad(editEvent('2026-05-hello', '', KEY));
     vi.useRealTimers();
     expect(data.tidy.enabled).toBe(true);
   });

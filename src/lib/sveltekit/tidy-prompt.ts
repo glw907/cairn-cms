@@ -25,7 +25,7 @@ WHAT TO FIX (always):
 - plainly wrong punctuation
 - a missing sentence-start capital
 - unambiguous grammar that needs a small rewording (subject-verb and pronoun agreement, tense slips, a dangling modifier, faulty parallelism in a list, a comma splice or run-on fixed with the lightest touch)
-- homophones (its/it's, their/there/they're, your/you're) ONLY where the existing form is grammatically wrong in its sentence, never a correct possessive "its" or a correct "there"
+- homophones (its/it's, their/there/they're, your/you're) only where the existing form is grammatically wrong in its sentence, never a correct possessive "its" or a correct "there"
 
 WHAT TO LEAVE ALONE (out of scope, line editing or voice):
 - word choice ("utilize" stays)
@@ -74,8 +74,7 @@ export function buildTidyPrompt(conventions: TidyConventions): string {
 }
 
 // One rule line per enabled convention, in the order of the convention list. A disabled (undefined or false) toggle
-// contributes nothing. The Fixes group is not emitted here: the objective fixes live in the core, and
-// the group toggle is a screen control that does not strip the core.
+// contributes nothing. The objective fixes live in the core and are not emitted here.
 function conventionLines(c: TidyConventions): string[] {
   const lines: string[] = [];
 
@@ -97,7 +96,7 @@ function conventionLines(c: TidyConventions): string[] {
           ? 'spell out whole numbers under one hundred and use numerals for one hundred and up'
           : 'use numerals for all numbers';
     lines.push(
-      `Number style: ${threshold}; ALWAYS use numerals for ages, dates, measurements, and percentages regardless of the threshold.`
+      `Number style: ${threshold}; always use numerals for ages, dates, measurements, and percentages regardless of the threshold.`
     );
   }
 

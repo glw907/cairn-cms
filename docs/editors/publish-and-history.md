@@ -118,7 +118,9 @@ To delete an entry, follow these steps:
 
 If other entries link to the one you're deleting, the window refuses the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same refusal. So does a fragment that appears in another editor's unpublished edits. In that case, ask that editor to remove the include or discard those edits first. **Change URL** on a fragment follows the same rule for unpublished includes. The editor updates published includes to the new name.
 
-On a list, the trash button beside an entry deletes it at once, with no confirmation window, unless other entries link to it. To get the confirmation, delete from the entry's editing screen.
+On a list, the trash button beside an entry opens the same window, with the same refusal when other entries link to it. The list's confirm also names the entry, for example **“Snow report” will be deleted.**
+
+Selecting outside the window doesn't close it. To close it, select the close button or press Esc.
 
 ## Review and restore earlier versions
 

@@ -18,7 +18,7 @@ caption: Trail Guide and Community News are in use, so their trash buttons are g
 1. The **Your tags** list shows each tag's name, how it's stored, and how many entries use it.
 1. The trash button appears active only beside a tag that no entry uses.
 1. The section called **Already on your entries** lists tags that entries carry but your list doesn't have yet.
-1. **Save changes** applies everything you did on the screen. Nothing you change takes effect until you select it.
+1. **Save changes** applies everything you did on the screen. Nothing you change takes effect until you select it, and the screen then shows **Tags saved.**
 
 ## Add a tag
 

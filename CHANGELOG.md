@@ -145,6 +145,35 @@
 
 ### Changed
 
+- **`TidyConventions` drops `fixes`.** Tidy always makes the objective fixes, so the key and the
+  Settings screen's On/Off control are gone. The screen's Fixes section now states what tidy always
+  fixes.
+
+  Consumers must: remove `fixes` from any `TidyConventions` you build in code; a `fixes:` key in
+  `site.config.yaml` is ignored.
+
+- **Tidy defaults to `claude-sonnet-5-5`.** A site with no `tidy.model` moves off `claude-sonnet-5`.
+  The effort gate now covers the Haiku 5 and Fable 5 families, the Settings screen advises
+  `claude-haiku-5-5` for a cheaper run, and the prompt drops its two capitalized pressure words.
+
+  Consumers may: set `tidy.model: claude-sonnet-5` to stay on the old model.
+
+- **A list row's delete confirms.** The trash button opens the window the entry screen uses, so no
+  delete posts without it, and a refused delete names its blockers in that same window. The window
+  returns focus to the button that opened it and no longer closes on a click outside it, on the
+  entry screen too. On the list it also names the entry. `DeleteDialog` gains an optional
+  `entryTitle` prop, and `open()` takes an optional origin element.
+- **The edit screen hides Tidy when no key is bound.** A site with `tidy.enabled: true` and no
+  `ANTHROPIC_API_KEY` no longer offers a button that can only refuse.
+- **A tidy settings save says when it applies, and the screen shows what was saved.** The message
+  names the next deploy, and `settingsLoad` reads the committed conventions from the default branch,
+  so a second save starts from the committed values. A parse failure, or a committed value outside
+  its allowed set, falls back to the deployed conventions and logs `config.invalid` with
+  `scope: 'settings'`. An empty `conventions:` key reads as no conventions.
+- **A rename onto a live entry's address is refused.** `renameAction` applies the check publish
+  already used, across every concept, and answers 409 with nothing committed. The new
+  `rename.address_collided` log event names the holder.
+
 - **`defineAdapter` keeps unset optional keys readable and checks two config keys at the type level.**
   `(cairn as CairnAdapter).aiPosture` needs no cast when the adapter leaves it unset. A
   `summaryFields` entry is keyed to its concept's fields, and a `navLayout` item's `screen` is one of
@@ -858,6 +887,16 @@
 
 ### Fixed
 
+- **A proofread cut off at the output cap fails honestly.** A `max_tokens` stop now answers 413 with
+  the too-long message instead of returning a partial body as the corrected text, and logs
+  `tidy.failed` with reason `truncated`. The check lives in the default client, so a site's own
+  gateway owns its truncation.
+- **The tag screen confirms a save.** It shows **Tags saved.** in a status region, and
+  `VocabularyData` gains `saved: boolean`.
+- **A failed island reports itself.** Bad props JSON or a throw on mount now calls `console.error`
+  naming the island, and the static fallback stays.
+- **The bulk media delete window stops promising an undo.** It reads "Every removal is one
+  revertible commit."
 - **Spellcheck no longer dies silently on some page loads.** A large dictionary read could trap the
   spellchecker's wasm, which left that page with no underlines until a reload. The worker now feeds
   the dictionary in writes of at most 64KB.

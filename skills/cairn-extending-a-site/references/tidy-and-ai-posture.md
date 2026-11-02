@@ -29,10 +29,10 @@ The site config has no timeout key. Never put `timeoutMs` in the YAML.
    ```yaml
    tidy:
      enabled: true
-     model: claude-haiku-4-5
+     model: claude-haiku-5-5
    ```
 
-   The default model is `claude-sonnet-5`. The parser does not check the id; a model Anthropic
+   The default model is `claude-sonnet-5-5`. The parser does not check the id; a model Anthropic
    rejects surfaces on the first call as `tidy.failed` `reason: invalid_request`.
 3. For a longer deadline (default 30 seconds), add `timeoutMs` to the server module's existing
    `tidy` block. On a scaffold, keep the dev-gated `client` entry beside it.
@@ -54,7 +54,8 @@ The site config has no timeout key. Never put `timeoutMs` in the YAML.
 
 5. Commit and deploy. The runtime takes the site config at build, so a change to `tidy` (including
    an editor's save of the conventions on `/admin/settings`, which commits to the default branch)
-   reaches tidy only after the next deploy.
+   reaches tidy only after the next deploy. Until then `/admin/settings` shows the committed values
+   and tidy still works from the deployed ones; the save message says so.
 
 Under the dev backend, the scaffold's server module builds `client` from `createFakeAnthropic()`
 (`@glw907/cairn-cms-dev`) inside the `__CAIRN_DEV_BUILD__` gate, and the dev handle sets a dummy key,
@@ -63,13 +64,14 @@ so local runs never reach Anthropic.
 **Verify on the deployed site.** `/admin/settings` probes the key: the conventions with the model
 label means on with a key (a soft-failed probe looks the same), `Tidy is not set up yet` means off or
 no key, `Tidy's key isn't working` means Anthropic rejects it. Then run Tidy once on a draft; that is
-the only check of the SDK and the model.
+the only check of the SDK and the model. The edit screen hides the Tidy button when no key is bound,
+so a draft that shows no button on a site with `enabled: true` points at the key.
 
 | Refusal message | Cause | Fix |
 |---|---|---|
 | `Tidy is not enabled for this site.` | Deployed config lacks `enabled: true` | Set it, deploy |
-| `...the Anthropic API key is missing.` | No secret bound | `wrangler secret put` |
-| `This is too long to tidy at once...` | Over about 24,000 characters | Editor tidies a selection |
+| `...the Anthropic API key is missing.` | No secret bound (the edit screen hides the button when the key is absent, so this shows only on a screen loaded before the key was removed, or on a direct request) | `wrangler secret put` |
+| `This is too long to tidy at once...` | Over about 24,000 characters, or a proofread that hit the output cap | Editor tidies a selection |
 | Mentions `npm install @anthropic-ai/sdk` | SDK not installed | Install, deploy |
 | Tells the editor to contact the developer | Key rejected (`auth`); Tidy hides for 10 minutes | Bind a working key |
 | Names the model and `tidy.model` | Model id rejected | Set a supported model |

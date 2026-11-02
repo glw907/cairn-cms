@@ -195,7 +195,9 @@ onto an address a live entry holds is refused. The edit page shows an `address-c
 under the same rule beforehand. A draft, a fragment, or another entry's pending branch holds no
 address. A single publish answers 409 with the edits kept on the branch and nothing on `main`; a
 batch publish commits nothing and redirects with `?error=address_collision`. Each refusal logs
-`publish.address_collided`. Change the address of one entry, then publish again.
+`publish.address_collided`. Change the address of one entry, then publish again. A rename onto
+an address a live entry holds in any concept refuses the same way, with a 409, nothing committed,
+and a `rename.address_collided` record.
 
 ## Resolve a failed check
 

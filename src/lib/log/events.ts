@@ -45,6 +45,7 @@ export type CairnLogEvent =
   | 'preview.refused'
   | 'publish.failed'
   | 'publish.address_collided'
+  | 'rename.address_collided'
   | 'github.unreachable'
   | 'health.failed'
   | 'guard.refused'

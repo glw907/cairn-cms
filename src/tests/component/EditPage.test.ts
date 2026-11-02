@@ -105,7 +105,7 @@ function postProps(over = {}) {
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
       siteDictionary: [],
-      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false } },
+      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false } },
       advisories: [],
       orphanTags: [],
       siteName: 'Test Site',
@@ -1933,6 +1933,21 @@ describe('EditPage', () => {
     await expect.poll(() => menu.matches(':popover-open')).toBe(false);
   });
 
+  it('returns focus to More actions when the delete confirm closes', async () => {
+    const screen = await render(EditPage, postProps());
+    const trigger = screen.getByRole('button', { name: 'More actions' });
+    await trigger.click();
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-delete-dialog-title"]',
+    )!;
+    expect(dialog.open).toBe(true);
+    await userEvent.keyboard('{Escape}');
+    await expect.poll(() => dialog.open).toBe(false);
+    const el = trigger.element() as HTMLElement;
+    await expect.poll(() => document.activeElement === el).toBe(true);
+  });
+
   it('drives the header overflow as a popover with aria-expanded and Escape', async () => {
     const screen = await render(EditPage, postProps());
     const trigger = screen.getByRole('button', { name: 'More actions' });
@@ -2554,7 +2569,7 @@ describe('EditPage', () => {
           tidy: {
             enabled: true,
             model: 'claude-sonnet-4-6',
-            conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+            conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false },
           },
         }),
       );
@@ -2607,7 +2622,7 @@ describe('EditPage', () => {
           tidy: {
             enabled: true,
             model: 'claude-sonnet-4-6',
-            conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+            conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false },
           },
         }),
       );
@@ -3259,7 +3274,7 @@ describe('EditPage', () => {
       base.data.tidy = {
         enabled: true,
         model: 'claude-sonnet-4-6',
-        conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+        conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false },
       };
       return base;
     }

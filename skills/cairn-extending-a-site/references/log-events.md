@@ -49,6 +49,7 @@ Contents:
 | `entry.discarded` | info | `concept`, `id`, `editor` | A pending branch was deleted. |
 | `publish.failed` | warn or error | `concept`, `id`, `editor`, `reason` or `error` | Same shape as `commit.failed`. A failed publish-all logs one per entry. |
 | `publish.address_collided` | warn | `editor`, `address`, `heldByConcept`, `heldById` | A publish was refused because a live entry already holds the address. Nothing committed to `main`. |
+| `rename.address_collided` | warn | `editor`, `address`, `heldByConcept`, `heldById` | A rename was refused because the new address belongs to a live entry in any concept. Nothing committed. |
 | `content.field_behavior_failed` | warn | `field`, `owner`, `error` | A `behavior.validate` threw; the field counted as valid and the save went through. `owner` is the concept id or directive name. Fix the validator. |
 | `content.field_unmarked` | warn | `concept`, `field` | A multiselect named `tags`, `freetags`, or `categories` and no `taxonomy: true` field, so the tag index is empty. Mark the field. |
 | `content.field_undeclared` | warn | `concept`, `keys` | Manifest build found frontmatter keys the concept does not declare. Validation drops them; a save or publish keeps them in the file. |
@@ -58,7 +59,7 @@ Contents:
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `config.invalid` | error | `scope` (`nav`, `settings`, `vocabulary`), `conditionId`, `error` | Committed site config failed to parse or validate. The nav and vocabulary loads fall back to empty; the settings and vocabulary saves answer `fail(500)` with generic copy. `error` holds the parser message. |
+| `config.invalid` | error | `scope` (`nav`, `settings`, `vocabulary`), `conditionId`, `error` | Committed site config failed to parse or validate. The nav and vocabulary loads fall back to empty, and the settings load to the deployed conventions; the settings and vocabulary saves answer `fail(500)` with generic copy. `error` holds the parser message. |
 | `config.access_unmapped` | warn | `unmapped` | The access map keys at least one screen and leaves the listed concepts or fixed screens (`media`, `vocabulary`, `nav`, `settings`) without a rule. Fires once per isolate at cold start: widen the query window. Route keys never count. |
 
 ## Preview
@@ -113,7 +114,7 @@ These never carry document content or an API key.
 | `dictionary.added` | info | `editor`, `wordCount`, `retried` | Dictionary add committed. |
 | `dictionary.add_conflict` | warn | `editor`, `wordCount` | Second conflict; the client retries on the next save. |
 | `tidy.succeeded` | info | `editor`, `model`, `tokens` | Tidy returned a corrected document. |
-| `tidy.failed` | warn | `editor`, `model`, `reason` | Non-retryable, 503: `auth` (key rejected 401/403, marks the key unhealthy), `sdk_missing` (install `@anthropic-ai/sdk`), `invalid_request` (400, usually a bad `tidy.model`). Retryable, 502: `timeout` (deadline fired; raise `timeoutMs`), `abort`, `model` (rate limit, overload, server, network). |
+| `tidy.failed` | warn | `editor`, `model`, `reason` | Non-retryable, 503: `auth` (key rejected 401/403, marks the key unhealthy), `sdk_missing` (install `@anthropic-ai/sdk`), `invalid_request` (400, usually a bad `tidy.model`). Non-retryable, 413: `truncated` (the model hit the output cap; the editor tidies a selection). Retryable, 502: `timeout` (deadline fired; raise `timeoutMs`), `abort`, `model` (rate limit, overload, server, network). |
 | `tidy.refused` | warn | `editor`, `model` | Model refused the text (422). |
 | `tidy.empty` | warn | `editor`, `model` | Model returned nothing (502, retryable). |
 

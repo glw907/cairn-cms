@@ -133,12 +133,6 @@ describe('buildTidyPrompt: the config-built CONVENTIONS section', () => {
     expect(prompt).toContain('GitHub');
   });
 
-  it('respects the Fixes group toggle by leaving the core in place but allowing it off', () => {
-    // The objective fixes are always governed by the core; the group toggle is a screen control
-    // only and does not strip the core. A disabled group still leaves the core intact.
-    const prompt = buildTidyPrompt({ ...NONE, fixes: false });
-    expect(prompt).toContain('WHAT TO FIX');
-  });
 });
 
 describe('buildTidyPrompt: the prompt contract (the governing instructions)', () => {
@@ -161,7 +155,7 @@ describe('buildTidyPrompt: the prompt contract (the governing instructions)', ()
   });
 
   it('fixes a homophone only where the existing form is grammatically wrong', () => {
-    expect(prompt).toContain('ONLY where the existing form is grammatically');
+    expect(prompt).toContain('only where the existing form is grammatically');
     expect(prompt).toContain('their/there');
   });
 

@@ -23,7 +23,8 @@ if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   handle = devBackendHandle({
     runtime,
     // cairn-template:exclude-start
-    // This example site serves the package's seeded fixtures: its e2e runs under `wrangler dev`,
+    // This example site serves the package's seeded fixtures (or an empty site when
+    // `CAIRN_DEV_CONTENT` is `empty`, for the first-run screens): its e2e runs under `wrangler dev`,
     // whose workerd cannot read the working tree, and its specs assert the fixture content. A new
     // site takes the default, which serves its content from the working tree.
     content: devBackendContent(),

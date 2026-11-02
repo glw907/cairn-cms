@@ -15,7 +15,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
   import CsrfField from './CsrfField.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
   import { warnIfChromeWrapped } from './chrome-guard.js';
-  import { NO_PENDING_REQUEST_ERROR } from '../sveltekit/auth-error-codes.js';
+  import { SIGN_IN_LINK_FAILED, SIGN_IN_LINK_TITLE } from './sign-in-copy.js';
 
   interface Props {
     /** The login load's data: the magic-link shape (site name, an optional error, the CSRF token,
@@ -57,14 +57,8 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
   const linkError = $derived(magicLink && !form?.outcome && !form?.error ? magicLink.error : null);
   // The page title is the one landing signal a JS-free arrival gets before reading anything: the
   // redirect that lands here carries its reason only in a query string, and a screen reader
-  // announces the title first. Each refusal names itself, the way ConfirmPage swaps its h1.
-  const title = $derived(
-    linkError === NO_PENDING_REQUEST_ERROR
-      ? 'No pending sign-in · Cairn'
-      : linkError
-        ? 'Sign-in link expired · Cairn'
-        : 'Sign in · Cairn',
-  );
+  // announces the title first. Every link refusal shares one title, as it shares one sentence.
+  const title = $derived(linkError ? SIGN_IN_LINK_TITLE : 'Sign in · Cairn');
 </script>
 
 <svelte:head>
@@ -157,18 +151,8 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
       {:else if form?.error}
         <div role="alert" tabindex="-1" class="alert alert-error mb-3 type-body">{form.error}</div>
       {/if}
-      {#if linkError === NO_PENDING_REQUEST_ERROR}
-        <!-- This browser holds no pending sign-in, which is all the engine knows: it cannot tell a
-             second device from a cleared cookie jar. The instruction is the one that works in
-             every case, and it names this browser, since "request a new one" alone reproduces the
-             refusal for someone who asks on a desktop and clicks on a phone. -->
-        <div role="alert" tabindex="-1" class="alert alert-error mb-3 type-body">
-          This browser has no pending sign-in. Request a new link below and open it in this browser.
-        </div>
-      {:else if linkError}
-        <div role="alert" tabindex="-1" class="alert alert-error mb-3 type-body">
-          That link expired. Request a new link below and open it in this browser.
-        </div>
+      {#if linkError}
+        <div role="alert" tabindex="-1" class="alert alert-error mb-3 type-body">{SIGN_IN_LINK_FAILED}</div>
       {/if}
       <form method="POST" action="?/request" class="flex flex-col gap-3">
         <CsrfField token={magicLink?.csrf ?? ''} />

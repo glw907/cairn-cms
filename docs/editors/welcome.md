@@ -21,7 +21,7 @@ caption: The sign-in page asks for one thing, your email address. The link it se
 4. Open the email whose subject is **Sign in to** followed by your site's name, and then select **Sign in** in the message. You have 10 minutes to use the link. If the email doesn't arrive within a minute or two, check your spam folder.
 5. On the **Almost there** page, select **Confirm sign-in**.
 
-Open the link in the same browser where you asked for it. If you ask for a link on a computer and open the email on a phone, the editor can't match the two. It tells you to request a new link and open it in the browser you're using.
+Open the link in the same browser where you asked for it. If you ask for a link on a computer and open the email on a phone, the editor can't match the two. It says the link didn’t work and tells you to request a new link and open it in the browser you're using.
 
 ## Understand the confirm step
 

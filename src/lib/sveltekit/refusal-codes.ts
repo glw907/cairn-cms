@@ -5,21 +5,18 @@
 // field stays `string | null` and the public surface never grows a code union to write.
 
 /**
- * The refusals that genuinely navigate rather than answering the form that posted: an expired
- *  sign-in link, publish-all's refusals (`nothing_to_publish`, `publish_conflict`,
+ * The refusals that genuinely navigate rather than answering the form that posted: publish-all's refusals (`nothing_to_publish`, `publish_conflict`,
  *  `address_collision`), and the one deliberate exception to the
  *  "publish-all only ever redirects to its four outcomes" rule, `publish_failed`, for the
  *  unexpected (non-conflict) commit error that would otherwise reach `viewAction`'s generic
  *  `fail(500)` and be discarded when `/admin`'s load redirects away before it can render
- *  (`publishAllAction`, `content-routes-entry-write.ts`). `expired` keeps its
- *  shipped spelling; the rest are snake_case, matching the log vocabulary's grammar
+ *  (`publishAllAction`, `content-routes-entry-write.ts`). The codes are snake_case, matching the log vocabulary's grammar
  *  (`src/lib/log/events.ts`).
  */
-export type RefusalCode = 'expired' | 'nothing_to_publish' | 'publish_conflict' | 'publish_failed' | 'address_collision';
+export type RefusalCode = 'nothing_to_publish' | 'publish_conflict' | 'publish_failed' | 'address_collision';
 
 /** Each {@link RefusalCode}'s engine copy, the only prose the query channel is ever allowed to carry. */
 const REFUSAL_COPY: Record<RefusalCode, string> = {
-  expired: 'That link expired. Request a new one below.',
   nothing_to_publish: 'Nothing to publish. Every entry is already live.',
   publish_conflict: 'The site changed while publishing. Reload and try again.',
   address_collision: 'Nothing was published. Two entries would share one address. Open the pending entries, change the address of one of the two, and publish again.',

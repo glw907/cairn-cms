@@ -14,9 +14,8 @@
  * The `?error=` code a confirm redirects with when the submitted token fails to confirm and this
  * browser carries no pending-login cookie, whatever the failure's cause (an empty token field is the exception and always redirects with `expired`): a token bound to another
  * browser's nonce, an expired, unknown, or already-used token all redirect with it when the cookie
- * is absent. A browser that carries a cookie gets `expired` on any failed confirm. The two need
- * different instructions: "request a new one" is the exact advice that reproduces the failure for
- * someone clicking on a second device.
+ * is absent. A browser that carries a cookie gets `expired` on any failed confirm. The two codes
+ * stay distinct on the wire, and the pages word them identically: one instruction fixes both.
  *
  * Exported so `LoginPage` and `ConfirmPage` branch on this value rather than on a duplicated
  * string literal. The wire format is the literal below, so a site rendering its login page

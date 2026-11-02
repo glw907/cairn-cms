@@ -33,13 +33,13 @@ function walkExts(dir: string, exts: string[]): string[] {
 describe('extractDocQuotes', () => {
   it('extracts each bolded double-quoted sentence, folded to lowercase with quotes stripped', () => {
     const markdown = [
-      '**"That link expired. Request a new link below and open it in this browser."** on the sign-in',
+      '**"Request a new link below and open it in this browser."** on the sign-in',
       'page, or **"This link didn\'t work"** on the confirm page.',
       '',
       '**A delete is refused, naming what links to it.** No quotes here, so this is not extracted.',
     ].join('\n');
     expect(extractDocQuotes(markdown)).toEqual([
-      'that link expired. request a new link below and open it in this browser.',
+      'request a new link below and open it in this browser.',
       'this link didnt work',
     ]);
   });
@@ -57,8 +57,8 @@ describe('extractDocQuotes', () => {
 
 describe('buildPattern and isGrounded', () => {
   it('grounds a doc quote against a plain literal candidate with no interpolation hole', () => {
-    const quote = 'that link expired. request a new link below and open it in this browser.';
-    const candidates = ['That link expired. Request a new link below and open it in this browser.'];
+    const quote = 'request a new link below and open it in this browser.';
+    const candidates = ['Request a new link below and open it in this browser.'];
     expect(isGrounded(quote, candidates)).toBe(true);
   });
 

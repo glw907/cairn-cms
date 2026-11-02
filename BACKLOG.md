@@ -27,6 +27,9 @@
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02)*
+  The publish-state filter scrolls inside its container at 320 by design (`golden-path.spec.ts:764-790`). With `Unpublished changes` the row now rests on `All 7 | Unpublished changes 2 | Pub`, and nothing signals that more sits to the right, so an editor at that width can miss **Published**. Add a scroll cue, or let the row wrap. Found by the `admin-rest` baseline read.
+  Placement: Cleanup round.
 - [ ] **#275** Remove the list bullets beside repeatable rows `#bug` `#cairn-cms` *(2026-11-02)*
   Each row in a repeatable field shows a list marker in the left gutter, because `RepeatableField.svelte:211`'s `<ul>` sets no `list-none`. The marker eats width in a narrow Details pane and reads as a stray dot. Found by the `admin-rest` render read, on code that pass didn't change.
   Placement: Cleanup round.

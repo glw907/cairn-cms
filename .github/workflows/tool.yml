@@ -20,6 +20,7 @@ on:
       # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
       - 'scripts/checks/shipped-anchors.json'
+      - 'scripts/checks/fixtures/consumers-must/**'
       - 'schema/**'
     tags: ['tool/v*']
   pull_request:
@@ -33,6 +34,7 @@ on:
       # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
       - 'scripts/checks/shipped-anchors.json'
+      - 'scripts/checks/fixtures/consumers-must/**'
       - 'schema/**'
   workflow_dispatch:
 

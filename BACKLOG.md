@@ -21,9 +21,9 @@
 - [ ] **#251** Correct the stale `test.yml` comment that calls `prepack` unrunnable `#bug` `#cairn-cms` *(2026-11-01)*
   The comment at `.github/workflows/test.yml:76-81` says the bake's default path is unrunnable until `@glw907/cairn-cms-dev` publishes. `npm --prefix packages/create-cairn-site run prepack` ran clean at `0.98.0`, and setup now runs it. Left alone in `tool-gates` because no task was on that hunk.
   Placement: Cleanup round.
-- [ ] **#252** Make the fast lane's related-unit selection catch a count pinned in a test of a script it changed `#improvement` `#cairn-cms` *(2026-11-01)*
-  T1 added a close-prebuilt component, and `close-prebuilt.test.ts` pins the component count (35 to 36). The implementer's own fast lane reported green and the miss surfaced only on the session's rerun, so a dispatch trusting the agent's lane would have pushed a red. Read from this run, not traced to the selection rule.
-  Placement: Cleanup round.
+- [ ] **#252** Stop a red fast-lane leg hiding the legs after it, and an implementer's pipe hiding the red `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+  T1 of `tool-gates` added a close-prebuilt component, and `close-prebuilt.test.ts` pins the count (35 to 36). `vitest related` selects that test on T1's paths. The implementer never reached it: `check:close` was red, line 1's `&&` chain stopped there (`gate-tier.mjs:717`), and `| tail -4` hid the exit code. Fix: line 1 runs every leg and then fails, and `cairn-implementer` reports the lane's exit code.
+  Placement: `tool-fixes`.
 - [ ] **#254** Add a section-refusals action for a `createSectionAction` with `resolveDb` omitted `#improvement` `#cairn-cms` *(2026-11-01)*
   The refusal fixture route (`examples/showcase/src/routes/admin/section-refusals`) covers a `resolveDb` that returns undefined, but not an action built with the option omitted, because the option turns optional in Pass 3 (E4). Add the action and its spec row once that lands.
   Placement: Pass 3.
@@ -175,14 +175,11 @@
 - [ ] **#247** Weigh the session residuals in `AUTH_DB` and the confirm page `#improvement` `#cairn-cms` *(2026-11-01)*
   Session ids are stored raw in D1 (`src/lib/auth/store.ts:241`), an earlier session row isn't deleted on re-login (`src/lib/sveltekit/auth-routes.ts:359-360`), `confirmLoad` embeds the raw token in the HTML (`auth-routes.ts:288`), and the CSP is only `frame-ancestors`, with no `script-src`. A stolen database or an injected script reaches a live session or link. Found by the pass 1a security read.
   Placement: Cleanup round.
-- [ ] **#244** Trace a worktree cross-read in `sveltekit-mount-contract-reshape.test.ts` `#bug` `#cairn-cms` *(2026-11-01)*
-  In one fast lane the test failed to load `dist/sveltekit/index.d.ts` from another worktree's path (`agent-a44abf19e72fe71b6`), then passed alone and on a full rerun. The cause is not traced; a shared cache across worktrees is the first thing to check. Found by pass 1a.
-  Placement: Cleanup round.
+- [ ] **#244** Keep implementers' lane logs off a shared `/tmp` name `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+  Pass 1a's implementer read `cannot load .../agent-a44abf19e72fe71b6/dist/sveltekit/index.d.ts` out of `/tmp/lane.log`, which `agent-a44abf19e72fe71b6` was writing at the same moment from two overlapping lanes in its worktree. The test and the caches are innocent. Fix: `cairn-implementer` keeps lane logs in its worktree and runs one lane at a time.
+  Placement: `tool-fixes`.
 - [ ] **#243** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)*
   `removeOwnerIfNotLast`, `demoteOwnerIfNotLast`, and `OwnerGuardOutcome` in `src/lib/auth/store.ts` have no production reader since `/auth-store` left: only tests and `packages/cairn-cms-dev/src/fake-auth-db.ts` reach them. `@public` tags remain on names no longer on any public subpath (`store.ts` and `src/lib/auth/roles.ts:125`), and `check-tiers.mjs` walks exports only, so it passes them. Found by pass 1a.
-  Placement: Cleanup round.
-- [ ] **#217** Have `cairn-implementer` report from its commit's file list `#improvement` `#cairn-cms` *(2026-11-01)*
-  On #176 T1's implementer reported three skill files edited that weren't in its commit, and its "about 40 minutes" was 9.5. The fast lane passed because no check reads those files, and the session caught it only by reading the merge's diffstat. `.claude/agents/cairn-implementer.md`'s report step could require `git show --stat HEAD` and a recorded start time. Worded into each dispatch on #176 afterward, with no repeat.
   Placement: Cleanup round.
 - [ ] **#240** Handle a BOM in the media rewriters `#bug` `#cairn-cms` *(2026-11-01)*
   `repointMediaRef` (`src/lib/content/media-rewrite.ts:321`) and `fillAltForHash` (`:572`) call `splitFrontmatter` with no BOM strip, so a BOM file gets no frontmatter edit, while `parseMarkdown` and `references.ts` both strip it. A repoint then leaves the old hash in the hero `src`. Found by the field-values close review (#176); it predates that PR.
@@ -308,6 +305,9 @@
 - **#165** A dated filename whose prefix does not match the concept's `datePrefix` keeps date digits in its public...: Migration-only, cosmetic, and visible at the first URL check. The entry still works. (Geoff, 2026-10-31)
 
 ## Done
+- [x] **#217** Have `cairn-implementer` report from its commit's file list `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-01)* *(swept 2026-11-01)*
+  On #176 T1's implementer reported three skill files edited that weren't in its commit, and its "about 40 minutes" was 9.5. The fast lane passed because no check reads those files, and the session caught it only by reading the merge's diffstat. `.claude/agents/cairn-implementer.md`'s report step could require `git show --stat HEAD` and a recorded start time. Worded into each dispatch on #176 afterward, with no repeat.
+  Done: 8f23f7643, whose "Report" step requires the files changed as `git show --name-only --format= <sha>` lists them. The start-time half stays unrecorded, and no run has needed it.
 - [x] **#75** `cairn-guidance check` misjudges the `.claude/` Tailwind exclusion and advises a line that excludes the wrong directory `#bug` `#cairn-cms` *(2026-10-25 → 2026-11-01)* *(swept 2026-10-31)*
   `judgeSourceExclusion` (`src/lib/guidance/check.ts:76-91`) reads only `src/admin.css` and `src/theme/admin.css` and counts as excluded only the literal `SOURCE_EXCLUSION_LINE`, `@source not "./.claude";` (`:21`). Tailwind resolves an `@source` path against the stylesheet that carries it, so in `src/admin.css` that line excludes `src/.claude`, not the project root's `.claude/`; a correct `@source not "../.claude";` reads as not excluded, and the advice at `:201` makes a site add the wrong line. It also never reads the public stylesheet (the scaffold's exclusion is `templates/waymark/src/chassis/tokens.css:55`, `../../.claude`). Fix: resolve each `@source not` path against its file and compare to the root `.claude`, and read the site's Tailwind entries, with tests. Found by the Claude Code page's recheck, 2026-10-25.
   Done: `judgeSourceExclusion` takes the listed `src/**/*.css` paths, finds each Tailwind entry, and accepts any `@source not` that resolves to the root `.claude`; the advised line comes from the entry's depth. The report prints `PASS` or `FIX` per line with a count, and `--strict` fails on any `FIX`.

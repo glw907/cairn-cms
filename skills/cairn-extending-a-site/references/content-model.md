@@ -68,13 +68,15 @@ Every field is optional unless it sets `required: true`. Mark only the fields th
 (usually the title and the start date); leave the rest bare. An empty optional field is dropped from
 the saved frontmatter and typed optional, so code reading it under strict settings checks it is set.
 A key the fieldset does not declare (a hand-written `draft: true`) is not shown in the form and
-survives every save and publish; a declared field the form leaves empty is removed. A bare YAML date
-in an undeclared key is rewritten as a full ISO instant (`2026-01-01T00:00:00.000Z`).
+survives every save and publish; a declared field the form leaves empty is removed.
 
-`fields.text`, `textarea`, `number`, `url`, `email`, `date` (`YYYY-MM-DD`), `datetime`, `boolean`,
+`fields.text`, `textarea`, `number`, `url`, `date` (`YYYY-MM-DD`), `boolean`,
 `select`, `multiselect`, `image`, `reference`, `object`, `array`. `number` is the whole-number field
-for a capacity or count; `url` for a link. A text-type field reads a non-string value (an unquoted
-number, date, or boolean) as empty.
+for a capacity or count; `url` for a link. A `boolean` takes `true` or `false` (an empty value reads
+as unset), and any other value, such as the string `'true'`, is refused. A text-type field reads a non-string value (an unquoted
+number or boolean) as empty. A `multiselect` with `options` refuses a value outside them; add
+`creatable: true` and it keeps one, renders as an open tag input, and infers as `string[]` instead of
+the option union.
 
 ## Cross-field rules
 

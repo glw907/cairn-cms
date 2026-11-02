@@ -33,20 +33,18 @@ describe('fields select/multiselect', () => {
   });
 });
 
-describe('fields url/email', () => {
-  it('url and email are labeled leaves', () => {
+describe('fields url', () => {
+  it('url is a labeled leaf', () => {
     expect(fields.url({ label: 'Website' })).toEqual({ type: 'url', label: 'Website' });
-    expect(fields.email({ label: 'Contact' })).toEqual({ type: 'email', label: 'Contact' });
   });
 });
 
-describe('fields date/datetime/boolean', () => {
+describe('fields date/boolean', () => {
   it('date carries YYYY-MM-DD bounds', () => {
     expect(fields.date({ label: 'Date', min: '2020-01-01' }))
       .toEqual({ type: 'date', label: 'Date', min: '2020-01-01' });
   });
-  it('datetime and boolean are labeled leaves', () => {
-    expect(fields.datetime({ label: 'Publish at' })).toEqual({ type: 'datetime', label: 'Publish at' });
+  it('boolean is a labeled leaf', () => {
     expect(fields.boolean({ label: 'Draft' })).toEqual({ type: 'boolean', label: 'Draft' });
   });
 });

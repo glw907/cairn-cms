@@ -732,6 +732,69 @@
 
   Consumers must: nothing.
 
+- **`parseMarkdown` and `serializeMarkdown` run on `yaml`, and `gray-matter` and `js-yaml` leave the
+  engine.** The core schema keeps a date as the text it was written, so `date: 2024-03-15` reads as the
+  string `2024-03-15` and an unquoted timestamp keeps its offset instead of becoming a `Date`. No code
+  path produces a `Date` now, so a `Date` you pass by hand to `validate` or `'~standard'` reads as empty.
+  The block boundary is one rule for every reader: an empty block (`---` then `---`) and spaces after the
+  opening fence are accepted, a language tag after the fence (`---yaml`, `---js`) is no longer read as
+  frontmatter, and an unclosed block reads as no frontmatter where it used to read to the end of the
+  file. YAML 1.2 replaces the old dialect: `10:30` is the string `10:30` (it was 630), `0755` is 755 (it
+  was 493), `0o755` is 493 (it was a string), `1_000` is a string (it was 1000), `0b11` is a string
+  (it was 3), and a `<<` merge key no longer merges. A save writes single-quoted scalars (an unlimited
+  line width, so a scalar with no newline stays on one line; a string holding a newline writes as a
+  block scalar), so a bare date loses its quotes
+  and `references.ts` stops quoting a date-shaped id. A comparison over four sites' content found
+  no value that changed apart from dates read as text.
+
+  Consumers must: read a date value as text, in any key, not a `Date`, in your code
+  and in a migration script that calls `parseMarkdown`. Stop passing a `Date` to `validate` or
+  `'~standard'`; pass the `YYYY-MM-DD` string. Check a content file for a `---yaml` fence, an unclosed
+  block, or a `10:30`, `0755`, `0o755`, `1_000`, `0b11`, or `<<` value, and write what you mean. Expect a first admin save to
+  rewrite a hand-written block into the single-quoted form.
+
+- **A `date` field refuses a value with a time of day.** A text such as `2024-03-15 20:00:00 -08:00`
+  or `2024-03-15T20:00:00Z` fails with `has a time of day. Write the date alone: 2024-03-15`, naming the
+  day as written. Before, a negative offset late in the day validated as the next day with no warning.
+  An entry refused here leaves the manifest, so the admin's concept list stops showing it, with a
+  `content.entry_invalid` log record, and the build fails on it unless it is a draft. The edit route still
+  opens it by URL on the written day, and a save writes the date alone.
+
+  Consumers must: write the date alone in every `date` field, taking the day from the filename when it
+  carries one. Run the build once and fix each entry it names.
+
+- **A `boolean` field refuses a non-boolean, and `draft` is checked whether or not the concept declares
+  it.** `true` stores `true`. `false`, an empty value, and an absent key omit the value. Anything else,
+  such as `draft: "true"` or `draft: yes`, fails with `Draft must be true or false`. Before, the engine
+  read only the boolean `true` as a draft, so a mistyped marker published the entry. A concept that
+  declares no `draft` field runs the raw key through the same rule, and `draft` must be boolean whatever
+  kind the concept declares it as: a `fields.text` draft holding `"true"` is refused too. A directive's
+  boolean attribute is unaffected, since it is already a real boolean. Jekyll's `published: false` is
+  still not read.
+
+  Consumers must: fix each `draft` and each value of a declared `boolean` field that is not `true`,
+  `false`, or empty, such as `featured: "true"` or `pinned: yes`; the build names the file, and such an
+  entry leaves the manifest and the admin's concept list with a `content.entry_invalid` log record, as in
+  the entry above. Map any other draft marker to `draft: true`. If you call `validate` by hand, pass a
+  real boolean or an empty value: a raw form string such as `'on'` is now refused where it used to read
+  as unset.
+
+- **`creatable` widens a multiselect's set.** A `multiselect` with `creatable: true` keeps a value
+  outside `options` on save, and its inferred type is `string[]` instead of the union of `options`. Before,
+  the tag input invited a new value that the save then refused. A taxonomy under a vocabulary stays
+  closed.
+
+  Consumers must: drop any code that narrowed a creatable field's value to the `options` union.
+
+- **An entry's form renders length and date bounds as input attributes.** `text` and `textarea` carry
+  `minlength` and `maxlength` (`length` sets both, otherwise `min` and `max`), and `date` carries `min`
+  and `max`, so the browser refuses what the save would. `pattern` stays out, and the component form
+  is unchanged. The costs: `maxlength` truncates a paste with no message, the browser counts untrimmed
+  text where the save counts trimmed text, a stored over-long value trips nothing until it is edited,
+  and a stored date outside `min` or `max` is invalid at once.
+
+  Consumers must: nothing.
+
 ### Removed
 
 - **The rendered audit: `cairn-audit --rendered`, `cairn-audit norms`, and the `rendered` config
@@ -784,6 +847,15 @@
   and re-run `npx cairn-guidance install` so a site's copy of the skills drops the links to the
   removed pages.
 
+- **`fields.datetime`, `fields.email`, `DatetimeField`, and `EmailField`.** The two kinds leave the
+  builders, the field types, the validator, the entry and directive forms, and the three barrels. A
+  `datetime` field's `min` and `max` never bound anything, and the engine never validated a moment
+  beyond reading it as text.
+
+  Consumers must: replace `fields.email` with `fields.text` and a `pattern` for an address, and replace
+  `fields.datetime` with `fields.date` plus a text field for the moment. Declare a directive attribute
+  that was `email` or `datetime` as `text`.
+
 ### Fixed
 
 - **Spellcheck no longer dies silently on some page loads.** A large dictionary read could trap the
@@ -795,7 +867,7 @@
 - **A save or publish keeps every frontmatter key the fieldset does not declare.** A hand-written
   `draft: true` survives, so the entry stays hidden. A save reads the prior file once and fails closed
   with a 503 when that read or its parse fails. A bare YAML date such as `updated: 2026-01-01` is
-  written back as `2026-01-01T00:00:00.000Z`: the instant survives and the text changes. A malformed
+  written back as the text `2026-01-01`. A malformed
   file now throws on every parse, where it used to throw once per isolate and then read as empty.
 - **A publish onto an address a live entry holds is refused.** Single publish answers 409 and keeps
   the branch. Site-wide publish commits nothing, keeps every branch, and redirects with
@@ -939,7 +1011,7 @@
   (`^6.5.2`), `@codemirror/language` (`^6.13.1`), `@codemirror/view` (`^6.43.14`), `@lucide/svelte`
   (`^1.52.0`), `@rodrigodagostino/svelte-sortable-list` (`^2.2.6`), `heic-to` (`^1.6.5`, libheif
   1.23.5), `mdast-util-directive` (`^3.1.1`), `shiki` (`^4.5.0`), and the `@types/hast`,
-  `gray-matter`, `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
+  `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
   `package.json` takes `wrangler` `^4.148.0`, `@sveltejs/kit` `^3.0.1`, `svelte` `^5.57.2`, `vite`
   `^8.3.3`, and `@cloudflare/workers-types` `^5.20261007.1`. The Workers test project moves to
   `@cloudflare/vitest-plugin` (the renamed `@cloudflare/vitest-pool-workers`, which is deprecated),
@@ -948,6 +1020,10 @@
 
   Consumers must: nothing. A site that regenerates `worker-configuration.d.ts` with Wrangler 4.148
   gains ambient `*.txt`, `*.html`, `*.sql`, `*.bin`, and `*.wasm` module declarations.
+
+- `gray-matter` and `js-yaml` leave the engine's dependencies, and `yaml` reads and writes frontmatter.
+
+  Consumers must: nothing. See the `parseMarkdown` entry under Changed.
 
 ## 0.98.0
 

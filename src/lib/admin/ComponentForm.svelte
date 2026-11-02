@@ -135,12 +135,8 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         return 'number';
       case 'date':
         return 'date';
-      case 'datetime':
-        return 'datetime-local';
       case 'url':
         return 'url';
-      case 'email':
-        return 'email';
       default:
         return 'text';
     }
@@ -151,7 +147,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
    *  attribute below. The chain's final `{:else}` stays a runtime fallback (an icon attribute with
    *  no `icons` prop reaches it too, since that branch's extra `&& icons` guard narrows no type
    *  away), so the compiler cannot prove the chain exhaustive from the template alone; this
-   *  function lists every `FieldDescriptor` arm as its case so a sixteenth arm fails
+   *  function lists every `FieldDescriptor` arm as its case so a fourteenth arm fails
    *  `npm run check` here. multiselect, image, object, reference, and array never reach a real
    *  component attribute (`checkComponentAttributes` rejects them at `defineComponent`), but `def.attributes`
    *  is still typed over the full union, so this proof covers them too. Never called: the
@@ -167,9 +163,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       case 'textarea':
       case 'number':
       case 'url':
-      case 'email':
       case 'date':
-      case 'datetime':
       case 'multiselect':
       case 'image':
       case 'object':

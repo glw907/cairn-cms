@@ -234,20 +234,6 @@ describe('FieldInput arm dispatch (characterization: every FieldDescriptor arm)'
     expect(input?.value).toBe('https://example.com');
   });
 
-  it('renders an email input for an email field', async () => {
-    const field: NamedField = { type: 'email', name: 'contact', label: 'Contact' };
-    await render(FieldInput, { field, frontmatter: { contact: 'a@b.c' }, ...shared() });
-    const input = document.querySelector<HTMLInputElement>('input[name="contact"]');
-    expect(input?.type).toBe('email');
-  });
-
-  it('renders a datetime-local input for a datetime field', async () => {
-    const field: NamedField = { type: 'datetime', name: 'when', label: 'When' };
-    await render(FieldInput, { field, frontmatter: { when: '2026-06-26T14:30' }, ...shared() });
-    const input = document.querySelector<HTMLInputElement>('input[name="when"]');
-    expect(input?.type).toBe('datetime-local');
-  });
-
   it('renders a checkbox for a boolean field', async () => {
     const field: NamedField = { type: 'boolean', name: 'draft', label: 'Draft' };
     await render(FieldInput, { field, frontmatter: { draft: true }, ...shared() });
@@ -310,5 +296,69 @@ describe('FieldInput arm dispatch (characterization: every FieldDescriptor arm)'
     // Each row starts collapsed; expand it to reach the nested leaf input.
     document.querySelector<HTMLButtonElement>('[data-cairn-row-toggle]')?.click();
     await expect.poll(() => document.querySelector<HTMLInputElement>('input[name="aliases.0"]')?.value).toBe('x');
+  });
+});
+
+describe('FieldInput renders length and date bounds as input attributes', () => {
+  async function control(field: NamedField, selector: string, value = '') {
+    await render(FieldInput, { field, name: field.name, frontmatter: { [field.name]: value }, ...shared() });
+    return document.querySelector<HTMLElement>(selector)!;
+  }
+
+  it('sets maxlength from a text field max', async () => {
+    const el = await control({ type: 'text', name: 'a', label: 'A', max: 12 }, 'input[name="a"]');
+    expect(el.getAttribute('maxlength')).toBe('12');
+    expect(el.hasAttribute('minlength')).toBe(false);
+  });
+
+  it('sets both lengths from a text field length', async () => {
+    const el = await control({ type: 'text', name: 'b', label: 'B', length: 5 }, 'input[name="b"]');
+    expect(el.getAttribute('minlength')).toBe('5');
+    expect(el.getAttribute('maxlength')).toBe('5');
+  });
+
+  it('sets minlength from a textarea min', async () => {
+    const el = await control({ type: 'textarea', name: 'c', label: 'C', min: 3 }, 'textarea[name="c"]');
+    expect(el.getAttribute('minlength')).toBe('3');
+    expect(el.hasAttribute('maxlength')).toBe(false);
+  });
+
+  it('sets minlength from a text field min', async () => {
+    const el = await control({ type: 'text', name: 'f', label: 'F', min: 2 }, 'input[name="f"]');
+    expect(el.getAttribute('minlength')).toBe('2');
+    expect(el.hasAttribute('maxlength')).toBe(false);
+  });
+
+  it('sets maxlength from a textarea max', async () => {
+    const el = await control({ type: 'textarea', name: 'g', label: 'G', max: 9 }, 'textarea[name="g"]');
+    expect(el.getAttribute('maxlength')).toBe('9');
+    expect(el.hasAttribute('minlength')).toBe(false);
+  });
+
+  it('sets both lengths from a textarea length', async () => {
+    const el = await control({ type: 'textarea', name: 'h', label: 'H', length: 5 }, 'textarea[name="h"]');
+    expect(el.getAttribute('minlength')).toBe('5');
+    expect(el.getAttribute('maxlength')).toBe('5');
+  });
+
+  it('lets length win over min and max', async () => {
+    const t = await control({ type: 'textarea', name: 'i', label: 'I', length: 5, min: 2, max: 9 }, 'textarea[name="i"]');
+    expect(t.getAttribute('minlength')).toBe('5');
+    expect(t.getAttribute('maxlength')).toBe('5');
+    const i = await control({ type: 'text', name: 'j', label: 'J', length: 5, min: 2, max: 9 }, 'input[name="j"]');
+    expect(i.getAttribute('minlength')).toBe('5');
+    expect(i.getAttribute('maxlength')).toBe('5');
+  });
+
+  it('sets min and max on a date input', async () => {
+    const el = await control({ type: 'date', name: 'd', label: 'D', min: '2026-01-01', max: '2026-12-31' }, 'input[name="d"]');
+    expect(el.getAttribute('min')).toBe('2026-01-01');
+    expect(el.getAttribute('max')).toBe('2026-12-31');
+  });
+
+  it('carries no maxlength on a url field', async () => {
+    const el = await control({ type: 'url', name: 'e', label: 'E' }, 'input[name="e"]');
+    expect(el.hasAttribute('maxlength')).toBe(false);
+    expect(el.hasAttribute('minlength')).toBe(false);
   });
 });

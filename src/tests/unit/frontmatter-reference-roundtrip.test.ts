@@ -46,8 +46,8 @@ describe('reference round-trip, side A (form-authored)', () => {
 });
 
 describe('reference round-trip, side B (disk-authored, the real loss vectors)', () => {
-  it('a disk-authored unquoted date-shaped scalar id survives as its id string', () => {
-    const reloaded = parseMarkdown('---\nauthor: 2026-01-02\n---\nbody\n').frontmatter; // js-yaml parses to a Date
+  it('a disk-authored unquoted date-shaped scalar id reads as its id string', () => {
+    const reloaded = parseMarkdown('---\nauthor: 2026-01-02\n---\nbody\n').frontmatter; // the YAML core schema keeps it a string
     expect(formValues(fields, reloaded).author).toBe('2026-01-02');
   });
 
@@ -61,7 +61,7 @@ describe('reference round-trip, side B (disk-authored, the real loss vectors)', 
     expect(formValues(fields, reloaded).related).toEqual(['2026-01-02', 'b-post']);
   });
 
-  it('documents the js-yaml single-element-array guarantee', () => {
+  it('a single-element array stays an array through the YAML round trip', () => {
     const back = parseMarkdown(serializeMarkdown({ related: ['a-post'] }, 'b')).frontmatter;
     expect(Array.isArray(back.related)).toBe(true);
     expect(back.related).toEqual(['a-post']);

@@ -151,17 +151,13 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     if (multiselectFieldset) updateMultiselectValidity();
   });
 
-  // The HTML input type for a plain single-line text input arm (url, email, datetime, and the text
-  // fallback). datetime maps to the datetime-local control; everything else carries no type attribute
-  // so the browser defaults to a text input.
-  function inputType(fieldType: string): 'url' | 'email' | 'datetime-local' | undefined {
+  // The HTML input type for a plain single-line text input arm (url and the text fallback). url maps
+  // to the url control; everything else carries no type attribute so the browser defaults to a
+  // text input.
+  function inputType(fieldType: string): 'url' | undefined {
     switch (fieldType) {
       case 'url':
         return 'url';
-      case 'email':
-        return 'email';
-      case 'datetime':
-        return 'datetime-local';
       default:
         return undefined;
     }
@@ -177,7 +173,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
    *  chain's final `{:else}` stays a runtime fallback (an icon field with no `icons` prop reaches
    *  it too, since that branch's extra `&& icons` guard narrows no type away), so the compiler
    *  cannot prove the chain exhaustive from the template alone; this function lists every
-   *  `FieldDescriptor` arm as its case so a sixteenth arm fails `npm run check` here, before it
+   *  `FieldDescriptor` arm as its case so a fourteenth arm fails `npm run check` here, before it
    *  silently renders through the generic fallback. Never called: the compile-time check is its
    *  only purpose. Deliberately unused; keep it despite looking like dead code.
    */
@@ -196,8 +192,6 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
       case 'icon':
       case 'text':
       case 'url':
-      case 'email':
-      case 'datetime':
         return;
       default:
         kind satisfies never;
@@ -215,7 +209,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   {@const f = field as NamedField & TextareaField}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{f.label}</span>
-    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required}>{str(frontmatter[f.name])}</textarea>
+    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required} minlength={f.length ?? f.min} maxlength={f.length ?? f.max}>{str(frontmatter[f.name])}</textarea>
     {#if f.help}
       {@render fieldHint(hintBase, f.help)}
     {/if}
@@ -261,7 +255,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     <span class="type-body font-medium">{field.label}</span>
     <!-- A date field always carries a hint: the adapter's help when set, else the
          built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
-    <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${hintBase}-hint`} value={str(frontmatter[field.name])} required={field.required} />
+    <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${hintBase}-hint`} value={str(frontmatter[field.name])} required={field.required} min={field.min} max={field.max} />
     {@render fieldHint(hintBase, field.help || DATE_PUBLISH_HINT)}
   </label>
 {:else if field.type === 'boolean'}
@@ -369,11 +363,12 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     {/if}
   </div>
 {:else}
-  <!-- The plain single-line text input arm: url, email, datetime, and the text fallback. They share
-       one shape and differ only in the input type inputType() resolves. -->
+  <!-- The plain single-line text input arm: url, text, and an icon field with no icon set. They
+       differ in the input type, and only text carries length bounds. -->
+  {@const bounds = field.type === 'text' ? field : undefined}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{field.label}</span>
-    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
+    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} minlength={bounds?.length ?? bounds?.min} maxlength={bounds?.length ?? bounds?.max} />
     {#if field.help}
       {@render fieldHint(hintBase, field.help)}
     {/if}

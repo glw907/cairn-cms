@@ -170,4 +170,24 @@ describe('DeleteDialog', () => {
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toContain('2 entries');
   });
+
+  it('disables the confirm after submit so a double click sends one POST, and re-enables on reopen', async () => {
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [] });
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector('dialog')!;
+    const form = dialog.querySelector('form')!;
+    let posts = 0;
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      posts++;
+    });
+    const confirm = () => dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    confirm().click();
+    await expect.poll(() => confirm().disabled).toBe(true);
+    confirm().click();
+    expect(posts).toBe(1);
+    dialog.close();
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    expect(confirm().disabled).toBe(false);
+  });
 });

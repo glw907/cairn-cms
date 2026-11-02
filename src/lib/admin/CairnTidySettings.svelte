@@ -461,7 +461,7 @@ bespoke: a single-use control, not a repeated device.
 
       <!-- SECTION: STYLE CONVENTIONS (default off; on reveals an inline variant chooser) -->
       <section class="mb-6">
-        <div class="mb-3 flex items-end gap-3 px-0.5">
+        <div class="mb-3 flex flex-col gap-2 px-0.5 sm:flex-row sm:items-end sm:gap-3">
           <div class="min-w-0 flex-1">
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Style conventions
@@ -472,7 +472,7 @@ bespoke: a single-use control, not a repeated device.
             </h2>
             <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Optional. No style convention applies until you turn one on. Turn one on to choose how it should read everywhere.</p>
           </div>
-          <div class="flex flex-none items-center gap-1">
+          <div class="flex flex-wrap items-center gap-1 sm:flex-none">
             <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={styleAllOn}>Turn all on</button>
             <span class="type-meta text-muted opacity-40" aria-hidden="true">&middot;</span>
             <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={styleAllOff}>Turn all off</button>

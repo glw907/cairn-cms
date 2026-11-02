@@ -960,6 +960,13 @@
 
 ### Fixed
 
+- **A save keeps every collapsed repeatable row.** `RepeatableField` unmounted a collapsed row's
+  controls, so a save that never expanded the row dropped it from the entry. The body now stays
+  mounted and is hidden, so each row's values reach the form, and a required control in a collapsed
+  row opens its row on a failed validation instead of cancelling the save silently (#237).
+
+  Consumers must: nothing.
+
 - **A proofread cut off at the output cap fails honestly.** A `max_tokens` stop now answers 413 with
   the too-long message instead of returning a partial body as the corrected text, and logs
   `tidy.failed` with reason `truncated`. The check lives in the default client, so a site's own

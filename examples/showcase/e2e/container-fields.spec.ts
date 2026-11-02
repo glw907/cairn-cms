@@ -186,9 +186,12 @@ async function freshPost(page: import('@playwright/test').Page, title: string): 
   await fillTitleWhenHydrated(page, title);
   await page.locator('.cm-content').click();
   await page.keyboard.type('A body for the collapsed round-trip.');
-  await expect(page.locator('input[name="body"]')).toHaveValue('A body for the collapsed round-trip.', {
-    timeout: 2000,
-  });
+  await expect(page.locator('input[name="body"]')).toHaveValue(
+    'A body for the collapsed round-trip.',
+    {
+      timeout: 2000,
+    },
+  );
   return id;
 }
 

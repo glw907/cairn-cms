@@ -254,7 +254,7 @@ describe('RepeatableField keeps a collapsed row in the form', () => {
         ...shared(),
       });
       const wrapper = document.querySelector('[data-cairn-row-body]')!.parentElement as HTMLElement;
-      await expect.element(page.elementLocator(wrapper)).toBeHidden();
+      await expect.element(page.elementLocator(wrapper)).not.toBeVisible();
       document.querySelector<HTMLButtonElement>('[data-cairn-row-toggle]')!.click();
       await expect.element(page.elementLocator(wrapper)).toBeVisible();
     } finally {

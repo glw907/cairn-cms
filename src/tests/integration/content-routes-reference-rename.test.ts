@@ -25,8 +25,7 @@ function runtime(): CairnRuntime {
   const postSchema = defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
     author: fields.reference({ concept: 'pages', label: 'Author' }),
-    related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
-  });
+    related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Related post' }), label: 'Related' }) });
   const posts: ConceptDescriptor = {
     id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
     routing: { routable: true, dated: false, inFeeds: true },

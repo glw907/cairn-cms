@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import DeleteDialog from '../../lib/admin/DeleteDialog.svelte';
-import type { InboundLink } from '../../lib/content/manifest.js';
+import type { EntryRef } from '../../lib/content/manifest.js';
 
 async function open(props: {
   conceptId: string;
   id: string;
   singular: string;
-  inboundLinks: InboundLink[];
+  inboundLinks: EntryRef[];
   pending?: boolean;
   inboundKind?: 'link' | 'include';
 }) {

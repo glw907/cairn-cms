@@ -3,13 +3,14 @@ import { createGithubApp } from '../../lib/index.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { createLinkResolver, createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
+import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { verifyEntries } from '../../lib/content/manifest.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const adapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
-    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) } },
+    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
@@ -25,8 +26,8 @@ const files = {
 // A posts concept whose validate requires a non-empty title, so an empty-title file fails.
 const requiredTitleAdapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
-    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) } },
+    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
@@ -35,7 +36,7 @@ const requiredTitleAdapter = defineAdapter({
 
 describe('buildSiteManifest', () => {
   it('builds one entry per file across concepts with edges', () => {
-    const manifest = buildSiteManifest(adapter, files);
+    const { manifest } = buildSiteManifest(adapter, files);
     const keys = manifest.entries.map((e) => `${e.concept}/${e.id}`).sort();
     expect(keys).toEqual(['pages/about', 'posts/2026-01-04-guide']);
     const guide = manifest.entries.find((e) => e.id === '2026-01-04-guide');
@@ -43,15 +44,15 @@ describe('buildSiteManifest', () => {
     expect(guide?.links).toEqual([{ concept: 'pages', id: 'about' }]);
   });
 
-  it('carries a summary on each built entry', () => {
-    const manifest = buildSiteManifest(adapter, files);
+  it('carries an excerpt on each built entry', () => {
+    const { manifest } = buildSiteManifest(adapter, files);
     const about = manifest.entries.find((e) => e.id === 'about');
-    // No description, so the summary is the body excerpt.
-    expect(about?.summary).toBe('Hi.');
+    // No description, so the excerpt comes from the body.
+    expect(about?.excerpt).toBe('Hi.');
   });
 
   it('excludes a file whose frontmatter fails validation', () => {
-    const manifest = buildSiteManifest(requiredTitleAdapter, {
+    const { manifest } = buildSiteManifest(requiredTitleAdapter, {
       'src/content/posts/2026-01-01-good.md': '---\ntitle: Good\ndate: 2026-01-01\n---\nbody',
       'src/content/posts/2026-01-02-bad.md': '---\ntitle: ""\ndate: 2026-01-02\n---\nbody',
     });
@@ -75,8 +76,8 @@ describe('createLinkResolver', () => {
   it('treats a cairn: ref to a non-routable concept as a miss (the dangling-link backstop)', () => {
     const fragmentsAdapter = defineAdapter({
       content: {
-        pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
-        fragments: { dir: 'src/content/fragments', label: 'Fragments', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+        pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
+        fragments: { dir: 'src/content/fragments', label: 'Fragments', routing: 'embedded', fields: { title: fields.text({ label: 'Title' }) } },
       },
       backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
       email: { from: 'a@b.c' },
@@ -115,7 +116,7 @@ describe('buildSiteManifest undeclared frontmatter keys', () => {
 
   it('warns once per entry it skips as invalid, a draft included', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const manifest = buildSiteManifest(requiredTitleAdapter, {
+    const { manifest } = buildSiteManifest(requiredTitleAdapter, {
       '/src/content/posts/2026-01-04-live.md': '---\ntitle: Live\ndate: 2026-01-04\n---\n\nOK.\n',
       '/src/content/posts/2026-01-05-broken.md': '---\ntitle: ""\ndate: 2026-01-05\ndraft: true\n---\n\nNo title.\n',
       '/src/content/posts/2026-01-06-broken-too.md': '---\ntitle: ""\ndate: 2026-01-06\n---\n\nNo title.\n',
@@ -139,5 +140,127 @@ describe('buildSiteManifest undeclared frontmatter keys', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     buildSiteManifest(adapter, files);
     expect(undeclaredWarnings(warn)).toEqual([]);
+  });
+});
+
+describe('buildSiteManifest problems', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const post = (body: string, frontmatter = '') =>
+    `---\ntitle: T\ndate: 2026-01-04\n${frontmatter}---\n\n${body}\n`;
+  const target = { '/src/content/posts/one.md': post('Target.') };
+
+  /** The errors reported for a post holding `body`, with whether its row survived. */
+  function scan(body: string) {
+    const path = '/src/content/posts/2026-01-04-probe.md';
+    const { manifest, problems } = buildSiteManifest(adapter, { ...target, [path]: post(body) });
+    return {
+      errors: problems.find((p) => p.path === path)?.errors,
+      kept: manifest.entries.some((e) => e.id === '2026-01-04-probe'),
+    };
+  }
+
+  it('reports an invalid filename and keeps the row', () => {
+    const path = '/src/content/pages/My_Trip.md';
+    const { manifest, problems } = buildSiteManifest(adapter, { [path]: '---\ntitle: Trip\n---\n\nHi.\n' });
+    expect(problems).toEqual([
+      {
+        concept: 'pages',
+        id: 'My_Trip',
+        path,
+        draft: false,
+        errors: { filename: 'My_Trip.md is not a valid entry filename: use lowercase letters, digits, and single hyphens' },
+      },
+    ]);
+    expect(manifest.entries.map((e) => e.id)).toEqual(['My_Trip']);
+  });
+
+  it.each([
+    ['a reference definition', '[a][r]\n\n[r]: cairn:posts/one', 'cairn:posts/one'],
+    ['an html anchor', '<a href="cairn:posts/one">a</a>', 'cairn:posts/one'],
+    ['a malformed inline token', '[a](cairn:bad)', 'cairn:bad'],
+    ['a directive attribute', ':::cta{href="cairn:posts/one"}\nGo.\n:::', 'cairn:posts/one'],
+    ['an html image', '<img src="cairn:x">', 'cairn:x'],
+    ['a markdown image', '![a](cairn:posts/one)', 'cairn:posts/one'],
+    ['a single-quoted href', "<a href='cairn:posts/one'>a</a>", 'cairn:posts/one'],
+    ['a tag spanning two lines', '<a class="x"\n  href="cairn:posts/one">a</a>', 'cairn:posts/one'],
+  ])('reports %s and keeps the row', (_name, body, href) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(scan(body)).toEqual({ errors: { body: `cairn: link can't resolve: ${href}` }, kept: true });
+  });
+
+  it.each([
+    ['a good inline token', '[a](cairn:posts/one)'],
+    ['a token in a code fence', '```\n[a](cairn:bad)\n<a href="cairn:posts/one">\n```'],
+    ['a token in an html comment', '<!-- <a href="cairn:posts/old">gone</a> -->'],
+    ['a token between tags', '<pre><code>href="cairn:posts/one"</code></pre>'],
+  ])('reports nothing for %s', (_name, body) => {
+    expect(scan(body)).toEqual({ errors: undefined, kept: true });
+  });
+
+  it('flags a draft, which verifyEntries passes', () => {
+    const { problems } = buildSiteManifest(adapter, {
+      '/src/content/posts/2026-01-04-probe.md': post('[a](cairn:bad)', 'draft: true\n'),
+    });
+    expect(problems).toMatchObject([{ draft: true }]);
+    expect(() => verifyEntries(problems)).not.toThrow();
+  });
+
+  it('merges a validator failure into the problem and drops the row', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { manifest, problems } = buildSiteManifest(requiredTitleAdapter, {
+      '/src/content/posts/Bad_Name.md': '---\ntitle: ""\ndate: 2026-01-04\n---\n\n[a](cairn:bad)\n',
+    });
+    expect(manifest.entries).toEqual([]);
+    expect(problems).toHaveLength(1);
+    expect(Object.keys(problems[0].errors).sort()).toEqual(['body', 'filename', 'title']);
+  });
+
+  it('counts non-draft problems and lists one line per error', () => {
+    const problem = { concept: 'posts', path: 'p', draft: false, errors: { title: 'Required', body: 'Bad' } };
+    expect(() =>
+      verifyEntries([{ ...problem, id: 'a' }, { ...problem, id: 'b', errors: { title: 'Required' } }, { ...problem, id: 'c', draft: true }]),
+    ).toThrowError('cairn: 2 invalid entries:\nposts/a: title: Required\nposts/a: body: Bad\nposts/b: title: Required');
+  });
+});
+
+describe('buildSiteManifest directive check', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const registered = defineAdapter({
+    content: adapter.content,
+    backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+    email: { from: 'a@b.c' },
+    rendering: {
+      render: ({ body }) => Promise.resolve(body),
+      components: defineRegistry({
+        components: [defineComponent({ name: 'callout', label: 'Callout', description: 'd', build: (ctx) => ctx.node, slots: [{ name: 'item', label: 'Item', kind: 'markdown' }] })],
+      }),
+    },
+  });
+
+  /** The `content.directive_unknown` records written for a page holding `body`. */
+  function unknownDirectives(body: string): Record<string, unknown>[] {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    buildSiteManifest(registered, { '/src/content/pages/probe.md': `---\ntitle: P\n---\n\n${body}\n` });
+    return warn.mock.calls
+      .map((call) => call[0] as Record<string, unknown>)
+      .filter((record) => record.event === 'content.directive_unknown');
+  }
+
+  it('warns on a name nothing registers', () => {
+    expect(unknownDirectives(':::calout\nHi.\n:::')).toEqual([
+      expect.objectContaining({ level: 'warn', concept: 'pages', path: '/src/content/pages/probe.md', name: 'calout' }),
+    ]);
+  });
+
+  it.each([
+    ['a registered name', ':::callout\nHi.\n:::'],
+    ['a slot name', '::::callout\n:::item\nHi.\n:::\n::::'],
+    ['an include', '::include{fragment="x"}'],
+    ['a figure', ':::figure\n![a](media:x)\n:::'],
+    ['a text directive', 'A :word in prose.'],
+  ])('stays silent for %s', (_name, body) => {
+    expect(unknownDirectives(body)).toEqual([]);
   });
 });

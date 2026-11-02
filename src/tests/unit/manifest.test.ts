@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { manifestEntryFromFile, formatManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, manifestFragmentResolver, inboundLinks, inboundReferences, inboundIncludes, deriveTagUsage } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
@@ -33,7 +34,7 @@ describe('manifestEntryFromFile', () => {
       title: 'Waxing Guide',
       date: '2026-01-04',
       permalink: '/2026/01/waxing-guide',
-      summary: 'See about.',
+      excerpt: 'See about.',
       draft: false,
       links: [{ concept: 'pages', id: 'about' }],
     });
@@ -131,7 +132,7 @@ describe('manifestEntryFromFile', () => {
     // The serialized row of a tag-free entry carries no tags key.
     expect(formatManifest({ version: 1, entries: [noTax] })).not.toContain('tags');
   });
-  it('derives a summary from the description, else the body', () => {
+  it('derives an excerpt from the description, else the body', () => {
     // A non-dated descriptor, so the slug permalink resolves from the file stem alone.
     const pages: ConceptDescriptor = {
       id: 'pages',
@@ -150,13 +151,13 @@ describe('manifestEntryFromFile', () => {
       path: 'src/content/pages/a.md',
       raw: '---\ntitle: A\ndescription: A short blurb.\n---\nBody text here.',
     });
-    expect(withDesc.summary).toBe('A short blurb.');
+    expect(withDesc.excerpt).toBe('A short blurb.');
 
     const noDesc = manifestEntryFromFile(pages, {
       path: 'src/content/pages/b.md',
       raw: '---\ntitle: B\n---\nThe body becomes the excerpt when there is no description.',
     });
-    expect(noDesc.summary).toBe('The body becomes the excerpt when there is no description.');
+    expect(noDesc.excerpt).toBe('The body becomes the excerpt when there is no description.');
   });
 });
 
@@ -231,16 +232,17 @@ describe('formatManifest / parseManifest', () => {
     ] });
     expect(empty).not.toContain('includes');
   });
-  it('omits an empty summary (no churn) and round-trips a present one', () => {
+  it('omits an empty excerpt (no churn) and round-trips a present one', () => {
     const present = parseManifest(formatManifest({ version: 1, entries: [
-      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], summary: 'Blurb.' },
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], excerpt: 'Blurb.' },
     ] }));
-    expect(present.entries[0].summary).toBe('Blurb.');
+    expect(present.entries[0].excerpt).toBe('Blurb.');
 
     const emptyRaw = formatManifest({ version: 1, entries: [
-      { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], summary: '' },
+      { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], excerpt: '' },
     ] });
-    expect(emptyRaw).not.toContain('summary');
+    expect(emptyRaw).not.toContain('excerpt');
+    expect(formatManifest(present)).toContain('"excerpt": "Blurb."');
   });
 });
 
@@ -279,11 +281,11 @@ describe('parseManifest hardening', () => {
     expect(parsed.entries[0].date).toBe('2026-01-04');
     expect(parsed.entries[0].links).toEqual([{ concept: 'pages', id: 'home' }]);
   });
-  it('still accepts an older entry with no summary key', () => {
+  it('still accepts an older entry with no excerpt key', () => {
     const old = parseManifest(JSON.stringify({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] }));
-    expect(old.entries[0].summary).toBeUndefined();
+    expect(old.entries[0].excerpt).toBeUndefined();
   });
   it('leniently accepts an entry with no mediaRefs key (a manifest predating the field)', () => {
     const old = parseManifest(JSON.stringify({ version: 1, entries: [
@@ -389,9 +391,9 @@ describe('verifyManifest', () => {
     const stale = formatManifest({ version: 1, entries: [entryA] });
     expect(() => verifyManifest(built, stale)).toThrow(/Regenerate it \(npx cairn-manifest\)/);
   });
-  it('fails a committed manifest that lacks a now-built summary', () => {
+  it('fails a committed manifest that lacks a now-built excerpt', () => {
     const built = { version: 1 as const, entries: [
-      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], summary: 'Blurb.' },
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], excerpt: 'Blurb.' },
     ] };
     const staleCommitted = formatManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
@@ -707,6 +709,24 @@ describe('deriveTagUsage', () => {
 });
 
 describe('verifyReferences', () => {
+  const row = (id: string, links: { concept: string; id: string }[], draft = false) => ({
+    id,
+    concept: 'posts',
+    title: id,
+    permalink: `/${id}`,
+    draft,
+    links,
+  });
+
+  it('throws on a non-draft body link to a missing target, and passes a draft or a live target', () => {
+    const ghost = [{ concept: 'posts', id: 'ghost' }];
+    expect(() => verifyReferences({ version: 1, entries: [row('a', ghost)] })).toThrowError(
+      'content link is dangling: posts/a links to posts/ghost, which does not exist.',
+    );
+    expect(() => verifyReferences({ version: 1, entries: [row('a', ghost, true)] })).not.toThrow();
+    expect(() => verifyReferences({ version: 1, entries: [row('a', [{ concept: 'posts', id: 'b' }]), row('b', [])] })).not.toThrow();
+  });
+
   it('throws on a dangling edge, naming the source entry, the field, and the missing target', () => {
     const manifest = {
       version: 1 as const,
@@ -781,4 +801,17 @@ describe('verifyReferences', () => {
     expect(() => verifyReferences(buildManifest('posts'))).not.toThrow();
     expect(() => verifyReferences(buildManifest('pages'))).toThrow(/pages\/jane-doe/);
   });
+});
+
+describe('committed index.json files', () => {
+  // A key the rename missed or moved would not survive parse then format, and no install is needed.
+  it.each(['examples/showcase/src/content/.cairn/index.json', 'templates/waymark/src/content/.cairn/index.json'])(
+    '%s round-trips byte for byte',
+    (path) => {
+      const raw = readFileSync(path, 'utf8');
+      expect(raw).toContain('"excerpt"');
+      expect(raw).not.toContain('"summary"');
+      expect(formatManifest(parseManifest(raw))).toBe(raw);
+    },
+  );
 });

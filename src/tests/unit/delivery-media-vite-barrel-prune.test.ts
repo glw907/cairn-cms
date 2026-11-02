@@ -57,7 +57,7 @@ const DATA_KEPT = [
   'buildSiteManifest',
   'createLinkResolver',
   'resolveReferences',
-  'ResolvedReference',
+  'EntryRef',
 ];
 
 // The route-loader factory and its types, also on /delivery.

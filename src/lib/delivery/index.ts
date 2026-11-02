@@ -51,7 +51,6 @@ export type {
   SiteResolver,
   TypedSiteResolver,
   UntypedSiteResolver,
-  ResolvedReference,
 } from './site-resolver.js';
 export { buildSiteDescriptors } from './site-descriptors.js';
 export { buildExcerpt } from '../content/excerpt.js';
@@ -64,7 +63,7 @@ export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from './responses.js';
 export { buildSiteManifest } from './manifest.js';
-export type { Manifest, ManifestEntry } from '../content/manifest.js';
+export type { Manifest, ManifestEntry, EntryRef, SiteManifestBuild, ManifestProblem } from '../content/manifest.js';
 export { createPublicRoutes } from './public-routes.js';
 export type { PublicRoutesConfig, PublicRoutes, EntryData, EntryDataOverrides } from './public-routes.js';
 // `PublicRoutesConfig.render` names `SiteRender`, and its `resolveMedia` names `MediaResolve` and

@@ -3,7 +3,6 @@ import { createGithubApp } from '../../lib/index.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { defineConcept } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { SiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { ContentIndex } from '../../lib/delivery/content-index.js';
@@ -13,17 +12,26 @@ const adapter = defineAdapter({
     posts: defineConcept({
       dir: 'src/content/posts',
       routing: 'feed',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
-      }),
+      },
+    }),
+    notes: defineConcept({
+      dir: 'src/content/notes',
+      fields: {
+        title: fields.text({ label: 'Title', required: true }),
+        rank: fields.number({ label: 'Rank' }),
+        status: fields.select({ label: 'Status', options: ['open', 'closed'] }),
+      },
+      summaryFields: ['status'],
     }),
     pages: defineConcept({
       dir: 'src/content/pages',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         lede: fields.text({ label: 'Lede' }),
-      }),
+      },
     }),
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
@@ -46,6 +54,24 @@ describe('SiteResolver<A>', () => {
     const posts = site.concept('posts');
     expectTypeOf(posts.byId('2026-01-05-hello')!.frontmatter).toEqualTypeOf<{ title: string; date?: string }>();
     expect(posts.all().map((p) => p.id)).toEqual(['2026-01-05-hello']);
+  });
+
+  it('types a plain-record concept over a required text, an optional number, and a select union', () => {
+    const read = () => site.concept('notes').byId('a')!.frontmatter;
+    expectTypeOf(read).returns.toEqualTypeOf<{
+      title: string;
+      rank?: number;
+      status?: 'open' | 'closed';
+    }>();
+  });
+
+  it('refuses a summaryFields key no field declares', () => {
+    defineConcept({
+      dir: 'src/content/notes',
+      fields: { title: fields.text({ label: 'Title' }) },
+      // @ts-expect-error `lede` is not a key of this concept's fields.
+      summaryFields: ['lede'],
+    });
   });
 
   it('refuses an id the adapter does not declare', () => {

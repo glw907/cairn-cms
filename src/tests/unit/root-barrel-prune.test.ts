@@ -8,14 +8,17 @@ import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 // `ResolvedReference` reshape (its home becomes `/delivery` only) and `RoutingRule` (Task 5,
 // demoted alongside the routing-union change: `RoutingRule` is the internal normalization target
 // only, no longer an accepted `ConceptConfig.routing` value). Verbatim from
-// `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`, plus `StandardSchemaV1` (the
-// retires pass, batch 1a: unexported from this barrel; stays exported from
-// `content/standard-schema.ts`). The last five names are internals: `/internal` carries the
-// manifest helpers, `resolveCapability` stays a module-level export, and `parseManifest` left every
-// barrel.
+// `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`, plus `StandardSchemaV1` and
+// `StandardInput` (Standard Schema conformance is gone) and `defineFieldset` and `FieldsetConfig`
+// (a concept declares a plain field record). The last seven names are internals: `/internal` carries
+// the manifest helpers, `resolveCapability` stays a module-level export, `parseManifest` left every
+// barrel, and `ManifestProblem` lives on `/delivery`.
 const DEMOTED = [
   'resolveOwnerLevelRoles',
   'StandardSchemaV1',
+  'StandardInput',
+  'defineFieldset',
+  'FieldsetConfig',
   'initialValues',
   'normalizeConcepts',
   'findConcept',
@@ -68,11 +71,14 @@ const DEMOTED = [
   'ComponentValidation',
   'ComponentInsert',
   'ReferenceOptions',
-  'ResolvedReference',  'resolveCapability',
+  'ResolvedReference',
+  'resolveCapability',
   'formatManifest',
   'verifyManifest',
   'verifyReferences',
+  'verifyEntries',
   'parseManifest',
+  'ManifestProblem',
 ];
 
 // C2 breaking window (2026-08-02, R1): `ConceptUrlPolicy` demoted from the root barrel. The
@@ -127,7 +133,6 @@ const KEPT = [
   'defineRegistry',
   'defineComponent',
   'fields',
-  'defineFieldset',
   'createGithubApp',
   'parseSiteConfig',
   'renderGlyph',
@@ -156,11 +161,9 @@ const KEPT = [
   'CairnRuntime',
   'SiteRender',
   'ComposeInput',
-  'StandardInput',
   'FieldDescriptor',
   'Fieldset',
   'InferFieldset',
-  'FieldsetConfig',
   'CairnRef',
   'LinkResolve',
   'Manifest',

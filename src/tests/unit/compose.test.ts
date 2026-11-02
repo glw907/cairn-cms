@@ -8,12 +8,11 @@ import { devBackendHandle } from '../../../packages/cairn-cms-dev/src/handle.js'
 import type { CairnAdapter, PreviewConfig } from '../../lib/content/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import type { RolesDeclaration } from '../../lib/auth/roles.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { testSiteConfig } from './_content-fixture.js';
 
 function adapter(): CairnAdapter {
   return {
-    content: { pages: { dir: 'src/content/pages', routing: 'page', fields: defineFieldset({}) } },
+    content: { pages: { dir: 'src/content/pages', routing: 'page', fields: {} } },
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     email: { from: 'cms@test' },
     rendering: { render: ({ body }) => Promise.resolve(body) },

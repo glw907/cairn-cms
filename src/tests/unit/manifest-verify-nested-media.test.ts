@@ -4,8 +4,7 @@
 // the pre-field allowance only when no concept declares a nested image shape.
 import { describe, it, expect } from 'vitest';
 import { formatManifest, verifyManifest, type Manifest, type ManifestEntry } from '../../lib/content/manifest.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
-import { fields } from '../../lib/content/fields.js';
+import { fields, type FieldDescriptor } from '../../lib/content/fields.js';
 
 const entry = (id: string, over: Partial<ManifestEntry> = {}): ManifestEntry => ({
   id,
@@ -19,20 +18,19 @@ const entry = (id: string, over: Partial<ManifestEntry> = {}): ManifestEntry => 
 
 const manifest = (...entries: ManifestEntry[]): Manifest => ({ version: 1, entries });
 
-const adapterWith = (extra: Parameters<typeof defineFieldset>[0]) => ({
+const adapterWith = (extra: Record<string, FieldDescriptor>) => ({
   content: {
     posts: {
       dir: 'src/content/posts',
-      fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }), ...extra }),
+      fields: { title: fields.text({ label: 'Title', required: true }), ...extra },
     },
   },
 });
 
-const gallery = adapterWith({ gallery: fields.array(fields.image({ label: 'Image' })) });
+const gallery = adapterWith({ gallery: fields.array({ item: fields.image({ label: 'Image' }), label: 'Items' }) });
 const card = adapterWith({ card: fields.object({ label: 'Card', fields: { image: fields.image({ label: 'Image' }) } }) });
 const cards = adapterWith({
-  cards: fields.array(fields.object({ label: 'Card', fields: { image: fields.image({ label: 'Image' }) } }), { label: 'Cards' }),
-});
+  cards: fields.array({ item: fields.object({ label: 'Card', fields: { image: fields.image({ label: 'Image' }) } }), label: 'Cards' }) });
 const topLevelOnly = adapterWith({ hero: fields.image({ label: 'Hero' }) });
 
 const HERO = '00112233445566aa';

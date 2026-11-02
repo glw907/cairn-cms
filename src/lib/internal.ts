@@ -3,6 +3,6 @@
 // package export. A site never imports from here: the entry carries no semver promise and any name
 // may change in any release. It has no tier and no surface snapshot.
 export { buildSiteManifest } from './delivery/manifest.js';
-export { formatManifest, verifyManifest, verifyReferences } from './content/manifest.js';
+export { formatManifest, verifyEntries, verifyManifest, verifyReferences } from './content/manifest.js';
 export { parseMediaManifest } from './media/manifest.js';
 export { HASH_RE, R2_EXT_RE, r2Key } from './media/naming.js';

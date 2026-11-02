@@ -10,7 +10,7 @@ import type { Backend } from '../../lib/github/backend.js';
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
 /** Serialize a manifest fixture; entries default the fields listLoad does not read. */
-function manifestRaw(entries: Partial<{ id: string; concept: string; title: string; date: string; draft: boolean; summary: string }>[]): string {
+function manifestRaw(entries: Partial<{ id: string; concept: string; title: string; date: string; draft: boolean; excerpt: string }>[]): string {
   return JSON.stringify({
     version: 1,
     entries: entries.map((e) => ({ concept: 'posts', permalink: `/posts/${e.id}`, draft: false, links: [], ...e })),
@@ -165,8 +165,8 @@ describe('listLoad', () => {
     const gh = new GithubDouble({
       main: {
         [MANIFEST_PATH]: manifestRaw([
-          { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', summary: 'Indexed blurb.' },
-          { id: '2026-04-older', title: 'Older', date: '2026-04-01' }, // no summary in the manifest row
+          { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', excerpt: 'Indexed blurb.' },
+          { id: '2026-04-older', title: 'Older', date: '2026-04-01' }, // no excerpt in the manifest row
         ]),
       },
     });

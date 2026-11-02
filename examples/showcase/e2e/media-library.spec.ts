@@ -309,7 +309,7 @@ test('direct upload: the header Upload button opens the capture dialog, and the 
 
   // The upload commits and redirects to the uploaded flash; the new asset appears in the grid.
   await expect(page).toHaveURL(/\/admin\/media\?uploaded=1/);
-  await expect(page.locator('.alert-success')).toHaveText('Asset uploaded.');
+  await expect(page.locator('.alert-success')).toHaveText('Image uploaded.');
   const grid = page.getByRole('listbox', { name: 'Media library' });
   await expect(grid.getByText(displayName, { exact: true })).toBeVisible();
 

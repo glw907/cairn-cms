@@ -5,9 +5,9 @@
 //
 // The roots the walk starts from, by name: every exported function named `define*` or `create*`, plus
 // the extras in ROOT_EXTRAS. A new export matching the pattern joins the walk automatically. The
-// roots in the current `dist`, by subpath (22 pairs, 22 distinct exports):
+// roots in the current `dist`, by subpath (21 pairs, 21 distinct exports):
 //   .               createGithubApp, createRenderer, defineAccess, defineAdapter, defineComponent,
-//                   defineConcept, defineFieldset, defineRegistry, defineRoles
+//                   defineConcept, defineRegistry, defineRoles
 //   /delivery       createFragmentResolver, createLinkResolver, createPublicRoutes, createSiteResolver
 //   /log            createLogger
 //   /media          createMediaResolver
@@ -49,10 +49,10 @@ export const ROOT_EXTRAS = ['cairnManifest'];
  * A declaring type the walk excludes: data passed to a page, descriptors, registries, and engine
  * component props by suffix, plus the runtime objects and vendored protocol types a root's
  * parameters reach but a developer never writes (the composed runtime, the site resolver, the
- * resolved media config, a media manifest row, Standard Schema and its input shape).
+ * resolved media config, a media manifest row).
  */
 export const EXCLUDED_TYPE =
-  /(Data|Descriptor|Registry|Props)$|^(CairnRuntime|SiteResolver|UntypedSiteResolver|TypedSiteResolver|ResolvedMediaConfig|MediaEntry|StandardSchemaV1|StandardInput)$/;
+  /(Data|Descriptor|Registry|Props)$|^(CairnRuntime|SiteResolver|UntypedSiteResolver|TypedSiteResolver|ResolvedMediaConfig|MediaEntry)$/;
 
 const LEAF_FLAGS =
   ts.TypeFlags.Any |

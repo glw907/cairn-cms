@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter, ConceptDescriptor } from '../../lib/content/types.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
 import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
@@ -74,7 +73,7 @@ describe('composeRuntime URL policy', () => {
           routing: 'feed',
           permalink: '/:year/:slug',
           datePrefix: 'year',
-          fields: defineFieldset({ date: fields.date({ label: 'Date' }) }),
+          fields: { date: fields.date({ label: 'Date' }) },
         },
       },
     };
@@ -97,10 +96,11 @@ describe('composeRuntime URL policy', () => {
   it('derives the same concepts as the delivery path', () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
     const delivered = buildSiteDescriptors(testAdapter);
-    // `validate` is a fresh closure per normalize call (it binds the concept id as the
-    // field-behavior owner label), so the two paths agree in behavior under different function
-    // identities: compare the data structurally, then the validator by what it answers.
-    const structural = (cs: ConceptDescriptor[]) => cs.map((c) => ({ ...c, validate: null }));
+    // `validate` and the schema are fresh per normalize call (one binds the concept id as the
+    // field-behavior owner label, and the other is built there), so the two paths agree in behavior
+    // under different function identities: compare the data structurally, then the validator by
+    // what it answers.
+    const structural = (cs: ConceptDescriptor[]) => cs.map((c) => ({ ...c, validate: null, schema: c.schema.fields }));
     expect(structural(runtime.concepts)).toEqual(structural(delivered));
     expect(runtime.concepts.map((c) => c.validate({}, ''))).toEqual(delivered.map((c) => c.validate({}, '')));
   });

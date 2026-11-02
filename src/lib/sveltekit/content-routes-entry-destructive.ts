@@ -26,7 +26,7 @@ import {
   inboundLinks,
   inboundReferences,
   inboundIncludes,
-  type InboundLink,
+  type EntryRef,
 } from '../content/manifest.js';
 import { log } from '../log/index.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
@@ -44,14 +44,14 @@ import {
 } from './content-routes-shared.js';
 
 /**
- * The entries whose open `cairn/*` branch includes the fragment, in the {@link InboundLink} shape
+ * The entries whose open `cairn/*` branch includes the fragment, in the {@link EntryRef} shape
  *  (permalink empty: the edit is unpublished). Strict, so a branch read failure rejects and the
  *  caller fails closed; main rows are omitted because the manifest's includes already cover main.
  *  Publish-all runs no save guard, so a pending include stranded by a delete or rename would
  *  dangle at the build.
  */
-async function pendingIncluders(backend: Backend, concepts: ConceptDescriptor[], fragmentId: string): Promise<InboundLink[]> {
-  const index = await buildCrossBranchIndex<InboundLink>(
+async function pendingIncluders(backend: Backend, concepts: ConceptDescriptor[], fragmentId: string): Promise<EntryRef[]> {
+  const index = await buildCrossBranchIndex<EntryRef>(
     backend,
     concepts,
     [],
@@ -80,7 +80,7 @@ export interface DeleteFailure {
   /** The one-line human summary every content action failure carries. */
   error: string;
   /** The entries whose bodies link to (or include) the refused one, for the blockers list. */
-  inboundLinks: InboundLink[];
+  inboundLinks: EntryRef[];
   /**
    * Which gate refused, so the admin copy names the real blocker. Absent reads as `'link'`. A
    *  fragment can be blocked by either gate, and the links gate runs first, so the concept alone
@@ -152,7 +152,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
           id,
         } satisfies DeleteFailure);
       }
-      let pending: InboundLink[];
+      let pending: EntryRef[];
       try {
         pending = await pendingIncluders(backend, runtime.concepts, id);
       } catch {
@@ -189,9 +189,9 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     }
     const refRows = refIndex.get(`${concept.id}/${id}`) ?? [];
     if (refRows.length > 0) {
-      // Carry each referencing entry into the InboundLink shape the blockers list renders. A branch row
+      // Carry each referencing entry into the EntryRef shape the blockers list renders. A branch row
       // has no permalink (the edit is unpublished), so default it to empty.
-      const referencingEntries: InboundLink[] = refRows.map((row) => ({
+      const referencingEntries: EntryRef[] = refRows.map((row) => ({
         concept: row.concept,
         id: row.id,
         title: row.title,
@@ -231,7 +231,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       log.info('commit.succeeded', commitFields);
     } catch (err) {
       return ctx.commitFailure(commitFields, err, {
-        error: 'This file changed since you opened it. Reload and try again.',
+        error: 'This entry changed since you opened it. Reload and try again.',
         inboundLinks: [],
         id,
       } satisfies DeleteFailure);
@@ -350,7 +350,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     // merged into it (workerd throttles simultaneous outbound connections). Publish-all runs no
     // save guard, so renaming under a pending include would dangle it at the build.
     if (concept.id === FRAGMENTS_CONCEPT_ID) {
-      let pending: InboundLink[];
+      let pending: EntryRef[];
       try {
         pending = await pendingIncluders(backend, runtime.concepts, id);
       } catch {
@@ -479,7 +479,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       log.info('commit.succeeded', commitFields);
     } catch (err) {
       return ctx.commitFailure(commitFields, err, {
-        error: 'This file changed since you opened it. Reload and try again.',
+        error: 'This entry changed since you opened it. Reload and try again.',
       } satisfies RenameFailure);
     }
     // Keyed to the OLD id: renaming refuses above while a pending branch exists, so a live preview

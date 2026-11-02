@@ -7,7 +7,6 @@
 import {
   createRenderer,
   defineRegistry,
-  defineFieldset,
   fields,
   defineAdapter,
   defineConcept,
@@ -75,7 +74,7 @@ export const cairn = defineAdapter({
       singular: 'post',
       summaryFields: ['description'],
       routing: 'feed',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         // The post files carry a description the SEO head reads; declare it so it survives the
@@ -89,7 +88,8 @@ export const cairn = defineAdapter({
         author: fields.reference({ concept: 'pages', label: 'Author' }),
         // A many reference to other posts: array(reference) exercising the chip-list editor arm and
         // the multi-edge extractor, delivered as a list of resolved targets.
-        related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), {
+        related: fields.array({
+          item: fields.reference({ concept: 'posts', label: 'Related post' }),
           label: 'Related posts',
         }),
         // The taxonomy marker: one creatable multiselect per concept whose validated values surface on
@@ -106,19 +106,20 @@ export const cairn = defineAdapter({
         // A repeatable flat object: array(object) exercising the v2 container editor end to end. The
         // object carries no label (the array labels the group, itemLabel summarizes a row),
         // and the container e2e pins the add/reorder/remove and the save-and-reload round-trip.
-        faq: fields.array(
-          fields.object({
+        faq: fields.array({
+          item: fields.object({
             fields: {
               question: fields.text({ label: 'Question', required: true }),
               answer: fields.textarea({ label: 'Answer', required: true }),
             },
           }),
-          { label: 'FAQ', itemLabel: 'question' },
-        ),
+          label: 'FAQ',
+          itemLabel: 'question',
+        }),
         // A repeatable image: array(image) exercising the leaf-array editor arm, each row a hero-style
         // image field whose structured value round-trips through save and reload.
-        gallery: fields.array(fields.image({ label: 'Image' }), { label: 'Gallery' }),
-      }),
+        gallery: fields.array({ item: fields.image({ label: 'Image' }), label: 'Gallery' }),
+      },
     }),
     pages: defineConcept({
       dir: 'src/content/pages',
@@ -127,10 +128,10 @@ export const cairn = defineAdapter({
       // back to `label` and read "New Pages" instead (the same fallback `posts` names above).
       singular: 'page',
       routing: 'page',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
         robots: fields.text({ label: 'Robots' }),
-      }),
+      },
     }),
     // The Fragments concept (the reusable-content design): keyed right after pages, per the
     // documented convention, so the flat zero-config nav places it beside the other authored
@@ -143,9 +144,9 @@ export const cairn = defineAdapter({
       label: 'Fragments',
       singular: 'fragment',
       routing: 'embedded',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title', required: true }),
-      }),
+      },
     }),
   },
   // finalize.mjs matches this line character for character (TEMPLATE_GITHUB_APP_LITERAL)

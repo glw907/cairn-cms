@@ -4,21 +4,23 @@
 // the cairn-manifest bin and its unit tests import by relative path, unreachable
 // from the package's `@glw907/cairn-cms/vite` subpath. It owns a virtual module that runs
 // import.meta.glob over src/content inside the app's Vite graph, builds the manifest with
-// the engine builder, and verifies it against the committed file. The verify runs in the plugin's
-// buildStart hook, so a drift throws there and fails the build (or the dev server's start) as a hard
-// error, outside the prerender request lifecycle (where handleHttpError could downgrade it). Under
-// `vite build` it loads once per build through a nested Vite SSR server; under `vite dev` it loads
-// through the running dev server's SSR runner, because closing a nested server runs the site's
-// plugins' closeServer hooks, and adapter-cloudflare's disposes the platform proxy the running server
-// shares. Write mode produces the serialized manifest, which the cairn-manifest bin uses to
-// regenerate. See the design spec, locked decision 1.
+// the engine builder, and either verifies it against the committed file or regenerates that file.
+// Under `vite build` the verify runs in the plugin's buildStart hook, so a drift throws there and fails
+// the build as a hard error, outside the prerender request lifecycle (where handleHttpError could
+// downgrade it). It loads once per build through a nested Vite SSR server. Under `vite dev`, buildStart
+// regenerates a stale manifest instead and the server starts. That load goes through the running dev
+// server's SSR runner, because closing a nested server runs the site's plugins' closeServer hooks,
+// and adapter-cloudflare's disposes the platform proxy the running server shares. Write mode produces
+// the serialized manifest and its problems, which dev start and the cairn-manifest bin both apply.
 import type { DevEnvironment, Plugin, PluginOption, ViteDevServer } from 'vite';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { resolveViteRoot } from './resolve-root.js';
-import { parseManifest, formatManifest } from '../content/manifest.js';
+import { parseManifest, formatManifest, diffManifests } from '../content/manifest.js';
+import type { Manifest, ManifestProblem } from '../content/manifest.js';
+import { formatManifestSummary, type ManifestReport } from './assemble.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AiPosture } from '../content/types.js';
 
@@ -43,6 +45,10 @@ export interface CairnManifestOptions {
 const VIRTUAL_ID = 'virtual:cairn-manifest';
 const RESOLVED_ID = '\0' + VIRTUAL_ID;
 
+/** The virtual module the dev server loads to regenerate the manifest. */
+const WRITE_VIRTUAL_ID = 'virtual:cairn-manifest/write';
+const WRITE_RESOLVED_ID = '\0' + WRITE_VIRTUAL_ID;
+
 /** The virtual module the dev server loads to read the adapter facts the site-facts check compares. */
 const ADAPTER_FACTS_VIRTUAL_ID = 'virtual:cairn-manifest/adapter-facts';
 const ADAPTER_FACTS_RESOLVED_ID = '\0' + ADAPTER_FACTS_VIRTUAL_ID;
@@ -58,26 +64,27 @@ const SITE_FACTS_REL_PATH = DEFAULT_SITE_FACTS_PATH.replace(/^\//, '');
 
 /**
  * Build the virtual module source. In verify mode it throws on drift; in write mode it exports the
- *  serialized manifest as `result`. The module runs in the app graph, so its `import.meta.glob`,
- *  package, and `?raw` resolution is the build's.
+ *  serialized manifest and the build's problems, as JSON, as `result`. The module runs in the app
+ *  graph, so its `import.meta.glob`, package, and `?raw` resolution is the build's.
  */
 function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): string {
   // In write mode the committed file may not exist yet, so do not import it.
   const committedImport = mode === 'verify' ? `import committed from ${JSON.stringify(DEFAULT_MANIFEST_PATH + '?raw')};` : '';
-  // In verify mode, run verifyReferences after verifyManifest, inside the generated source where the
-  // built manifest is in scope. References have no prerender backstop, so this build gate is their only
-  // integrity authority; it cannot move to the verifyManifestFromVite TS call site, where `built` does
-  // not exist (it lives only in this evaluated string).
+  // In verify mode, run verifyEntries and verifyReferences ahead of verifyManifest, inside the generated
+  // source where the build is in scope, so a content fault reads as itself, not as a stale manifest
+  // that regenerating would only hide. References have no prerender backstop, so this build gate is
+  // their only integrity authority; neither check can move to the verifyManifestFromVite TS call site,
+  // where `built` and `problems` do not exist (they live only in this evaluated string).
   const resultExpr =
     mode === 'write'
-      ? 'formatManifest(built)'
-      : '(verifyManifest(built, committed, cairn), verifyReferences(built), "ok")';
+      ? 'JSON.stringify({ manifest: formatManifest(built), problems })'
+      : '(verifyEntries(problems), verifyReferences(built), verifyManifest(built, committed, cairn), "ok")';
   return `
-import { buildSiteManifest, formatManifest, verifyManifest, verifyReferences } from '@glw907/cairn-cms/internal';
+import { buildSiteManifest, formatManifest, verifyEntries, verifyManifest, verifyReferences } from '@glw907/cairn-cms/internal';
 import { cairn } from ${JSON.stringify(opts.configModule)};
 ${committedImport}
 const files = import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true });
-const built = buildSiteManifest(cairn, files);
+const { manifest: built, problems } = buildSiteManifest(cairn, files);
 export const result = ${resultExpr};
 `;
 }
@@ -201,26 +208,36 @@ export async function stripNestedServerPlugins(plugins: PluginOption): Promise<P
 }
 
 /**
- * Verify the committed manifest against the corpus from a Vite context, throwing on drift. The bin
- *  and the plugin share this. Given a running dev server, it loads the verify module the plugin
- *  serves there; otherwise it evaluates the module in a nested server.
+ * Verify the committed manifest against the corpus by evaluating the verify module in a nested
+ *  server, throwing on drift. Only a build verifies: a dev start regenerates instead.
  */
-export async function verifyManifestFromVite(
-  opts: CairnManifestOptions,
-  root: string,
-  server?: ViteDevServer,
-): Promise<void> {
-  const source = virtualSource(opts, 'verify');
-  if (server) await loadFromDevServer(server, VIRTUAL_ID, source, root);
-  else await evalVirtual(source, root);
+export async function verifyManifestFromVite(opts: CairnManifestOptions, root: string): Promise<void> {
+  await evalVirtual(virtualSource(opts, 'verify'), root);
+}
+
+/** A regenerated manifest, serialized and ready to write, with the problems its build met. */
+export interface BuiltManifest {
+  /** The canonical serialized manifest. */
+  manifest: string;
+  /** The entries the build found wrong, in build order. */
+  problems: ManifestProblem[];
 }
 
 /**
  * Regenerate the serialized manifest from the corpus in a Vite context, sharing the build's
- *  resolution. The cairn-manifest bin (a later task) will call this and write the result.
+ *  resolution. Given a running dev server, it loads the write module the plugin serves there;
+ *  otherwise it evaluates the module in a nested server.
  */
-export async function buildManifestFromVite(opts: CairnManifestOptions, root: string): Promise<string> {
-  return evalVirtual(virtualSource(opts, 'write'), root);
+export async function buildManifestFromVite(
+  opts: CairnManifestOptions,
+  root: string,
+  server?: ViteDevServer,
+): Promise<BuiltManifest> {
+  const source = virtualSource(opts, 'write');
+  const raw = server
+    ? await loadFromDevServer(server, WRITE_VIRTUAL_ID, source, root)
+    : await evalVirtual(source, root);
+  return JSON.parse(raw) as BuiltManifest;
 }
 
 /**
@@ -248,13 +265,16 @@ async function e2eFlagSet(mode: string): Promise<boolean> {
 }
 
 /**
- * The cairnManifest plugin. It serves the verify and adapter-facts virtual modules to the app graph
- *  and evaluates them in buildStart, so a manifest or site-facts drift fails the build, or the dev
- *  server's start.
+ * The cairnManifest plugin. It serves its virtual modules to the app graph and evaluates them in
+ *  buildStart, so a manifest or site-facts drift fails the build. Under `vite dev` it regenerates a
+ *  stale manifest once and the server starts; a stale `site-facts.json` still fails the dev start.
  * @remarks
- * The verify also runs `verifyReferences`, so a published `reference` field naming a missing entry
- * fails the build too. A missing `site-facts.json` only warns; a stale one fails the build the way
- * a drifted manifest does. Regenerate the manifest with the `cairn-manifest` bin.
+ * The build's verify also runs `verifyReferences`, so a published `reference` field naming a missing
+ * entry fails the build too. A missing `site-facts.json` only warns; a stale one fails the build the
+ * way a drifted manifest does. Regenerate the manifest with the `cairn-manifest` bin.
+ *
+ * A dev start that rewrites the manifest, or finds an invalid entry, warns one line beginning
+ * `cairn-manifest: regenerated`. It runs no verify and never rewrites on a hot update.
  *
  * Its `config` hook defines `__CAIRN_DEV_BUILD__`: `true` under `vite dev` and in a build with
  * `VITE_CAIRN_E2E=1` (read from the process env and the working directory's `.env` files), `false`
@@ -303,21 +323,22 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       devServer = server;
     },
     resolveId(id) {
-      if (id === VIRTUAL_ID) return RESOLVED_ID;
+      if (id === WRITE_VIRTUAL_ID) return WRITE_RESOLVED_ID;
       if (id === ADAPTER_FACTS_VIRTUAL_ID) return ADAPTER_FACTS_RESOLVED_ID;
     },
     load(id) {
-      if (id === RESOLVED_ID) return virtualSource(opts, 'verify');
+      if (id === WRITE_RESOLVED_ID) return virtualSource(opts, 'write');
       if (id === ADAPTER_FACTS_RESOLVED_ID) return adapterFactsSource(opts);
     },
     // Runs once per build environment and once per dev server start. A build verifies through a
-    // nested SSR server, once for all its environments; a dev server verifies through itself, once
+    // nested SSR server, once for all its environments; a dev server regenerates through itself, once
     // every configureServer hook (the adapter's platform proxy setup among them) has finished.
     async buildStart() {
       const checks = devServer
-        ? await runStartChecks(opts, root, devServer)
+        ? await runDevStartChecks(opts, root, devServer)
         : await (buildChecks ??= runStartChecks(opts, root));
       if ('manifestError' in checks) this.error(checks.manifestError);
+      if (checks.regenerated) this.warn(checks.regenerated);
       if (checks.siteFacts.status === 'absent') {
         this.warn(siteFactsAbsentWarning(SITE_FACTS_REL_PATH));
       } else if (checks.siteFacts.status === 'skipped') {
@@ -331,28 +352,47 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       buildChecks = undefined;
     },
   };
-  // Stash the options on the instance so the cairn-manifest bin's writeManifest can read the content
-  // globs, config module, and manifest path off the plugin in the consumer's loaded config, sharing
-  // exactly the options the build verifies with.
+  // Stash the options on the instance so the cairn-manifest bin's writeManifest can read the config
+  // module off the plugin in the consumer's loaded config, sharing exactly the options the build
+  // verifies with.
   plugin[CAIRN_OPTIONS] = opts;
   return plugin;
 }
 
-/** What the plugin's start checks found: the manifest's drift message, or the site-facts outcome. */
-type StartChecks = { manifestError: string } | { siteFacts: SiteFactsCheck };
+/**
+ * What the plugin's start checks found: the manifest's error message, or the site-facts outcome and,
+ *  under dev, the line to warn when the regeneration has something to say.
+ */
+type StartChecks = { manifestError: string } | { siteFacts: SiteFactsCheck; regenerated?: string };
 
 /**
- * Run the manifest verify and, when it passes, the site-facts check, through the dev server when one
- *  is given and a nested server otherwise. A drift is returned rather than thrown, so a memoized run
- *  reports to every buildStart that awaits it.
+ * Run the manifest verify and, when it passes, the site-facts check, through a nested server. A
+ *  drift is returned rather than thrown, so a memoized run reports to every buildStart that awaits it.
  */
-async function runStartChecks(opts: CairnManifestOptions, root: string, server?: ViteDevServer): Promise<StartChecks> {
+async function runStartChecks(opts: CairnManifestOptions, root: string): Promise<StartChecks> {
   try {
-    await verifyManifestFromVite(opts, root, server);
+    await verifyManifestFromVite(opts, root);
   } catch (err) {
     return { manifestError: err instanceof Error ? err.message : String(err) };
   }
-  return { siteFacts: await checkSiteFacts(opts, root, server) };
+  return { siteFacts: await checkSiteFacts(opts, root) };
+}
+
+/**
+ * Regenerate the manifest through the running dev server and, when that succeeds, check the site
+ *  facts. No verify runs: a dev start repairs a stale manifest rather than refusing it. The site-facts
+ *  check stays strict, since the regeneration covers only the manifest.
+ */
+async function runDevStartChecks(opts: CairnManifestOptions, root: string, server: ViteDevServer): Promise<StartChecks> {
+  let report: ManifestReport;
+  try {
+    report = await applyManifest(root, await buildManifestFromVite(opts, root, server));
+  } catch (err) {
+    return { manifestError: err instanceof Error ? err.message : String(err) };
+  }
+  const siteFacts = await checkSiteFacts(opts, root, server);
+  if (!report.written && report.problems.length === 0) return { siteFacts };
+  return { siteFacts, regenerated: `cairn-manifest: regenerated ${formatManifestSummary(report)}` };
 }
 
 /**
@@ -377,35 +417,69 @@ async function loadCairnBuild(cwd: string): Promise<{ opts: CairnManifestOptions
 }
 
 /**
- * Regenerate the committed manifest from the consumer's corpus and write it to the configured
- *  manifest path under the Vite root {@link loadCairnBuild} derives, evaluating the write-mode
- *  virtual module through the build's resolution. The cairn-manifest bin calls this; it is
- *  exported so the write logic is testable apart from the CLI shell.
+ * Regenerate the committed manifest from the consumer's corpus and apply it under the Vite root
+ *  {@link loadCairnBuild} derives, evaluating the write-mode virtual module through the build's
+ *  resolution. The cairn-manifest bin calls this; it is exported so the write logic is testable
+ *  apart from the CLI shell.
  */
-export async function writeManifest(cwd: string = process.cwd()): Promise<void> {
+export async function writeManifest(cwd: string = process.cwd()): Promise<ManifestReport> {
   const { opts, root } = await loadCairnBuild(cwd);
-  const serialized = await buildManifestFromVite(opts, root);
+  return applyManifest(root, await buildManifestFromVite(opts, root));
+}
+
+/** Bring the committed manifest up to date with a regenerated one, writing only when the bytes differ. */
+async function applyManifest(root: string, built: BuiltManifest): Promise<ManifestReport> {
   // The manifest path is app-root-absolute (a leading slash relative to the project), so resolve it
   // against the Vite root, not the filesystem root or the config-search cwd.
   const outPath = join(root, DEFAULT_MANIFEST_PATH.replace(/^\//, ''));
+  const committed = await readFile(outPath, 'utf8').catch(() => null);
   // The rebuild derives every row from a content file, and publishedAt is manifest-owned, so merge
   // the committed stamps back in before writing. Without this, regenerating would clear every one.
-  const committed = await readFile(outPath, 'utf8').catch(() => null);
-  await mkdir(dirname(outPath), { recursive: true });
-  await writeFile(outPath, carryPublishStamps(serialized, committed));
+  const next = carryPublishStamps(built.manifest, committed);
+  const written = next !== committed;
+  if (written) {
+    await mkdir(dirname(outPath), { recursive: true });
+    await writeFile(outPath, next);
+  }
+  const manifest = parseManifest(next);
+  return {
+    entries: manifest.entries.length,
+    changed: countChanged(manifest, committed),
+    written,
+    problems: built.problems,
+  };
+}
+
+/**
+ * Count the rows `next` adds, removes, or alters against the committed file's contents. A file that
+ *  is absent or will not parse counts every row of `next` as changed.
+ */
+function countChanged(next: Manifest, committedRaw: string | null): number {
+  let committed: Manifest;
+  try {
+    committed = parseManifest(committedRaw ?? '');
+  } catch {
+    return next.entries.length;
+  }
+  const { added, removed, changed } = diffManifests(next, committed);
+  return added.length + removed.length + changed.length;
 }
 
 /**
  * Regenerate the committed `site-facts.json` from the consumer's adapter and write it to the
- *  default site-facts path, sharing the manifest bin's config discovery and root derivation so
- *  the file always tracks the exact adapter the build verifies against.
+ *  default site-facts path when its bytes differ, sharing the manifest bin's config discovery and
+ *  root derivation so the file always tracks the exact adapter the build verifies against.
+ * @returns Whether the file's bytes changed.
  */
-export async function writeSiteFacts(cwd: string = process.cwd()): Promise<void> {
+export async function writeSiteFacts(cwd: string = process.cwd()): Promise<boolean> {
   const { opts, root } = await loadCairnBuild(cwd);
   const serialized = await buildSiteFactsFromVite(opts, root);
   const outPath = join(root, SITE_FACTS_REL_PATH);
+  const committed = await readFile(outPath, 'utf8').catch(() => null);
+  if (serialized === committed) return false;
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, serialized);
+  return true;
 }
 
 /**

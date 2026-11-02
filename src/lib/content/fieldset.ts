@@ -1,11 +1,9 @@
 // cairn-cms: the fieldset primitive (Contract v2), the one live field system. A key-to-descriptor
-// record becomes a schema carrying the descriptors as plain data, a server-derived validator, and the
-// Standard Schema conformance property. The validator coerces per type, drops an empty optional field,
-// and returns field-keyed errors or normalized data. The adapter contract, the editor form, the
+// record becomes a schema carrying the descriptors as plain data and a server-derived validator. The
+// validator coerces per type, drops an empty optional field, and returns field-keyed errors or normalized data. The adapter contract, the editor form, the
 // delivery inference, and the media extractor all read this.
 import type { FieldDescriptor, ImageValue } from './fields.js';
 import type { ValidationIssue, ValidationResult } from './types.js';
-import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
 import { isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 import { isValidId } from './ids.js';
@@ -35,7 +33,6 @@ export type BehaviorTable = Record<string, FieldBehavior>;
  * Options for `defineFieldset`. `refine` runs after the per-field coercion and constraints pass, for
  *  cross-field and body-dependent checks. It is validation-only: it returns field-keyed errors to
  *  merge, or nothing, and never transforms the data. Server-only, since it may carry closures.
- * @public
  */
 export interface FieldsetConfig {
   /**
@@ -49,8 +46,8 @@ export interface FieldsetConfig {
 }
 
 /**
- * A concept's fieldset: the plain-data descriptors, the co-bundled behavior table, the server-derived
- *  validator, and the Standard Schema conformance property.
+ * A concept's fieldset: the plain-data descriptors, the co-bundled behavior table, and the
+ *  server-derived validator.
  * @public
  */
 export interface Fieldset<R extends Record<string, FieldDescriptor> = Record<string, FieldDescriptor>> {
@@ -65,8 +62,6 @@ export interface Fieldset<R extends Record<string, FieldDescriptor> = Record<str
    *  `content.field_behavior_failed` cannot say which one threw without it. Never a value.
    */
   validate(frontmatter: Record<string, unknown>, body: string, owner?: string): ValidationResult;
-  /** Standard Schema v1 conformance, for ecosystem interop. A thin adapter over `validate`. */
-  readonly '~standard': StandardSchemaV1<StandardInput, Record<string, unknown>>['~standard'];
 }
 
 /**
@@ -116,10 +111,14 @@ type InferRecord<RR extends Record<string, FieldDescriptor>, R = RemoveIndex<RR>
 >;
 
 /**
- * Extract the inferred frontmatter type from a `Fieldset`.
+ * Extract the inferred frontmatter type from a `Fieldset` or a plain field record.
  * @public
  */
-export type InferFieldset<S> = S extends Fieldset<infer R> ? InferRecord<R> : never;
+export type InferFieldset<S> = S extends Fieldset<infer R>
+  ? InferRecord<R>
+  : S extends Record<string, FieldDescriptor>
+    ? InferRecord<S>
+    : never;
 
 // Coerce a raw value to the trimmed string the empty check and constraints run on. A parsed value may
 // arrive from parseMarkdown, not only a form string: a JS number on a number field. A finite 0 coerces to '0', never read as empty, since 0 is a real number a YAML scalar
@@ -428,9 +427,8 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
 }
 
 /**
- * Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors, a
- *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
- *  and the Standard Schema conformance property whose issues map each error to a single-segment path.
+ * Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors and a
+ *  server-derived validator that coerces per type and returns field-keyed errors or normalized data.
  * @remarks
  * The validator reads a parsed value as well as a form string (a numeric `number`, a lone scalar
  * on a `multiselect`), recurses one level into an `object` and an
@@ -442,7 +440,6 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
  * `reference` or an `seo` image sits inside a container, a field key contains a dot, more than one
  * top-level image sets `seo` or more than one multiselect sets `taxonomy`, or `config.behavior`
  * names an undeclared field.
- * @public
  */
 export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
@@ -512,18 +509,7 @@ export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
     }
     return { ok: true, data };
   };
-  const standard: StandardSchemaV1<StandardInput, Record<string, unknown>>['~standard'] = {
-    version: 1,
-    vendor: 'cairn',
-    validate: (value) => {
-      const { frontmatter = {}, body = '' } = (value ?? {}) as Partial<StandardInput>;
-      const result = validate(frontmatter ?? {}, body ?? '');
-      return result.ok
-        ? { value: result.data }
-        : { issues: result.issues ?? Object.entries(result.errors).map(([key, message]) => ({ message, path: [key] })) };
-    },
-  };
-  return { fields: record, behavior: config.behavior ?? {}, validate, '~standard': standard };
+  return { fields: record, behavior: config.behavior ?? {}, validate };
 }
 
 /**
@@ -537,7 +523,7 @@ export function initialValues(fieldset: Fieldset, now?: Date): Record<string, un
   const values: Record<string, unknown> = {};
   for (const [key, field] of Object.entries(fieldset.fields)) {
     const value = field.default;
-    if (value === undefined || value === '' || value === false) continue;
+    if (value === undefined || value === '' || value === false || (Array.isArray(value) && value.length === 0)) continue;
     if (field.type === 'date' && value === 'today') {
       if (now) values[key] = now.toISOString().slice(0, 10);
       continue;

@@ -105,13 +105,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // media refusal now answers in place through `form`, so there is no redirected conflict error
   // to carry here.
   const FLASH_MESSAGE = {
-    deleted: 'Asset deleted.',
+    deleted: 'Image deleted.',
     updated: 'Changes saved.',
-    replaced: 'Asset replaced.',
+    replaced: 'Image replaced.',
     altPropagated: 'Alt text applied.',
-    bulkDeleted: 'Assets deleted.',
-    orphansPurged: 'Orphans purged.',
-    uploaded: 'Asset uploaded.',
+    bulkDeleted: 'Images deleted.',
+    orphansPurged: 'Orphaned files removed.',
+    uploaded: 'Image uploaded.',
   } as const;
   const flashMessage = $derived(data.flash ? FLASH_MESSAGE[data.flash] : '');
 
@@ -765,13 +765,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               />
             </span>
             <div class="relative flex aspect-[4/3] items-center justify-center bg-base-200/60">
-              <!-- The usage marker, top-right: a used count, or the warning-ink "Not referenced"
+              <!-- The usage marker, top-right: a used count, or the warning-ink "No references"
                    chip. The category reads "No references found" (renamed from "Unused"): a found
                    reference is not proof of use, and absence of one is not proof of disuse. -->
               {#if used > 0}
                 <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-selector border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold text-muted">used {used}</span>
               {:else}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-selector border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold cairn-text-warning">Not referenced</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-selector border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold cairn-text-warning">No references</span>
               {/if}
               {#if brokenHashes.has(asset.hash)}
                 <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">
@@ -827,7 +827,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                2026-07-15, propagated from ConceptList), and the first column insets to the card's
                corner radius. -->
           <th class="w-10 pl-6"><span class="sr-only">Select</span></th>
-          <th class={headerLabel}>Asset</th>
+          <th class={headerLabel}>Image</th>
           <th class="{headerLabel} w-32">Alt status</th>
           <th class="{headerLabel} w-40">Used</th>
           <th class="w-24 text-right" aria-sort={addedSort}>
@@ -975,7 +975,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     class="fixed inset-x-0 bottom-0 z-30 flex max-h-[85vh] flex-col rounded-t-box border-t border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)] sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-16 sm:max-h-none sm:w-[22rem] sm:rounded-t-none sm:border-l sm:border-t-0"
   >
     <div class="flex items-center justify-between border-b border-[var(--cairn-card-border)] px-4 py-3.5">
-      <h2 class="type-label font-semibold uppercase tracking-[0.08em] text-muted">Asset</h2>
+      <h2 class="type-label font-semibold uppercase tracking-[0.08em] text-muted">Image</h2>
       <button bind:this={closeButton} type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close details" onclick={closePanel}>
         <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
       </button>

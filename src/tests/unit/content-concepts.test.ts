@@ -1,11 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { normalizeConcepts, findConcept, RESERVED_VIEW_IDS } from '../../lib/content/concepts.js';
+import { defineConcept, normalizeConcepts, findConcept, RESERVED_VIEW_IDS } from '../../lib/content/concepts.js';
 import { parseAdminPath } from '../../lib/sveltekit/admin-dispatch.js';
 import { composeRuntime } from '../../lib/content/compose.js';
 import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 import type { ConceptConfig } from '../../lib/content/types.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import { log } from '../../lib/log/index.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
 
@@ -58,7 +57,7 @@ describe('normalizeConcepts', () => {
 
   it('carries the source fieldset through onto the descriptor', () => {
     const [posts] = normalizeConcepts(testAdapter.content);
-    expect(posts.schema).toBe(testAdapter.content.posts?.fields);
+    expect(posts.schema.fields).toBe(testAdapter.content.posts?.fields);
   });
 
   // Seam 1 contract: a third concept attaches by adding one key under `content` and declaring its own
@@ -67,7 +66,7 @@ describe('normalizeConcepts', () => {
     const fragments: ConceptConfig = {
       dir: 'src/content/fragments',
       routing: 'embedded',
-      fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: { title: fields.text({ label: 'Title' }) },
     };
     const descriptors = normalizeConcepts({ ...testAdapter.content, fragments });
 
@@ -89,7 +88,7 @@ describe('normalizeConcepts', () => {
       normalizeConcepts({
         fragments: {
           dir: 'src/content/fragments',
-          fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+          fields: { title: fields.text({ label: 'Title' }) },
           ...extra,
         },
       }),
@@ -106,13 +105,13 @@ describe('normalizeConcepts', () => {
       dir: 'src/content/fragments',
       // @ts-expect-error routing accepts only the 'feed' | 'page' | 'embedded' shorthand now
       routing: { routable: false, dated: false, inFeeds: false },
-      fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: { title: fields.text({ label: 'Title' }) },
     };
     expect(objectRouting.dir).toBe('src/content/fragments');
   });
 });
 
-const cfg = { dir: 'd', fields: defineFieldset({}) };
+const cfg = { dir: 'd', fields: {} };
 
 describe('normalizeConcepts URL policy', () => {
   it('defaults permalink and datePrefix when the concept declares no policy', () => {
@@ -131,7 +130,7 @@ describe('normalizeConcepts URL policy', () => {
         routing: 'feed',
         permalink: '/:year/:month/:slug',
         datePrefix: 'month',
-        fields: defineFieldset({ date: fields.date({ label: 'Date' }) }),
+        fields: { date: fields.date({ label: 'Date' }) },
       },
     });
     expect(posts.permalink).toBe('/:year/:month/:slug');
@@ -146,7 +145,7 @@ describe('normalizeConcepts URL policy', () => {
           routing: 'feed',
           permalink: '/:year/:month/:slug',
           datePrefix: 'month',
-          fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+          fields: { title: fields.text({ label: 'Title' }) },
         },
       }),
     ).toThrow(
@@ -162,7 +161,7 @@ describe('normalizeConcepts URL policy', () => {
           routing: 'feed',
           permalink: '/:year/:month/:slug',
           datePrefix: 'month',
-          fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.text({ label: 'Date' }) }),
+          fields: { title: fields.text({ label: 'Title' }), date: fields.text({ label: 'Date' }) },
         },
       }),
     ).toThrow(
@@ -177,7 +176,7 @@ describe('normalizeConcepts URL policy', () => {
         routing: 'feed',
         permalink: '/:year/:month/:slug',
         datePrefix: 'month',
-        fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
+        fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) },
       },
     });
     const dateField = posts.fields.find((f) => f.name === 'date');
@@ -191,7 +190,7 @@ describe('normalizeConcepts URL policy', () => {
       posts: {
         dir: 'p',
         routing: 'feed', // dated, default permalink /posts/:slug carries no date token
-        fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
+        fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) },
       },
     });
     const dateField = posts.fields.find((f) => f.name === 'date');
@@ -211,18 +210,18 @@ describe('normalizeConcepts URL policy', () => {
     const [withFields] = normalizeConcepts({
       posts: {
         dir: 'p',
-        fields: defineFieldset({
+        fields: {
           title: fields.text({ label: 'Title' }),
           description: fields.textarea({ label: 'Description' }),
           heroImage: fields.text({ label: 'Hero image' }),
-        }),
+        },
         summaryFields: ['description', 'heroImage'],
       },
     });
     expect(withFields.summaryFields).toEqual(['description', 'heroImage']);
 
     const [withoutFields] = normalizeConcepts({
-      pages: { dir: 'g', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+      pages: { dir: 'g', fields: { title: fields.text({ label: 'Title' }) } },
     });
     expect(withoutFields.summaryFields).toEqual([]);
   });
@@ -232,7 +231,7 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
+          fields: { title: fields.text({ label: 'Title' }) },
           summaryFields: ['description'],
         },
       }),
@@ -243,10 +242,10 @@ describe('normalizeConcepts URL policy', () => {
     const [descriptor] = normalizeConcepts({
       posts: {
         dir: 'p',
-        fields: defineFieldset({
+        fields: {
           title: fields.text({ label: 'Title' }),
           description: fields.textarea({ label: 'Description' }),
-        }),
+        },
         summaryFields: ['description'],
       },
     });
@@ -258,10 +257,10 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          fields: defineFieldset({
+          fields: {
             title: fields.text({ label: 'Title' }),
             author: fields.reference({ concept: 'nope', label: 'Author' }),
-          }),
+          },
         },
       }),
     ).toThrow('cairn: concept "posts" reference field "author" names concept "nope", which is not declared under content');
@@ -272,10 +271,10 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          fields: defineFieldset({
+          fields: {
             title: fields.text({ label: 'Title' }),
-            related: fields.array(fields.reference({ concept: 'nope', label: 'Post' }), { label: 'Related' }),
-          }),
+            related: fields.array({ item: fields.reference({ concept: 'nope', label: 'Post' }), label: 'Related' }),
+          },
         },
       }),
     ).toThrow('cairn: concept "posts" reference field "related" names concept "nope", which is not declared under content');
@@ -286,14 +285,22 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          fields: defineFieldset({
+          fields: {
             title: fields.text({ label: 'Title' }),
             author: fields.reference({ concept: 'pages', label: 'Author' }),
-          }),
+          },
         },
-        pages: { dir: 'g', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+        pages: { dir: 'g', fields: { title: fields.text({ label: 'Title' }) } },
       }),
     ).not.toThrow();
+  });
+});
+
+describe('a concept dir', () => {
+  it.each(['/src/content/posts', 'src/content/posts/'])('refuses %s', (dir) => {
+    const message = `cairn: concept "posts" dir "${dir}" must have no leading or trailing slash`;
+    expect(() => defineConcept({ dir, label: 'posts', fields: {} })).toThrowError(message);
+    expect(() => normalizeConcepts({ posts: { dir, fields: {} } })).toThrowError(message);
   });
 });
 
@@ -310,18 +317,14 @@ describe("a concept's validate names itself as the field-behavior owner", () => 
     const [posts] = normalizeConcepts({
       posts: {
         dir: 'p',
-        fields: defineFieldset(
-          { summary: fields.text({ label: 'Summary' }) },
-          {
-            behavior: {
-              summary: {
-                validate: () => {
-                  throw new Error('boom');
-                },
-              },
+        fields: { summary: fields.text({ label: 'Summary' }) },
+        behavior: {
+          summary: {
+            validate: () => {
+              throw new Error('boom');
             },
           },
-        ),
+        },
       },
     });
     const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
@@ -335,6 +338,54 @@ describe("a concept's validate names itself as the field-behavior owner", () => 
     } finally {
       warn.mockRestore();
     }
+  });
+});
+
+describe('a plain field record', () => {
+  it('throws at defineConcept on a malformed pattern', () => {
+    expect(() =>
+      defineConcept({ dir: 'p', fields: { code: fields.text({ label: 'Code', pattern: '(' }) } }),
+    ).toThrow(/pattern/i);
+  });
+
+  it('throws at defineConcept on two seo images', () => {
+    expect(() =>
+      defineConcept({
+        dir: 'p',
+        fields: {
+          hero: fields.image({ label: 'Hero', seo: true }),
+          card: fields.image({ label: 'Card', seo: true }),
+        },
+      }),
+    ).toThrow(/at most one SEO image/);
+  });
+
+  it('throws at defineConcept on a behavior key no field declares', () => {
+    expect(() =>
+      defineConcept({
+        dir: 'p',
+        fields: { title: fields.text({ label: 'Title' }) },
+        behavior: { nope: { validate: () => null } },
+      }),
+    ).toThrow(/not a declared field/);
+  });
+
+  it('enforces required for a concept that skipped defineConcept', () => {
+    const [posts] = normalizeConcepts({
+      posts: { dir: 'p', fields: { title: fields.text({ label: 'Title', required: true }) } },
+    });
+    expect(posts.validate({}, '')).toMatchObject({ ok: false, errors: { title: 'Title is required' } });
+  });
+
+  it("carries a concept's refine error to descriptor.validate", () => {
+    const [posts] = normalizeConcepts({
+      posts: {
+        dir: 'p',
+        fields: { title: fields.text({ label: 'Title' }) },
+        refine: () => ({ title: 'Refused.' }),
+      },
+    });
+    expect(posts.validate({ title: 'Hi' }, '')).toMatchObject({ ok: false, errors: { title: 'Refused.' } });
   });
 });
 

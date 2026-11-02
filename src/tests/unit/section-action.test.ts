@@ -322,6 +322,43 @@ describe('createSectionAction: role not admitted', () => {
   });
 });
 
+describe('createSectionAction: the local 403 names the fix', () => {
+  const backend = {} as NonNullable<CairnEvent['locals']['cairnBackend']>;
+  const withBackend = (e: CairnEvent): CairnEvent => ({ ...e, locals: { ...e.locals, cairnBackend: backend } });
+  const unmatchedAccess: AccessMap = { '/admin/other': ['editor'] };
+  const roleGatedAccess: AccessMap = { [mappedTarget]: ['owner'] };
+  const generic = { error: 'You do not have access to this action.' };
+  const named = { error: `No access rule for ${mappedTarget}. Add it to the adapter's access map.` };
+
+  it('is generic without cairnBackend, even for a missing rule', async () => {
+    const { action } = approveAction();
+    expect(refusal(await action(readyEvent({ cairnAccess: unmatchedAccess }))).data).toEqual(generic);
+  });
+
+  it('names the missing rule under cairnBackend, ahead of a custom deniedMessage', async () => {
+    const { action } = approveAction();
+    expect(refusal(await action(withBackend(readyEvent({ cairnAccess: unmatchedAccess })))).data).toEqual(named);
+    const custom = approveAction(boundDb, { deniedMessage: 'Not for you.' });
+    expect(refusal(await custom.action(withBackend(readyEvent({ cairnAccess: unmatchedAccess })))).data).toEqual(named);
+  });
+
+  it('keeps the generic text and the custom message for a role refusal under cairnBackend', async () => {
+    const { action } = approveAction();
+    expect(refusal(await action(withBackend(readyEvent({ cairnAccess: roleGatedAccess })))).data).toEqual(generic);
+    const custom = approveAction(boundDb, { deniedMessage: 'Not for you.' });
+    expect(refusal(await custom.action(withBackend(readyEvent({ cairnAccess: roleGatedAccess })))).data).toEqual({
+      error: 'Not for you.',
+    });
+  });
+
+  it('keeps the generic text for a shadowed rule under cairnBackend', async () => {
+    const { action } = approveAction();
+    const shadowed: AccessMap = { '/admin/team': ['editor'], '/admin/team/deeper': ['editor'] };
+    const e = withBackend(readyEvent({ cairnAccess: shadowed, pathname: '/admin/team/x', routeId: '/admin/team/[x]' }));
+    expect(refusal(await action(e)).data).toEqual(generic);
+  });
+});
+
 describe('createSectionAction: rate limit catch rethrows control-flow shapes', () => {
   it('propagates a redirect() thrown from rateLimit.key, rather than degrading to open', async () => {
     const limiter: RateLimitLike = { limit: async () => ({ success: true }) };

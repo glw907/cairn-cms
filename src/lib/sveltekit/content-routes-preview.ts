@@ -58,13 +58,13 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
     const conceptId = event.params.concept ?? '';
     const id = event.params.id ?? '';
 
-    // mintPreview runs its authorization sequence first (requireEditor, then
-    // requireEngineAccess against the target concept), so a refused editor's outcome reaches them
-    // before requireOrigin's site-misconfiguration throw ever runs. requireOrigin only guards the
-    // URL this action addresses on success, so it waits until a mint actually succeeds. The trade:
-    // a site with no PUBLIC_ORIGIN configured still lets mintPreview write the preview-token row
-    // before requireOrigin throws, so that row sits unreachable (no URL was ever returned to share
-    // it) until its TTL expires it, rather than the misconfiguration being caught up front.
+    // requireOrigin runs before mintPreview, so a site with no PUBLIC_ORIGIN writes no
+    // preview-token row: the row would sit unreachable (no URL could be returned to share it)
+    // until its TTL expired it. The cost: a refused editor on a misconfigured site now sees the
+    // misconfiguration instead of the access refusal, since the origin check precedes mintPreview's
+    // authorization.
+    const origin = requireOrigin(env);
+
     let result: PreviewMintOutcome;
     try {
       result = await mintPreview(ctx.runtime, ctx.deps.preview ?? {}, event, { concept: conceptId, entryId: id });
@@ -85,8 +85,6 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
           error: 'This entry has no unpublished draft to share. Save an edit first.',
         } satisfies PreviewMintFailure);
     }
-
-    const origin = requireOrigin(env);
 
     // The response body carries the bearer credential (the token, inside the URL); never let a
     // shared cache or intermediary retain it.

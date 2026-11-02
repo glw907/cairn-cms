@@ -2,6 +2,20 @@
 
 ### Added
 
+- **A refused entry delete or rename leaves a log record.** `entry.delete_refused` and
+  `entry.rename_refused` carry `editor`, `concept`, `id`, `reason`, and `count` where the site counts
+  something; `entry.reference_check_failed` marks a fail-closed read fault with `action` and `error`. The
+  `log-events` table lists every `reason`.
+
+  Consumers must: nothing.
+
+- **A local 403 for a missing access rule names the fix.** Under the dev backend, `requireAccess` and
+  `createSectionAction` answer `No access rule for <target>. Add it to the adapter's access map.` ahead of
+  a custom `deniedMessage`; a deployed site's refusal stays generic and its log record is unchanged. The
+  showcase and scaffold `+error.svelte` show that text on a 403.
+
+  Consumers must: nothing.
+
 - **A `Consumers must:` line has one grammar, and a gate holds new lines to it.** The line sits alone
   on one physical line, at column 0 or two spaces, and reads `Consumers must: nothing.` or
   `Consumers must: <action>.` with no bold, no backticks, and no hedge. `npm run check:consumers-must`
@@ -137,6 +151,13 @@
   unmigrated `AUTH_DB`, say.
 
 ### Changed
+
+- **`mintPreview` and `revokePreview` check access before they look up the concept.** A role the access
+  map denies a key gets the 403 whether or not the key names a concept; an unmapped nonexistent id still
+  answers `unknown-concept`. The mint action reads `PUBLIC_ORIGIN` before it mints, so a site without one
+  writes no `preview_tokens` row, and a refused editor on that site sees the misconfiguration.
+
+  Consumers must: nothing.
 
 - **`EditData` carries one `flash` field, and `ContentFormFailure.error` is required.** Each success
   redirect sets exactly one flash, so `flash` (`'saved' | 'renamed' | 'published' | 'discarded' | null`)

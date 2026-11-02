@@ -32,7 +32,7 @@ Two traps follow from this table:
 - **`requireAccess` is fail-closed.** With no rule for the route, or no `access` member at all,
   it refuses every session with a 403, the owner included. The sidebar is the opposite: an entry
   whose `href` matches no rule stays visible to every session. A link can show while its route
-  refuses.
+  refuses. Under the dev backend the 403 for a missing rule reads `No access rule for <target>. Add it to the adapter's access map.`; a deployed site's stays generic.
 
 For a role-limited screen, the access map alone does both jobs: one rule, `requireAccess` in the
 route's `load` and every form action wrapped in `createSectionAction` (an action runs without the

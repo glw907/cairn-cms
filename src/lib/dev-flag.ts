@@ -56,3 +56,14 @@ export function readPublicOrigin(env: unknown): string | undefined {
   const value = bindings?.PUBLIC_ORIGIN;
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
+
+/**
+ * Name the fix for a missing access rule, but only on a local dev-backend request. The signal is
+ * `event.locals.cairnBackend`, which only the dev handle sets and a production request leaves
+ * unset, so a deployed site's 403 never says which targets the access map lacks. Returns null for
+ * any other reason or when the backend is unset, and the caller keeps its generic refusal.
+ */
+export function localNoRuleMessage(reason: string, target: string, cairnBackend: unknown): string | null {
+  if (reason !== 'no_rule' || !cairnBackend) return null;
+  return `No access rule for ${target}. Add it to the adapter's access map.`;
+}

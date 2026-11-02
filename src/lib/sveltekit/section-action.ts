@@ -30,6 +30,7 @@ import {
 } from './admin-action.js';
 import { targetFromRouteId } from '../auth/access.js';
 import { log } from '../log/index.js';
+import { localNoRuleMessage } from '../dev-flag.js';
 import { resolveRateLimit } from '../cloudflare/rate-limit.js';
 import type { AdminActionContext } from './admin-action.js';
 import type { CairnEvent } from './types.js';
@@ -258,7 +259,8 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       ): ActionFailure<{ error: string }> {
         ctx.audit({ action: opts.action, entity: opts.entity, detail });
         log.warn('auth.access.refused', { email: ctx.editor.email, role: ctx.editor.role, target, reason });
-        return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
+        const named = localNoRuleMessage(reason, target, event.locals.cairnBackend);
+        return fail(403, { error: named ?? opts.deniedMessage ?? DENIED_MESSAGE });
       }
 
       /** One deployment-fault exit: a 500 the site's operator reads in the log, not in the response. */

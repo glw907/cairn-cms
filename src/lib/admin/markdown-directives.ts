@@ -112,11 +112,6 @@ export function fenceScan(lines: string[]): FenceScan {
   return { depths, roles, inCode };
 }
 
-/** The depth half of {@link fenceScan}, for callers that need no roles. */
-export function fenceDepths(lines: string[]): (number | null)[] {
-  return fenceScan(lines).depths;
-}
-
 /** The inclusive line span of one directive container. */
 export interface ContainerRange {
   fromLine: number;

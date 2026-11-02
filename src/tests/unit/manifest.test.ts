@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, formatManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, manifestFragmentResolver, inboundLinks, inboundReferences, inboundIncludes, deriveTagUsage } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, formatManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, manifestFragmentResolver, inboundLinks, inboundReferences, inboundIncludes } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
@@ -680,31 +680,6 @@ describe('inboundIncludes', () => {
   });
   it('returns an empty list when nothing includes the target', () => {
     expect(inboundIncludes(manifest, 'nobody')).toEqual([]);
-  });
-});
-
-describe('deriveTagUsage', () => {
-  const manifest = {
-    version: 1 as const,
-    entries: [
-      { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [], tags: ['svelte', 'web-design'] },
-      { id: 'b', concept: 'posts', title: 'Post B', permalink: '/b', draft: false, links: [], tags: ['svelte'] },
-      { id: 'c', concept: 'pages', title: 'Page C', permalink: '/c', draft: false, links: [], tags: ['typescript'] },
-      { id: 'd', concept: 'pages', title: 'Page D', permalink: '/d', draft: false, links: [] },
-    ],
-  };
-  it('returns a row for each entry whose tags include the value', () => {
-    expect(deriveTagUsage(manifest, 'svelte')).toEqual([
-      { concept: 'posts', id: 'a', title: 'Post A', permalink: '/a' },
-      { concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' },
-    ]);
-  });
-  it('returns an empty list when no entry carries the value', () => {
-    expect(deriveTagUsage(manifest, 'nobody')).toEqual([]);
-  });
-  it('never returns an entry lacking the value, including a tagless entry', () => {
-    const ids = deriveTagUsage(manifest, 'typescript').map((r) => r.id);
-    expect(ids).toEqual(['c']);
   });
 });
 

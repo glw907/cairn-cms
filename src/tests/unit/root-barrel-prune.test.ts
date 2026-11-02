@@ -46,7 +46,6 @@ const DEMOTED = [
   'parseComponent',
   'validateComponent',
   'buildComponentInsert',
-  'generateComponentReference',
   'remarkDirectiveStamp',
   'requireOrigin',
   'buildMagicLinkMessage',

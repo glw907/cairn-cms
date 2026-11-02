@@ -22,21 +22,6 @@ export function strProp(node: Element, name: string): string | undefined {
 /** A site's icon factory: turn a stamped icon name + role into a hast element. */
 export type MakeIcon = (name: string, role?: string) => Element;
 
-/**
- * Tag the first <ul> among children with `cairn-grid` and strip its whitespace-only
- *  text nodes so the bare list serializes without newlines. Returns that <ul>.
- */
-export function markFirstList(children: ElementContent[]): Element | undefined {
-  const ul = children.find((c) => isElement(c) && c.tagName === 'ul') as Element | undefined;
-  if (ul) {
-    ul.properties = { ...ul.properties, className: ['cairn-grid'] };
-    ul.children = (ul.children as ElementContent[]).filter(
-      (c) => !(c.type === 'text' && /^\s*$/.test(c.value)),
-    );
-  }
-  return ul;
-}
-
 // Recurse into a node's children, transforming any nested primitive sections
 // (a grid inside a card, panels inside a split). Nested primitives never carry the
 // entrance ordinal; only top-level ones do (stamped in the transformer below).

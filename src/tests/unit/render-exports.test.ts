@@ -23,7 +23,7 @@ describe('engine entry render surface', () => {
   });
 
   it('still hides the internal hast helpers from the root entry', () => {
-    for (const name of ['isElement', 'strProp', 'markFirstList']) {
+    for (const name of ['isElement', 'strProp']) {
       expect(name in engine).toBe(false);
     }
   });

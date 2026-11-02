@@ -5,12 +5,20 @@ import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry, type ComponentContext } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import { renderGlyph } from '../../lib/render/glyph.js';
-import {
-  markFirstList,
-  isElement,
-  strProp,
-  type MakeIcon,
-} from '../../lib/render/rehype-dispatch.js';
+import { isElement, strProp, type MakeIcon } from '../../lib/render/rehype-dispatch.js';
+
+// Local fixture directive helper: tag the first <ul> with cairn-grid and strip its
+// whitespace-only text nodes so the bare list serializes without newlines.
+function markFirstList(children: ElementContent[]): Element | undefined {
+  const ul = children.find((c) => isElement(c) && c.tagName === 'ul') as Element | undefined;
+  if (ul) {
+    ul.properties = { ...ul.properties, className: ['cairn-grid'] };
+    ul.children = (ul.children as ElementContent[]).filter(
+      (c) => !(c.type === 'text' && /^\s*$/.test(c.value)),
+    );
+  }
+  return ul;
+}
 
 // Local fixture copies of the render trio the engine retired, kept byte-for-byte so this suite's
 // byte-identical lock stands on no engine export beyond the ones the engine still ships. A real

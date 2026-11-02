@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
 import type { Root, Element, ElementContent } from 'hast';
-import { rehypeDispatch, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
+import { rehypeDispatch, isElement } from '../../lib/render/rehype-dispatch.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 import type { ComponentContext } from '../../lib/render/registry.js';
 
@@ -70,12 +70,6 @@ describe('rehypeDispatch', () => {
     // The index counts primitives only, so the interleaved <p> does not bump it.
     expect(first.properties.dataRise).toBe('0');
     expect(second.properties.dataRise).toBe('1');
-  });
-
-  it('markFirstList tags the first <ul> with cairn-grid', () => {
-    const ul = h('ul', [h('li', ['a'])]);
-    const out = markFirstList([h('p', ['x']), ul]);
-    expect(out?.properties?.className).toContain('cairn-grid');
   });
 
   const islandReg = defineRegistry({

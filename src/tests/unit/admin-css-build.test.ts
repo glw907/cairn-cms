@@ -180,11 +180,10 @@ describe('admin css build', () => {
     }
   });
 
-  // The blessed daisyUI 5 safelist (admin-css-safelist.ts): the pass-B "admin CSS class-inventory
-  // gap" harvest finding generalized. A daisy class only works in the admin once cairn's build
-  // compiles it, so a site-authored admin screen (the ASC admin toolkit, first) can reach for this
-  // vocabulary before any shipped cairn component references it. Curated, not exhaustive: these are
-  // the families the safelist source documents, not every daisyUI class.
+  // The admin-toolkit daisyUI 5 vocabulary: a daisy class only works in the admin once cairn's
+  // build compiles it, so a site-authored admin screen can reach for this vocabulary before any
+  // shipped cairn component references it. The full daisyUI compile supplies it; this pins the
+  // families a toolkit screen most likely reaches for, not every daisyUI class.
   it('compiles the blessed daisyUI safelist for the admin-toolkit vocabulary', () => {
     for (const cls of [
       '.table-zebra',

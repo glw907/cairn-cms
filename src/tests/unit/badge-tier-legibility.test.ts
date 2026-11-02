@@ -4,7 +4,7 @@ import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { composite, contrastRatio, resolveColors, type Rgba, type RenderedPage } from './_canvas-color.js';
 
 // CONTRACT (audit-admin-statuschip's badge-tier ruling, closing the ledger entry the
-// toolkit-seams pass left open): every admin-css-safelist badge entry gets a rendered legibility
+// toolkit-seams pass left open): every blessed raw daisyUI badge class gets a rendered legibility
 // measurement, on both packaged admin themes, against the register set's own floors
 // (status-chip-register-tuning.test.ts is the precedent for both the technique and the floors).
 //

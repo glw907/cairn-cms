@@ -488,6 +488,50 @@ describe('sign-in rate limit', () => {
     expect(Object.keys(failed[0]).sort()).toEqual(['error', 'event', 'level', 'scope', 'timestamp']);
     expect(JSON.stringify(failed[0])).not.toContain(address);
   });
+
+  it('bounds the limiter key to a 64-character address', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { keys, binding } = limiter(true);
+    const { routes } = routesLimitedBy(() => binding);
+    await routes.requestAction(
+      makeEvent({ url, form: { email: 'ed@x.dev' }, headers: { 'cf-connecting-ip': 'a'.repeat(500) } }),
+    );
+    expect(keys).toEqual([`login:${'a'.repeat(64)}`]);
+  });
+
+  /** The one auth.rate_limit_failed record a request under `resolve` writes. */
+  async function failedRecord(resolve: Parameters<typeof routesLimitedBy>[0]) {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes } = routesLimitedBy(resolve);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, headers }));
+    const records = warnSpy.mock.calls.map((c) => c[0] as Record<string, unknown>);
+    vi.restoreAllMocks();
+    return records.filter((r) => r.event === 'auth.rate_limit_failed')[0];
+  }
+
+  it('logs a useful error, not [object Object], when the resolver throws a non-Error value', async () => {
+    const record = await failedRecord(() => {
+      throw { status: 303, location: '/elsewhere' };
+    });
+    expect(record.error).toBe('non-error throw');
+  });
+
+  it('logs only the error name and a fixed message, so an address echoed in any form never reaches the record', async () => {
+    const echoed = [
+      '203.0.113.7',
+      '0:0:0:0:0:0:0:1',
+      '::1',
+      encodeURIComponent('login:203.0.113.7'),
+      '%32%30%33%2E%30%2E%31%31%33%2E%37',
+    ].join(' ');
+    const record = await failedRecord(() => ({
+      limit: () => Promise.reject(Object.assign(new Error(`limiter failed for ${echoed}`), { name: 'LimiterError' })),
+    }));
+    expect(record.error).toBe('LimiterError: rate limit call failed');
+    expect(JSON.stringify(record)).not.toContain('203.0.113.7');
+    expect(JSON.stringify(record)).not.toContain('%32%30');
+  });
 });
 
 describe('first-owner seeding', () => {

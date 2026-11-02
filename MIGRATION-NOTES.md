@@ -196,6 +196,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Match `That sign-in link didn’t work` in a test of the sign-in strings.** The sign-in and confirm pages show one sentence for a failed link, and the old strings (`That link expired`, `This browser has no pending sign-in`, `This sign-in link is invalid or expired`) are gone.
+- **Match a thrown GitHub error on its prefix.** The text gains a next step after the status, so compare `GitHub ref <branch> failed: <status>` and not the whole string.
 - **Expect `auth.link.sent` from the default Cloudflare sender.** Log queries that used `auth.token.minted` to mean the email went out should use `auth.link.sent`. A custom `send` writes no such record and logs for itself.
 - **Rename `.steps` and `.step` to `.start-steps` and `.start-step`** in any site CSS that selects the Help screen's getting-started list.
 - **Read `data.flash` in place of `saved`, `renamed`, `publishedFlash`, and `discardedFlash`.** A hand-built `EditData` sets `flash: null`, or one of `'saved'`, `'renamed'`, `'published'`, or `'discarded'`. The settings, vocabulary, and nav `saved` flags stay.

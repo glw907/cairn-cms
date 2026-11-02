@@ -220,6 +220,21 @@
 
   Consumers must: nothing.
 
+- **A failed sign-in link reads the same on the sign-in and confirm pages.** `?error=expired` and
+  `?error=no-pending-request` show one sentence and one page title: a link works once, for 10 minutes, in
+  the browser that requested it. The confirm page's no-token state uses the same sentence. Both redirect
+  codes stay, and `expired` no longer resolves to a message on `/admin`, where it was never emitted.
+
+  Consumers must: match `That sign-in link didn’t work` in any test that asserts the old sign-in strings
+  (`That link expired`, `This browser has no pending sign-in`, `This sign-in link is invalid or expired`).
+
+- **Thrown GitHub and `defineRoles` errors name the next step.** A GitHub failure keeps its operation and
+  status, then tells the site owner to check the GitHub App's install on the repo, then GitHub's status
+  page. A `defineRoles` error names its fix, such as the capabilities a role may map to.
+
+  Consumers must: match a thrown GitHub error on its prefix (`GitHub ref <branch> failed: <status>`), not
+  the whole string, if a test compares it exactly.
+
 - **The sign-in email has a new layout.** It shows the site's name, a **Sign in** button, the link
   written out, the expiry, and an ignore line, with a matching plain-text part. The subject is unchanged.
 

@@ -167,7 +167,8 @@ To pass the docs gate, make these changes together:
   [Conventional Commits](https://www.conventionalcommits.org/) shape:
   `fix(auth): reject expired tokens`.
 - A consumer-visible change gets a `CHANGELOG.md` entry under `## Unreleased`, with a
-  `Consumers must:` line when upgrading requires action. Releases are cut separately.
+  `Consumers must: nothing.` or `Consumers must: <action>.` line, alone on one physical line
+  at column 0 or two spaces, when upgrading requires action. Releases are cut separately.
 - Work on the `/admin` interface (the admin components in `src/lib/admin/` or
   `cairn-admin.css`) follows the design system at
   [`.claude/skills/cairn-following-admin-design/references/admin-design-system.md`](./.claude/skills/cairn-following-admin-design/references/admin-design-system.md); read it

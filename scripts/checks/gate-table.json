@@ -70,6 +70,7 @@
     "check:tool-conditions": ["docs", "engine"],
     "check:docs": ["docs"],
     "check:rulings-format": ["docs"],
+    "check:consumers-must": ["docs", "scripts"],
     "check:editor-quotes": ["docs", "engine"],
     "check:leaks": ["docs", "engine", "showcase"],
     "check:visuals": ["docs", "engine"],

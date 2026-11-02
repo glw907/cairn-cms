@@ -1,0 +1,18 @@
+[
+  { "name": "bare nothing", "section": "Consumers must: nothing.", "valid": true, "actionable": false },
+  { "name": "an action", "section": "Consumers must: rename `Foo` to `Bar`.", "valid": true, "actionable": true },
+  { "name": "a two-space-indented action", "section": "- A bullet.\n\n  Consumers must: rename `Foo` to `Bar`.\n\n- Next bullet.", "valid": true, "actionable": true },
+  { "name": "an indented action naming a rebuild", "section": "  Consumers must: rebuild the site from a fresh scaffold.", "valid": true, "actionable": true },
+  { "name": "a hedged nothing", "section": "Consumers must: nothing, unless a script matches.", "valid": false, "actionable": true },
+  { "name": "a capitalized Nothing", "section": "Consumers must: Nothing.", "valid": false, "actionable": true },
+  { "name": "a bold lead", "section": "**Consumers must:** nothing.", "valid": false, "actionable": false },
+  { "name": "a mid-paragraph lead", "section": "The change is small. Consumers must: nothing.", "valid": false, "actionable": false },
+  { "name": "a clause wrapped onto a second line", "section": "Consumers must: rename `Foo`,\nthen rebuild.", "valid": false, "actionable": true },
+  { "name": "no terminal period", "section": "Consumers must: rename `Foo`", "valid": false, "actionable": true },
+  { "name": "a code-span mention in prose", "section": "Write a `Consumers must:` line when upgrading needs action.", "valid": true, "actionable": false },
+  { "name": "a code span holding the whole line", "section": "`Consumers must: nothing.`", "valid": true, "actionable": false },
+  { "name": "a body that starts with nothingness", "section": "Consumers must: nothingness is gone, so rename Foo.", "valid": true, "actionable": true },
+  { "name": "nothing jammed against the next bullet", "section": "- A bullet.\n  Consumers must: nothing.\n- Next bullet.", "valid": false, "actionable": false },
+  { "name": "a tab indent", "section": "\tConsumers must: nothing.", "valid": false, "actionable": false },
+  { "name": "two lines where the second is actionable", "section": "Consumers must: nothing.\n\nConsumers must: rename `Foo`.", "valid": true, "actionable": true }
+]

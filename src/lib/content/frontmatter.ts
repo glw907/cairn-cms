@@ -1,12 +1,15 @@
 // cairn-cms: frontmatter form decoding and on-disk serialization. `frontmatterFromForm`
 // is the form-to-data half of the edit loop; `serializeMarkdown`/`parseMarkdown` are the
 // on-disk write/read pair. Kept as one seam so a site owns its serialization contract
-// (quoting, key order) without the save endpoint reaching for gray-matter directly.
-import matter from 'gray-matter';
+// (quoting, key order) without the save endpoint reaching for a YAML library directly.
+import { parse, stringify } from 'yaml';
+import { splitFrontmatter } from './frontmatter-region.js';
 import type { ImageValue, NamedField } from './types.js';
 import type { FieldDescriptor } from './fields.js';
 import { coerceStringList } from './coerce.js';
 import { unreachable } from './unreachable.js';
+
+const BOM = '\uFEFF';
 
 /**
  * True when a multiselect field is a closed checkbox group: it declares an options vocabulary and is
@@ -195,9 +198,8 @@ export function frontmatterFromForm(
 
 /**
  * Coerce a frontmatter date value to the `YYYY-MM-DD` an `<input type="date">` wants.
- * gray-matter parses an unquoted YAML date into a JS Date, so a string-only read would
- * leave the input empty and drop the date on save. A parsed YAML date is UTC midnight, so
- * slicing the ISO string avoids a local-timezone shift.
+ * An unquoted YAML date reads as the text it was written, so the leading day is the value.
+ * A Date is sliced from its ISO string, which avoids a local-timezone shift.
  */
 export function dateInputValue(value: unknown): string {
   if (value instanceof Date) {
@@ -349,21 +351,31 @@ export function formValues(
   return out;
 }
 
-/** Reassemble a markdown file from frontmatter and body for committing. */
+/**
+ * Reassemble a markdown file from frontmatter and body for committing. A single-quoted scalar keeps a
+ * significant string's committed shape (`author: '123'`), and an unlimited line width keeps every
+ * scalar on the one line the byte-preserving rewriters read. An empty record writes the body alone.
+ */
 export function serializeMarkdown(frontmatter: object, body: string): string {
-  return matter.stringify(body, frontmatter);
+  const yaml = stringify(frontmatter, { singleQuote: true, lineWidth: 0 });
+  const content = body.endsWith('\n') ? body : `${body}\n`;
+  return yaml === '{}\n' ? content : `---\n${yaml}---\n${content}`;
 }
 
 /**
- * Parse a markdown file into its frontmatter and body: the read-side inverse of serialize.
+ * Parse a markdown file into its frontmatter and body: the read-side inverse of serialize. Values read
+ * under the YAML 1.2 core schema, so a date stays the text it was written. A file with no block has an
+ * empty record, and malformed YAML throws on every read.
  * @public
  */
 export function parseMarkdown(source: string): {
   frontmatter: Record<string, unknown>;
   body: string;
 } {
-  // Empty options skip gray-matter's source cache, which would otherwise swallow a parse failure
-  //  after the first throw and read the same malformed file as an empty header the next time.
-  const parsed = matter(source, {});
-  return { frontmatter: parsed.data, body: parsed.content };
+  const text = source.startsWith(BOM) ? source.slice(BOM.length) : source;
+  const { fmBlock, body } = splitFrontmatter(text);
+  if (fmBlock === '') return { frontmatter: {}, body };
+  const yaml = fmBlock.replace(/^---[ \t]*\r?\n/, '').replace(/---\r?\n?$/, '');
+  // A scalar or list block returns as parsed, so the cast names the common case rather than a check.
+  return { frontmatter: (parse(yaml) ?? {}) as Record<string, unknown>, body };
 }

@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import matter from 'gray-matter';
 import {
   frontmatterFromForm,
   formValues,
@@ -322,9 +321,7 @@ describe('serialize and parse', () => {
     const out = serializeMarkdown(data, body);
     expect(out).toMatch(/^---\n/);
 
-    const parsed = matter(out);
-    expect(parsed.data).toEqual(data);
-    expect(parsed.content.trim()).toBe(body.trim());
+    expect(parseMarkdown(out)).toEqual({ frontmatter: data, body });
   });
 
   it('parses a file back into frontmatter and body', () => {
@@ -335,10 +332,81 @@ describe('serialize and parse', () => {
   it('round-trips a nested image object, quoting the media: token and omitting an absent caption', () => {
     const data = { image: { src: 'media:a.0123456789abcdef', alt: 'x' } };
     const out = serializeMarkdown(data, '');
-    // The media: token carries a colon, so gray-matter must quote it rather than read it as a YAML map.
+    // The media: token carries a colon, so the writer must keep it a string rather than a YAML map.
     const parsed = parseMarkdown(out);
     expect(parsed.frontmatter).toEqual(data);
     expect((parsed.frontmatter.image as { caption?: string }).caption).toBeUndefined();
+  });
+
+  it('reads a bare date as the text it was written', () => {
+    expect(parseMarkdown('---\ndate: 2024-03-15\n---\n').frontmatter).toEqual({ date: '2024-03-15' });
+  });
+
+  it('keeps the day and offset of a timestamp as written', () => {
+    expect(parseMarkdown('---\ndate: 2024-03-15 20:00:00 -08:00\n---\n').frontmatter).toEqual({
+      date: '2024-03-15 20:00:00 -08:00',
+    });
+  });
+
+  it('keeps an undeclared key through a parse and a serialize', () => {
+    const source = '---\ntitle: A\nlegacy_id: 7\n---\nBody\n';
+    const { frontmatter, body } = parseMarkdown(source);
+    expect(serializeMarkdown(frontmatter, body)).toBe(source);
+  });
+
+  it('writes a string shaped like another scalar so it reparses as a string', () => {
+    const data = { id: '123', flag: 'true', year: '2026' };
+    const out = serializeMarkdown(data, 'Body\n');
+    expect(out).toContain("id: '123'\n");
+    expect(parseMarkdown(out).frontmatter).toEqual(data);
+  });
+
+  it('writes a long description on one line', () => {
+    const description = 'word '.repeat(60).trim();
+    const out = serializeMarkdown({ description }, 'Body\n');
+    expect(out).toBe(`---\ndescription: ${description}\n---\nBody\n`);
+  });
+
+  it('writes the body alone for an empty record, adding one trailing newline', () => {
+    expect(serializeMarkdown({}, 'Body')).toBe('Body\n');
+    expect(serializeMarkdown({}, 'Body\n')).toBe('Body\n');
+  });
+
+  it('reads an empty block as an empty record', () => {
+    expect(parseMarkdown('---\n---\nbody')).toEqual({ frontmatter: {}, body: 'body' });
+  });
+
+  it('strips a leading BOM', () => {
+    expect(parseMarkdown('\uFEFF---\ntitle: A\n---\nbody\n')).toEqual({
+      frontmatter: { title: 'A' },
+      body: 'body\n',
+    });
+    expect(parseMarkdown('\uFEFFplain\n')).toEqual({ frontmatter: {}, body: 'plain\n' });
+  });
+
+  it('reads CRLF fences', () => {
+    expect(parseMarkdown('---\r\ntitle: A\r\n---\r\nbody\r\n')).toEqual({
+      frontmatter: { title: 'A' },
+      body: 'body\r\n',
+    });
+  });
+
+  it('reads a comment-only block as an empty record', () => {
+    expect(parseMarkdown('---\n# a note\n---\nbody\n')).toEqual({ frontmatter: {}, body: 'body\n' });
+  });
+
+  it('accepts spaces after the opening fence and rejects a longer fence or an unclosed block', () => {
+    expect(parseMarkdown('--- \ntitle: a\n---\n').frontmatter).toEqual({ title: 'a' });
+    const longer = '----\na\n---\n';
+    expect(parseMarkdown(longer)).toEqual({ frontmatter: {}, body: longer });
+    const unclosed = '---\ntitle: a\n';
+    expect(parseMarkdown(unclosed)).toEqual({ frontmatter: {}, body: unclosed });
+  });
+
+  it('throws on malformed YAML on every read', () => {
+    const source = '---\ntitle: [unclosed\n---\nbody\n';
+    expect(() => parseMarkdown(source)).toThrow();
+    expect(() => parseMarkdown(source)).toThrow();
   });
 });
 

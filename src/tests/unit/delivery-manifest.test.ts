@@ -9,7 +9,7 @@ import { fields } from '../../lib/content/fields.js';
 
 const adapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) } },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'dated', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) } },
     pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
@@ -26,7 +26,7 @@ const files = {
 // A posts concept whose validate requires a non-empty title, so an empty-title file fails.
 const requiredTitleAdapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) } },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'dated', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) } },
     pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),

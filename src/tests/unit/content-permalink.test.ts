@@ -5,7 +5,7 @@ import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const base: Omit<ConceptDescriptor, 'permalink'> = {
   id: 'posts', label: 'Posts', singular: 'Posts', dir: 'd', datePrefix: 'day',
-  routing: { routable: true, dated: true, inFeeds: true },
+  routing: { routable: true, dated: true },
   fields: [], schema: defineFieldset({}), summaryFields: [], validate: () => ({ ok: true, data: {} }),
 };
 const desc = (permalink: string): ConceptDescriptor => ({ ...base, permalink });

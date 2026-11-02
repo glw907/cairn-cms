@@ -22,7 +22,7 @@ export const cairn = defineAdapter({
       dir: 'src/content/posts',
       label: 'Posts',
       singular: 'post',
-      routing: 'feed',
+      routing: 'dated',
       fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),

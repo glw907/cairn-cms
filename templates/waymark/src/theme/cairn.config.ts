@@ -73,7 +73,7 @@ export const cairn = defineAdapter({
       // fallback, exercised deliberately without one in the engine's component tests).
       singular: 'post',
       summaryFields: ['description'],
-      routing: 'feed',
+      routing: 'dated',
       fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),

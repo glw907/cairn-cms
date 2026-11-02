@@ -24,7 +24,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ComponentRegistry`: { defs: ComponentDef[]; names: string[]; get: (name: string) => ComponentDef | undefined; defaultIcon: (name: string, role?: string) => string | undefined; iconField: (name: string) => string | undefined }
 - `ComposeInput`: { adapter: CairnAdapter; siteConfig: SiteConfig }
 - `composeRuntime`: ({ adapter, siteConfig }: ComposeInput) => CairnRuntime
-- `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: R; refine?: ((data: Record<string, unknown>, body: string) => Record<string, string> | undefined); behavior?: BehaviorTable; routing?: "feed" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
+- `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: R; refine?: ((data: Record<string, unknown>, body: string) => Record<string, string> | undefined); behavior?: BehaviorTable; routing?: "dated" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
 - `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
 - `createGithubApp`: (config: { owner: string; repo: string; branch: string; appId: string; installationId: string }) => GithubAppProvider
 - `createRenderer`: (config?: RendererConfig) => Renderer
@@ -82,7 +82,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ResolveOptions`: { resolveLink?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }
 - `RoleDeclaration`: Capability | { capability: Capability; home?: string }
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
-- `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
+- `RoutingRule`: { routable: boolean; dated: boolean }
 - `SelectField`: { type: "select"; options: readonly string[]; label: string; help?: string; required?: boolean; default?: string }
 - `SenderConfig`: { from: string; replyTo?: string }
 - `SendMagicLink`: (env: CairnEnv, message: MagicLinkMessage) => Promise<void>

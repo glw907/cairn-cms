@@ -112,15 +112,15 @@ export interface ConceptConfig<R extends Record<string, FieldDescriptor> = Recor
   /** Function-valued per-field behavior, keyed by field name. Each key must name a declared field. */
   behavior?: BehaviorTable;
   /**
-   * This concept's routing: the `'feed'` (dated and in feeds), `'page'` (a routable static page), or
+   * This concept's routing: the `'dated'` (a routable page with a date), `'page'` (a routable static page), or
    *  `'embedded'` (not routable) shorthand. Omitted means `'page'`. Every routable concept's entries
-   *  get a public page and a sitemap entry; a `'feed'` concept's permalink may also use the date
+   *  get a public page and a sitemap entry; a `'dated'` concept's permalink may also use the date
    *  tokens, and its index sorts newest first (an undated concept's sorts by title). An `'embedded'`
    *  concept has no public page and no sitemap entry, but keeps a directory, fields, and an admin list
    *  and editor, which label its identifier **Name** and offer **Rename** rather than **Change address**.
    *  Which entries reach an RSS or JSON feed is the site's feed route's choice.
    */
-  routing?: 'feed' | 'page' | 'embedded';
+  routing?: 'dated' | 'page' | 'embedded';
   /** The permalink pattern, root-relative, e.g. `/blog/:year/:slug`. Defaults by concept id. */
   permalink?: string;
   /** Date-prefix granularity for a dated concept's id-to-slug stripping. Defaults to `day`. */
@@ -358,7 +358,7 @@ export interface CairnAdapter {
 }
 
 /**
- * Concept-fixed routing for a normalized concept. Posts are dated feed entries;
+ * Concept-fixed routing for a normalized concept. Posts are dated entries;
  * pages are plain navigable structure. Not in adapter config.
  * @public
  */
@@ -367,8 +367,6 @@ export interface RoutingRule {
   routable: boolean;
   /** Carries a date (posts). */
   dated: boolean;
-  /** Set for the `'feed'` shorthand. The sitemap lists every routable concept whatever this says. */
-  inFeeds: boolean;
 }
 
 /**

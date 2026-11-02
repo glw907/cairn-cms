@@ -35,10 +35,10 @@ export const RESERVED_VIEW_IDS: ReadonlySet<string> = new Set([
 ]);
 
 /** The named routing shorthands, each expanding to a concrete rule. */
-const ROUTING_SHORTHANDS: Readonly<Record<'feed' | 'page' | 'embedded', RoutingRule>> = {
-  feed: { routable: true, dated: true, inFeeds: true },
-  page: { routable: true, dated: false, inFeeds: false },
-  embedded: { routable: false, dated: false, inFeeds: false },
+const ROUTING_SHORTHANDS: Readonly<Record<'dated' | 'page' | 'embedded', RoutingRule>> = {
+  dated: { routable: true, dated: true },
+  page: { routable: true, dated: false },
+  embedded: { routable: false, dated: false },
 };
 
 /**
@@ -58,7 +58,7 @@ export const FRAGMENTS_CONCEPT_ID = 'fragments';
 export function resolveRouting(routing: ConceptConfig['routing'], id: string): RoutingRule {
   if (routing === undefined) return ROUTING_SHORTHANDS.page;
   if (!(routing in ROUTING_SHORTHANDS)) {
-    throw new Error(`cairn: concept "${id}" routing "${routing}" must be one of feed, page, embedded`);
+    throw new Error(`cairn: concept "${id}" routing "${routing}" must be one of dated, page, embedded`);
   }
   return ROUTING_SHORTHANDS[routing];
 }
@@ -71,7 +71,7 @@ export function resolveRouting(routing: ConceptConfig['routing'], id: string): R
  * Defaults, resolved when the engine composes the runtime: `routing` is `'page'`; `permalink` is
  * `/:slug` for a concept keyed `pages` and `/<concept-id>/:slug` for any other; `datePrefix` is
  * `'day'`. A permalink that uses a date token (`:year`, `:month`, `:day`) needs a dated concept
- * (`routing: 'feed'`) and a field named `date` of type `date`; both this function and the
+ * (`routing: 'dated'`) and a field named `date` of type `date`; both this function and the
  * compose step throw on a missing or wrong-typed one and normalize it to `required: true`. An omitted
  * `singular` falls back to `label` with no warning, so a plural label reads "New Posts" on the
  * create affordances: declare `singular` on every concept. The concept key `fragments` is

@@ -7,7 +7,7 @@ import { fields } from '../../lib/content/fields.js';
 const [posts] = normalizeConcepts({
   posts: {
     dir: 'p',
-    routing: 'feed',
+    routing: 'dated',
     permalink: '/:year/:month/:day/:slug',
     datePrefix: 'day',
     fields: { date: fields.date({ label: 'Date' }) },
@@ -52,7 +52,7 @@ describe('buildSiteResolver', () => {
     const [postsRef, pagesRef] = normalizeConcepts({
       posts: {
         dir: 'p',
-        routing: 'feed',
+        routing: 'dated',
         permalink: '/:slug',
         datePrefix: 'day',
         fields: {
@@ -98,7 +98,7 @@ describe('buildSiteResolver', () => {
     const [postsRef, pagesRef] = normalizeConcepts({
       posts: {
         dir: 'p',
-        routing: 'feed',
+        routing: 'dated',
         permalink: '/:slug',
         datePrefix: 'day',
         fields: {
@@ -136,7 +136,7 @@ describe('buildSiteResolver', () => {
     const [postsRef, pagesRef] = normalizeConcepts({
       posts: {
         dir: 'p',
-        routing: 'feed',
+        routing: 'dated',
         permalink: '/:slug',
         datePrefix: 'day',
         fields: { author: fields.reference({ concept: 'pages', label: 'Author' }) },
@@ -190,7 +190,7 @@ describe('buildSiteResolver', () => {
   it('throws on a permalink collision across concepts, naming both ids', () => {
     const [p2] = normalizeConcepts({ pages: { dir: 'g', permalink: '/dup', fields: {} } });
     const [q2] = normalizeConcepts({
-      posts: { dir: 'p', routing: 'feed', permalink: '/dup', fields: {} },
+      posts: { dir: 'p', routing: 'dated', permalink: '/dup', fields: {} },
     });
     expect(() =>
       buildSiteResolver([

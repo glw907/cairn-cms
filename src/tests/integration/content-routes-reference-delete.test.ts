@@ -29,7 +29,7 @@ function runtime(): CairnRuntime {
     related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Related post' }), label: 'Related' }) });
   const posts: ConceptDescriptor = {
     id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
-    routing: { routable: true, dated: false, inFeeds: true },
+    routing: { routable: true, dated: false },
     permalink: '/posts/:slug',
     datePrefix: 'day',
     fields: [
@@ -43,7 +43,7 @@ function runtime(): CairnRuntime {
   };
   const pages: ConceptDescriptor = {
     id: 'pages', label: 'Pages', singular: 'Page', dir: 'src/content/pages',
-    routing: { routable: true, dated: false, inFeeds: false },
+    routing: { routable: true, dated: false },
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],

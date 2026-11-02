@@ -438,7 +438,7 @@ describe('editLoad address-collision advisory', () => {
       concepts: [
         {
           id: 'pages', label: 'Page', singular: 'Page', dir: 'src/content/pages',
-          routing: { routable: true, dated: false, inFeeds: false },
+          routing: { routable: true, dated: false },
           permalink: '/:slug',
           datePrefix: 'day',
           fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],

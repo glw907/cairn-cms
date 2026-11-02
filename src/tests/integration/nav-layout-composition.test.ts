@@ -61,7 +61,7 @@ function runtime(): CairnRuntime {
     concepts: [
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
-        routing: { routable: true, dated: false, inFeeds: true },
+        routing: { routable: true, dated: false },
         permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },
@@ -159,13 +159,13 @@ function accessRuntime(): CairnRuntime {
     concepts: [
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
-        routing: { routable: true, dated: false, inFeeds: true },
+        routing: { routable: true, dated: false },
         permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },
       {
         id: 'pages', label: 'Pages', singular: 'Page', dir: 'src/content/pages',
-        routing: { routable: true, dated: false, inFeeds: false },
+        routing: { routable: true, dated: false },
         permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },

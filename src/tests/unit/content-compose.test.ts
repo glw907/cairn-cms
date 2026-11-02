@@ -70,7 +70,7 @@ describe('composeRuntime URL policy', () => {
         ...testAdapter.content,
         posts: {
           dir: 'src/content/posts',
-          routing: 'feed',
+          routing: 'dated',
           permalink: '/:year/:slug',
           datePrefix: 'year',
           fields: { date: fields.date({ label: 'Date' }) },

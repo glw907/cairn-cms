@@ -45,7 +45,7 @@ function concept(id: string) {
     label: id,
     singular: id,
     dir: `src/content/${id}`,
-    routing: { routable: true, dated: false, inFeeds: false },
+    routing: { routable: true, dated: false },
     permalink: `/${id}/:slug`,
     datePrefix: 'day' as const,
     fields: [],

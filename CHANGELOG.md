@@ -205,6 +205,12 @@
 
 ### Changed
 
+- **`routing: 'dated'` replaces `routing: 'feed'`, and `RoutingRule.inFeeds` is gone.** The shorthand
+  names what the concept is, a routable page with a date, and not a feed the engine never built. A
+  site's feed route has always chosen the members, so no feed changes.
+
+  Consumers must: write `routing: 'dated'` in place of `routing: 'feed'` on each concept, and stop reading `inFeeds` from a concept's routing.
+
 - **`cairn-media-seed` moves to `@glw907/cairn-cms-dev`.** The engine no longer installs the bin, and the
   dev package ships it with the same command name and flags. A site that doesn't run the seed sees no
   change.

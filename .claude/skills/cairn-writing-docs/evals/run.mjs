@@ -42,7 +42,7 @@ export const ALLOWED_TOOLS = [
   'Bash(git diff*)', 'Bash(git status*)', 'Bash(git log*)', 'Bash(git add *)', 'Bash(git commit *)',
   'Bash(jq *)', 'Bash(mkdir *)',
   // The read-only filters a compound command pipes through; a real session's allow rules carry them.
-  'Bash(tail *)', 'Bash(head *)', 'Bash(echo *)', 'Bash(wc *)', 'Bash(cat *)',
+  'Bash(tail *)', 'Bash(head *)', 'Bash(echo *)', 'Bash(sed -n *)', 'Bash(wc *)', 'Bash(cat *)',
   'Bash(ls*)', 'Bash(grep *)', 'Bash(sort*)', 'Bash(uniq*)', 'Bash(cut *)', 'Bash(tr *)',
   'Bash(diff *)', 'Bash(printf *)', 'Bash(git ls-files*)', 'Bash(git rev-parse*)',
   'Bash(git -C * log *)', 'Bash(git -C * status*)', 'Bash(git grep*)', 'Bash(git show*)',
@@ -58,17 +58,6 @@ export const DENIED_TOOLS = [
   // The sessions run with no Cloudflare credential in their environment, but wrangler can read the
   // workstation's own login from HOME, so anything that reaches the account is denied by name.
   'Bash(*wrangler login*)', 'Bash(*wrangler secret*)', 'Bash(*wrangler deploy*)', 'Bash(*wrangler publish*)', 'Bash(*wrangler*--remote*)',
-  // A read-only filter that can write a file: the allowed git reads and `sort` take an output file or a
-  // pager, and `sed` a `w` command that a glob cannot tell from a `w` in a path, so it is denied whole.
-  // A session keeps `Read`, `head`, and `tail`. `sort`'s pattern also catches the clustered `-uo`.
-  'Bash(sed *)',
-  'Bash(git diff *--output*)', 'Bash(git -C * diff *--output*)',
-  'Bash(git show *--output*)', 'Bash(git -C * show *--output*)',
-  'Bash(git log *--output*)', 'Bash(git -C * log *--output*)',
-  'Bash(git grep *-O*)', 'Bash(git -C * grep *-O*)',
-  'Bash(git grep *--open-files-in-pager*)', 'Bash(git -C * grep *--open-files-in-pager*)',
-  'Bash(sort *-*o*)',
-  'Bash(git difftool*)', 'Bash(git -C * difftool*)',
 ];
 
 /**

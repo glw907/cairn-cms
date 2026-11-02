@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import LoginPage from '../../lib/admin/LoginPage.svelte';
+import { SIGN_IN_LINK_FAILED, SIGN_IN_LINK_TITLE } from '../../lib/admin/sign-in-copy.js';
 import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-error-codes.js';
 
 describe('LoginPage', () => {
@@ -72,42 +73,22 @@ describe('LoginPage', () => {
   it('lets a fresh action result supersede a stale expired-link error', async () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' }, form: { outcome: 'throttled' } });
     await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();
-    expect(screen.container.textContent).not.toMatch(/that link expired/i);
+    expect(screen.container.textContent).not.toMatch(/didn’t work/i);
   });
 
-  it('names the same-browser requirement when this browser holds no pending sign-in', async () => {
-    // Distinct from the expired copy on purpose: "request a new one" is exactly the instruction
-    // that reproduces the failure for someone who asks on a desktop and clicks on a phone.
-    const screen = await render(LoginPage, {
-      data: { siteName: 'Test Site', error: NO_PENDING_REQUEST_ERROR, csrf: 'csrf-tok' },
-      form: null,
-    });
-    await expect.element(screen.getByText(/no pending sign-in/i)).toBeInTheDocument();
-    await expect.element(screen.getByText(/open it in this browser/i)).toBeInTheDocument();
-    expect(screen.container.textContent).not.toMatch(/that link expired/i);
-    await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
-  });
-
-  it('gives each refusal its own title and a focusable alert, the JS-free landing signal', async () => {
-    // A redirect lands here carrying its reason only in a query string. The title is what a
-    // screen reader announces first, and tabindex="-1" lets an assistive technology move straight
-    // to the refusal instead of reading down to it.
-    const noPending = await render(LoginPage, {
-      data: { siteName: 'Test Site', error: NO_PENDING_REQUEST_ERROR, csrf: 'csrf-tok' },
-      form: null,
-    });
-    expect(document.title).toBe('No pending sign-in · Cairn');
-    expect(noPending.container.querySelector('[role="alert"]')).toHaveAttribute('tabindex', '-1');
-    noPending.unmount();
-
-    const expired = await render(LoginPage, {
-      data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' },
-      form: null,
-    });
-    expect(document.title).toBe('Sign-in link expired · Cairn');
-    expect(expired.container.querySelector('[role="alert"]')).toHaveAttribute('tabindex', '-1');
-    expired.unmount();
-
+  it('renders one sentence and one title for both link-refusal codes', async () => {
+    // The engine cannot tell the two causes apart for the reader, so both codes read the same.
+    // The title is what a screen reader announces first on a JS-free landing, and tabindex="-1"
+    // lets an assistive technology move straight to the refusal.
+    for (const error of [NO_PENDING_REQUEST_ERROR, 'expired']) {
+      const screen = await render(LoginPage, { data: { siteName: 'Test Site', error, csrf: 'csrf-tok' }, form: null });
+      expect(document.title).toBe(SIGN_IN_LINK_TITLE);
+      const alert = screen.container.querySelector('[role="alert"]');
+      expect(alert?.textContent?.trim()).toBe(SIGN_IN_LINK_FAILED);
+      expect(alert).toHaveAttribute('tabindex', '-1');
+      await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+      screen.unmount();
+    }
     await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
     expect(document.title).toBe('Sign in · Cairn');
   });
@@ -163,7 +144,7 @@ describe('LoginPage', () => {
       form: { error: 'Something went wrong. Try again.' },
     });
     await expect.element(screen.getByText(/something went wrong/i)).toBeInTheDocument();
-    expect(screen.container.textContent).not.toMatch(/that link expired/i);
+    expect(screen.container.textContent).not.toMatch(/didn’t work/i);
   });
 
   it('applies the SSR-resolved dark theme to its data-theme wrapper (the cookie carries no auth)', async () => {

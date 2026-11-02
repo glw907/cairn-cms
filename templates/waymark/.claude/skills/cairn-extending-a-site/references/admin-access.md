@@ -127,7 +127,7 @@ Pick the shape by whether the refusal can answer the request that raised it:
   editor's unsaved input survives; reads close through `requireAccess` in the `load`, so reads and
   writes share one fail-closed predicate.
 - **The guard** returns a branded `Response` before routing (missing bindings, CSRF, identity).
-- A small closed set (expired sign-in link, publish-all outcome) redirects with an engine-resolved
+- A small closed set (the publish-all outcomes) redirects with an engine-resolved
   `?error=` code; site code never writes or reads one.
 
 A site `handleError` replaces SvelteKit's default logging, so log the error first in it.

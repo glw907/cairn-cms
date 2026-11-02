@@ -30,15 +30,13 @@ Two other messages can appear on the sign-in page when you ask for a link:
 
 The **Check your email** screen says to open the link within 10 minutes. The link works only in the browser where you asked for it. If you ask on a computer and open the email on your phone, the link fails.
 
-Depending on what went wrong, you see one of these messages:
+You see this message on the sign-in page, or on the confirm page after you select a link:
 
-- **"That link expired. Request a new link below and open it in this browser."**
-- **"This browser has no pending sign-in. Request a new link below and open it in this browser."**
-- **"This sign-in link is invalid or expired."**
+- **"That sign-in link didn’t work. A link works once, for 10 minutes, in the browser that requested it. Request a new link below and open it in this browser."**
 
-All three have the same fix:
+The fix is the same whatever the cause:
 
-1. Go to the sign-in page. If you see **This sign-in link is invalid or expired.**, select **Request a new link**.
+1. Go to the sign-in page. If you're on the confirm page, select **Request a new link**.
 1. Enter your email address and select **Send sign-in link**.
 1. Open the new email in the same browser where you asked for the link.
 

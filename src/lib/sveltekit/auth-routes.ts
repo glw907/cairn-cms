@@ -111,8 +111,8 @@ export { NO_PENDING_REQUEST_ERROR };
  * {@link TOKEN_TTL_MS}. The cookie holds an opaque nonce whose only meaning is the `nonce_hash`
  * on a live token row, and a row dies with its ten-minute TTL, so a cookie that outlives it
  * grants nothing. What the longer life buys is the ordinary case: an editor who clicks a link
- * after the token expired arrives WITH their cookie and reads "that link expired" rather than the
- * false "different browser" message a cookie-less arrival produces.
+ * after the token expired arrives WITH their cookie and takes the `expired` redirect rather than the
+ * `no-pending-request` one a cookie-less arrival takes.
  */
 const PENDING_COOKIE_TTL_MULTIPLE = 6;
 

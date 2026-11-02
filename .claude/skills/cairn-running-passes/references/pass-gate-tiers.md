@@ -63,7 +63,9 @@ Seven legs, in this order. Each prints only when it applies.
    `site-visual.spec.ts`, or the whole suite, appends `--grep-invert "site home|archive page 2"`,
    the two tests this workstation's Chromium renders off CI's baselines (`durable-gotchas.md`);
    CI runs them whole.
-7. `make -C tool check`, when the diff holds a `tool/**` path. A tool-only diff prints just this.
+7. `make -C tool check`, when the diff holds a `tool/**` path or a path the Go tests read outside
+   `tool/` (the table's `toolInputs`: an edit to one of those needs Go and Vale installed). A
+   tool-only diff prints just this.
 
 ### Buckets and the static checks
 
@@ -136,18 +138,24 @@ project and no e2e, and its output holds no bare `npm run package` and no bare `
 (the close runner is only ever given a label subset, and it builds `dist` itself). `--fast` cannot
 combine with `--pin` or `--protected`.
 
-**Line 1**, the non-browser legs, fails if any leg fails. It runs on the heavy lane, cairn-run-gate's
+**Line 1**, the non-browser legs, runs every leg and fails at the end if any failed, so a red static
+check never hides a unit red. It runs on the heavy lane, cairn-run-gate's
 default, with no lane prefix.
 
-- A serial chain, because each of its parts builds or reads `dist` and a build beside a reader
+- A serial group that runs every leg and fails at the end, because each of its parts builds or reads `dist` and a build beside a reader
   races: `npm run check:close -- <labels>` for the diff's static checks (minus the type check), then
   the type check (`npm run check`, whose program loads `dist` through the package's self-import),
   then `check:tool-heuristics`, `test:emit`, and the showcase's `test:unit` where the diff selects
   them, then `npm run check:docs-gate` when a docs path changed, then the unit tests related to the
   diff (`npx vitest related --run --passWithNoTests --project unit <paths>`; the whole `unit`
-  project when the diff deletes or renames a path under `src/` or `scripts/`).
+  project when the diff deletes or renames a path under `src/` or `scripts/`, or holds a live path
+  outside the table's `unitSelectable` list or a `src/` file that is not code). A live `docs/` or
+  `MIGRATION-NOTES.md` path adds the slug contract test, which reads those files at run time.
+  Named gap: `vitest related` follows imports and never sees a file a unit test reads at run time,
+  so a `src/` code edit can miss one of the 38 unit tests that do; CI is their home.
 - Beside the chain, concurrently: tellgrader, the Cairn Vale rule-case tests, and `make -C tool
-  check` when the diff holds a `tool/**` path. A tool-only diff prints just the tool gate.
+  check` when the diff holds a `tool/**` path or a `toolInputs` path (the files the Go tests read
+  outside `tool/`; Go and Vale must be installed). A tool-only diff prints just the tool gate.
 
 `--fast` accepts `--class` and `--paint` and ignores them, since they only shape the e2e leg that
 CI carries.

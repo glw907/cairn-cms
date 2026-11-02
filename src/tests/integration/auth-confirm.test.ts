@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { seedEditor, makeEvent, makeCookies, makeRecordingCookies, countRows, expectRedirect } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { generateToken, hashToken, sessionCookieName, csrfCookieName, buildCookieName } from '../../lib/auth/crypto.js';
-import { issueToken, createSession } from '../../lib/auth/store.js';
+import { issueToken, createSession, resolveSession } from '../../lib/auth/store.js';
 import { testEvent } from '../helpers/test-event.js';
 import { withTestEnv } from '../helpers/with-test-env.js';
 import { runtime } from '../unit/_content-harness.js';
@@ -88,6 +88,66 @@ describe('confirm POST (scenarios 1, 3, 4)', () => {
     );
     expect(redirect.location).toBe('/admin/login?error=expired');
     expect(await countRows('session')).toBe(0);
+  });
+});
+
+describe('one session row per browser', () => {
+  const confirmUrl = 'https://test.dev/admin/auth/confirm';
+
+  /** Whether a raw session id still selects a row, read by its digest with direct SQL. */
+  async function rowExists(id: string): Promise<boolean> {
+    return (await db.prepare('SELECT 1 FROM session WHERE id = ?').bind(await hashToken(id)).first()) !== null;
+  }
+
+  it('re-login replaces this browser row and leaves a second device row', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await createSession(db, 'sid-other-device', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    await createSession(db, 'sid-this-browser', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    const token = generateToken();
+    const now = Date.now();
+    await issueToken(db, 'ed@x.dev', await hashToken(token), now + 10_000, now, await hashToken(PENDING_NONCE));
+    const cookies = makeCookies({ ...pendingSeed(), [sessionCookieName(true)]: 'sid-this-browser' });
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    const fresh = cookies.get(sessionCookieName(true));
+    expect(fresh).toBeTruthy();
+    expect(fresh).not.toBe('sid-this-browser');
+    expect(await rowExists('sid-this-browser')).toBe(false);
+    expect(await rowExists('sid-other-device')).toBe(true);
+    expect(await rowExists(fresh as string)).toBe(true);
+    expect(await countRows('session')).toBe(2);
+  });
+
+  it('reads the prior id from the other cookie-name form when the derived one is absent', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await createSession(db, 'sid-bare-form', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    const token = generateToken();
+    const now = Date.now();
+    await issueToken(db, 'ed@x.dev', await hashToken(token), now + 10_000, now, await hashToken(PENDING_NONCE));
+    const cookies = makeCookies({ ...pendingSeed(), [sessionCookieName(false)]: 'sid-bare-form' });
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    expect(await rowExists('sid-bare-form')).toBe(false);
+    expect(await countRows('session')).toBe(1);
+  });
+
+  it('a failed confirm with a session cookie leaves that row', async () => {
+    await liveToken('ed@x.dev');
+    await createSession(db, 'sid-this-browser', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    const cookies = makeCookies({ ...pendingSeed(), [sessionCookieName(true)]: 'sid-this-browser' });
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token: 'bogus' }, cookies })));
+    expect(await rowExists('sid-this-browser')).toBe(true);
+  });
+
+  it('logout removes the row by its digest, and the cookie no longer resolves', async () => {
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeCookies(pendingSeed());
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    const id = cookies.get(sessionCookieName(true)) as string;
+    expect(await rowExists(id)).toBe(true);
+    await expectRedirect(() =>
+      routes.logoutAction(makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies })),
+    );
+    expect(await rowExists(id)).toBe(false);
+    expect(await resolveSession(db, id, Date.now())).toBeNull();
   });
 });
 

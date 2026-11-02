@@ -70,11 +70,12 @@ export function makeEvent(input: {
   form?: Record<string, string>;
   cookies?: CookieJar;
   editor?: Editor | null;
+  headers?: Record<string, string>;
 }) {
-  const { url, form, cookies = makeCookies(), editor = null } = input;
+  const { url, form, cookies = makeCookies(), editor = null, headers } = input;
   const request = form
-    ? new Request(url, { method: 'POST', body: new URLSearchParams(form) })
-    : new Request(url);
+    ? new Request(url, { method: 'POST', body: new URLSearchParams(form), headers })
+    : new Request(url, { headers });
   return {
     url: new URL(url),
     request,

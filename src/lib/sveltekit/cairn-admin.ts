@@ -36,10 +36,11 @@ export interface CairnAdminConfig {
   /** The composed runtime the admin bundle closes over: concepts, roles, the backend, and every other site-declared seam. */
   runtime: CairnRuntime;
   /**
-   * The magic-link auth seam: `send` replaces the default Cloudflare Email sender. The email's
-   *  site name and email sender config come from the runtime. See `AuthRoutesConfig`.
+   * The magic-link auth seam: `send` replaces the default Cloudflare Email sender, and
+   *  `rateLimit` resolves an optional sign-in rate limit. The email's site name and email sender
+   *  config come from the runtime. See `AuthRoutesConfig`.
    */
-  auth?: Pick<AuthRoutesConfig, 'send'>;
+  auth?: Pick<AuthRoutesConfig, 'send' | 'rateLimit'>;
   /**
    * Forwarded to the content routes verbatim; a site that enables tidy passes a `TidyClient`
    *  factory here to route tidy through its own gateway, and a test passes a stub.
@@ -97,7 +98,7 @@ export type AdminData =
  */
 export function createCairnAdminInternal(config: CairnAdminConfig) {
   const { runtime } = config;
-  const auth = createAuthRoutes({ runtime, send: config.auth?.send });
+  const auth = createAuthRoutes({ runtime, send: config.auth?.send, rateLimit: config.auth?.rateLimit });
   const content = createContentRoutesInternal({
     runtime,
     tidy: config.tidy,

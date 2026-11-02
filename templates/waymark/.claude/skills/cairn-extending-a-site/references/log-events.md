@@ -39,6 +39,8 @@ Contents:
 | `auth.session.created` | info | `email` | Session row created after a confirm. |
 | `auth.session.destroyed` | info | `email` | Logout deleted a row that was still live. A stale or expired cookie leaves no record, so this undercounts sign-outs. |
 | `auth.session.destroy_failed` | error | `error` | Logout's row delete failed (D1). The cookie is already cleared. |
+| `auth.rate_limited` | warn | `scope` (`login`) | The site's sign-in rate limit (`auth.rateLimit`) refused a link request, keyed by the requester's address, which the record never carries. The requester read `throttled`. A run of them is a request flood from one address, or a limit set too low for a shared address. |
+| `auth.rate_limit_failed` | warn | `scope` (`login`), `error` | The sign-in rate limit's resolver or limiter call threw or failed, so the request went through unlimited. `error` has the address masked. |
 | `auth.identity.unknown` | warn | `email`, `path` | Identity mode: the gate proved an email that matches no roster row. Fix the roster row to carry this exact address. |
 | `auth.role.unknown` | warn | `email`, `role` | Session role is outside the declared vocabulary; it authenticates at `none`. Add the role to `defineRoles`. |
 | `auth.access.refused` | warn | `email`, `role`, `target`, `reason` | The access map denied a request. `no_rule`: no key for the target. `shadowed`: a dynamic segment hides the rule behind a deeper key (declare `target`). `role`: the rule omits the role, the `editors` floor, `none` capability, or `ownerOnly`. |

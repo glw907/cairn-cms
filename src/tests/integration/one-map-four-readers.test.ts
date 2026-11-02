@@ -13,6 +13,7 @@ import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
 import { createSectionAction } from '../../lib/sveltekit/section-action.js';
 import { resolveNavLayout } from '../../lib/sveltekit/admin-nav.js';
 import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
+import { createSession } from '../../lib/auth/store.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import { composeRuntime } from '../../lib/content/compose.js';
@@ -58,10 +59,9 @@ async function guardedEvent(role: 'owner' | 'steward', routeId: string, post = f
     .prepare('INSERT OR IGNORE INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
     .bind(email, role, role, Date.now())
     .run();
-  await db
-    .prepare('INSERT OR IGNORE INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-    .bind(`sid-${role}`, email, Date.now() + 10_000, Date.now())
-    .run();
+  // The store keeps only the id's digest, so the row goes in through createSession. Passing the
+  // same id as the prior one replaces the row a second call for this role would otherwise collide with.
+  await createSession(db, `sid-${role}`, email, Date.now() + 10_000, Date.now(), `sid-${role}`);
   const jar = makeCookies({ [sessionCookieName(true)]: `sid-${role}`, ...(post ? { [csrfCookieName(true)]: 'MATCH' } : {}) });
   const url = `https://test.dev${routeId}`;
   const request = post

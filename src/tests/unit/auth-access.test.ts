@@ -138,6 +138,16 @@ describe('canReach: mapped and unmapped screen ids', () => {
   it('admits any editor capability when no map is given at all', () => {
     expect(canReach(undefined, editor('publisher'), 'pages')).toBe(true);
   });
+
+  it.each(['constructor', '__proto__'])(
+    'answers the prototype name %s as an unmapped screen for every capability',
+    (target) => {
+      expect(canReach(access, editor('publisher'), target)).toBe(canReach(access, editor('publisher'), 'unmapped-screen'));
+      expect(canReach(access, editor('publisher'), target)).toBe(true);
+      expect(canReach(access, editor('owner', 'owner'), target)).toBe(true);
+      expect(canReach(access, editor('staff', 'none'), target)).toBe(false);
+    },
+  );
 });
 
 describe('canReach: href prefix matching', () => {

@@ -9,6 +9,7 @@ import type { Backend } from '../../lib/github/backend.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { expectRedirect as expectRedirectAssertion } from '../_redirect-assertions.js';
 import { log } from '../../lib/log/index.js';
+import { hashToken } from '../../lib/auth/crypto.js';
 import { testEvent } from '../helpers/test-event.js';
 import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
@@ -81,6 +82,7 @@ function actionEvent(
     editor?: { email: string; displayName: string; role: 'owner' | 'editor'; capability: 'owner' | 'editor' } | null;
     env?: Record<string, unknown>;
     cookies?: Record<string, string>;
+    headers?: Record<string, string>;
   } = {},
 ) {
   const cookieSets: { name: string; value: string }[] = [];
@@ -91,6 +93,7 @@ function actionEvent(
     url: `https://t.example${pathname}`,
     route: '/admin/[...path]',
     body: new URLSearchParams(opts.form ?? {}),
+    headers: opts.headers,
     locals: {
       cairnEditor:
         opts.editor === undefined
@@ -178,6 +181,24 @@ describe('auth actions', () => {
     await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent' });
   });
 
+  it('request reaches the auth rate limit through createCairnAdmin, resolved off the Worker env', async () => {
+    const { db } = fakeD1();
+    const keys: string[] = [];
+    const limiter = { limit: async ({ key }: { key: string }) => (keys.push(key), { success: false }) };
+    const admin = createCairnAdmin({
+      runtime: runtime(),
+      auth: { rateLimit: (env) => env.LOGIN_LIMITER as typeof limiter | undefined },
+    });
+    const event = actionEvent('/admin/login', {
+      editor: null,
+      form: { email: 'who@t' },
+      env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db, LOGIN_LIMITER: limiter },
+      headers: { 'cf-connecting-ip': '198.51.100.4' },
+    });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'throttled' });
+    expect(keys).toEqual(['login:198.51.100.4']);
+  });
+
   it('the mail carries the runtime site name, email sender, and reply-to', async () => {
     const { db } = fakeD1({ 'FROM editor WHERE': { email: 'ed@t', display_name: 'Ed Editor', role: 'editor' } });
     const sent: { from: string; replyTo?: string; subject: string }[] = [];
@@ -226,7 +247,9 @@ describe('auth actions', () => {
       cookies: { '__Host-cairn_session': 'sid' },
     });
     await expectRedirect(admin.actions.logout(event), '/admin/login');
-    expect(calls.some((c) => c.sql.includes('DELETE FROM session') && c.args[0] === 'sid')).toBe(true);
+    // The store matches the cookie's digest, never the raw id.
+    const digest = await hashToken('sid');
+    expect(calls.some((c) => c.sql.includes('DELETE FROM session') && c.args[0] === digest)).toBe(true);
     // The CSRF cookie is deleted alongside the session cookie, so a persistent double-submit
     // token cannot survive sign-out. Both cookie-name forms delete for both cookies (Task 6,
     // belt-and-braces N1), so a PUBLIC_ORIGIN change between login and logout cannot strand a

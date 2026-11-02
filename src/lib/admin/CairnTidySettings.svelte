@@ -17,7 +17,7 @@ Two tiers with a truthful visibility gate:
     probe surface) fails soft and keeps the editor tier open rather than punishing an unproven
     state. No teasing disabled controls sit in the tab order in either gated state.
 
-The resting state is the safe default: Fixes on, every style convention off, every variant collapsed.
+The resting state is the safe default: every style convention off, every variant collapsed.
 Each binary toggle is the shipped check-and-tint aria-pressed button; each variant chooser is the
 shipped pick-one recipe (role="radiogroup" over role="radio" with aria-checked, roving tabindex, the
 check glyph as the non-color cue), never aria-pressed for a pick-one. A generated summary line and the
@@ -29,7 +29,7 @@ home), diffable and shared across editors.
 
 The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated; Save stays in the form's foot, the screen's
-form-semantic primary action. The section-count pills (Fixes' On/Off, Style conventions' on-count)
+form-semantic primary action. The section-count pills (the Style conventions on-count)
 re-express on `StatusChip` at a neutral tone (a Tidy pill never
 reaches past neutral/warning), each still wrapped in its `role="status" aria-live="polite"`
 region so the announcement contract is unchanged. The On/Off check-and-tint toggle itself stays
@@ -245,7 +245,7 @@ bespoke: a single-use control, not a repeated device.
   // always true for any combination.
   const summaryFixes = $derived.by(() => {
     const parts: string[] = [];
-    if (conv.fixes) parts.push('spelling', 'grammar', 'doubled words', 'spacing', 'capitals', 'end punctuation');
+    parts.push('spelling', 'grammar', 'doubled words', 'spacing', 'capitals', 'end punctuation');
     if (rowOn('oxfordComma')) parts.push('commas');
     if (rowOn('timeFormat')) parts.push('time format');
     if (rowOn('numberStyle')) parts.push('number style');
@@ -255,7 +255,7 @@ bespoke: a single-use control, not a repeated device.
     if (rowOn('ellipsis')) parts.push('ellipses');
     if (rowOn('smartQuotes')) parts.push('quotes');
     if (rowOn('brandCaps')) parts.push('brand names');
-    return parts.length ? joinList(parts) : 'nothing yet';
+    return joinList(parts);
   });
   const summaryLeaves = $derived.by(() => {
     const parts: string[] = [];
@@ -284,16 +284,10 @@ bespoke: a single-use control, not a repeated device.
     for (const row of styleRows) (conv[row.key] as unknown) = row.variants ? undefined : false;
     for (const row of advancedRows) (conv[row.key] as unknown) = false;
   }
-  function fixesAllOff() {
-    conv.fixes = false;
-  }
-  function fixesAllOn() {
-    conv.fixes = true;
-  }
-  // Reset to the safe resting default: Fixes on, every style and advanced toggle off, every variant
+  // Reset to the safe resting default: every style and advanced toggle off, every variant
   // collapsed. Never named a house style.
   function resetSafeDefault() {
-    conv = { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false };
+    conv = { enDashRanges: false, smartQuotes: false, brandCaps: false };
   }
 
   // --- the radiogroup roving-tabindex handler, the CairnMediaLibrary triage recipe ---
@@ -433,21 +427,14 @@ bespoke: a single-use control, not a repeated device.
           <div class="min-w-0 flex-1">
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Fixes
-              <span role="status" aria-live="polite">
-                <StatusChip label={conv.fixes ? 'On' : 'Off'} size="xs" />
-                <span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span>
-              </span>
             </h2>
-            <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Plain errors, not style choices. On by default. Leave them on unless you have a reason not to.</p>
-          </div>
-          <div class="flex flex-none items-center gap-1">
-            <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={conv.fixes ? fixesAllOff : fixesAllOn}>{conv.fixes ? 'Turn off' : 'Turn on'}</button>
+            <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Plain errors, not style choices. Tidy always fixes these.</p>
           </div>
         </div>
         <div class="overflow-hidden card-shell card-shadow">
-          <div class="flex items-center gap-4 p-3.5 {conv.fixes ? '' : 'opacity-60'}">
+          <div class="flex items-center gap-4 p-3.5">
             <div class="min-w-0 flex-1">
-              <div class="type-subtitle font-semibold leading-snug {conv.fixes ? '' : 'text-muted'}">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
+              <div class="type-subtitle font-semibold leading-snug">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
               <!-- the colorless diff (the design arc's accent reservation, 2026-07-15): a deletion
                    is muted strikethrough, an insertion is semibold ink, both on a neutral wash -->
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug" aria-hidden="true">
@@ -465,11 +452,6 @@ bespoke: a single-use control, not a repeated device.
                 <span class="type-label text-muted">as written, following your site's English</span>
               </div>
             </div>
-            <span class="flex-none">
-              <button type="button" class={onoffClass(conv.fixes)} aria-pressed={conv.fixes} aria-label="Fixes" onclick={() => toggleBool('fixes')}>
-                {#if conv.fixes}<CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />On{:else}<CircleIcon class="h-3 w-3 opacity-60" aria-hidden="true" />Off{/if}
-              </button>
-            </span>
           </div>
         </div>
       </section>

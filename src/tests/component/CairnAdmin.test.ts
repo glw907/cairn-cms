@@ -101,7 +101,7 @@ function settingsData(): AdminData {
       keyStatus: 'valid',
       model: 'claude-sonnet-5',
       modelLabel: 'Claude Sonnet 5',
-      conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+      conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false },
       saved: false,
     },
   };
@@ -137,7 +137,7 @@ function editData(): AdminData {
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
       siteDictionary: [],
-      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false } },
+      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false } },
       advisories: [],
       orphanTags: [],
     },

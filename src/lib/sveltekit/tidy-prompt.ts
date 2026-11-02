@@ -74,8 +74,7 @@ export function buildTidyPrompt(conventions: TidyConventions): string {
 }
 
 // One rule line per enabled convention, in the order of the convention list. A disabled (undefined or false) toggle
-// contributes nothing. The Fixes group is not emitted here: the objective fixes live in the core, and
-// the group toggle is a screen control that does not strip the core.
+// contributes nothing. The objective fixes live in the core and are not emitted here.
 function conventionLines(c: TidyConventions): string[] {
   const lines: string[] = [];
 

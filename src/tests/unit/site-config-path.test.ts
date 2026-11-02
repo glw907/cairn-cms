@@ -75,7 +75,7 @@ describe('the screens that read the site config', () => {
     const { content } = routesFor();
     await expectRedirect(() =>
       content.settingsSaveAction(
-        contentEvent({ url: 'https://t.example/admin/settings', form: { conventions: JSON.stringify({ fixes: true }) } }),
+        contentEvent({ url: 'https://t.example/admin/settings', form: { conventions: JSON.stringify({ smartQuotes: true }) } }),
       ),
     );
     await expectRedirect(() =>
@@ -87,7 +87,7 @@ describe('the screens that read the site config', () => {
       ),
     );
     const committed = gh.read('main', DEFAULT_SITE_CONFIG_PATH)!;
-    expect(committed).toContain('fixes: true');
+    expect(committed).toContain('smartQuotes: true');
     expect(committed).toContain('value: svelte');
   });
 
@@ -99,7 +99,7 @@ describe('the screens that read the site config', () => {
     });
     await expectRedirect(() =>
       content.settingsSaveAction(
-        contentEvent({ url: 'https://t.example/admin/settings', form: { conventions: JSON.stringify({ fixes: true }) } }),
+        contentEvent({ url: 'https://t.example/admin/settings', form: { conventions: JSON.stringify({ smartQuotes: true }) } }),
       ),
     );
     await expectRedirect(() =>
@@ -116,7 +116,7 @@ describe('the screens that read the site config', () => {
       ),
     );
     const committed = gh.read('main', ELSEWHERE)!;
-    expect(committed).toContain('fixes: true');
+    expect(committed).toContain('smartQuotes: true');
     expect(committed).toContain('value: svelte');
     expect(committed).toContain('label: Home');
     // Nothing was written to the default path, which holds no file in this seed.

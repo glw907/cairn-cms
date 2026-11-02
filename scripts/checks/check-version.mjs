@@ -76,7 +76,7 @@ export function compareVersions(a, b) {
  * @param {string} changelogText the full CHANGELOG.md text
  * @returns {string | null}
  */
-function unreleasedWindow(changelogText) {
+export function unreleasedWindow(changelogText) {
   const heading = changelogText.match(/^## Unreleased\b.*$/m);
   if (!heading) return null;
   const afterHeading = (heading.index ?? 0) + heading[0].length;

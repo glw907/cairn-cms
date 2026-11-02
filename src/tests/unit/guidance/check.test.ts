@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   IMPORT_LINE,
-  SOURCE_EXCLUSION_LINE,
   formatCheckReport,
   gitignoreExcludesClaude,
-  isStaleUnderStrict,
+  hasFixes,
   judgeCheckCairnScript,
   judgeSourceExclusion,
   judgeTree,
@@ -71,41 +70,103 @@ describe('gitignoreExcludesClaude', () => {
 });
 
 describe('judgeSourceExclusion', () => {
-  it('passes on a gitignored .claude without reading any CSS candidate', async () => {
-    const result = await judgeSourceExclusion(readFileFrom({ '.gitignore': '.claude\n' }));
+  const tw = '@import "tailwindcss";\n';
+
+  it('passes on a gitignored .claude without reading any CSS', async () => {
+    const result = await judgeSourceExclusion(readFileFrom({ '.gitignore': '.claude\n' }), ['src/admin.css']);
     expect(result.status).toBe('excluded');
   });
 
-  it('reads the exclusion line off the scaffold\'s admin.css when .claude is not gitignored', async () => {
+  it('fails ./.claude in src/admin.css, which resolves to src/.claude, and names the right line', async () => {
     const result = await judgeSourceExclusion(
-      readFileFrom({ '.gitignore': 'dist\n', 'src/admin.css': `@source "./routes/admin";\n${SOURCE_EXCLUSION_LINE}\n` })
+      readFileFrom({ 'src/admin.css': `${tw}@source not "./.claude";\n` }),
+      ['src/admin.css']
+    );
+    expect(result.status).toBe('not-excluded');
+    expect(result.line).toBe('@source not "../.claude";');
+  });
+
+  it('passes ../.claude in src/admin.css', async () => {
+    const result = await judgeSourceExclusion(
+      readFileFrom({ 'src/admin.css': `${tw}@source not "../.claude";\n` }),
+      ['src/admin.css']
     );
     expect(result.status).toBe('excluded');
   });
 
-  it('counts a Tailwind import with source(none) as excluded, as the emitted admin.css writes it', async () => {
+  it('passes ../../.claude in src/chassis/tokens.css', async () => {
+    const result = await judgeSourceExclusion(
+      readFileFrom({ 'src/chassis/tokens.css': `${tw}@source not "../../.claude";\n` }),
+      ['src/chassis/tokens.css']
+    );
+    expect(result.status).toBe('excluded');
+  });
+
+  it('fails a single-quoted import with no exclusion and names the line for its depth', async () => {
+    const result = await judgeSourceExclusion(
+      readFileFrom({ 'src/chassis/tokens.css': "@import 'tailwindcss';\n" }),
+      ['src/chassis/tokens.css']
+    );
+    expect(result).toEqual({
+      status: 'not-excluded',
+      entry: 'src/chassis/tokens.css',
+      line: '@source not "../../.claude";',
+    });
+  });
+
+  it('counts an exclusion in another listed file for an entry', async () => {
     const result = await judgeSourceExclusion(
       readFileFrom({
-        'src/admin.css': '@import "tailwindcss/utilities.css" layer(utilities) source(none);\n@source "./routes/admin";\n',
-      })
+        'src/chassis/tokens.css': tw,
+        'src/theme/theme.css': '@source not "../../.claude";\n',
+      }),
+      ['src/chassis/tokens.css', 'src/theme/theme.css']
     );
     expect(result.status).toBe('excluded');
   });
 
-  it('reports not-excluded when the entry has @source directives but no exclusion', async () => {
+  it('needs no exclusion for a utilities import with source(none)', async () => {
     const result = await judgeSourceExclusion(
-      readFileFrom({ 'src/admin.css': '@source "./routes/admin";\n' })
+      readFileFrom({
+        'src/admin.css': '@import "tailwindcss/utilities.css" layer(utilities) source(none);\n',
+      }),
+      ['src/admin.css']
+    );
+    expect(result.status).toBe('excluded');
+  });
+
+  it('does not treat tailwindcss/theme.css alone as an entry', async () => {
+    const result = await judgeSourceExclusion(
+      readFileFrom({ 'src/app.css': '@import "tailwindcss/theme.css";\n' }),
+      ['src/app.css']
+    );
+    expect(result.status).toBe('excluded');
+  });
+
+  it('ignores a @source not inside a CSS comment', async () => {
+    const result = await judgeSourceExclusion(
+      readFileFrom({ 'src/admin.css': `${tw}/* @source not "../.claude"; */\n` }),
+      ['src/admin.css']
     );
     expect(result.status).toBe('not-excluded');
   });
 
-  it('reports unknown and names every path checked when no entry can be identified', async () => {
-    const result = await judgeSourceExclusion(readFileFrom({}));
-    expect(result.status).toBe('unknown');
-    expect(result.checked).toContain('.gitignore');
-    expect(result.checked).toContain('src/admin.css');
+  it('passes when there is no entry', async () => {
+    const result = await judgeSourceExclusion(readFileFrom({}), []);
+    expect(result.status).toBe('excluded');
   });
 });
+
+function greenFiles(): Record<string, string> {
+  return {
+    ...flattenGuidanceTree(source),
+    'CLAUDE.md': `see ${IMPORT_LINE}`,
+    'package.json': JSON.stringify({ scripts: { 'check:cairn': 'cairn-audit' } }),
+    'cairn-audit.config.json': '{}',
+    '.github/workflows/check.yml': 'name: check\n',
+    '.gitignore': '.claude\n',
+  };
+}
 
 describe('judgeCheckCairnScript', () => {
   it('is false with no package.json', () => {
@@ -132,7 +193,7 @@ describe('runGuidanceCheck', () => {
       '.github/workflows/check.yml': 'name: check\n',
       '.gitignore': '.claude\n',
     };
-    const report = await runGuidanceCheck(readFileFrom(files), source);
+    const report = await runGuidanceCheck(readFileFrom(files), source, []);
 
     expect(report.tree.status).toBe('fresh');
     expect(report.importLine.present).toBe(true);
@@ -149,23 +210,26 @@ describe('runGuidanceCheck', () => {
   });
 
   it('prints the exact import line when CLAUDE.md is missing it', async () => {
-    const report = await runGuidanceCheck(readFileFrom({}), source);
+    const report = await runGuidanceCheck(readFileFrom({}), source, []);
     expect(report.importLine.detail).toContain(IMPORT_LINE);
   });
 
   it('prints the packaged snippet body under check:cairn, cairn-audit.config.json, and the CI workflow when each is missing', async () => {
-    const report = await runGuidanceCheck(readFileFrom({}), source);
+    const report = await runGuidanceCheck(readFileFrom({}), source, []);
     expect(report.checkCairnScript.detail).toContain(source.snippets['check-cairn.json']);
     expect(report.auditConfig.detail).toContain(source.snippets['cairn-audit.config.json']);
     expect(report.ciWorkflow.detail).toContain(source.snippets['check.yml']);
   });
 
-  it('prints the exclusion line with placement guidance when no Tailwind entry can be identified', async () => {
-    const report = await runGuidanceCheck(readFileFrom({}), source);
-    expect(report.sourceExclusion.status).toBe('unknown');
-    expect(report.sourceExclusion.detail).toContain(SOURCE_EXCLUSION_LINE);
-    expect(report.sourceExclusion.detail).toContain('.gitignore');
-    expect(report.sourceExclusion.detail).toContain('src/admin.css');
+  it('prints the exact exclusion line and the entry when the Tailwind entry lacks one', async () => {
+    const report = await runGuidanceCheck(
+      readFileFrom({ 'src/chassis/tokens.css': '@import "tailwindcss";\n' }),
+      source,
+      ['src/chassis/tokens.css']
+    );
+    expect(report.sourceExclusion.ok).toBe(false);
+    expect(report.sourceExclusion.detail).toContain('@source not "../../.claude";');
+    expect(report.sourceExclusion.detail).toContain('src/chassis/tokens.css');
   });
 
   it('reports every present .orig file', async () => {
@@ -174,7 +238,7 @@ describe('runGuidanceCheck', () => {
       ...packaged,
       '.claude/skills/foo/SKILL.md.orig': 'old content',
     };
-    const report = await runGuidanceCheck(readFileFrom(files), source);
+    const report = await runGuidanceCheck(readFileFrom(files), source, []);
     expect(report.orig.paths).toContain('.claude/skills/foo/SKILL.md.orig');
   });
 
@@ -184,7 +248,7 @@ describe('runGuidanceCheck', () => {
       ...packaged,
       '.claude/cairn/MANIFEST': '.claude/skills/foo/SKILL.md\n.claude/skills/retired/SKILL.md\n',
     };
-    const report = await runGuidanceCheck(readFileFrom(files), source);
+    const report = await runGuidanceCheck(readFileFrom(files), source, []);
     expect(report.tree.removable).toContain('.claude/skills/retired/SKILL.md');
   });
 
@@ -194,38 +258,51 @@ describe('runGuidanceCheck', () => {
       ...packaged,
       '.claude/cairn/MANIFEST': '/etc/passwd\n../../x\n.claude/skills/retired/SKILL.md\n',
     };
-    const report = await runGuidanceCheck(readFileFrom(files), source);
+    const report = await runGuidanceCheck(readFileFrom(files), source, []);
     expect(report.tree.removable).toEqual(['.claude/skills/retired/SKILL.md']);
     expect(report.tree.detail).not.toContain('/etc/passwd');
     expect(report.tree.detail).not.toContain('../../x');
   });
 });
 
-describe('isStaleUnderStrict', () => {
+describe('hasFixes', () => {
   it('is true when the tree is stale', async () => {
     const packaged = flattenGuidanceTree(source);
-    const report = await runGuidanceCheck(readFileFrom({ ...packaged, '.claude/skills/foo/SKILL.md': 'edited' }), source);
-    expect(isStaleUnderStrict(report)).toBe(true);
+    const report = await runGuidanceCheck(readFileFrom({ ...packaged, '.claude/skills/foo/SKILL.md': 'edited' }), source, []);
+    expect(hasFixes(report)).toBe(true);
   });
 
   it('is true when the tree is missing', async () => {
-    const report = await runGuidanceCheck(readFileFrom({}), source);
-    expect(isStaleUnderStrict(report)).toBe(true);
+    const report = await runGuidanceCheck(readFileFrom({}), source, []);
+    expect(hasFixes(report)).toBe(true);
   });
 
-  it('is false when the tree is fresh', async () => {
-    const packaged = flattenGuidanceTree(source);
-    const report = await runGuidanceCheck(readFileFrom(packaged), source);
-    expect(isStaleUnderStrict(report)).toBe(false);
+  it('is true when a leftover .orig is present beside an otherwise green report', async () => {
+    const report = await runGuidanceCheck(readFileFrom({ ...greenFiles(), '.claude/skills/foo/SKILL.md.orig': 'old' }), source, []);
+    expect(report.orig.ok).toBe(false);
+    expect(hasFixes(report)).toBe(true);
+  });
+
+  it('is false when every line passes', async () => {
+    const report = await runGuidanceCheck(readFileFrom(greenFiles()), source, []);
+    expect(hasFixes(report)).toBe(false);
   });
 });
 
 describe('formatCheckReport', () => {
-  it('renders all seven lines plus the recommendation block', async () => {
-    const packaged = flattenGuidanceTree(source);
-    const report = await runGuidanceCheck(readFileFrom(packaged), source);
+  it('prefixes each of seven lines PASS or FIX and ends with the count after the recommendations', async () => {
+    const report = await runGuidanceCheck(readFileFrom({ ...greenFiles(), 'CLAUDE.md': 'no import' }), source, []);
+    const lines = formatCheckReport(report).split('\n');
+    expect(lines.slice(0, 7).filter((l) => l.startsWith('PASS  ')).length).toBe(6);
+    expect(lines[1]).toMatch(/^FIX {3}CLAUDE\.md is missing the import line/);
+    expect(lines.indexOf('Recommendations (not gated):')).toBeGreaterThan(6);
+    expect(lines.at(-1)).toBe('6 passed, 1 to fix');
+  });
+
+  it('keeps a snippet body under its FIX line', async () => {
+    const report = await runGuidanceCheck(readFileFrom({}), source, []);
     const text = formatCheckReport(report);
-    expect(text).toContain('DaisyUI');
-    expect(text.split('\n').filter(Boolean).length).toBeGreaterThanOrEqual(7);
+    expect(text).toContain(`${source.snippets['check.yml']}`);
+    expect(text.endsWith('2 passed, 5 to fix')).toBe(true);
   });
 });

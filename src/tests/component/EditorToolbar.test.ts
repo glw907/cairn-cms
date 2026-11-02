@@ -201,7 +201,13 @@ describe('EditorToolbar', () => {
     // The check glyph adds 22px to a selected tab's own box; before this fix, selecting a tab
     // resized it and shifted the row after it. The compiled sheet carries daisyUI's real button
     // sizing, so this measures the production footprint, not a UA default.
-    beforeAll(() => document.documentElement.setAttribute('data-theme', 'cairn-admin'));
+    beforeAll(async () => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      // The sheet's faces use font-display:swap, so a tab measured before IBM Plex arrives lands on
+      // the fallback face and the width differs after the swap (1.8px in a cold browser).
+      // document.fonts.ready is no use here: it resolves at once when no load has started.
+      await document.fonts.load('14px "IBM Plex Sans Variable"');
+    });
     afterAll(() => document.documentElement.removeAttribute('data-theme'));
 
     it('keeps each tab its own width across the selected/unselected swap', async () => {

@@ -2,12 +2,12 @@
 // cairn-guidance: install or check the package's shipped skills, review agent, and CLAUDE.md
 // fragment in a consumer repo. `install` copies them into .claude/ (writing .orig beside
 // anything an edit diverged from, and a MANIFEST of what it wrote). `check` reports whether the
-// tree, the import line, and the gate wiring match what the package expects; it exits 0 unless
-// --strict is given and the guidance tree is stale or missing. Bad flags go to stderr with exit
+// tree, the import line, and the gate wiring match what the package expects, printing PASS or
+// FIX per line; it exits 0 unless --strict is given and any line reports FIX. Bad flags go to stderr with exit
 // 2, matching the doctor and audit bins' convention.
-import { readFile } from 'node:fs/promises';
-import { resolve, sep } from 'node:path';
-import { formatCheckReport, isStaleUnderStrict, runGuidanceCheck } from './check.js';
+import { readFile, readdir } from 'node:fs/promises';
+import { join, resolve, sep } from 'node:path';
+import { formatCheckReport, hasFixes, runGuidanceCheck } from './check.js';
 import { installGuidance, readGuidanceSource } from './install.js';
 
 export const USAGE = `Usage: cairn-guidance <install|check> [--strict] [--dry-run]
@@ -20,15 +20,15 @@ export const USAGE = `Usage: cairn-guidance <install|check> [--strict] [--dry-ru
   --dry-run With install, print what it would write, delete, and keep, and change nothing.
   check     Report whether the installed guidance tree, the CLAUDE.md import
             line, and the gate wiring match what the package expects.
-  --strict  With check, exit 1 when the guidance tree is stale or missing.
-            Otherwise check always exits 0.
+  --strict  With check, exit 1 when any line reports FIX.
+            Otherwise check exits 0 whatever it reports.
   --help    Print this message and exit 0.
 
 Every write stays under .claude/; a destination outside it, or reached through a symlink, is
 refused by name and the run continues. A .claude that is itself a symlink refuses every path. install never writes .claude/settings.json, the root
 CLAUDE.md, package.json, or anything under .github/, and exits 0 even when it refuses or a write
-fails, so read its stderr. An existing .orig is never rewritten. check reports seven lines, none
-of which fails the run except the tree freshness under --strict. An unknown command or flag, or
+fails, so read its stderr. An existing .orig is never rewritten. check reports seven lines, each
+PASS or FIX, and a count; no line fails the run except under --strict. An unknown command or flag, or
 --strict with install, exits 2.
 `;
 
@@ -140,9 +140,20 @@ async function main(): Promise<void> {
     return;
   }
 
-  const report = await runGuidanceCheck(readFileUnderCwd, source);
+  let cssPaths: string[] = [];
+  try {
+    const entries = await readdir(join(cwd, 'src'), { recursive: true });
+    cssPaths = entries
+      .filter((rel) => rel.endsWith('.css'))
+      .map((rel) => `src/${rel.split(sep).join('/')}`)
+      .sort();
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+  }
+
+  const report = await runGuidanceCheck(readFileUnderCwd, source, cssPaths);
   console.log(formatCheckReport(report));
-  if (args.strict && isStaleUnderStrict(report)) {
+  if (args.strict && hasFixes(report)) {
     process.exitCode = 1;
   }
 }

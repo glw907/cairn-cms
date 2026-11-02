@@ -98,6 +98,7 @@ jobs:
       - run: npm run check:invisible-craft
       - run: npm run check:admin-css-classes
       - run: npm run check:rulings-format
+      - run: npm run check:consumers-must
       - run: npm run check:prose
       - run: npm run check:version
       - run: npm run check:dev-package

@@ -1,9 +1,6 @@
 ---
 name: cairn-following-public-design
 description: Follows cairn's public design system when you work on the public reading theme (Waymark): its tokens, prose styles, and layout rules. Use when editing src/lib/public, public CSS, or a theme for the public pages of a site built on cairn.
-paths:
-  - "src/lib/public/**"
-  - "templates/waymark/**"
 ---
 
 # Following the public design

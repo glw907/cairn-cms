@@ -106,6 +106,16 @@ describe('packaged bin (needs dist/guidance/bin.js; run npm run package to unski
     }
   });
 
+  it.skipIf(!built)('check --strict passes every line from the waymark template', () => {
+    const out = spawnSync(process.execPath, [BIN, 'check', '--strict'], {
+      cwd: resolve(process.cwd(), 'templates/waymark'),
+      env: { PATH: process.env.PATH },
+      encoding: 'utf8',
+    });
+    expect(out.stdout).toContain('7 passed, 0 to fix');
+    expect(out.status).toBe(0);
+  });
+
   it.skipIf(!built)('install writes the guidance tree, and a second install reports it unchanged', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cairn-guidance-install-'));
     try {
@@ -123,8 +133,9 @@ describe('packaged bin (needs dist/guidance/bin.js; run npm run package to unski
         env: { PATH: process.env.PATH },
         encoding: 'utf8',
       });
-      expect(second.status).toBe(0);
-      expect(second.stdout.toLowerCase()).toContain('matches the installed package');
+      // An empty directory has no import line or gate wiring, so strict fails on those lines.
+      expect(second.status).toBe(1);
+      expect(second.stdout).toMatch(/^PASS {2}the guidance tree .* matches the installed package/m);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

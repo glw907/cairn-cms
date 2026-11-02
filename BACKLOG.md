@@ -27,6 +27,9 @@
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#278** Walk sign-in, edit-and-save, and publish with a screen reader (Orca) `#improvement` `#cairn-cms` *(2026-11-02)*
+  `keyboard-walk.spec.ts` proves the keyboard path and the focus ring, not what a screen reader announces. This pass removed the polite `aria-live` regions from the Nav, Tags, Tidy, Create, and Editors screens, because the move of focus to the alert or the refused field replaces them; only a screen reader shows whether the refusal, the saved flash, and the publish result are still heard. Walk the three journeys in Orca with Firefox and with Chromium, and file what is not announced.
+  Placement: site work, ahead of the beta gate.
 - [ ] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   The publish-state filter scrolls inside its container at 320 by design (`golden-path.spec.ts:764-790`). With `Unpublished changes` the row now rests on `All 7 | Unpublished changes 2 | Pub`, and nothing signals that more sits to the right, so an editor at that width can miss **Published**. Add a scroll cue. Wrapping is ruled out: `ListToolbar.svelte:489-493` explains why and `golden-path.spec.ts:785` pins it. Found by the `admin-rest` baseline read.
   Placement: Cleanup round.

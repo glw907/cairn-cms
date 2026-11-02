@@ -19,9 +19,10 @@ it. Engine passes land on `main` and never release.
 
 ## Immediate next action
 
-Pass 1a (auth removal) and pass 1b (audit trim) are in planning, side by side. The conductor acting
-for this run is session `cairn-cms-9b`, and its planners report to it. Passes 2 to 8 follow in order,
-each planned just before it runs. The run stops at the release sitting, where Geoff reads the release
+The `small-api` slice (pass 3 plus pass 2's shape 8) is PR-ready in PR #184, from session
+`cairn-cms-small-api`, and merges last of its group. The conductor acting for this run is session
+`cairn-cms-9b`, and its planners report to it. The remaining passes follow in order, each planned
+just before it runs. The run stops at the release sitting, where Geoff reads the release
 packet and rules each of the five held majors. Three bars read unmet by Geoff's choice (the install
 and editor sittings, and the docs review of the human pages), and Evaluate is unmet until its re-cut
 (`BACKLOG.md` #207).

@@ -210,8 +210,8 @@
   `BlockContext`; and `defineRegistry` takes `blocks`. `rendering.blocks` and `createRenderer`'s `blocks`
   are plain arrays of block definitions, and the engine builds the registry, so a site no longer calls
   `defineRegistry` to wire either. `defineAdapter` builds it too, so a reserved block name, or a
-  `defaultIconByRole` block with no icon attribute, fails at load. `BlockDef` drops `attributeSchema`, which the new `RegisteredBlock`
-  type that `defineBlock` returns carries. Scaffolds move `src/theme/markdown-components.ts` to
+  `defaultIconByRole` block with no icon attribute, fails at load. `BlockDef` drops `attributeSchema`,
+  which the new `RegisteredBlock` type that `defineBlock` returns carries. Scaffolds move `src/theme/markdown-components.ts` to
   `src/theme/markdown-blocks.ts`, and its `components` export is `blocks`. The admin's strings follow: the
   insert dialog reads "Insert a block", "Search blocks", and "Back to blocks", the Edit-block control reads
   "Edit the block at the cursor" or "Place the cursor in an editable block to edit it", and the fold

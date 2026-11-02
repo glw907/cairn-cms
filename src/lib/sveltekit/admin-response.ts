@@ -49,10 +49,10 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
  * the rejection pages (a CSRF failure, an https-required help page, a bindings-missing fault), which
  * send no Strict-Transport-Security at all.
  *
- * That omission is deliberate and load-bearing. A header here would replace a policy the zone
- * pinned rather than restate it (see {@link SecurityHeaderOptions.omitHsts}). The CSRF rejection is
+ * That omission is deliberate and load-bearing. A header here would replace a browser's cached
+ * policy rather than restate it (see {@link SecurityHeaderOptions.omitHsts}). The CSRF rejection is
  * reachable by any cross-site POST with no session, so a header there would hand any page on the web
- * a repeatable way to rewrite the pin. The guard's resolve path
+ * a repeatable way to rewrite that policy. The guard's resolve path
  * still sends the header on every response it returns, which is what keeps the admin host pinned.
  * The https-required page is served over http, where RFC 6797 forbids the header anyway.
  */

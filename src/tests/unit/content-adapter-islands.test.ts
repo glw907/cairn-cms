@@ -57,7 +57,8 @@ describe('defineAdapter island consistency', () => {
   it('accepts a rendering with no blocks key, and a frozen blocks array', () => {
     const render = async ({ body }: { body: string }) => body;
     expect(() => defineAdapter(adapterWith({ render }))).not.toThrow();
-    expect(() => defineAdapter(adapterWith({ render, blocks: Object.freeze([]) }))).not.toThrow();
+    const blocks = [{ name: 'card', label: '', description: '', build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }) }] satisfies BlockDef[];
+    expect(() => defineAdapter(adapterWith({ render, blocks: Object.freeze(blocks) }))).not.toThrow();
   });
 
   it('refuses a stale components key under rendering, naming blocks', () => {

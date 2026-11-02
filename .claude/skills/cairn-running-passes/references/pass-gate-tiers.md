@@ -76,7 +76,7 @@ matches it:
 | scripts | `scripts/`, `src/tests/`, `.github/`, `eslint.config.js`, `tsdoc.json`, `vitest.config.ts`, `wrangler.test.jsonc` |
 | harness | `.claude/` |
 | showcase | `examples/showcase/`, `templates/`, `packages/create-cairn-site/` |
-| engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `migrations-channel/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |
+| engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |
 | export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `scripts/checks/api-surface.md`, `schema/`, `skills/`, `claude/` |
 
 A pattern ending in `/` is a literal directory prefix, a pattern with no glob character is an exact

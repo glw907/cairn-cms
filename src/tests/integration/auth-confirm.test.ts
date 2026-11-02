@@ -6,9 +6,10 @@ import { generateToken, hashToken, sessionCookieName, csrfCookieName, buildCooki
 import { issueToken, createSession } from '../../lib/auth/store.js';
 import { testEvent } from '../helpers/test-event.js';
 import { withTestEnv } from '../helpers/with-test-env.js';
+import { runtime } from '../unit/_content-harness.js';
 
 const db = env.AUTH_DB;
-const routes = createAuthRoutes({ branding: { siteName: 'Test', from: 'noreply@test.dev' }, send: async () => {} });
+const routes = createAuthRoutes({ runtime: runtime(), send: async () => {} });
 
 beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);

@@ -19,12 +19,12 @@ Contents:
 On a scaffold, components live in `src/theme/markdown-components.ts` and the adapter builds the
 registry from its exported `components` list. Adding one takes two edits there: the
 `defineComponent` call and an entry in `components`. A hand-built site passes
-`defineRegistry({ components })` to `createRenderer`, sets `rendering.components`, and passes
-`registry={cairn.rendering.components}` to `CairnAdmin` (no registry, no **Insert block** button).
+`defineRegistry({ components })` to `createRenderer` as `components`, sets `rendering.components`, and passes
+`rendering={cairn.rendering}` to `CairnAdmin` (no `components` in it, no **Insert block** button).
 
 - `name`, `label`, `description`, `build` are required. `figure` and `include` are reserved.
 - `attributes` map to single-value field types only (`text`, `textarea`, `number`, `select`, `url`,
-  `email`, `date`, `datetime`, `boolean`, `icon`); others throw at load.
+  `date`, `boolean`, `icon`); others throw at load.
 - `slots`: `title` is the bracketed label, `body` the unmarked content, any other name a nested
   `:::name` region. `kind` is `inline`, `markdown`, or `repeatable`. `required` affects only the
   insert form.
@@ -163,11 +163,12 @@ visible island).
 | Symptom | Cause |
 |---|---|
 | Error naming the component at load | Bad attribute type, reserved name, `defaultIconByRole` without an `icon` attribute, or the hydrate/islands pairing |
-| No **Insert block** button | `CairnAdmin` gets no `registry`, or no listable component |
+| No **Insert block** button | `CairnAdmin` gets no `rendering`, or `rendering` has no `components`, or no listable component |
 | Missing from the picker | No attribute, slot, or `insertTemplate`, or `hidden` |
 | `The preview could not render this content.` | `build` threw on an unexpected value |
 | Directive prints as text | Leaf or text form; use `:::name` |
 | Content renders without markup | Not in the registry `createRenderer` received, or a name mismatch |
 | No boundary in the HTML | `hydrate` unset |
 | Boundary, fallback stays, runtime never loads | `hasIslands` false or no `afterNavigate` call |
-| Runtime loads, fallback stays | Not scrolled to (visible), registry key mismatch, bad props JSON, or the component threw on mount (all silent) |
+| Runtime loads, fallback stays, console silent | Not scrolled to (visible), or a registry key mismatch |
+| Runtime loads, fallback stays, console error names the island | Bad props JSON, or the component threw on mount |

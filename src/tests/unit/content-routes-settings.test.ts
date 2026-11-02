@@ -5,7 +5,7 @@
 // flipped by an editor save. The save 404s when tidy is off (the server half of the truthful gate);
 // the route-level 404 outside the settings view is the viewAction gate, covered in the cairn-admin
 // actions test.
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
@@ -59,7 +59,7 @@ const SEED_YAML = [
   '  enabled: true',
   '  model: claude-sonnet-4-6',
   '  conventions:',
-  '    fixes: true',
+  '    oxfordComma: always',
   '',
 ].join('\n');
 
@@ -72,7 +72,7 @@ describe('settingsSaveAction', () => {
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: SEED_YAML } });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
-    const conventions = JSON.stringify({ fixes: true, oxfordComma: 'always', timeFormat: '5 PM' });
+    const conventions = JSON.stringify({ oxfordComma: 'always', timeFormat: '5 PM' });
     const { location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent(conventions)));
     expect(location).toBe('/admin/settings?saved=1');
     // The commit names the session editor as author.
@@ -88,7 +88,6 @@ describe('settingsSaveAction', () => {
     // The boolean toggles (enDashRanges/smartQuotes/brandCaps) are non-optional, so the validator
     // fills their false default; a collapsed multi-position toggle is dropped (none here).
     expect(reparsed.tidy?.conventions).toEqual({
-      fixes: true,
       oxfordComma: 'always',
       timeFormat: '5 PM',
       enDashRanges: false,
@@ -176,6 +175,9 @@ describe('settingsSaveAction', () => {
 
 describe('settingsLoad', () => {
   afterEach(() => resetKeyHealthForTest());
+  beforeEach(() => {
+    new GithubDouble({ main: { [CONFIG_PATH]: SEED_YAML } }).install();
+  });
 
   function loadEvent(env: Record<string, unknown> = {}) {
     return contentEvent({ url: 'https://t.example/admin/settings', env });
@@ -189,7 +191,7 @@ describe('settingsLoad', () => {
     expect(data.keyConfigured).toBe(true);
     expect(data.keyStatus).toBe('valid');
     expect(data.modelLabel).toBe('Claude Sonnet 5');
-    expect(data.conventions.fixes).toBe(true);
+    expect(data.conventions).not.toHaveProperty('fixes');
   });
 
   it('labels a site pinned to claude-sonnet-4-6 with its plain name, not the bare id', async () => {
@@ -199,6 +201,22 @@ describe('settingsLoad', () => {
     });
     const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(data.modelLabel).toBe('Claude Sonnet 4.6');
+  });
+
+  it('labels the 5.5 family and Haiku 4.5 with their plain names', async () => {
+    const labels: [string, string][] = [
+      ['claude-sonnet-5-5', 'Claude Sonnet 5.5'],
+      ['claude-haiku-5-5', 'Claude Haiku 5.5'],
+      ['claude-haiku-4-5', 'Claude Haiku 4.5'],
+    ];
+    for (const [model, label] of labels) {
+      const routes = createContentRoutes({
+        runtime: runtime({ tidy: { enabled: true, model } }),
+        tidy: { client: fakeTidyClient('valid') },
+      });
+      const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+      expect(data.modelLabel).toBe(label);
+    }
   });
 
   it('keeps the gate closed when the key is missing, even with tidy enabled (no probe attempted)', async () => {
@@ -238,6 +256,108 @@ describe('settingsLoad', () => {
     expect(data.tidyEnabled).toBe(false);
   });
 
+  it('loads the committed conventions, not the runtime\'s, when the gate is open', async () => {
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: { oxfordComma: 'never' } } }),
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions.oxfordComma).toBe('always');
+  });
+
+  it('keeps the runtime conventions when no file is committed, with no log', async () => {
+    new GithubDouble({ main: {} }).install();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: { oxfordComma: 'never' } } }),
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions.oxfordComma).toBe('never');
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('keeps the runtime conventions when the read fails, with no log', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('boom', { status: 500 })));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: { oxfordComma: 'never' } } }),
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions.oxfordComma).toBe('never');
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('keeps the runtime conventions when the committed conventions key is empty, with no log', async () => {
+    new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\ntidy:\n  enabled: true\n  conventions:\n' } }).install();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: { oxfordComma: 'never' } } }),
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions.oxfordComma).toBe('never');
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('keeps the runtime conventions and logs config.invalid for a malformed committed file', async () => {
+    new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n' } }).install();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: { oxfordComma: 'never' } } }),
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions.oxfordComma).toBe('never');
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    expect(record).toMatchObject({ event: 'config.invalid', scope: 'settings' });
+  });
+
+  it.each([
+    ['an unknown variant', 'siteName: S\ntidy:\n  enabled: true\n  conventions:\n    oxfordComma: sometimes\n'],
+    ['a non-boolean toggle', 'siteName: S\ntidy:\n  enabled: true\n  conventions:\n    smartQuotes: yes\n'],
+    ['a non-object block', 'siteName: S\ntidy:\n  enabled: true\n  conventions: 5\n'],
+  ])('keeps the runtime conventions and logs config.invalid for %s in the committed block', async (_name, yaml) => {
+    new GithubDouble({ main: { [CONFIG_PATH]: yaml } }).install();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: { oxfordComma: 'never' } } }),
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions.oxfordComma).toBe('never');
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    expect(record).toMatchObject({ event: 'config.invalid', scope: 'settings' });
+  });
+
+  it('accepts a partial committed block, filling the rest from the defaults', async () => {
+    new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\ntidy:\n  enabled: true\n  conventions:\n    percent: word\n' } }).install();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeTidyClient('valid') } });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions).toEqual({ enDashRanges: false, smartQuotes: false, brandCaps: false, percent: 'word' });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('resolves without throwing when the runtime conventions are null (an empty `conventions:` key)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: null as unknown as undefined } }), // a YAML null the type does not admit
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions).toEqual({ enDashRanges: false, smartQuotes: false, brandCaps: false });
+  });
+
+  it('reads nothing from GitHub when the key is missing', async () => {
+    const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const routes = createContentRoutes({ runtime: runtime() });
+    await routes.settingsLoad(loadEvent({}));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeTidyClient('valid') } });
     const data = await routes.settingsLoad(
@@ -252,6 +372,9 @@ describe('settingsLoad', () => {
 
 describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {
   afterEach(() => resetKeyHealthForTest());
+  beforeEach(() => {
+    new GithubDouble({ main: { [CONFIG_PATH]: SEED_YAML } }).install();
+  });
 
   function loadEvent(env: Record<string, unknown> = {}) {
     return contentEvent({ url: 'https://t.example/admin/settings', env });

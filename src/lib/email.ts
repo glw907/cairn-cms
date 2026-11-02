@@ -30,19 +30,6 @@ export interface MagicLinkMessage {
 }
 
 /**
- * Per-site identity for the magic-link email, sourced from the adapter.
- * @public
- */
-export interface AuthBranding {
-  /** The site name the magic-link email's subject and body show. */
-  siteName: string;
-  /** The address the magic-link email is sent from. */
-  from: string;
-  /** The single address a reply to the magic-link email goes to. */
-  replyTo?: string;
-}
-
-/**
  * The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference:
  * a binding, or an injected sender, that takes a built magic-link message. The return type is
  * `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send`
@@ -65,16 +52,18 @@ export type SendMagicLink = (env: CairnEnv, message: MagicLinkMessage) => Promis
 /** Build the confirmation email. The link is the only action; the copy stays plain. */
 export function buildMagicLinkMessage(input: {
   to: string;
-  branding: AuthBranding;
+  siteName: string;
+  /** The runtime's `SenderConfig`, spelled structurally: this module loads in the site-shaped type program, which must not reach the render pipeline through `content/types`. */
+  sender: { from: string; replyTo?: string };
   link: string;
 }): MagicLinkMessage {
-  const { to, branding, link } = input;
-  const subject = `Sign in to ${branding.siteName}`;
-  const text = `Open this link to sign in to ${branding.siteName}:\n\n${link}\n\nThe link expires in 10 minutes. If you did not request it, ignore this email.`;
+  const { to, siteName, sender, link } = input;
+  const subject = `Sign in to ${siteName}`;
+  const text = `Open this link to sign in to ${siteName}:\n\n${link}\n\nThe link expires in 10 minutes. If you did not request it, ignore this email.`;
   // `link` is engine-built and url-safe; `siteName` is site config, so escape it for HTML.
-  const name = escapeHtml(branding.siteName);
+  const name = escapeHtml(siteName);
   const html = `<p>Open this link to sign in to ${name}:</p><p><a href="${link}">Sign in</a></p><p>The link expires in 10 minutes. If you did not request it, ignore this email.</p>`;
-  return { to, from: branding.from, subject, html, text, replyTo: branding.replyTo };
+  return { to, from: sender.from, subject, html, text, replyTo: sender.replyTo };
 }
 
 /** The production send: Cloudflare Email Sending through the EMAIL binding. */

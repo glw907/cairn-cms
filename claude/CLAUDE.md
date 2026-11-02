@@ -22,8 +22,6 @@ declaration in `node_modules/@glw907/cairn-cms/dist/`, and the installed skills 
   `cairn-building-admin-screens` skill covers them.
 - The field, screen-scaffold, and formatter primitives a custom `/admin/` screen composes. The
   `cairn-building-admin-screens` skill's custom-screen reference covers them.
-- `createAuthChannel`: a site's login channel for a second sign-in group (request, confirm, logout) over
-  a site-owned database. The `cairn-extending-a-site` skill's second-sign-in-group reference covers it.
 - `createLogger`: structured logs in the engine's record shape, with the same redaction
   rules. The `cairn-extending-a-site` skill's log-events reference lists the record shape.
 

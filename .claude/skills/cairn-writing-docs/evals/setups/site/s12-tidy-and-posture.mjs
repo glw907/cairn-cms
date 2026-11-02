@@ -22,7 +22,7 @@ export default function setup(root) {
   swap(join(root, 'src/theme/site.config.yaml'), 'tidy:\n  enabled: true\n', 'tidy:\n  enabled: false\n');
   swap(
     join(root, 'src/routes/robots.txt/+server.ts'),
-    "    disallow: ['/admin'],\n    posture: (cairn as CairnAdapter).aiPosture,\n",
+    "    disallow: ['/admin'],\n    posture: cairn.aiPosture,\n",
     "    disallow: ['/admin'],\n",
   );
 }

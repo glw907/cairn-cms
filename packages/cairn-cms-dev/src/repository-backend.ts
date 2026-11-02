@@ -25,7 +25,7 @@ const ABSENT = new Set(['ENOENT', 'ENOTDIR', 'EISDIR']);
 /**
  * Build the repository-mode `Backend` over the working tree at `root`. The overlay lives in this
  * closure, so one backend is one dev session: construct it once per handle, never per request.
- * `node:fs` loads on first read, the way `channel-db.ts` loads `node:sqlite`, so importing this
+ * `node:fs` loads on first read, so importing this
  * module costs nothing under a bundler that never reaches a read.
  * @param root - the working-tree directory every repo path resolves against, normally `process.cwd()`.
  * @returns a {@link Backend} marked `ephemeral`, with `main` as its default branch.

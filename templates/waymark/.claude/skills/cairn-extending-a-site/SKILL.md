@@ -34,9 +34,9 @@ Read only the reference for the job at hand.
 | Write a markdown component or a hydrated island | `references/components-and-islands.md` |
 | Entry pages, head, feeds, sitemap, robots, archive, tags, menu | `references/public-routes.md` |
 | Share a draft preview link | `references/draft-preview.md` |
-| Media upload limits, image URLs, media route, srcset | `references/media.md` |
+| Media upload limits, image URLs, media route | `references/media.md` |
 | Mount the admin, gate a custom screen or action, roles and access map, refusal shape, audit table | `references/admin-access.md` |
-| A second audience: a role or an auth channel; rolling your own token flow | `references/second-sign-in-group.md` |
+| A second audience: a role, or a token flow of your own on `/auth-crypto` | `references/second-sign-in-group.md` |
 | Replace magic links with Cloudflare Access | `references/cloudflare-access.md` |
 | Announce newly published posts after deploy | `references/newly-published.md` |
 | Turn on tidy; set the AI training posture | `references/tidy-and-ai-posture.md` |

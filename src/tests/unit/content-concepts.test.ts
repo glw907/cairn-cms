@@ -37,7 +37,7 @@ describe('normalizeConcepts', () => {
 
   it('produces byte-identical routing through composeRuntime and buildSiteDescriptors for one shorthand', () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
-    const delivery = buildSiteDescriptors(testAdapter, testSiteConfig);
+    const delivery = buildSiteDescriptors(testAdapter);
     const fromRuntime = runtime.concepts.find((c) => c.id === 'posts')?.routing;
     const fromDelivery = delivery.find((c) => c.id === 'posts')?.routing;
     expect(fromRuntime).toEqual({ routable: true, dated: true, inFeeds: true });

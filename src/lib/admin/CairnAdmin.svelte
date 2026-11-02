@@ -25,10 +25,8 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   import type { AdminData } from '../sveltekit/cairn-admin.js';
   import type { ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { RevertOutcome } from '../sveltekit/types.js';
-  import type { RequestOutcome } from '../sveltekit/auth-routes.js';
-  import type { ComponentRegistry } from '../render/registry.js';
-  import type { IconSet } from '../render/glyph.js';
-  import type { SiteRender } from '../content/types.js';
+  import type { LoginRequestOutcome } from '../sveltekit/auth-routes.js';
+  import type { CairnAdapter } from '../content/types.js';
 
   interface Props {
     /** The discriminated view data from `createCairnAdmin`'s load. */
@@ -42,26 +40,25 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
      *  `CairnHistory` below. */
     form?:
       | (ContentFormFailure & {
-          sent?: boolean;
           outcome?: 'sent' | 'send-error' | 'throttled' | RevertOutcome['outcome'];
           ok?: boolean;
           draftEditor?: string;
           draftLastSavedAt?: string;
         })
       | null;
-    /** The site's design-accurate render pipeline, for the edit view's preview pane. */
-    render?: SiteRender;
-    /** The site's component registry, for the edit view's insert palette. */
-    registry?: ComponentRegistry;
-    /** The site's icon set, for the edit view's guided form fields. */
-    icons?: IconSet;
+    /**
+     * The adapter's rendering block (`cairn.rendering`), for the edit view: `render` drives the
+     *  preview pane, `components` the insert palette, and `icons` the guided form fields. One prop
+     *  carries all three, so the palette cannot be dropped while the preview stays wired.
+     */
+    rendering?: CairnAdapter['rendering'];
     /** Whether the edit view's Share preview group renders; forwarded to `EditPage`. It only hides
      *  the group and leaves the preview actions mounted. Defaults to `true` there when left unset. Presentational
      *  only: see `EditPage`'s `previewMint`. */
     previewMint?: boolean;
   }
 
-  let { data, form = null, render, registry, icons, previewMint }: Props = $props();
+  let { data, form = null, rendering, previewMint }: Props = $props();
 
   // The SSR-resolved admin theme the auth views (login, confirm) render under. It rides the shell
   // payload (page.data.shell), a public member on every auth route: the theme cookie carries no
@@ -73,12 +70,12 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 </script>
 
 {#if data.view === 'login'}
-  <!-- Only requestAction's wrapped result (a RequestOutcome, or viewAction's generic
+  <!-- Only requestAction's wrapped result (a LoginRequestOutcome, or viewAction's generic
        { error } catch-all) ever posts to this view, so the broader merged form union narrows
        here: template narrowing on data.view does not reduce it for us. -->
   <LoginPage
     data={{ ...data.page, theme: publicTheme }}
-    form={form as { sent?: boolean; outcome?: RequestOutcome['outcome']; error?: string } | null}
+    form={form as { outcome?: LoginRequestOutcome['outcome']; error?: string } | null}
   />
 {:else if data.view === 'confirm'}
   <ConfirmPage data={{ ...data.page, theme: publicTheme }} {form} />
@@ -93,9 +90,9 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   <!-- siteName rides the shell payload (page.data.shell), an authed member at every edit route. -->
   <EditPage
     data={{ ...data.page, siteName: (page.data.shell as AdminShellData & { public: false }).siteName }}
-    {render}
-    {registry}
-    {icons}
+    render={rendering?.render}
+    registry={rendering?.components}
+    icons={rendering?.icons}
     {form}
     {previewMint}
   />

@@ -8,7 +8,7 @@
 // The committed manifest is empty at build, so an in-flight upload's record is layered on top of
 // it for the render rather than waiting for the save to land.
 import { error } from '@sveltejs/kit';
-import { normalizeAssets, createMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
+import { createMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
 import { cairn } from '#theme/cairn.config.js';
 import { devBackendOptIn } from '#chassis/dev-gate.js';
 import type { RequestHandler } from './$types';
@@ -19,10 +19,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const { body, record } = (await request.json()) as { body: string; record: MediaEntry };
     // One-row manifest from the posted record, overlaid onto the (empty) committed manifest.
     const manifest = { [record.hash]: record };
-    const resolveMedia = createMediaResolver(
-      manifest,
-      normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
-    );
+    const resolveMedia = createMediaResolver({ bucketBinding: 'MEDIA_BUCKET' }, manifest);
     const html = await cairn.rendering.render({ body, resolveMedia });
     return Response.json({ html });
   }

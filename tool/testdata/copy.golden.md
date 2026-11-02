@@ -352,7 +352,7 @@ Name the check that entry holds
 - %s resolves to %s, below the engine floor %s
 - %s resolves to %s, outside the engine peer range %s
 - %s satisfy the engine peer ranges
-- %s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null), so SvelteKit's origin check refuses the site's forms and every createAuthChannel action; %s (heuristic text read)
+- %s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null), so SvelteKit's origin check refuses the site's forms; %s (heuristic text read)
 - %s, but %s carries directives consistent with '%s'. Set aiPosture explicitly if that is deliberate.
 - %s. %s
 - %s. %s carries no AI-crawler directives, consistent with stating nothing.

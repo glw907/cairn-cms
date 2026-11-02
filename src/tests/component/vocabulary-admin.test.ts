@@ -18,6 +18,7 @@ function data(over: Partial<VocabularyData> = {}): VocabularyData {
     usage: { 'snow-report': 8, gear: 0 },
     unlisted: [{ value: 'trip-reports', count: 3 }],
     ...over,
+    saved: over.saved ?? false,
   };
 }
 
@@ -26,6 +27,32 @@ function postedVocabulary(container: Element): { value: string; label: string }[
   const field = container.querySelector<HTMLInputElement>('input[name="vocabulary"]')!;
   return JSON.parse(field.value);
 }
+
+describe('VocabularyAdmin: the saved confirmation', () => {
+  it('shows the alert and announces Tags saved. through a status region filled after mount', async () => {
+    const screen = await render(VocabularyAdmin, { data: data({ saved: true }) });
+    expect(screen.container.querySelector('.alert-success')?.textContent).toContain('Tags saved.');
+    const status = screen.container.querySelector('[role="status"]')!;
+    await expect.poll(() => status.textContent).toContain('Tags saved.');
+    expect(status.querySelector('.alert')).toBeNull();
+  });
+
+  it('empties the region when a same-route navigation drops the saved flag', async () => {
+    const screen = await render(VocabularyAdmin, { data: data({ saved: true }) });
+    const status = screen.container.querySelector('[role="status"]')!;
+    await expect.poll(() => status.textContent).toContain('Tags saved.');
+    await screen.rerender({ data: data({ saved: false }) });
+    await expect.poll(() => status.textContent).toBe('');
+  });
+
+  it('keeps the region mounted and empty when nothing was saved', async () => {
+    const screen = await render(VocabularyAdmin, { data: data({ saved: false }) });
+    expect(screen.container.querySelector('.alert-success')).toBeNull();
+    const status = screen.container.querySelector('[role="status"]');
+    expect(status).not.toBeNull();
+    expect(status?.textContent).toBe('');
+  });
+});
 
 describe('VocabularyAdmin', () => {
   it('renders its header through the admin toolkit, meta line carrying the lede', async () => {

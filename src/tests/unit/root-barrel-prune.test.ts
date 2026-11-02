@@ -13,6 +13,7 @@ import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 // `content/standard-schema.ts`), minus `parseManifest`, whose canonical home is now this barrel
 // beside `formatManifest`, so it moves to the keep list below.
 const DEMOTED = [
+  'resolveOwnerLevelRoles',
   'StandardSchemaV1',
   'initialValues',
   'normalizeConcepts',
@@ -96,9 +97,7 @@ const C2_READDED = [
   'SelectField',
   'MultiselectField',
   'UrlField',
-  'EmailField',
   'DateField',
-  'DatetimeField',
   'BooleanField',
   'IconField',
   'ImageField',
@@ -151,7 +150,7 @@ const KEPT = [
   'SenderConfig',
   'NavMenuConfig',
   'PreviewConfig',
-  'AssetConfig',
+  'MediaConfig',
   'ConceptDescriptor',
   'CairnRuntime',
   'SiteRender',

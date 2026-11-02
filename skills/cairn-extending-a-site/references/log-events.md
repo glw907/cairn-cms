@@ -17,7 +17,6 @@ Contents:
 - [Roster and roles](#roster-and-roles)
 - [Dictionary and tidy](#dictionary-and-tidy)
 - [Custom admin actions and audit](#custom-admin-actions-and-audit)
-- [Auth channel](#auth-channel)
 - [Health, GitHub, Turnstile](#health-github-turnstile)
 - [Refusals that leave no cairn record](#refusals-that-leave-no-cairn-record)
 
@@ -49,16 +48,17 @@ Contents:
 | `entry.discarded` | info | `concept`, `id`, `editor` | A pending branch was deleted. |
 | `publish.failed` | warn or error | `concept`, `id`, `editor`, `reason` or `error` | Same shape as `commit.failed`. A failed publish-all logs one per entry. |
 | `publish.address_collided` | warn | `editor`, `address`, `heldByConcept`, `heldById` | A publish was refused because a live entry already holds the address. Nothing committed to `main`. |
+| `rename.address_collided` | warn | `editor`, `address`, `heldByConcept`, `heldById` | A rename was refused because the new address belongs to a live entry in any concept. Nothing committed. |
 | `content.field_behavior_failed` | warn | `field`, `owner`, `error` | A `behavior.validate` threw; the field counted as valid and the save went through. `owner` is the concept id or directive name. Fix the validator. |
 | `content.field_unmarked` | warn | `concept`, `field` | A multiselect named `tags`, `freetags`, or `categories` and no `taxonomy: true` field, so the tag index is empty. Mark the field. |
 | `content.field_undeclared` | warn | `concept`, `keys` | Manifest build found frontmatter keys the concept does not declare. Validation drops them; a save or publish keeps them in the file. |
-| `content.entry_invalid` | warn | `scope`, `concept`, `id` (index) or `path` (manifest), `draft`, `errors` | `scope: index`: `createSiteIndexes` ran with `validate: false` and dropped the entry. `scope: manifest`: the manifest skipped it (drafts too), so the admin list omits it. |
+| `content.entry_invalid` | warn | `scope`, `concept`, `path`, `draft`, `errors` | `scope: manifest`: the manifest skipped it (drafts too), so the admin list omits it. |
 
 ## Config
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `config.invalid` | error | `scope` (`nav`, `settings`, `vocabulary`), `conditionId`, `error` | Committed site config failed to parse or validate. The nav and vocabulary loads fall back to empty; the settings and vocabulary saves answer `fail(500)` with generic copy. `error` holds the parser message. |
+| `config.invalid` | error | `scope` (`nav`, `settings`, `vocabulary`), `conditionId`, `error` | Committed site config failed to parse or validate. The nav and vocabulary loads fall back to empty, and the settings load to the deployed conventions; the settings and vocabulary saves answer `fail(500)` with generic copy. `error` holds the parser message. |
 | `config.access_unmapped` | warn | `unmapped` | The access map keys at least one screen and leaves the listed concepts or fixed screens (`media`, `vocabulary`, `nav`, `settings`) without a rule. Fires once per isolate at cold start: widen the query window. Route keys never count. |
 
 ## Preview
@@ -81,11 +81,10 @@ Contents:
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
 | `media.uploaded` | info | `editor`, `hash`, `bytes`, `contentType`, `reused` | Bytes stored to R2 or matched. The manifest row lands later with the save or Library commit. |
-| `media.upload_failed` | warn | `editor`, `reason` | `media_disabled`, `length_required`, `too_large` (over `maxUploadBytes`), `csrf`, `session_expired`, `access_denied`, `unsupported_type` (sniffed type not allowed or markup), `binding_missing`, `hash_collision`. |
+| `media.upload_failed` | warn | `editor`, `reason` | `media_disabled`, `length_required`, `too_large` (over the 25 MB cap), `csrf`, `session_expired`, `access_denied`, `unsupported_type` (sniffed type not allowed or markup), `binding_missing`, `hash_collision`. |
 | `media.delivery_failed` | warn | `reason` (`binding_missing`), `binding` | The serve route has no bucket bound. |
 | `media.orphans_reconciled` | info | `orphaned`, `missing` | Reconcile read finished. |
 | `media.resolve_missing` | warn | `hash` | A `media:` reference has no manifest row; renders as a broken image. |
-| `media.resolver_absent` | warn | none | A public route factory built with `assetsEnabled` and no `resolveMedia`. Once at construction. |
 | `media.deleted` | info | `editor`, `hash` | Bytes and row removed. |
 | `media.delete_refused` | warn | `editor`, `hash`, `foundIn` | Asset still referenced. |
 | `media.replaced` | info | `editor`, `oldHash`, `newHash`, `affected` | Replace-in-place rewrote referencing entries. |
@@ -103,7 +102,6 @@ Contents:
 | `editor.added` | info | `owner`, `target`, `role`, `capability` | Owner added an editor. |
 | `editor.removed` | info | `owner`, `target` | Owner removed an editor. |
 | `editor.role_changed` | info | `owner`, `target`, `role`, `capability` | Owner changed a role. |
-| `editor.bootstrapped` | info | `email` | The `bootstrapOwner` request inserted the first owner row. |
 
 ## Dictionary and tidy
 
@@ -114,7 +112,7 @@ These never carry document content or an API key.
 | `dictionary.added` | info | `editor`, `wordCount`, `retried` | Dictionary add committed. |
 | `dictionary.add_conflict` | warn | `editor`, `wordCount` | Second conflict; the client retries on the next save. |
 | `tidy.succeeded` | info | `editor`, `model`, `tokens` | Tidy returned a corrected document. |
-| `tidy.failed` | warn | `editor`, `model`, `reason` | Non-retryable, 503: `auth` (key rejected 401/403, marks the key unhealthy), `sdk_missing` (install `@anthropic-ai/sdk`), `invalid_request` (400, usually a bad `tidy.model`). Retryable, 502: `timeout` (deadline fired; raise `timeoutMs`), `abort`, `model` (rate limit, overload, server, network). |
+| `tidy.failed` | warn | `editor`, `model`, `reason` | Non-retryable, 503: `auth` (key rejected 401/403, marks the key unhealthy), `sdk_missing` (install `@anthropic-ai/sdk`), `invalid_request` (400, usually a bad `tidy.model`). Non-retryable, 413: `truncated` (the model hit the output cap; the editor tidies a selection). Retryable, 502: `timeout` (deadline fired; raise `timeoutMs`), `abort`, `model` (rate limit, overload, server, network). |
 | `tidy.refused` | warn | `editor`, `model` | Model refused the text (422). |
 | `tidy.empty` | warn | `editor`, `model` | Model returned nothing (502, retryable). |
 
@@ -135,31 +133,11 @@ These never carry document content or an API key.
 | `audit.sink.call_failed` | error | `path`, `action`, `entity`, `entityId`, `editor`, `error` | The site's `locals.cairnAuditSink` threw or rejected. The action stands; fix the sink. |
 | `audit.sink.write_failed` | error | `reason`, `actor`, `action`, `entity`, `entityId`, `detail`, `error` | `createD1AuditSink` failed to persist: `coercion_failed`, `prepare_failed`, `insert_rejected`, `wait_until_failed`. The only surviving copy of the row. |
 
-## Auth channel
-
-`correlationId` is a pseudonym (first 16 hex of the salted identity hash), never the subject.
-
-| Event | Level | Fields | Meaning |
-|---|---|---|---|
-| `auth.channel.requested` | info or warn | `correlationId` (absent on `challenge_failed`), `outcome` | `outcome`: `delivered`, `unknown` (contact not on the roster `lookup` reads), `cooldown`, `challenge_failed`, `suppressed`, `lookup_failed` (warn: `lookup` threw). |
-| `auth.channel.send_failed` | error | `correlationId`, `error` | `deliver` threw; the pending row is deleted and the charge refunded. |
-| `auth.channel.send_cleanup_failed` | error | `correlationId`, `error` | The cleanup after a failed `deliver` also threw. |
-| `auth.channel.confirmed` | info or error | `correlationId`, `outcome` (`empty_subject_fault` on error) | Code consumed. Error branch: the stored subject is an empty string (roster data fault). |
-| `auth.channel.locked` | warn | `correlationId` | Per-code attempt cap exceeded. |
-| `auth.channel.escalated` | warn | `correlationId` | Failure threshold exceeded and the challenge also failed; answers `challenge-required`. |
-| `auth.channel.ceiling_exceeded` | error | `correlationId` | Identity send ceiling exceeded; delivery still proceeds. |
-| `auth.channel.session.created` | info | `correlationId` | Session minted. |
-| `auth.channel.session.destroyed` | info | `correlationId` | Live row destroyed by logout, confirm's orphan cleanup, or a `verify`-refused revocation. |
-| `auth.channel.salt_unavailable` | warn | `path` (`logout` or `revoke`), `error` | Teardown finished but the pseudonym could not be derived, so the destroyed record was skipped. |
-| `auth.channel.rate_limited` | warn | `action`, `correlationId` | Over the optional limit; answers `throttled`. |
-| `auth.channel.rate_limit_absent` | warn | `action`, `correlationId` | Limit binding resolved to nothing; degrades to open. |
-| `auth.channel.rate_limit_failed` | warn | `action`, `correlationId`, `error` | `key()` or `limit()` threw; degrades to open. |
-
 ## Health, GitHub, Turnstile
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `github.unreachable` | warn | `scope` (`shell`, `help`, `publish_advisories`, `health`), `error` (not on `health`), `reason` (`health` only) | A best-effort GitHub read failed and the screen degraded. On `health`: `key_refused` (401), `installation_not_found` (404), `installation_suspended` (403), `unreachable`. |
+| `github.unreachable` | warn | `scope` (`shell`, `help`, `publish_advisories`, `health`), `error` (not on `health`), `reason` (`health` only) | A best-effort GitHub read failed and the screen degraded. On `health`: `key_refused` (401), `installation_not_found` (404), `installation_suspended` (403), `token_request_refused` (422: the repository is not in the installation, the App lacks Contents write, `repo` is stale, or GitHub throttled the request), `unreachable`. |
 | `health.failed` | error | `error` | `loadHealth` threw; the route answers 503 while this keeps the message. |
 | `turnstile.verify_failed` | warn | `reason`; `tokenLength`, `error`, `status`, `codes`, `expected`/`actual` per reason | `missing_secret` (blank secret, checked first), `invalid_input` (no or bad token), `request_failed`, `bad_status`, `unparseable`, `rejected` (non-routine error code: rotated or wrong secret), `hostname_mismatch`, `action_mismatch`. A routine bot rejection logs nothing. |
 

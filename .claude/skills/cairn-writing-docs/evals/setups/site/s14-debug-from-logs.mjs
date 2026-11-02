@@ -119,7 +119,7 @@ export default function setup(root) {
   // `wrangler types` would drop, which is why a read of APP_DB still type-checks.
   swap(join(root, 'worker-configuration.d.ts'), '\tAUTH_DB: D1Database;\n', '\tAUTH_DB: D1Database;\n\tNOTES_DB: D1Database;\n\tAPP_DB: D1Database;\n');
   const config = join(root, 'src/theme/cairn.config.ts');
-  swap(config, '  type AssetConfig,\n} from', '  type AssetConfig,\n  defineAccess,\n} from');
+  swap(config, '  type MediaConfig,\n} from', '  type MediaConfig,\n  defineAccess,\n} from');
   swap(config, '  media,\n', "  media,\n  access: defineAccess(undefined, { '/admin/notes': ['owner', 'editor'] }),\n");
 
   mkdirSync(join(root, 'migrations-notes'), { recursive: true });

@@ -313,7 +313,7 @@ describe('extractImportedIdentifiers', () => {
     const segments = codeVoiceSegments(
       [
         '```ts',
-        "import { createChannelDb } from '@glw907/cairn-cms-dev';",
+        "import { createFakeR2 } from '@glw907/cairn-cms-dev';",
         "import { sveltekitThing } from '@glw907/cairn-cms/sveltekit';",
         '```',
       ].join('\n'),

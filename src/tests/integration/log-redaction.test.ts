@@ -11,6 +11,7 @@ import {
   TOKEN_TTL_MS,
   SESSION_TTL_MS,
 } from '../../lib/auth/crypto.js';
+import { runtime } from '../unit/_content-harness.js';
 
 const db = env.AUTH_DB;
 
@@ -23,7 +24,7 @@ beforeEach(async () => {
 });
 
 function routes() {
-  return createAuthRoutes({ branding: { siteName: 'T', from: 'n@test.dev' }, send: async () => {} });
+  return createAuthRoutes({ runtime: runtime(), send: async () => {} });
 }
 
 /** Capture every record any console method emits during `run`. */
@@ -63,7 +64,7 @@ describe('log redaction', () => {
     // sent message and pull the real token out of its link, so the redaction assert is exact.
     let token = '';
     const r = createAuthRoutes({
-      branding: { siteName: 'T', from: 'n@test.dev' },
+      runtime: runtime(),
       send: async (_env, message) => {
         const link = new URL(message.text.match(/https:\/\/\S+/)?.[0] ?? '');
         token = link.searchParams.get('token') ?? '';

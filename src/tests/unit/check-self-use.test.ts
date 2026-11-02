@@ -23,7 +23,6 @@ const authFile = (rel: string) => resolve(ROOT, rel);
 describe('isAuthOnlyPath', () => {
   it('matches every src/lib/auth* sibling directory', () => {
     expect(isAuthOnlyPath('src/lib/auth/store.ts')).toBe(true);
-    expect(isAuthOnlyPath('src/lib/auth-channel/factory.ts')).toBe(true);
     expect(isAuthOnlyPath('src/lib/auth-crypto/index.ts')).toBe(true);
     expect(isAuthOnlyPath('src/lib/auth-store/index.ts')).toBe(true);
   });

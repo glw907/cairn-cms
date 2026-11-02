@@ -6,12 +6,10 @@
 // exactly what this seed wrote. The `session` table is never touched; the confirm click mints the
 // session through the engine's code path.
 //
-// The seed's SQL encodes the same trust the engine does: the owner insert only ever fires on a
-// genuinely empty allowlist (`insertOwnerIfEmpty` in `src/lib/auth/store.ts`), and the token
-// insert only ever fires for an address the editor table already carries, whether it was already
-// there or the owner insert just added it. A non-matching email against an already-populated
-// allowlist grants nothing, the same trust `src/lib/sveltekit/auth-routes.ts` describes for the
-// engine's bootstrap path.
+// The seed's SQL encodes its own trust: the owner insert only ever fires on a genuinely empty
+// allowlist, and the token insert only ever fires for an address the editor table already
+// carries, whether it was already there or the owner insert just added it. A non-matching email
+// against an already-populated allowlist grants nothing.
 import { randomBytes, createHash } from 'node:crypto';
 import { runWrangler, accountEnv } from './exec.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
@@ -96,10 +94,10 @@ export async function seedOwnerAndToken({ dir, email, log, now = Date.now(), acc
   const tokenHash = createHash('sha256').update(token).digest('hex');
   const expiresAt = now + TOKEN_TTL_MS;
 
-  // The owner insert fires only when the allowlist is empty (WHERE NOT EXISTS), mirroring
-  // insertOwnerIfEmpty exactly, and the token insert fires only for an address the editor table
-  // already carries (WHERE EXISTS), whether it was already there or the insert above just added
-  // it. An address that is neither the sole owner-to-be nor an existing editor gets nothing.
+  // The owner insert fires only when the allowlist is empty (WHERE NOT EXISTS), and the token
+  // insert fires only for an address the editor table already carries (WHERE EXISTS), whether
+  // it was already there or the insert above just added it. An address that is neither the
+  // sole owner-to-be nor an existing editor gets nothing.
   const sql =
     `INSERT INTO editor (email, display_name, role, created_at)\n` +
     `  SELECT '${escapedEmail}', '${escapedDisplayName}', 'owner', ${now}\n` +

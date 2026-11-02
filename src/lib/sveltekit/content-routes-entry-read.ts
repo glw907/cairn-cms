@@ -18,7 +18,7 @@ import { parseManifest, inboundLinks, inboundIncludes, type LinkTarget, type Inb
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
-import { keyKnownUnhealthy } from './tidy-key-health.js';
+import { keyKnownUnhealthy, tidyKeyPresent } from './tidy-key-health.js';
 import { parseMediaManifest } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
@@ -303,7 +303,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       backend.branchHead(branch),
       backend.readFile(path, backend.defaultBranch),
       backend.readFile(runtime.manifestPath, backend.defaultBranch),
-      runtime.resolvedAssets.enabled
+      runtime.media.enabled
         ? backend.readFile(runtime.mediaManifestPath, backend.defaultBranch).catch(() => null)
         : Promise.resolve(null),
       backend.readFile(ctx.dictionaryFilePath(), backend.defaultBranch).catch(() => null),
@@ -498,9 +498,11 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       siteDictionary: mergeDictionaryWords(parseDictionary(dictionaryRaw), []),
       // The editor-tier tidy facts: the master switch, the model (for the head pill), and the resolved
       // conventions (the because-line and category inference read only these). The API key is never
-      // exposed here. A site with no tidy block reads disabled with the default conventions.
+      // exposed here. A site with no tidy block reads disabled with the default conventions. The
+      // control also needs the key present, so a site with tidy on and no key hides the button
+      // rather than offering a click that can only fail, and a key the cache knows is dead hides it too.
       tidy: {
-        enabled: (runtime.tidy?.enabled ?? false) && !keyKnownUnhealthy(),
+        enabled: (runtime.tidy?.enabled ?? false) && tidyKeyPresent() && !keyKnownUnhealthy(),
         model: runtime.tidy?.model || DEFAULT_TIDY_MODEL,
         conventions: resolveTidyConventions(runtime.tidy?.conventions),
       },

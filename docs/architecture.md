@@ -30,7 +30,6 @@ cairn owns markdown content and the editor and admin frame. Everything else a si
 - The `identity` option on the auth guard replaces magic links with an outside gate, such as Cloudflare Access.
 - A route file under `src/routes/admin/` renders inside the admin shell behind the same guard, and `navLayout` lists it in the sidebar. The guard sets `locals.cairnEditor` to the signed-in editor on admin routes only. The admin toolkit, built with DaisyUI and Tailwind, supplies the components.
 - `media` configures the media store.
-- An auth channel signs in a second sign-in group outside `/admin`.
 
 ## Stability tiers
 
@@ -51,10 +50,10 @@ This section is where the security model is documented. The design assumes the l
 - **Sign-in.** A link carries a 256-bit single-use token. The engine sends it only to an address on the roster, it lives 10 minutes, and the database holds only its SHA-256 hash. The sign-in completes only in the browser that asked for it, so a link opened in another browser, or followed by a mail scanner, does nothing. A session lasts 30 days in a `__Host-` cookie over HTTPS.
 - **Forged requests.** SvelteKit's origin check and the guard's double-submit token both run on every unsafe admin form post. Admin responses carry `Referrer-Policy: strict-origin`, so a sign-in token never leaves in a referrer.
 - **Reach of a taken account.** A taken editor account can publish to the site, within the routes the access map gives its role. The render pipeline sanitizes author markdown by default, stripping scripts, event handlers, and `javascript:` URLs unless the site widens or disables the floor.
-- **Secrets.** The GitHub App's private key is a Worker secret. It signs a JWT that GitHub exchanges for a short-lived installation token, which the Worker caches in memory and never logs. The App's Contents permission is write access to the whole installed repository, so the site's repository should hold only the site.
+- **Secrets.** The GitHub App's private key is a Worker secret. It signs a JWT that GitHub exchanges for a short-lived installation token, which the Worker caches in memory and never logs. Each minted token is scoped to the site's one repository with Contents write, which covers that whole repository, so the repository should hold only the site. The key isn't scoped that way: it can mint whatever the App holds on every repository the installation covers.
 - **Logs.** The engine's structured logs carry an editor's email and never a token, a session id, or a link.
 
-Replacing sign-in or adding a second sign-in group moves some of these defenses to the site. The doc comments on `createAuthChannel`, `createAuthGuard`, and the render exports carry each surface's security contract.
+Replacing sign-in or adding a second sign-in group moves some of these defenses to the site. The doc comments on `createAuthGuard` and the render exports carry each surface's security contract.
 
 ## Claude Code guidance
 

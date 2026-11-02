@@ -47,7 +47,8 @@ export interface TidyClient {
    * Correct `text` under `system` for `model`, returning the corrected text and a coarse
    *  engine-owned token record. `effort` rides the request only when the resolved model supports
    *  it. The abort signal rides the second argument, mirroring `models.list`'s options shape, so
-   *  the request actually cancels when the deadline fires.
+   *  the request actually cancels when the deadline fires. The default client throws when the
+   *  model stops at its output cap; a gateway client owns its own truncation handling.
    */
   tidy(
     request: { model: string; system: string; text: string; effort?: TidyEffort },
@@ -102,12 +103,11 @@ interface AnthropicWireClient {
 }
 
 /**
- * The `max_tokens` ceiling the adapter sends on every tidy call: comfortably exceeds the input
- *  token count so a proofread is never capped mid-response. A proofread runs at roughly input
- *  length, and the tidy action's request cap (content-routes-tidy.ts's `MAX_TIDY_CHARS`,
- *  24,000 characters) is at most about 8,000 input tokens even at Sonnet 5's higher-density
- *  tokenizer, so this ceiling stays generous. Internal: the public {@link TidyClient} contract
- *  carries no vendor-shaped `max_tokens` field.
+ * The `max_tokens` ceiling the adapter sends on every tidy call. A reply that reaches it stops
+ *  mid-response, and the adapter throws {@link TidyTruncatedError} rather than hand back a cut-off
+ *  document. Sized to leave room for adaptive thinking ahead of the text on the default model
+ *  (`claude-sonnet-5-5`); how close a proofread near the input cap comes to it is unmeasured.
+ *  Internal: the public {@link TidyClient} contract carries no vendor-shaped `max_tokens` field.
  */
 const MAX_OUTPUT_TOKENS = 16_000;
 
@@ -124,6 +124,21 @@ export class TidySdkMissingError extends Error {
   constructor(cause: unknown) {
     super('@anthropic-ai/sdk is not installed.', { cause });
     this.name = 'TidySdkMissingError';
+  }
+}
+
+/**
+ * Thrown by the default tidy client when the model stops at the output cap (`stop_reason`
+ *  `max_tokens`), so the reply is a partial document that must never reach the editor as a
+ *  correction. Distinct from every other failure because the call reached Anthropic and the key
+ *  worked; the tidy action answers it with the too-long refusal. Engine-internal, like
+ *  {@link TidySdkMissingError}: only the default client constructs one, so a gateway supplied
+ *  through `tidy.client` owns its own truncation handling.
+ */
+export class TidyTruncatedError extends Error {
+  constructor() {
+    super('The tidy reply hit the output cap.');
+    this.name = 'TidyTruncatedError';
   }
 }
 
@@ -167,6 +182,7 @@ function lazyAnthropicClient(opts: { apiKey: string }): TidyClient {
         .filter((block) => block.type === 'text' && typeof block.text === 'string')
         .map((block) => block.text ?? '')
         .join('');
+      if (message.stop_reason === 'max_tokens') throw new TidyTruncatedError();
       return {
         corrected,
         refused: message.stop_reason === 'refusal',
@@ -280,9 +296,11 @@ export interface AttentionItem {
  * full entry can run many seconds, so the action bounds it with an AbortSignal and maps the overrun to
  * a retryable fail(502). This sits well under Cloudflare's per-request wall-clock ceiling (a Worker
  * invocation can run far longer, but a single subrequest left open near that ceiling would surface as a
- * platform timeout the action could not shape into a clean retry). 30s comfortably covers a proofread
- * of the bounded input (see MAX_TIDY_CHARS in content-routes-tidy.ts) while leaving headroom under the
- * platform limit.
+ * platform timeout the action could not shape into a clean retry). One recorded probe (a single run
+ * per model, a short stand-in system prompt, `effort: 'low'`, a 12,935-character input) took 20.6s
+ * on `claude-sonnet-5-5` for 4,751 output tokens and 40.1s on `claude-sonnet-5` for 5,581. That is
+ * one run each, not a rate; latency near the input cap (MAX_TIDY_CHARS in content-routes-tidy.ts) is
+ * unmeasured.
  */
 const DEFAULT_TIDY_TIMEOUT_MS = 30_000;
 

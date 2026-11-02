@@ -73,7 +73,7 @@ function hasBody(obj: DeliveryObject | DeliveryObjectBody): obj is DeliveryObjec
  * @scaffold
  */
 export interface MediaRouteConfig {
-  /** The composed runtime; its `resolvedAssets` decides delivery, and a media-off site's handler always 404s. */
+  /** The composed runtime; its `media` decides delivery, and a media-off site's handler always 404s. */
   runtime: CairnRuntime;
 }
 
@@ -85,8 +85,7 @@ export interface MediaRouteConfig {
  * object key from the validated values only (never trusting the URL's fan-out), guards the
  * Cloudflare Images self-loop, and sets the security headers on every served response.
  *
- * Mount it as the `GET` of a `[...path]` route under the site's `publicBase` (`/media` by
- * default); the rest parameter must be named `path`. Every served response carries
+ * Mount it as the `GET` of a `[...path]` route at `/media`; the rest parameter must be named `path`. Every served response carries
  * `X-Content-Type-Options: nosniff`, `Content-Disposition: inline`, a `default-src 'none'; sandbox`
  * CSP, and a one-year immutable cache, the XSS control for bytes served outside `/admin`. It
  * answers 304 and 206 for `If-None-Match` and `Range`, 503 when the bucket binding is missing, and
@@ -95,7 +94,7 @@ export interface MediaRouteConfig {
  * @scaffold
  */
 export function createMediaRoute(config: MediaRouteConfig): RequestHandler {
-  const resolved = config.runtime.resolvedAssets;
+  const resolved = config.runtime.media;
   return async (event) => {
     // Media off: the route is mounted but serves nothing.
     if (!resolved.enabled) return new Response(null, { status: 404 });

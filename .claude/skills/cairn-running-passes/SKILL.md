@@ -27,7 +27,7 @@ The prepack bakes the gitignored template that most `packages/create-cairn-site`
 
 ## Risk classes
 
-- `auth-data`: `src/lib/{auth,auth-channel,auth-crypto,auth-store,github}/**`, `src/lib/sveltekit/{csrf*,auth-*,commit-log}.ts`, `src/lib/admin/{csrf-context.ts,CsrfField.svelte}`, `migrations*/**`, `examples/showcase/migrations*/**`, `templates/*/migrations*/**`, `**/hooks.server.ts`, `**/preview/\[token\]/**` (escaped, because `[token]` is a character class in a pathspec), `**/members/login/**`, `**/admin/signups/**`, `tool/internal/secrets/**`, `packages/create-cairn-site/src/{github,cloudflare}/**`, `wrangler.*`.
+- `auth-data`: `src/lib/{auth,auth-crypto,github}/**`, `src/lib/sveltekit/{csrf*,auth-*,commit-log}.ts`, `src/lib/admin/{csrf-context.ts,CsrfField.svelte}`, `migrations*/**`, `examples/showcase/migrations*/**`, `templates/*/migrations*/**`, `**/hooks.server.ts`, `**/preview/\[token\]/**` (escaped, because `[token]` is a character class in a pathspec), `**/admin/signups/**`, `tool/internal/secrets/**`, `packages/create-cairn-site/src/{github,cloudflare}/**`, `wrangler.*`.
 - `runner`: `scripts/checks/**`, `.github/workflows/**`, `.github/ci-green.json`.
 - `ordinary`: everything else.
 

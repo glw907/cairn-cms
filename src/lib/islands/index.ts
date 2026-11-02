@@ -40,14 +40,16 @@ function mountIsland(node: Element, Comp: Component<Record<string, unknown>>): v
   let props: Record<string, unknown>;
   try {
     props = JSON.parse(node.getAttribute('data-cairn-props') ?? '{}') as Record<string, unknown>;
-  } catch {
+  } catch (err) {
+    console.error(`cairn island "${node.getAttribute('data-cairn-island')}": props JSON is malformed, keeping the static fallback`, err);
     return;
   }
   const fallback = [...node.childNodes];
   node.replaceChildren();
   try {
     mounted.push(mount(Comp, { target: node as HTMLElement, props }));
-  } catch {
+  } catch (err) {
+    console.error(`cairn island "${node.getAttribute('data-cairn-island')}": component threw on mount, keeping the static fallback`, err);
     node.replaceChildren(...fallback);
   }
 }
@@ -71,7 +73,8 @@ function observeIsland(node: Element, Comp: Component<Record<string, unknown>>):
  *  client-side navigation, once the new DOM is in place (an `afterNavigate` callback): it tears down the
  *  previous pass first, so it is idempotent and leak-free. An eager island (`hydrate: true`) mounts at once;
  *  a `'visible'` island mounts on first intersection. An unknown directive name, a malformed prop payload,
- *  or a component that throws leaves the static fallback in place, so one bad island never breaks the page.
+ *  or a component that throws leaves the static fallback in place, so one bad island never breaks the page. The
+ *  last two also report to the console with the island's name and the caught error.
  *  Mount-and-replace clears the fallback, so an island whose fallback holds a focusable control should
  *  restore focus itself; the shipped fallbacks are non-interactive.
  * @remarks

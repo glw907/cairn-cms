@@ -16,7 +16,6 @@ import {
   setEditorRole,
   removeOwnerIfNotLast,
   demoteOwnerIfNotLast,
-  insertOwnerIfEmpty,
 } from '../../lib/auth/store.js';
 import { insertPreviewToken, findPreviewToken } from '../../lib/auth/preview-store.js';
 import { CairnError } from '../../lib/diagnostics/error.js';
@@ -227,32 +226,6 @@ describe('concurrency: two simultaneous demotes of a two-owner roster', () => {
   });
 });
 
-describe('insertOwnerIfEmpty (bootstrap owner)', () => {
-  it('inserts the owner row on an empty table and returns true', async () => {
-    const inserted = await insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', Date.now());
-    expect(inserted).toBe(true);
-    expect(await findEditor(db, 'boss@x.dev')).toEqual({ email: 'boss@x.dev', displayName: 'Boss', role: 'owner' });
-  });
-
-  it('writes nothing and returns false when a row already exists', async () => {
-    await seedEditor('ed@x.dev', 'Ed', 'editor');
-    const inserted = await insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', Date.now());
-    expect(inserted).toBe(false);
-    expect(await findEditor(db, 'boss@x.dev')).toBeNull();
-    expect(await countRows('editor')).toBe(1);
-  });
-
-  it('races two concurrent calls to exactly one inserted row', async () => {
-    const now = Date.now();
-    const [first, second] = await Promise.all([
-      insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', now),
-      insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', now),
-    ]);
-    expect([first, second].filter(Boolean)).toHaveLength(1);
-    expect(await countRows('editor')).toBe(1);
-  });
-});
-
 describe('magic tokens (single-use by construction)', () => {
   it('issues a token and consumes it exactly once', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
@@ -442,7 +415,7 @@ describe('email normalization (the store owns it)', () => {
   });
 
   it('leaves a reachable owner after a mixed-case owner is provisioned and one is removed', async () => {
-    // The lockout the promoted `/auth-store` surface could otherwise cause: a roster screen adds an
+    // The lockout an unnormalized provisioning path could otherwise cause: a roster screen adds an
     // owner as a user typed it, then an owner removes themselves through ManageEditors. Both rows
     // must be reachable by the lowercased email the login path looks up.
     await seedEditor('own@x.dev', 'Own', 'owner');
@@ -472,11 +445,6 @@ describe('email normalization (the store owns it)', () => {
     await insertEditor(db, 'other@x.dev', 'Other', 'editor', Date.now());
     await deleteEditor(db, 'OTHER@X.DEV', []);
     expect(await findEditor(db, 'other@x.dev')).toBeNull();
-  });
-
-  it('normalizes the bootstrap owner insert', async () => {
-    expect(await insertOwnerIfEmpty(db, 'Boss@X.dev', 'Boss', Date.now())).toBe(true);
-    expect((await findEditor(db, 'boss@x.dev'))?.role).toBe('owner');
   });
 
   it('normalizes the token and session paths', async () => {

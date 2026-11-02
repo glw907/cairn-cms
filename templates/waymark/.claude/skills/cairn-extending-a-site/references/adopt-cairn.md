@@ -16,13 +16,11 @@ Contents:
 
 1. Dependencies: `@glw907/cairn-cms` (dependency), `@cloudflare/workers-types` `^5` (dev
    dependency, a required peer). `ERESOLVE` means the app still pins `@sveltejs/kit` `^2`.
-2. `vite.config.ts`: `ssr: { noExternal: ['@glw907/cairn-cms'] }`. The engine ships `.svelte`
-   source that the site's Svelte plugin must compile.
-3. `src/app.d.ts`: `import '@glw907/cairn-cms/ambient';` above `declare global`. It types
+2. `src/app.d.ts`: `import '@glw907/cairn-cms/ambient';` above `declare global`. It types
    `App.Locals` and declares `__CAIRN_DEV_BUILD__`.
-4. Imports: SvelteKit 3 throws on `$lib`. Use the `package.json` `imports` map
+3. Imports: SvelteKit 3 throws on `$lib`. Use the `package.json` `imports` map
    (`"#lib/*": "./src/lib/*"`), and import site modules as `#lib/<file>.js`. Add the map if absent.
-5. A custom route that needs a binding reads it from `cloudflare:workers` (adapter 8 declares no
+4. A custom route that needs a binding reads it from `cloudflare:workers` (adapter 8 declares no
    `App.Platform`), typed by `wrangler types --include-runtime=false`.
 
 ## Site config, adapter, content
@@ -34,11 +32,12 @@ Contents:
    and `siteConfig = parseSiteConfig(siteYaml)` (imported with `?raw`). Declare a field for every
    frontmatter key the content keeps (`references/content-model.md`). `backend` takes
    `createGithubApp({ owner, repo, branch, appId, installationId })`; until production these are
-   placeholders (`appId: '0'`). `email: { from }` likewise. `rendering.render` forwards to
-   `createRenderer(defineRegistry({ components: [] })).renderMarkdown(body, { resolve, resolveMedia, resolveFragment })`.
-3. `src/lib/content.ts`: one literal eager `?raw` glob per concept into `createSiteIndexes`, with
-   validation left on; export `site` and an `origin` constant.
-4. `vite.config.ts`: `cairnManifest({ configModule: '/src/lib/cairn.config.ts', content: { posts: '/src/content/posts/*.md' } })`
+   placeholders (`appId: '0'`). `email: { from }` likewise. `rendering.render` is
+   `createRenderer({ components }).render`, which forwards `resolveLink`, `resolveMedia`, and `resolveFragment`.
+3. `src/lib/content.ts`: one literal eager `?raw` glob in the absolute form `/src/content/**/*.md`
+   into `createSiteResolver(cairn, files)`; export `site` and an `origin` constant. A relative
+   glob's `../content/...` keys are refused.
+4. `vite.config.ts`: `cairnManifest({ configModule: '/src/lib/cairn.config.ts' })`
    after `sveltekit()`.
 5. `npx cairn-manifest`, then commit `src/content/.cairn/index.json` and `site-facts.json`. Every
    build fails on a stale manifest.
@@ -46,8 +45,8 @@ Contents:
 ## Render entries
 
 `src/routes/[...path]/+page.server.ts` with `prerender = true`, `entries`, and `load` from
-`createPublicRoutes({ site, render: cairn.rendering.render, origin, siteName, description })`;
-`+page.svelte` renders `{@html data.html}`. Shape and head: `references/public-routes.md`. A posts
+`createPublicRoutes({ site, render: cairn.rendering.render, origin, siteName, description,
+resolveMedia: null })`; `+page.svelte` renders `{@html data.html}`. Shape and head: `references/public-routes.md`. A posts
 concept with default routing serves each entry at `/posts/<slug>`.
 
 Done when `npm run check` and `npm run build` pass. A build failure table is in
@@ -56,10 +55,10 @@ Done when `npm run check` and `npm run build` pass. A build failure table is in
 ## Dev backend admin
 
 1. `src/lib/cairn.server.ts`: `runtime = composeRuntime({ adapter: cairn, siteConfig })` and
-   `admin = createCairnAdmin({ runtime, auth: { bootstrapOwner: { email, displayName } } })`.
+   `admin = createCairnAdmin({ runtime })`.
 2. Mount the catch-all and layout (`references/admin-access.md`).
-3. `npm install -D @glw907/cairn-cms-dev @types/node`; add `@glw907/cairn-cms-dev` to
-   `ssr.noExternal` (without it `/admin` answers 500 under `vite dev`).
+3. `npm install -D @glw907/cairn-cms-dev @types/node`. The `cairnManifest` plugin
+   already adds both packages to `ssr.noExternal`, so `vite.config.ts` needs no line for them.
 4. `src/hooks.server.ts`:
 
    ```ts
@@ -97,29 +96,35 @@ missing** (`config.bindings-missing`).
    `0004_login_nonce.sql` from `node_modules/@glw907/cairn-cms/migrations/` into `migrations/`; bind
    as `AUTH_DB` with `migrations_dir: "migrations"`; `npx wrangler d1 migrations apply <db> --remote`
    (and `--local` for `wrangler dev`). Other migrations are opt-in: `0001_roles`, `0002_audit` (own
-   database), `0003_preview`.
+   database), `0003_preview`. Then seed the first owner row, since no sign-in creates one:
+
+   ```sh
+   npx wrangler d1 execute <auth-db> --remote --command "INSERT INTO editor (email, display_name, role, created_at) VALUES (lower(trim('you@example.com')), 'Your Name', 'owner', unixepoch() * 1000)"
+   ```
+
+   Double any `'` in the email or name, and use `--local` in place of `--remote` for `wrangler dev`.
 3. Email: `npx wrangler email sending enable <domain>`; `send_email: [{ name: "EMAIL" }]`; a custom
    domain route; `vars.PUBLIC_ORIGIN` (the https origin, also the content module's `origin`);
    `observability.enabled: true`; `email.from` on the domain.
 4. `cairn doctor` (passes `config.bindings`), commit, push, `npm run build`, `npx wrangler deploy`.
-5. Sign in with the `bootstrapOwner` email (logs `editor.bootstrapped`), publish an edit, confirm the
+5. Sign in with the seeded owner email, publish an edit, confirm the
    commit on `main`, pull, rebuild, redeploy.
 
 | Symptom | Fix |
 |---|---|
 | **Wrangler bindings are missing** | Declare `AUTH_DB` and `EMAIL`, redeploy |
 | `config.public-origin-invalid` | Set `PUBLIC_ORIGIN` to the https origin |
-| No sign-in email | Onboard the domain for Email Sending |
+| No sign-in email, with an `auth.link.send_failed` record | Onboard the domain for Email Sending |
+| No sign-in email, with no `auth.link.send_failed` record | Run `SELECT email FROM editor`: if the address is missing, seed the owner; if it is there, delivery can lag on a new sending domain, so wait and retry |
 | Store error naming `0004_login_nonce.sql` | Copy and apply it `--remote` |
 | Publish fails, `github.app-unreachable` | Check App permission, installation, and the key secret |
 
-Sign-in email: `auth.branding` (`siteName`, `from`, `replyTo`) overrides members; a custom
-`auth.send` (`SendMagicLink`) replaces the sender, and must never put the body or link in a thrown
-message.
+Sign-in email: the site name and sender come from the runtime; a custom `auth.send`
+(`SendMagicLink`) replaces the sender, and must never put the body or link in a thrown message.
 
 ## Report what is left
 
 When stopping before production, list each placeholder still in the code and each piece unwired:
 the `createGithubApp` values and the App itself, `GITHUB_APP_PRIVATE_KEY_B64`, `email.from`,
-`bootstrapOwner`, the `origin` constant and `PUBLIC_ORIGIN`, the admin mount and hooks, `AUTH_DB`
+the seeded owner row, the `origin` constant and `PUBLIC_ORIGIN`, the admin mount and hooks, `AUTH_DB`
 and its migrations, the `EMAIL` binding and domain.

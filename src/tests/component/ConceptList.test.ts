@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import ConceptList from '../../lib/admin/ConceptList.svelte';
 // The compiled sheet's text (daisyUI's real .badge/.input/.btn sizing), injected only for the
 // narrow/wide extremes suite below so its bounding-box measurements reflect production control
@@ -213,6 +213,85 @@ describe('ConceptList', () => {
     await expect.element(screen.getByRole('button', { name: /delete post 12/i })).toBeInTheDocument();
   });
 
+  it('mounts one shared delete dialog that a row trash opens and a second row retargets', async () => {
+    const screen = await render(ConceptList, { data: data({ singular: 'Post' }) });
+    expect(screen.container.querySelectorAll('[id="cairn-delete-dialog-title"]').length).toBe(1);
+    expect(screen.container.querySelector('tbody form[action="?/delete"]')).toBeNull();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    expect(dialog.open).toBe(false);
+    await screen.getByRole('button', { name: 'Delete Post 12' }).click();
+    await expect.poll(() => dialog.open).toBe(true);
+    expect(dialog.querySelector('h2')?.textContent).toBe('Delete this post?');
+    const id = () => (dialog.querySelector('input[name="id"]') as HTMLInputElement).value;
+    expect(id()).toBe('2026-05-12-post-12');
+    dialog.close();
+    await screen.getByRole('button', { name: 'Delete Post 11' }).click();
+    await expect.poll(() => id()).toBe('2026-05-11-post-11');
+    expect(screen.container.querySelectorAll('[id="cairn-delete-dialog-title"]').length).toBe(1);
+  });
+
+  it('names the picked entry in the confirm and describes the dialog by it', async () => {
+    const screen = await render(ConceptList, { data: data({ singular: 'Post' }) });
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    await screen.getByRole('button', { name: 'Delete Post 11' }).click();
+    await expect.poll(() => dialog.open).toBe(true);
+    const desc = dialog.querySelector(`#${dialog.getAttribute('aria-describedby')}`);
+    expect(desc?.textContent).toContain('“Post 11” will be deleted. This cannot be undone.');
+  });
+
+  it('returns focus to the row button that opened the dialog, even when the click did not focus it', async () => {
+    const screen = await render(ConceptList, { data: data({ singular: 'Post' }) });
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    const row2 = screen.getByRole('button', { name: 'Delete Post 11' }).element() as HTMLButtonElement;
+    // A programmatic click leaves focus on the body, as Safari's mouse click does.
+    (document.activeElement as HTMLElement | null)?.blur();
+    row2.click();
+    await expect.poll(() => dialog.open).toBe(true);
+    await userEvent.keyboard('{Escape}');
+    await expect.poll(() => dialog.open).toBe(false);
+    expect(document.activeElement).toBe(row2);
+  });
+
+  it('does not close when the click lands outside the dialog box', async () => {
+    const screen = await render(ConceptList, { data: data({ singular: 'Post' }) });
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    await screen.getByRole('button', { name: 'Delete Post 11' }).click();
+    await expect.poll(() => dialog.open).toBe(true);
+    expect(dialog.querySelector('form[method="dialog"]')).toBeNull();
+    dialog.click();
+    expect(dialog.open).toBe(true);
+  });
+
+  it('retargets a refused-load dialog: another row confirms, the refused row shows its blockers', async () => {
+    const form = {
+      error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+      id: '2026-05-01-post-1',
+      inboundLinks: [{ concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' }],
+    };
+    const entries = [
+      { id: 'a', title: 'Alpha', date: '2026-05-02', draft: false, status: 'published' as const, summary: null },
+      { id: 'b', title: 'Bravo', date: '2026-05-01', draft: false, status: 'published' as const, summary: null },
+    ];
+    const screen = await render(ConceptList, {
+      data: data({ singular: 'Post', entries }),
+      form: { ...form, id: 'a' },
+    });
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    // The refused row's trigger carries the entry name, like every other row's.
+    await expect.element(screen.getByRole('button', { name: 'Delete Alpha' })).toBeInTheDocument();
+    // On load the dialog targets the refused row and renders its blockers.
+    expect(dialog.querySelector('form[action="?/delete"]')).toBeNull();
+    expect(dialog.textContent).toContain('1 entry links here');
+    await screen.getByRole('button', { name: 'Delete Bravo' }).click();
+    await expect.poll(() => dialog.open).toBe(true);
+    expect((dialog.querySelector('input[name="id"]') as HTMLInputElement).value).toBe('b');
+    expect(dialog.textContent).not.toContain('links here');
+    dialog.close();
+    await screen.getByRole('button', { name: 'Delete Alpha' }).click();
+    await expect.poll(() => dialog.querySelector('form[action="?/delete"]')).toBeNull();
+    expect(dialog.textContent).toContain('1 entry links here');
+  });
+
   // The triage layer: counts per state and the filter that narrows the rows. The filter logic is
   // the contract here; Task 7 dresses the controls to the mockup.
   function triageEntries() {
@@ -328,9 +407,10 @@ describe('ConceptList', () => {
     expect(banner?.textContent ?? '').not.toMatch(/link to it/i);
     expect(banner?.textContent ?? '').not.toMatch(/repoint/i);
     expect(banner?.querySelector('a')?.textContent ?? '').toContain('Post 03');
-    // The row's own DeleteDialog mount also threads the include kind, so its blocked-view copy
-    // (rendered into the DOM even while the dialog is unopened) matches the banner rather than the
-    // link family's "repoint" wording.
+    // The list's one DeleteDialog also threads the include kind for the refused row, so its
+    // blocked-view copy (rendered into the DOM even while the dialog is unopened) matches the
+    // banner rather than the link family's "repoint" wording.
+    expect(screen.container.querySelectorAll('[id="cairn-delete-dialog-title"]').length).toBe(1);
     const rowDialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]');
     expect(rowDialog?.textContent ?? '').toMatch(/included by 1 entry/i);
     expect(rowDialog?.textContent ?? '').not.toMatch(/repoint/i);

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { entryIdentity, asDate, asString, asTags } from '../../lib/content/identity.js';
+import { parseMarkdown } from '../../lib/content/frontmatter.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { fields } from '../../lib/content/fields.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
@@ -56,10 +57,9 @@ describe('entryIdentity', () => {
     expect(identity.permalink).toBe('/2026/05/01/hello');
   });
 
-  it('coerces an unquoted YAML date (a JS Date) to YYYY-MM-DD', () => {
-    const identity = entryIdentity(descriptor(), 'src/content/posts/2026-05-01-hello.md', {
-      date: new Date('2026-05-01T00:00:00Z'),
-    });
+  it('reads an unquoted YAML date as the text it was written', () => {
+    const { frontmatter } = parseMarkdown('---\ndate: 2026-05-01\n---\n');
+    const identity = entryIdentity(descriptor(), 'src/content/posts/2026-05-01-hello.md', frontmatter);
     expect(identity.date).toBe('2026-05-01');
   });
 
@@ -78,10 +78,9 @@ describe('coercion helpers', () => {
     expect(asString(42)).toBeUndefined();
   });
 
-  it('asDate slices a string date and reads a JS Date', () => {
+  it('asDate slices a string date', () => {
     expect(asDate('2026-05-01')).toBe('2026-05-01');
     expect(asDate('2026-05-01T12:00:00Z')).toBe('2026-05-01');
-    expect(asDate(new Date('2026-05-01T00:00:00Z'))).toBe('2026-05-01');
     expect(asDate('nope')).toBeUndefined();
     expect(asDate(undefined)).toBeUndefined();
   });

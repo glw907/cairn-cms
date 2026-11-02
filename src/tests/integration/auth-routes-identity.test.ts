@@ -21,7 +21,6 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);
 });
 
-const branding = { siteName: 'Test', from: 'noreply@test.dev' };
 const IDENTITY = { label: 'Acme SSO', logoutUrl: '/goodbye' };
 
 /** A minimal runtime for createCairnAdmin, mirroring cairn-admin-load.test.ts's own fixture. */
@@ -38,7 +37,7 @@ function runtime(): CairnRuntime {
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
+    media: { enabled: false },
     vocabulary: [],
   };
 }
@@ -172,7 +171,7 @@ describe('logoutAction under identity mode', () => {
 
 describe('the five handlers, unchanged without locals.cairnIdentity', () => {
   it('loginLoad, requestAction, confirmLoad, confirmAction, and logoutAction all keep the magic-link behavior', async () => {
-    const routes = createAuthRoutes({ branding });
+    const routes = createAuthRoutes({ runtime: runtime() });
     const loginCookies = makeRecordingCookies();
     const loginData = routes.loginLoad(makeEvent({ url: 'https://test.dev/admin/login', cookies: loginCookies }));
     expect('siteName' in loginData).toBe(true);

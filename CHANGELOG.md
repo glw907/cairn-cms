@@ -58,10 +58,9 @@
 
   Consumers may: read an export's doc comment in `node_modules/@glw907/cairn-cms/dist/` before a page.
 
-- **A `content.entry_invalid` log event.** `createSiteIndexes` with `validate: false` logs one warning
-  per entry it leaves out as invalid (`scope: 'index'`), and `buildSiteManifest` logs one per entry it
-  skips, a draft included (`scope: 'manifest'`). Both used to drop the entry with no signal, so a
-  migrated draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
+- **A `content.entry_invalid` log event.** `buildSiteManifest` logs one warning per entry it skips,
+  a draft included (`scope: 'manifest'`). It used to drop the entry with no signal, so a migrated
+  draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
   `CAIRN_LOG_EVENTS` gain the member, and the `cairn-extending-a-site` skill's event table its row.
 
   Consumers may: read the build output for `content.entry_invalid` to find what a build left out.
@@ -124,22 +123,6 @@
   the target, `shadowed` when a dynamic route segment hides the matched rule behind a deeper key, and
   `role` for every other refusal. The refusal itself is unchanged.
 
-- **`createAuthChannel`'s `resolveDb` takes the structural subset of D1 the channel store uses.** The
-  new `ChannelDatabaseLike`, `ChannelSessionLike`, and `ChannelStatementLike` types name it, and a
-  `D1Database` and the dev package's `createChannelDb()` result both satisfy it. `revokeSessions`
-  takes the same type.
-
-  Consumers may: pass `createChannelDb()`'s result to a channel's `resolveDb` with no cast.
-
-- **A site can pass `auth.branding` to `createCairnAdmin` as a partial.** The `branding` member is a
-  `Partial<AuthBranding>` merged over the runtime's `siteName`, `from`, and `replyTo`, so
-  `{ siteName }` alone keeps the adapter's sender.
-
-  Consumers must: if you passed a full `auth.branding` without `replyTo` to suppress the adapter's
-  reply-to, expect the runtime's `replyTo` to apply now, since an omitted or undefined member falls
-  back to the default and branding can't clear it. Remove `replyTo` from the adapter's `email` group,
-  or send through a custom `auth.send`, to send no reply-to.
-
 - **A thrown health check logs `health.failed`, and the scaffold's `/healthz` is never cached.**
   `loadHealth` logs the new `health.failed` event with the error's message before it rethrows, so a
   route's bare catch keeps the anonymous response's fixed detail without losing the cause. The
@@ -163,6 +146,133 @@
   exits 1 on any `FIX`. The `unknown` exclusion state is gone: with no entry, nothing scans `.claude/`.
 
   Consumers must: fix every FIX line before running cairn-guidance check --strict in CI.
+
+- **`TidyConventions` drops `fixes`.** Tidy always makes the objective fixes, so the key and the
+  Settings screen's On/Off control are gone. The screen's Fixes section now states what tidy always
+  fixes.
+
+  Consumers must: remove `fixes` from any `TidyConventions` you build in code; a `fixes:` key in
+  `site.config.yaml` is ignored.
+
+- **Tidy defaults to `claude-sonnet-5-5`.** A site with no `tidy.model` moves off `claude-sonnet-5`.
+  The effort gate now covers the Haiku 5 and Fable 5 families, the Settings screen advises
+  `claude-haiku-5-5` for a cheaper run, and the prompt drops its two capitalized pressure words.
+
+  Consumers may: set `tidy.model: claude-sonnet-5` to stay on the old model.
+
+- **A list row's delete confirms.** The trash button opens the window the entry screen uses, so no
+  delete posts without it, and a refused delete names its blockers in that same window. The window
+  returns focus to the button that opened it and no longer closes on a click outside it, on the
+  entry screen too. On the list it also names the entry. `DeleteDialog` gains an optional
+  `entryTitle` prop, and `open()` takes an optional origin element.
+- **The edit screen hides Tidy when no key is bound.** A site with `tidy.enabled: true` and no
+  `ANTHROPIC_API_KEY` no longer offers a button that can only refuse.
+- **A tidy settings save says when it applies, and the screen shows what was saved.** The message
+  names the next deploy, and `settingsLoad` reads the committed conventions from the default branch,
+  so a second save starts from the committed values. A parse failure, or a committed value outside
+  its allowed set, falls back to the deployed conventions and logs `config.invalid` with
+  `scope: 'settings'`. An empty `conventions:` key reads as no conventions.
+- **A rename onto a live entry's address is refused.** `renameAction` applies the check publish
+  already used, across every concept, and answers 409 with nothing committed. The new
+  `rename.address_collided` log event names the holder.
+
+- **`defineAdapter` keeps unset optional keys readable and checks two config keys at the type level.**
+  `(cairn as CairnAdapter).aiPosture` needs no cast when the adapter leaves it unset. A
+  `summaryFields` entry is keyed to its concept's fields, and a `navLayout` item's `screen` is one of
+  the engine's six ids or a `content` key, so a misspelled one fails the type check. A `navLayout`
+  built apart from `defineAdapter` and annotated `NavLayout` is refused, because its `screen` is wide.
+
+  Consumers must: declare `navLayout` inline on `defineAdapter` instead of in a separate constant
+  annotated `NavLayout`.
+
+  Consumers must: correct any `summaryFields` key that is not a field of its concept and any
+  `navLayout` `screen` that is neither an engine screen id nor a `content` key.
+
+  Consumers may: drop a cast around `cairn.aiPosture`.
+
+- **`createRenderer` takes one config bag and returns one `render`.** `createRenderer(registry,
+  options)` becomes `createRenderer({ components, resolveMedia, ... })`. `renderMarkdown(md, opts)`
+  becomes `render({ body: md, ...opts })`, and `renderDocument` takes the same input, now named
+  `RenderInput`. The returned `remarkPlugins` and `rehypePlugins` are gone, though the options stay.
+  `ResolveOptions` and `SiteRender` name the link resolver `resolveLink` where they named it `resolve`.
+
+  Consumers must: pass `createRenderer` one object with `components` and `resolveMedia` keys.
+
+  Consumers must: call `render({ body, ...opts })` where you called `renderMarkdown(md, opts)`, and
+  pass the same input to `renderDocument`.
+
+  Consumers must: stop reading `remarkPlugins` and `rehypePlugins` off the renderer.
+
+  Consumers must: rename `resolve` to `resolveLink` on any `ResolveOptions` or `SiteRender` you write.
+
+  Consumers must: write `render: renderer.render` in the adapter's `rendering` group.
+
+- **`AssetConfig` is `MediaConfig`, and it holds `bucketBinding` alone.** `publicBase`, `urlForm`,
+  `maxUploadBytes`, `allowedTypes`, and `transformations` are gone, with `srcset`, `sizes`, and
+  `transform-url.ts`. The upload cap is fixed at 25 MB and the types at the five web image types.
+  `createMediaResolver(media, manifest, { strict })` is the new argument order and normalizes inside.
+  `normalizeAssets` and `ResolvedAssetConfig` leave `/media`, `runtime.resolvedAssets` is
+  `runtime.media`, and `publicPath` loses its `urlForm` argument. `PublicRoutesConfig.resolveMedia`
+  is required as `MediaResolve | null`, `assetsEnabled` is gone, and `data.mediaBase` with it. The
+  `media.resolver_absent` log event is gone.
+
+  Consumers must: rename the `AssetConfig` type to `MediaConfig` and reduce the value to `{ bucketBinding }`.
+
+  Consumers must: delete `publicBase`, `urlForm`, `maxUploadBytes`, `allowedTypes`, and
+  `transformations` from the media config, and retire a media route mounted at a `publicBase` other
+  than `/media`, and any `srcset` or `sizes` use.
+
+  Consumers must: call `createMediaResolver(media, manifest, { strict })` in that order and drop any
+  `normalizeAssets` call, and drop any `ResolvedAssetConfig` import.
+
+  Consumers must: read `runtime.media` where you read `runtime.resolvedAssets`.
+
+  Consumers must: pass `resolveMedia` to `createPublicRoutes` as a resolver or `null`, and drop
+  `assetsEnabled`.
+
+  Consumers must: stop reading `data.mediaBase` and drop the `urlForm` argument from any `publicPath` call.
+
+  Consumers must: stop querying logs for `media.resolver_absent`.
+
+- **`createSiteResolver(adapter, files)` replaces `createSiteIndexes`.** It takes the adapter and one
+  eager `?raw` glob of `/src/content/**/*.md`, buckets each file into the concept whose `dir` is its
+  parent, and always validates. `cairnManifest` takes `configModule` alone: `content`, `manifestPath`,
+  and `siteFactsPath` are gone. `SiteResolver<A>` is typed by the adapter, `site.entries()` is
+  `site.paths()`, and `SiteResolver.adjacent` is gone in favor of `site.concept(id).adjacent(entryId)`.
+  `buildSiteDescriptors` and `buildSiteManifest` lose their config argument. A file under no concept,
+  or a concept `dir` outside `src/content`, now throws. A concept may be named `site`.
+
+  Consumers must: replace `createSiteIndexes(adapter, config, globs, opts)` with
+  `createSiteResolver(adapter, files)` over one `/src/content/**/*.md` glob.
+
+  Consumers must: use the returned value as `site`, read each concept through `site.concept('posts')`
+  where you read `indexes.posts`, and drop any `SiteIndexes` or `SiteGlobs` import.
+
+  Consumers must: drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`, and move
+  a generated file at a custom path to `src/content/.cairn/`.
+
+  Consumers must: remove `validate: false` and fix the entries it hid.
+
+  Consumers must: call `site.paths()` where you called `site.entries()`, and `site.concept(id).adjacent(entryId)` where you called `site.adjacent`.
+
+  Consumers must: drop the config argument from any `buildSiteDescriptors` or `buildSiteManifest` call.
+
+  Consumers must: move any concept `dir` outside `src/content` under it, and any markdown file under no concept's `dir`.
+
+- **`CairnAdmin` takes one `rendering` prop.** `rendering={cairn.rendering}` replaces `render`,
+  `registry`, and `icons`, so the renderer cannot be wired without the component registry that feeds
+  Insert block. `runtime.registry`, which nothing read, is gone.
+
+  Consumers must: pass `rendering={cairn.rendering}` to `CairnAdmin` and drop `render`, `registry`,
+  and `icons`.
+
+  Consumers must: stop reading `runtime.registry`.
+
+- **The `cairnManifest` plugin owns `ssr.noExternal`.** It adds `@glw907/cairn-cms` and
+  `@glw907/cairn-cms-dev` to the list in the main config and in the nested verify server, merged with
+  any list the site sets.
+
+  Consumers must: delete the `ssr.noExternal` line for the engine from `vite.config.ts`.
 
 - **`buildSitemapView` skips `noindex` entries.** An entry whose `robots` field carries `noindex` no
   longer appears in the sitemap, matching the markdown twin. The check applies only to a concept whose
@@ -221,7 +331,7 @@
   publishes, and `check:dev-package` now fails on any `exports` target or `files` entry outside
   `dist/`.
 
-  Consumers must: add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine, so `vite dev` processes the package's `cloudflare:workers` import instead of handing it to Node. Nothing else, unless a site imports a file from the package's `src/` directly.
+  The `cairnManifest` plugin adds the package to `ssr.noExternal` (see its entry above), so `vite dev` processes the package's `cloudflare:workers` import instead of handing it to Node, and a site adds no line. A site that imports a file from the package's `src/` directly has more to change.
 
 - **The `sanitizeSchema` callback gets a copy, and a floor holds after it returns.** The callback
   receives a deep copy of cairn's safe base schema. Once it returns, the engine removes `script` from
@@ -333,9 +443,7 @@
   for non-admin paths; it keeps the double-submit token on every unsafe `/admin` form POST. A form
   POST whose `Origin` is missing, `null`, or foreign now gets SvelteKit's plain 403, `Cross-site POST
   form submissions are forbidden`, before any `handle` hook runs, and no cairn event records it. The
-  diagnostic is the Workers Logs invocation record. `createAuthChannel` keeps its own origin
-  compare, so a member action still has its CSRF floor under `vite dev`, where SvelteKit skips its
-  check.
+  diagnostic is the Workers Logs invocation record.
 
   Consumers must: delete the `csrf` block entirely. Don't replace it with `trustedOrigins: ['*']`,
   which SvelteKit's removal message suggests: it turns off SvelteKit's Origin check on every route,
@@ -350,8 +458,8 @@
   `%sveltekit.head%` in `app.html` wins over cairn's. `/preview/[token]` keeps `no-referrer`.
 
   Consumers must: if your site sets `Referrer-Policy: no-referrer` site-wide, serve
-  `strict-origin-when-cross-origin` or `strict-origin` instead. Your own forms and
-  `createAuthChannel` forms otherwise fail SvelteKit's check.
+  `strict-origin-when-cross-origin` or `strict-origin` instead. Your own forms otherwise fail
+  SvelteKit's check.
 
   Consumers must: have an endpoint that receives a server-to-server POST with no `Content-Type`,
   such as a webhook, expect SvelteKit's 403, and have the sender set a content type such as JSON.
@@ -359,9 +467,8 @@
 
 - **The engine reads the Worker's bindings from `cloudflare:workers`, not `event.platform`.**
   Adapter 8 passes no `platform`, so `env` and `waitUntil` come from the module. One internal module
-  is the engine's only `cloudflare:workers` import, and no Node-context entry reaches it. The guard,
-  the auth channel, and the admin routes read `env` there; `waitUntil` is always
-  defined, so the auth channel's inline-await branch is gone. The dev flag `CAIRN_DEV_BACKEND` and
+  is the engine's only `cloudflare:workers` import, and no Node-context entry reaches it. The guard
+  and the admin routes read `env` there; `waitUntil` is always defined. The dev flag `CAIRN_DEV_BACKEND` and
   `PUBLIC_ORIGIN` are read from the Worker env alone, with no `process.env` fallback, and no engine
   code touches `env` or `withEnv` while a build prerenders. The dev backend layers its doubles with
   `withEnv`, so they reach engine and site reads alike. `CairnPlatformBindings` and
@@ -653,6 +760,81 @@
 
   Consumers must: nothing.
 
+- **`createAuthRoutes` takes `{ runtime, send }`, and `RequestOutcome` is `LoginRequestOutcome`.** The
+  factory's `runtime` is required and carries the site name and sender. The renamed outcome drops its
+  `sent` member, so branch on `outcome === 'sent'`, which the neutral answer for an unknown address
+  also returns. `tokensMatch` is renamed `compareTokens`.
+
+  Consumers must: pass `{ runtime }` to `createAuthRoutes`.
+
+  Consumers must: rename `RequestOutcome` to `LoginRequestOutcome` and handle the outcome with no
+  `sent` member.
+
+  Consumers must: rename `tokensMatch` to `compareTokens`.
+
+- **`parseMarkdown` and `serializeMarkdown` run on `yaml`, and `gray-matter` and `js-yaml` leave the
+  engine.** The core schema keeps a date as the text it was written, so `date: 2024-03-15` reads as the
+  string `2024-03-15` and an unquoted timestamp keeps its offset instead of becoming a `Date`. No code
+  path produces a `Date` now, so a `Date` you pass by hand to `validate` or `'~standard'` reads as empty.
+  The block boundary is one rule for every reader: an empty block (`---` then `---`) and spaces after the
+  opening fence are accepted, a language tag after the fence (`---yaml`, `---js`) is no longer read as
+  frontmatter, and an unclosed block reads as no frontmatter where it used to read to the end of the
+  file. YAML 1.2 replaces the old dialect: `10:30` is the string `10:30` (it was 630), `0755` is 755 (it
+  was 493), `0o755` is 493 (it was a string), `1_000` is a string (it was 1000), `0b11` is a string
+  (it was 3), and a `<<` merge key no longer merges. A save writes single-quoted scalars (an unlimited
+  line width, so a scalar with no newline stays on one line; a string holding a newline writes as a
+  block scalar), so a bare date loses its quotes
+  and `references.ts` stops quoting a date-shaped id. A comparison over four sites' content found
+  no value that changed apart from dates read as text.
+
+  Consumers must: read a date value as text, in any key, not a `Date`, in your code
+  and in a migration script that calls `parseMarkdown`. Stop passing a `Date` to `validate` or
+  `'~standard'`; pass the `YYYY-MM-DD` string. Check a content file for a `---yaml` fence, an unclosed
+  block, or a `10:30`, `0755`, `0o755`, `1_000`, `0b11`, or `<<` value, and write what you mean. Expect a first admin save to
+  rewrite a hand-written block into the single-quoted form.
+
+- **A `date` field refuses a value with a time of day.** A text such as `2024-03-15 20:00:00 -08:00`
+  or `2024-03-15T20:00:00Z` fails with `has a time of day. Write the date alone: 2024-03-15`, naming the
+  day as written. Before, a negative offset late in the day validated as the next day with no warning.
+  An entry refused here leaves the manifest, so the admin's concept list stops showing it, with a
+  `content.entry_invalid` log record, and the build fails on it unless it is a draft. The edit route still
+  opens it by URL on the written day, and a save writes the date alone.
+
+  Consumers must: write the date alone in every `date` field, taking the day from the filename when it
+  carries one. Run the build once and fix each entry it names.
+
+- **A `boolean` field refuses a non-boolean, and `draft` is checked whether or not the concept declares
+  it.** `true` stores `true`. `false`, an empty value, and an absent key omit the value. Anything else,
+  such as `draft: "true"` or `draft: yes`, fails with `Draft must be true or false`. Before, the engine
+  read only the boolean `true` as a draft, so a mistyped marker published the entry. A concept that
+  declares no `draft` field runs the raw key through the same rule, and `draft` must be boolean whatever
+  kind the concept declares it as: a `fields.text` draft holding `"true"` is refused too. A directive's
+  boolean attribute is unaffected, since it is already a real boolean. Jekyll's `published: false` is
+  still not read.
+
+  Consumers must: fix each `draft` and each value of a declared `boolean` field that is not `true`,
+  `false`, or empty, such as `featured: "true"` or `pinned: yes`; the build names the file, and such an
+  entry leaves the manifest and the admin's concept list with a `content.entry_invalid` log record, as in
+  the entry above. Map any other draft marker to `draft: true`. If you call `validate` by hand, pass a
+  real boolean or an empty value: a raw form string such as `'on'` is now refused where it used to read
+  as unset.
+
+- **`creatable` widens a multiselect's set.** A `multiselect` with `creatable: true` keeps a value
+  outside `options` on save, and its inferred type is `string[]` instead of the union of `options`. Before,
+  the tag input invited a new value that the save then refused. A taxonomy under a vocabulary stays
+  closed.
+
+  Consumers must: drop any code that narrowed a creatable field's value to the `options` union.
+
+- **An entry's form renders length and date bounds as input attributes.** `text` and `textarea` carry
+  `minlength` and `maxlength` (`length` sets both, otherwise `min` and `max`), and `date` carries `min`
+  and `max`, so the browser refuses what the save would. `pattern` stays out, and the component form
+  is unchanged. The costs: `maxlength` truncates a paste with no message, the browser counts untrimmed
+  text where the save counts trimmed text, a stored over-long value trips nothing until it is edited,
+  and a stored date outside `min` or `max` is invalid at once.
+
+  Consumers must: nothing.
+
 ### Removed
 
 - **The rendered audit: `cairn-audit --rendered`, `cairn-audit norms`, and the `rendered` config
@@ -680,8 +862,7 @@
   `EditorRoutesConfig.roles`.** `runtime` carries both, so each factory's separate options are gone
   (see the `{ runtime }` entry under Changed).
 - **`PlatformContext`, `CairnEvent`'s `platform` member and `Env` parameter, and the
-  `auth.channel.delivery_inline` log event.** The auth channel hands delivery and its sweep to the
-  module's `waitUntil`, which is always defined, so no deployment takes the inline branch. A site that
+  `auth.channel.delivery_inline` log event.** The event retired with the auth channel. A site that
   matched on `auth.channel.delivery_inline` needs changing.
 - **The guard's non-admin Origin check, the `auth.csrf-origin-mismatch` condition, and
   `guard.refused`'s `origin` reason.** SvelteKit's own check refuses the request before the guard runs.
@@ -705,8 +886,90 @@
   and re-run `npx cairn-guidance install` so a site's copy of the skills drops the links to the
   removed pages.
 
+- **`fields.datetime`, `fields.email`, `DatetimeField`, and `EmailField`.** The two kinds leave the
+  builders, the field types, the validator, the entry and directive forms, and the three barrels. A
+  `datetime` field's `min` and `max` never bound anything, and the engine never validated a moment
+  beyond reading it as text.
+
+  Consumers must: replace `fields.email` with `fields.text` and a `pattern` for an address, and replace
+  `fields.datetime` with `fields.date` plus a text field for the moment. Declare a directive attribute
+  that was `email` or `datetime` as `text`.
+
+- **The auth channel's second store and the owner bootstrap.** `/auth-channel` with its `migrations-channel`
+  schema and `createChannelDb` are removed, as are `originMatches`, `isDeployedHost`, the 13
+  `auth.channel.*` log events, and `src/lib/log.ts` from the scaffold. `bootstrapOwner`,
+  `insertOwnerIfEmpty`, the `editor.bootstrapped` event, and the `/auth-store` subpath are removed too,
+  and `resolveOwnerLevelRoles` leaves the root barrel. `AuthBranding` is removed with `auth.branding`,
+  `CairnAdminConfig.auth` shrinks to `{ send? }`, and the magic-link email takes the site name and
+  sender from the runtime.
+
+  Consumers must: drop `/auth-channel` imports and delete `migrations-channel` from your migrations
+  setup; stop calling `createChannelDb`.
+
+  Consumers must: drop `/auth-store` imports; the subpath is gone.
+
+  Consumers must: if your site manages its roster outside `/admin/editors`, have your own SQL on
+  `AUTH_DB` do what `deleteEditor`, `setEditorRole`, `removeOwnerIfNotLast`, and `demoteOwnerIfNotLast`
+  did. Trim and lowercase the email before it matches or writes the `editor` table, since a shadow row
+  counts as an owner yet can never sign in. Count owners inside the one `DELETE`, as
+  `AND (role NOT IN (...) OR (SELECT COUNT(*) FROM editor WHERE role IN (...)) > 1)`, so a concurrent
+  write can't strand the roster. In an `UPDATE`, add `OR ? = 1`, bound to whether the new role has
+  owner capability, so the last owner can still move to another owner-level role. List every role with
+  owner capability, since a missed name miscounts the owners. Only when the `DELETE` changed a row,
+  which `meta.changes` reports, delete the person's rows from `session` and `magic_token` by `email`,
+  so a refused removal keeps its sessions. Then delete from `preview_tokens` by `editor` in a statement
+  of its own and ignore a "no such table" error: that table exists only after `0003_preview.sql`, and
+  one missing table fails a whole D1 batch.
+
+  Consumers must: stop importing `resolveOwnerLevelRoles` from the root barrel; no public subpath
+  carries it now, so derive owner-capability roles from your own role vocabulary.
+
+  Consumers must: delete the `auth.bootstrapOwner` option, which is now a type error, and seed the
+  owner row before you deploy if the `editor` table may be empty, since `bootstrapOwner` no longer
+  creates it on first request. `skills/cairn-extending-a-site/references/adopt-cairn.md`
+  carries the seed step; `create-cairn-site` seeds its own owner.
+
+  Consumers must: delete `auth.branding` from `createCairnAdmin` and stop importing `AuthBranding`. The
+  `siteName` and sender now come from the adapter's `email` group and the site config. A site that needs
+  a different name or from address changes the built message in a custom `auth.send`, which receives it.
+  That reaches the email only: the login and confirm pages now show the site config's name. To send no
+  reply address, remove `replyTo` from the adapter's `email` group or use a custom `auth.send`.
+
+  Consumers must: stop matching on the 13 `auth.channel.*` events and on `editor.bootstrapped`; they
+  left `CAIRN_LOG_EVENTS`.
+
+  Consumers must: delete `src/lib/log.ts` from a site scaffolded earlier if nothing else imports it.
+
+### Security
+
+- **The minted installation token is scoped to one repository and Contents write.** `installationToken`
+  now sends `repositories: [repo]` and `permissions: { contents: 'write' }`, so a token minted for one
+  site can no longer write to, administer, or change workflows on the account's other repositories.
+  That boundary holds for the token, not the key: the key itself can still mint whatever the App holds
+  on every repository the installation covers. A 422 from the mint reports as `token_request_refused`
+  in `/healthz?live=1`'s `githubAppToken` check.
+
+  Consumers must: grant the App Contents read and write, and set `repo` to the repository's current
+  name. A stale name followed GitHub's redirect before; it now reaches a validated body and the mint is
+  expected to be refused, which `/healthz?live=1` reports as a detail such as `token_request_refused`.
+
+- **The guard clears `locals.cairnEditor` on `/admin/login` and `/admin/auth/confirm`.** Those paths
+  resolve no session, so a value a handle set before the guard no longer reaches them.
+
+  Consumers must: nothing.
+
 ### Fixed
 
+- **A proofread cut off at the output cap fails honestly.** A `max_tokens` stop now answers 413 with
+  the too-long message instead of returning a partial body as the corrected text, and logs
+  `tidy.failed` with reason `truncated`. The check lives in the default client, so a site's own
+  gateway owns its truncation.
+- **The tag screen confirms a save.** It shows **Tags saved.** in a status region, and
+  `VocabularyData` gains `saved: boolean`.
+- **A failed island reports itself.** Bad props JSON or a throw on mount now calls `console.error`
+  naming the island, and the static fallback stays.
+- **The bulk media delete window stops promising an undo.** It reads "Every removal is one
+  revertible commit."
 - **Spellcheck no longer dies silently on some page loads.** A large dictionary read could trap the
   spellchecker's wasm, which left that page with no underlines until a reload. The worker now feeds
   the dictionary in writes of at most 64KB.
@@ -716,7 +979,7 @@
 - **A save or publish keeps every frontmatter key the fieldset does not declare.** A hand-written
   `draft: true` survives, so the entry stays hidden. A save reads the prior file once and fails closed
   with a 503 when that read or its parse fails. A bare YAML date such as `updated: 2026-01-01` is
-  written back as `2026-01-01T00:00:00.000Z`: the instant survives and the text changes. A malformed
+  written back as the text `2026-01-01`. A malformed
   file now throws on every parse, where it used to throw once per isolate and then read as empty.
 - **A publish onto an address a live entry holds is refused.** Single publish answers 409 and keeps
   the branch. Site-wide publish commits nothing, keeps every branch, and redirects with
@@ -736,14 +999,6 @@
   Consumers must: expect `buildNewlyPublished` to omit a renamed entry, and drop any workaround that
   filtered renames by key.
 
-- **The editor preview honors a moved media path.** `manifestMediaResolver` takes the site's media
-  base, so an image in the preview resolves under it instead of `/media`.
-- **`normalizeAssets` throws on an `allowedTypes` entry the upload path cannot store.** The error is
-  `cairn:`-prefixed and names the type. The sniffer's five types stay the only source.
-
-  Consumers must: remove any `allowedTypes` entry outside `image/jpeg`, `image/png`, `image/webp`,
-  `image/gif`, and `image/avif`, since the site now fails at startup on one.
-
 - **A throwing `attention` function no longer fails the admin shell load.** The shell catches the
   throw or rejection, renders no badges for that request, and logs `admin.attention_failed` with the
   error. A site no longer needs its own try/catch around the function.
@@ -758,7 +1013,7 @@
   instead of the unknown-id message, which sent the reader looking for a missing file.
 - **`slugify` strips accents before it removes other characters.** A title with `résumé` now derives
   `resume` where it derived `r-sum`. Ids already on disk are unchanged.
-- **The scaffold's media constant is typed `AssetConfig`.** The showcase and the `waymark` template
+- **The scaffold's media constant is typed `MediaConfig`.** The showcase and the `waymark` template
   annotate it, so the `configure-media` page's edits type-check as written.
 
 - **`cairn-guidance check` reads a fresh scaffold as fresh.** A stylesheet whose Tailwind import uses
@@ -789,9 +1044,6 @@
   build that folded the dev backend in and deployed with `CAIRN_DEV_BACKEND` set served the
   owner-session bypass with no tripwire. With the flag set on the Worker env, a request to a
   non-local host now gets the guard's 503 and its `guard.refused` record.
-- **A `createAuthChannel` delivery cleanup that throws no longer escapes `waitUntil`.** When
-  `deliver` throws, the cleanup that deletes the pending row and refunds the send charge now logs
-  `auth.channel.send_cleanup_failed` if it fails in turn, instead of leaving an unobserved rejection.
 
 ### Documentation
 
@@ -868,7 +1120,7 @@
   (`^6.5.2`), `@codemirror/language` (`^6.13.1`), `@codemirror/view` (`^6.43.14`), `@lucide/svelte`
   (`^1.52.0`), `@rodrigodagostino/svelte-sortable-list` (`^2.2.6`), `heic-to` (`^1.6.5`, libheif
   1.23.5), `mdast-util-directive` (`^3.1.1`), `shiki` (`^4.5.0`), and the `@types/hast`,
-  `gray-matter`, `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
+  `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
   `package.json` takes `wrangler` `^4.148.0`, `@sveltejs/kit` `^3.0.1`, `svelte` `^5.57.2`, `vite`
   `^8.3.3`, and `@cloudflare/workers-types` `^5.20261007.1`. The Workers test project moves to
   `@cloudflare/vitest-plugin` (the renamed `@cloudflare/vitest-pool-workers`, which is deprecated),
@@ -877,6 +1129,10 @@
 
   Consumers must: nothing. A site that regenerates `worker-configuration.d.ts` with Wrangler 4.148
   gains ambient `*.txt`, `*.html`, `*.sql`, `*.bin`, and `*.wasm` module declarations.
+
+- `gray-matter` and `js-yaml` leave the engine's dependencies, and `yaml` reads and writes frontmatter.
+
+  Consumers must: nothing. See the `parseMarkdown` entry under Changed.
 
 ## 0.98.0
 

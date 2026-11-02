@@ -191,7 +191,7 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
     }
 
     // Resolve the R2 bucket before the commit, so a missing binding refuses before any write.
-    const bucketResult = resolveMediaBucket(event, runtime.resolvedAssets);
+    const bucketResult = resolveMediaBucket(event, runtime.media);
     if ('error' in bucketResult) {
       return fail(503, { error: bucketResult.error, hash, usage: [], foundIn } satisfies MediaDeleteFailure);
     }
@@ -280,7 +280,7 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
 
     // Resolve the R2 bucket before any write, so a media-off site or a missing binding refuses before
     // the commit, exactly like single delete.
-    const bucketResult = resolveMediaBucket(event, runtime.resolvedAssets);
+    const bucketResult = resolveMediaBucket(event, runtime.media);
     if ('error' in bucketResult) {
       return fail(503, { error: bucketResult.error } satisfies MediaBulkFailure);
     }
@@ -362,7 +362,7 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
 
     // Resolve the R2 binding. The reconcile lists the raw bucket directly, so keep the raw binding;
     // the MediaStore seam carries no list. A media-off site or a missing binding refuses the scan.
-    const bucketResult = resolveMediaBucket(event, runtime.resolvedAssets);
+    const bucketResult = resolveMediaBucket(event, runtime.media);
     if ('error' in bucketResult) {
       return fail(503, { error: bucketResult.error } satisfies MediaBulkFailure);
     }
@@ -420,7 +420,7 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
 
     // Resolve the R2 binding, the same media-off / missing-binding refusals as the scan. The purge
     // deletes through the MediaStore seam, so wrap the raw binding.
-    const bucketResult = resolveMediaBucket(event, runtime.resolvedAssets);
+    const bucketResult = resolveMediaBucket(event, runtime.media);
     if ('error' in bucketResult) {
       return fail(503, { error: bucketResult.error } satisfies MediaBulkFailure);
     }

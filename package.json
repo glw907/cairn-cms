@@ -153,14 +153,6 @@
       "types": "./dist/reproductions/manifest.d.ts",
       "default": "./dist/reproductions/manifest.js"
     },
-    "./auth-store": {
-      "types": "./dist/auth-store/index.d.ts",
-      "default": "./dist/auth-store/index.js"
-    },
-    "./auth-channel": {
-      "types": "./dist/auth-channel/index.d.ts",
-      "default": "./dist/auth-channel/index.js"
-    },
     "./auth-crypto": {
       "types": "./dist/auth-crypto/index.d.ts",
       "worker": "./dist/auth-crypto/index.js",
@@ -198,7 +190,6 @@
   "files": [
     "dist",
     "migrations",
-    "migrations-channel",
     "schema",
     "skills",
     "claude",
@@ -245,7 +236,6 @@
     "@types/mdast": "^4.0.4",
     "culori": "^4.0.2",
     "esm-env": "^1.2.2",
-    "gray-matter": "^4.0.3",
     "hast-util-sanitize": "^5.0.2",
     "hast-util-to-string": "^3.0.1",
     "hastscript": "^9.0.1",

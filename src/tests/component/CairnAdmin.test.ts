@@ -9,6 +9,8 @@ import type { CairnRuntime, NamedField } from '../../lib/content/types.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
+import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 import { page } from './_app-state.js';
 
 // The authed shell payload the edit view reads its siteName from (page.data.shell). CairnAdmin no
@@ -26,7 +28,6 @@ function shell(): AdminShellData {
     csrf: 'test-csrf',
     pendingEntries: Promise.resolve(null),
     attention: {},
-    mediaBase: '/media',
   };
 }
 
@@ -101,7 +102,7 @@ function settingsData(): AdminData {
       keyStatus: 'valid',
       model: 'claude-sonnet-5',
       modelLabel: 'Claude Sonnet 5',
-      conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+      conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false },
       saved: false,
     },
   };
@@ -137,7 +138,7 @@ function editData(): AdminData {
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
       siteDictionary: [],
-      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false } },
+      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false } },
       advisories: [],
       orphanTags: [],
     },
@@ -196,6 +197,20 @@ describe('CairnAdmin', () => {
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
   });
 
+  it('threads rendering.components to the edit view so Insert block shows', async () => {
+    page.data = { shell: shell() };
+    const callout = defineComponent({
+      build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }),
+      name: 'callout', label: 'Callout', description: 'A note.', use: 'Call out an idea.',
+      attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note'] }) },
+      slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
+    });
+    const components = defineRegistry({ components: [callout] });
+    const rendering = { render: async () => '', components };
+    const screen = await render(CairnAdmin, { data: editData(), rendering });
+    await expect.element(screen.getByRole('button', { name: /insert block/i })).toBeInTheDocument();
+  });
+
   it('renders the editors view bare', async () => {
     const screen = await render(CairnAdmin, { data: editorsData() });
     await expect.element(screen.getByText('Owner One')).toBeInTheDocument();
@@ -207,7 +222,7 @@ describe('CairnAdmin', () => {
   });
 
   it('forwards the action result to the rendered view', async () => {
-    const screen = await render(CairnAdmin, { data: loginData(), form: { sent: true } });
+    const screen = await render(CairnAdmin, { data: loginData(), form: { outcome: 'sent' } });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
   });
 
@@ -242,7 +257,7 @@ describe('form-action contract', () => {
       render: ({ body }) => Promise.resolve(body),
       manifestPath: 'src/content/.cairn/index.json',
       mediaManifestPath: 'src/content/.cairn/media.json',
-      resolvedAssets: { enabled: false },
+      media: { enabled: false },
     vocabulary: [],
     };
   }

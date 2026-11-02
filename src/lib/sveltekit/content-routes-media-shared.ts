@@ -4,7 +4,7 @@
 // action). Each function here is a plain function of its explicit arguments, not a closure over
 // ContentRoutesContext, so this file stays a leaf: it imports no `content-routes-*` sibling.
 import type { UsageEntry } from '../media/usage.js';
-import type { ResolvedAssetConfig } from '../media/config.js';
+import type { ResolvedMediaConfig } from '../media/config.js';
 import { formatMediaToken } from '../media/reference.js';
 import type { CairnEvent } from './types.js';
 // R2Bucket is named only to cast the raw binding for resolveMediaBucket. It is a type-only import
@@ -107,7 +107,7 @@ export const CONTENT_CONFLICT_MESSAGE = 'The site changed since you opened it. R
  */
 export function resolveMediaBucket(
   event: CairnEvent,
-  resolved: ResolvedAssetConfig,
+  resolved: ResolvedMediaConfig,
 ): { bucket: R2Bucket } | { error: string } {
   if (!resolved.enabled) return { error: MEDIA_DISABLED_MESSAGE };
   const rawBucket = env[resolved.bucketBinding];

@@ -28,14 +28,14 @@ Contents:
   target and the admin refuses it.
 - **Keys.** Write only declared keys. Map renamed ones (old `summary` → `description`); drop
   template keys (`layout`, `aliases`, `published`).
-- **Dates.** A `date` field takes `YYYY-MM-DD`. An unquoted timestamp parses as a `Date` and the
-  field takes its UTC day, so `2024-03-12 20:00:00 -08:00` becomes `2024-03-13`. Take the day from
-  the filename when it carries one, and only fall back to the frontmatter. A `datetime` field needs
-  the timestamp as a quoted string with its offset.
-- **Drafts.** Only boolean `draft: true` is a draft. `draft: 'true'`, `draft: yes`, and
-  `published: false` all read as published; map each old marker to `draft: true`.
+- **Dates.** A `date` field takes `YYYY-MM-DD`. A value with a time of day fails the build, naming
+  the file and the day as written, so write the date alone. Take the day from the filename when it
+  carries one, and only fall back to the frontmatter.
+- **Drafts.** Only boolean `true` or `false` is valid, whatever field kind declares `draft`.
+  `draft: 'true'` and `draft: yes` fail the build, while `published: false` still reads as published,
+  so map each old marker to `draft: true`. Every declared `boolean` field follows the same rule.
 - **Tags.** Slug each (`Travel Notes` → `travel-notes`) under the taxonomy field's key.
-- **Text fields.** Text-type fields read a number, date, or boolean as empty; stringify them.
+- **Text fields.** Text-type fields read a number or boolean as empty; stringify them.
 - **Body.** Rewrite each shortcode as a container directive of a registered component (`:::note`).
   Old image URLs keep working where they still serve; only `media:` references are rewritten.
 
@@ -49,7 +49,7 @@ const TO = 'src/content/posts';
 const PREFIX = 10; // datePrefix: year 4, month 7, day 10
 const ID_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-const toDay = (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v ?? '').match(/^\d{4}-\d{2}-\d{2}/)?.[0]);
+const toDay = (v) => (String(v ?? '').match(/^\d{4}-\d{2}-\d{2}/)?.[0]);
 const toSlug = (t) => String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 function toFrontmatter(old, filename) {
@@ -101,16 +101,16 @@ For an undated concept, set `id` to `stem` and drop the date line and test. One 
 3. `npm run build`. It fails with `cairn: <n> invalid frontmatter field(s):` then
    `<dir>/<id>: <field>: <message>` lines. Fix the script, delete the files the last run wrote (an
    id change leaves the old file behind), and rerun from step 1.
-4. Never pass `{ validate: false }` to `createSiteIndexes` to get a green build: invalid entries
-   still drop from the site, only with a warning instead of a failure.
-5. Open a migrated entry at its permalink: images load, no shortcode shows as text.
+4. Open a migrated entry at its permalink: images load, no shortcode shows as text.
 
 | Symptom | Cause |
 |---|---|
 | `Skipped` line | No date, off-shape or duplicate id, or unparseable frontmatter |
 | Body starts with `+++` | TOML frontmatter |
-| `date: ... must be a valid date (YYYY-MM-DD)` | Not a real date (an unquoted `2024-13-45` rolls over silently instead) |
+| `date: ... must be a valid date (YYYY-MM-DD)` | Not a real date |
+| `date: ... has a time of day` | The value carries a time after the day; write the date alone |
+| `draft: Draft must be true or false` | `draft` is a string such as `'true'` or `yes`; write boolean `true` |
 | Required text field listed though the old file had it | Value was not a string, or sat under an unmapped key |
 | Permalink resolves to two entries | Two dated files with one slug under an undated permalink |
-| Entry missing, build passes | Invalid draft, or `validate: false` still set |
+| Entry missing, build passes | Invalid draft |
 | Shortcode prints as text | Not rewritten to a container directive |

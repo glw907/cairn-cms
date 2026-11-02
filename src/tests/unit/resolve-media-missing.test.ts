@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createMediaResolver } from '../../lib/render/resolve-media.js';
-import { normalizeAssets } from '../../lib/media/config.js';
 import { log } from '../../lib/log/index.js';
 import type { MediaManifest } from '../../lib/media/manifest.js';
 
-const resolved = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' });
+const media = { bucketBinding: 'MEDIA_BUCKET' };
 const empty: MediaManifest = {};
 
 describe('createMediaResolver media.resolve_missing', () => {
@@ -12,7 +11,7 @@ describe('createMediaResolver media.resolve_missing', () => {
 
   it('logs media.resolve_missing with the hash on a real miss', () => {
     const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    const resolve = createMediaResolver(empty, resolved);
+    const resolve = createMediaResolver(media, empty);
     expect(resolve({ slug: null, hash: 'a1b2c3d4e5f6a7b8' })).toBeUndefined();
     expect(warnSpy).toHaveBeenCalledTimes(1);
     const [event, fields] = warnSpy.mock.calls[0];
@@ -24,7 +23,7 @@ describe('createMediaResolver media.resolve_missing', () => {
 
   it('does not log on the media-off path (that would be noise)', () => {
     const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    const off = createMediaResolver(empty, normalizeAssets(undefined));
+    const off = createMediaResolver(undefined, empty);
     expect(off({ slug: null, hash: 'a1b2c3d4e5f6a7b8' })).toBeUndefined();
     expect(warnSpy).not.toHaveBeenCalled();
   });
@@ -47,7 +46,7 @@ describe('createMediaResolver media.resolve_missing', () => {
         createdAt: '2026-06-16T00:00:00.000Z',
       },
     };
-    const resolve = createMediaResolver(manifest, resolved);
+    const resolve = createMediaResolver(media, manifest);
     expect(resolve({ slug: null, hash: 'a1b2c3d4e5f6a7b8' })).toBe('/media/shoes.a1b2c3d4e5f6a7b8.webp');
     expect(warnSpy).not.toHaveBeenCalled();
   });
@@ -73,25 +72,25 @@ describe('createMediaResolver media.resolve_missing', () => {
 
     it('throws a cairn: error on a missing hash while media is on', () => {
       vi.spyOn(log, 'warn').mockImplementation(() => {});
-      const resolve = createMediaResolver(empty, resolved, { strict: true });
+      const resolve = createMediaResolver(media, empty, { strict: true });
       expect(() => resolve({ slug: null, hash })).toThrow(/^cairn: .*a1b2c3d4e5f6a7b8/);
     });
 
     it('keeps the url and imageDetail on a hit', () => {
-      const resolve = createMediaResolver(manifest, resolved, { strict: true });
+      const resolve = createMediaResolver(media, manifest, { strict: true });
       expect(resolve({ slug: null, hash })).toBe(`/media/shoes.${hash}.webp`);
       const detail = (resolve as { imageDetail?: (r: { slug: null; hash: string }) => unknown }).imageDetail;
       expect(detail?.({ slug: null, hash })).toMatchObject({ width: 100, height: 100 });
     });
 
     it('stays silent with media off', () => {
-      const off = createMediaResolver(empty, normalizeAssets(undefined), { strict: true });
+      const off = createMediaResolver(undefined, empty, { strict: true });
       expect(off({ slug: null, hash })).toBeUndefined();
     });
 
     it('still returns undefined on a miss when not strict', () => {
       vi.spyOn(log, 'warn').mockImplementation(() => {});
-      expect(createMediaResolver(empty, resolved)({ slug: null, hash })).toBeUndefined();
+      expect(createMediaResolver(media, empty)({ slug: null, hash })).toBeUndefined();
     });
   });
 });

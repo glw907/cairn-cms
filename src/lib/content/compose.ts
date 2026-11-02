@@ -2,7 +2,7 @@
 // serves from.
 import type { CairnAdapter, CairnRuntime } from './types.js';
 import { normalizeConcepts } from './concepts.js';
-import { normalizeAssets } from '../media/config.js';
+import { normalizeMedia } from '../media/config.js';
 import { dictionaryFileForDialect, readVocabulary, type SiteConfig } from '../nav/site-config.js';
 import { validateAccessRoles } from '../auth/access.js';
 
@@ -56,7 +56,6 @@ export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRunt
     supportContact: adapter.editor?.supportContact ?? DEFAULT_SUPPORT_CONTACT,
     render: adapter.rendering.render,
     manifestPath: CONTENT_MANIFEST_PATH,
-    registry: adapter.rendering.components,
     icons: adapter.rendering.icons,
     navMenu: adapter.editor?.nav,
     siteConfigPath: adapter.editor?.siteConfigPath ?? DEFAULT_SITE_CONFIG_PATH,
@@ -64,7 +63,7 @@ export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRunt
     publishActions: adapter.editor?.publishActions,
     preview: adapter.editor?.preview,
     assets: adapter.media,
-    resolvedAssets: normalizeAssets(adapter.media),
+    media: normalizeMedia(adapter.media),
     mediaManifestPath: MEDIA_MANIFEST_PATH,
     dictionaryPath: DICTIONARY_PATH,
     // The spellcheck dictionary is resolved once here from the site config's dialect (default US),

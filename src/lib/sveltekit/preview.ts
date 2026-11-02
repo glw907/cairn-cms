@@ -352,16 +352,16 @@ async function buildPreviewResolvers(
   }
 
   // Media: createMediaResolver, never manifestMediaResolver (whose hardcoded url form ignores a
-  // site's publicBase, presets, and imageDetail, breaking twin-render equivalence). Branch-first
+  // site's imageDetail, breaking twin-render equivalence). Branch-first
   // then default-branch fallback, so an upload newer than the site's last build still resolves;
   // branch-first is skipped for the ended page (mediaBranch null), whose branch is already gone.
   let resolveMedia: MediaResolve = () => undefined;
-  if (runtime.resolvedAssets.enabled) {
+  if (runtime.media.enabled) {
     const branchRaw = mediaBranch
       ? await backend.readFile(runtime.mediaManifestPath, mediaBranch).catch(() => null)
       : null;
     const raw = branchRaw ?? (await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch).catch(() => null));
-    resolveMedia = createMediaResolver(parseMediaManifest(safeParseJson(raw)), runtime.resolvedAssets);
+    resolveMedia = createMediaResolver(runtime.media, parseMediaManifest(safeParseJson(raw)));
   }
 
   return { resolveLink, resolveFragment, resolveMedia };
@@ -417,7 +417,7 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  `hashToken(token)`, a SHA-256 digest, and the attacker controls only the plaintext token, never
  *  the hash. Steering a chosen plaintext's digest to collide with a stored hash under a B-tree
  *  index scan would require a partial SHA-256 preimage, a problem timing a comparison does not
- *  make easier; `tokensMatch` (crypto.ts) is deliberately not used here.
+ *  make easier; `compareTokens` (crypto.ts) is deliberately not used here.
  *
  * The returned `seo` ({@link stripPreviewSeo}) never carries `canonical`, `og:url`, or
  *  `jsonLd.url`: a preview render must not self-canonicalize while it is `noindex`ed, and must not

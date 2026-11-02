@@ -18,7 +18,7 @@ export {
   createAuthRoutes,
   NO_PENDING_REQUEST_ERROR,
   type AuthRoutesConfig,
-  type RequestOutcome,
+  type LoginRequestOutcome,
   type AuthRoutes,
 } from './auth-routes.js';
 export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';
@@ -103,11 +103,8 @@ export type {
 } from './types.js';
 // Re-exported here, not just from root, beside the event and binding types it describes.
 export type { CairnEnv } from '../env.js';
-// `AuthBranding`'s canonical home is this subpath (ruling `audit-adapter-authbranding`,
-// docs/internal/engine-rulings.md), since `AuthRoutesConfig.branding` is the one public
-// signature naming it and the root barrel no longer re-exports it. `MagicLinkMessage`,
-// `SendMagicLink`, and `EmailSender` keep canonical home `.`.
-export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from '../email.js';
+// `MagicLinkMessage`, `SendMagicLink`, and `EmailSender` keep canonical home `.`.
+export type { MagicLinkMessage, SendMagicLink, EmailSender } from '../email.js';
 // The binding-shaped types a site's generated `Env` satisfies; /sveltekit is their canonical home.
 export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindings.js';
 
@@ -137,7 +134,7 @@ export type {
   ConceptDescriptor,
   SenderConfig,
   NavMenuConfig,
-  AssetConfig,
+  MediaConfig,
   PreviewConfig,
   RoutingRule,
   ValidationResult,
@@ -152,9 +149,7 @@ export type {
   SelectField,
   MultiselectField,
   UrlField,
-  EmailField,
   DateField,
-  DatetimeField,
   BooleanField,
   IconField,
   ImageField,

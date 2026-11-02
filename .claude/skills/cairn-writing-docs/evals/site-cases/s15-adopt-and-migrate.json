@@ -9,8 +9,8 @@
   "knownBad": "setups/site/s15-adopt-and-migrate-bad.mjs",
   "maxTurns": 70,
   "source": [
-    "src/lib/vite/internal.ts:57,263 cairnManifest: the committed manifest defaults to /src/content/.cairn/index.json and a build on a stale one fails; the plugin's content option maps each concept to its glob",
-    "src/lib/delivery/site-indexes.ts:34,42 createSiteIndexes takes one literal glob per concept and validates every non-draft entry unless validate is false",
+    "src/lib/vite/internal.ts:57,263 cairnManifest: the committed manifest defaults to /src/content/.cairn/index.json and a build on a stale one fails; the plugin takes configModule alone and owns ssr.noExternal",
+    "src/lib/delivery/site-resolver.ts createSiteResolver takes the adapter and one /src/content/**/*.md glob, and always validates every non-draft entry",
     "src/lib/content/frontmatter.ts:392 parseMarkdown hands an unquoted YAML timestamp over as a Date; a date field reads the Date's UTC day, so 2024-03-12 20:00:00 -08:00 is 2024-03-13",
     "src/lib/content/manifest.ts:110 and src/lib/delivery/manifest.ts:40: an entry is a draft only when its frontmatter holds the boolean draft: true (published: false reads as published)",
     "src/lib/content/ids.ts: an entry id is lowercase letters and digits joined by single hyphens",
@@ -18,9 +18,9 @@
     "setups/site/s15-adopt-and-migrate.mjs: the engine stays declared and installed (a case run cannot reach the registry), so the install step is not exercised; the unquoted timestamp's UTC day is 2024-03-13 against a filename day of 2024-03-12 (checked with parseMarkdown)"
   ],
   "expectations": [
-    "vite.config.ts gains the cairnManifest plugin (configModule and a posts content glob) and ssr.noExternal for @glw907/cairn-cms; src/app.d.ts imports @glw907/cairn-cms/ambient.",
+    "vite.config.ts gains the cairnManifest plugin with configModule alone, which also owns ssr.noExternal for @glw907/cairn-cms; src/app.d.ts imports @glw907/cairn-cms/ambient.",
     "A site config and an adapter module declare a posts concept whose fields include title, date, description, a boolean draft, and a multiselect marked taxonomy: true, so the migrated keys survive the first admin save.",
-    "A content module passes the posts glob to createSiteIndexes with validation left on, and a prerendered [...path] route built on createPublicRoutes serves each post at /posts/<slug>.",
+    "A content module passes the one /src/content/**/*.md glob to createSiteResolver, and a prerendered [...path] route built on createPublicRoutes serves each post at /posts/<slug>.",
     "The four old files become src/content/posts/2023-11-02-first-snow.md, 2024-01-19-pack-list.md, 2024-03-12-winter-gear-guide.md, and 2024-04-02-draft-trip.md: lowercase hyphenated ids, no layout key, the summary as description, tags as slugs, the unpublished post as draft: true, and the winter post dated 2024-03-12 and not 2024-03-13.",
     "The committed manifest (src/content/.cairn/index.json and site-facts.json) is written by cairn-manifest after the migration, and npm run build passes."
   ],
@@ -95,12 +95,6 @@
     },
     {
       "type": "contains",
-      "path": "vite.config.ts",
-      "regex": "noExternal\\s*:\\s*\\[[^\\]]*@glw907/cairn-cms",
-      "source": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/add-cairn-to-a-sveltekit-app.md (Install the engine and let Vite compile it)"
-    },
-    {
-      "type": "contains",
       "path": "src/app.d.ts",
       "text": "@glw907/cairn-cms/ambient",
       "source": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/add-cairn-to-a-sveltekit-app.md (Install the engine and let Vite compile it, step 3)"
@@ -108,14 +102,8 @@
     {
       "type": "contains",
       "path": "src",
-      "regex": "createSiteIndexes\\(",
-      "source": "src/lib/delivery/site-indexes.ts:42"
-    },
-    {
-      "type": "absent",
-      "path": "src",
-      "regex": "validate\\s*:\\s*false",
-      "source": "src/lib/delivery/site-indexes.ts:34; https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/migrate-existing-content.md (Run the build as the migration check)"
+      "regex": "createSiteResolver\\(",
+      "source": "src/lib/delivery/site-resolver.ts"
     },
     {
       "type": "absent",
@@ -155,7 +143,7 @@
     },
     {
       "n": 3,
-      "text": "The session wrote the committed manifest with cairn-manifest after the migration, then ran the production build as the check; the tool log shows both, and validate: false was never set to get a build through.",
+      "text": "The session wrote the committed manifest with cairn-manifest after the migration, then ran the production build as the check; the tool log shows both, and no entry was skipped or silenced to get a build through.",
       "source": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/migrate-existing-content.md (Run the build as the migration check)"
     },
     {

@@ -144,8 +144,8 @@ wired, tightens two access edges, and regenerates the manifest. Do these in orde
    route it names. Remove a role you dropped from `defineRoles` from every access rule, or keep it
    declared: a rule naming an undeclared role now fails at server start.
 7. Key alerting for a missing Turnstile secret on `missing_secret`, not `invalid_input`.
-8. If you passed a full `auth.branding` without `replyTo`, check the adapter's `email` group: the
-   runtime's `replyTo` applies now.
+8. Delete `auth.branding` from `createCairnAdmin` if you pass it. `CairnAdminConfig.auth` takes only
+   `send` now.
 9. Optionally, answer 503 from `/healthz` when `ok` is false, and apply `0001_roles.sql` if you declare
    custom roles on a site scaffolded before the scaffold shipped it.
 10. Run `npm run check`, then `npm run build`, and expect both to exit 0. Run `cairn doctor` and expect
@@ -168,7 +168,7 @@ these steps, in order, after step 3:
    needed `<script>` into a registered component or an island.
 4. Delete your `devBuildDefine` plugin and the `__CAIRN_DEV_BUILD__` declaration in `app.d.ts`.
    The `cairnManifest()` plugin defines the flag, and `@glw907/cairn-cms/ambient` declares it.
-5. Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine.
+5. Delete the `ssr.noExternal` line from `vite.config.ts`. The `cairnManifest()` plugin adds the engine and `@glw907/cairn-cms-dev` to it.
 6. Drop `seedContent` from `devBackendHandle`. Pass `content: 'fixtures'` when the dev backend runs
    under `wrangler dev`, or to keep the seeded dev content.
 7. Run `npm run check`, then `npm run build`, and expect both to exit 0.
@@ -197,13 +197,47 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 ## Unreleased
 
 - **Fix every FIX line before running `cairn-guidance check --strict` in CI.** The check now reports `PASS` or `FIX` on each of its seven lines, judges the `.claude/` Tailwind exclusion by the path it resolves to, and exits 1 under `--strict` on any `FIX`. A site whose `@source not` line sits in a different stylesheet than its `tailwindcss` import now passes.
+- **Remove `fixes` from any `TidyConventions` you build in code.** The key is gone, because tidy always makes the objective fixes. A `fixes:` key in `site.config.yaml` is ignored, so delete it when convenient. If it was the only key under `conventions:`, delete the empty key too.
+- **Expect tidy to run on `claude-sonnet-5-5` when `tidy.model` is unset.** Set `tidy.model: claude-sonnet-5` to stay on the old model. A site that passes its own `tidy.client` handles a reply cut off at the output cap itself; the default client answers it with the too-long message.
+- **Expect no Tidy button on a site with no `ANTHROPIC_API_KEY`.** A draft that shows no button on a site that turned Tidy on points at the key. `/admin/settings` shows the same state.
+- **Expect a rename onto a live entry's address to be refused.** Move one of the two entries first. A log query reads `rename.address_collided`, with the fields `publish.address_collided` carries.
+- **Add `saved` to any `VocabularyData` you build by hand.** It's a boolean, and a test fixture that omits it no longer type-checks.
 - **Drop the rendered audit from your scripts, CI, and config.** `cairn-audit` is static-only now. Remove `cairn-audit --rendered`, `cairn-audit norms`, and any `check:cairn:rendered` script, and delete a `rendered` section from `cairn-audit.config.json` (an old `rendered` key is ignored, like any unknown key). `CAIRN_AUDIT_COOKIES` no longer does anything. Remove Playwright if the audit was its only use.
-- **Expect an admin save to keep keys your fieldset does not declare.** A key dropped from a fieldset now stays in old files, so remove it from the file by hand when you mean to delete it. A bare YAML date such as `updated: 2026-01-01` is written back as `2026-01-01T00:00:00.000Z`. A save also fails closed with a 503 when the prior file cannot be read or parsed.
+- **Expect an admin save to keep keys your fieldset does not declare.** A key dropped from a fieldset now stays in old files, so remove it from the file by hand when you mean to delete it. A bare YAML date such as `updated: 2026-01-01` is written back as the text `2026-01-01`. A save also fails closed with a 503 when the prior file cannot be read or parsed.
 - **Expect a publish onto a live entry's address to be refused.** Move one of the two entries first. A log query on `publish.address_collided` reads `heldByConcept` and `heldById` now.
 - **Expect `buildNewlyPublished` to omit a renamed entry.** Newness is stamp membership, so a rename that carries its stamp no longer reads as a first publish. Drop any workaround that filtered renames by key.
-- **Remove an `allowedTypes` entry outside `image/jpeg`, `image/png`, `image/webp`, `image/gif`, and `image/avif`.** `normalizeAssets` now throws at startup on one, naming it.
 - **Use `createMediaResolver(..., { strict: true })` to fail a build on a missing asset.** It replaces a hand-written throwing wrapper, and the typed `actions.mediaLibraryUpload` replaces a cast.
+- **Replace `fields.email` with `fields.text` and a `pattern`, and `fields.datetime` with `fields.date` plus a text field.** The `email` and `datetime` kinds, `EmailField`, and `DatetimeField` are gone, and a directive attribute declared `email` or `datetime` becomes `text`.
+- **Read frontmatter dates as text, and stop passing a `Date` to `validate` or `'~standard'`.** `parseMarkdown` and `serializeMarkdown` run on `yaml`, so `date: 2024-03-15` reads as the string `2024-03-15` and a `Date` you pass in reads as empty. `10:30` is the string `10:30`, `0755` is 755, `0o755` is 493, `1_000` and `0b11` are strings, and a `<<` merge key no longer merges. A `---yaml` fence is no longer frontmatter, and an unclosed block reads as none. A save writes single-quoted scalars, each on one line unless it holds a newline, so a bare date loses its quotes.
+- **Write the date alone in every `date` field.** A value with a time of day, such as `2024-03-15 20:00:00 -08:00`, fails the build unless the entry is a draft, naming the file and the day as written. The admin's concept list stops showing such an entry, with a `content.entry_invalid` log record. The edit route still opens it by URL, and a save writes the date alone.
+- **Fix each `draft` and declared `boolean` value that is not `true`, `false`, or empty.** A `boolean` field now refuses anything else, `draft: "true"` and `draft: yes` included, with `Draft must be true or false`, and `draft` is checked whatever kind the concept declares it as, or none. Such an entry leaves the manifest and the admin's concept list, as above. Map any other draft marker to `draft: true`. A hand call to `validate` takes a real boolean or an empty value: a raw form string such as `'on'` is now refused.
+- **Drop any narrowing of a creatable multiselect to its `options` union.** A field with `creatable: true` keeps a value outside `options`, and its inferred type is `string[]`.
+- **Expect length and date bounds as input attributes on an entry's form.** `maxlength` truncates a paste with no message, and a stored date outside `min` or `max` is invalid at once. `pattern` stays a save check.
 - **Expect `buildSitemapView` to drop `noindex` entries.** A concept whose fieldset declares `robots` no longer lists an entry marked `noindex` in the sitemap. A site that wants one listed anyway builds that row into `extraRoutes`. A site built from the scaffold can copy the new `src/routes/sitemap.xml/+server.ts`, which uses `buildSitemapView` and takes `lastmod` from `updated`.
+- **Declare `navLayout` inline on `defineAdapter`.** A `navLayout` built in a separate constant annotated `NavLayout` is refused, because its `screen` is wide.
+- **Correct any misspelled `summaryFields` key or `navLayout` `screen`.** A `summaryFields` key must be a field of its concept, and a `screen` must be one of the engine's six ids or a `content` key. A misspelling now fails `npm run check`. A cast around `cairn.aiPosture` is no longer needed.
+- **Pass `createRenderer` one object.** `createRenderer(registry, options)` becomes `createRenderer({ components, resolveMedia, ... })`.
+- **Call `render({ body, ...opts })` in place of `renderMarkdown(md, opts)`.** `renderDocument` takes the same input, named `RenderInput`.
+- **Stop reading `remarkPlugins` and `rehypePlugins` off the renderer.** The options that feed them stay on `createRenderer`.
+- **Rename `resolve` to `resolveLink` on any `ResolveOptions` or `SiteRender` you write.**
+- **Write `render: renderer.render` in the adapter's `rendering` group.**
+- **Rename `AssetConfig` to `MediaConfig` and reduce the value to `{ bucketBinding }`.**
+- **Delete `publicBase`, `urlForm`, `maxUploadBytes`, `allowedTypes`, and `transformations` from the media config.** The cap is fixed at 25 MB and the types at the five web image types. Retire a media route mounted anywhere but `/media`, and any `srcset` or `sizes` use.
+- **Call `createMediaResolver(media, manifest, { strict })` in that order.** It normalizes inside, so drop any `normalizeAssets` call and any `ResolvedAssetConfig` import.
+- **Read `runtime.media` where you read `runtime.resolvedAssets`.**
+- **Pass `resolveMedia` to `createPublicRoutes` as a resolver or `null`, and drop `assetsEnabled`.**
+- **Stop reading `data.mediaBase`, and drop the `urlForm` argument from any `publicPath` call.**
+- **Stop querying logs for the media resolver-absent event.** `CHANGELOG.md` names it, and it is gone.
+- **Replace `createSiteIndexes(adapter, config, globs, opts)` with `createSiteResolver(adapter, files)`.** Pass one `import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true })`.
+- **Use the returned value as `site`, and read each concept through `site.concept('posts')` where you read `indexes.posts`.** Drop any `SiteIndexes` or `SiteGlobs` import.
+- **Drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`.** It takes `configModule` alone, so move a generated file at a custom path to `src/content/.cairn/`.
+- **Remove `validate: false` and fix the entries it hid.** The resolver always validates.
+- **Call `site.paths()` where you called `site.entries()`, and `site.concept(id).adjacent(entryId)` where you called `site.adjacent`.**
+- **Drop the config argument from any `buildSiteDescriptors` or `buildSiteManifest` call.**
+- **Keep every concept `dir` under `src/content`, and every markdown file under a concept's `dir`.** A concept `dir` outside it, or a file under none, now throws.
+- **Pass `rendering={cairn.rendering}` to `CairnAdmin`, and drop `render`, `registry`, and `icons`.**
+- **Stop reading `runtime.registry`.**
+- **Delete the engine's `ssr.noExternal` line from `vite.config.ts`.** The `cairnManifest()` plugin owns it.
 
 - **Run `npx cairn-guidance install`; it removes the four old skill directories.** The packaged skills have new names: `cairn-extend` is `cairn-extending-a-site`, `cairn-public` is `cairn-styling-public-pages`, `cairn-admin-screens` is `cairn-building-admin-screens`, and `cairn-consult` is `cairn-consulting-the-engine`. `install` deletes an old file whose hash matches a version the package shipped. It keeps and names an edited file, and reports an old directory it has no `MANIFEST` entry for, so delete those by hand under `.claude/skills/`; both name sets load until you do. Rewrite any project instruction that names an old skill.
 - **Read upgrade steps from `MIGRATION-NOTES.md` and JSON schemas from `schema/`.** The extend, reference, and Claude Code docs tracks are gone: each export's doc comment carries its contract, and the packaged skills teach each job. A script that read the reference track's schema directory reads `schema/` in the installed package, each `$id` unchanged. Re-run `npx cairn-guidance install` so your copy of the skills drops links to the removed pages.
@@ -211,7 +245,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Remove `itemLabel` from any `behavior` table, rename any concept whose id names an engine view, and make publish-action labels unique.** `itemLabel` stays on the `array` field descriptor. Composition now throws on a concept id of `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings`, and on two publish actions that share a label.
 - **Return a `tagNames` array from every `sanitizeSchema` callback.** The callback now gets a copy of the safe schema, and the engine strips `script` after it returns, so a callback can no longer admit author script. Use a registered component or island for that markup, or `unsafeDisableSanitize` to turn the floor off.
 - **Delete your `devBuildDefine` plugin and `__CAIRN_DEV_BUILD__` declaration.** The `cairnManifest()` plugin defines the flag now and `/ambient` declares it. A site that keeps both still builds, because a define the site sets wins.
-- **Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`.** The package ships built JavaScript that imports `cloudflare:workers`. Without the entry, `vite dev` hands it to Node, which rejects the scheme, and `/admin` answers 500.
+- **Leave `@glw907/cairn-cms-dev` out of `ssr.noExternal` in `vite.config.ts`.** The package ships built JavaScript that imports `cloudflare:workers`, and the `cairnManifest()` plugin adds it to the list, so `vite dev` does not hand it to Node.
 - **Drop `seedContent` from `devBackendHandle`, and pass `content: 'fixtures'` when the dev backend runs under `wrangler dev`.** The option never did anything, and the dev backend now serves your site's content from the working tree by default. That mode needs a filesystem, so it throws under workerd.
 - **Pass `content: 'fixtures'` to keep the seeded dev content.** A site that runs the dev backend without ever naming `seedContent` now sees its entries instead of the sample posts. Edits stay in memory either way, and the admin says so in one persistent notice.
 - **Upgrade to SvelteKit 3, `@sveltejs/adapter-cloudflare` 8, Svelte 5.57.1, and Wrangler 4.118.**
@@ -258,7 +292,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   external.
 - **Serve `strict-origin-when-cross-origin` or `strict-origin` if your site sets `no-referrer`
   site-wide.** Under `no-referrer` a browser sends `Origin: null` on a form POST, and SvelteKit's
-  check refuses your forms and `createAuthChannel` forms. cairn's admin documents pin
+  check refuses your forms. cairn's admin documents pin
   `strict-origin` with a header and a meta tag, so the admin keeps working unless a meta placed
   after `%sveltekit.head%` in `app.html` overrides it.
 - **Have a server-to-server POST carry a `Content-Type`.** SvelteKit 3 refuses a POST with no
@@ -268,8 +302,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   which is now a build error. `v2` replaces the `config.csrf-disable` check with
   `config.csrf-trusted-origins` and retires three ids, so a script that matches on them needs changing:
   `config.csrf-disable`, `config.csrf-disable-missing`, and `auth.csrf-origin-mismatch`.
-- **Stop matching on `auth.channel.delivery_inline`.** The event retired, since the module's
-  `waitUntil` is always defined. `guard.refused` also carries no `origin` reason, because
+- **Stop matching on `auth.channel.delivery_inline`.** The event retired with the auth channel.
+  `guard.refused` also carries no `origin` reason, because
   SvelteKit's check refuses a cross-origin form POST before the guard runs.
 - **Re-run `npx cairn-guidance install` if your site uses the `cairn-extend` skill.** This release
   drops cairn's narrative guides and its two front-door pages until each set is rebuilt, so the
@@ -310,10 +344,6 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Key Turnstile alerting on `missing_secret` for a missing secret.** `turnstile.verify_failed` with
   `reason: 'invalid_input'` now means a bad token only. A blank or non-string secret logs
   `missing_secret`.
-- **Expect the runtime's reply address when a full `auth.branding` left it out.** `auth.branding` is a
-  partial merged over the runtime's `siteName`, `from`, and `replyTo`, and branding can't clear a
-  member. To send no reply address, remove it from the adapter's `email` group or send through a custom
-  `auth.send`.
 - **Expect a calm conflict from publish and publish-all.** Both, and the Media Library's writes and
   the dictionary add, now fail closed when another commit lands on the default branch while they read
   their snapshots. The entry stays held on its branch, and publishing again succeeds.
@@ -330,6 +360,14 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   `auth.store-roles-unmigrated`. Once the file sits in the site's `migrations` directory, any
   automated `wrangler d1 migrations apply`, a deploy pipeline's included, runs it and rebuilds
   `editor` the same way, so carry site-added columns across before you copy it in.
+
+- **Drop `/auth-channel`, `migrations-channel`, and `createChannelDb`.** The second auth store is gone, with `originMatches`, `isDeployedHost`, and `src/lib/log.ts` in the scaffold. Delete the `src/lib/log.ts` of a site scaffolded earlier if nothing else imports it.
+- **Drop `/auth-store`, delete the `auth.bootstrapOwner` option, and seed the owner row before you deploy if the `editor` table may be empty.** The option is now a type error, and nothing creates the first owner on a first request. `skills/cairn-extending-a-site/references/adopt-cairn.md` carries the seed step, and `create-cairn-site` seeds its own owner. `resolveOwnerLevelRoles` also left the root barrel, so derive owner-capability roles from your own role vocabulary.
+- **Replace the guarded roster writes if your site manages its roster outside `/admin/editors`.** `deleteEditor`, `setEditorRole`, `removeOwnerIfNotLast`, and `demoteOwnerIfNotLast` went with `/auth-store`, so your own SQL on `AUTH_DB` must do what they did. Trim and lowercase the email before it matches or writes the `editor` table, since a shadow row counts as an owner yet can never sign in. Count owners inside the one `DELETE`, as `AND (role NOT IN (...) OR (SELECT COUNT(*) FROM editor WHERE role IN (...)) > 1)`, so a concurrent write can't strand the roster. In an `UPDATE`, add `OR ? = 1`, bound to whether the new role has owner capability, so the last owner can still move to another owner-level role. List every role with owner capability, since a missed name miscounts the owners. Only when the `DELETE` changed a row, which `meta.changes` reports, delete the person's rows from `session` and `magic_token` by `email`, so a refused removal keeps its sessions. Then delete from `preview_tokens` by `editor` in a statement of its own and ignore a "no such table" error: that table exists only after `0003_preview.sql`, and one missing table fails a whole D1 batch.
+- **Delete `auth.branding` and stop importing `AuthBranding`.** The site name and sender come from the adapter's `email` group and the site config. To send a different name or from address, change the built message in a custom `auth.send`, which receives it. That reaches the email only: the login and confirm pages now show the site config's name. To send no reply address, remove `replyTo` from the adapter's `email` group or use a custom `auth.send`. `CairnAdminConfig.auth` is `{ send? }` now.
+- **Pass `{ runtime }` to `createAuthRoutes`, rename `RequestOutcome` to `LoginRequestOutcome`, and rename `tokensMatch` to `compareTokens`.** The outcome has no `sent` member now, so branch on `outcome === 'sent'`, which the neutral answer for an unknown address also returns.
+- **Stop matching on the 13 `auth.channel.*` log events and on `editor.bootstrapped`.** All 14 left `CAIRN_LOG_EVENTS`.
+- **Grant the App Contents read and write, and set `repo` to the repository's current name.** The engine mints its installation token for that one repository and `contents: write` only. A stale name followed GitHub's redirect before, and the mint is now expected to refuse it; `/healthz?live=1` reports a 422 as `token_request_refused`.
 
 The setup tool's changes ask nothing of an existing site. In the showcase and the scaffold template,
 the `ORIGIN` constant in `content.ts` became an import of `publicOrigin` from

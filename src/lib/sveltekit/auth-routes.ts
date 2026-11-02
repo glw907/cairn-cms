@@ -1,6 +1,6 @@
 // The SvelteKit handlers for the magic-link flow, consumed by a site's thin route shims.
-// The factory takes per-site branding and an injected send, so tests run the real handlers
-// against a sink.
+// The factory takes the composed runtime, which carries the site name and sender, and an
+// injected send, so tests run the real handlers against a sink.
 import { error, redirect } from '@sveltejs/kit';
 import { requireOrigin, requireDb } from '../env.js';
 import {
@@ -22,56 +22,39 @@ import {
   deleteSession,
   recentlyIssued,
   rebindToken,
-  insertOwnerIfEmpty,
 } from '../auth/store.js';
-import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
+import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type SendMagicLink } from '../email.js';
 import { issueCsrfToken, csrfSecure } from './csrf.js';
 import { isSafeLogoutUrl } from './guard.js';
 import { NO_PENDING_REQUEST_ERROR } from './auth-error-codes.js';
 import { log } from '../log/index.js';
 import { env } from './workers-env.js';
+import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
 
 /**
- * The config `createAuthRoutes` takes: the magic-link branding, the sender, and the bootstrap owner.
+ * The config `createAuthRoutes` takes: the composed runtime and an optional send.
  * @beta
  */
 export interface AuthRoutesConfig {
-  /** The site name and sender identity the magic-link email carries. */
-  branding: AuthBranding;
+  /** The composed runtime; its `siteName` and `sender` are the identity the magic-link email carries. */
+  runtime: CairnRuntime;
   /** Sends the built magic-link message, in place of the default Cloudflare Email sender. */
   send?: SendMagicLink;
-  /**
-   * A site-declared owner to seed the allowlist through the request action, in place of a
-   * hand-run `wrangler d1 execute` INSERT. Grants nothing once any editor row exists; the email
-   * is compared trimmed and lowercased, matching the normalization every write path already
-   * applies. Inert under identity mode: `requestAction`, its only call site, 404s before ever
-   * reaching this check, so the first owner must be seeded out of band before `identity` is
-   * enabled. On a matching request against an empty `editor` table, `requestAction` inserts the
-   * owner in one atomic `INSERT ... WHERE NOT EXISTS` before the normal magic-link flow and logs
-   * `editor.bootstrapped`; a non-matching email on an empty table is treated as an unknown email.
-   */
-  bootstrapOwner?: {
-    /** The owner's email address, compared trimmed and lowercased. */
-    email: string;
-    /** The owner's display name on the seeded row. */
-    displayName: string;
-  };
 }
 
 /**
- * The request-action result. `outcome` is the discriminant; `sent` is kept for a site rendering
- * its form against `form.sent`, so the field is additive. The neutral and send-ok paths return
- * the identical `{ outcome: 'sent', sent: true }`, so the common case never leaks allowlist
+ * The request-action result, discriminated on `outcome`. The neutral and send-ok paths return
+ * the identical `{ outcome: 'sent' }`, so the common case never leaks allowlist
  * membership. `requestAction` awaits the send, so the outcome reflects it: `send-error` means the
  * email could not be sent, and `throttled` means the same address asked again inside the send
  * cooldown, a signal that does reveal membership.
  * @beta
  */
-export type RequestOutcome =
-  | { outcome: 'sent'; sent: true }
-  | { outcome: 'send-error'; sent: false }
-  | { outcome: 'throttled'; sent: false };
+export type LoginRequestOutcome =
+  | { outcome: 'sent' }
+  | { outcome: 'send-error' }
+  | { outcome: 'throttled' };
 
 /**
  * The magic-link login page's data: the site name, a resolved `?error` code, and the CSRF
@@ -176,9 +159,7 @@ function scrubSendError(err: unknown): string {
  * and logout actions, the handlers a site's sign-in routes call directly or `createCairnAdmin`
  * composes into its dispatch. The guard serves exactly two public admin paths, `/admin/login`
  * and `/admin/auth/confirm`; every other path under `/admin/auth/` sits behind the session gate.
- * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport;
- * `config.bootstrapOwner` seeds the very first owner row through the request action, in place of
- * a hand-run D1 insert.
+ * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport.
  * @beta
  */
 export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
@@ -193,7 +174,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * before any cookie write: the organization's gate is the only sign-in surface, and this
    * action mints nothing.
    */
-  async function requestAction(event: CairnEvent): Promise<RequestOutcome> {
+  async function requestAction(event: CairnEvent): Promise<LoginRequestOutcome> {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
     const origin = requireOrigin(env);
     const db = requireDb(env);
@@ -214,20 +195,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // case here is a reuse, not a mint.
     const nonce = mintOrReusePendingNonce(event);
 
-    // Bootstrap: an empty allowlist plus a matching configured owner inserts the owner row
-    // atomically, before the lookup below, so the normal flow finds it and proceeds exactly as
-    // it would for any other allow-listed editor. A non-matching email or a non-empty table
-    // grants nothing, so this encodes exactly the trust the hand-seed SQL already encodes.
-    if (config.bootstrapOwner && email && email === config.bootstrapOwner.email.trim().toLowerCase()) {
-      const inserted = await insertOwnerIfEmpty(db, email, config.bootstrapOwner.displayName, now);
-      if (inserted) log.info('editor.bootstrapped', { email });
-    }
-
     const editor = email ? await findEditor(db, email) : null;
     // Non-editor: byte-identical to the editor send-ok path, so the response body never leaks
     // membership. Response timing still differs (the editor path awaits the send), the side-channel
     // the design accepts as strictly weaker than the explicit throttled signal below.
-    if (!editor) return { outcome: 'sent', sent: true };
+    if (!editor) return { outcome: 'sent' };
 
     // Per-email cooldown: an editor who requested within the window gets the throttled signal rather
     // than a second email. This reveals editor membership, the deliberate relaxed-non-leak posture.
@@ -253,7 +225,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
       // never the nonce or its hash, which are the credential this whole binding turns on.
       const rebind = await rebindToken(db, email, await hashToken(nonce), now);
       if (rebind.outcome === 'rebound') log.info('auth.token.rebound', { email });
-      return { outcome: 'throttled', sent: false };
+      return { outcome: 'throttled' };
     }
 
     const token = generateToken();
@@ -265,7 +237,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // confirm the link went out before telling an editor to check their inbox. The cost is one
     // email-API round trip on the login POST, the right trade for a login flow.
     try {
-      await send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link }));
+      await send(env, buildMagicLinkMessage({ to: email, siteName: config.runtime.siteName, sender: config.runtime.sender, link }));
     } catch (err) {
       // Map the binding failure to its registered condition (carried as a CairnError with the
       // original as cause), and log the greppable code plus the conditionId so the next onboarding
@@ -274,9 +246,9 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
       log.error('auth.link.send_failed', { email, error: scrubSendError(err), code: errorCode(err), conditionId: failure.conditionId });
       // A plain 200 with a status field, not fail(): the result stays one uniform union for the
       // page, and the failure is already observable through the error-level log record.
-      return { outcome: 'send-error', sent: false };
+      return { outcome: 'send-error' };
     }
-    return { outcome: 'sent', sent: true };
+    return { outcome: 'sent' };
   }
 
   /**
@@ -294,7 +266,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     if (event.locals.cairnIdentity) return { identity: { label: event.locals.cairnIdentity.label } };
     mintOrReusePendingNonce(event);
     return {
-      siteName: config.branding.siteName,
+      siteName: config.runtime.siteName,
       error: event.url.searchParams.get('error'),
       csrf: issueCsrfToken(event),
     };
@@ -314,7 +286,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     event.setHeaders({ 'Referrer-Policy': 'strict-origin' });
     return {
       token: event.url.searchParams.get('token') ?? '',
-      siteName: config.branding.siteName,
+      siteName: config.runtime.siteName,
       error: event.url.searchParams.get('error'),
       csrf: issueCsrfToken(event),
     };
@@ -516,8 +488,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
 export interface AuthRoutes {
   /** The `/admin/login` load; under identity mode it returns the hand-off shape and mints no nonce or CSRF token. */
   loginLoad: (event: CairnEvent) => LoginData;
-  /** The `?/request` action on `/admin/login`: awaits the send and resolves a {@link RequestOutcome}; 404s under identity mode. */
-  requestAction: (event: CairnEvent) => Promise<RequestOutcome>;
+  /** The `?/request` action on `/admin/login`: awaits the send and resolves a {@link LoginRequestOutcome}; 404s under identity mode. */
+  requestAction: (event: CairnEvent) => Promise<LoginRequestOutcome>;
   /** The `/admin/auth/confirm` load: renders the confirm form and consumes nothing; 404s under identity mode. */
   confirmLoad: (event: CairnEvent) => ConfirmData;
   /** The `?/confirm` action: consumes the token, starts a session, and redirects to `/admin`; a failed confirm redirects to the login page with an `?error=` code; 404s under identity mode. */

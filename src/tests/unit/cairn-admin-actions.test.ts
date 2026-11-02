@@ -27,7 +27,7 @@ function runtime(): CairnRuntime {
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
+    media: { enabled: false },
     vocabulary: [],
   };
 }
@@ -176,18 +176,16 @@ describe('auth actions', () => {
       form: { email: 'who@t' },
       env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db },
     });
-    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent' });
   });
 
-  it('a partial auth.branding merges over the runtime default: the mail keeps the runtime sender and reply-to', async () => {
+  it('the mail carries the runtime site name, sender, and reply-to', async () => {
     const { db } = fakeD1({ 'FROM editor WHERE': { email: 'ed@t', display_name: 'Ed Editor', role: 'editor' } });
     const sent: { from: string; replyTo?: string; subject: string }[] = [];
-    const rt = runtime();
-    rt.sender = { from: 'cms@test', replyTo: 'help@test' };
+    const rt = { ...runtime(), siteName: 'Renamed Site', sender: { from: 'cms@test', replyTo: 'help@test' } };
     const admin = createCairnAdmin({
       runtime: rt,
       auth: {
-        branding: { siteName: 'Renamed Site' },
         send: async (_env, message) => {
           sent.push({ from: message.from, replyTo: message.replyTo, subject: message.subject });
         },
@@ -198,7 +196,7 @@ describe('auth actions', () => {
       form: { email: 'ed@t' },
       env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db },
     });
-    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent' });
     expect(sent).toEqual([{ from: 'cms@test', replyTo: 'help@test', subject: 'Sign in to Renamed Site' }]);
   });
 
@@ -771,16 +769,21 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   });
 
   it('a throwing tidy action returns fail(500) with the calm copy (save-500-hardening)', async () => {
-    // Force a genuine throw deep inside tidyAction, past its own try/catch: a malformed conventions
-    // block (never produced by the validated settings save, but a stand-in for the class of bug the
-    // wrapper exists to catch) makes resolveTidyConventions throw reading off null. tidy's client
+    // Force a genuine throw deep inside tidyAction, past its own try/catch: a conventions block
+    // whose read throws is a stand-in for the class of bug the wrapper exists to catch. tidy's client
     // posts with `redirect: 'manual'`, so the wrapper's fallback matters most here: a redirect would
     // read as an opaque, status-0 response and show a false "your session expired" message, which is
     // exactly what fail(500) avoids.
     const csrf = 'csrf-token-value-0123456789abcdef';
     const tidyRuntime = {
       ...runtime(),
-      tidy: { enabled: true, model: 'claude-test', conventions: null as unknown as Record<string, unknown> },
+      tidy: {
+        enabled: true,
+        model: 'claude-test',
+        get conventions(): undefined {
+          throw new Error('unexpected tidy failure');
+        },
+      },
     } as CairnRuntime;
     const admin = createCairnAdmin({ runtime: tidyRuntime, ...deps });
     setFakeEnv({ ANTHROPIC_API_KEY: 'sk-test-key' });

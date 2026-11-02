@@ -1,7 +1,7 @@
 // cairn-cms: the shared frontmatter-region helpers. A byte-preserving rewriter (media-rewrite's
 // `repointMediaRef`/`fillAltForHash`, references' `rewriteFrontmatterReference`) splices a
-// frontmatter value by source offset rather than round-tripping through gray-matter (which reformats
-// YAML and is not byte stable). These helpers locate the `---` fenced block, split it into lines with
+// frontmatter value by source offset rather than round-tripping through the YAML serializer (which
+// reformats YAML and is not byte stable). These helpers locate the `---` fenced block, split it into lines with
 // absolute offsets, and find a top-level key's inclusive line range, so every such rewriter agrees on
 // the boundary, the CRLF handling, and the colon-anchored key scan.
 
@@ -22,7 +22,7 @@ export interface FmLine {
  *  `fmBlock.length` added. Shared by every arm so they agree on the boundary.
  */
 export function splitFrontmatter(markdown: string): { fmBlock: string; body: string } {
-  const m = markdown.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  const m = markdown.match(/^---[ \t]*\r?\n(?:[\s\S]*?\r?\n)??---\r?\n?/);
   const fmBlock = m ? m[0] : '';
   return { fmBlock, body: markdown.slice(fmBlock.length) };
 }

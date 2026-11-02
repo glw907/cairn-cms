@@ -26,7 +26,6 @@
       "scripts/build/",
       "packages/cairn-cms-dev/",
       "migrations/",
-      "migrations-channel/",
       "package.json",
       "package-lock.json",
       "svelte.config.js",
@@ -183,7 +182,6 @@
           "media-slice.spec.ts"
         ]
       },
-      { "prefixes": ["src/lib/auth-channel/"], "specs": ["members.spec.ts"] },
       {
         "prefixes": ["src/lib/design/"],
         "specs": [
@@ -229,8 +227,7 @@
           "publish-pending-word.spec.ts",
           "healthz.spec.ts",
           "admin-referrer.spec.ts",
-          "preview.spec.ts",
-          "capture-transport.spec.ts"
+          "preview.spec.ts"
         ]
       },
       { "prefixes": ["src/lib/diagnostics/"], "specs": ["healthz.spec.ts", "golden-path.spec.ts"] },
@@ -271,7 +268,6 @@
           "golden-path.spec.ts"
         ]
       },
-      { "prefixes": ["examples/showcase/src/members/"], "specs": ["members.spec.ts"] },
       {
         "prefixes": ["examples/showcase/src/content/"],
         "specs": [

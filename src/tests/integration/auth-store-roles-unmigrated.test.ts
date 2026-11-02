@@ -4,7 +4,6 @@ import {
   insertEditor,
   setEditorRole,
   demoteOwnerIfNotLast,
-  insertOwnerIfEmpty,
   findEditor,
 } from '../../lib/auth/store.js';
 import { CairnError } from '../../lib/diagnostics/error.js';
@@ -112,7 +111,7 @@ describe('against an AUTH_DB still carrying the owner/editor role CHECK', () => 
   });
 
   it('leaves writes the owner/editor CHECK admits unrouted and working', async () => {
-    expect(await insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', 1)).toBe(true);
+    await insertEditor(db, 'boss@x.dev', 'Boss', 'owner', 1);
     await insertEditor(db, 'ed@x.dev', 'Ed', 'editor', 1);
     expect(await setEditorRole(db, 'ed@x.dev', 'owner', ['owner'])).toEqual({ outcome: 'ok' });
     expect(await demoteOwnerIfNotLast(db, 'ed@x.dev', ['owner'], 'editor')).toEqual({ outcome: 'ok' });

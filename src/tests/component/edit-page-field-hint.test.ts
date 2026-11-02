@@ -52,7 +52,7 @@ function props() {
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
       siteDictionary: [],
-      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false } },
+      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false } },
       advisories: [],
       orphanTags: [],
       siteName: 'Test Site',
@@ -103,5 +103,30 @@ describe('edit-page field hint', () => {
 
     // A date field with a description shows the site's copy, not the default.
     await expect.element(page.getByText('Custom date help.')).toBeInTheDocument();
+  });
+
+  it('renders a bounded title as maxlength on the hoisted title input', async () => {
+    const base = props();
+    const page = await render(EditPage, {
+      ...base,
+      data: { ...base.data, fields: [{ name: 'title', label: 'Title', type: 'text', max: 60 }] as NamedField[] },
+    });
+    const title = page.getByRole('textbox', { name: 'Title' });
+    await expect.element(title).toHaveAttribute('maxlength', '60');
+    await expect.element(title).not.toHaveAttribute('minlength');
+  });
+
+  it('lets length set both bounds on a textarea title, over min and max', async () => {
+    const base = props();
+    const page = await render(EditPage, {
+      ...base,
+      data: {
+        ...base.data,
+        fields: [{ name: 'title', label: 'Title', type: 'textarea', length: 5, min: 2, max: 9 }] as NamedField[],
+      },
+    });
+    const title = page.getByRole('textbox', { name: 'Title' });
+    await expect.element(title).toHaveAttribute('minlength', '5');
+    await expect.element(title).toHaveAttribute('maxlength', '5');
   });
 });

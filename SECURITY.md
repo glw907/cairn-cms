@@ -23,5 +23,5 @@ token, confirms it over POST, and stores opaque session rows in Cloudflare D1. S
 `editor`, and an anti-lockout rule keeps at least one owner in place.
 
 The render path applies a rehype-sanitize floor by default. Author markdown cannot inject raw
-HTML or a `javascript:` URL unless a site explicitly opts out. The doc comments on `createAuthChannel`, `createAuthGuard`, and the render exports carry
+HTML or a `javascript:` URL unless a site explicitly opts out. The doc comments on `createAuthGuard` and the render exports carry
 each surface's security contract.

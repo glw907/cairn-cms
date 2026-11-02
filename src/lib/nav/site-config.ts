@@ -136,31 +136,25 @@ export interface VocabularyEntry {
 export interface TidyConfig {
   /** Master switch. Default false; tidy is opt-in. */
   enabled?: boolean;
-  /** The model id. Default `claude-sonnet-5`; the alternative is `claude-haiku-4-5`. */
+  /** The model id. Default `claude-sonnet-5-5`; the alternative is `claude-haiku-5-5`. */
   model?: string;
   /** The per-convention toggles that build the prompt's CONVENTIONS section. */
   conventions?: Partial<TidyConventions>;
 }
 
-/** The default tidy model when a site sets none: Sonnet 5, the judgment floor for a light copy-edit. */
-export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5';
+/** The default tidy model when a site sets none: Sonnet 5.5, the judgment floor for a light copy-edit. */
+export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5-5';
 
 /**
  * The corrected convention set (spec "The corrected convention set"), the resolved shape the prompt
  * builder consumes. Every field carries a concrete value; `resolveTidyConventions` fills the defaults
  * from a partial config. The Settings screen validates a saved block against the same sets, and a
- * value outside its set throws. The Fixes group is the objective fixes (default on, governed by the always-on
- * core); the style tier defaults off (a falsy variant means off); the advanced tier defaults off.
+ * value outside its set throws. The objective fixes are not a convention: the always-on core
+ * applies them; the style tier defaults off (a falsy variant means off); the advanced tier defaults off.
  * Sentence spacing is dropped on purpose and regional spelling is `spellcheck.dialect`, not a toggle.
  * @public
  */
 export interface TidyConventions {
-  /**
-   * The objective Fixes group (spelling, grammar, doubled words, whitespace, capitals, terminal
-   *  punctuation). Default on. Only the Settings toggle reads it: the tidy prompt always applies the
-   *  objective fixes, so `false` does not stop them from running.
-   */
-  fixes: boolean;
   /** Oxford comma position. Off when undefined; `always` | `complex-only` (AP) | `never`. */
   oxfordComma?: 'always' | 'complex-only' | 'never';
   /**
@@ -186,21 +180,21 @@ export interface TidyConventions {
   brandCaps: boolean;
 }
 
-/** The resting tidy convention set: Fixes on, every style and advanced toggle off. */
+/** The resting tidy convention set: every style and advanced toggle off. */
 export function defaultTidyConventions(): TidyConventions {
-  return { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false };
+  return { enDashRanges: false, smartQuotes: false, brandCaps: false };
 }
 
 /**
  * Resolve a partial conventions config (from the YAML) into the concrete TidyConventions the prompt
- * builder consumes. An absent field falls to its default: Fixes on, the style and advanced toggles
+ * builder consumes. An absent field falls to its default: the style and advanced toggles
  * off. A multi-position toggle stays undefined (off) unless the config names a variant.
  */
-export function resolveTidyConventions(partial: Partial<TidyConventions> | undefined): TidyConventions {
+export function resolveTidyConventions(partial: Partial<TidyConventions> | null | undefined): TidyConventions {
   const base = defaultTidyConventions();
-  if (partial === undefined) return base;
+  // An empty `conventions:` key parses to null, which reads as absent.
+  if (partial == null) return base;
   return {
-    fixes: partial.fixes ?? base.fixes,
     oxfordComma: partial.oxfordComma,
     numberStyle: partial.numberStyle,
     measurements: partial.measurements,
@@ -234,7 +228,7 @@ export class TidyConventionsError extends CairnError {
 }
 
 /**
- * Validate and normalize an untrusted conventions object (from the settings form) into a concrete
+ * Validate and normalize an untrusted conventions object (from the settings form or the committed block) into a concrete
  * TidyConventions. This input is committed to the repo, so every field is bounded to its known set:
  * a boolean toggle must be a boolean, and a multi-position toggle must be one of its listed variants
  * or absent (off). An unknown key is dropped rather than carried, so the committed block can never
@@ -262,7 +256,6 @@ export function validateTidyConventions(value: unknown): TidyConventions {
   }
 
   return {
-    fixes: bool('fixes', true),
     oxfordComma: variant('oxfordComma', OXFORD_COMMA_VALUES),
     numberStyle: variant('numberStyle', NUMBER_STYLE_VALUES),
     measurements: variant('measurements', MEASUREMENTS_VALUES),
@@ -331,7 +324,7 @@ const ADAPTER_MISPLACEMENTS: Readonly<Record<string, string>> = {
   backend: 'cairn: "backend" belongs in cairn.config.ts (createGithubApp(...)), not site.config.yaml',
   email: 'cairn: "email" belongs in cairn.config.ts (the adapter\'s SenderConfig), not site.config.yaml',
   rendering: 'cairn: "rendering" belongs in cairn.config.ts (the adapter\'s render subsystem), not site.config.yaml',
-  media: 'cairn: "media" belongs in cairn.config.ts (the adapter\'s AssetConfig), not site.config.yaml',
+  media: 'cairn: "media" belongs in cairn.config.ts (the adapter\'s MediaConfig), not site.config.yaml',
   editor: 'cairn: "editor" belongs in cairn.config.ts (the adapter\'s preview/nav/supportContact knobs), not site.config.yaml',
 };
 

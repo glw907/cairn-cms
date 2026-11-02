@@ -16,8 +16,9 @@ Contents:
 
 ## Prepare
 
-- The first owner row must already exist in `AUTH_DB`: `bootstrapOwner` runs only on the magic-link
-  path, which identity mode never reaches.
+- The first owner row must already exist in `AUTH_DB`: no sign-in creates one, and identity mode
+  never reaches the magic-link path. Seed it with the `wrangler d1 execute` INSERT in
+  `references/adopt-cairn.md`.
 - Each roster email must equal the primary address the provider asserts (the guard trims and
   lowercases and does no alias matching).
 - The Access application covers `/admin`, everything beneath it, and `/admin/__data.json`. Leave

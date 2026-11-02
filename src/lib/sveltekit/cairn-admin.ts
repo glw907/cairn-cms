@@ -22,7 +22,6 @@ import {
 import { createEditorRoutes, type EditorsData } from './editors-routes.js';
 import { createNavRoutes, type NavData } from './nav-routes.js';
 import type { AuthRoutesConfig } from './auth-routes.js';
-import type { AuthBranding } from '../email.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent, HistoryData } from './types.js';
 
@@ -37,14 +36,10 @@ export interface CairnAdminConfig {
   /** The composed runtime the admin bundle closes over: concepts, roles, the backend, and every other site-declared seam. */
   runtime: CairnRuntime;
   /**
-   * The magic-link auth seam: the same members `createAuthRoutes` takes, all optional here.
-   *  `branding` is a partial override merged over the runtime's site name and sender, so
-   *  `{ siteName }` alone keeps the runtime's `from` and `replyTo`. See `AuthRoutesConfig`.
+   * The magic-link auth seam: `send` replaces the default Cloudflare Email sender. The email's
+   *  site name and sender come from the runtime. See `AuthRoutesConfig`.
    */
-  auth?: Partial<Omit<AuthRoutesConfig, 'branding'>> & {
-    /** The branding members to override; each one omitted falls back to the runtime's value. */
-    branding?: Partial<AuthBranding>;
-  };
+  auth?: Pick<AuthRoutesConfig, 'send'>;
   /**
    * Forwarded to the content routes verbatim; a site that enables tidy passes a `TidyClient`
    *  factory here to route tidy through its own gateway, and a test passes a stub.
@@ -96,7 +91,7 @@ export type AdminData =
  * and validating its view before delegating), and a separate `shellLoad` for
  * `/admin/+layout.server.ts`'s shared chrome. `config.runtime` is the composed runtime the bundle
  * closes over; `config`'s other members override only the seams a site actually needs (auth
- * send/bootstrap, tidy, `navFilter`, `attention`), and everything else derives from `runtime`.
+ * send, tidy, `navFilter`, `attention`), and everything else derives from `runtime`.
  *
  * This is the WIDE shape, mirroring the foundations-B `createContentRoutesInternal` precedent:
  *  reachable from no package subpath, so its `actions` record is free to carry every one of the
@@ -107,15 +102,7 @@ export type AdminData =
  */
 export function createCairnAdminInternal(config: CairnAdminConfig) {
   const { runtime } = config;
-  // The runtime already composes the site name and the sender identity, so the magic-link
-  // branding needs no second copy of either unless a site overrides a member of it.
-  const override = config.auth?.branding;
-  const branding: AuthBranding = {
-    siteName: override?.siteName ?? runtime.siteName,
-    from: override?.from ?? runtime.sender.from,
-    replyTo: override?.replyTo ?? runtime.sender.replyTo,
-  };
-  const auth = createAuthRoutes({ branding, send: config.auth?.send, bootstrapOwner: config.auth?.bootstrapOwner });
+  const auth = createAuthRoutes({ runtime, send: config.auth?.send });
   const content = createContentRoutesInternal({
     runtime,
     tidy: config.tidy,

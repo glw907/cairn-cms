@@ -12,8 +12,6 @@ import { cairnManifest } from '../../lib/vite/internal.js';
 
 const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
-  content: { posts: '/src/content/posts/*.md' },
-  manifestPath: '/src/content/.cairn/index.json',
 };
 
 const REPO_ROOT = resolve(import.meta.dirname, '../../..');

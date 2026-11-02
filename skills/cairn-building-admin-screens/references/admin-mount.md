@@ -45,13 +45,7 @@ export const actions = admin.actions;
   let { data, form }: { data: AdminData; form: ActionData } = $props();
 </script>
 
-<CairnAdmin
-  {data}
-  {form}
-  render={cairn.rendering.render}
-  registry={cairn.rendering.components}
-  icons={cairn.rendering.icons}
-/>
+<CairnAdmin {data} {form} rendering={cairn.rendering} />
 ```
 
 ```ts
@@ -79,8 +73,8 @@ export const load = admin.shellLoad;
   bake a build-time snapshot of a session-gated page.
 - The layout pair is what puts a custom screen inside the shell: every `/admin/**` route renders
   as its children.
-- `createCairnAdmin` takes one config with a required `runtime`. Magic-link branding defaults
-  from the runtime's `siteName` and sender, so most sites add only `tidy`, `navFilter`, or
+- `createCairnAdmin` takes one config with a required `runtime`. The magic-link email takes
+  its site name and sender from the runtime, so most sites add only `tidy`, `navFilter`, or
   `attention`.
 
 ## The root layout must be chrome-free

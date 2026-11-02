@@ -113,15 +113,21 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
 3. If `/healthz?live=1` reports the detail `key_refused`, or `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: 401`, GitHub refused the signed request.
 
-   Status 401 is the one status that blames the key. The error page comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
+   A 401 means GitHub refused the signed request, and the error page comes from that refusal. The request also carries the App id, so first confirm that the `appId` in your site's `createGithubApp` call matches the App's settings page. If it matches, roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 
-4. If `/healthz?live=1` reports the detail `installation_not_found`, `installation_suspended`, `token_request_refused`, or `unreachable`, or a `github.unreachable` record carries any status other than 401, the key isn't at fault. Don't replace it.
+4. If `/healthz?live=1` reports the detail `installation_not_found`, `installation_suspended`, `token_request_refused`, or `unreachable`, or a `github.unreachable` record carries any status other than 401, check the causes below first and leave the key alone for now.
 
-   For the first three details, GitHub accepted the key and refused the request for a token. A 404 or a 403 can mean the installation or a stale `repo`, and a 422 can mean the repository. An `unreachable` detail or a 5xx status can instead be a GitHub outage, so check [GitHub's status page](https://www.githubstatus.com) first. If GitHub is up, check three things:
+   For the first three details, GitHub most likely accepted the key and refused the request for a token. That reading comes from GitHub's REST documentation. The request names the repository and the permissions. A 404 or a 403 can mean the installation or a stale `repo`, and a 422 can mean the repository or the permissions.
+
+   An `unreachable` detail or a 5xx status is different. GitHub gave no verdict on the key, so don't replace it yet. Either can be a GitHub outage: check [GitHub's status page](https://www.githubstatus.com) first.
+
+   If GitHub is up, check five things:
 
    - The `repo` in your site's `createGithubApp` call matches the repository's current name on GitHub.
    - The App's installation includes that repository. On [GitHub's installations page](https://github.com/settings/installations), open the App and check the repository access.
    - The App holds Contents read and write permission. Check the permissions on the App's settings page.
+   - The installation isn't suspended. Check its status on [GitHub's installations page](https://github.com/settings/installations).
+   - The `installationId` in your site's `createGithubApp` call matches the App's installation. The id is the last part of the installation page's URL on GitHub.
 
    A plain `/healthz` stays `ok: true` in this case, because that check never requests a token.
 

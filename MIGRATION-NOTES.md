@@ -196,6 +196,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Read `runtime.email` in place of `runtime.sender`, and read the renderer, icons, and media from the adapter.** `CairnRuntime` no longer carries `render`, `icons`, or `assets`. Read `adapter.rendering.render`, `adapter.rendering.icons`, and `adapter.media`, or `runtime.media` for the resolved config. A hand-built runtime in a test drops those keys and renames `sender` to `email`.
 - **Fix every FIX line before running `cairn-guidance check --strict` in CI.** The check now reports `PASS` or `FIX` on each of its seven lines, judges the `.claude/` Tailwind exclusion by the path it resolves to, and exits 1 under `--strict` on any `FIX`. A site whose `@source not` line sits in a different stylesheet than its `tailwindcss` import now passes.
 - **Remove `fixes` from any `TidyConventions` you build in code.** The key is gone, because tidy always makes the objective fixes. A `fixes:` key in `site.config.yaml` is ignored, so delete it when convenient. If it was the only key under `conventions:`, delete the empty key too.
 - **Expect tidy to run on `claude-sonnet-5-5` when `tidy.model` is unset.** Set `tidy.model: claude-sonnet-5` to stay on the old model. A site that passes its own `tidy.client` handles a reply cut off at the output cap itself; the default client answers it with the too-long message.

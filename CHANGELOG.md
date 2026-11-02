@@ -138,6 +138,12 @@
 
 ### Changed
 
+- **`CairnRuntime` stops copying what the adapter already holds.** `composeRuntime` no longer sets
+  `render`, `icons`, or `assets`, and `sender` is now `email`, matching the adapter member it carries.
+  `runtime.media` stays the resolved media config.
+
+  Consumers must: read `runtime.email` in place of `runtime.sender`, and read `render`, `icons`, and `media` from the adapter in place of `runtime.render`, `runtime.icons`, and `runtime.assets`.
+
 - **`cairn-guidance check` judges the `.claude/` Tailwind exclusion by resolved path and reports `PASS`
   or `FIX`.** It lists every `.css` file under `src/`, finds the files that import `tailwindcss` or
   `tailwindcss/utilities`, and accepts any `@source not` that resolves to the root `.claude`, so an

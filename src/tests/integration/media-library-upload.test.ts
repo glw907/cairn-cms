@@ -32,10 +32,9 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'Test Site',
     siteConfigPath: 'src/lib/site.config.yaml',
-    sender: { from: 'noreply@test', replyTo: 'noreply@test' },
+    email: { from: 'noreply@test', replyTo: 'noreply@test' },
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: MEDIA_PATH,
     vocabulary: [],

@@ -11,7 +11,7 @@ describe('composeRuntime', () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
     expect(runtime.concepts.map((c) => c.id)).toEqual(['posts', 'pages']);
     expect(runtime.backend).toEqual(testAdapter.backend);
-    expect(await runtime.render({ body: 'x' })).toBe('x');
+    expect(runtime.email).toEqual(testAdapter.email);
   });
 
   it('sources siteName from the site config, not the adapter', () => {
@@ -22,14 +22,25 @@ describe('composeRuntime', () => {
     expect(runtime.siteName).toBe('Sourced From Config');
   });
 
-  // Seam 4 contract: the media slot passes through untouched onto the runtime's `assets`.
-  it('passes the media slot through, and omits it when absent', () => {
-    expect(composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig }).assets).toBeUndefined();
-    const withMedia: CairnAdapter = {
-      ...testAdapter,
-      media: { bucketBinding: 'MEDIA_BUCKET' },
-    };
-    expect(composeRuntime({ adapter: withMedia, siteConfig: testSiteConfig }).assets).toEqual({ bucketBinding: 'MEDIA_BUCKET' });
+  // The runtime holds what it derives, not what the adapter already carries: the renderer, icons, and
+  // raw media slot are read from the adapter, so the runtime type has no such members.
+  it('does not copy the adapter renderer, icons, or raw media slot onto the runtime', () => {
+    const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
+    // @ts-expect-error render lives on the adapter's rendering slot
+    void runtime.render;
+    // @ts-expect-error icons live on the adapter's rendering slot
+    void runtime.icons;
+    // @ts-expect-error the raw media slot lives on the adapter; the runtime carries `media`
+    void runtime.assets;
+    // @ts-expect-error the sender config is `email`
+    void runtime.sender;
+    expect('render' in runtime || 'icons' in runtime || 'assets' in runtime || 'sender' in runtime).toBe(false);
+  });
+
+  it('resolves the media slot into the runtime media config', () => {
+    expect(composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig }).media).toEqual({ enabled: false });
+    const withMedia: CairnAdapter = { ...testAdapter, media: { bucketBinding: 'MEDIA_BUCKET' } };
+    expect(composeRuntime({ adapter: withMedia, siteConfig: testSiteConfig }).media).toMatchObject({ enabled: true, bucketBinding: 'MEDIA_BUCKET' });
   });
 
   // The tag vocabulary is the enforcement seam's source: composeRuntime validates the site config's

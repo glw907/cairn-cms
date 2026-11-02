@@ -37,7 +37,7 @@ export interface CairnAdminConfig {
   runtime: CairnRuntime;
   /**
    * The magic-link auth seam: `send` replaces the default Cloudflare Email sender. The email's
-   *  site name and sender come from the runtime. See `AuthRoutesConfig`.
+   *  site name and email sender config come from the runtime. See `AuthRoutesConfig`.
    */
   auth?: Pick<AuthRoutesConfig, 'send'>;
   /**

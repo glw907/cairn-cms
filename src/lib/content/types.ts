@@ -433,15 +433,10 @@ export interface CairnRuntime {
   access?: AccessMap;
   /** The commit backend provider, carried through from the adapter by `composeRuntime`. */
   backend: BackendProvider;
-  sender: SenderConfig;
+  /** The sender config passed through from the adapter; the magic-link email reads it. */
+  email: SenderConfig;
   /** The support contact passed through from the adapter; the in-admin help reads it. Optional. */
   supportContact?: string;
-  /**
-   * The site's one renderer: the editor preview and every public page call it (design decision 4).
-   *  The build passes a site-resolver-backed `resolveLink`/`resolveMedia` pair, the preview manifest-backed
-   *  ones.
-   */
-  render: SiteRender;
   manifestPath: string;
   /** The repo-relative path to the committed media manifest, defaulted in composeRuntime. */
   mediaManifestPath: string;
@@ -459,8 +454,6 @@ export interface CairnRuntime {
    *  otherwise `{ enabled: true, bucketBinding }` for the upload, storage, delivery, and resolver paths.
    */
   media: import('../media/config.js').ResolvedMediaConfig;
-  /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
-  icons?: IconSet;
   navMenu?: NavMenuConfig;
   /**
    * The repo-relative path of the site-config YAML the nav editor, Settings, and Tags read and
@@ -481,7 +474,6 @@ export interface CairnRuntime {
   publishActions?: PublishActionEntry[];
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
-  assets?: MediaConfig;
   /**
    * The editor's spellcheck dictionary file, resolved once at compose from the site config's
    *  `spellcheck.dialect` (defaulting to US English). The edit load threads it onto EditData and the

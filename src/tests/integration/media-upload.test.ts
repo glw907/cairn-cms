@@ -26,7 +26,7 @@ const CSRF = 'csrf-token-value-0123456789abcdef';
 function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
   return {
     siteName: 'Test Site',
-    sender: { from: 'noreply@test', replyTo: 'noreply@test' },
+    email: { from: 'noreply@test', replyTo: 'noreply@test' },
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     manifestPath: 'src/content/.cairn/manifest.json',

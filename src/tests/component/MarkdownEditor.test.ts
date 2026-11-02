@@ -576,7 +576,9 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();
     const expected = 'Block marker. Edit the text between these lines and leave this line as it is.';
     expect(screen.container.querySelector('.cm-line.cm-cairn-directive-fence')?.getAttribute('title')).toBe(expected);
-    expect(screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')?.getAttribute('title')).toBe(expected);
+    // A leaf marker has no text between lines, so it gets its own hint rather than the fence's.
+    const leaf = screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')?.getAttribute('title');
+    expect(leaf).toBe('Block marker. This line places the block; leave it as it is.');
   });
 
   it('writes in iA Writer Mono, the self-hosted editor face', async () => {

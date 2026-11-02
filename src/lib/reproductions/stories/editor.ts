@@ -98,13 +98,16 @@ function insertButton(label: string, inner: string, index: number): string {
  * @param label - the control's accessible name and Tooltip text, naming what the caret must reach
  * @param inner - the icon's shapes
  * @param index - the control's position in the strip
+ * @param reason - the Tooltip text when it says more than the name; defaults to the name
  * @returns one button's markup, followed by its Tooltip bubble
  */
-function guardedButton(label: string, inner: string, index: number): string {
+function guardedButton(label: string, inner: string, index: number, reason = label): string {
+  // A reason that differs from the name is the description Tooltip points aria-describedby at.
+  const describedBy = reason === label ? '' : ` aria-describedby="${tooltipBubbleId(index)}"`;
   return (
     '<button type="button" class="btn btn-sm btn-ghost btn-square cairn-btn-guarded cursor-not-allowed" ' +
-    `aria-haspopup="dialog" aria-disabled="true" aria-label="${label}">` +
-    `${glyph(inner)}</button>${tooltipBubble(label, index)}`
+    `aria-haspopup="dialog" aria-disabled="true" aria-label="${label}"${describedBy}>` +
+    `${glyph(inner)}</button>${tooltipBubble(reason, index)}`
   );
 }
 
@@ -140,10 +143,11 @@ const insertControls = createRawSnippet(() => ({
     // and with no caret in a component the control is unavailable, guarded the same way as the
     // figure control below.
     guardedButton(
-      'Place the cursor in an editable block to edit it',
+      'Edit block',
       '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>' +
         '<path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',
       1,
+      'Place the cursor in an editable block to edit it',
     ) +
     insertButton(
       'Web link (Ctrl+K)',

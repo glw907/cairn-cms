@@ -3207,7 +3207,7 @@ describe('EditPage', () => {
       // The Insert and Edit controls share the SquarePen/Blocks glyphs; the Edit control is the
       // one whose aria-label speaks to editing (the label varies by state, so match the verb).
       return screen.container.querySelector<HTMLButtonElement>(
-        'button[aria-label*="Edit the block"], button[aria-label*="cursor in an editable block"], button[aria-label*="edited in the form"], button[aria-label*="Switch to Write to edit"]',
+        'button[aria-label="Edit block"], button[aria-label="Edit the block at the cursor"]',
       );
     }
 
@@ -3236,7 +3236,7 @@ describe('EditPage', () => {
       // an assistive-technology user can read why it is unavailable.
       expect(control.getAttribute('aria-disabled')).toBe('true');
       expect(control.disabled).toBe(false);
-      expect(control.getAttribute('aria-label')).toBe('Place the cursor in an editable block to edit it');
+      expect(control.getAttribute('aria-label')).toBe('Edit block');
       expect(tooltipText(control)).toBe('Place the cursor in an editable block to edit it');
     });
 
@@ -3274,8 +3274,18 @@ describe('EditPage', () => {
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('true');
       const control = editControl(screen)!;
       expect(control.getAttribute('aria-label')).not.toBe('Edit the block at the cursor');
-      expect(control.getAttribute('aria-label')).toBe('Switch to Write to edit this block');
+      expect(control.getAttribute('aria-label')).toBe('Edit block');
       expect(tooltipText(control)).toBe('Switch to Write to edit this block');
+    });
+
+    it('gives the Preview reason, not a cursor instruction, when Preview is open and the caret is outside a block', async () => {
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry });
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await screen.getByRole('tab', { name: 'Preview' }).click();
+      await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('true');
+      const control = editControl(screen)!;
+      expect(control.getAttribute('aria-label')).toBe('Edit block');
+      expect(tooltipText(control)).toBe('Switch to Write and place the cursor in an editable block to edit it');
     });
 
     it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {
@@ -3284,9 +3294,8 @@ describe('EditPage', () => {
       await clickLine(screen, ':::callout[Heads up]');
       // The block carries an undeclared attribute key, so the gate refuses it. The control stays
       // unavailable (aria-disabled) and the tooltip points the editor at markdown.
-      await expect
-        .poll(() => editControl(screen)?.getAttribute('aria-label'))
-        .toBe("This block can’t be edited in the form. Edit it as markdown.");
+      await expect.poll(() => tooltipText(editControl(screen)!)).toBe("This block can’t be edited in the form. Edit it as markdown.");
+      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit block');
       expect(editControl(screen)!.getAttribute('aria-disabled')).toBe('true');
       expect(editControl(screen)!.disabled).toBe(false);
     });
@@ -3352,10 +3361,10 @@ describe('EditPage', () => {
       // override the current position's own outcome.
       resolvers[1]({ safe: false, reason: 'unknown-attribute' });
       await expect
-        .poll(() => editControl(screen)?.getAttribute('aria-label'))
+        .poll(() => tooltipText(editControl(screen)!))
         .toBe("This block can’t be edited in the form. Edit it as markdown.");
       resolvers[0]({ safe: true });
-      expect(editControl(screen)?.getAttribute('aria-label')).toBe(
+      expect(tooltipText(editControl(screen)!)).toBe(
         "This block can’t be edited in the form. Edit it as markdown.",
       );
     });

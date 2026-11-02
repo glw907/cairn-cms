@@ -174,6 +174,19 @@ describe('ComponentInsertDialog search', () => {
     await expect.element(screen.getByRole('status')).toHaveTextContent(/1 block/i);
   });
 
+  it('announces the match count only for a non-empty query with matches', async () => {
+    const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons });
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    const status = () => document.querySelector('[role="status"].sr-only')!;
+    // An empty query announces nothing: the count of every block is not a result.
+    expect(status().textContent?.trim()).toBe('');
+    await screen.getByRole('searchbox').fill('Comp 3');
+    await expect.poll(() => status().textContent?.trim()).toBe('1 block matches');
+    // A zero-result query is announced by the visible no-match state, not the count.
+    await screen.getByRole('searchbox').fill('zzzznope');
+    await expect.poll(() => status().textContent?.trim()).toBe('');
+  });
+
   it('shows a no-match state when nothing matches', async () => {
     const screen = await render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons });
     await screen.getByRole('button', { name: /insert block/i }).click();

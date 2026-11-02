@@ -978,28 +978,31 @@ island.
       editableArbiter.next();
     };
   });
-  // The Edit-block control's accessible label and tooltip: a plain reason in each state. Enabled
-  // names the action; every disabled reason is honest about why, including when Preview hides the
-  // Write surface. The Write pane stays mounted under Preview, so editable survives the tab switch;
-  // without the insertDisabled branch below, the label would keep claiming "Edit the block at
-  // the cursor" over a click Preview has made inert (a mouse user's tooltip and a screen reader's
-  // announcement both read that promise). editReason, driven purely by the caret, is unaffected by
-  // Preview: an unsafe block stays unsafe, and switching to Write would not change that, so its
-  // reason is left as-is rather than folded into the Preview branch.
-  const editBlockLabel = $derived(
+  // The Edit-block control's accessible name and tooltip. Enabled, the one text names the action.
+  // Unavailable, the name stays one stable "Edit block" and the reason rides in the tooltip, which
+  // Tooltip points aria-describedby at, so the name never changes under a screen-reader user and
+  // every reason is still announced. The reasons are honest about why, including when Preview hides
+  // the Write surface (the Write pane stays mounted under Preview, so editable survives the tab
+  // switch, and the reason must not promise an action Preview has made inert). editReason, driven
+  // purely by the caret, is unaffected by Preview: an unsafe block stays unsafe, and switching to
+  // Write would not change that, so its reason is left as-is.
+  const editBlockReason = $derived(
     editable
       ? insertDisabled
         ? 'Switch to Write to edit this block'
         : 'Edit the block at the cursor'
       : editReason === 'unsafe'
         ? 'This block can’t be edited in the form. Edit it as markdown.'
-        : 'Place the cursor in an editable block to edit it',
+        : insertDisabled
+          ? 'Switch to Write and place the cursor in an editable block to edit it'
+          : 'Place the cursor in an editable block to edit it',
   );
   // Whether the Edit-block control is unavailable: either Preview hides the Write surface, or the
   // caret is not on a safe, schema-bearing component. The control stays focusable and announced in
   // this state (aria-disabled, not the native disabled attribute), so its reason reaches assistive
   // technology; the dead click is made inert in editBlock().
   const editBlockUnavailable = $derived(insertDisabled || !editable);
+  const editBlockLabel = $derived(editBlockUnavailable ? 'Edit block' : editBlockReason);
   // Activate edit: parse the block into form values, then open the dialog in edit mode over the
   // stored source range. Guarded by editable AND the preview-mode disable, so the control is inert
   // unless the gate passed and the editor is on the Write tab. The def, range, and markdown all come
@@ -2124,7 +2127,7 @@ island.
                  give the dimmed look (the Figure control's pattern below), never .btn-disabled, which
                  sets pointer-events: none and would suppress the tooltip a mouse user reads for the
                  why. That reason text is the wrapping Tooltip's, never a native title attribute. -->
-            <Tooltip text={editBlockLabel}>
+            <Tooltip text={editBlockReason}>
               <button
                 type="button"
                 class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"

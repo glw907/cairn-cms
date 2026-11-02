@@ -180,7 +180,7 @@ export interface TidyConventions {
   brandCaps: boolean;
 }
 
-/** The resting tidy convention set: Every style and advanced toggle off. */
+/** The resting tidy convention set: every style and advanced toggle off. */
 export function defaultTidyConventions(): TidyConventions {
   return { enDashRanges: false, smartQuotes: false, brandCaps: false };
 }
@@ -190,9 +190,10 @@ export function defaultTidyConventions(): TidyConventions {
  * builder consumes. An absent field falls to its default: the style and advanced toggles
  * off. A multi-position toggle stays undefined (off) unless the config names a variant.
  */
-export function resolveTidyConventions(partial: Partial<TidyConventions> | undefined): TidyConventions {
+export function resolveTidyConventions(partial: Partial<TidyConventions> | null | undefined): TidyConventions {
   const base = defaultTidyConventions();
-  if (partial === undefined) return base;
+  // An empty `conventions:` key parses to null, which reads as absent.
+  if (partial == null) return base;
   return {
     oxfordComma: partial.oxfordComma,
     numberStyle: partial.numberStyle,

@@ -30,7 +30,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
 @beta
 -->
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import CsrfField from './CsrfField.svelte';
   import CheckIcon from '@lucide/svelte/icons/check';
   import TagIcon from '@lucide/svelte/icons/tag';
@@ -154,6 +154,12 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
     }
   });
   const liveError = $derived(lifecycleError ? `${lifecycleError}${errorNonce()}` : '');
+
+  // The saved message for the sr-only status region, set after mount so it is a mutation.
+  let savedAnnouncement = $state('');
+  onMount(() => {
+    if (data.saved) savedAnnouncement = 'Tags saved.';
+  });
 </script>
 
 <div class="mx-auto max-w-3xl px-2 py-2">
@@ -167,13 +173,14 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   {#if lifecycleError}
     <div class="alert alert-error mt-3 type-body">{lifecycleError}</div>
   {/if}
-  <!-- Mounted unconditionally so a later save still announces (WCAG 4.1.3): only the visible box
-       moves inside. -->
-  <div role="status">
-    {#if data.saved}
-      <div class="alert alert-success mt-3 type-body">Tags saved.</div>
-    {/if}
-  </div>
+  <!-- The save is a native POST that redirects, so the page loads with `data.saved` already true
+       and the visible alert arrives server-rendered; an alert present at parse is not announced.
+       The sr-only region is empty in the server HTML and filled after hydration, so its text is
+       a real mutation the screen reader can voice. -->
+  {#if data.saved}
+    <div class="alert alert-success mt-3 type-body">Tags saved.</div>
+  {/if}
+  <div role="status" class="sr-only">{savedAnnouncement}</div>
 
   <!-- THE MUTATION ANNOUNCEMENT, always present so assistive tech re-announces every add, remove, and
        seed. Empty at rest. -->

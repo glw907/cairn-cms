@@ -31,13 +31,13 @@ The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated; Save stays in the form's foot, the screen's
 form-semantic primary action. The section-count pills (the Style conventions on-count)
 re-express on `StatusChip` at a neutral tone (a Tidy pill never
-reaches past neutral/warning), each still wrapped in its `role="status" aria-live="polite"`
+reaches past neutral/warning), the pill still wrapped in its `role="status" aria-live="polite"`
 region so the announcement contract is unchanged. The On/Off check-and-tint toggle itself stays
 bespoke: a single-use control, not a repeated device.
 @beta
 -->
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import CsrfField from './CsrfField.svelte';
   import CheckIcon from '@lucide/svelte/icons/check';
   import CircleIcon from '@lucide/svelte/icons/circle';
@@ -92,6 +92,12 @@ bespoke: a single-use control, not a repeated device.
     }
   });
   const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
+
+  // The saved message for the sr-only status region, set after mount so it is a mutation.
+  let savedAnnouncement = $state('');
+  onMount(() => {
+    if (data.saved) savedAnnouncement = "Tidy settings saved. They apply after your site's next deploy.";
+  });
 
   // The working copy of the editor-tier conventions: every control binds to this, and the save posts
   // it. Seeded once from the load's resolved conventions, so the resting state IS the committed state.
@@ -244,8 +250,7 @@ bespoke: a single-use control, not a repeated device.
   // alone" clause names what stays untouched. Both are generated from the live config, so the line is
   // always true for any combination.
   const summaryFixes = $derived.by(() => {
-    const parts: string[] = [];
-    parts.push('spelling', 'grammar', 'doubled words', 'spacing', 'capitals', 'end punctuation');
+    const parts: string[] = ['spelling', 'grammar', 'doubled words', 'spacing', 'capitals', 'end punctuation'];
     if (rowOn('oxfordComma')) parts.push('commas');
     if (rowOn('timeFormat')) parts.push('time format');
     if (rowOn('numberStyle')) parts.push('number style');
@@ -338,14 +343,14 @@ bespoke: a single-use control, not a repeated device.
   />
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
-  <!-- Mounted unconditionally so a later save still announces (the needs-alt notice's live-region
-       rule, WCAG 4.1.3): a region conditionally mounted with its first content is not reliably
-       observed by assistive tech. Only the visible box moves inside. -->
-  <div role="status">
-    {#if data.saved}
-      <div class="alert alert-success mt-4 type-body">Tidy settings saved. They apply after your site's next deploy.</div>
-    {/if}
-  </div>
+  <!-- The save is a native POST that redirects, so the page loads with `data.saved` already true
+       and the visible alert arrives server-rendered; an alert present at parse is not announced.
+       The sr-only region is empty in the server HTML and filled after hydration, so its text is
+       a real mutation the screen reader can voice. -->
+  <div role="status" class="sr-only">{savedAnnouncement}</div>
+  {#if data.saved}
+    <div class="alert alert-success mt-4 type-body">Tidy settings saved. They apply after your site's next deploy.</div>
+  {/if}
   {#if lifecycleError}
     <div class="alert alert-error mt-4 type-body">{lifecycleError}</div>
   {/if}
@@ -421,15 +426,11 @@ bespoke: a single-use control, not a repeated device.
       <CsrfField />
       <input type="hidden" name="conventions" value={conventionsJson} />
 
-      <!-- SECTION: FIXES (the objective errors, one group toggle) -->
+      <!-- SECTION: FIXES (the objective errors, always on) -->
       <section class="mb-6">
-        <div class="mb-3 flex items-end gap-3 px-0.5">
-          <div class="min-w-0 flex-1">
-            <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
-              Fixes
-            </h2>
-            <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Plain errors, not style choices. Tidy always fixes these.</p>
-          </div>
+        <div class="mb-3 px-0.5">
+          <h2 class="type-heading font-bold font-[family-name:var(--font-display)]">Fixes</h2>
+          <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Plain errors, not style choices. Tidy always fixes these.</p>
         </div>
         <div class="overflow-hidden card-shell card-shadow">
           <div class="flex items-center gap-4 p-3.5">

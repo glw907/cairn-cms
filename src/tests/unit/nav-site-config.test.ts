@@ -12,6 +12,7 @@ import {
   setVocabulary,
   dictionaryFileForDialect,
   resolveTidyConventions,
+  defaultTidyConventions,
   DEFAULT_DIALECT,
 } from '../../lib/nav/site-config.js';
 import { condition, CairnError } from '../../lib/diagnostics/index.js';
@@ -276,6 +277,11 @@ describe('setTidy', () => {
     const resolved = resolveTidyConventions(parsed.tidy?.conventions);
     expect(resolved).not.toHaveProperty('fixes');
     expect(resolved.oxfordComma).toBe('always');
+  });
+
+  it('resolves an empty `conventions:` key (null) to the defaults without throwing', () => {
+    const parsed = parseSiteConfig('siteName: S\ntidy:\n  enabled: true\n  conventions:\n');
+    expect(resolveTidyConventions(parsed.tidy?.conventions)).toEqual(defaultTidyConventions());
   });
 
   it('throws when the root has no siteName', () => {

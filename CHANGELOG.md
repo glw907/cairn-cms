@@ -160,13 +160,17 @@
   Consumers may: set `tidy.model: claude-sonnet-5` to stay on the old model.
 
 - **A list row's delete confirms.** The trash button opens the window the entry screen uses, so no
-  delete posts without it, and a refused delete names its blockers in that same window.
+  delete posts without it, and a refused delete names its blockers in that same window. The window
+  now names the entry, returns focus to the button that opened it, and no longer closes on a click
+  outside it, on the entry screen too. `DeleteDialog` gains an optional `entryTitle` prop, and
+  `open()` takes an optional origin element.
 - **The edit screen hides Tidy when no key is bound.** A site with `tidy.enabled: true` and no
   `ANTHROPIC_API_KEY` no longer offers a button that can only refuse.
 - **A tidy settings save says when it applies, and the screen shows what was saved.** The message
   names the next deploy, and `settingsLoad` reads the committed conventions from the default branch,
-  so a second save can't overwrite the first with the deployed values. A parse failure falls back to
-  the deployed conventions and logs `config.invalid` with `scope: 'settings'`.
+  so a second save starts from the committed values. A parse failure, or a committed value outside
+  its allowed set, falls back to the deployed conventions and logs `config.invalid` with
+  `scope: 'settings'`. An empty `conventions:` key reads as no conventions.
 - **A rename onto a live entry's address is refused.** `renameAction` applies the check publish
   already used, across every concept, and answers 409 with nothing committed. The new
   `rename.address_collided` log event names the holder.

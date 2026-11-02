@@ -314,6 +314,42 @@ describe('settingsLoad', () => {
     expect(record).toMatchObject({ event: 'config.invalid', scope: 'settings' });
   });
 
+  it.each([
+    ['an unknown variant', 'siteName: S\ntidy:\n  enabled: true\n  conventions:\n    oxfordComma: sometimes\n'],
+    ['a non-boolean toggle', 'siteName: S\ntidy:\n  enabled: true\n  conventions:\n    smartQuotes: yes\n'],
+    ['a non-object block', 'siteName: S\ntidy:\n  enabled: true\n  conventions: 5\n'],
+  ])('keeps the runtime conventions and logs config.invalid for %s in the committed block', async (_name, yaml) => {
+    new GithubDouble({ main: { [CONFIG_PATH]: yaml } }).install();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: { oxfordComma: 'never' } } }),
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions.oxfordComma).toBe('never');
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    expect(record).toMatchObject({ event: 'config.invalid', scope: 'settings' });
+  });
+
+  it('accepts a partial committed block, filling the rest from the defaults', async () => {
+    new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\ntidy:\n  enabled: true\n  conventions:\n    percent: word\n' } }).install();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeTidyClient('valid') } });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions).toEqual({ enDashRanges: false, smartQuotes: false, brandCaps: false, percent: 'word' });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('resolves without throwing when the runtime conventions are null (an empty `conventions:` key)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const routes = createContentRoutes({
+      runtime: runtime({ tidy: { enabled: true, conventions: null as unknown as undefined } }), // a YAML null the type does not admit
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+    expect(data.conventions).toEqual({ enDashRanges: false, smartQuotes: false, brandCaps: false });
+  });
+
   it('reads nothing from GitHub when the key is missing', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);

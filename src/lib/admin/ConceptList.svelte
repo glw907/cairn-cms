@@ -60,11 +60,16 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   const deleteTarget = $derived(
     data.entries.find((e) => e.id === pickedId) ?? data.entries.find((e) => e.id === deleteRefused?.id),
   );
-  const targetRefused = $derived(deleteRefused !== null && deleteRefused.id === deleteTarget?.id);
-  async function openDelete(id: string) {
+  // The refusal, only when it belongs to the entry the dialog now targets.
+  const targetRefusal = $derived(
+    deleteTarget !== undefined && deleteRefused?.id === deleteTarget.id ? deleteRefused : null,
+  );
+  // The origin is captured by the handler: `currentTarget` is null after the await, and Safari
+  // does not focus a button on click, so the dialog cannot recover the opener itself.
+  async function openDelete(id: string, origin: HTMLElement) {
     pickedId = id;
     await tick();
-    deleteDialog?.open();
+    deleteDialog?.open(origin);
   }
 
   type SortKey = 'title' | 'date';
@@ -457,11 +462,11 @@ Filtering, sorting, and paging run over the loaded entries in component state.
             <td class="w-12 px-2 py-2 text-right sm:px-4">
               {#if deleteRefused?.id === entry.id}
                 <!-- A prior delete was refused: the shared dialog names the blockers and offers no confirm. -->
-                <button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" onclick={() => openDelete(entry.id)}>
+                <button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" aria-label="Delete {entry.title}" onclick={(e) => openDelete(entry.id, e.currentTarget)}>
                   Delete
                 </button>
               {:else}
-                <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-haspopup="dialog" aria-label="Delete {entry.title}" onclick={() => openDelete(entry.id)}>
+                <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-haspopup="dialog" aria-label="Delete {entry.title}" onclick={(e) => openDelete(entry.id, e.currentTarget)}>
                   <Trash2Icon class="h-4 w-4" aria-hidden="true" />
                 </button>
               {/if}
@@ -490,8 +495,9 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     conceptId={data.conceptId}
     id={deleteTarget?.id ?? ''}
     singular={data.singular ?? data.label}
-    inboundLinks={targetRefused && deleteRefused ? deleteRefused.inboundLinks : []}
-    inboundKind={targetRefused && deleteRefused ? deleteRefused.inboundKind : 'link'}
+    entryTitle={deleteTarget?.title}
+    inboundLinks={targetRefusal?.inboundLinks ?? []}
+    inboundKind={targetRefusal?.inboundKind ?? 'link'}
     pending={deleteTarget ? deleteTarget.status !== 'published' : false}
   />
   <div class="mb-4">

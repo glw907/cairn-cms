@@ -52,16 +52,20 @@ with no local browser.
   says "one run reports every red check". Considered: reorder the unit leg first, which races the
   close runner's `dist` build.
 - **The unit leg runs whole unless every path is selectable.** A new table key `unitSelectable` lists
-  what stays on `vitest related`: `src/`, `docs/`, the root prose files, and the Vale files.
-  Anything else, including a root file nobody listed, runs `npx vitest run --project unit`, which took
-  52 s here on a loaded machine. It fails closed, as the classifier's header asks. The item's fix
+  what stays on `vitest related`: `src/` code files, `docs/`, the root prose files, and the Vale files.
+  Anything else, including a root file nobody listed or a stylesheet under `src/`, runs
+  `npx vitest run --project unit`, which took 52 s here on a loaded machine and 77 s under the review's
+  logger. A `src/` code edit stays related, so the 38 unit files that read `src/` at run time stay CI's;
+  that gap is named in the plan and filed. A docs path adds the one slug-contract test. It fails closed, as the classifier's header asks. The item's fix
   candidate maps two tests to three paths, and that map goes stale the same way the import graph
-  already does. This also closes #166, since `check-skill-form.test.ts:84` holds the real tree.
+  already does; the slug test is the one exception, since no static check covers its exact headings.
+  This also closes #166, since `check-skill-form.test.ts:84` holds the real tree.
 - **`toolInputs` in the table selects the tool gate.** #241 asks for `events.ts`. The same table entry
   covers the other files the Go tests read outside `tool/`, from one grep, at no extra machinery.
 - **#208's fix sits in the test.** `openCreateDialog` in `editor-helpers.ts` beside
   `fillTitleWhenHydrated`, re-clicking until the dialog opens. The dialog only opens once hydrated, so
-  everything after it runs on a live page. Considered: `command="show-modal"` on the button, which
+  everything after it runs on a live page. Its logged attempts name the cause in the same five runs that
+  test the fix, so a separate trace round isn't needed. Considered: `command="show-modal"` on the button, which
   moves the race to a pre-hydration `fill` and to an unset date (`ConceptList.svelte:223`, set in
   `$effect`); and `disabled` until hydrated, which flashes a grey button at every editor. A dead first
   click for a person inside that gap is not a defect worth new surface.
@@ -88,4 +92,4 @@ goes to the conductor as a list item.
 
 ## Estimate
 
-Design 130, ceiling 260, plan path 115.
+Design 130, ceiling 260, plan path 105.

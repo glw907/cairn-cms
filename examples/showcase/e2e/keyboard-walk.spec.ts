@@ -150,11 +150,16 @@ test('edit and save by keyboard, then a refused save lands on the title', async 
         }),
       }),
   );
+  const titleBox = page.getByRole('textbox', { name: 'Title' });
+  await titleBox.focus();
+  await page.keyboard.type(' Edited');
   await typeIntoEditor(page, ' Once more.');
   await backToSave(page);
   await page.keyboard.press('Enter');
   await expect(page.locator('.alert', { hasText: message })).toBeVisible();
   await expectFocused(page, 'textbox', 'Title');
+  // The refused edit is still in the control: a failure applies in place, never a reload.
+  await expect(titleBox).toHaveValue(`${title} Edited`);
   await expect(page.getByRole('textbox', { name: 'Title' })).toHaveAttribute(
     'aria-invalid',
     'true',

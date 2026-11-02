@@ -1726,19 +1726,28 @@ The original decision framing, for the record:
   One deliberate pass proves every admin screen renders a designed zero state rather than a blank
   table, and that the first-run path (empty dashboard, first entry, first publish) reads as a
   guided arc. The highest-leverage design item in the pre-beta set because it is every stranger's
-  first five minutes.
+  first five minutes. **Done** in `p2-p4`: Navigation, Tags, and Help have designed zero states, a
+  second dev server serves an empty site, and ten `admin-zero-*` baselines hold posts, tags,
+  navigation, media, and help at 320 and 2560. No first-run card or sample-free scaffold was built.
 - **Pre-beta design: the admin at the viewport extremes (Geoff, 2026-08-01).** The five-viewport
   composed standard is enforced for the public artifacts through the showcase's CI matrix; the
   admin has visual baselines but has never been held to composed-at-320-and-2560, never merely
-  unbroken, screen by screen. Editors open admins on phones constantly.
+  unbroken, screen by screen. Editors open admins on phones constantly. **Done** in `p2-p4`: 32
+  baselines hold eight screens at 320 and 2560 in both themes. The editors table stacks Email and
+  Role below `sm`, and the publish filter shows a scroll cue. The Tidy settings row at 320 is
+  backlog #294.
 - **Pre-beta design: the sign-in touchpoints (Geoff, 2026-08-01).** The login screen, the
   magic-link email itself, and the confirm page are the first impression for every editor a
   developer invites, and the email has never had a design pass; it is the one piece of cairn UI
-  that renders in an inbox next to professionally designed mail.
+  that renders in an inbox next to professionally designed mail. **Done** in `p2-p4`: one wording
+  for a failed link on the sign-in and confirm pages, a designed email, and `auth.link.sent` in the
+  logs. No client-rendering test of the email exists.
 - **Pre-beta design: a keyboard-and-screen-reader walkthrough of the three core flows (Geoff,
   2026-08-01).** Sign in, edit-and-save, publish, run end-to-end the way an assistive-tech user
   experiences them. The per-pass a11y reviewer catches component-level issues; nobody has run the
   flows whole. One attended session with findings filed; the public beta is the forcing function.
+  The keyboard half is **done** in `p2-p4` (`keyboard-walk.spec.ts`, no findings). The screen-reader
+  half is backlog #290, ahead of the beta gate.
 - **Pre-beta DX: the zero-credential quickstart (Geoff, 2026-08-01).** The dev backend already
   lets the engine run without the GitHub App; verify the whole first-contact path (scaffold, local
   admin, edit, preview) closes with zero accounts, no GitHub App, no Cloudflare, no email sender,
@@ -1845,7 +1854,9 @@ The original decision framing, for the record:
   `/preview/[token]` route.
 
 - **The refused-action editor cluster: four non-enhanced forms plus a shared announcement gap
-  (docs friction log, triaged 2026-08-14; C2b review round).** Four admin forms still post
+  (docs friction log, triaged 2026-08-14; C2b review round). Done in `p2-p4`: the five screens submit
+  through `use:enhance` with one shared helper (`src/lib/admin/refusal.ts`), keep the working copy,
+  and move focus to the alert; the polite regions are gone.** Four admin forms still post
   full-page with no `use:enhance` (verified: `NavTree.svelte:53`, and the same pattern in
   `VocabularyAdmin`, `CairnTidySettings`, `ConceptList`'s create dialog), so a refused submit
   re-renders a fresh document and drops whatever the editor was mid-typing (a drag-reordered
@@ -2417,7 +2428,11 @@ The original decision framing, for the record:
   to `ContentFormFailure` and reseed the fields from it, which also makes the failure shape
   honest about what it holds. The refused-action editor cluster above (Next tier) shares
   this same "no `use:enhance`, so a refusal loses state" shape one screen further along;
-  consider folding the two into one pass.
+  consider folding the two into one pass. **Checked in `p2-p4`:** for a post with JavaScript the
+  gap no longer holds. `keyboard-walk.spec.ts` edits the Title, takes a refused save, and finds the
+  Title still holding the edit, with focus and `aria-invalid` on it, because the failure applies
+  in place. The failure still carries no frontmatter, so a post without JavaScript reloads the
+  stored record, and `ContentFormFailure` still lacks the field values this entry proposed.
 
 - **Make required image and reference fields visible to constraint validation.** Both arms submit
   through hidden inputs, which the browser's constraint API ignores regardless of `required`, so a

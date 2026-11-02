@@ -27,6 +27,18 @@
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#294** Fix the Tidy settings "Not yet available" rows at 320 `#bug` `#cairn-cms` *(2026-11-02)*
+  At 320 the rows squeeze into a narrow column beside their label. The screen is not one of the eight the viewport bar holds, so the `p2-p4` pass read it and left it. Found by the `p2-p4` render probe.
+  Placement: Pass 8.
+- [ ] **#293** Load the settings head at page load so a kept working copy can't overwrite a newer save `#improvement` `#cairn-cms` *(2026-11-02)*
+  A refused settings save now keeps the editor's working copy, so a second Save reads the current head and replaces another editor's change. The conflict sentence says so (`Someone else changed these settings. Saving again replaces their change.`), but the screen offers the overwrite one click after naming the conflict. Carry the head the editor opened with in the form and refuse a save against a newer one. A stale tab could already do this, so the pass added no new class of overwrite. Found by the `p2-p4` pass.
+  Placement: Pass 8.
+- [ ] **#292** Check that a scoped class never shares a DaisyUI component's name `#improvement` `#cairn-cms` *(2026-11-02)*
+  `HelpHome`'s `.steps` and `.step` shared DaisyUI's Steps names, which set `grid-auto-flow: column` and `content: counter(step)` on `li.step::after`, and the first-steps panel was broken at every width from the day it shipped. No gate saw it. `filter`, `card`, `kbd`, and `label` share component names too, in `HelpHome.svelte` and `ListToolbar.svelte`, and render correctly today. A check that compares each scoped `<style>` class against DaisyUI's component roots would have caught it. Found by the `p2-p4` render probe.
+  Placement: Pass 8.
+- [ ] **#291** Regenerate a new baseline in any spec, not only two `#improvement` `#cairn-cms` *(2026-11-02)*
+  `.github/workflows/e2e.yml:163` regenerates baselines by naming `admin-visual.spec.ts` and `site-visual.spec.ts`, so a baseline added in any other spec never regenerates, and its first CI run fails with no retry. The `p2-p4` pass kept every new image in `admin-visual.spec.ts` for that reason. Found by the `p2-p4` plan.
+  Placement: Pass 8.
 - [ ] **#290** Walk sign-in, edit-and-save, and publish with a screen reader (Orca) `#improvement` `#cairn-cms` *(2026-11-02)*
   `keyboard-walk.spec.ts` proves the keyboard path and the focus ring, not what a screen reader announces. This pass removed the polite `aria-live` regions from the Nav, Tags, Tidy, Create, and Editors screens, because the move of focus to the alert or the refused field replaces them; only a screen reader shows whether the refusal, the saved flash, and the publish result are still heard. Walk the three journeys in Orca with Firefox and with Chromium, and file what is not announced.
   Placement: site work, ahead of the beta gate.
@@ -66,9 +78,6 @@
 - [ ] **#278** Retire the `R4` exemption from `check-idioms` `#improvement` `#cairn-cms` *(2026-11-02)*
   `scripts/checks/check-idioms.mjs:27,252` exempts `R4 re-export` and `R4 closure` by name for the canonical-home re-export pattern, which `cleanup-one-import-path` retired. No comment in `src/lib` uses the phrase now, so the exemption, its test at `check-idioms.test.ts:137`, and `fixtures/idioms/process-reference.ts` guard nothing and would pass a real round marker. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
-  The publish-state filter scrolls inside its container at 320 by design (`golden-path.spec.ts:764-790`). With `Unpublished changes` the row now rests on `All 7 | Unpublished changes 2 | Pub`, and nothing signals that more sits to the right, so an editor at that width can miss **Published**. Add a scroll cue. Wrapping is ruled out: `ListToolbar.svelte:489-493` explains why and `golden-path.spec.ts:785` pins it. Found by the `admin-rest` baseline read.
-  Placement: Cleanup round.
 - [ ] **#275** Remove the list bullets beside repeatable rows `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   Each row in a repeatable field shows a list marker in the left gutter, because `RepeatableField.svelte:211`'s `<ul>` sets no `list-none`. The marker eats width in a narrow Details pane and reads as a stray dot. Found by the `admin-rest` render read, on code that pass didn't change.
   Placement: Cleanup round.
@@ -105,12 +114,6 @@
 - [ ] **#250** Let a worktree-isolated session run compound shell commands that touch no git `#improvement` `#cairn-cms` *(2026-11-01)*
   The worktree guard refused `cmd && cat file`, `sed -i`, a heredoc script that mentioned git in its text, `cairn-run-gate 'bash <script>'`, and a write to the pass clock file under the git dir, in the `tool-gates` run and in all four `cairn-implementer` dispatches, with "cannot be shown not to be git". Each recovered by splitting the command or using the Edit tool. The guard's wording gives no hint which part tripped it. Fix candidate: name the matching token in the refusal, or allow a command whose text carries no `git` word and no path under the git dir.
   Placement: Cleanup round.
-- [ ] **#255** Put the sign-in email's `messageId` in the sign-in log record `#improvement` `#cairn-cms` *(2026-11-01)*
-  The logs stop at Cloudflare's acceptance, and a dropped link is invisible past it (`docs/admin/troubleshooting.md`, "Nobody can sign in"). Logging the send binding's message id on the `auth.token.minted` or send record would let an owner match a delivery report to a sign-in. It needs a new field in `src/lib/sveltekit/auth-routes.ts`, an `auth-data` path, so it takes the one security read in Pass 7.
-  Placement: Pass 7.
-- [ ] **#256** Give the GitHub failure and `defineRoles` error strings a next step `#improvement` `#cairn-cms` *(2026-11-01)*
-  The p1-p8 error sweep left 13 lines under `src/lib/github/**` and the `defineRoles` strings in `src/lib/auth/roles.ts` alone, because both paths are `auth-data` and a change costs a security read and a live smoke. Each already names the operation and status; none says what to do next.
-  Placement: Pass 7.
 - [ ] **#277** Decide whether `createNavRoutes` stays public `#improvement` `#cairn-cms` *(2026-11-02)*
   The other per-route factories left the barrels, but `createNavRoutes` stayed public and outside that ruling, and no site mounts it. Decide whether to hide it the same way.
   Placement: Pass 8.
@@ -123,9 +126,6 @@
 - [ ] **#245** Confirm a publish through the scoped token on the real install `#improvement` `#cairn-cms` *(2026-11-01)*
   The rc.2 install proves only a scaffolded App, which holds `contents`, `administration`, and `workflows`, while the App `adopt-cairn.md` teaches holds Contents alone. At the sitting, publish an entry through the token `installationToken` now mints (`repositories` plus `contents: write`). A ref write refused for workflows stops for Geoff, who is at that sitting, with the cause in hand; no fallback is written now. Found by pass 1a.
   Placement: Release, real install.
-- [ ] **#238** Tell an entry form's editor a field's bounds and keep the error on screen `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
-  `admin-rest` shows a field's bounds under the control, marks it with `validator`, and keeps Details closed over a focused title. A server refusal still shows `.alert-error` with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:129`), so each side can refuse what the other accepts. Whether to trim or warn is a product question.
-  Placement: Pass 7.
 
 - [ ] **#239** Refuse contradictory bounds at declaration `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Nothing in the concept's field declaration refuses `min > max`, `length` beside a conflicting `min` or `max`, or a non-calendar date bound. With `{ length: 5, max: 3 }` the form invites 5 characters and the save refuses every value (`field-rules.ts:21-23`), and `min > max` now reaches the markup as `minlength` above `maxlength`, which HTML forbids. A malformed date `min` is ignored by the browser while the save still compares it. Found by the field-values close review (#176).
@@ -208,12 +208,6 @@
 - [ ] **#168** Hand cairn.pub its routing contract with the release `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   cairn.pub renders the doc arms from the installed engine, so the one release owes it three things, from the 2026-09-22 handoff (kept at the `pre-agent-first` tag, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`). Keep the `https://cairn.pub/docs/<arm>/<page>` shape the `cairn` binary prints, with no extension, and redirect rather than move. Redirect every retired path to its successor, regenerating the table from the final page set. Before the `tool/v1.1.0` successor tag, confirm each `https://cairn.pub/docs/admin/<page>` URL a failure block prints resolves on the deployed site. Decide whether the `--json` schemas removed in db5ffdf7a still get a published home at `/schema/`. The three CLI reference pages left with the technical tracks and are out. The `0.98.0` pin ceiling stays until that release.
   Placement: After the release.
-- [ ] **#180** Correct editor screens whose wording misstates what happens `#bug` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  A refused new entry closes the create dialog and drops the typed values (`ConceptList.svelte`). The other four claims closed in `admin-rest`.
-  Placement: Pass 7.
-- [ ] **#182** Give the one sign-in problem one message with one fix `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  One sign-in problem reads as several messages, with one fix, and some omit "in this browser" (`src/lib/admin/LoginPage.svelte:166,170`, `src/lib/admin/ConfirmPage.svelte:70,75`, `src/lib/sveltekit/refusal-codes.ts:21`). It includes the spent or expired link: re-clicking one says "This browser has no pending sign-in. Request a new link below and open it in this browser." because `confirmAction` gives every cookie-less refusal that message, deliberately (`src/lib/sveltekit/auth-routes.ts:378-383`, comment at `:372-377`). Requesting a new link in this browser does fix a spent link, so the work is one wording that names the cause and the fix for each case. An `auth-data` path, so batched and not made by a docs pass. Found by the admin arm (pass 4, 2026-10-31).
-  Placement: Pass 7.
 - [ ] **#185** Re-capture the setup transcript with a neutral scratch path and host `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   The setup transcript is recaptured at the one release's real install, with a neutral scratch path and host, not in a separate run. `packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt` (lines 323-324) holds the maintainer's home path (`/var/home/...`, from wrangler's asset-directory line) and the `glw907.workers.dev` URL, and `01d-resume.txt` is gone. List the stale transcript blocks the scaffold-setup PR names. No page quotes the path lines, and the package's `files` does not ship `test/`. Found by the pass 4 close review, 2026-10-31.
   Placement: The one release.
@@ -267,6 +261,24 @@
 - **#116** Validate preview.ttlMs when the admin is constructed: `cleanup-custom-recipes` retired the preview lifetime option. (Geoff, 2026-11-01)
 
 ## Done
+- [x] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02 → 2026-11-02)* *(swept 2026-11-02)*
+  The publish-state filter scrolls inside its container at 320 by design (`golden-path.spec.ts:764-790`). With `Unpublished changes` the row now rests on `All 7 | Unpublished changes 2 | Pub`, and nothing signals that more sits to the right, so an editor at that width can miss **Published**. Add a scroll cue. Wrapping is ruled out: `ListToolbar.svelte:489-493` explains why and `golden-path.spec.ts:785` pins it. Found by the `admin-rest` baseline read.
+  Placement: Cleanup round.
+- [x] **#255** Put the sign-in email's `messageId` in the sign-in log record `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  The logs stop at Cloudflare's acceptance, and a dropped link is invisible past it (`docs/admin/troubleshooting.md`, "Nobody can sign in"). Logging the send binding's message id on the `auth.token.minted` or send record would let an owner match a delivery report to a sign-in. It needs a new field in `src/lib/sveltekit/auth-routes.ts`, an `auth-data` path, so it takes the one security read in Pass 7.
+  Placement: Pass 7.
+- [x] **#256** Give the GitHub failure and `defineRoles` error strings a next step `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  The p1-p8 error sweep left 13 lines under `src/lib/github/**` and the `defineRoles` strings in `src/lib/auth/roles.ts` alone, because both paths are `auth-data` and a change costs a security read and a live smoke. Each already names the operation and status; none says what to do next.
+  Placement: Pass 7.
+- [x] **#238** Tell an entry form's editor a field's bounds and keep the error on screen `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-01)*
+  `admin-rest` shows a field's bounds under the control, marks it with `validator`, and keeps Details closed over a focused title. A server refusal still shows `.alert-error` with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:129`), so each side can refuse what the other accepts. Whether to trim or warn is a product question.
+  Placement: Pass 7.
+- [x] **#180** Correct editor screens whose wording misstates what happens `#bug` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-11-01)*
+  A refused new entry closes the create dialog and drops the typed values (`ConceptList.svelte`). The other four claims closed in `admin-rest`.
+  Placement: Pass 7.
+- [x] **#182** Give the one sign-in problem one message with one fix `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-11-01)*
+  One sign-in problem reads as several messages, with one fix, and some omit "in this browser" (`src/lib/admin/LoginPage.svelte:166,170`, `src/lib/admin/ConfirmPage.svelte:70,75`, `src/lib/sveltekit/refusal-codes.ts:21`). It includes the spent or expired link: re-clicking one says "This browser has no pending sign-in. Request a new link below and open it in this browser." because `confirmAction` gives every cookie-less refusal that message, deliberately (`src/lib/sveltekit/auth-routes.ts:378-383`, comment at `:372-377`). Requesting a new link in this browser does fix a spent link, so the work is one wording that names the cause and the fix for each case. An `auth-data` path, so batched and not made by a docs pass. Found by the admin arm (pass 4, 2026-10-31).
+  Placement: Pass 7.
 - [x] **#254** Add a section-refusals action for a `createSectionAction` with `resolveDb` omitted `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
   The refusal fixture route (`examples/showcase/src/routes/admin/section-refusals`) covers a `resolveDb` that returns undefined, but not an action built with the option omitted, because the option turns optional in Pass 3 (E4). Add the action and its spec row once that lands.
   Placement: Pass 3.

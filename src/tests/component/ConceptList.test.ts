@@ -103,6 +103,36 @@ describe('ConceptList', () => {
     expect(alert?.getAttribute('role')).toBeNull();
   });
 
+  describe('the lifecycle polite region', () => {
+    const lifecycleRegion = (screen: Awaited<ReturnType<typeof render>>) =>
+      screen.container.querySelectorAll('[aria-live="polite"]')[1];
+    const refusedDelete = () => ({
+      error: 'Cannot delete 2026-05-01-post-1: 1 entry links to it.',
+      id: '2026-05-01-post-1',
+      inboundLinks: [{ concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' }],
+    });
+
+    // Each arm re-renders with a fresh object carrying the identical outcome, as a second submit
+    // failing the same way would. A live region re-announces only when its text mutates.
+    it.each([
+      ['a publish-all bounce', { data: data({ formError: 'Save failed.' }) }, () => ({ data: data({ formError: 'Save failed.' }) }), 'Save failed.'],
+      ['a load error', { data: data({ error: 'Could not load.' }) }, () => ({ data: data({ error: 'Could not load.' }) }), 'Could not load.'],
+      ['a delete refusal', { data: data({ singular: 'Post' }), form: refusedDelete() }, () => ({ form: refusedDelete() }), 'This post could not be deleted. 1 entry links to it.'],
+    ])('re-announces a repeated identical %s', async (_arm, first, repeat, text) => {
+      const screen = await render(ConceptList, first);
+      await expect.poll(() => lifecycleRegion(screen).textContent ?? '').toContain(text);
+      const before = lifecycleRegion(screen).textContent;
+      await screen.rerender(repeat());
+      expect(lifecycleRegion(screen).textContent ?? '').toContain(text);
+      expect(lifecycleRegion(screen).textContent).not.toBe(before);
+    });
+
+    it('leaves a refused create out, since its alert takes focus', async () => {
+      const screen = await render(ConceptList, { data: data(), form: { error: 'An entry with that address already exists.' } });
+      expect(lifecycleRegion(screen).textContent ?? '').toBe('');
+    });
+  });
+
   it('hides the publish-all flash when zero entries were published', async () => {
     // A racing second admin can land first, leaving this redirect with publishedAll=0.
     const screen = await render(ConceptList, { data: data({ publishedAll: 0 }) });
@@ -205,6 +235,64 @@ describe('ConceptList', () => {
       await expect.poll(() => document.activeElement).toBe(dialog.querySelector('.alert-error'));
       expect(create.disabled).toBe(false);
       expect(bannersOutside(screen, dialog)).toHaveLength(0);
+    });
+
+    it('holds the working state and the result until update() settles', async () => {
+      const screen = await render(ConceptList, { data: data({ entries: [] }), form: null });
+      const { dialog, create } = await submitCreate(screen);
+      let finishUpdate = () => {};
+      settleEnhance({ type: 'failure', status: 409, data: { error: REFUSAL } }, () => new Promise<void>((resolve) => (finishUpdate = resolve)));
+      await screen.rerender({ data: data({ entries: [] }), form: { error: REFUSAL } });
+      await new Promise((r) => setTimeout(r, 50));
+      expect(create.disabled).toBe(true);
+      expect(dialog.querySelector('.alert-error')).toBeNull();
+
+      finishUpdate();
+      await expect.poll(() => dialog.querySelector('.alert-error')?.textContent).toContain(REFUSAL);
+      expect(create.disabled).toBe(false);
+    });
+
+    it('reports an update() that rejects as the failure notice', async () => {
+      const screen = await render(ConceptList, { data: data({ entries: [] }), form: null });
+      const { dialog, create } = await submitCreate(screen);
+      settleEnhance({ type: 'failure', status: 409, data: { error: REFUSAL } }, () => Promise.reject(new Error('load failed')));
+      await expect.poll(() => dialog.querySelector('.alert-error')?.textContent).toContain(FAILURE_NOTICE);
+      expect(create.disabled).toBe(false);
+    });
+
+    it('follows a redirect with a document load, and a back-forward-cache restore clears the working state', async () => {
+      const nav = (window as unknown as { navigation: EventTarget }).navigation;
+      const seen: string[] = [];
+      const onNavigate = (event: Event) => {
+        seen.push((event as Event & { destination: { url: string } }).destination.url);
+        event.preventDefault();
+      };
+      nav.addEventListener('navigate', onNavigate);
+      try {
+        const screen = await render(ConceptList, { data: data({ entries: [] }), form: null });
+        const { create } = await submitCreate(screen);
+        settleEnhance({ type: 'redirect', status: 303, location: '/admin/posts/new-entry' });
+        await expect.poll(() => seen.length).toBe(1);
+        expect(seen[0]).toContain('/admin/posts/new-entry');
+        expect(create.disabled).toBe(true);
+
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+        await expect.poll(() => create.disabled).toBe(false);
+      } finally {
+        nav.removeEventListener('navigate', onNavigate);
+      }
+    });
+
+    it('shows a refusal that lands after the dialog closed in the page banner', async () => {
+      const screen = await render(ConceptList, { data: data({ entries: [] }), form: null });
+      const { dialog } = await submitCreate(screen);
+      dialog.close();
+      await expect.poll(() => dialog.open).toBe(false);
+
+      settleEnhance({ type: 'failure', status: 409, data: { error: REFUSAL } });
+      await screen.rerender({ data: data({ entries: [] }), form: { error: REFUSAL } });
+      await expect.poll(() => bannersOutside(screen, dialog)[0]?.textContent).toContain(REFUSAL);
+      expect(dialog.querySelector('.alert-error')).toBeNull();
     });
 
     it('keeps the banner, with no focus taken, for a refusal that is not a create', async () => {

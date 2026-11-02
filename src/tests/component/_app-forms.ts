@@ -31,12 +31,21 @@ export const enhanceRuns: EnhanceRun[] = [];
 /** Every result `applyAction` was handed, oldest first. A test clears it between cases. */
 export const applyActionCalls: unknown[] = [];
 
-/** Resolvers for requests sent but not yet answered, oldest first. */
-const awaitingResult: Array<(result: unknown) => void> = [];
+/** One answer to a sent request: the result, and the `update()` the callback receives with it. */
+interface Answer {
+  result: unknown;
+  update: () => Promise<void>;
+}
 
-/** Answer the oldest unanswered request with `result`, as the server (or a failed fetch) would. */
-export function settleEnhance(result: unknown): void {
-  awaitingResult.shift()?.(result);
+/** Resolvers for requests sent but not yet answered, oldest first. */
+const awaitingResult: Array<(answer: Answer) => void> = [];
+
+/**
+ * Answer the oldest unanswered request with `result`, as the server (or a failed fetch) would.
+ * `update` stands in for Kit's `update()`, which resolves at once unless a test hands its own.
+ */
+export function settleEnhance(result: unknown, update: () => Promise<void> = async () => {}): void {
+  awaitingResult.shift()?.({ result, update });
 }
 
 /** Forget every recorded run, applied result, and unanswered request. */
@@ -90,8 +99,8 @@ export function enhance(
       controller: new AbortController(),
     });
     enhanceRuns.push({ action: action.search, formData });
-    const result = await new Promise<unknown>((resolve) => awaitingResult.push(resolve));
-    await callback?.({ action, formData, formElement, result, update: async () => {} });
+    const { result, update } = await new Promise<Answer>((resolve) => awaitingResult.push(resolve));
+    await callback?.({ action, formData, formElement, result, update });
   };
   formElement.addEventListener('submit', onSubmit);
   return { destroy: () => formElement.removeEventListener('submit', onSubmit) };

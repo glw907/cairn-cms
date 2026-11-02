@@ -14,10 +14,10 @@ State lives in `docs/STATUS.md` (the rolling now, with the next action), `BACKLO
 Cut a worktree off `main` for the pass, then run:
 
 ```sh
-npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)
+npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync) && npm --prefix packages/create-cairn-site run prepack
 ```
 
-The second install keeps the worktree's showcase off the main checkout's engine. The sync writes the `$app/tsconfig` that `check:public-skill` needs. `references/durable-gotchas.md` under `cairn-writing-engine-code` explains why.
+The prepack bakes the gitignored template that most `packages/create-cairn-site` tests read. The second install keeps the worktree's showcase off the main checkout's engine. The sync writes the `$app/tsconfig` that `check:public-skill` needs. `references/durable-gotchas.md` under `cairn-writing-engine-code` explains why.
 
 ## Gates
 

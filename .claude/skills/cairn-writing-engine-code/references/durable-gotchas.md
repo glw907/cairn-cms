@@ -327,8 +327,8 @@ for that reason alone. Run the setup before trusting a red or a green:
 - The baked create-cairn-site template (`test.yml`, the "Bake the create-cairn-site template" step),
   which most `packages/create-cairn-site` tests read; without it they fail with `ENOENT` or
   `scaffold: no template found`. The template is gitignored and only `prepack` bakes it, never
-  `npm install` or `npm test`. From `packages/create-cairn-site`, with `V` the root package version:
-  `node scripts/bake-template.mjs --to template --engine-spec "^$V" --dev-spec "^$V"`.
+  `npm install` or `npm test`. From the root, run `npm --prefix packages/create-cairn-site run prepack`.
+  `test.yml` passes explicit specs instead, because a `0.0.0` version or a `file:` spec makes the bake refuse.
 - `npx svelte-kit sync` in the showcase, which its `npm run check` script runs first. Without it
   `check-public-skill.test.ts` fails with `TSCONFIG_ERROR` for the missing
   `examples/showcase/.svelte-kit/tsconfig.json`. The output is gitignored.

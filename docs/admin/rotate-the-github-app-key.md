@@ -111,13 +111,13 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
    Check that the path names the new PEM file and that no `Out-File` step intervened under Windows PowerShell 5.1, and then push again.
 
-3. If `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: 401`, GitHub refused the signed request.
+3. If `/healthz?live=1` reports the detail `key_refused`, or `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: 401`, GitHub refused the signed request.
 
    Status 401 is the one status that blames the key. The error page comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 
-4. If `/healthz?live=1` reports the detail `token_request_refused`, or a `github.unreachable` record carries any status other than 401, the key isn't at fault. Don't replace it.
+4. If `/healthz?live=1` reports the detail `installation_not_found`, `installation_suspended`, `token_request_refused`, or `unreachable`, or a `github.unreachable` record carries any status other than 401, the key isn't at fault. Don't replace it.
 
-   GitHub accepted the key and refused the request for a token. A 404 or a 403 can mean the installation, and a 422 can mean the repository. Check three things:
+   For the first three details, GitHub accepted the key and refused the request for a token. A 404 or a 403 can mean the installation or a stale `repo`, and a 422 can mean the repository. An `unreachable` detail or a 5xx status can instead be a GitHub outage, so check [GitHub's status page](https://www.githubstatus.com) first. If GitHub is up, check three things:
 
    - The `repo` in your site's `createGithubApp` call matches the repository's current name on GitHub.
    - The App's installation includes that repository. On [GitHub's installations page](https://github.com/settings/installations), open the App and check the repository access.

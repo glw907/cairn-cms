@@ -215,7 +215,7 @@ Six conditions concern the database that records who may sign in. No command che
 
 To check, publish an edit and confirm that the newest commit on `main` names your site's App, the App's name followed by `[bot]`, as its committer. An empty error log proves nothing unless `observability.enabled` is on.
 
-**Act, or ask a developer:** confirm that the App is installed on your repository at [GitHub's installations page](https://github.com/settings/installations). If it is, the fault is in the private key secret in the Worker's secret store, or in the App id and installation id that the site's configuration names. Cloudflare secrets are write-only, so nobody can read the key back, and the fix is to replace it. [Rotate the GitHub App key](./rotate-the-github-app-key.md) describes how.
+**Act, or ask a developer:** check three things before you replace any key. The App's installation covers your repository: confirm it at [GitHub's installations page](https://github.com/settings/installations). The App holds Contents read and write permission, on the App's settings page. The `repo` in the site's `createGithubApp` call matches the repository's current name. Any of the three can fail the token request with a good key. If all three hold, the fault is in the private key secret in the Worker's secret store, or in the App id and installation id that the site's configuration names. Cloudflare secrets are write-only, so nobody can read the key back, and a key the check blames needs replacing. [Recover from a failed key](./rotate-the-github-app-key.md#recover-from-a-failed-key) tells the cases apart.
 
 ## Wire the admin mount
 

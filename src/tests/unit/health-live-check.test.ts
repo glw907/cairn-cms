@@ -154,6 +154,7 @@ describe('the live token check is bounded per isolate', () => {
       Array.from({ length: 5 }, () => loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), rt)),
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({ repositories: ['r'] });
     for (const data of results) expect(data.checks.githubAppToken).toEqual({ ok: true });
   });
 

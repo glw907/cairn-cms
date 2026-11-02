@@ -598,7 +598,12 @@ const EIGHT_SCREENS: {
   { screen: 'sign-in', path: '/admin/login', heading: /^Sign in to/ },
   { screen: 'confirm', path: '/admin/auth/confirm?token=preview-token', heading: 'Almost there' },
   { screen: 'editors', path: '/admin/editors', heading: 'Editors' },
-  { screen: 'edit-page', path: '/admin/posts/2026-06-hello', heading: 'Hello', mask: '.cm-content' },
+  {
+    screen: 'edit-page',
+    path: '/admin/posts/2026-06-hello',
+    heading: 'Hello',
+    mask: '.cm-content',
+  },
   { screen: 'media', path: '/admin/media', heading: 'Media library' },
   {
     screen: 'media-detail',
@@ -640,7 +645,10 @@ test('editors table fits at 320', async ({ page, context, baseURL }) => {
   const sizes = await wrap.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
   expect(sizes.scroll).toBe(sizes.client);
   const row = page.locator('tbody tr').first();
-  for (const target of [row.locator('.badge:visible'), row.getByRole('button', { name: /^Remove/ })]) {
+  for (const target of [
+    row.locator('.badge:visible'),
+    row.getByRole('button', { name: /^Remove/ }),
+  ]) {
     const box = await target.first().boundingBox();
     expect(box).not.toBeNull();
     expect(box!.x).toBeGreaterThanOrEqual(0);
@@ -669,7 +677,8 @@ test('publish filter shows its cue at 320', async ({ page, context, baseURL }) =
     const last = el.querySelector('[role="radio"]:last-of-type')!.getBoundingClientRect();
     return {
       lastRight: last.right,
-      cueStart: el.getBoundingClientRect().right - parseFloat(getComputedStyle(el, '::after').width),
+      cueStart:
+        el.getBoundingClientRect().right - parseFloat(getComputedStyle(el, '::after').width),
     };
   });
   expect(edges.lastRight).toBeLessThanOrEqual(edges.cueStart + 0.5);

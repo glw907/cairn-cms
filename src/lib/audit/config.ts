@@ -72,33 +72,6 @@ export const DEFAULT_SHEET_CANDIDATES = [
 // (`static.paletteFiles`) to keep its palette declaration outside `token-colors` too.
 export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/admin/cairn-admin.css'];
 
-// The core admin routes rendered mode visits absent a configured page list. Mirrors the norms
-// generator's page set (scripts/lab/generate-norms-manifest.mjs): both are "the core admin routes"
-// in the same sense, and `/admin` is deliberately absent from both since it renders the same office
-// as `/admin/posts`, so including it would double a route rather than add one.
-export const DEFAULT_RENDERED_PAGES = [
-  '/admin/posts',
-  '/admin/pages',
-  '/admin/vocabulary',
-  '/admin/media',
-  '/admin/editors',
-  '/admin/login',
-];
-
-/** One rendered-mode exemption. A live-page finding has no source line to co-locate a comment on. */
-export interface RenderedAllowlistEntry {
-  page: string;
-  selector: string;
-  reason: string;
-  /**
-   * The rule this exemption is for. Optional, and worth naming: a stale entry is reported at the
-   * named rule's tier, so suppressing an ADVISORY finding cannot later gate the build when the
-   * selector churns. Without it, a stale entry is an error, which is right for a suppressed
-   * error-tier finding and wrong for an advisory one.
-   */
-  rule?: string;
-}
-
 /** A resolved run configuration: defaults filled, paths still relative to `root`. */
 export interface AuditConfig {
   /** The directory every other path resolves against. */
@@ -157,13 +130,6 @@ export interface AuditConfig {
    * would otherwise miss.
    */
   sheetPaths: string[];
-  /**
-   * The pages rendered mode visits: `rendered.pages` (defaulting to the core admin routes) with
-   * `rendered.extraPages` appended. `extraPages` is additive on purpose, so naming a site's
-   * screen does not silently drop the core routes it no longer restates.
-   */
-  renderedPages: string[];
-  renderedAllowlist: RenderedAllowlistEntry[];
   /**
    * The roots the public scope reads `.svelte` and `.css` files under, recursively. A default
    * root the config's admin scope names is already removed, so this list is what the run reads.
@@ -233,28 +199,6 @@ function asPathOrPathList(value: unknown, field: string, fallback: () => string[
   fail(`${field} must be a path or a list of paths`);
 }
 
-function asAllowlist(value: unknown, field: string): RenderedAllowlistEntry[] {
-  if (value === undefined) return [];
-  if (!Array.isArray(value)) fail(`${field} must be a list`);
-  const required = (row: Record<string, unknown>, key: string): string => {
-    const entry = row[key];
-    if (typeof entry !== 'string' || entry === '') fail(`each ${field} entry needs a ${key}`);
-    return entry;
-  };
-  return value.map((entry) => {
-    const row = asRecord(entry, field);
-    if (row.rule !== undefined && (typeof row.rule !== 'string' || row.rule === '')) {
-      fail(`each ${field} entry's rule must be a rule id`);
-    }
-    return {
-      page: required(row, 'page'),
-      selector: required(row, 'selector'),
-      reason: required(row, 'reason'),
-      ...(row.rule === undefined ? {} : { rule: row.rule as string }),
-    };
-  });
-}
-
 /**
  * Resolve a parsed config file (or its absence) against the defaults. `sheetExists` decides which
  * stylesheet candidate the run uses, injected so the resolution is testable without a tree.
@@ -266,7 +210,6 @@ export function resolveConfig(
 ): AuditConfig {
   const file = asRecord(raw, 'the config');
   const staticSection = asRecord(file.static, 'static');
-  const renderedSection = asRecord(file.rendered, 'rendered');
   const publicSection = asRecord(file.public, 'public');
   const configuredPublicScope = publicSection.scope !== undefined;
   const publicRoots = asPathList(publicSection.scope, 'public.scope', DEFAULT_PUBLIC_SCOPE);
@@ -324,11 +267,6 @@ export function resolveConfig(
     sheetPaths: asPathOrPathList(file.sheet, 'sheet', () => [
       DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ?? DEFAULT_SHEET_CANDIDATES[0],
     ]),
-    renderedPages: [
-      ...asPathList(renderedSection.pages, 'rendered.pages', DEFAULT_RENDERED_PAGES),
-      ...asPathList(renderedSection.extraPages, 'rendered.extraPages', []),
-    ],
-    renderedAllowlist: asAllowlist(renderedSection.allowlist, 'rendered.allowlist'),
   };
 }
 
@@ -372,9 +310,8 @@ export function isPublicFile(config: AuditConfig, path: string): boolean {
   );
 }
 
-/** The flags both invocations share. */
-interface AuditFlags {
-  rendered: boolean;
+/** The bin's parsed argv. */
+export interface AuditFlags {
   config?: string;
   /** `--help` printed `USAGE` and exited before any run started. */
   help?: boolean;
@@ -390,62 +327,32 @@ interface AuditFlags {
   failOn?: 'error' | 'advisory';
 }
 
-/**
- * The bin's parsed argv. A union rather than an optional `term`, so the `norms` branch reaches its
- * term without a cast and a future subcommand cannot forget its argument.
- */
-export type AuditArgs =
-  | ({ command: 'audit' } & AuditFlags)
-  | ({ command: 'norms'; term: string } & AuditFlags);
-
 /** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
 export const USAGE = [
-  'Usage: cairn-audit [--rendered] [--config <path>] [--rule <id>]... [--fail-on error|advisory] [--help]',
-  '       cairn-audit norms <selector-or-role>',
+  'Usage: cairn-audit [--config <path>] [--rule <id>]... [--fail-on error|advisory] [--help]',
   '',
   '  (default)   Static audit of the working directory (config: cairn-audit.config.json).',
-  '  --rendered  Drive a browser against an already-running server (BASE_URL, default',
-  '              http://localhost:4173) under both themes. It never starts a server and exits 2',
-  '              when nothing answers or Playwright is absent.',
   '  --rule      Run only the named rule id; repeat for several. An unknown id exits 2.',
   '  --fail-on   advisory: exit 1 on any unsuppressed finding of either tier. error (the default):',
   '              only an error-tier finding exits 1.',
-  '  norms       Look up a measured design norm from the shipped manifest; needs no config, no',
-  '              built stylesheet, and no browser, and takes no --rendered. A term that names no',
-  '              role exits 2 with the role list.',
   '',
   'Exit codes: 0 no unsuppressed finding at the gating tier; 1 at least one; 2 the run could not',
-  'start or finish (bad flag, malformed config, no server, no browser). 2 is never a design verdict.',
+  'start or finish (bad flag, malformed config). 2 is never a design verdict.',
   'Suppress one finding with a comment above it: cairn-audit-disable-next-line <rule-id> -- <reason>.',
-  'The reason is required and a directive that silences nothing is itself an error. Rendered mode',
-  'exempts through rendered.allowlist in the config, and only an advisory rule can exempt itself.',
+  'The reason is required and a directive that silences nothing is itself an error.',
 ].join('\n');
 
 /**
- * Parse the bin's argv: one optional leading subcommand, then long flags. Throws with a usage line
- * on anything unexpected, since a mistyped argument that silently ran the default audit would
- * report a clean tree for a question nobody asked.
+ * Parse the bin's argv: long flags only. Throws with a usage line on anything unexpected, since a
+ * mistyped argument that silently ran the default audit would report a clean tree for a question
+ * nobody asked.
  */
-export function parseArgs(argv: string[]): AuditArgs {
-  let term: string | undefined;
-  let rest = argv;
-  if (rest[0] === 'norms') {
-    term = rest[1];
-    if (term === undefined || term.startsWith('--')) {
-      throw new Error(`norms needs a selector or role\n${USAGE}`);
-    }
-    rest = rest.slice(2);
-  }
-  const flags: AuditFlags = { rendered: false };
-  for (let i = 0; i < rest.length; ) {
-    const flag = rest[i];
-    if (flag === '--rendered') {
-      flags.rendered = true;
-      i += 1;
-      continue;
-    }
+export function parseArgs(argv: string[]): AuditFlags {
+  const flags: AuditFlags = {};
+  for (let i = 0; i < argv.length; ) {
+    const flag = argv[i];
     if (flag === '--config') {
-      const value = rest[i + 1];
+      const value = argv[i + 1];
       if (value === undefined || value.startsWith('--')) {
         throw new Error(`--config needs a value\n${USAGE}`);
       }
@@ -454,7 +361,7 @@ export function parseArgs(argv: string[]): AuditArgs {
       continue;
     }
     if (flag === '--rule') {
-      const value = rest[i + 1];
+      const value = argv[i + 1];
       if (value === undefined || value.startsWith('--')) {
         throw new Error(`--rule needs a value\n${USAGE}`);
       }
@@ -463,7 +370,7 @@ export function parseArgs(argv: string[]): AuditArgs {
       continue;
     }
     if (flag === '--fail-on') {
-      const value = rest[i + 1];
+      const value = argv[i + 1];
       if (value === undefined || value.startsWith('--')) {
         throw new Error(`--fail-on needs a value\n${USAGE}`);
       }
@@ -481,5 +388,5 @@ export function parseArgs(argv: string[]): AuditArgs {
     }
     throw new Error(`unknown argument ${flag}\n${USAGE}`);
   }
-  return term === undefined ? { command: 'audit', ...flags } : { command: 'norms', term, ...flags };
+  return flags;
 }

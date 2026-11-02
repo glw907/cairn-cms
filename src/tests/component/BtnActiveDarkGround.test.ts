@@ -7,7 +7,7 @@
 // contrast numbers are painted and composited through the audit's own color module, never
 // hand-rolled.
 import { describe, expect, it } from 'vitest';
-import { composite, contrastRatio as rgbaContrastRatio, type Rgba } from '../../lib/audit/color.js';
+import { composite, contrastRatio as rgbaContrastRatio, type Rgba } from '../unit/_canvas-color.js';
 import { renderInTheme, resolveColor, styleOf, type IdiomState, type Theme } from './_idiom-probe.js';
 
 const THEMES: Theme[] = ['cairn-admin', 'cairn-admin-dark'];
@@ -55,7 +55,7 @@ function backgroundChroma(computedColor: string): number {
 
 /**
  * A computed color as sRGB bytes, resolved by painting it rather than by parsing color syntax, the
- * discipline `src/lib/audit/color.ts` documents for the audit's own rules: every color in this
+ * discipline `src/tests/unit/_canvas-color.ts` documents: every color in this
  * sheet serializes in its authored oklch/oklab space, and an out-of-gamut token renders clipped,
  * so the canvas is the one reader that reports the pixels a person actually sees.
  */

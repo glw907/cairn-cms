@@ -129,9 +129,8 @@ describe('list-role', () => {
   // marker-suppressed list carries role=list": the rule only sees marker suppression an
   // element's OWN classes cause, never a descendant-selector rule keyed on some ancestor's class
   // (daisyUI's `.menu :where(li)`, breadcrumbs' `> li`), so a list suppressed that way is outside
-  // what this run can catch and outside what this assertion proves. That gap is now covered by
-  // the rendered-mode counterpart (`rules/rendered/list-role.ts`), which reads each item's actual
-  // computed `display` in a live browser instead; the nine engine lists it found were fixed
+  // what this run can catch and outside what this assertion proves. The nine engine lists a browser's
+  // computed `display` once found there were fixed
   // in-tree (`role="list"` plus `role="listitem"` on their unroled items), which is what lets this
   // static half stay clean here too, on the same markup, through its narrower own-class lens. The
   // full registry runs (not just this rule alone), so a suppression directive naming some OTHER

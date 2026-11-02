@@ -16,7 +16,7 @@ import type { Finding, StaticRule } from '../../types.js';
 const BADGE_GHOST_MESSAGE =
   'class "badge-ghost" is the stock daisyUI ghost badge, retired from cairn\'s tree: it ' +
   'hardcodes a background/border that can match a row or card color and melt into it, and neither ' +
-  'it nor the un-tuned badge-outline clears the audit\'s 3:1 border-contrast floor. cairn\'s ' +
+  'it nor the un-tuned badge-outline clears cairn\'s 3:1 border-contrast floor. cairn\'s ' +
   'recipe is the three ratified chip registers instead -- quiet (StatusChip\'s default, or the ' +
   'shared cairn-chip-quiet class, composed with badge) for a settled state such as Published, ' +
   'warning (StatusChip\'s `register="warning"`, or the shared cairn-chip-warning class) for a ' +

@@ -575,7 +575,7 @@ describe('formatReport', () => {
     expect(formatReport(reportOf([]))).toMatch(/0 suppressed/);
   });
 
-  // One ratified rendered exemption can suppress the same line on scores of elements, and a
+  // One ratified exemption can suppress the same line on scores of elements, and a
   // hundred-line block is read as noise rather than as the exception count it is. Repeats collapse
   // to one line carrying the multiplier; the summary total still counts every finding, and a line
   // that occurs once prints exactly as it always did.

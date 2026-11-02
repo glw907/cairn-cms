@@ -14,9 +14,8 @@
 // unmeasured, so the pair count never shrinks around a tint the rule cannot read.
 //
 // A value outside the resolver's bound, and a value the scheme model could not place, are
-// reported as unmeasured, never passed. The rendered checks
-// (`interactive-contrast`, and the rendered page itself) stay the ground truth; this rule catches a
-// failing pair before anything renders. The rule needs `daisyui`, since a block named after a
+// reported as unmeasured, never passed. A browser stays the
+// ground truth; this rule catches a failing pair before anything renders. The rule needs `daisyui`, since a block named after a
 // built-in theme takes that theme's values where it is silent.
 import { lineAt } from '../../markup.js';
 import { compositeOver, dualGamutRatio, resolveColor } from '../../contrast.js';
@@ -269,9 +268,9 @@ function measureScheme(scheme: Scheme, pairs: ContrastPair[], cascade: ThemeCasc
 /** What an unmeasured finding tells the author to do, by what stopped the measurement. */
 const UNMEASURED_ADVICE: Record<NonNullable<ContrastRow['unmeasuredBy']>, string> = {
   value:
-    'The resolver follows var() chains to a literal and evaluates color-mix(in oklab or in oklch, one operand with a percentage, one without); check a value in another form in the rendered audit',
-  cascade: 'Set the value in a daisyUI theme block or a plain :root rule the scheme model reads, or check the pair in the rendered audit',
-  tint: 'Write the tint in that form, or check the pair in the rendered audit',
+    'The resolver follows var() chains to a literal and evaluates color-mix(in oklab or in oklch, one operand with a percentage, one without); check a value in another form in a browser',
+  cascade: 'Set the value in a daisyUI theme block or a plain :root rule the scheme model reads, or check the pair in a browser',
+  tint: 'Write the tint in that form, or check the pair in a browser',
 };
 
 /** A ratio as a finding prints it. */

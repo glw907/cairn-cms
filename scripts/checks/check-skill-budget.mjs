@@ -8,7 +8,7 @@
 // how much and where the detail belongs (references/), above the ceiling.
 //
 // This also gates `cairn-building-admin-screens`' SKILL.md "Tier map" section against the real rule
-// registries (src/lib/audit/rules/static/index.ts and rendered/index.ts): a retiered or renamed
+// registries (src/lib/audit/rules/static/index.ts): a retiered or renamed
 // rule that forgets the doc's table is exactly the kind of drift no reader catches, since the
 // table reads as plausible prose either way. The tier map is that skill's artifact, bound to
 // its registries, so no other packaged skill carries one.
@@ -189,7 +189,7 @@ export function distRulesAvailable(root) {
   return existsSync(resolve(root, DIST_STATIC_RULES));
 }
 
-/** @typedef {{ id: string, mode: 'static' | 'rendered', tier: 'error' | 'advisory' }} TierMapEntry */
+/** @typedef {{ id: string, mode: 'static', tier: 'error' | 'advisory' }} TierMapEntry */
 
 /**
  * The tier-map section labels this check parses, in the order SKILL.md declares them.
@@ -198,8 +198,6 @@ export function distRulesAvailable(root) {
 const TIER_MAP_SECTIONS = [
   { label: 'Static, error tier', mode: 'static', tier: 'error' },
   { label: 'Static, advisory tier', mode: 'static', tier: 'advisory' },
-  { label: 'Rendered, error tier', mode: 'rendered', tier: 'error' },
-  { label: 'Rendered, advisory tier', mode: 'rendered', tier: 'advisory' },
 ];
 
 /**
@@ -234,9 +232,8 @@ export function parseTierMap(skillText) {
  * @returns {{ ok: true } | { ok: false, error: string }}
  */
 export function checkTierMap(documented, actual) {
-  // Mode plus id, since a static and a rendered rule may legitimately share an id. The maps hold
-  // the whole entry rather than its tier alone, so a problem line reads its mode and id back off
-  // the entry instead of taking the composite key apart again.
+  // Mode plus id. The maps hold the whole entry rather than its tier alone, so a problem line
+  // reads its mode and id back off the entry instead of taking the composite key apart again.
   const key = (/** @type {TierMapEntry} */ e) => `${e.mode}:${e.id}`;
   const documentedByKey = new Map(documented.map((e) => [key(e), e]));
   const actualByKey = new Map(actual.map((e) => [key(e), e]));
@@ -290,12 +287,7 @@ function tierMapEntry(rule, mode) {
 async function actualTierMap(root) {
   /** @type {typeof import('../../src/lib/audit/rules/static/index.js')} */
   const staticModule = await import(`file://${resolve(root, 'dist/audit/rules/static/index.js')}`);
-  /** @type {typeof import('../../src/lib/audit/rules/rendered/index.js')} */
-  const renderedModule = await import(`file://${resolve(root, 'dist/audit/rules/rendered/index.js')}`);
-  return [
-    ...staticModule.staticRules().map((rule) => tierMapEntry(rule, 'static')),
-    ...renderedModule.renderedRules().map((rule) => tierMapEntry(rule, 'rendered')),
-  ];
+  return staticModule.staticRules().map((rule) => tierMapEntry(rule, 'static'));
 }
 
 async function main() {

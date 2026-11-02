@@ -393,7 +393,7 @@ bespoke: a single-use control, not a repeated device.
         <div class="mt-3 border-t border-dashed border-[var(--cairn-card-border)] pt-2.5">
           <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
           <div class="mt-1 type-meta leading-relaxed text-muted">
-            Tidy is on (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">{data.model}</code>. Switch to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">claude-haiku-4-5</code> for a cheaper, faster run.
+            Tidy is on (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">{data.model}</code>. Switch to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">claude-haiku-5-5</code> for a cheaper, faster run.
           </div>
         </div>
       </div>

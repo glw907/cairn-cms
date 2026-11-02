@@ -200,6 +200,22 @@ describe('settingsLoad', () => {
     expect(data.modelLabel).toBe('Claude Sonnet 4.6');
   });
 
+  it('labels the 5.5 family and Haiku 4.5 with their plain names', async () => {
+    const labels: [string, string][] = [
+      ['claude-sonnet-5-5', 'Claude Sonnet 5.5'],
+      ['claude-haiku-5-5', 'Claude Haiku 5.5'],
+      ['claude-haiku-4-5', 'Claude Haiku 4.5'],
+    ];
+    for (const [model, label] of labels) {
+      const routes = createContentRoutes({
+        runtime: runtime({ tidy: { enabled: true, model } }),
+        tidy: { client: fakeTidyClient('valid') },
+      });
+      const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+      expect(data.modelLabel).toBe(label);
+    }
+  });
+
   it('keeps the gate closed when the key is missing, even with tidy enabled (no probe attempted)', async () => {
     const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.settingsLoad(loadEvent({}));

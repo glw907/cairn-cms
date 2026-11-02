@@ -155,7 +155,7 @@ describe('buildTidyPrompt: the prompt contract (the governing instructions)', ()
   });
 
   it('fixes a homophone only where the existing form is grammatically wrong', () => {
-    expect(prompt).toContain('ONLY where the existing form is grammatically');
+    expect(prompt).toContain('only where the existing form is grammatically');
     expect(prompt).toContain('their/there');
   });
 

@@ -29,10 +29,10 @@ The site config has no timeout key. Never put `timeoutMs` in the YAML.
    ```yaml
    tidy:
      enabled: true
-     model: claude-haiku-4-5
+     model: claude-haiku-5-5
    ```
 
-   The default model is `claude-sonnet-5`. The parser does not check the id; a model Anthropic
+   The default model is `claude-sonnet-5-5`. The parser does not check the id; a model Anthropic
    rejects surfaces on the first call as `tidy.failed` `reason: invalid_request`.
 3. For a longer deadline (default 30 seconds), add `timeoutMs` to the server module's existing
    `tidy` block. On a scaffold, keep the dev-gated `client` entry beside it.
@@ -69,7 +69,7 @@ the only check of the SDK and the model.
 |---|---|---|
 | `Tidy is not enabled for this site.` | Deployed config lacks `enabled: true` | Set it, deploy |
 | `...the Anthropic API key is missing.` | No secret bound | `wrangler secret put` |
-| `This is too long to tidy at once...` | Over about 24,000 characters | Editor tidies a selection |
+| `This is too long to tidy at once...` | Over about 24,000 characters, or a proofread that hit the output cap | Editor tidies a selection |
 | Mentions `npm install @anthropic-ai/sdk` | SDK not installed | Install, deploy |
 | Tells the editor to contact the developer | Key rejected (`auth`); Tidy hides for 10 minutes | Bind a working key |
 | Names the model and `tidy.model` | Model id rejected | Set a supported model |

@@ -3,8 +3,9 @@
 - **Slice:** `admin-rest`, the rest of pass 5 after `tidy-lists` and `tool-gates`, cut forward from the run
   sheet's order. Class `ordinary`, plus `runner` for T6's two files under `scripts/checks/` and
   `.github/workflows/`.
-- **Base:** `main` at `6762c2db3`. **Branch:** `worktree-admin-rest` (plan), `worktree-admin-rest-run`
-  (executor). **Push target:** `glw907/cairn-cms`.
+- **Base:** `main` at `16a081668`, which holds PR #178 (`auth-data`) and PR #180 (`tool-gates`). The plan was
+  written and reviewed at `6762c2db3`, then replayed here and rechecked. **Branch:** `worktree-admin-rest`
+  (plan), `worktree-admin-rest-run` (executor). **Push target:** `glw907/cairn-cms`.
 - **Design note:** `docs/internal/plans/2026-11-01-admin-rest-design.md`.
 - **Estimate:** design 190, ceiling 380, this plan's path 310 at the observed rate (see "Order"). It is
   over the design's estimate and under the ceiling, so no item is cut.
@@ -63,9 +64,8 @@ or is plain repo work. A refusal is a stop: write it to STATUS and wait. Never r
 | Local Playwright run on the heavy lane, stopping any test server the session started | T1 | `autoMode.allow` covers stopping a test process the session started. |
 | Conductor merge | close | Geoff's merge word. |
 
-Nothing here runs a remote `wrangler d1` command, touches a credential, or reads a secret. The Playwright
-server and T9's render read apply `MEMBER_DB` with `--local` only. No path on the `auth-data` map
-changes. If ergonomics 15's security read needs one, the conductor merges with the smoke, per the sheet.
+Nothing here runs a `wrangler d1` command, touches a credential, or reads a secret. No path on the
+`auth-data` map changes. If ergonomics 15's security read needs one, the conductor merges with the smoke, per the sheet.
 
 ## Standing answers
 
@@ -104,24 +104,17 @@ and write one question to `docs/STATUS.md`. #237, #173, and #193 are never cut.
 
 ## Shared hunks
 
-Read from the diffs of #178 (`auth-data`) and #180 (`tool-gates`).
+PR #178 and PR #180 are on this base, so their hunks are no longer shared. Open work that could touch these
+files:
 
-| File | Sibling | Hunks | This plan |
-|---|---|---|---|
-| `src/lib/sveltekit/guard.ts` | #178 | ~207, ~249, ~420 | `:550-556`, distant. |
-| `src/lib/sveltekit/preview.ts` | #178 | ~420 | `:113-143`, `:189-212`, distant. |
-| `src/lib/diagnostics/conditions.ts`, `tool/internal/spine/conditions.json` | #178 | 35, 54, 95, 179, 196 | `:173` and a new entry. Regenerate the mirror after a merge. |
-| `src/lib/log/events.ts`, `events-list.ts`, `tool/internal/logs/events.go`, `skills/cairn-extending-a-site/references/log-events.md` | #178 | Adds rows | Adds rows. Keep both on a conflict. |
-| `src/lib/admin/CairnAdmin.svelte` | #178 | Small | T2: the `form` prop at `:34-49` and six view mounts. |
-| `tool/internal/doctor/check.go`, goldens, `check_roles.go` | #180 | Adds `SkipTitle` and a test, rewrites goldens | T6 adds one check. See T6. |
-| `CHANGELOG.md`, `tool/CHANGELOG.md`, `BACKLOG.md`, `api-surface.md` | both | Appends | Merge chores. |
+- PR #181 (`p1-p8`) changes `CairnAdminShell.svelte` at `:31` and `:83`. T5 edits `:18`, `:375`, `:885`, `:1030`,
+  `:1038`, and `:1047`, all distant. `BACKLOG.md` is a merge chore.
+- `content-rest` (BACKLOG #179, #181) shares `EditPage.svelte:1951` and `:1956`, `CairnMediaLibrary.svelte`,
+  `content-routes-entry-write.ts`, and `MediaHeroField.svelte:607`, and had no plan on disk at this writing. The
+  conductor sets the merge order, and T5 keeps its string edits to the lines it names.
 
-`content-rest` (#179, #181) shares `EditPage.svelte:1951` and `:1956`, `CairnMediaLibrary.svelte`,
-`content-routes-entry-write.ts`, and `MediaHeroField.svelte:607`, and has no plan on disk yet. The
-conductor sets the merge order, and T5 keeps its string edits to the lines it names.
-
-Once #180 merges, `Consumers must:` lines follow its grammar: one bare line at column 0 or two spaces, whose
-body is `nothing.` or an action ending in a period.
+`Consumers must:` lines follow PR #180's grammar, enforced by `check:consumers-must`: one bare line at column 0
+or two spaces, whose body is `nothing.` or an action ending in a period.
 
 ## Order
 
@@ -143,10 +136,7 @@ T5's stories.
 Every dispatch to `cairn-implementer` carries:
 
 - The task's text, and this plan's path.
-- `npm --prefix packages/create-cairn-site run prepack` in the setup line, until #180 merges.
-- For a task under `src/lib/admin`, the path
-  `.claude/skills/cairn-following-admin-design/references/admin-design-system.md` to read directly, since
-  the skill is path-gated until #213 lands.
+- For a task under `src/lib/admin`, the skill `cairn-following-admin-design`.
 - For a task under `tool/`, `standards:go-conventions`.
 - For a task that changes behavior a page describes, `cairn-writing-docs` case A. Docs change with the code.
 
@@ -220,15 +210,15 @@ Every dispatch to `cairn-implementer` carries:
   - `content-routes-entry-read.ts:69`: `saved: boolean;`, `:71` `renamed: boolean;`, `:114` `publishedFlash: boolean;`, `:123` `discardedFlash: boolean;`
   - `:477`: `saved: event.url.searchParams.get('saved') === '1',`
   - `content-routes-shared.ts:41-42`: `/** The one-line human summary every content action failure carries. */` then `error?: string;`
-  - `CairnAdmin.svelte`: `form?: | (ContentFormFailure & { sent?: boolean; ...`
+  - `CairnAdmin.svelte:42-43`: `| (ContentFormFailure & {` then `outcome?: 'sent' | 'send-error' | 'throttled' | RevertOutcome['outcome'];`
 - **Mechanism:** Each success redirect sets exactly one of the four parameters
   (`content-routes-entry-write.ts:353-354,448,607`, `content-routes-entry-destructive.ts:489`), so one field
   holds all of them. The settings and nav `saved` flags are a separate shape and stay. `form` in
-  `CairnAdmin.svelte:41-49` has one arm, and it also carries success shapes with no `error`
-  (`{ sent }`, `{ ok: true }`, a `RevertOutcome`). So that prop's type moves to
+  `CairnAdmin.svelte:41-48` has one arm, and it also carries success shapes with no `error`
+  (`{ ok: true }`, a `RevertOutcome`). So that prop's type moves to
   `Partial<ContentFormFailure> & { ... }`, and each view mount typed `ContentFormFailure | null` narrows with a
-  cast, the way `:79` and `:104` already do: ConceptList, EditPage, NavTree, CairnMediaLibrary, CairnTidySettings,
-  VocabularyAdmin. Rewrite the doc comments at `content-routes-shared.ts:31-37` ("every field optional") and
+  cast, the way the login and history mounts already do: ConceptList, EditPage, NavTree, CairnMediaLibrary,
+  CairnTidySettings, VocabularyAdmin. Rewrite the doc comments at `content-routes-shared.ts:31-37` ("every field optional") and
   `CairnAdmin.svelte:34-40`. If a real `fail()` carries no `error`, give it one.
 - **Test:** Update the tests that pin the booleans. Add a load test for each parameter and for none, asserting
   the union value.
@@ -305,7 +295,7 @@ Every dispatch to `cairn-implementer` carries:
 
 **Ergonomics 15.** A local 403 names the fix.
 
-- **Current source:** `guard.ts:550-556`: `const ruled = hasAccessRule(access, resolvedTarget);`, then
+- **Current source:** `guard.ts:551-557`: `const ruled = hasAccessRule(access, resolvedTarget);`, then
   `const reason: AccessRefusedReason = ruled ? 'role' : noRuleReason(access, resolvedTarget);`, then
   `throw error(403, 'Access denied');`. `section-action.ts`, in `deny`: `return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });`.
   `examples/showcase/src/routes/admin/+error.svelte:15-20`: a 403 always shows the fixed copy
@@ -315,8 +305,7 @@ Every dispatch to `cairn-implementer` carries:
   request and in both content modes (`handle.ts:176`), and `ambient.ts:61` states "a production request leaves it
   unset". Neither the flag nor `isDeployedHost` can witness here: under `npm run dev` the flag reaches only
   `process.env` (`dev-gate.ts:30`), and a real site's `PUBLIC_ORIGIN` forces the deployed verdict on localhost
-  (`handle.ts:155-157`). Adding the flag to the handle's `doubles` would make `auth-channel/factory.ts:123` refuse
-  a local sign-in, so don't. `cairnBackend?.ephemeral` is the wrong test, since the fixtures backend leaves it unset.
+  (`handle.ts:155-157`). `cairnBackend?.ephemeral` is the wrong test, since the fixtures backend leaves it unset.
   So `handle.ts` and `App.Locals` don't change.
 
   One exported-from-module helper in `src/lib/dev-flag.ts` (not a package entry), so no `auth-data` path changes,
@@ -514,8 +503,8 @@ renamed word follows, including `add-an-image.md:77`.
      rewrite the false sentence at `:186`: seven conditions, and `cairn doctor` reports two of them.
   8. `tool.yml`'s two `paths` lists gain `migrations/**` and `templates/waymark/migrations/**`. The workflow's header says a change to a path a
      Go check depends on always triggers it, and without these the test below never runs on the change it guards.
-  9. `tool-gates` adds `SkipTitle` to `Check`. If `git grep -n SkipTitle origin/main -- tool/internal/doctor/check.go` prints a line at
-     dispatch, merge `main` first and declare it. Otherwise it's the merge chore: `TestEveryCheckDeclaresASkipTitle` names it.
+  9. The new check declares `SkipTitle`, the subject alone: `tool/internal/doctor/check.go:18-20` holds the field, and
+     `TestEveryCheckDeclaresASkipTitle` fails without it.
 - **Test:** Table test, one row per state above, plus: an opt-in file absent from the site passes; custom `migrations_dir` in TOML and JSONC
   reads that folder, with TOML's key before `binding`; absent key reads `migrations`. One test reads the repo's real `../../../migrations` and
   `../../../templates/waymark/migrations`, the way `permissions_test.go:14` reads a repo file: each name in the opt-in constant exists in the
@@ -617,7 +606,7 @@ renamed word follows, including `add-an-image.md:77`.
    `standards:go-conventions`. `standards:web-auth-security-reviewer` reads ergonomics 15 by judgment, and also reads T3's `requireEngineAccess`
    move: `target.concept` from a route param now reaches the `auth.access.refused` log unvalidated. One batched fix chain follows.
 4. Render read in the main loop. Run `npm run package`, confirm port 4391 is free as in T1, then from `examples/showcase` start in the background
-   `VITE_CAIRN_E2E=1 npm run build && npx wrangler d1 migrations apply MEMBER_DB --local && npx wrangler dev --port 4391 --inspector-port 4392 --var CAIRN_DEV_BACKEND:1 --var PUBLIC_ORIGIN:http://localhost:4391`.
+   `VITE_CAIRN_E2E=1 npm run build && npx wrangler dev --port 4391 --inspector-port 4392 --var CAIRN_DEV_BACKEND:1 --var PUBLIC_ORIGIN:http://localhost:4391`.
    Read `/admin/posts` (filters, a Details pane with rows), an entry's edit page, `/admin/media`, the Publish all confirmation with a title,
    `/admin/history`, and `/admin/settings` at 320. Dispatch `standards:visual-verifier` on anything that moved. Stop the server.
 5. A red visual baseline: `gh workflow run e2e.yml --ref worktree-admin-rest-run -f update_snapshots=true`. Pull the bot's commit, read the
@@ -647,3 +636,6 @@ guessed title rather than a real one.
 - `standards:backlog-sweep`'s full-sweep trigger fires on items filed days ago.
 - #241: the fast lane doesn't select the tool gate on an events change.
 - The `Explore` sweep agent had no Grep or Glob in this run.
+- PRs #178 and #180 merged during the plan's review, so its base moved and `BACKLOG.md` conflicted. The plan's commits
+  were unpushed, so they replayed on `main`, and the citations were rechecked. A planner's guard against this is
+  fetching `main` once more before the fold.

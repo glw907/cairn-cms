@@ -1,0 +1,56 @@
+Conductor hand-over for `cairn-cms-9b`: cairn-cms slice `admin-rest` (class `ordinary` plus `runner`).
+
+Plan: docs/internal/plans/2026-11-01-admin-rest-plan.md on branch `worktree-admin-rest`, pushed to glw907/cairn-cms, based on `main` at 16a081668. Path 310 minutes against a design estimate of about 190 and a ceiling of 380. No cut. Absolute copy of each file, in the planner's worktree:
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/admin-rest/docs/internal/plans/
+
+Three things differ from your launch prompt. Check them before the launch.
+
+- Executor model. Your prompt says Sonnet medium unless the sheet names otherwise, and the sheet's pass 5 names Opus high, because of shape 20 and #145. `tidy-lists` took #145 and shape 20 stays here, so the line below launches Opus high, with pair tasks on Sonnet. If you read it the other way, change the two flags, and T2 keeps `model: opus`.
+- Class. T6 edits two `runner` paths: `scripts/checks/tool-check-ids.mjs` and the `paths` lists in `.github/workflows/tool.yml`. Without the workflow edit, T6's new Go test wouldn't run on the change it guards. The session's `gh` token carries `workflow`. A push refusal is a stop.
+- T5 edits `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, which the sheet's `autoMode` line covers.
+
+Pre-launch checks (run sheet "Sequence and launch"):
+
+- In the main checkout /var/home/glw907/Projects/cairn-cms: on `main`, `git fetch`, and `git rev-list --count HEAD..origin/main` prints 0.
+- `pgrep -f .claude/worktrees/admin-rest-run` is empty and `git status` is clean, with no warm uncommitted code.
+- No open brief in docs/internal/consultations/.
+- The plan's pre-flight has no step for Geoff and no credential. It edits no `CLAUDE.md` and no `.claude/rules/`, so no docs eval run is owed.
+
+Executor launch, from the main checkout:
+
+cd /var/home/glw907/Projects/cairn-cms && claude --bg --model claude-opus-5-5 --effort high --name cairn-cms-admin-rest "$(cat /var/home/glw907/Projects/cairn-cms/.claude/worktrees/admin-rest/docs/internal/plans/2026-11-01-admin-rest-executor-prompt.txt)"
+
+Prompt file: /var/home/glw907/Projects/cairn-cms/.claude/worktrees/admin-rest/docs/internal/plans/2026-11-01-admin-rest-executor-prompt.txt
+
+The executor names `cairn-cms-9b` as its one instruction source. It works in a worktree it enters as `admin-rest-run`, merged from `origin/worktree-admin-rest`, and it ends at PR-ready. It merges `main` only when you tell it to. It never bumps or publishes, and it finalizes its `## Unreleased` entries.
+
+Merge order: yours, across the slices. T1 lands BACKLOG #237, which is High and silently deletes content, so this slice shouldn't wait on the others if the order allows.
+
+- If another slice merged first: tell the executor to merge `origin/main`, keep both `## Unreleased` entries, run `npm run emit:template` and `npm run check:surface -- --update`, regenerate the doctor goldens from `tool/` (`go test ./internal/doctor -run TestGolden -update`), and rerun the fast lane. A conflicting PR fires no `pull_request` CI, so give that word at the first conflict.
+- Known neighbors: PR #181 (`p1-p8`) changes `CairnAdminShell.svelte` at `:31` and `:83`, distant from T5's lines. `content-rest` shares `EditPage.svelte:1951` and `:1956`, `CairnMediaLibrary.svelte`, `content-routes-entry-write.ts`, and `MediaHeroField.svelte:607`. It had no plan on disk at this writing, so whichever lands second merges the strings by hand.
+- Two strings in `content-rest`'s reach follow #193's table: if it lands first, T5's rows for those lines read as a merge, and if it lands second, its executor keeps the ruled words.
+- `check:consumers-must` is live. This slice's one line is `Consumers must: read data.flash in place of saved, renamed, publishedFlash, and discardedFlash.`
+
+BACKLOG numbers: a new item takes the next free number on `main` at merge. The PR names its placeholders. Two new items are planned: the Discard and Rename double-submit gap, and `help` on a block attribute.
+
+Merge conditions, under Geoff's merge word in the sheet's Brief: green CI on the head, its e2e job included, and a folded whole-branch review with no open finding, record packet first. No `auth-data` path: confirm `git diff 16a081668...HEAD --name-only` touches none of the map's paths after the `main` merge settles. If ergonomics 15's security read needs one, merge with the smoke, per the sheet. T1's failing proof must be in the PR: the assertion and the SHA. Confirm both conditions yourself, then queue one record packet in the background and merge once the queue accepts it. The word covers the PR only, never a publish. Docs pages merge on the fact-check alone.
+
+The packet's Background carries:
+
+- #237's side effect: a required control left empty in a collapsed row now blocks the save and opens its row, where the row used to be deleted.
+- Every repeatable row body now stays mounted, so a collapse keeps typed edits.
+- The `EditData.flash` and required `ContentFormFailure.error` public type changes, with `Consumers must:` on the first, and `CairnAdmin`'s `form` prop on `Partial<ContentFormFailure>`.
+- #190's reorder narrows the concept probe and doesn't close it.
+- #122 reopened from `duplicate of #115`, and #115 and #116 moved to `## Won't do` under `cleanup-custom-recipes`.
+- Ergonomics 15 reads `event.locals.cairnBackend`, not the flag and `isDeployedHost` the audit named, because neither witnesses under `npm run dev`. `dev-flag-strict-read` stands with an added line. `+error.svelte` gains one branch in the chassis, so the template follows.
+- Ergonomics 19 adds `config.migrations-missing`, severity `warning`, and an opt-in constant of `0001_roles`, `0002_audit`, and `0003_preview`. It proves a file was copied, not applied.
+- #193's confirmation shows a real title for a published entry and the id for a never-published one, by the sheet's reversible-question row. Reading each branch's file was the alternative: one subrequest per entry.
+- #180 claim 4 removes the library's Describe and Decorative radios.
+- Set aside to pass 7: #180 claim 5 and #238's server-refusal half, both in ROADMAP's refused-action cluster, and #238's paste and trim, as a product question.
+- #173's rename table, and that cairn.pub serves these files at `/repro-assets`, so its next pin bump picks up the two renamed PNGs.
+
+Add whatever the PR's `## Decisions` lists beyond these.
+
+Sheet notes for you, no action owed here: pass 5 ends with this slice. Pass 7's refused-form cluster gains #180's claim 5 and #238's remainder, and both stay open in `BACKLOG.md` with `Placement: Pass 7`. The planner's commits were replayed on `main` when PRs #178 and #180 merged during review, and every citation was rechecked at 16a081668. The fold agent and the reviewer ran no repo test, since the planning worktree has no `node_modules`.
+
+After the merge: pull the checkout per `pass-core`, delete the branches `worktree-admin-rest` and `worktree-admin-rest-run` and both worktrees, and update STATUS in a batch. No bump and no publish.

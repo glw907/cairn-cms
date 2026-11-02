@@ -3,8 +3,8 @@ import * as sveltekit from '../../lib/sveltekit/index.js';
 import * as pkg from '../../lib/index.js';
 
 describe('nav exports', () => {
-  it('the sveltekit barrel exports createNavRoutes', () => {
-    expect(typeof sveltekit.createNavRoutes).toBe('function');
+  it('the sveltekit barrel hides createNavRoutes', () => {
+    expect('createNavRoutes' in sveltekit).toBe(false);
   });
 
   it('the package entry exports the read-side nav helpers', () => {

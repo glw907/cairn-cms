@@ -88,7 +88,7 @@ const CONSUMER_DEFINED_CLASSES = new Set([
 // An inline span whose first word is the audit CLI's own binary name is a command example
 // (`` `npx cairn-audit` ``, `` `cairn-audit --rule list-role` ``), never a class list; every
 // word in both is otherwise class-shaped and would false-positive without this exclusion.
-const CLI_INVOCATION_PREFIXES = new Set(['npx', 'cairn-audit']);
+const CLI_INVOCATION_PREFIXES = new Set(['npx', 'npm', 'cairn-audit']);
 
 function lineAt(text: string, offset: number): number {
   let line = 1;
@@ -171,6 +171,12 @@ describe("the skill's own exemplars compile", () => {
     // A guard against the extraction silently finding nothing: a regex or directory rename that
     // quietly stops scanning would otherwise leave this suite green with zero assertions made.
     expect(candidates.length).toBeGreaterThan(0);
+  });
+
+  it('reads an inline command example as a command, never a class list', () => {
+    for (const span of ['npx cairn-audit', 'cairn-audit --rule list-role', 'npm run check']) {
+      expect(extractCandidates('x.md', `Run \`${span}\` here.`), span).toEqual([]);
+    }
   });
 
   it('resolves every exemplar class token against the built admin sheet', () => {

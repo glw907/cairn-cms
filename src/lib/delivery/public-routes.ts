@@ -167,7 +167,6 @@ export interface EntryDataOverrides {
  *  function with no overrides, so its output is unchanged; `loadPreview` is the first
  *  caller to pass `overrides`, substituting the marking resolvers and a request-time media
  *  resolver in place of the build's throwing pair and the site's committed `media.json`.
- * @beta
  */
 export async function composeEntryData(
   config: PublicRoutesConfig,

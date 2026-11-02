@@ -172,6 +172,29 @@ export function collectReachableNames(checker, rootTypes, ownDir) {
       if (origin?.types) for (const member of origin.types) visit(member, depth + 1);
       return;
     }
+    // A deferred conditional's arm is often an indexed access over a mapped type, and a generic
+    // mapped type has no enumerable properties; its template is only reachable through its node.
+    if ((type.flags & ts.TypeFlags.IndexedAccess) !== 0) {
+      const access = /** @type {import('typescript').IndexedAccessType} */ (type);
+      visit(access.objectType, depth + 1);
+      visit(access.indexType, depth + 1);
+      return;
+    }
+    if (((/** @type {import('typescript').ObjectType} */ (type)).objectFlags & ts.ObjectFlags.Mapped) !== 0) {
+      const mappedNode = /** @type {{ declaration?: import('typescript').MappedTypeNode }} */ (type).declaration;
+      if (mappedNode?.type) visit(checker.getTypeFromTypeNode(mappedNode.type), depth + 1);
+    }
+    // A deferred conditional (`S extends X<infer A> ? Arm : Other`, left unresolved while `S` is
+    // generic) is neither a union nor an object, so its arms are only reachable through the
+    // declaration's own type nodes.
+    if ((type.flags & ts.TypeFlags.Conditional) !== 0) {
+      const node = /** @type {import('typescript').ConditionalType} */ (type).root?.node;
+      if (node) {
+        visit(checker.getTypeFromTypeNode(node.trueType), depth + 1);
+        visit(checker.getTypeFromTypeNode(node.falseType), depth + 1);
+      }
+      return;
+    }
     // An array type (`AdvisoryNotice[]`) is itself a generic type reference (`Array<AdvisoryNotice>`),
     // so its element type falls out of the generic type-arguments walk below; no separate case needed.
     // An index signature (`{ [x: string]: MediaUsageInfo }`) is not a property `getPropertiesOfType`

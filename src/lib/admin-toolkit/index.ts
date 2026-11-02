@@ -17,7 +17,6 @@
 export {
   formatCivilDate,
   type FormatCivilDateOptions,
-  type FormatTimestampOptions,
   type ItemLabel,
 } from './format.js';
 export {

@@ -3,9 +3,10 @@
 // order, and the honest gate note renders; when enabled-with-key the convention list renders with the
 // check-and-tint toggles and the radiogroup variant choosers, and a toggle updates the summary
 // role="status" region. The "reset to safe default" control returns the safe resting state.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import CairnTidySettings from '../../lib/admin/CairnTidySettings.svelte';
+import { enhanceRuns, resetEnhance, settleEnhance } from './_app-forms.js';
 import { defaultTidyConventions, type TidyConventions } from '../../lib/nav/site-config.js';
 import type { SettingsData } from '../../lib/sveltekit/content-routes.js';
 
@@ -220,10 +221,33 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     // read back into `data.error`; the shell must wire `form` through for the message to reach here.
     const screen = await render(CairnTidySettings, {
       data: data(),
-      form: { error: 'These settings changed since you opened them.' },
+      form: { error: 'Someone else changed these settings. Saving again replaces their change.' },
     });
     const alert = screen.container.querySelector('.alert-error');
-    expect(alert?.textContent).toContain('These settings changed since you opened them.');
+    expect(alert?.textContent).toContain('Someone else changed these settings. Saving again replaces their change.');
+  });
+});
+
+describe('CairnTidySettings: a refused save', () => {
+  beforeEach(resetEnhance);
+
+  it('answers in place: the changed toggle survives, the alert takes focus, Save frees up', async () => {
+    const screen = await render(CairnTidySettings, { data: data(), form: null });
+    const toggle = screen.getByRole('button', { name: 'Oxford comma' });
+    await toggle.click();
+    const save = screen.container.querySelector<HTMLButtonElement>('form button[type="submit"]')!;
+    save.click();
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    expect(save.disabled).toBe(true);
+    expect(save.getAttribute('aria-busy')).toBe('true');
+
+    settleEnhance({ type: 'failure', status: 400, data: { error: 'Those conventions could not be saved.' } });
+    await screen.rerender({ data: data(), form: { error: 'Those conventions could not be saved.' } });
+    const alert = screen.container.querySelector<HTMLElement>('.alert-error')!;
+    expect(alert.getAttribute('tabindex')).toBe('-1');
+    await expect.poll(() => document.activeElement).toBe(alert);
+    await expect.element(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => save.disabled).toBe(false);
   });
 });
 

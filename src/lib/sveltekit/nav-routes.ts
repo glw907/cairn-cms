@@ -167,7 +167,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
       log.info('commit.succeeded', commitFields);
     } catch (err) {
       return commitFailure(commitFields, err, {
-        error: 'These settings changed since you opened them. Reload and reapply your edits.',
+        error: 'Someone else changed these settings. Saving again replaces their change. To see it, reload, which drops your edits.',
       } satisfies ContentFormFailure);
     }
 

@@ -93,6 +93,7 @@ island.
   import { createTidyController } from './tidy-controller.svelte.js';
   import { createFigureEditor } from './figure-editor.svelte.js';
   import ShareLinkPanel from './ShareLinkPanel.svelte';
+  import { FAILURE_NOTICE } from './refusal.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -188,7 +189,6 @@ island.
   // The sign-in page an expired session's redirect pointed at, offered as a new-tab link beside the
   // notice so the author can sign in again without leaving the unsaved text. Empty otherwise.
   let signInHref = $state('');
-  const FAILURE_NOTICE = 'That did not go through. Your text is still here; please try again.';
   const SESSION_ENDED_NOTICE = 'Your session ended. Please sign in again in a new tab, then save. Your text is still here.';
   /** Resolve a redirect result's location against this page. `href` is the absolute URL the
    *  navigation must use, so the value checked is the value followed. `onConcept` says whether it

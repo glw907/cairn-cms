@@ -205,6 +205,12 @@
 
 ### Changed
 
+- **The `/delivery` response helpers take a `build` prefix.** They read `buildRssResponse`,
+  `buildJsonFeedResponse`, `buildSitemapResponse`, `buildRobotsResponse`, and `buildMarkdownResponse`, and
+  their behavior doesn't change.
+
+  Consumers must: rename `rssResponse` to `buildRssResponse`, `jsonFeedResponse` to `buildJsonFeedResponse`, `sitemapResponse` to `buildSitemapResponse`, `robotsResponse` to `buildRobotsResponse`, and `markdownResponse` to `buildMarkdownResponse`.
+
 - **`routing: 'dated'` replaces `routing: 'feed'`, and `RoutingRule.inFeeds` is gone.** The shorthand
   names what the concept is, a routable page with a date, and not a feed the engine never built. A
   site's feed route has always chosen the members, so no feed changes.
@@ -293,7 +299,7 @@
 
   Consumers must: read `runtime.email` in place of `runtime.sender`, and read `render`, `icons`, and `media` from the adapter in place of `runtime.render`, `runtime.icons`, and `runtime.assets`.
 
-- **`sitemapResponse` throws past 50,000 URLs.** The sitemaps.org limit for one file is 50,000 URLs, and
+- **`buildSitemapResponse` throws past 50,000 URLs.** The sitemaps.org limit for one file is 50,000 URLs, and
   the error names the count: `cairn: the sitemap has <n> URLs, and a sitemap file may list 50,000.
   List fewer URLs in this route.` A site under the limit sees no change.
 
@@ -1086,6 +1092,12 @@
   Consumers must: expect exit 1 from `cairn-manifest` on an invalid non-draft entry, and fix the entry before the next step of a script that runs it.
 
 ### Removed
+
+- **Dead internal code is gone.** `generateComponentReference`, `deriveTagUsage` with `TagUsageRow`,
+  `fenceDepths`, `markFirstList`, and the `ADMIN_CSS_SAFELIST` module had no production reader. None was
+  on the public surface, and `cairn-admin.css` builds byte-identical without them.
+
+  Consumers must: nothing.
 
 - **Each public name imports from one subpath.** The 107 re-exports are gone. `/delivery`, `/sveltekit`, and `/media` no longer carry the root's content-model, adapter, and backend types, and root no longer carries `MediaRef`, the `NavLayout` family, `PublishActionEntry`, or `IslandRegistry`. A type a signature names on one subpath may import from another. `check:surface` fails any name on two subpaths, `scripts/checks/check-surface-reexports.json` is deleted, so no record can excuse one, and the leak gate's per-subpath renderer model is retired.
 

@@ -254,7 +254,9 @@ export interface ComponentValues {
 export function emptyValues(def: ComponentDef): ComponentValues {
   const attributes: Record<string, string | boolean> = {};
   for (const [name, field] of Object.entries(def.attributes ?? {})) {
-    attributes[name] = field.default ?? (field.type === 'boolean' ? false : '');
+    const d = field.default;
+    attributes[name] =
+      typeof d === 'number' ? String(d) : typeof d === 'object' || d === undefined ? (field.type === 'boolean' ? false : '') : d;
   }
   const slots: Record<string, string | string[]> = {};
   for (const slot of def.slots ?? []) {

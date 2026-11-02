@@ -1,6 +1,6 @@
 // cairn-cms: the field descriptor union (Contract v2's fieldset primitive). Each interface below is a
-// leaf or container's plain-data shape (label, constraints, a type discriminant); `defineFieldset()` reads
-// this record to derive the validator, and the editor form reads it to render inputs. The `fields`
+// leaf or container's plain-data shape (label, constraints, a type discriminant); the fieldset derives the validator from
+// this record, and the editor form reads it to render inputs. The `fields`
 // constructor namespace captures each call site's literal options with a `const` type parameter, so a
 // concept's literals (a `select`'s option union, `required: true`) survive into the descriptor
 // type for `Infer` to read; the runtime value is unchanged.
@@ -24,19 +24,22 @@ interface FieldBase {
    *  "<label> is required".
    */
   required?: boolean;
+}
+/** The `default` option, typed to the value the field stores. */
+interface WithDefault<T> {
   /**
    * The initial value a new entry's create form opens with. Never applied to an existing or
    *  hand-written file, and never overrides a value already in the frontmatter. A `date` field also
    *  accepts `'today'`, which resolves to the request's UTC date as `YYYY-MM-DD`. An empty string or
    *  `false` writes no key.
    */
-  default?: string | boolean;
+  default?: T;
 }
 /**
  * A single-line text input.
  * @public
  */
-export interface TextField extends FieldBase {
+export interface TextField extends FieldBase, WithDefault<string> {
   type: 'text';
   /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `minlength` (unless `length` is set). */
   min?: number;
@@ -48,7 +51,7 @@ export interface TextField extends FieldBase {
    * A regular-expression source string the value must match, tested unanchored and with no flags,
    *  so it needs an explicit `^` and `$` to match the whole value (unlike the HTML `pattern`
    *  attribute). Enforced at the save, never rendered as an input attribute. A malformed source
-   *  throws when `defineFieldset` runs.
+   *  throws at declaration.
    */
   pattern?: string;
 }
@@ -56,7 +59,7 @@ export interface TextField extends FieldBase {
  * A multi-line text input.
  * @public
  */
-export interface TextareaField extends FieldBase {
+export interface TextareaField extends FieldBase, WithDefault<string> {
   type: 'textarea';
   /** The input's height in text rows. Defaults to 3. */
   rows?: number;
@@ -73,7 +76,7 @@ export interface TextareaField extends FieldBase {
  * A numeric input.
  * @public
  */
-export interface NumberField extends FieldBase {
+export interface NumberField extends FieldBase, WithDefault<number> {
   type: 'number';
   /** The smallest value allowed, also rendered as the input's `min` attribute. */
   min?: number;
@@ -86,7 +89,7 @@ export interface NumberField extends FieldBase {
  * A single-choice input over a closed option list.
  * @public
  */
-export interface SelectField extends FieldBase {
+export interface SelectField extends FieldBase, WithDefault<string> {
   type: 'select';
   /**
    * The closed set of allowed values. The control carries a leading empty choice that stores no
@@ -98,7 +101,7 @@ export interface SelectField extends FieldBase {
  * A multiple-choice input.
  * @public
  */
-export interface MultiselectField extends FieldBase {
+export interface MultiselectField extends FieldBase, WithDefault<readonly string[]> {
   type: 'multiselect';
   /**
    * The allowed values; omitted leaves the set open. When set, a value outside it fails the save
@@ -126,14 +129,14 @@ export interface MultiselectField extends FieldBase {
  * whitespace: a root-relative path or a `mailto:` value fails the save.
  * @public
  */
-export interface UrlField extends FieldBase {
+export interface UrlField extends FieldBase, WithDefault<string> {
   type: 'url';
 }
 /**
  * A calendar-date input.
  * @public
  */
-export interface DateField extends FieldBase {
+export interface DateField extends FieldBase, WithDefault<string> {
   type: 'date';
   /** Earliest allowed date as YYYY-MM-DD. Enforced at the save, and an entry's form renders it as the input's `min`. */
   min?: string;
@@ -144,7 +147,7 @@ export interface DateField extends FieldBase {
  * A checkbox; absent means false.
  * @public
  */
-export interface BooleanField extends FieldBase {
+export interface BooleanField extends FieldBase, WithDefault<boolean> {
   type: 'boolean';
 }
 /**
@@ -152,7 +155,7 @@ export interface BooleanField extends FieldBase {
  * picker when the adapter supplies an icon set and a plain text input when it does not.
  * @public
  */
-export interface IconField extends FieldBase {
+export interface IconField extends FieldBase, WithDefault<string> {
   type: 'icon';
 }
 /**
@@ -162,12 +165,14 @@ export interface IconField extends FieldBase {
  */
 export interface ImageField extends FieldBase {
   type: 'image';
+  /** Not accepted: an image has no default value. */
+  default?: never;
   /** Whether this field feeds the social-card image. */
   seo?: boolean;
 }
 /**
  * A group of leaf fields, stored as a nested object. Holds only leaves, never another container, a
- * `reference`, or an `seo` image; any of those throws when `defineFieldset` runs. All-empty optional
+ * `reference`, or an `seo` image; any of those throws at declaration. All-empty optional
  * leaves omit the key, and a required empty group fails the save.
  * @public
  */
@@ -178,6 +183,8 @@ export interface ObjectField extends Omit<FieldBase, 'label'> {
    *  itemLabel), so it may omit this; a top-level object supplies it for the group legend.
    */
   label?: string;
+  /** Not accepted: an object has no default value. */
+  default?: never;
   /** The leaf fields this group holds, keyed by frontmatter sub-key. */
   fields: Record<string, FieldDescriptor>;
 }
@@ -186,7 +193,7 @@ export interface ObjectField extends Omit<FieldBase, 'label'> {
  * inside an `object`. A value that is not a well-formed entry id fails the save.
  * @public
  */
-export interface ReferenceField extends FieldBase {
+export interface ReferenceField extends FieldBase, WithDefault<string> {
   type: 'reference';
   /**
    * The concept whose entries this field references. A name that no concept declared under
@@ -204,6 +211,8 @@ export interface ReferenceField extends FieldBase {
  */
 export interface ArrayField extends FieldBase {
   type: 'array';
+  /** Not accepted: an array has no default value. */
+  default?: never;
   /** The descriptor each list element conforms to: a leaf, or a flat object of leaves. */
   item: FieldDescriptor;
   /**
@@ -269,10 +278,7 @@ export const fields = {
   reference: <const O extends Omit<ReferenceField, 'type'>>(o: O): ReferenceField & O => ({ type: 'reference', ...o }),
   /**
    * A repeatable field over one item descriptor, preserving the item type for inference. The item is
-   *  a leaf, or a flat object of leaves; `defineFieldset` rejects deeper nesting at declaration.
+   *  a leaf, or a flat object of leaves; the check rejects deeper nesting at declaration.
    */
-  array: <const I extends FieldDescriptor, const O extends Omit<ArrayField, 'type' | 'item'>>(
-    item: I,
-    o?: O,
-  ): ArrayField & { item: I } & O => ({ type: 'array', item, ...(o as O) }),
+  array: <const O extends Omit<ArrayField, 'type'>>(o: O): ArrayField & O => ({ type: 'array', ...o }),
 };

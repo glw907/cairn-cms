@@ -14,7 +14,7 @@ import { error } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { isValidId } from '../content/ids.js';
 import { parsePendingBranch } from '../content/pending.js';
-import type { Manifest, ManifestEntry, InboundLink } from '../content/manifest.js';
+import type { Manifest, ManifestEntry, EntryRef } from '../content/manifest.js';
 import type { UsageEntry } from '../media/usage.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { requireDb } from '../env.js';
@@ -45,7 +45,7 @@ export interface ContentFormFailure {
   /** The author's edited markdown, set by a blocked `saveAction`/`publishAction` so the editor reseeds with the unsaved work. */
   body?: string;
   /** The entries whose bodies link to (or include) the refused one, set by a blocked `deleteAction`/`listDeleteAction`. */
-  inboundLinks?: InboundLink[];
+  inboundLinks?: EntryRef[];
   /** Which gate refused a blocked delete, set by `deleteAction`/`listDeleteAction`. Absent reads as `'link'`. */
   inboundKind?: 'link' | 'include';
   /** The refused entry's id, set by a blocked `deleteAction`/`listDeleteAction` so a list view marks the right row. */

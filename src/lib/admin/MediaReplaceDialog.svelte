@@ -447,7 +447,7 @@ full-page POST to `?/mediaReplace` navigates away.
             <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
               <UploadIcon class="h-6 w-6 text-primary" aria-hidden="true" />
               <span class="type-body font-medium text-base-content">Drop the new image, or upload</span>
-              <span class="type-meta">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>
+              <span class="type-meta">PNG, JPEG, WebP, GIF, or HEIC. We convert HEIC for you.</span>
               <button type="button" class="btn btn-sm btn-primary mt-1.5" onclick={() => replaceFileInput?.click()}>Choose a file</button>
               <input
                 bind:this={replaceFileInput}

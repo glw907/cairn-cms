@@ -12,7 +12,7 @@ import CairnHistory from '../../admin/CairnHistory.svelte';
 import ConceptList from '../../admin/ConceptList.svelte';
 import EditPage from '../../admin/EditPage.svelte';
 import WelcomeView from '../../admin/WelcomeView.svelte';
-import type { InboundLink } from '../../content/manifest.js';
+import type { EntryRef } from '../../content/manifest.js';
 import type { DeleteFailure } from '../../sveltekit/content-routes-entry-destructive.js';
 import { fixtureDeskPathname, fixtureEditor, fixtureEntries, fixtureSiteName } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
@@ -61,7 +61,7 @@ const historyList: ReproStory = {
 
 /** The blocked entry `publish/refusal-banner` names, and the entries whose links block it. */
 const REFUSED_ENTRY = fixtureEntries[0]!;
-const REFUSAL_INBOUND_LINKS: InboundLink[] = fixtureEntries
+const REFUSAL_INBOUND_LINKS: EntryRef[] = fixtureEntries
   .filter((entry) => entry.id !== REFUSED_ENTRY.id)
   .map((entry) => ({ concept: entry.concept, id: entry.id, title: entry.title, permalink: `/posts/${entry.id}` }));
 

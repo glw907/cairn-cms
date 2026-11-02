@@ -118,11 +118,11 @@ describe('CairnMediaLibrary grid', () => {
     expect(describedTile.querySelector('.status-chip-quiet')).not.toBeNull();
     expect(describedTile.textContent ?? '').toMatch(/described/i);
 
-    // The no-references tile carries the "Not referenced" marker; the used tile names its count.
+    // The no-references tile carries the "No references" marker; the used tile names its count.
     // The category never reads "Unused" (the rename: absence of a found reference is not proof of
     // disuse).
     const unusedTile = options.find((o) => /meadow-fence/.test(o.textContent ?? ''))!;
-    expect(unusedTile.textContent ?? '').toMatch(/not referenced/i);
+    expect(unusedTile.textContent ?? '').toMatch(/no references/i);
     expect(unusedTile.textContent ?? '').not.toMatch(/unused/i);
     expect(describedTile.textContent ?? '').toMatch(/used/i);
   });
@@ -402,7 +402,7 @@ describe('CairnMediaLibrary empty and broken states', () => {
     const screen = await render(CairnMediaLibrary, { data: fixture({ flash: 'deleted' }) });
     const strip = screen.container.querySelector('[aria-live="polite"]');
     expect(strip).not.toBeNull();
-    expect(screen.container.textContent ?? '').toContain('Asset deleted.');
+    expect(screen.container.textContent ?? '').toContain('Image deleted.');
     // The strip never steals focus.
     expect(document.activeElement).toBe(document.body);
   });
@@ -418,7 +418,7 @@ describe('CairnMediaLibrary empty and broken states', () => {
     // where the old bottom-type cast would have hidden a genuinely wrong `data` shape too.
     const data: MediaLibraryData & { flashError: string } = {
       ...fixture(),
-      flashError: 'The media manifest changed. Reload and try again.',
+      flashError: 'The media library changed. Reload and try again.',
     };
     const screen = await render(CairnMediaLibrary, { data });
     const alert = screen.container.querySelector('[role="alert"]');

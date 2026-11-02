@@ -69,7 +69,7 @@ If the site's configuration changes while you work on the list, **Save changes**
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded message is quoted exactly as the product shows it, so a contraction rule cannot rewrite it. -->
-**The site config changed since you opened it. Re-read the config and reapply your edits.**
+**These settings changed since you opened them. Reload and reapply your edits.**
 <!-- vale Microsoft.Contractions = YES -->
 
 To recover:

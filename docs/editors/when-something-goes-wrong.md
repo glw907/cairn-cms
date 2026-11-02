@@ -55,7 +55,7 @@ The following table lists the messages, what each one means, and what to do.
 |---|---|---|
 | **"Title is required"** | A field that must be filled in is empty. The message starts with the field's name. Yours may say something other than Title. Other field rules, such as a minimum length, name the field and the limit in the same way. | Fill in or fix the field, and then select **Save** or **Publish** again. Fields other than the title are in the **Details** panel. |
 | **"Pick a date for this entry."** | The entry needs a date, and the date field is empty. | Choose a date in the date field in the **Details** panel, and then save again. |
-| **"This file changed since you opened it. Re-read the draft and save again."** | The saved copy of the entry changed while your save was on its way. | Follow the steps in [An edit conflict stops your save](#an-edit-conflict-stops-your-save). |
+| **"This entry changed since you opened it. Re-read the draft and save again."** | The saved copy of the entry changed while your save was on its way. | Follow the steps in [An edit conflict stops your save](#an-edit-conflict-stops-your-save). |
 | **"Your edits are saved. Publish again."** | The site changed while your publish was running. | Select **Publish** again. |
 | **"Another entry already uses the address /posts/hello. Your edits are saved. Change the address of one of the two, then publish again."** | Another entry already has the address your entry would publish to. Yours may name a different address. Two entries can't share an address, so nothing was published. | Open the other entry and select **Change address** in its **Details** panel. If that entry has unpublished edits, publish or discard them first. Then select **Publish** again. |
 | **"This entry includes a fragment that does not exist: welcome."** | The entry includes a fragment the site doesn't have. The message names the fragment. | Remove the **Include:** chip, or include a fragment that exists. Then save again. |
@@ -86,7 +86,7 @@ To keep your work:
 
 If your save runs into an edit conflict, you see this message:
 
-**"This file changed since you opened it. Re-read the draft and save again."**
+**"This entry changed since you opened it. Re-read the draft and save again."**
 
 Your typing is safe. The editor keeps your text and shows it again after the refusal. Don't reload the page. Reloading brings back the last saved version of the draft and can lose what you typed since.
 

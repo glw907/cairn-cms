@@ -303,7 +303,7 @@ export function seedMediaLibrary(): void {
   // lists it so editLoad's linkTargets surface it in the picker; the markdown backs its editor.
   main.set('src/content/pages/about.md', '---\ntitle: About\n---\nThe showcase about page.\n');
 
-  // The content manifest on main: the seed post entry, carrying a non-empty summary (the office
+  // The content manifest on main: the seed post entry, carrying a non-empty excerpt (the office
   // triage spec asserts it) and a mediaRefs pointing at the used asset (so its where-used reads
   // published), plus the two Pass B entries whose mediaRefs point at first-light (so the usage index
   // selects them for the bulk rewrite). The Manifest shape from src/lib/content/manifest.ts.
@@ -316,7 +316,7 @@ export function seedMediaLibrary(): void {
         title: 'Hello',
         date: '2026-06-01',
         permalink: '/posts/hello',
-        summary: 'The original body.',
+        excerpt: 'The original body.',
         draft: false,
         links: [],
         mediaRefs: [SEED_MEDIA.used.hash],
@@ -327,7 +327,7 @@ export function seedMediaLibrary(): void {
         title: PASS_B_ENTRIES.emptyAlt.title,
         date: '2026-06-05',
         permalink: PASS_B_ENTRIES.emptyAlt.permalink,
-        summary: 'First run of the season.',
+        excerpt: 'First run of the season.',
         draft: false,
         links: [],
         mediaRefs: [PASS_B_MEDIA.hash],
@@ -338,7 +338,7 @@ export function seedMediaLibrary(): void {
         title: PASS_B_ENTRIES.customAlt.title,
         date: '2026-06-07',
         permalink: PASS_B_ENTRIES.customAlt.permalink,
-        summary: 'A quieter lap.',
+        excerpt: 'A quieter lap.',
         draft: false,
         links: [],
         mediaRefs: [PASS_B_MEDIA.hash],
@@ -349,7 +349,7 @@ export function seedMediaLibrary(): void {
         title: SEED_EDITOR.title,
         date: '2026-06-09',
         permalink: '/posts/copyedit',
-        summary: SEED_EDITOR.body,
+        excerpt: SEED_EDITOR.body,
         draft: false,
         links: [],
         mediaRefs: [],
@@ -360,7 +360,7 @@ export function seedMediaLibrary(): void {
         concept: 'pages',
         title: 'About',
         permalink: '/about',
-        summary: 'The showcase about page.',
+        excerpt: 'The showcase about page.',
         draft: false,
         links: [],
         mediaRefs: [],
@@ -462,7 +462,7 @@ export function seedFragments(): void {
         concept: 'fragments',
         title: fragment.title,
         permalink: `/fragments/${fragment.id}`,
-        summary: fragment.body,
+        excerpt: fragment.body,
         draft: false,
         links: [],
         mediaRefs: [],
@@ -685,7 +685,7 @@ export function seedPreviewTwin(): void {
       title: 'Hello, cairn',
       date: '2026-01-15',
       permalink: '/posts/hello',
-      summary: 'The first showcase post, and a placeholder demonstrating the hero image, gallery, FAQ, and related-post fields together.',
+      excerpt: 'The first showcase post, and a placeholder demonstrating the hero image, gallery, FAQ, and related-post fields together.',
       draft: false,
       links: [],
       mediaRefs: [PREVIEW_TWIN_HERO_HASH],

@@ -13,7 +13,7 @@ import type { IconSet } from '../render/glyph.js';
 import type { IslandRegistry } from '../islands/types.js';
 import type { BackendProvider } from '../github/backend.js';
 import type { DatePrefix } from './ids.js';
-import type { Fieldset } from './fieldset.js';
+import type { BehaviorTable, Fieldset } from './fieldset.js';
 import type { FieldDescriptor } from './fields.js';
 import type { LinkResolve } from './links.js';
 import type { RolesDeclaration } from '../auth/roles.js';
@@ -70,14 +70,13 @@ export type ValidationResult =
 export type NamedField = FieldDescriptor & { name: string };
 
 /**
- * Per-site configuration for one content concept. One `fields` fieldset, built with
- * `defineFieldset`, is the single source of truth for the editor form, the validator, and the
- * inferred frontmatter type. Generic over the fieldset so a concept's concrete type survives for
- * typed reads. A concept also declares its routing and URL policy here (`routing`, `permalink`,
+ * Per-site configuration for one content concept. One `fields` record of field descriptors is the
+ * single source of truth for the editor form, the validator, and the inferred frontmatter type.
+ * Generic over that record so a concept's concrete type survives for typed reads. A concept also declares its routing and URL policy here (`routing`, `permalink`,
  * `datePrefix`), resolved by `normalizeConcepts`.
  * @public
  */
-export interface ConceptConfig<S extends Fieldset = Fieldset> {
+export interface ConceptConfig<R extends Record<string, FieldDescriptor> = Record<string, FieldDescriptor>> {
   /**
    * Repo-relative content directory, e.g. "src/content/posts": no leading or trailing slash. The
    *  engine uses it verbatim, and `createSiteResolver` and `buildSiteManifest` refuse a `dir` outside
@@ -93,15 +92,25 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** The singular noun for the create affordances ("New post"); defaults to `label` when omitted. */
   singular?: string;
   /**
-   * The concept's fieldset: the form projection, the generated validator, and the inferred type. An
-   *  admin save writes the entry's frontmatter from the validator's output alone, so a key the
-   *  fieldset does not declare is dropped from the file at its first admin save. The engine reads
+   * The concept's field descriptors, keyed by frontmatter key: the source of the form projection, the
+   *  generated validator, and the inferred type. An admin save writes the entry's frontmatter from
+   *  the validator's output alone, so a key the record does not declare is dropped from the file at its first admin save. The engine reads
    *  `title` (an entry without one falls back to its id), `date`, `updated`, `description`,
    *  `draft`, and the head fields `image`, `robots`, and `author` by literal name, so a site that
    *  wants one to survive declares it as a field. The validator also runs when the site builds its
    *  content indexes: a non-draft entry whose frontmatter fails it fails the build.
    */
-  fields: S;
+  fields: R;
+  /**
+   * A cross-field or body-dependent check: returns field-keyed error messages, or nothing to pass. It
+   *  runs after the per-field coercion and constraints pass, never transforms the data, and is
+   *  server-only, since it may carry closures. Synchronous by design: it runs inline in the save
+   *  action's request path on every save, so a check needing external data pre-fetches it and reads
+   *  it inside the callback instead of awaiting.
+   */
+  refine?: (data: Record<string, unknown>, body: string) => Record<string, string> | undefined;
+  /** Function-valued per-field behavior, keyed by field name. Each key must name a declared field. */
+  behavior?: BehaviorTable;
   /**
    * This concept's routing: the `'feed'` (dated and in feeds), `'page'` (a routable static page), or
    *  `'embedded'` (not routable) shorthand. Omitted means `'page'`. Every routable concept's entries
@@ -117,7 +126,7 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** Date-prefix granularity for a dated concept's id-to-slug stripping. Defaults to `day`. */
   datePrefix?: DatePrefix;
   /**
-   * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
+   * Frontmatter keys to surface on each `ContentSummary.summaryFields`, so a list card reads an authored
    *  field without a per-entry detail read. Defaults to none. `defineConcept` keys this list to the
    *  declared fields, and compose throws when a key from an untyped caller is not one.
    */
@@ -405,7 +414,7 @@ export interface ConceptDescriptor {
    */
   schema: Fieldset;
   /**
-   * Frontmatter keys the index copies onto each summary's `fields` record. `normalizeConcepts`
+   * Frontmatter keys the index copies onto each summary's `summaryFields` record. `normalizeConcepts`
    *  resolves it to `[]` when a concept omits `summaryFields`.
    */
   summaryFields: string[];

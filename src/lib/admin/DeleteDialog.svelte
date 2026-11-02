@@ -9,7 +9,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';
   import { refocusDialogOrigin, resolveDialogOrigin } from './dialog-origin.js';
-  import type { InboundLink } from '../content/manifest.js';
+  import type { EntryRef } from '../content/manifest.js';
 
   interface Props {
     /** The concept this entry belongs to, e.g. "posts". Posted with the confirm. */
@@ -22,7 +22,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
      */
     singular: string;
     /** The entries that link to (or include) this one; non-empty blocks the delete. */
-    inboundLinks: InboundLink[];
+    inboundLinks: EntryRef[];
     /** Which copy family the blocked view renders: "link" for an entry other entries link to,
      *  "include" for a fragment the listed entries include. */
     inboundKind?: 'link' | 'include';

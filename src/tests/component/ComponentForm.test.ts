@@ -274,7 +274,7 @@ describe('ComponentForm attribute-arm dispatch (characterization: every FieldDes
         photo: fields.image({ label: 'Photo' }),
         meta: fields.object({ label: 'Meta', fields: {} }),
         author: fields.reference({ label: 'Author', concept: 'pages' }),
-        related: fields.array(fields.text({ label: 'Item' }), { label: 'Related' }),
+        related: fields.array({ item: fields.text({ label: 'Item' }), label: 'Related' }),
       },
     };
     const screen = await render(ComponentForm, { def, onInsert: () => {} });

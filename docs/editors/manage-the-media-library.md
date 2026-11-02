@@ -11,7 +11,7 @@ Select **Library** in the sidebar. Your site can use a different label for it. T
 ```repro
 story: media/library
 alt: Reproduction of the Media library screen in grid view, with an image count, a search box, view buttons, and three filters.
-caption: Each tile shows the image, its name, a Described or Needs alt label, and either a used count or a Not referenced flag. A line under the grid reads Showing 5 of 5.
+caption: Each tile shows the image, its name, a Described or Needs alt label, and either a used count or a No references flag. A line under the grid reads Showing 5 of 5.
 ```
 
 1. The line under the title gives the number of images in the library, how many of them the site uses, and how much storage they take. Searching and filtering don't change these totals.
@@ -31,7 +31,7 @@ The library finds an image only where a page's text or fields point to it. An im
 1. Under **Alt text**, select **Write a description** and type a short description, or select **Mark as decorative**. You can add the description later.
 1. Select **Upload image**.
 
-The library shows **Asset uploaded.** when the upload finishes. [Add an image](add-an-image.md) explains how to choose between a description and decorative.
+The library shows **Image uploaded.** when the upload finishes. [Add an image](add-an-image.md) explains how to choose between a description and decorative.
 
 ## Check which images the library accepts
 
@@ -143,7 +143,7 @@ alt: Reproduction of the delete confirmation for an image that pages still use, 
 caption: The window lists each entry that would break and keeps Delete anyway unavailable until the typed address matches.
 ```
 
-After a delete, the library shows **Asset deleted.**
+After a delete, the library shows **Image deleted.**
 
 ## Remove files that no image uses
 

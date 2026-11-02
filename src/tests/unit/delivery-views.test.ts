@@ -5,7 +5,6 @@ import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { ConceptIndex } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 
 const ORIGIN = 'https://example.com';
@@ -14,25 +13,25 @@ const descriptors = normalizeConcepts({
   posts: {
     dir: 'posts',
     routing: 'feed',
-    fields: defineFieldset({
+    fields: {
       title: fields.text({ label: 'Title' }),
       date: fields.date({ label: 'Date' }),
       topics: fields.multiselect({ label: 'Topics', taxonomy: true }),
-    }),
+    },
   },
   pages: {
     dir: 'pages',
     routing: 'page',
-    fields: defineFieldset({
+    fields: {
       title: fields.text({ label: 'Title' }),
-    }),
+    },
   },
   fragments: {
     dir: 'fragments',
     routing: 'embedded',
-    fields: defineFieldset({
+    fields: {
       title: fields.text({ label: 'Title' }),
-    }),
+    },
   },
 });
 
@@ -96,10 +95,10 @@ describe('buildSitemapView noindex', () => {
     pages: {
       dir: 'pages',
       routing: 'page',
-      fields: defineFieldset({
+      fields: {
         title: fields.text({ label: 'Title' }),
         robots: fields.text({ label: 'Robots' }),
-      }),
+      },
     },
   });
 

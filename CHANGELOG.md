@@ -873,7 +873,7 @@
 - **`parseMarkdown` and `serializeMarkdown` run on `yaml`, and `gray-matter` and `js-yaml` leave the
   engine.** The core schema keeps a date as the text it was written, so `date: 2024-03-15` reads as the
   string `2024-03-15` and an unquoted timestamp keeps its offset instead of becoming a `Date`. No code
-  path produces a `Date` now, so a `Date` you pass by hand to `validate` or `'~standard'` reads as empty.
+  path produces a `Date` now, so a `Date` you pass by hand to `validate` reads as empty.
   The block boundary is one rule for every reader: an empty block (`---` then `---`) and spaces after the
   opening fence are accepted, a language tag after the fence (`---yaml`, `---js`) is no longer read as
   frontmatter, and an unclosed block reads as no frontmatter where it used to read to the end of the
@@ -886,8 +886,8 @@
   no value that changed apart from dates read as text.
 
   Consumers must: read a date value as text, in any key, not a `Date`, in your code
-  and in a migration script that calls `parseMarkdown`. Stop passing a `Date` to `validate` or
-  `'~standard'`; pass the `YYYY-MM-DD` string. Check a content file for a `---yaml` fence, an unclosed
+  and in a migration script that calls `parseMarkdown`. Stop passing a `Date` to `validate`; pass the
+  `YYYY-MM-DD` string. Check a content file for a `---yaml` fence, an unclosed
   block, or a `10:30`, `0755`, `0o755`, `1_000`, `0b11`, or `<<` value, and write what you mean. Expect a first admin save to
   rewrite a hand-written block into the single-quoted form.
 
@@ -933,7 +933,89 @@
 
   Consumers must: nothing.
 
+- **A concept declares a plain `fields` record, with `refine` and `behavior` beside it.**
+  `ConceptConfig` is generic over the record. `defineConcept` runs the declaration checks that
+  `defineFieldset` ran, so a malformed `pattern`, two `seo` images, or a `behavior` key no field declares
+  still throws at declaration, and `normalizeConcepts` runs them for a concept written without
+  `defineConcept`. `defineFieldset` and `FieldsetConfig` leave the root barrel. `InferFieldset` takes the
+  record, and `Fieldset`, `BehaviorTable`, and `FieldBehavior` stay public.
+
+  Consumers must: replace `fields: defineFieldset({ ... })` with `fields: { ... }` on each concept, and remove the `defineFieldset` import.
+
+  Consumers must: move a `refine` or `behavior` from `defineFieldset`'s second argument onto the concept.
+
+  Consumers must: read a concept's `fields` as the plain record, pass `ConceptConfig` the record type, and remove any `FieldsetConfig` import.
+
+- **A field's `default` takes the type of its value, and `fields.array` takes one options bag.** Text,
+  textarea, url, select, icon, date, and reference take a string, number takes a number, boolean takes a
+  boolean, and multiselect takes a list. Image, object, and array take none. `initialValues` writes no key
+  for an empty list, and a number default seeds a directive attribute as a string.
+
+  Consumers must: change `fields.array(item, { label })` to `fields.array({ item, label })`, and add a `label` where a call had none.
+
+  Consumers must: give each `default` its field's type, and remove a `default` from an `image`, `object`, or `array` field.
+
+- **The read side stops overloading `fields` and `summary`.** `ContentSummary.fields` is `summaryFields`,
+  and `ManifestEntry.summary` is `excerpt`, so `index.json` writes the new key. `EntryRef` replaces
+  `InboundLink` and `ResolvedReference`, with `excerpt` in place of `summary`. It's public from
+  `/delivery/data` and re-exported from `/sveltekit`. `EntrySummary.summary`, the admin list row, and
+  `FeedItem.summary` stay.
+
+  Consumers must: read `summary.summaryFields` in place of `summary.fields`.
+
+  Consumers must: rename `InboundLink` and `ResolvedReference` to `EntryRef`, and read `.excerpt` in place of `.summary` on a reference.
+
+  Consumers must: read `.excerpt` in place of `.summary` on a `ManifestEntry`.
+
+  Consumers must: run `npx cairn-manifest` and commit `src/content/.cairn/index.json`.
+
+- **`buildSiteManifest` returns the manifest and its problems, and `vite build` names the real fault
+  first.** The result is `SiteManifestBuild`, `{ manifest, problems }`, and each `ManifestProblem` carries
+  `concept`, `id`, `path`, `draft`, and `errors`. Verify mode runs the new `verifyEntries`, then
+  `verifyReferences`, then `verifyManifest`, so an invalid entry fails with `cairn: <n> invalid entries:`
+  and a dangling link with `content link is dangling`, each ahead of `content manifest is stale`. That
+  last message now means the content is valid and the manifest is behind. A draft's problem never fails
+  the build.
+
+  Consumers must: read `.manifest` from `buildSiteManifest`'s result.
+
+- **The manifest build refuses what would ship broken.** A leading or trailing slash on a concept's `dir`
+  throws at declaration. A filename stem that isn't a valid id, and a `cairn:` href that can't resolve,
+  fail the build and keep the entry's row. The scan covers a reference definition, an image, a malformed
+  inline token, raw HTML, and a directive attribute, and it skips code and HTML comments.
+  `verifyReferences` also walks each non-draft entry's links, so a link to a missing entry fails.
+
+  Consumers must: remove a leading or trailing slash from each concept's `dir`.
+
+  Consumers must: rename an entry file whose stem is anything but lowercase letters, digits, and single hyphens.
+
+  Consumers must: replace each `cairn:` href the build names with an inline `[text](cairn:concept/id)` link to an entry that exists.
+
+- **The manifest build warns on an unknown block directive.** A `:::name` or `::name` that no registered
+  component or slot names, and that isn't `include` or `figure`, logs `content.directive_unknown` with
+  `concept`, `path`, and `name`. The build goes on.
+
+  Consumers must: nothing.
+
+- **`vite dev` regenerates a stale manifest and starts.** The plugin evaluates the manifest through the
+  running server at `buildStart`, carries publish stamps, writes only when the bytes differ, and warns one
+  `cairn-manifest: regenerated` line. An invalid entry no longer stops a dev start. A hot update never
+  regenerates, `vite build` stays strict, and a stale `site-facts.json` still fails a dev start.
+
+  Consumers must: nothing.
+
+- **`cairn-manifest` prints one summary line and exits 1 on an invalid non-draft entry.** The line reads
+  `index.json: 15 entries, 2 changed; site-facts.json unchanged; 1 invalid: posts/hello: title: Title is
+  required`. A draft's problem reads `1 invalid draft:` and exits 0.
+
+  Consumers must: expect exit 1 from `cairn-manifest` on an invalid non-draft entry, and fix the entry before the next step of a script that runs it.
+
 ### Removed
+
+- **Standard Schema: `'~standard'` on `Fieldset`, and `StandardInput`.** Nothing in the engine read
+  them. Ruling `cleanup-one-validate-hook` records the reversal.
+
+  Consumers must: stop reading `'~standard'` and `StandardInput`.
 
 - **The rendered audit: `cairn-audit --rendered`, `cairn-audit norms`, and the `rendered` config
   section.** `cairn-audit` is static-only. The browser rules are gone (`border-contrast`,
@@ -1084,6 +1166,20 @@
   controls, so a save that never expanded the row dropped it from the entry. The body now stays
   mounted and is hidden, so each row's values reach the form, and a required control in a collapsed
   row opens its row on a failed validation instead of cancelling the save silently (#237).
+
+  Consumers must: nothing.
+
+- **Editor screens drop builder words, and a stale head reads one way.** A save, rename, or delete that
+  loses a race says `This entry changed since you opened it.`, the settings and navigation screens say
+  `These settings changed since you opened them.`, and the media screens say
+  `The media library changed since you opened it.` A share link shows `Creating…` while it's made, and a
+  reference to an unpublished or missing entry says to publish it or remove the reference.
+
+  Consumers must: nothing.
+
+- **The media library's strings agree.** The flashes and table headers say image, `Orphaned files
+  removed.` replaces `Orphans purged.`, the tile chip reads `No references` to match its filter, and the
+  formats line adds GIF.
 
   Consumers must: nothing.
 

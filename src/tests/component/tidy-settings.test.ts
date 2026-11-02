@@ -220,10 +220,10 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     // read back into `data.error`; the shell must wire `form` through for the message to reach here.
     const screen = await render(CairnTidySettings, {
       data: data(),
-      form: { error: 'The site config changed since you opened it.' },
+      form: { error: 'These settings changed since you opened them.' },
     });
     const alert = screen.container.querySelector('.alert-error');
-    expect(alert?.textContent).toContain('The site config changed since you opened it.');
+    expect(alert?.textContent).toContain('These settings changed since you opened them.');
   });
 });
 

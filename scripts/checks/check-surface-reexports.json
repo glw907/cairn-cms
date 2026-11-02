@@ -9,6 +9,12 @@
   ],
   "reexports": [
     {
+      "name": "EntryRef",
+      "subpath": "/sveltekit",
+      "home": "/delivery/data",
+      "reason": "R4 closure: `EditData`, `ContentFormFailure` name it on this subpath."
+    },
+    {
       "name": "IslandRegistry",
       "subpath": ".",
       "home": "/islands",
@@ -181,6 +187,12 @@
       "subpath": "/delivery/data",
       "home": ".",
       "reason": "R4 closure: `buildNewlyPublished`, `Manifest` name it on this subpath."
+    },
+    {
+      "name": "ManifestProblem",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `SiteManifestBuild` names it on this subpath."
     },
     {
       "name": "MultiselectField",

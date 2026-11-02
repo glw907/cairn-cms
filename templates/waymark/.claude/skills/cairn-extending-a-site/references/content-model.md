@@ -21,7 +21,8 @@ A concept is its adapter entry, plus a manifest run when its directory already h
    reads **New Events**. `dir` sits under `src/content`, and each entry sits directly in it.
 2. **Manifest**: if the directory already holds entries, run `npx cairn-manifest` (scaffold script
    `cairn:manifest`) and commit `src/content/.cairn/index.json`. Never hand-write manifest rows. An
-   entry that fails validation is skipped (logs `content.entry_invalid` `scope: manifest`).
+   entry that fails validation is skipped (logs `content.entry_invalid` `scope: manifest`), and the
+   bin exits 1 unless the entry is a draft.
 
 The content module's one glob and the `cairnManifest` plugin both read `/src/content/**/*.md`, so
 neither takes an edit. The content module holds the glob in the absolute form, since Vite resolves
@@ -80,7 +81,7 @@ the option union.
 
 ## Cross-field rules
 
-A fieldset takes a second argument with two hooks:
+`defineConcept` takes two hooks beside `fields`:
 
 - **`refine(data, body)`**: the default for a rule that compares fields (an end date before a start
   date). It runs only after every field check passes, receives the coerced data, and returns a map
@@ -95,28 +96,24 @@ A refused save shows one banner with the first message, beside no field, so writ
 a complete sentence an editor can act on.
 
 ```ts
-import { defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
+import { defineConcept, fields } from '@glw907/cairn-cms';
 
 export const events = defineConcept({
   dir: 'src/content/events',
   label: 'Events',
   singular: 'event',
-  fields: defineFieldset(
-    {
-      title: fields.text({ label: 'Title', required: true }),
-      date: fields.date({ label: 'Start date', required: true }),
-      endDate: fields.date({ label: 'End date' }),
-      location: fields.text({ label: 'Location' }),
-      capacity: fields.number({ label: 'Capacity' }),
-      signupUrl: fields.url({ label: 'Signup link' }),
-    },
-    {
-      refine: (data) =>
-        typeof data.date === 'string' && typeof data.endDate === 'string' && data.endDate < data.date
-          ? { endDate: "The end date can't be before the start date." }
-          : undefined,
-    },
-  ),
+  fields: {
+    title: fields.text({ label: 'Title', required: true }),
+    date: fields.date({ label: 'Start date', required: true }),
+    endDate: fields.date({ label: 'End date' }),
+    location: fields.text({ label: 'Location' }),
+    capacity: fields.number({ label: 'Capacity' }),
+    signupUrl: fields.url({ label: 'Signup link' }),
+  },
+  refine: (data) =>
+    typeof data.date === 'string' && typeof data.endDate === 'string' && data.endDate < data.date
+      ? { endDate: "The end date can't be before the start date." }
+      : undefined,
 });
 ```
 
@@ -140,7 +137,7 @@ export const events = defineConcept({
   throws). There is no fallback to a field named `tags` (logs `content.field_unmarked`). Once the
   site config's `vocabulary` holds items, a save adds only vocabulary values (lowercase hyphenated);
   existing outside tags stay as orphans.
-- `summaryFields` copies named keys onto `ContentSummary.fields`; an undeclared key fails
+- `summaryFields` copies named keys onto `ContentSummary.summaryFields`; an undeclared key fails
   `npm run check`, and compose throws on one that reaches it from an untyped caller.
 - `itemLabel` on an `array` of objects names the sub-field that labels a collapsed row.
 
@@ -148,7 +145,8 @@ export const events = defineConcept({
 
 `src/content/.cairn/index.json` holds one row per entry (id, concept, title, date, permalink, draft,
 links, media refs, reference edges, tags, includes, `publishedAt`). The `cairnManifest` plugin
-rebuilds it on every build and dev start and fails the build on drift (`content manifest is stale`).
+regenerates it once at dev start, warning `cairn-manifest: regenerated` and a summary, and fails a
+build on drift (`content manifest is stale`).
 After any content edit outside the admin, run `npx cairn-manifest` and commit the result; it also
 writes `site-facts.json` and keeps first-publish stamps.
 
@@ -207,7 +205,9 @@ and a `rename.address_collided` record.
 | `cairn: concept` ... no glob passed | Pass the glob in the content module |
 | `cairn: concept` error on permalink, date prefix, or routing at load | Fix the member named |
 | `cairn: concept` error about an `/admin` view or `site` | Rename the key in all three files |
-| `content manifest is stale` | `npx cairn-manifest`, commit |
-| Manifest has no rows for the concept | Add it to `cairnManifest` `content`, fix the pattern, or fix invalid entries, then regenerate |
+| `cairn: <n> invalid entries:` then `<concept>/<id>: <field>: <message>` | Fix each line: the field, the filename, or the `cairn:` link. A draft is exempt |
+| `content link is dangling` | Fix or remove the body link, or restore its target |
+| `content manifest is stale` | The content is valid and the manifest is behind: `npx cairn-manifest`, commit |
+| Manifest has no rows for the concept | Add an entry file directly in its `dir`, or fix invalid entries, then regenerate |
 | `cairn: <n> invalid frontmatter field(s):` | Fix the field or mark the entry `draft: true` |
 | Server error or build failure from `refine` | Make `refine` return a map instead of throwing |

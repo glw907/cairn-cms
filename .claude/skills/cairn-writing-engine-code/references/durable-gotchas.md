@@ -47,6 +47,7 @@ and `npm run lane:fast` replaces the lane they name.
 - [Showcase chrome traps](#showcase-chrome-traps)
 - [A rename sweep edits the living docs only](#a-rename-sweep-edits-the-living-docs-only)
 - [`git commit -- <path>` commits unstaged hunks too](#git-commit----path-commits-unstaged-hunks-too)
+- [Do not import `content/types` from `email.ts` or `platform-bindings`](#do-not-import-contenttypes-from-emailts-or-platform-bindings)
 
 
 Detail moved out of `CLAUDE.md` to keep that file inside its context budget. The first five
@@ -615,3 +616,11 @@ if the diff is larger than intended. A consumer-site repo can carry another sess
 different branch, so check `git branch --show-current` and `git status` before editing, not only at
 commit time. If the branch is wrong or the file already has unrelated changes, leave your edit
 uncommitted and report the conflict.
+
+## Do not import `content/types` from `email.ts` or `platform-bindings`
+
+Do not import `content/types` from `src/lib/email.ts` or `src/lib/sveltekit/platform-bindings`.
+`src/tests/types/tsconfig.json` loads both, through `generated-env-satisfies.ts`, in a program
+without the mdast-to-hast augmentation, so `npm run check` fails on `resolve-include.ts` with
+`'hName' does not exist in type 'ParagraphData'`. Spell the type structurally, or import it from a
+leaf module that does not reach `content/types`.

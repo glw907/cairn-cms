@@ -330,6 +330,13 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   automated `wrangler d1 migrations apply`, a deploy pipeline's included, runs it and rebuilds
   `editor` the same way, so carry site-added columns across before you copy it in.
 
+- **Drop `/auth-channel`, `migrations-channel`, and `createChannelDb`.** The second auth store is gone, with `originMatches`, `isDeployedHost`, and `src/lib/log.ts` in the scaffold. Delete the `src/lib/log.ts` of a site scaffolded earlier if nothing else imports it.
+- **Drop `/auth-store` and `bootstrapOwner`, and seed the owner row before you deploy if the `editor` table may be empty.** Nothing creates the first owner on a first request now. `skills/cairn-extending-a-site/references/adopt-cairn.md` carries the seed step, and `create-cairn-site` seeds its own owner. `resolveOwnerLevelRoles` also left the root barrel, so derive owner-capability roles from your own role vocabulary.
+- **Delete `auth.branding` and stop importing `AuthBranding`.** The site name and sender come from the adapter's `email` group and the site config. To send a different name or from address, change the built message in a custom `auth.send`, which receives it. `CairnAdminConfig.auth` is `{ send? }` now.
+- **Pass `{ runtime }` to `createAuthRoutes`, rename `RequestOutcome` to `LoginRequestOutcome`, and rename `tokensMatch` to `compareTokens`.** The outcome has no `sent` member now, so `send-ok` is the only success case.
+- **Stop matching on the 13 `auth.channel.*` log events and on `editor.bootstrapped`.** All 14 left `CAIRN_LOG_EVENTS`.
+- **Grant the App Contents read and write, and set `repo` to the repository's current name.** The engine mints its installation token for that one repository and `contents: write` only. A stale name followed GitHub's redirect before, and the mint now refuses it; `/healthz?live=1` reports a 422 as `token_request_refused`.
+
 The setup tool's changes ask nothing of an existing site. In the showcase and the scaffold template,
 the `ORIGIN` constant in `content.ts` became an import of `publicOrigin` from
 `src/theme/cairn.config.ts`, which `create-cairn-site` now writes with the site's real address. A site

@@ -635,6 +635,17 @@
 
   Consumers must: nothing.
 
+- **`createAuthRoutes` takes `{ runtime, send }`, and `RequestOutcome` is `LoginRequestOutcome`.** The
+  factory's `runtime` is required and carries the site name and sender. The renamed outcome drops its
+  `sent` member, so `send-ok` is the only success case. `tokensMatch` is renamed `compareTokens`.
+
+  Consumers must: pass `{ runtime }` to `createAuthRoutes`.
+
+  Consumers must: rename `RequestOutcome` to `LoginRequestOutcome` and handle the outcome with no
+  `sent` member.
+
+  Consumers must: rename `tokensMatch` to `compareTokens`.
+
 ### Removed
 
 - **The rendered audit: `cairn-audit --rendered`, `cairn-audit norms`, and the `rendered` config
@@ -686,6 +697,46 @@
   a JSON schema from `node_modules/@glw907/cairn-cms/schema/` rather than the reference track,
   and re-run `npx cairn-guidance install` so a site's copy of the skills drops the links to the
   removed pages.
+
+- **The auth channel's second store and the owner bootstrap.** `/auth-channel` with its `migrations-channel`
+  schema and `createChannelDb` are removed, as are `originMatches`, `isDeployedHost`, the 13
+  `auth.channel.*` log events, and `src/lib/log.ts` from the scaffold. `bootstrapOwner`,
+  `insertOwnerIfEmpty`, the `editor.bootstrapped` event, and the `/auth-store` subpath are removed too,
+  and `resolveOwnerLevelRoles` leaves the root barrel. `AuthBranding` is removed with `auth.branding`,
+  `CairnAdminConfig.auth` shrinks to `{ send? }`, and the magic-link email takes the site name and
+  sender from the runtime.
+
+  Consumers must: drop `/auth-channel` imports and delete `migrations-channel` from your migrations
+  setup; stop calling `createChannelDb`.
+
+  Consumers must: drop `/auth-store` imports; the subpath is gone.
+
+  Consumers must: stop importing `resolveOwnerLevelRoles` from the root barrel; no public subpath
+  carries it now, so derive owner-capability roles from your own role vocabulary.
+
+  Consumers must: seed the owner row before you deploy if the `editor` table may be empty, since
+  `bootstrapOwner` no longer creates it on first request. `skills/cairn-extending-a-site/references/adopt-cairn.md`
+  carries the seed step; `create-cairn-site` seeds its own owner.
+
+  Consumers must: delete `auth.branding` from `createCairnAdmin` and stop importing `AuthBranding`. The
+  `siteName` and sender now come from the adapter's `email` group and the site config. A site that needs
+  a different name or from address changes the built message in a custom `auth.send`, which receives it.
+
+  Consumers must: stop matching on the 13 `auth.channel.*` events and on `editor.bootstrapped`; they
+  left `CAIRN_LOG_EVENTS`.
+
+  Consumers must: delete `src/lib/log.ts` from a site scaffolded earlier if nothing else imports it.
+
+### Security
+
+- **The minted installation token is scoped to one repository and Contents write.** `installationToken`
+  now sends `repositories: [repo]` and `permissions: { contents: 'write' }`, so a token minted for one
+  site can no longer write to, administer, or change workflows on the account's other repositories. A
+  422 from the mint reports as `token_request_refused` in `/healthz?live=1`'s `githubAppToken` check.
+
+  Consumers must: grant the App Contents read and write, and set `repo` to the repository's current
+  name. A stale name followed GitHub's redirect before; it now reaches a validated body and the mint is
+  refused, which `/healthz?live=1` reports as `token_request_refused`.
 
 ### Fixed
 

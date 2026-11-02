@@ -49,6 +49,8 @@ export const ALLOWLIST = new Set([
   'log-event:config.csrf-disable-missing', // MIGRATION-NOTES.md, a retired condition id a removal entry must still name
   'log-event:auth.csrf-origin-mismatch', // MIGRATION-NOTES.md, a retired condition id a removal entry must still name
   'log-event:auth.channel.delivery_inline', // MIGRATION-NOTES.md, the retired log event name a removal entry must still name to say what changed
+  'log-event:auth.channel', // MIGRATION-NOTES.md, the wildcard prefix of the 13 retired channel events a removal entry must still name
+  'log-event:editor.bootstrapped', // MIGRATION-NOTES.md, the retired log event name a removal entry must still name
   'env-var:CHANNEL_SCHEMA_SQL', // MIGRATION-NOTES.md, the removed constant a removal entry must still name
   'log-event:publish.address_collision', // MIGRATION-NOTES.md, the retired name a rename entry must still name to say what changed
 
@@ -58,6 +60,7 @@ export const ALLOWLIST = new Set([
   // its analogues at different paths (its adapter lives at `src/theme/cairn.config.ts`, not
   // `src/lib/cairn.config.ts`), which is why these are not resolved against it either.
   'file-path:node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql', // MIGRATION-NOTES.md, the removed channel schema path a removal entry must still name
+  'file-path:src/lib/log.ts', // MIGRATION-NOTES.md, the removed scaffold file a removal entry must still name
   'file-path:src/app.d.ts', // a site's SvelteKit ambient-types file
   'file-path:src/app.html', // a site's SvelteKit app shell
   'file-path:src/app.css', // a hand-built site's global style sheet, Tailwind's SvelteKit guide's location

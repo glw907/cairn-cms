@@ -178,9 +178,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/auth-crypto`
 
 - `buildCookieName`: (base: string, secure: boolean) => string
+- `compareTokens`: (a: string, b: string) => boolean
 - `generateToken`: () => string
 - `hashToken`: (token: string) => Promise<string>
-- `compareTokens`: (a: string, b: string) => boolean
 
 ## `/cloudflare`
 

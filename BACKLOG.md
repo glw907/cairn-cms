@@ -3,11 +3,15 @@
 > Project issue tracker. Managed by `/log-issue`.
 
 ## High
-- [ ] **#203** Scope the App's installation and its minted token to the one repository `#improvement` `#cairn-cms` *(2026-11-01)*
-  The install prompt and the `installation-not-covering-repo` remedy steer a first run to "All repositories" (`packages/create-cairn-site/src/github/install.mjs:237`, `packages/create-cairn-site/src/github/catalogue.mjs:132-134`), while the App holds `contents: write`, `administration: write`, and `workflows: write` (`packages/create-cairn-site/src/github/manifest.mjs:58-62`) and the engine mints unscoped installation tokens (`src/lib/github/signing.ts:87` POSTs `/access_tokens` with no `repositories` or `permissions` body). A token minted for one site can then write, administer, and change workflows on every repository the owner's account holds. Options: scope the minted token to the one repository and `contents: write`, and/or keep "Only select repositories" as the default advice, and add a closing-block line telling the owner to narrow the installation (`docs/admin/create-your-site.md:88` already says to). An `auth-data` engine change and a product and security call. Found by the scaffold-setup pass's security review (H1).
-  Placement: Pass 1a.
+- [ ] **#203** Tell an owner to narrow the App's installation after the first run `#improvement` `#cairn-cms` *(2026-11-01)*
+  Pass 1a scoped the minted token to the one repository and `contents: write` (`src/lib/github/signing.ts`), but the install prompt and the `installation-not-covering-repo` remedy still steer a first run to "All repositories" (`packages/create-cairn-site/src/github/install.mjs:237`, `packages/create-cairn-site/src/github/catalogue.mjs:132-134`), and a leaked App key can still mint unscoped tokens for every repository the installation covers. Add a closing-block line telling the owner to narrow the installation to the one repository after the first run (`docs/admin/create-your-site.md:88` already says to).
+  Placement: Cleanup round.
 
 ## Medium
+- [ ] **#216** Confirm a publish through the scoped token on the real install `#improvement` `#cairn-cms` *(2026-11-01)*
+  The rc.2 install proves only a scaffolded App, which holds `contents`, `administration`, and `workflows`, while the App `adopt-cairn.md` teaches holds Contents alone. At the sitting, publish an entry through the token `installationToken` now mints (`repositories` plus `contents: write`). A ref write refused for workflows stops for Geoff, who is at that sitting, with the cause in hand; no fallback is written now. Found by pass 1a.
+  Placement: Release, real install.
+
 - [ ] **#210** Refuse a failed spellcheck asset fetch `#bug` `#cairn-cms` *(2026-11-01)*
   `createEngine` at `src/lib/admin/spellcheck-worker.ts:276` never checks `.ok`, so a 404 dictionary loads the error page as the corpus and the worker reports `ready` with an engine that knows almost no words. Found by the #174 review; it predates that PR.
   Placement: Pass 5.
@@ -163,6 +167,12 @@
   Placement: Final engine batch, small API slice.
 
 ## Low
+- [ ] **#215** Trace a worktree cross-read in `sveltekit-mount-contract-reshape.test.ts` `#bug` `#cairn-cms` *(2026-11-01)*
+  In one fast lane the test failed to load `dist/sveltekit/index.d.ts` from another worktree's path (`agent-a44abf19e72fe71b6`), then passed alone and on a full rerun. The cause is not traced; a shared cache across worktrees is the first thing to check. Found by pass 1a.
+  Placement: Cleanup round.
+- [ ] **#214** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)*
+  `removeOwnerIfNotLast`, `demoteOwnerIfNotLast`, and `OwnerGuardOutcome` in `src/lib/auth/store.ts` have no production reader since `/auth-store` left: only tests and `packages/cairn-cms-dev/src/fake-auth-db.ts` reach them. `@public` tags remain on names no longer on any public subpath (`store.ts` and `src/lib/auth/roles.ts:125`), and `check-tiers.mjs` walks exports only, so it passes them. Found by pass 1a.
+  Placement: Cleanup round.
 - [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)*
   `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
   Placement: After the release.
@@ -179,9 +189,6 @@
   `renameAction`'s collision check (`src/lib/sveltekit/content-routes-entry-destructive.ts:265`) reads only the new file path in the same concept, so a rename that lands on a live entry's permalink in another concept commits to main. `createSiteResolver`'s duplicate throw (`src/lib/delivery/site-resolver.ts:104`) then fails every later deploy until someone moves an entry. The media and publish pass closes this for publish (#31) and leaves rename. Found while planning that pass, 2026-11-01.
   Placement: Final engine batch, content rules.
 
-- [ ] **#189** Close the second-sign-in-group reference's roll-your-own gaps `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
-  The security read of agent-first pass 3 found `skills/cairn-extending-a-site/references/second-sign-in-group.md` lists the basics of a hand-rolled login without a fresh session id at login (fixation), the cookie attributes (HttpOnly, Secure, SameSite=Lax, Max-Age, `__Host-` on the CSRF cookie), logout deleting the server-side row, and one response for an unknown contact (enumeration). Add them, and settle the guard-first versus guard-last hook order that `custom-screen.md` and the `createAuthGuard` doc comment word differently.
-  Placement: Pass 1a.
 - [ ] **#190** Require draft-preview links to be minted from a POST action `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
   `draft-preview.md` and the S05 judge never say that minting changes state and so belongs in a form action, not a `load`. `mintPreview` and `revokePreview` also answer `unknown-concept` before the access check (`src/lib/sveltekit/preview.ts`), which lets any editor probe which concepts exist.
   Placement: Cleanup round (skill reference and judge text), final engine batch (the ordering).
@@ -190,9 +197,6 @@
   Placement: Final engine batch.
 - [ ] **#187** Rename `IdentityRefusal` to `IdentityFailure` `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   `convention-failure-suffix` retires `Refusal` as a type-name suffix, and `IdentityRefusal` (`src/lib/sveltekit/guard.ts:123`, `@beta`) is the one live straggler; no ledger entry argues an exception. Rename it, its `sveltekit` barrel export, and `scripts/checks/api-surface.md`, with a migration note. Ruled while closing #169 (agent-first pass 3).
-  Placement: Final engine batch (small API).
-- [ ] **#167** Drop the reserved `kind?: 'code'` option from `AuthChannelConfig` `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  `createAuthChannel` publishes a reserved extension point with exactly one legal value (`src/lib/auth-channel/factory.ts:309-310`), so a consumer can only ever write the default. The any-site audit's ruling was to drop it until a second authenticator exists; the rest of that ruling is executed. Removing it is a breaking change to the auth-channel surface, so it rides the final engine batch or the first post-1.0 major. Found by agent-first pass 2's ledger rebuild.
   Placement: Final engine batch (small API).
 - [ ] **#168** Hand cairn.pub its routing contract with the release `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   cairn.pub renders the doc arms from the installed engine, so the one release owes it three things, from the 2026-09-22 handoff (kept at the `pre-agent-first` tag, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`). Keep the `https://cairn.pub/docs/<arm>/<page>` shape the `cairn` binary prints, with no extension, and redirect rather than move. Redirect every retired path to its successor, regenerating the table from the final page set. Before the `tool/v1.1.0` successor tag, confirm each `https://cairn.pub/docs/admin/<page>` URL a failure block prints resolves on the deployed site. Decide whether the `--json` schemas removed in db5ffdf7a still get a published home at `/schema/`. The three CLI reference pages left with the technical tracks and are out. The `0.98.0` pin ceiling stays until that release.
@@ -288,6 +292,14 @@
 - **#165** A dated filename whose prefix does not match the concept's `datePrefix` keeps date digits in its public...: Migration-only, cosmetic, and visible at the first URL check. The entry still works. (Geoff, 2026-10-31)
 
 ## Done
+- [x] **#189** Close the second-sign-in-group reference's roll-your-own gaps `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01 → 2026-11-01)*
+  The security read of agent-first pass 3 found `skills/cairn-extending-a-site/references/second-sign-in-group.md` lists the basics of a hand-rolled login without a fresh session id at login (fixation), the cookie attributes (HttpOnly, Secure, SameSite=Lax, Max-Age, `__Host-` on the CSRF cookie), logout deleting the server-side row, and one response for an unknown contact (enumeration). Add them, and settle the guard-first versus guard-last hook order that `custom-screen.md` and the `createAuthGuard` doc comment word differently.
+  Placement: Pass 1a.
+  Done: 7efdab464 finished the roll-your-own recipe and settled the hook order.
+- [x] **#167** Drop the reserved `kind?: 'code'` option from `AuthChannelConfig` `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
+  `createAuthChannel` publishes a reserved extension point with exactly one legal value (`src/lib/auth-channel/factory.ts:309-310`), so a consumer can only ever write the default. The any-site audit's ruling was to drop it until a second authenticator exists; the rest of that ruling is executed. Removing it is a breaking change to the auth-channel surface, so it rides the final engine batch or the first post-1.0 major. Found by agent-first pass 2's ledger rebuild.
+  Placement: Final engine batch (small API).
+  Done: dissolved by pass 1a's removal of `/auth-channel`.
 - [x] **#96** Fix the comment above the no-pending-request redirect `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-31 → 2026-11-01)*
   done: 106561156 rewrote the comment; `src/lib/sveltekit/auth-routes.ts:372-377` now says "whatever the cause", matching the redirect at `:378-382`.
 - [x] **#120** Refuse the redirect trap whatever the page list holds `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)*

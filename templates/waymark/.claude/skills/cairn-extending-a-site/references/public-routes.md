@@ -51,9 +51,10 @@ The page renders `CairnHead` (`@glw907/cairn-cms/public`) with `seo={data.seo}`,
 `data.concept` types `data.entry.frontmatter` from that concept's fields: inside
 `if (data.concept === 'posts')`, `data.entry.frontmatter.image` is the posts field's value.
 
-A `PublicRoutesConfig` with no type argument gives the untyped `EntryData`, where `concept` is a
-string and the frontmatter a record. Every typed value assigns to it, and `loadPreview` returns that
-untyped form, so a template shared with the preview route takes `EntryData` as its prop type.
+`loadPreview` infers the same type from the config you pass it, so a template shared with the preview
+route takes `EntryData<typeof site>` as its prop type. A `PublicRoutesConfig` with no type argument gives
+the untyped `EntryData`, where `concept` is a string and the frontmatter a record. Every typed value
+assigns to it.
 
 To show reference fields, return `references` from the same load:
 `resolveReferences(site, descriptor, data.entry.frontmatter)` with the descriptor from

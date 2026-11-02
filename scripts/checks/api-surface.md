@@ -271,7 +271,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `IdentityResolver`: { resolve: (event: CairnEvent) => Promise<ResolvedIdentity | IdentityFailure>; logoutUrl: string; label?: string }
 - `ListData`: { conceptId: string; label: string; singular: string; dated: boolean; routable: boolean; entries: EntrySummary[]; error: string | null; formError: string | null; publishedAll: number | null }
 - `loadHealth`: (event: CairnEvent, { runtime }: { runtime: CairnRuntime }) => Promise<HealthData>
-- `loadPreview`: (event: CairnEvent, { runtime, publicRoutes }: { runtime: CairnRuntime; publicRoutes: PublicRoutesConfig<UntypedSiteResolver> }) => Promise<PreviewData>
+- `loadPreview`: <S extends SiteResolver>(event: CairnEvent, { runtime, publicRoutes }: { runtime: CairnRuntime; publicRoutes: PublicRoutesConfig<S> }) => Promise<PreviewData<S>>
 - `LoginRequestOutcome`: { outcome: "sent" } | { outcome: "send-error" } | { outcome: "throttled" }
 - `MediaLibraryData`: { assets: MediaLibraryEntry[]; usage: { [x: string]: MediaUsageInfo }; error: string | null; flash: "deleted" | "updated" | "replaced" | "altPropagated" | "bulkDeleted" | "orphansPurged" | "uploaded" | null }
 - `MediaRouteConfig`: { runtime: CairnRuntime }
@@ -283,7 +283,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavLayoutSection`: { label: string; children: (NavLayoutEntry | NavLayoutEngineRef)[]; roles?: string[]; collapsed?: boolean }
 - `NO_PENDING_REQUEST_ERROR`: "no-pending-request"
 - `PlainSectionAction`: <T>(handler: (args: { event: CairnEvent; form: FormData; ctx: Omit<SectionActionContext<unknown>, "db"> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>>
-- `PreviewData`: ConceptEntryData<string, Record<string, unknown>> & { preview: { state: "draft" | "published"; expiresAt: string; published: { permalink: string } | null } }
+- `PreviewData`: EntryData<S> & { preview: { state: "draft" | "published"; expiresAt: string; published: { permalink: string } | null } }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `requireAccess`: (event: CairnEvent, target?: string) => Editor
 - `requireOwner`: (event: CairnEvent) => Editor

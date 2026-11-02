@@ -1,6 +1,6 @@
 // SvelteKit's Origin check runs on every route ahead of any handle; cairn adds the admin's
-// double-submit token on top. These helpers back the guard's token check, the auth channel's
-// Origin compare, and the loads that issue the token.
+// double-submit token on top. These helpers back the guard's token check and the loads that
+// issue the token.
 import { csrfCookieName, generateCsrfToken, tokensMatch, SESSION_TTL_MS } from '../auth/crypto.js';
 import { isLocalHost, readPublicOrigin } from '../dev-flag.js';
 import { env } from './workers-env.js';
@@ -28,7 +28,7 @@ const FORM_CONTENT_TYPES = new Set([
 // receiving over TLS. On a non-https request the client-supplied Host header does still select the
 // bare name over the PUBLIC_ORIGIN answer, but that is not attacker-reachable through a victim's
 // browser, which derives Host from the URL it is actually visiting. That is why this stays on
-// the bare hostname predicate rather than `isDeployedHost`.
+// the bare hostname predicate.
 
 /**
  * Decide the Secure bit for one request's cairn-owned cookies, the single source every writer and
@@ -85,11 +85,6 @@ export function isUnsafeFormRequest(request: Request): boolean {
   const header = request.headers.get('content-type');
   if (!header) return true;
   return FORM_CONTENT_TYPES.has(header.split(';', 1)[0].trim().toLowerCase());
-}
-
-/** The faithful framework check: the Origin header equals the request's origin. */
-export function originMatches(event: Pick<CairnEvent, 'url' | 'request'>): boolean {
-  return event.request.headers.get('origin') === event.url.origin;
 }
 
 /**

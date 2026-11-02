@@ -249,10 +249,6 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
     // production build (the dev branch replaces it entirely rather than running alongside it), so
     // there is no legitimate live-flag case for this handler to admit
     // (docs/internal/engine-rulings.md, `dev-backend-flag-refusal`).
-    // `auth-channel/factory.ts` carries the flag's OTHER refusal, on a narrower set-AND-deployed
-    // predicate, since one factory instance serves both dev and prod; both import the flag name,
-    // the message, and the truthiness rule from `dev-flag.ts` so the two never drift onto
-    // different wording or a different reading of the same value.
     if (!(await isBuilding()) && isDevBackendFlagSet(env[CAIRN_DEV_BACKEND_FLAG])) {
       log.error('guard.refused', { reason: 'dev_backend_in_prod', path: pathname });
       return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 });

@@ -52,6 +52,11 @@ every route. No `tool/v2.0.0` tag exists yet.
   `Referrer-Policy: no-referrer` trips, and drops the advice that `no-referrer` is safe on a
   route guarded by a token. `edge.https-not-forced`'s text no longer says the framework's CSRF
   guard rejects the post.
+- **The doctor's copy drops the channel clauses.** The `config.no-referrer-blanket` fail
+  detail and the `config.csrf-trusted-origins-wildcard` and `edge.https-not-forced` texts no longer
+  mention a channel or member action, since the engine no longer ships one. The
+  `github.app-unreachable` remediation now names the installation's repository coverage,
+  Contents read and write, and the adapter's `repo`.
 - **The doctor's floor expectations show the SvelteKit 3 peer shape** in its fixtures and goldens;
   the check still reads the peer ranges from the installed engine at run time.
 - **`cairn doctor --help`'s first sentence is split in two.** The text still names every clause

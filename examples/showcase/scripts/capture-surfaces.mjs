@@ -4,7 +4,7 @@
 // tool (`git show 274374f2^:examples/showcase/scripts/reference-capture.mjs`), which already
 // solved the preview-server recipe and the admin theme cookie; this tool generalizes that shape
 // into a surface/width/scheme matrix instead of a fixed screen list. It starts a separate preview
-// server (the `playwright.config.ts` webServer recipe without its members migration) and tears
+// server (the `playwright.config.ts` webServer recipe) and tears
 // it down on exit, rather than connecting to a server the caller happens to have running, so a
 // capture always proves the current build.
 //
@@ -291,8 +291,7 @@ async function isServerUp(url) {
   }
 }
 
-/** Starts the showcase preview server with the `playwright.config.ts` webServer recipe, minus
- *  its members migration
+/** Starts the showcase preview server with the `playwright.config.ts` webServer recipe
  *  (`VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port 4173 --var CAIRN_DEV_BACKEND:1`),
  *  detached into a separate process group so the whole group can be killed on teardown, and waits
  *  for /admin/posts to answer 200 within the config's 120s budget. Refuses to run if port 4173 already has a

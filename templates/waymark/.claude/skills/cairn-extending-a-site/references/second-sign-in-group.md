@@ -8,21 +8,20 @@ Contents:
 
 - [Choose](#choose)
 - [Role path](#role-path)
-- [Channel path](#channel-path)
 - [Rolling your own flow with /auth-crypto](#rolling-your-own-flow-with-auth-crypto)
 - [Server-only subpaths](#server-only-subpaths)
 
 ## Choose
 
-| | Declared role | Auth channel (`createAuthChannel`, `/auth-channel`) |
+| | Declared role | A flow built on `/auth-crypto` |
 |---|---|---|
-| Sign-in | Same magic link | Numeric code (8 digits default) over the site's transport |
-| Roster | `editor` table in `AUTH_DB`, added on `/admin/editors` | Site's store, read by `lookup` |
-| Session | `AUTH_DB`, populates `locals.cairnEditor` at `none` capability | Channel's own D1 binding, never `AUTH_DB`, never `locals.cairnEditor` |
+| Sign-in | Same magic link | The site's own, built from the primitives |
+| Roster | `editor` table in `AUTH_DB`, added on `/admin/editors` | Site's store |
+| Session | `AUTH_DB`, populates `locals.cairnEditor` at `none` capability | Site's own store and cookie, never `AUTH_DB`, never `locals.cairnEditor` |
 | Lands | The role's `home` under `/admin` | Site routes outside `/admin` |
 
 An owner adds people one at a time and they work under `/admin`: role. The site already keeps the
-roster and its people never need the admin: channel. A group that writes content needs editor
+roster and its people never need the admin: your own flow. A group that writes content needs editor
 capability and an access map (`references/admin-access.md`).
 
 ## Role path
@@ -43,44 +42,6 @@ capability and an access map (`references/admin-access.md`).
 
 The dev backend runs every request as an owner, so verify on the deployed site. An add that fails
 with `auth.store-roles-unmigrated` means `0001_roles.sql` is not applied.
-
-## Channel path
-
-1. Provision a separate D1 database. Copy the packaged migration into a sibling directory and point
-   the binding there, never at the `AUTH_DB` `migrations` directory: a shared `migrations_dir`
-   applies each schema to the other database on first migrate.
-
-   ```sh
-   mkdir migrations-members
-   cp node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql migrations-members/
-   npx wrangler d1 migrations apply MEMBER_DB --local
-   ```
-
-   with `{ "binding": "MEMBER_DB", ..., "migrations_dir": "migrations-members" }` in
-   `wrangler.jsonc`. The file is idempotent, so a database built from raw DDL adopts it by running
-   `wrangler d1 migrations apply`, which records the `d1_migrations` marker; insert that marker by
-   hand only without the runner.
-2. Write the channel in a server-only module, typed over the generated `Cloudflare.Env`:
-   `resolveDb` returns `MEMBER_DB`; `deliver(contact, code, ctx)` sends; `lookup(contact, { env })`
-   returns a stable subject or `null`; `normalize` is idempotent and injective (trim and lowercase an
-   email); `challenge` verifies a human with `verifyTurnstile` from `/cloudflare`, passing
-   `hostname`, `action` and `ip` (without the first two a token solved on another widget with the
-   same sitekey replays against this form), and never returns `true` unconditionally; `cookie.name` must not start with `cairn_`.
-3. Login route (`prerender = false`): a `request` action and a `confirm` action that pass the event
-   to `channel.actions.request` and `.confirm` and switch on `outcome` (`sent`, `confirmed`; anything
-   else is `fail(400, ...)`). The load redirects a visitor whose `resolveSubject(event)` is set.
-4. Member area (`prerender = false`): each `load` calls `resolveSubject` and redirects to login on
-   `null`; a `logout` action calls `channel.actions.logout`.
-5. End a removed member's sessions with a `verify` function (false destroys the row on that
-   resolution) or `revokeSessions(binding, subject)` at removal.
-6. Test on Node: `createChannelDb(sql)` from `@glw907/cairn-cms-dev` (needs Node 24 `node:sqlite`),
-   `vi.mock('cloudflare:workers')` for `env` and `waitUntil`, and `@glw907/cairn-cms` in
-   `test.server.deps.inline`. The event needs a local URL and a matching `Origin`.
-7. Deploy: apply the migration `--remote`, `npx wrangler secret put TURNSTILE_SECRET`, deploy.
-
-Diagnose with the `auth.channel.*` records in `references/log-events.md`: `outcome: unknown` is a
-contact not on the roster, `lookup_failed` a throwing lookup, `send_failed` a throwing `deliver`,
-`turnstile.verify_failed` `missing_secret` a blank secret. Codes last 10 minutes and 5 attempts.
 
 ## Rolling your own flow with /auth-crypto
 
@@ -118,7 +79,7 @@ discipline:
 - Answer an unknown contact with one response, byte-identical to a sent one in its body and its
   `Set-Cookie`. A cookie set only for a known contact is a one-request allowlist oracle, so set any
   pending cookie before the lookup branches.
-- Give a short code a ten-minute expiry and an attempt cap. The engine's channel allows 5 attempts.
+- Give a short code a ten-minute expiry and an attempt cap.
 - Mint a fresh session id with `generateToken` at login, never one the visitor presented, which
   would allow session fixation.
 - Set the session cookie HttpOnly, Secure, SameSite=Lax, with a `Max-Age`, and with a `__Host-` name on

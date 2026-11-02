@@ -61,7 +61,6 @@ describe('the table', () => {
     ['engine', 'scripts/build/', 'scripts/build/build-admin-css.mjs'],
     ['engine', 'packages/cairn-cms-dev/', 'packages/cairn-cms-dev/package.json'],
     ['engine', 'migrations/', 'migrations/0001_roles.sql'],
-    ['engine', 'migrations-channel/', 'migrations-channel/0000_channel.sql'],
     ['engine', 'package.json', 'package.json'],
     ['engine', 'package-lock.json', 'package-lock.json'],
     ['engine', 'svelte.config.js', 'svelte.config.js'],

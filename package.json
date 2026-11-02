@@ -160,10 +160,6 @@
       "types": "./dist/auth-store/index.d.ts",
       "default": "./dist/auth-store/index.js"
     },
-    "./auth-channel": {
-      "types": "./dist/auth-channel/index.d.ts",
-      "default": "./dist/auth-channel/index.js"
-    },
     "./auth-crypto": {
       "types": "./dist/auth-crypto/index.d.ts",
       "worker": "./dist/auth-crypto/index.js",
@@ -201,7 +197,6 @@
   "files": [
     "dist",
     "migrations",
-    "migrations-channel",
     "schema",
     "skills",
     "claude",

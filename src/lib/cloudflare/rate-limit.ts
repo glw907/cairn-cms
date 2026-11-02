@@ -8,8 +8,8 @@
 /**
  * The structural slice of a Workers `RateLimit` binding {@link resolveRateLimit} calls; any
  * conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`.
- * Declared here so the engine has one structural limiter type; `/sveltekit` and `/auth-channel`
- * re-export this same declaration. A Workers binding's `simple.period` in `wrangler.jsonc` accepts
+ * Declared here so the engine has one structural limiter type; `/sveltekit` re-exports this
+ * same declaration. A Workers binding's `simple.period` in `wrangler.jsonc` accepts
  * only `10` or `60` seconds.
  * @public
  */

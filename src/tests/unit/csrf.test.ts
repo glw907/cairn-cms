@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   isUnsafeFormRequest,
-  originMatches,
   issueCsrfToken,
   validateCsrfHeader,
   validateCsrfToken,
@@ -74,19 +73,6 @@ describe('isUnsafeFormRequest', () => {
       body: '{}',
     });
     expect(isUnsafeFormRequest(json)).toBe(false);
-  });
-});
-
-describe('originMatches', () => {
-  const ev = (origin: string | null) =>
-    ({
-      url: new URL('https://x.dev/about'),
-      request: req('https://x.dev/about', origin ? { headers: { origin } } : undefined),
-    });
-  it('matches an equal origin and rejects a mismatch or absence', () => {
-    expect(originMatches(ev('https://x.dev'))).toBe(true);
-    expect(originMatches(ev('https://evil.dev'))).toBe(false);
-    expect(originMatches(ev(null))).toBe(false);
   });
 });
 

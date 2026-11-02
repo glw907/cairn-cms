@@ -85,9 +85,8 @@ describe('shipped roots', () => {
   const repoRoot = resolve(__dirname, '../../..');
 
   it('scans the migrations at T2 with every class', () => {
-    for (const path of ['migrations/0002_audit.sql', 'migrations-channel/0000_channel.sql']) {
-      expect(profileFor(path), path).toEqual({ tier: 'T2', classes: ['C1', 'C2', 'C3', 'C4'], mode: 'whole' });
-    }
+    const path = 'migrations/0002_audit.sql';
+    expect(profileFor(path), path).toEqual({ tier: 'T2', classes: ['C1', 'C2', 'C3', 'C4'], mode: 'whole' });
   });
 
   it('maps every tracked file under a package.json "files" root to a scanned tier and a scan root', () => {

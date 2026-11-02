@@ -75,19 +75,6 @@ var eventVocabulary = []string{
 	"audit.sink.call_failed",
 	"turnstile.verify_failed",
 	"audit.sink.write_failed",
-	"auth.channel.requested",
-	"auth.channel.send_failed",
-	"auth.channel.send_cleanup_failed",
-	"auth.channel.confirmed",
-	"auth.channel.locked",
-	"auth.channel.escalated",
-	"auth.channel.ceiling_exceeded",
-	"auth.channel.session.created",
-	"auth.channel.session.destroyed",
-	"auth.channel.salt_unavailable",
-	"auth.channel.rate_limited",
-	"auth.channel.rate_limit_absent",
-	"auth.channel.rate_limit_failed",
 }
 
 // Events returns a copy of the engine's log event vocabulary, for cairn logs --event's flag

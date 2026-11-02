@@ -213,7 +213,7 @@ export function profileFor(relPath) {
     return { tier: 'T2', classes: all, mode: 'whole' };
   }
   if (
-    /^(?:skills|claude|migrations|migrations-channel)\//.test(path) ||
+    /^(?:skills|claude|migrations)\//.test(path) ||
     path.startsWith('examples/showcase/src/chassis/') ||
     path.startsWith('src/lib/reproductions/') ||
     path === 'tool/cmd/cairn/messages.go'
@@ -494,7 +494,6 @@ export const SCAN_ROOTS = [
   'skills',
   'claude',
   'migrations',
-  'migrations-channel',
   'examples/showcase/README.md',
   'examples/showcase/src/chassis',
   'src/lib',

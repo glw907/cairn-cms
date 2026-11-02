@@ -42,7 +42,7 @@ The fix is the same whatever the cause:
 
 ## A save or publish is refused
 
-When you select **Save** or **Publish** and the editor refuses, a message appears above your draft. The refusal doesn't discard your work. Your text stays in the editor exactly as you left it. When a message is about one field, the editor moves the cursor to that field and opens the **Details** panel first if the field is inside it.
+When you select **Save** or **Publish** and the editor refuses, a message appears above your draft. The refusal doesn't discard your work. Your text stays in the editor exactly as you left it. When a message names a field with one visible box, the editor moves the cursor there, opening the **Details** panel first if needed.
 
 The following table lists the messages, what each one means, and what to do.
 

@@ -25,7 +25,7 @@ already in place, so a real gap gets built in cairn's vocabulary.
 
 ## Worked example: a destination picker
 
-A screen needs to move a record between collections; no toolkit export or norms role covers it.
+A screen needs to move a record between collections; no toolkit export or recipe row covers it.
 
 - **Trigger** (control): a row verb, `btn btn-ghost btn-xs`, ghost because it opens a second
   surface.

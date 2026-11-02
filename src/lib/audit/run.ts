@@ -176,8 +176,8 @@ function loadSheetSources(config: AuditConfig): string {
 /**
  * Narrow a rule registry to the ids `--rule` named, in registry order regardless of the order
  * `ids` lists them. Undefined or empty `ids` returns `rules` unchanged, the whole registry a
- * caller ran before `--rule` existed. Generic over the rule shape: an id that matches no registered rule throws, naming every
- * known id, since silently running a smaller registry than the one asked for is the ambiguity
+ * caller ran before `--rule` existed. Generic over the rule shape: an id that matches no
+ * registered rule throws, naming every known id, since silently running a smaller registry than the one asked for is the ambiguity
  * `--rule` exists to remove.
  */
 export function selectRules<T extends { id: string }>(rules: T[], ids: string[] | undefined): T[] {

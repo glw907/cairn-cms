@@ -19,11 +19,10 @@ it. Engine passes land on `main` and never release.
 
 ## Immediate next action
 
-The `small-api` slice (pass 3 plus pass 2's shape 8) is merged (PR #184). The `p2-p4` slice (pass 7)
-is PR-ready in PR #186, from session `cairn-cms-p2-p4`; its `auth-data` items carry the security
-read and live smoke, so the conductor merges it. The conductor acting for this run is session
-`cairn-cms-9b`, and its planners report to it. The remaining passes follow in order, each planned
-just before it runs. The run stops at the release sitting, where Geoff reads the release
+Passes 1a to 7 are merged, with `p2-p4` last (PR #186). Pass 8, `cleanup`, is planned on branch
+`worktree-cleanup`, and its launch waits on Geoff's answer to queue item `20261102T053521-4053664`
+about its ceiling. The conductor acting for this run is session `cairn-cms-9b`, and its planners
+report to it. The run stops at the release sitting, where Geoff reads the release
 packet and rules each of the five held majors. Three bars read unmet by Geoff's choice (the install
 and editor sittings, and the docs review of the human pages), and Evaluate is unmet until its re-cut
 (`BACKLOG.md` #207).

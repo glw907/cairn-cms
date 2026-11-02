@@ -166,12 +166,19 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     //  closed, since proceeding on "no prior keys" would silently delete every key the fieldset does
     //  not declare.
     let priorData: Record<string, unknown> = {};
+    const priorPending = pendingBranch(concept.id, id);
     try {
-      const branch = pendingBranch(concept.id, id);
-      const priorBranch = (await backend.branchHead(branch)) !== null ? branch : backend.defaultBranch;
+      const priorBranch = (await backend.branchHead(priorPending)) !== null ? priorPending : backend.defaultBranch;
       const priorRaw = await backend.readFile(path, priorBranch);
       if (priorRaw !== null) priorData = parseMarkdown(priorRaw).frontmatter;
-    } catch {
+    } catch (err) {
+      log.warn('entry.prior_read_failed', {
+        editor: editor.email,
+        concept: concept.id,
+        id,
+        branch: priorPending,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return fail(503, saveRefusal("Couldn't read the current version of this entry. Try saving again.", body));
     }
 

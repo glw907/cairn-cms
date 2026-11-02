@@ -39,6 +39,7 @@ var eventVocabulary = []string{
 	"entry.delete_refused",
 	"entry.rename_refused",
 	"entry.reference_check_failed",
+	"entry.prior_read_failed",
 	"github.unreachable",
 	"health.failed",
 	"guard.refused",

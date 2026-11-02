@@ -115,6 +115,7 @@ describe('saveAction: the server decides what is prior', () => {
   });
 
   it('refuses with 503 and keeps the body when the prior read throws on a new=1 save', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = double();
     const real = globalThis.fetch;
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
@@ -128,5 +129,9 @@ describe('saveAction: the server decides what is prior', () => {
     expect(result.status).toBe(503);
     expect(result.data.body).toBe('Body text.');
     expect(gh.calls.some((c) => c.method === 'PATCH')).toBe(false);
+    const records = warn.mock.calls.map((c) => c[0]).filter((r) => r?.event === 'entry.prior_read_failed');
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ concept: 'posts', id: 'my-post', error: 'network down' });
+    warn.mockRestore();
   });
 });

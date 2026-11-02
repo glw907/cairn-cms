@@ -17,6 +17,7 @@ import {
   buildSiteFactsFromVite,
   checkSiteFacts,
   formatSiteFacts,
+  writeManifest,
   writeSiteFacts,
   siteFactsAbsentWarning,
   readAdapterFacts,
@@ -96,10 +97,10 @@ afterAll(() => {
 });
 
 async function seedManifest(dir: string): Promise<void> {
-  const serialized = await buildManifestFromVite(OPTS, dir);
+  const { manifest } = await buildManifestFromVite(OPTS, dir);
   const out = join(dir, 'src/content/.cairn/index.json');
   mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, serialized);
+  writeFileSync(out, manifest);
 }
 
 /** A fake Rollup plugin context recording warn/error calls, error rethrown as buildStart itself does. */
@@ -201,6 +202,27 @@ describe('checkSiteFacts', () => {
     const dir = tempProject(ADAPTER_FULL);
     await writeSiteFacts(dir);
     await expect(checkSiteFacts(OPTS, dir)).resolves.toEqual({ status: 'ok' });
+  }, 30000);
+});
+
+describe('the write path reports what it did', () => {
+  it('writeManifest carries the problems of a real write-mode load and counts only changed rows', async () => {
+    const dir = tempProject(ADAPTER_NO_FACTS);
+    mkdirSync(join(dir, 'src/content/posts'), { recursive: true });
+    writeFileSync(join(dir, 'src/content/posts/good.md'), '---\ntitle: Good\n---\nBody.\n');
+    writeFileSync(join(dir, 'src/content/posts/bad.md'), '---\n---\nBody.\n');
+
+    const first = await writeManifest(dir);
+    expect(first).toMatchObject({ entries: 1, changed: 1, written: true });
+    expect(first.problems).toMatchObject([{ concept: 'posts', id: 'bad', draft: false }]);
+
+    await expect(writeManifest(dir)).resolves.toMatchObject({ entries: 1, changed: 0, written: false });
+  }, 30000);
+
+  it('writeSiteFacts returns whether the bytes changed', async () => {
+    const dir = tempProject(ADAPTER_FULL);
+    await expect(writeSiteFacts(dir)).resolves.toBe(true);
+    await expect(writeSiteFacts(dir)).resolves.toBe(false);
   }, 30000);
 });
 

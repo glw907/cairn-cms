@@ -76,10 +76,10 @@ const OPTS = {
 // verify. buildManifestFromVite (write mode) runs no verify, so it happily serializes a manifest that
 // still carries a dangling edge, which is exactly what the dangling test needs to isolate the gate.
 async function seedManifest(dir: string): Promise<void> {
-  const serialized = await buildManifestFromVite(OPTS, dir);
+  const { manifest } = await buildManifestFromVite(OPTS, dir);
   const out = join(dir, 'src/content/.cairn/index.json');
   mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, serialized);
+  writeFileSync(out, manifest);
 }
 
 describe('verifyReferences wired into the manifest build', () => {

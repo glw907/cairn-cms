@@ -144,7 +144,8 @@ export const events = defineConcept({
 
 `src/content/.cairn/index.json` holds one row per entry (id, concept, title, date, permalink, draft,
 links, media refs, reference edges, tags, includes, `publishedAt`). The `cairnManifest` plugin
-rebuilds it on every build and dev start and fails the build on drift (`content manifest is stale`).
+regenerates it once at dev start, warning `cairn-manifest: regenerated` and a summary, and fails a
+build on drift (`content manifest is stale`).
 After any content edit outside the admin, run `npx cairn-manifest` and commit the result; it also
 writes `site-facts.json` and keeps first-publish stamps.
 

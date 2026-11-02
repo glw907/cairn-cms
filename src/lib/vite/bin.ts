@@ -2,12 +2,13 @@
 // cairn-manifest: the regenerate command. It evaluates the cairnManifest virtual module in write mode
 // through the consumer's Vite resolution and writes the canonical content manifest, then does the
 // same for the site-facts contract. A thin shell over writeManifest and writeSiteFacts so the write
-// logic stays testable apart from the CLI. Bad flags go to stderr with exit 2; a write failure exits
-// 1; a clean run exits 0. The codes go through process.exitCode, never process.exit, so a piped
+// logic stays testable apart from the CLI. It prints a one-line summary to stdout. Bad flags go to
+// stderr with exit 2; a write failure exits 1; a finished write with an invalid non-draft entry exits
+// 1; any other run exits 0. The codes go through process.exitCode, never process.exit, so a piped
 // stdout flushes the whole report before the process ends, the same rule its two sibling bins
 // (cairn-audit, cairn-media-seed) already follow.
 import { writeManifest, writeSiteFacts } from './internal.js';
-import { parseArgs, USAGE } from './assemble.js';
+import { formatManifestSummary, manifestExitCode, parseArgs, USAGE } from './assemble.js';
 
 async function main(): Promise<void> {
   let args: ReturnType<typeof parseArgs>;
@@ -25,8 +26,10 @@ async function main(): Promise<void> {
   }
 
   try {
-    await writeManifest(process.cwd());
-    await writeSiteFacts(process.cwd());
+    const report = await writeManifest(process.cwd());
+    const factsChanged = await writeSiteFacts(process.cwd());
+    console.log(formatManifestSummary(report, factsChanged));
+    process.exitCode = manifestExitCode(report);
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exitCode = 1;

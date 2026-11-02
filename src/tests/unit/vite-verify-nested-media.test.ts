@@ -70,7 +70,8 @@ afterAll(() => {
 /** Commit the manifest the corpus builds, with every `mediaRefs` key removed: a manifest generated
  *  before the field existed. */
 async function seedPreFieldManifest(dir: string): Promise<void> {
-  const built = JSON.parse(await buildManifestFromVite(OPTS, dir)) as { entries: Record<string, unknown>[] };
+  const { manifest } = await buildManifestFromVite(OPTS, dir);
+  const built = JSON.parse(manifest) as { entries: Record<string, unknown>[] };
   for (const entry of built.entries) delete entry.mediaRefs;
   const out = join(dir, 'src/content/.cairn/index.json');
   mkdirSync(dirname(out), { recursive: true });

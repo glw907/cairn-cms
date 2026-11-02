@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fillTitleWhenHydrated } from './editor-helpers.js';
+import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
 
 // Task 8: the fragments (reusable-content) feature, proven end to end against the real showcase
 // build. The public half and the editor half exercise two separate content universes on purpose:
@@ -63,9 +63,7 @@ test.describe('fragments: reusable content included across entries', () => {
     // fragmentTargets reads (content-routes-core.ts reads a fragment's body from
     // backend.defaultBranch only, so a pending, unpublished fragment never appears in the picker).
     await page.goto('/admin/fragments');
-    await page.locator('header').getByRole('button', { name: 'New fragment' }).click();
-    const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
-    await expect(createDialog).toBeVisible();
+    const createDialog = await openCreateDialog(page, 'New fragment');
     await createDialog.locator('input[name="title"]').fill(fragmentTitle);
     await createDialog.locator('input[name="slug"]').fill(fragmentSlug);
     await createDialog.getByRole('button', { name: 'Create' }).click();
@@ -89,9 +87,7 @@ test.describe('fragments: reusable content included across entries', () => {
     // render identically.
     const postSlug = `fragment-picker-post-${Date.now()}`;
     await page.goto('/admin/posts');
-    await page.locator('header').getByRole('button', { name: 'New post' }).click();
-    const createPostDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
-    await expect(createPostDialog).toBeVisible();
+    const createPostDialog = await openCreateDialog(page);
     await createPostDialog.locator('input[name="title"]').fill('Fragment Picker Post');
     await createPostDialog.locator('input[name="slug"]').fill(postSlug);
     await createPostDialog.getByRole('button', { name: 'Create' }).click();

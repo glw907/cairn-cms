@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { resolve, relative, join } from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
-import { fillTitleWhenHydrated } from './editor-helpers.js';
+import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
 
 // The preview pass's e2e proof (spec part 3, "Public preview for a non-editor"): the whole chain,
 // end to end, against the real mintPreview/revokePreview admin actions and the real loadPreview
@@ -156,9 +156,7 @@ async function createDraftPost(
   opts: { slug: string; title: string; body: string },
 ): Promise<string> {
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New post' }).click();
-  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
-  await expect(createDialog).toBeVisible();
+  const createDialog = await openCreateDialog(page);
   await createDialog.locator('input[name="title"]').fill(opts.title);
   await createDialog.locator('input[name="slug"]').fill(opts.slug);
   await createDialog.getByRole('button', { name: 'Create' }).click();

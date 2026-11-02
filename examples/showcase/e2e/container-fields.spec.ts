@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fillTitleWhenHydrated } from './editor-helpers.js';
+import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
 
 // The v2 container fields (posts.faq = array(object), posts.gallery = array(image)) end to end against
 // the running showcase behind the fake backend (the fake-github recorder plus the fake R2 double on
@@ -36,9 +36,7 @@ test('the FAQ array(object) round-trips: add two rows, reorder, remove one, save
   await page.goto('/admin/posts');
 
   // Create the entry through the header dialog.
-  await page.locator('header').getByRole('button', { name: 'New post' }).click();
-  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
-  await expect(createDialog).toBeVisible();
+  const createDialog = await openCreateDialog(page);
   await createDialog.locator('input[name="title"]').fill('FAQ Roundtrip');
   await createDialog.locator('input[name="slug"]').fill(slug);
   await createDialog.getByRole('button', { name: 'Create' }).click();
@@ -106,9 +104,7 @@ test('the gallery array(image) round-trips: add an image row, save, reload, the 
   const slug = `gallery-roundtrip-${Date.now()}`;
 
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New post' }).click();
-  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
-  await expect(createDialog).toBeVisible();
+  const createDialog = await openCreateDialog(page);
   await createDialog.locator('input[name="title"]').fill('Gallery Roundtrip');
   await createDialog.locator('input[name="slug"]').fill(slug);
   await createDialog.getByRole('button', { name: 'Create' }).click();

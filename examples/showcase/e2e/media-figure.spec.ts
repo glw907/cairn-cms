@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fillTitleWhenHydrated } from './editor-helpers.js';
+import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
 
 // The media Phase 3a inline figure, end to end against the running showcase. It builds on the 2b
 // insert flow (open the popover, upload, alt, Insert), then drives the figure control: wrap the
@@ -39,9 +39,7 @@ test('the figure flow: wrap an inserted image in a wide figure, render the figca
   // server), and a fresh entry so this spec never touches the shared seed branch.
   const slug = `figure-post-${Date.now()}`;
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New post' }).click();
-  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
-  await expect(createDialog).toBeVisible();
+  const createDialog = await openCreateDialog(page);
   await createDialog.locator('input[name="title"]').fill('Figure Post');
   await createDialog.locator('input[name="slug"]').fill(slug);
   await createDialog.getByRole('button', { name: 'Create' }).click();

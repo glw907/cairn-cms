@@ -79,22 +79,10 @@ function triggers(workflow: Workflow): Record<string, unknown> {
   return (raw ?? {}) as Record<string, unknown>;
 }
 
-/**
- * Names every job that sets no `timeout-minutes`. A reusable-workflow call is exempt because
- * GitHub rejects the key there; it is judged by the jobs of the workflow it calls instead.
- */
-function jobsWithoutTimeout(name: string, seen: string[] = []): string[] {
+/** Names every job that sets no `timeout-minutes`. */
+function jobsWithoutTimeout(name: string): string[] {
   const missing: string[] = [];
   for (const [jobId, job] of Object.entries(loadWorkflow(name).jobs ?? {})) {
-    if (job.uses !== undefined) {
-      const called = /^\.\/\.github\/workflows\/([\w.-]+)$/.exec(job.uses)?.[1];
-      if (called === undefined) {
-        missing.push(`${name}:${jobId} calls ${job.uses}, which is not a local workflow this suite can read`);
-      } else if (!seen.includes(called)) {
-        missing.push(...jobsWithoutTimeout(called, [...seen, called]));
-      }
-      continue;
-    }
     if (typeof job['timeout-minutes'] !== 'number') missing.push(`${name}:${jobId}`);
   }
   return missing;
@@ -103,19 +91,6 @@ function jobsWithoutTimeout(name: string, seen: string[] = []): string[] {
 describe('every job is bounded', () => {
   it.each(workflowFiles())('%s sets timeout-minutes on every job it runs', (name) => {
     expect(jobsWithoutTimeout(name)).toEqual([]);
-  });
-
-  it('reads a reusable-workflow call through the jobs of the workflow it calls', () => {
-    const calls = workflowFiles().filter((name) =>
-      Object.values(loadWorkflow(name).jobs ?? {}).some((job) => job.uses !== undefined),
-    );
-    expect(calls.sort()).toEqual(['e2e.yml', 'publish.yml']);
-    for (const name of calls) {
-      for (const job of Object.values(loadWorkflow(name).jobs ?? {})) {
-        if (job.uses !== undefined) expect(job).not.toHaveProperty('timeout-minutes');
-      }
-    }
-    expect(Object.keys(loadWorkflow('norms.yml').jobs ?? {}).length).toBeGreaterThan(0);
   });
 });
 

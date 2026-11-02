@@ -15,7 +15,6 @@ import { parseMediaToken } from '../media/reference.js';
 
 /**
  * Every toolbar format the editor applies through `EditorApi.format`.
- * @public
  */
 export type FormatKind =
   | 'bold'

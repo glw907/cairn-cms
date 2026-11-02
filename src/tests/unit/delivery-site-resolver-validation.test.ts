@@ -7,7 +7,7 @@ import { fields } from '../../lib/content/fields.js';
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
-    routing: 'feed',
+    routing: 'dated',
     fields: { title: fields.text({ label: 'Title', required: true }) },
   },
 })[0];
@@ -51,7 +51,7 @@ describe('buildSiteResolver validation', () => {
     const d = normalizeConcepts({
       posts: {
         dir: 'src/content/posts',
-        routing: 'feed',
+        routing: 'dated',
         fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) },
       },
     })[0];
@@ -82,7 +82,7 @@ describe('buildSiteResolver validation', () => {
     const d = normalizeConcepts({
       posts: {
         dir: 'src/content/posts',
-        routing: 'feed',
+        routing: 'dated',
         fields: { draft: fields.boolean({ label: 'Draft' }) },
       },
     })[0];
@@ -95,7 +95,7 @@ describe('buildSiteResolver validation', () => {
     const d = normalizeConcepts({
       posts: {
         dir: 'src/content/posts',
-        routing: 'feed',
+        routing: 'dated',
         fields: { draft: fields.text({ label: 'Draft' }) },
       },
     })[0];

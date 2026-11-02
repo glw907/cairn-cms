@@ -7,8 +7,8 @@
 // tree-shaking rather than reliant on it.
 //
 // `auth-routes.ts` re-exports what it needs, so `/sveltekit` stays the one publishing subpath and
-// every existing import keeps resolving (the canonical-home rule is about the subpath, not the
-// declaring file).
+// every existing import keeps resolving (the one-path rule is about the subpath, not the declaring
+// file).
 
 /**
  * The `?error=` code a confirm redirects with when the submitted token fails to confirm and this

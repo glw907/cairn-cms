@@ -53,7 +53,7 @@ export const load: PageServerLoad = async (event) => {
 // composes the editor, CSRF and audit contract onto every action and resolves the section's
 // binding, so no action re-implements a gate the engine already owns.
 //
-// It is fail-closed on every call, unlike createAdminAction's opt-in access option: the site's access
+// It is fail-closed on every call: the site's access
 // declaration (the adapter's `access` member in src/theme/cairn.config.ts) must carry a rule
 // admitting the session for this route, or the action refuses with a 403 it never explains to the
 // browser, and a route no hook attached the map to refuses with a 500. ownerOnly stacks on top of that map check for the destructive

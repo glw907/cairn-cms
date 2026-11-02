@@ -6,35 +6,19 @@
 // `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md` is the brief this rider answers,
 // including its "the internals pass should re-decide the split" instruction (Step 3 below).
 //
-// TWO derivations feed the recorded set, because the two known proof cases live in different
-// models and neither alone finds both:
+// The derivation (`deriveTypeCheckerLeaks`) walks the real TypeScript type graph, through the
+// compiler API, from every currently-exported symbol on each subpath's built `.d.ts`, to a fixed
+// point. It catches a name buried more than one hop deep (`AdvisoryAction`, reachable only through
+// `EditData.advisories[].actions[]`) that `buildSurfaceModel()`'s renderer cannot:
+// `renderInterface` (check-surface.mjs) expands exactly one member level. It follows a type across
+// subpaths: a reachable name exported from any subpath is nameable, so it is no leak, and the
+// one-path rule in check-surface.mjs holds where that name imports from.
 //
-// - The TYPE-CHECKER model (`deriveTypeCheckerLeaks`) walks the real TypeScript type graph,
-//   through the compiler API, from every currently-exported symbol on each subpath's built
-//   `.d.ts`, to a fixed point. It catches a name buried more than one hop deep (`AdvisoryAction`,
-//   reachable only through `EditData.advisories[].actions[]`) that `buildSurfaceModel()`'s
-//   renderer cannot: `renderInterface` (check-surface.mjs) expands exactly one member level, so
-//   a nested INTERFACE reference like `AdvisoryNotice` prints as its bare name, and
-//   `AdvisoryNotice`'s further members (where `AdvisoryAction` actually lives) are never
-//   independently rendered once `AdvisoryNotice` itself is unpublished from every subpath.
-// - The RENDERER model (`deriveRendererLeaks`) works over `buildSurfaceModel()`'s already-
-//   rendered shape strings and catches the opposite gap: a name that DOES have its
-//   top-level export row on one subpath, but whose exact literal-union definition is EXPANDED
-//   inline (never referenced by name) inside another export's shape on a DIFFERENT subpath
-//   (`NavIcon`, `EngineScreenId`: root's `.d.ts` rolls up `NavLayoutEntry.icon` without a
-//   surviving symbol reference to `NavIcon`, a TypeScript dts-bundling artifact, not a property
-//   of the type graph itself). `SlotKind` is the absent-everywhere control: unlike `NavIcon`, its
-//   declaring module is bundled into BOTH subpaths' `.d.ts`, so the type-checker model finds
-//   a live symbol reference on both, and
-//   the renderer model (which needs a name's OWN top-level shape to compare against) cannot
-//   attempt it at all, since `SlotKind` has no export row on any subpath to read that shape from.
-//
-// The recorded registry (`check-surface-leaks.json`) is the UNION, keyed by (name, subpath),
-// each entry carrying which model surfaced it and exactly one reason kind: `sanctioned-by` (a
-// ledger slug or move-record row) or `standing-unverdicted` (a one-line citation). The gate fails
-// on any leak the derivation finds with no matching entry, and on any entry the derivation no
-// longer produces (the record shrinks as a leak is resolved, the same discipline check-surface's
-// canonical-home rule already holds for its record).
+// The recorded registry (`check-surface-leaks.json`) is keyed by (name, subpath), each entry
+// carrying exactly one reason kind: `sanctioned-by` (a ledger slug or move-record row) or
+// `standing-unverdicted` (a one-line citation). The gate fails on any leak the derivation finds
+// with no matching entry, and on any entry the derivation no longer produces (the record shrinks
+// as a leak is resolved).
 import ts from 'typescript';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
@@ -234,6 +218,22 @@ export function collectReachableNames(checker, rootTypes, ownDir) {
 }
 
 /**
+ * The leak filter: from the names reachable on one subpath, those declared in our own type universe
+ * and exported from no subpath. An export on any subpath clears a name, so the gate follows a type
+ * across subpaths.
+ * @param {Iterable<string>} reachable
+ * @param {Set<string>} universe
+ * @param {Record<string, Record<string, string>>} model
+ * @returns {string[]} sorted
+ */
+export function selectLeakedNames(reachable, universe, model) {
+  /** @type {Set<string>} */
+  const exportedAnywhere = new Set();
+  for (const exports of Object.values(model)) for (const name of Object.keys(exports)) exportedAnywhere.add(name);
+  return [...reachable].filter((name) => universe.has(name) && !exportedAnywhere.has(name)).sort();
+}
+
+/**
  * F-1's classic clause, against the type checker: a name absent from every subpath's export
  * list, drawn from our own known type universe, reachable from some currently-exported symbol's
  * type graph on a given subpath. Keyed by the subpath whose graph reached it (a name reachable
@@ -243,10 +243,6 @@ export function collectReachableNames(checker, rootTypes, ownDir) {
  * @returns {{ name: string, subpath: string, model: 'type-checker' }[]}
  */
 export function deriveTypeCheckerLeaks(model, universe) {
-  /** @type {Set<string>} */
-  const exportedAnywhere = new Set();
-  for (const subpath of Object.keys(model)) for (const name of Object.keys(model[subpath])) exportedAnywhere.add(name);
-
   const distDir = resolve(ROOT, 'dist');
   /** @type {{ name: string, subpath: string, model: 'type-checker' }[]} */
   const leaks = [];
@@ -255,158 +251,33 @@ export function deriveTypeCheckerLeaks(model, universe) {
     if (!existsSync(dtsPath)) continue;
     const { checker, symbols } = moduleExports(dtsPath);
     if (symbols.length === 0) continue;
-    // `/admin` mixes runtime Svelte component exports (MarkdownEditor, EditPage, ...) with a
-    // handful of plain type exports riding the same barrel (TidyApi, ImagePlaceholderApi,
-    // FormatKind, EditorApi). The split is read mechanically off the dist declarations via
-    // `isPlainTypeExport`, not asserted in prose: only the plain-type exports feed the walk below,
-    // so a genuine leak reachable only through one of them (as `Change`, buried inside `TidyApi`,
-    // in fact is; see the registry entry) is caught the same way it would be on any other subpath.
+    // `/admin` exports runtime Svelte components, and a plain type added beside them rides the same
+    // barrel. The split is read mechanically off the dist declarations via `isPlainTypeExport`, not
+    // asserted in prose: only plain-type exports feed the walk below, so a genuine leak reachable
+    // only through one of them is caught the same way it would be on any other subpath.
     //
-    // A component's declared type is a generic reference to its Props/Events/Slots parameters,
-    // and walking those would reach every prop's type, including a component's internal
-    // callback and object props. That is an ACCEPTED LIMITATION, stated as one rather than fixed
-    // here: component prop types stay invisible to this rider. The concrete blocked shape is the
-    // two-model structure itself, neither of which reaches a prop: the type-checker model starts
-    // from each subpath's EXPORTED symbols' declared types, and a component's declared type
-    // (`Component<Props, Events, Slots>`) never surfaces `Props`' member types through that
-    // walk the way an interface's members do, because the generic's type ARGUMENTS are Props
-    // itself, not a property of it; the renderer model never attempts `/admin` at all, since
-    // it compares literal-union shapes across `buildSurfaceModel()`'s per-export renderings, and a
-    // component's rendered shape is the opaque `Component<Props, ...>` string, not an expanded
-    // object. Structurally modeling component props (walking each component's Props type
-    // argument) would need a third model this rider does not build; Task 7's props gate is the
-    // answer for that surface instead (see the ledger row's stated-limits paragraph).
+    // A component's declared type is a generic reference to its Props/Events/Slots parameters.
+    // That is an ACCEPTED LIMITATION, stated as one rather than fixed here: component prop types
+    // stay invisible to this rider, because the walk starts from each subpath's EXPORTED symbols'
+    // declared types, and a component's declared type (`Component<Props, Events, Slots>`) never
+    // surfaces `Props`' member types the way an interface's members do. Structurally modeling
+    // component props would need a second model this rider does not build; Task 7's props gate is
+    // the answer for that surface instead (see the ledger row's stated-limits paragraph).
     const resolved = symbols.map((sym) => resolveAlias(checker, sym));
     const rootSymbols = entry.subpath === '/admin' ? resolved.filter(isPlainTypeExport) : resolved;
     if (rootSymbols.length === 0) continue;
     const rootTypes = rootSymbols.map((sym) => shapeTypeOf(checker, sym));
     const reachable = collectReachableNames(checker, rootTypes, distDir);
-    for (const name of [...reachable].sort()) {
-      if (!universe.has(name)) continue;
-      if (exportedAnywhere.has(name)) continue;
+    for (const name of selectLeakedNames(reachable, universe, model)) {
       leaks.push({ name, subpath: entry.subpath, model: 'type-checker' });
     }
   }
   return leaks;
 }
 
-// --- the renderer model (the per-subpath clause) ------------------------------------------------
-// A depth-aware split on `separator` at bracket depth 0, outside quotes. `=>` is treated as one
-// unit (skipped without a depth change) so an arrow-typed member's `<...>` generic argument
-// does not miscount against the `(...)` that already protects it.
-/** @param {string} text @param {string} separator @returns {string[]} */
-function splitTopLevel(text, separator) {
-  /** @type {string[]} */
-  const parts = [];
-  let depth = 0;
-  /** @type {string | null} */
-  let quote = null;
-  let start = 0;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quote) {
-      if (c === quote && text[i - 1] !== '\\') quote = null;
-      continue;
-    }
-    if (c === '"' || c === "'") {
-      quote = c;
-      continue;
-    }
-    if (c === '=' && text[i + 1] === '>') {
-      i++;
-      continue;
-    }
-    if ('([{<'.includes(c)) depth++;
-    else if (')]}>'.includes(c)) depth--;
-    else if (depth === 0 && text.startsWith(separator, i)) {
-      parts.push(text.slice(start, i));
-      i += separator.length - 1;
-      start = i + 1;
-    }
-  }
-  parts.push(text.slice(start));
-  return parts.map((p) => p.trim()).filter((p) => p.length > 0);
-}
-
-// A rendered shape reads as a pure literal-string union (`"a" | "b" | ...`, with `(string & {})`
-// tolerated as the engine's open-string escape hatch) or it does not; only this distinctive
-// shape is compared across subpaths, so an ordinary object or primitive member never produces a
-// false match. Returns the canonical (sorted) literal set, or `null` when the shape is not a
-// pure literal union.
-/** @param {string} shape @returns {string[] | null} */
-export function extractLiteralUnionSet(shape) {
-  const parts = splitTopLevel(shape.trim(), ' | ');
-  /** @type {string[]} */
-  const literals = [];
-  for (const part of parts) {
-    if (part === '(string & {})') continue;
-    const m = part.match(/^"([^"]*)"$/);
-    if (!m) return null;
-    literals.push(m[1]);
-  }
-  return literals.length > 0 ? literals.sort() : null;
-}
-
-/** @param {string[]} a @param {string[]} b */
-function sameSet(a, b) {
-  return a.length === b.length && a.every((v, i) => v === b[i]);
-}
-
+// --- the registry and the gate ----------------------------------------------------------------
 /**
- * Whether `shape` (a rendered export, object or otherwise) contains a member, at any depth this
- * gate's single-level object rendering reaches, whose literal-union set exactly matches
- * `targetSet`. Checked against the shape's top-level form first (a type alias could itself
- * be the union), then against each of its members if it is an object shape.
- * @param {string} shape
- * @param {string[]} targetSet
- * @returns {boolean}
- */
-export function shapeContainsLiteralUnion(shape, targetSet) {
-  const own = extractLiteralUnionSet(shape);
-  if (own && sameSet(own, targetSet)) return true;
-  const trimmed = shape.trim();
-  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return false;
-  for (const member of splitTopLevel(trimmed.slice(1, -1), ';')) {
-    const colon = member.indexOf(':');
-    if (colon === -1) continue;
-    const memberType = member.slice(colon + 1).trim();
-    const memberSet = extractLiteralUnionSet(memberType);
-    if (memberSet && sameSet(memberSet, targetSet)) return true;
-  }
-  return false;
-}
-
-/**
- * F-1's per-subpath clause: a name that HAS its top-level export row on one subpath, whose
- * exact literal-union definition is expanded inline (not referenced by name) inside another
- * export's rendered shape on a different subpath. Pure over `buildSurfaceModel()`'s output, so
- * the unit test drives it with a crafted model.
- * @param {Record<string, Record<string, string>>} model
- * @returns {{ name: string, subpath: string, model: 'renderer', foundIn: string }[]}
- */
-export function deriveRendererLeaks(model) {
-  const subpaths = Object.keys(model).sort();
-  /** @type {{ name: string, subpath: string, model: 'renderer', foundIn: string }[]} */
-  const leaks = [];
-  for (const home of subpaths) {
-    for (const [name, shape] of Object.entries(model[home])) {
-      const homeSet = extractLiteralUnionSet(shape);
-      if (!homeSet) continue;
-      for (const other of subpaths) {
-        if (other === home || name in model[other]) continue;
-        const foundIn = Object.entries(model[other]).find(([, otherShape]) =>
-          shapeContainsLiteralUnion(otherShape, homeSet),
-        );
-        if (foundIn) leaks.push({ name, subpath: other, model: 'renderer', foundIn: foundIn[0] });
-      }
-    }
-  }
-  return leaks;
-}
-
-// --- the union, the registry, and the gate --------------------------------------------------
-/**
- * @typedef {{ name: string, subpath: string, model: string, foundIn?: string }} DerivedLeak
+ * @typedef {{ name: string, subpath: string, model: string }} DerivedLeak
  * @typedef {{ name: string, subpath: string, model: string, 'sanctioned-by'?: string, 'standing-unverdicted'?: string }} RegistryEntry
  */
 
@@ -418,20 +289,12 @@ function leakKey(leak) {
 }
 
 /**
- * The full derivation: the type-checker model's clause plus the renderer model's per-subpath
- * clause, deduplicated by (name, subpath).
+ * The full derivation, sorted by name then subpath.
  * @param {Record<string, Record<string, string>>} model
  * @returns {DerivedLeak[]}
  */
 export function deriveLeaks(model) {
-  const universe = knownTypeUniverse();
-  /** @type {Map<string, DerivedLeak>} */
-  const byKey = new Map();
-  for (const leak of deriveTypeCheckerLeaks(model, universe)) byKey.set(leakKey(leak), leak);
-  for (const leak of deriveRendererLeaks(model)) {
-    if (!byKey.has(leakKey(leak))) byKey.set(leakKey(leak), leak);
-  }
-  return [...byKey.values()].sort(
+  return deriveTypeCheckerLeaks(model, knownTypeUniverse()).sort(
     (a, b) => a.name.localeCompare(b.name) || a.subpath.localeCompare(b.subpath),
   );
 }
@@ -439,8 +302,7 @@ export function deriveLeaks(model) {
 /**
  * The gate's verdict against a loaded registry: every derived leak must match a registry entry
  * carrying exactly one non-empty reason kind, and every registry entry must still be produced by
- * the derivation (a resolved leak's entry is drift, the same discipline check-surface's
- * canonical-home record already holds).
+ * the derivation (a resolved leak's entry is drift).
  * @param {DerivedLeak[]} derived
  * @param {RegistryEntry[]} registry
  * @returns {{ ok: true } | { ok: false, unrecorded: DerivedLeak[], stale: RegistryEntry[], unreasoned: RegistryEntry[] }}

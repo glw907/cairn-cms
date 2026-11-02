@@ -15,6 +15,11 @@
 
   Consumers must: nothing.
 
+- **`serializeMarkdown` is exported from the package root.** It is the write half of `parseMarkdown`:
+  it reassembles frontmatter and a body into the file shape the editor commits.
+
+  Consumers must: nothing.
+
 - **A slot's help and a field's bounds show under the control.** `SlotDef.help` renders under the slot in the
   insert form, and the control is described by it. A text, textarea, or number field with `min`, `max`, or
   `length` shows the bound (`3 to 80 characters.`) after its help, and keeps the validity mark after the
@@ -270,6 +275,82 @@
   Consumers must: nothing.
 
 - **`mintPreview` and `revokePreview` check access before they look up the concept.** A role the access
+
+- **The `:::` content unit is a block in the API and the admin.** `defineComponent` is `defineBlock`;
+  `ComponentDef`, `ComponentRegistry`, and `ComponentContext` are `BlockDef`, `BlockRegistry`, and
+  `BlockContext`; and `defineRegistry` takes `blocks`. `rendering.blocks` and `createRenderer`'s `blocks`
+  are plain arrays of block definitions, and the engine builds the registry, so a site no longer calls
+  `defineRegistry` to wire either. `defineAdapter` builds it too, so a reserved block name, or a
+  `defaultIconByRole` block with no icon attribute, fails at load. `BlockDef` drops `attributeSchema`,
+  which the new `RegisteredBlock` type that `defineBlock` returns carries. Scaffolds move `src/theme/markdown-components.ts` to
+  `src/theme/markdown-blocks.ts`, and its `components` export is `blocks`. The admin's strings follow: the
+  insert dialog reads "Insert a block", "Search blocks", and "Back to blocks", the Edit-block control reads
+  "Edit the block at the cursor" or "Place the cursor in an editable block to edit it", and the fold
+  control reads "Fold this block" or "Unfold this block". Stored entries and the directive grammar don't
+  change, so no content moves. A stale key refuses at load: `createRenderer` throws on a `components` key
+  or a registry passed as its config, and `defineAdapter` throws on a `components` key under `rendering`.
+
+  Consumers must: rename `defineComponent` to `defineBlock`.
+
+  Consumers must: rename `ComponentDef` to `BlockDef`.
+
+  Consumers must: rename `ComponentRegistry` to `BlockRegistry`.
+
+  Consumers must: rename `ComponentContext` to `BlockContext`.
+
+  Consumers must: change `createRenderer({ components: registry })` to `createRenderer({ blocks })`, passing the array, and `createRenderer(registry, options)` from an older pin to `createRenderer({ blocks, ...options })`.
+
+  Consumers must: change `rendering: { components: registry }` to `rendering: { blocks }`, passing the array, and read `rendering.blocks` as an array, not through `.defs`, `.names`, or `.get`.
+
+  Consumers must: change `defineRegistry({ components })` to `defineRegistry({ blocks })` where you keep a registry of your own, and drop the call where it only fed `createRenderer` and `rendering`.
+
+  Consumers must: rename `src/theme/markdown-components.ts` to `src/theme/markdown-blocks.ts` and its `components` export to `blocks`, if your site came from the scaffold.
+
+  Consumers must: read `attributeSchema` through `RegisteredBlock`, not `BlockDef`.
+
+  Consumers must: update any test that finds an admin control by its old label, such as `Insert a component`, `Search components`, `Back to components`, or `Fold this section`.
+
+- **`EntryData` is typed from the site resolver.** `EntryData<S>` is a union over the adapter's concepts,
+  so narrowing on `data.concept` types `data.entry.frontmatter` from that concept's fields.
+  `PublicRoutesConfig<S>`, `PublicRoutes<S>`, and `createPublicRoutes` carry the resolver type, and with
+  no argument each stays the untyped form. `loadPreview` still returns that form, and `PreviewData` is now
+  an intersection type, not an interface.
+
+  Consumers must: narrow on `data.concept` before reading a field one concept declares if your `PublicRoutesConfig` has no annotation, since its `entryLoad` data is now typed. Annotate the config `PublicRoutesConfig<typeof site>` to take the same narrowing, or leave a `PublicRoutesConfig` annotation in place to change nothing.
+
+- **The `/delivery` response helpers take a `build` prefix.** They read `buildRssResponse`,
+  `buildJsonFeedResponse`, `buildSitemapResponse`, `buildRobotsResponse`, and `buildMarkdownResponse`, and
+  their behavior doesn't change.
+
+  Consumers must: rename `rssResponse` to `buildRssResponse`, `jsonFeedResponse` to `buildJsonFeedResponse`, `sitemapResponse` to `buildSitemapResponse`, `robotsResponse` to `buildRobotsResponse`, and `markdownResponse` to `buildMarkdownResponse`.
+
+- **`routing: 'dated'` replaces `routing: 'feed'`, and `RoutingRule.inFeeds` is gone.** The shorthand
+  names what the concept is, a routable page with a date, and not a feed the engine never built. A
+  site's feed route has always chosen the members, so no feed changes.
+
+  Consumers must: write `routing: 'dated'` in place of `routing: 'feed'` on each concept, and stop reading `inFeeds` from a concept's routing.
+
+- **`cairn-media-seed` moves to `@glw907/cairn-cms-dev`.** The engine no longer installs the bin, and the
+  dev package ships it with the same command name and flags. A site that doesn't run the seed sees no
+  change.
+
+  Consumers must: add `@glw907/cairn-cms-dev` as a dev dependency at the engine's version if you run `cairn-media-seed`.
+
+- **Config errors name the next step.** The `navLayout` unknown-screen and missing-`navMenu` errors, the
+  unknown permalink token errors, and the undeclared-field errors list the valid values. A `CairnError`
+  message now ends with its registry remediation, so `AUTH_DB binding is not configured` says how to
+  declare the binding. The nav and site-config errors an editor reads keep their exact text.
+
+  Consumers must: nothing.
+
+- **A log record prints as one JSON line outside Workers.** Under `vite dev` or in a Node script, the
+  logger prints `JSON.stringify(record)`, so an `Error` or `Headers` value prints as `{}` and a `BigInt`
+  takes the `<unserializable>` fallback. On Workers a record stays an object, so Workers Logs reads it as
+  before.
+
+  Consumers must: nothing.
+
+- **The preview mint and revoke actions check access before they look up the concept.** A role the access
   map denies a key gets the 403 whether or not the key names a concept; an unmapped nonexistent id still
   answers `unknown-concept`. The mint action reads `PUBLIC_ORIGIN` before it mints, so a site without one
   writes no `preview_tokens` row, and a refused editor on that site gets a generic failure.
@@ -287,7 +368,52 @@
 
   Consumers must: treat ContentFormFailure.error as a required string, and use Partial<ContentFormFailure> for a form prop that also carries a success result.
 
-- **`buildSitemap` throws past 50,000 URLs.** The sitemaps.org limit for one file is 50,000 URLs, and
+- **`loadPreview` and `loadHealth` take the event first and an options bag.** They now read
+  `loadPreview(event, { runtime, publicRoutes })` and `loadHealth(event, { runtime })`.
+
+  Consumers must: change the `/preview/[token]` route to `loadPreview(event, { runtime, publicRoutes })` and the health route to `loadHealth(event, { runtime })`, then run `npm run check`, because `vite build` does not type-check and a stale call fails only at runtime.
+
+- **`createSectionAction` takes no `resolveDb` for an action with no binding.** With the key omitted
+  the handler runs with no `ctx.db`, and the new `PlainSectionAction` type names the wrapper it
+  returns. `createSectionAction({ resolveDb: () => env.APP_DB })` is the recipe and types `ctx.db`
+  with no type arguments. A present `resolveDb` that answers nothing still refuses with
+  `db_not_bound`, after every authorization check.
+
+  Consumers must: nothing.
+
+- **`/delivery` loads under plain Node, so `/delivery/data` is gone.** The route loaders resolve
+  `@sveltejs/kit` with a dynamic import on their 404 paths. Its delivery names stay on `/delivery`, and
+  its content-model and adapter types, such as `SiteConfig`, `Manifest`, and `ConceptConfig`, import from
+  `@glw907/cairn-cms`.
+
+  Consumers must: change each `@glw907/cairn-cms/delivery/data` import to the name's one subpath, `@glw907/cairn-cms/delivery` for a delivery name and `@glw907/cairn-cms` for a content-model or adapter type.
+
+- **`CairnHead` moves to `/public`, beside `PreviewBanner`.** `/delivery/head` is gone.
+
+  Consumers must: change each `@glw907/cairn-cms/delivery/head` import to `@glw907/cairn-cms/public`.
+
+- **`/render` is gone, and `BlockContext` is a root type.** `/render` carried that one type, and
+  `/sveltekit` no longer re-exports it.
+
+  Consumers must: import `BlockContext` from `@glw907/cairn-cms`, not `@glw907/cairn-cms/render` or `@glw907/cairn-cms/sveltekit`.
+
+- **A new `./internal` export backs the `cairnManifest` plugin's generated module.** The entry is the
+  engine's own, with no tier, no surface snapshot, and no semver promise. A site never imports it.
+
+  Consumers must: nothing.
+
+- **`IdentityRefusal` is now `IdentityFailure`.** The identity seam's refusal arm follows the
+  `*Failure` suffix the other failure types use. Only the name changes.
+
+  Consumers must: rename `IdentityRefusal` to `IdentityFailure` in any `IdentityResolver` you write.
+
+- **`CairnRuntime` stops copying what the adapter already holds.** `composeRuntime` no longer sets
+  `render`, `icons`, or `assets`, and `sender` is now `email`, matching the adapter member it carries.
+  `runtime.media` stays the resolved media config.
+
+  Consumers must: read `runtime.email` in place of `runtime.sender`, and read `render`, `icons`, and `media` from the adapter in place of `runtime.render`, `runtime.icons`, and `runtime.assets`.
+
+- **`buildSitemapResponse` throws past 50,000 URLs.** The sitemaps.org limit for one file is 50,000 URLs, and
   the error names the count: `cairn: the sitemap has <n> URLs, and a sitemap file may list 50,000.
   List fewer URLs in this route.` A site under the limit sees no change.
 
@@ -358,12 +484,12 @@
   Consumers may: drop a cast around `cairn.aiPosture`.
 
 - **`createRenderer` takes one config bag and returns one `render`.** `createRenderer(registry,
-  options)` becomes `createRenderer({ components, resolveMedia, ... })`. `renderMarkdown(md, opts)`
+  options)` becomes `createRenderer({ blocks, resolveMedia, ... })`. `renderMarkdown(md, opts)`
   becomes `render({ body: md, ...opts })`, and `renderDocument` takes the same input, now named
   `RenderInput`. The returned `remarkPlugins` and `rehypePlugins` are gone, though the options stay.
   `ResolveOptions` and `SiteRender` name the link resolver `resolveLink` where they named it `resolve`.
 
-  Consumers must: pass `createRenderer` one object with `components` and `resolveMedia` keys.
+  Consumers must: pass `createRenderer` one object with `blocks` and `resolveMedia` keys.
 
   Consumers must: call `render({ body, ...opts })` where you called `renderMarkdown(md, opts)`, and
   pass the same input to `renderDocument`.
@@ -1081,6 +1207,40 @@
 
 ### Removed
 
+- **Dead internal code is gone.** `generateComponentReference`, `deriveTagUsage` with `TagUsageRow`,
+  `fenceDepths`, `markFirstList`, and the `ADMIN_CSS_SAFELIST` module had no production reader. None was
+  on the public surface, and `cairn-admin.css` builds byte-identical without them.
+
+  Consumers must: nothing.
+
+- **Each public name imports from one subpath.** The 107 re-exports are gone. `/delivery`, `/sveltekit`, and `/media` no longer carry the root's content-model, adapter, and backend types, and root no longer carries `MediaRef`, the `NavLayout` family, `PublishActionEntry`, or `IslandRegistry`. A type a signature names on one subpath may import from another. `check:surface` fails any name on two subpaths, `scripts/checks/check-surface-reexports.json` is deleted, so no record can excuse one, and the leak gate's per-subpath renderer model is retired.
+
+  Consumers must: import each name from its one subpath.
+
+- **The per-route factories, the preview mint pair, and `buildNewlyPublished` leave the public surface.**
+  `/sveltekit` drops `createContentRoutes`, `createAuthRoutes`, `createEditorRoutes`, `mintPreview`, and
+  `revokePreview`, with the `ContentRoutes`, `AuthRoutes`, `EditorRoutes`, `EditorRoutesConfig`,
+  `PreviewMintOutcome`, and `PreviewRevokeOutcome` types. No site needs them, since `createCairnAdmin`
+  composes the routes and the editor's Share preview group mints and revokes. `/delivery` and the root
+  drop `parseManifest`, and `buildNewlyPublished` is deleted. `createNavRoutes` stays public.
+
+  Consumers must: mount the admin through `createCairnAdmin` in place of `createContentRoutes`, `createAuthRoutes`, and `createEditorRoutes`, and drop any import of `mintPreview`, `revokePreview`, `parseManifest`, and `buildNewlyPublished`.
+
+- **A preview link's lifetime is fixed at seven days.** `PreviewTokenConfig` and the `preview` option on
+  `createCairnAdmin` are gone, and `createCairnAdmin` throws on a leftover `preview` key.
+
+  Consumers must: remove `preview` from your `createCairnAdmin` config.
+
+- **The public surface drops what a site never mounts or calls.** `/admin` now exports `CairnAdmin`,
+  `CairnAdminShell`, and `CsrfField`, since those are all a site mounts. `/delivery` drops the feed,
+  sitemap, and robots builders, which the response helpers cover, and `composeEntryData` and
+  `renderJsonLdScript`, which `createPublicRoutes` covers. The root drops the manifest format and
+  verify helpers and `resolveCapability`, `/admin-toolkit` drops `formatTimestamp`, and `/sveltekit`
+  drops `requireEditor` and `createAdminAction`. `createSectionAction` is now the one wrapper for a
+  custom admin action, and it checks the access map on every call.
+
+  Consumers must: stop importing `LoginPage`, `ConfirmPage`, `ConceptList`, `CairnMediaLibrary`, `CairnTidySettings`, `HelpHome`, `EditPage`, `CairnHistory`, `ManageEditors`, `MarkdownEditor`, `EditorApi`, `TidyApi`, `ImagePlaceholderApi`, `FormatKind`, `NavTree`, `DeleteDialog`, `RenameDialog`, `VocabularyAdmin`, `WelcomeView`, `buildRssFeed`, `buildJsonFeed`, `buildSitemap`, `buildRobots`, `formatManifest`, `verifyManifest`, `verifyReferences`, `composeEntryData`, `renderJsonLdScript`, `requireEditor`, `resolveCapability`, `formatTimestamp`, `createAdminAction`, and `AdminActionOptions`, replacing `createAdminAction` with `createSectionAction` with an access-map rule for its target, `requireEditor` with `requireAccess` with a rule naming `editor`, a feed, sitemap, or robots builder with its response helper, and `resolveCapability` with a literal capability.
+
 - **Standard Schema: `'~standard'` on `Fieldset`, and `StandardInput`.** Nothing in the engine read
   them. Ruling `cleanup-one-validate-hook` records the reversal.
 
@@ -1188,6 +1348,23 @@
   left `CAIRN_LOG_EVENTS`.
 
   Consumers must: delete `src/lib/log.ts` from a site scaffolded earlier if nothing else imports it.
+
+- **Options no site sets are gone.** `RendererConfig` drops `sanitizeSchema`, `unsafeDisableSanitize`, and
+  `anchorRel`: one pipeline path remains, a `<script>` is removed from every render, and the `rel` forced on a
+  `target="_blank"` anchor is always `noopener noreferrer`. It runs after the component dispatch and before
+  the site's own `rehypePlugins`, so an anchor a site plugin adds gets no `rel`. `CairnAdapter.editor` drops
+  `siteConfigPath`, and the site config is always `src/theme/site.config.yaml`. `PreviewConfig` drops
+  `bodyClass`, top level and per concept. `AuthGuardConfig` drops `includeSubDomains`, so the admin's
+  `Strict-Transport-Security` header is `max-age=63072000` alone, and the engine pins no subdomains.
+  `FormatCivilDateOptions` drops `intlOptions`; the Media Library's date still reads month and day.
+
+  Consumers must: delete `sanitizeSchema`, `unsafeDisableSanitize`, `anchorRel`, `editor.siteConfigPath`, `bodyClass`, and `includeSubDomains` from your config, and move a site config that lived elsewhere to `src/theme/site.config.yaml`.
+
+- **`spellcheck:` leaves `site.config.yaml`.** The dialect block configured a dictionary list that held one
+  entry, so the editor always uses US English. A site config that still carries the key now fails with
+  "unrecognized key".
+
+  Consumers must: delete the `spellcheck:` block from `site.config.yaml`.
 
 ### Security
 

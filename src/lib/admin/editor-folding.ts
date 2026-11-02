@@ -84,12 +84,12 @@ function resolvedLabel(name: string, labelFor?: (name: string) => string | undef
 }
 
 // The disclosure name for a fold control: the resolved label from its opener line, or the
-// generic 'section' when the opener carries no directive name at all. State-neutral by
+// generic 'block' when the opener carries no directive name at all. State-neutral by
 // construction, so aria-expanded stays the sole state signal rather than double-signaling
 // against a verb label.
 function blockName(openerLineText: string, labelFor?: (name: string) => string | undefined): string {
   const name = directiveOpenerName(openerLineText);
-  return name ? `${resolvedLabel(name, labelFor)} section` : 'section';
+  return name ? `${resolvedLabel(name, labelFor)} block` : 'block';
 }
 
 // What preparePlaceholder derives once per fold so placeholderDOM renders it without
@@ -150,13 +150,13 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepa
   // A folded row is only ever rendered while folded, so aria-expanded is always false here; the
   // redundancy with the gutter chevron's aria-expanded is intended.
   pill.setAttribute('aria-expanded', 'false');
-  const ariaName = prepared.label ? `${prepared.label} section` : 'section';
+  const ariaName = prepared.label ? `${prepared.label} block` : 'block';
   // The title rides the aria-label too (not just the visible text), so the chip carries the same
   // information for assistive tech that it now carries for sighted authors: with the opener's
   // fence machinery absorbed into the chip, an author using a screen reader has no other way to
   // learn the container's title while it stays folded.
   const ariaTitle = prepared.title ? `, “${prepared.title}”` : '';
-  pill.setAttribute('aria-label', `${ariaName}${ariaTitle}, ${prepared.lines} hidden lines`);
+  pill.setAttribute('aria-label', `${ariaName}${ariaTitle}, ${prepared.lines} lines, hidden`);
   // The registry's `use` line carries the pill's native tooltip; the opener's {title="..."}
   // attribute now rides the visible chip text and the aria-label above instead.
   if (prepared.use) pill.title = prepared.use;
@@ -447,7 +447,7 @@ class FoldMarker extends GutterMarker {
   toDOM(view: EditorView) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    const title = this.folded ? 'Unfold this section' : 'Fold this section';
+    const title = this.folded ? 'Unfold this block' : 'Fold this block';
     btn.className =
       'cm-cairn-fold-btn' +
       (this.folded ? ' cm-cairn-fold-folded' : '') +

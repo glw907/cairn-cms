@@ -61,7 +61,7 @@ export default function setup(root) {
       dir: 'src/content/notes',
       label: 'Notes',
       singular: 'note',
-      routing: 'feed',
+      routing: 'dated',
       fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),

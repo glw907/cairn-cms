@@ -7,16 +7,13 @@
 // even though a site's adapter config also feeds both: this barrel carries no server route, no
 // Svelte component, and no per-request framework binding.
 //
-// The canonical-home rule (ratified foundations A, `canonical-home-rule` in the rulings ledger)
-// governs every barrel: each name has exactly one declaring subpath, and any other barrel that
-// publishes it does so as a recorded R4 re-export naming that home and the signature that requires
-// it. A name below whose home is another subpath carries that note on its export line; every
-// other name here is at home. `check:surface` fails an unrecorded duplicate.
+// Every public name imports from one subpath, across all the barrels, even where a signature on
+// another subpath names the type. `check:surface` fails a name exported from two subpaths.
 export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their role names onto the three
 // engine capability levels. A zero-config site declares nothing and keeps the owner/editor default.
-export { defineRoles, resolveCapability } from './auth/roles.js';
+export { defineRoles } from './auth/roles.js';
 export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles.js';
 // The access map (admin access map and attention seams pass): one declaration, made on the adapter
 // and read from the runtime by the guard, the dev backend's handle, and the nav resolver, and one
@@ -43,15 +40,13 @@ export type {
   SiteRender,
   // `ConceptConfig.datePrefix` and `ConceptDescriptor.routing` name these.
   RoutingRule,
-  // `CairnAdapter.aiPosture` names this, so it reaches root the way every other adapter member
-  // type does. `/delivery` and `/delivery/data` export it too, since that is where `buildRobots`
-  // and `robotsResponse` read it.
+  // `CairnAdapter.aiPosture` names this, and `buildRobotsResponse` on `/delivery` reads it.
   AiPosture,
 } from './content/types.js';
 export { defineConcept } from './content/concepts.js';
 export { composeRuntime } from './content/compose.js';
 export type { ComposeInput } from './content/compose.js';
-export { parseMarkdown } from './content/frontmatter.js';
+export { parseMarkdown, serializeMarkdown } from './content/frontmatter.js';
 export { defineAdapter } from './content/adapter.js';
 // The Contract v2 field vocabulary: the one live field system.
 export { fields } from './content/fields.js';
@@ -83,36 +78,29 @@ export type {
 // `ConceptConfig.datePrefix` names this granularity type.
 export type { DatePrefix } from './content/ids.js';
 // The committed content manifest (content-graph design). The corpus builder and the
-// request-time resolver ship from the delivery entry; only the manifest's format, parse, and
-// verify operations stay public, for a build script or a custom regenerate tool. `CairnRef` and
-// `LinkResolve` name `createRenderer`'s link-resolution signature.
+// request-time resolver ship from the delivery entry. `CairnRef` and `LinkResolve` name
+// `createRenderer`'s link-resolution signature.
 export type { CairnRef, LinkResolve } from './content/links.js';
-export { formatManifest, parseManifest, verifyEntries, verifyManifest, verifyReferences } from './content/manifest.js';
-// `Manifest.entries` names `ManifestEntry`, and `verifyEntries` takes `ManifestProblem`s.
-export type { Manifest, ManifestEntry, ManifestProblem } from './content/manifest.js';
+// `Manifest.entries` names `ManifestEntry`.
+export type { Manifest, ManifestEntry } from './content/manifest.js';
 // Render engine: generic directive pipeline; sites own the component registry.
-export { defineRegistry, defineComponent } from './render/registry.js';
+export { defineRegistry, defineBlock } from './render/registry.js';
 export { previewMarkdown } from './render/component-grammar.js';
-// `ComponentDef.build`'s parameter and `.slots` name these.
-export type { ComponentDef, ComponentRegistry, ComponentContext, SlotDef } from './render/registry.js';
+// `BlockDef.build`'s parameter and `.slots` name these.
+export type { BlockDef, BlockRegistry, BlockContext, RegisteredBlock, SlotDef } from './render/registry.js';
 export { renderGlyph } from './render/glyph.js';
 export type { IconSet } from './render/glyph.js';
-// The component-authoring context type (ComponentContext) lives on both the root barrel and the
-// @glw907/cairn-cms/render subpath, which is otherwise type-only. rehypeDispatch is deliberately
-// not public: createRenderer is the one public render pipeline, so the safe plugin ordering is
-// the only public path.
+// rehypeDispatch is deliberately not public: createRenderer is the one public render pipeline, so
+// the safe plugin ordering is the only public path.
 export { createRenderer } from './render/pipeline.js';
 // `Renderer`'s `render`/`renderDocument` name `RenderInput`, which spreads `ResolveOptions`.
 export type { RendererConfig, Renderer, RenderInput, DocHeading, ResolveOptions } from './render/pipeline.js';
 // The `::include` fragment resolver type: `RenderInput.resolveFragment` and
 // `SiteRender.resolveFragment` both name it, the same public-surface pattern as `LinkResolve`.
 export type { FragmentResolve } from './render/resolve-include.js';
-// `SiteRender` and `CairnRuntime.render` name `MediaResolve` in their `resolveMedia` option;
-// `MediaResolve`'s parameter names `MediaRef`.
+// `SiteRender` names `MediaResolve` in its `resolveMedia` option. `MediaResolve`'s parameter names
+// `MediaRef`, which imports from `/media`.
 export type { MediaResolve } from './render/resolve-media.js';
-// Canonical home `/media`; a recorded R4 re-export here because `MediaResolve`'s parameter
-// names it and `MediaResolve` reaches this barrel through `SiteRender`.
-export type { MediaRef } from './media/reference.js';
 // `Manifest.entries[].references` names `ReferenceEdge`.
 export type { ReferenceEdge } from './content/references.js';
 
@@ -128,14 +116,3 @@ export type { FileChange } from './github/repo.js';
 export { parseSiteConfig, readMenu, readVocabulary, SiteConfigError } from './nav/site-config.js';
 // `CairnRuntime.tidy` names `TidyConfig`, whose `conventions` field names `TidyConventions`.
 export type { NavNode, SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from './nav/site-config.js';
-// Canonical home `/sveltekit`; a recorded R4 re-export here because `CairnAdapter.editor.navLayout`
-// names `NavLayout`, whose union names its three member shapes in turn. Type-only imports, so
-// no `/sveltekit` module ever executes here.
-export type { NavLayout, NavLayoutEntry, NavLayoutEngineRef, NavLayoutSection } from './sveltekit/admin-nav.js';
-// Canonical home `/sveltekit`; a recorded R4 re-export here because
-// `CairnAdapter.editor.publishActions` and `CairnRuntime.publishActions` name it directly as
-// `PublishActionEntry[]`.
-export type { PublishActionEntry } from './sveltekit/publish-actions.js';
-// Canonical home `/islands`; a recorded R4 re-export here because `CairnAdapter.rendering.islands`
-// names it.
-export type { IslandRegistry } from './islands/types.js';

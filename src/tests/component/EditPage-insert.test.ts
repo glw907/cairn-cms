@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EditPage from '../../lib/admin/EditPage.svelte';
-import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { defineBlock, defineRegistry } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import type { EditData } from '../../lib/sveltekit/content-routes.js';
 
 const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }) };
-const callout = defineComponent({
+const callout = defineBlock({
   ...base, name: 'callout', label: 'Callout', description: 'A note.', use: 'Call out an idea.',
   attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note'] }) },
   slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
 });
-const registry = defineRegistry({ components: [callout] });
+const registry = defineRegistry({ blocks: [callout] });
 
 const data: EditData & { siteName: string } = {
   conceptId: 'posts', id: 'hello', label: 'Post', singular: 'Post', fields: [], frontmatter: {}, body: 'Start.',

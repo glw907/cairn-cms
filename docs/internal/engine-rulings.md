@@ -488,25 +488,29 @@ when the remediation pass lands.
 ## cleanup-one-import-path: each public name imports from its one declaring subpath, with no re-export  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
 
 - **Verdict:** retire. Each public name imports from its one declaring subpath and the re-exports are removed.
-- **Reopens on:** The leak gate cannot follow a type across subpaths once the re-exports go.
+- **Reopens on:** The leak gate cannot follow a type across subpaths once the re-exports go. The `selectLeakedNames` tests in `src/tests/unit/check-surface-leaks.test.ts` pin that it does.
+- **Executed:** The `small-api` slice, PR #184. `/delivery/data`, `/delivery/head`, and `/render` are gone, and `check:surface` enforces the one path with no re-export record.
 - **Record:** Reverses tag accepts `canonical-home-rule` (accept; re-exports as "not a second home") and part of `f1-return-position-leak-sanction` (accept). The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
 
 ## cleanup-hide-internals: about 40 names leave the public surface, `/auth-store` goes, `cairn-media-seed` moves to the dev package, and `resolveDb` turns optional on `createSectionAction`  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
 
 - **Verdict:** retire. About 40 internal names leave the public surface, `/auth-store` goes, `cairn-media-seed` moves to the dev package, and `resolveDb` turns optional on `createSectionAction`.
 - **Reopens on:** A site needs a hidden name, shown in code it has built.
+- **Executed:** The `small-api` slice, PR #184.
 - **Record:** Reverses tag verdicts: `audit-sveltekit-adminaction` (keep), `audit-adapter-verifymanifest` (keep), `audit-sveltekit-requireeditor` (keep), `audit-delivery-composeentrydata` (keep), `audit-delivery-buildrssfeed` (keep), `audit-delivery-buildjsonfeed` (keep), `audit-delivery-buildsitemap` (keep), `audit-auth-listeditors` (keep), `audit-auth-inserteditor` (keep), `audit-auth-editorrow` (keep) (`audit-auth-editorrow` is now `UnresolvedEditor`), `audit-cli-cairn-media-seed-header-repeatable` (keep), `audit-cli-cairn-media-seed-bucket-and-the-wrangler-r2-buckets-resoluti` (keep), `audit-cli-cairn-media-seed-command-exit-contract-content-addressed-wri` (keep); `audit-admin-listtoolbar` (reshape), `audit-admin-formattimestamp` (reshape), `audit-auth-seteditorrole` (reshape), `audit-auth-deleteeditor` (reshape), `audit-auth-demoteownerifnotlast` (reshape), `audit-auth-removeownerifnotlast` (reshape); `polish-formattimestamp-domain` (accept). `tooltip-primitive` stands. The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
 
 ## cleanup-unset-options: options and field kinds no site sets are removed  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
 
 - **Verdict:** retire. Options and field kinds that no site sets are removed.
 - **Reopens on:** A site sets the option, shown in code it has built. Adding one back isn't a break.
+- **Executed:** The `small-api` slice, PR #184.
 - **Record:** Reverses Won't-do #126 and #139 in `BACKLOG.md`, and, each in part, tag keeps `audit-adapter-assetconfig` (keep), `audit-adapter-navmenuconfig` (keep), `audit-sveltekit-authguardoptions` (keep), `audit-admin-formatcivildateoptions` (keep). The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
 
 ## cleanup-custom-recipes: the hand-mount factories, preview token verbs, preview lifetime, and newly-published recipe are removed  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
 
 - **Verdict:** retire. The hand-mount factories, the preview token verbs, the preview lifetime option, and the newly-published recipe are removed.
 - **Reopens on:** A site needs its own preview screen or a publish hook, shown in code it has built.
+- **Executed:** The `small-api` slice, PR #184. `editor.publishActions` stays as plain link data, not a hook.
 - **Record:** Reverses tag reshape `audit-sveltekit-mintpreviewtoken` (reshape) and tag keeps `audit-sveltekit-createauthroutes` (keep), `audit-sveltekit-createeditorroutes` (keep), `audit-sveltekit-createcontentroutes` (keep), `audit-delivery-newlypublishedentries` (keep); closes #115 and #116 in `BACKLOG.md`. The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
 
 ## cleanup-one-validate-hook: one fail-closed `validate` replaces `refine` and `behavior`  (retire, 2026-11-01, cleanup design 20261101T122027-138291)

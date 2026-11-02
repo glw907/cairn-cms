@@ -1,9 +1,9 @@
 // cairn-cms: the rehype step that turns a component directive's stamped hast markers (from
 // remark-directives.ts) into the site's rendered markup, by looking up the directive's name in
-// the ComponentRegistry and calling its declared `render`. The small hast-reading helpers below
+// the BlockRegistry and calling its declared `render`. The small hast-reading helpers below
 // back that render call.
 import type { Root, Element, ElementContent } from 'hast';
-import { dataAttrProp, type ComponentContext, type ComponentDef, type ComponentRegistry } from './registry.js';
+import { dataAttrProp, type BlockContext, type BlockDef, type BlockRegistry } from './registry.js';
 
 /** Narrow a hast node to an Element, false for a text node, a comment, or undefined. */
 export function isElement(node: ElementContent | undefined): node is Element {
@@ -22,25 +22,10 @@ export function strProp(node: Element, name: string): string | undefined {
 /** A site's icon factory: turn a stamped icon name + role into a hast element. */
 export type MakeIcon = (name: string, role?: string) => Element;
 
-/**
- * Tag the first <ul> among children with `cairn-grid` and strip its whitespace-only
- *  text nodes so the bare list serializes without newlines. Returns that <ul>.
- */
-export function markFirstList(children: ElementContent[]): Element | undefined {
-  const ul = children.find((c) => isElement(c) && c.tagName === 'ul') as Element | undefined;
-  if (ul) {
-    ul.properties = { ...ul.properties, className: ['cairn-grid'] };
-    ul.children = (ul.children as ElementContent[]).filter(
-      (c) => !(c.type === 'text' && /^\s*$/.test(c.value)),
-    );
-  }
-  return ul;
-}
-
 // Recurse into a node's children, transforming any nested primitive sections
 // (a grid inside a card, panels inside a split). Nested primitives never carry the
 // entrance ordinal; only top-level ones do (stamped in the transformer below).
-function transformChildren(children: ElementContent[], registry: ComponentRegistry): ElementContent[] {
+function transformChildren(children: ElementContent[], registry: BlockRegistry): ElementContent[] {
   return children.map((c) => {
     if (isElement(c) && c.properties?.dataPrimitive) return transformNode(c, registry);
     if (isElement(c)) c.children = transformChildren(c.children as ElementContent[], registry);
@@ -50,7 +35,7 @@ function transformChildren(children: ElementContent[], registry: ComponentRegist
 
 // Read a stamped attribute back into its typed value. Booleans arrive as the strings
 // 'true'/'false'; everything else is the literal string the author wrote.
-function readAttributes(node: Element, def: ComponentDef): Record<string, string | boolean> {
+function readAttributes(node: Element, def: BlockDef): Record<string, string | boolean> {
   const out: Record<string, string | boolean> = {};
   for (const [name, field] of Object.entries(def.attributes ?? {})) {
     const value = strProp(node, dataAttrProp(name));
@@ -110,7 +95,7 @@ function partitionSlots(node: Element): {
 // from readAttributes (which coerces 'true'/'false' upstream), and every other field stays the literal
 // string the author wrote. The result is JSON.stringify-ed into data-cairn-props and parsed on the client.
 function serializeIslandProps(
-  def: ComponentDef,
+  def: BlockDef,
   attributes: Record<string, string | boolean>,
 ): Record<string, string | number | boolean> {
   const out: Record<string, string | number | boolean> = {};
@@ -127,7 +112,7 @@ function serializeIslandProps(
 // sink guard (which strips only style/on*). The fallback is build()'s no-JS, first-paint representation.
 function islandBoundary(
   name: string,
-  def: ComponentDef,
+  def: BlockDef,
   attributes: Record<string, string | boolean>,
   fallback: Element,
 ): Element {
@@ -139,14 +124,14 @@ function islandBoundary(
   return { type: 'element', tagName: 'div', properties, children: [fallback] };
 }
 
-function transformNode(node: Element, registry: ComponentRegistry): Element {
+function transformNode(node: Element, registry: BlockRegistry): Element {
   node.children = transformChildren(node.children as ElementContent[], registry);
   const name = strProp(node, 'dataPrimitive');
   const def = name ? registry.get(name) : undefined;
   if (!def) return node;
   const parts = partitionSlots(node);
   const attributes = readAttributes(node, def);
-  const ctx: ComponentContext = {
+  const ctx: BlockContext = {
     attributes,
     slot: parts.slot,
     items: parts.items,
@@ -168,7 +153,7 @@ function transformNode(node: Element, registry: ComponentRegistry): Element {
  *  `data-rise` while dropping `style`. Nested primitives never get it. Non-primitive
  *  content (lede, intro paragraphs, the page-toc nav) passes through untouched.
  */
-export function rehypeDispatch(registry: ComponentRegistry) {
+export function rehypeDispatch(registry: BlockRegistry) {
   return (tree: Root) => {
     let idx = 0;
     tree.children = (tree.children as ElementContent[]).map((child) => {

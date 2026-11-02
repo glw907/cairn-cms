@@ -12,7 +12,7 @@ For the screen's markup and register, load `cairn-building-admin-screens`.
 
 ## Mount the admin
 
-The single mount is one catch-all and one layout. `createCairnAdmin({ runtime, auth, tidy, preview })`
+The single mount is one catch-all and one layout. `createCairnAdmin({ runtime, auth, tidy })`
 returns `load`, `actions`, and `shellLoad`.
 
 ```ts
@@ -42,26 +42,6 @@ export const actions = admin.actions;
 renders `CairnAdminShell` (`@glw907/cairn-cms/admin`) over `data.shell`. The root layout above
 `/admin` must carry no chrome (header, footer, width cap).
 
-Hand-mounted routes use the four per-route factories `createCairnAdmin` wraps:
-`createAuthRoutes`, `createContentRoutes`, `createEditorRoutes`, `createNavRoutes`. Register each
-handler under the action name the view posts (`?/save`, `?/editorAdd`, ...); a `default` action
-receives no named post.
-
-```ts
-// src/routes/admin/editors/+page.server.ts
-import { createEditorRoutes } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '#lib/cairn.server.js';
-
-const editors = createEditorRoutes({ runtime });
-
-export const load = editors.editorsLoad;
-export const actions = {
-  editorAdd: editors.editorAddAction,
-  editorRemove: editors.editorRemoveAction,
-  editorSetRole: editors.editorSetRoleAction,
-};
-```
-
 ## Gate a custom screen
 
 The guard admits any signed-in session to `/admin/**` and decides no per-route authorization.
@@ -69,12 +49,14 @@ SvelteKit runs a matched form action without the page's `load`, so a gated page 
 Wire both:
 
 - `requireAccess(event)` at the top of the `load`, before any read.
-- Every form action wrapped by one `createSectionAction<Env, Db>({ resolveDb })` per section. It
-  runs session, CSRF, the optional rate limit, the same access check, and the database binding
-  check, then the handler with `ctx.db` and `ctx.audit`. Annotate `Env` (it does not infer from
-  `resolveDb`). Call `ctx.audit({ entityId })` on success.
+- Every form action wrapped by one `createSectionAction({ resolveDb: () => env.APP_DB })` per
+  section, with `env` from `cloudflare:workers`. It runs session, CSRF, the optional rate limit, the
+  same access check, and the database binding check, then the handler with `ctx.db` and `ctx.audit`.
+  An action with no binding calls `createSectionAction({})` and gets no `ctx.db`. Call
+  `ctx.audit({ entityId })` on success.
 
-A section path needs an access-map key, or both refuse every session, owner included. Both default
+A section path needs an access-map key, or both refuse every session, owner included: an empty map
+refuses everyone. Both default
 the target to the route id with groups dropped (`/admin/(app)/roster` is `/admin/roster`). A route
 with a rest parameter, or one serving several sections, passes the key explicitly:
 `requireAccess(event, '/admin/money')` and `target: '/admin/money'` in every wrapper's options.
@@ -95,8 +77,8 @@ function, and puts none behind an `/admin`-scoped Cloudflare Access app.
    `webmaster`. Keys are a concept id, a fixed screen (`media`, `vocabulary`, `nav`, `settings`), or
    an `/admin` path.
 3. Keep every route key a gated route uses. An unnamed engine screen stays open to editor capability;
-   an unnamed route behind `requireAccess` refuses everyone. A route all editors may reach can call
-   `requireEditor`, which ignores the map.
+   an unnamed route behind `requireAccess` refuses everyone. A route all editors may reach takes a
+   key naming `editor`.
 4. A route key governs its subtree by deepest whole-segment prefix (`/admin/money` covers
    `/admin/money/refunds`, never `/admin/moneyx`). A dynamic segment under a deeper key resolves to
    no rule (`reason: shadowed`); declare `target`.
@@ -117,10 +99,10 @@ the role to the key, or `ownerOnly` refused a non-owner).
 
 Pick the shape by whether the refusal can answer the request that raised it:
 
-- **Throw** `error(403)` or `redirect(303, '/admin/login')`: `requireOwner`, `requireEditor`, and
-  `requireAccess` authorize and throw; `requireSession` and `createAdminAction` authenticate only
-  and throw for a missing session or failed CSRF. SvelteKit renders these with no `handleError`
-  mapping.
+- **Throw** `error(403)` or `redirect(303, '/admin/login')`: `requireOwner` and `requireAccess`
+  authorize and throw; `requireSession` authenticates only and throws for a missing session, and
+  `createSectionAction` throws for a missing session or failed CSRF. SvelteKit renders these with no
+  `handleError` mapping.
 - **`fail()`** for every refusal the route can answer in place, typed `ActionFailure<T>` to the
   screen's shape, never a bare `ActionFailure<unknown>`. A custom action uses `createSectionAction`
   or a hand-rolled `fail(...)`, not a throw. `createSectionAction`'s 403 and 500 are `fail()` so the

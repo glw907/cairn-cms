@@ -5,12 +5,12 @@ import remarkDirective from 'remark-directive';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import { remarkDirectiveStamp } from '../../lib/render/remark-directives.js';
-import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { defineBlock, defineRegistry } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 
 const reg = defineRegistry({
-  components: [
-    defineComponent({
+  blocks: [
+    defineBlock({
       name: 'card',
       label: '',
       description: '',
@@ -18,7 +18,7 @@ const reg = defineRegistry({
       build: (ctx) => ctx.node,
       attributes: { icon: fields.icon({ label: 'Icon' }) },
     }),
-    defineComponent({
+    defineBlock({
       name: 'alert',
       label: '',
       description: '',
@@ -79,8 +79,8 @@ describe('icon attribute round-trip', () => {
     const { createRenderer } = await import('../../lib/render/pipeline.js');
     const seen: Array<string | boolean | undefined> = [];
     const iconReg = defineRegistry({
-      components: [
-        defineComponent({
+      blocks: [
+        defineBlock({
           name: 'badge',
           label: '',
           description: '',
@@ -92,7 +92,7 @@ describe('icon attribute round-trip', () => {
         }),
       ],
     });
-    await createRenderer({ components: iconReg }).render({ body: ':::badge{icon=flag}\nbody\n:::' });
+    await createRenderer({ blocks: iconReg.defs }).render({ body: ':::badge{icon=flag}\nbody\n:::' });
     expect(seen[0]).toBe('flag');
   });
 });

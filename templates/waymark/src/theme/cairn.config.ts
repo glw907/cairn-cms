@@ -1,12 +1,11 @@
 // This site's adapter: the single seam the engine consumes. It declares the posts, pages, and
 // fragments concepts, the media wiring, the navLayout, and the preview knob, over a render that
 // runs the engine pipeline and a backend the dev GitHub double answers for. The
-// icon set and the registered markdown components live in separate modules
-// (`icons.ts`, `markdown-components.ts`); this file holds only the adapter, concepts, backend,
+// icon set and the registered markdown blocks live in separate modules
+// (`icons.ts`, `markdown-blocks.ts`); this file holds only the adapter, concepts, backend,
 // and navLayout.
 import {
   createRenderer,
-  defineRegistry,
   fields,
   defineAdapter,
   defineConcept,
@@ -17,7 +16,7 @@ import { createMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/me
 import { siteIslands } from './islands/registry.js';
 import { proseTypography } from '#chassis/render.js';
 import { icons } from './icons.js';
-import { components } from './markdown-components.js';
+import { blocks } from './markdown-blocks.js';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
 // sheet must stay ?url-only; see the header comment in site.css.
@@ -31,9 +30,7 @@ import siteCss from './site.css?url';
  */
 export const publicOrigin = 'https://showcase.test';
 
-const registry = defineRegistry({ components });
-
-// The real render path: parse markdown through the engine so registered components render. The
+// The real render path: parse markdown through the engine so registered blocks render. The
 // chassis's proseTypography remark plugin smartens quotes, dashes, and ellipses in body prose;
 // wiring it here, at the one createRenderer call, means both the public render and the editor's
 // live preview inherit it, since both read the render this composes.
@@ -58,7 +55,7 @@ const media: MediaConfig = { bucketBinding: 'MEDIA_BUCKET' };
 export const resolveMedia = createMediaResolver(media, mediaManifest);
 
 const renderer = createRenderer({
-  components: registry,
+  blocks,
   remarkPlugins: proseTypography,
   resolveMedia,
 });
@@ -73,7 +70,7 @@ export const cairn = defineAdapter({
       // fallback, exercised deliberately without one in the engine's component tests).
       singular: 'post',
       summaryFields: ['description'],
-      routing: 'feed',
+      routing: 'dated',
       fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
@@ -161,19 +158,19 @@ export const cairn = defineAdapter({
   // /media delivery route.
   media,
   // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the
-  // site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture
+  // site's robots.txt route passes it to buildRobotsResponse, and CairnAdapter.aiPosture
   // documents both values; the cairn-extending-a-site skill helps pick.
   // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate
   // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.
   rendering: {
-    // Render through the engine so registered components (the callout) produce their markup; the
+    // Render through the engine so registered blocks (the callout) produce their markup; the
     // engine's pipeline already wraps every table in a scrollable, labeled region by default
     // (RendererConfig.tableScroll). The renderer's resolveMedia default backs the public build; the
     // preview path injects its own per call. renderer.render forwards resolveFragment too: the build
     // passes a site-resolver-backed resolver (createPublicRoutes), the preview a manifest-backed
     // one (EditPage).
     render: renderer.render,
-    components: registry,
+    blocks,
     icons,
     islands: siteIslands,
   },
@@ -227,5 +224,5 @@ export const cairn = defineAdapter({
 
 // Re-exported rather than parsed here: site-config.ts owns the one parseSiteConfig call, so a
 // lean reader (the root layout server load) can pull just the parsed config and its primary menu
-// without importing this whole adapter (the renderer, the icon set, the registered components).
+// without importing this whole adapter (the renderer, the icon set, the registered blocks).
 export { siteConfig } from './site-config.js';

@@ -35,7 +35,6 @@
       "src/lib/**/index.ts",
       "package.json",
       "scripts/checks/check-surface-leaks.json",
-      "scripts/checks/check-surface-reexports.json",
       "scripts/checks/check-self-use-allowlist.json",
       "scripts/checks/check-symbols-allowlist.mjs",
       "scripts/checks/api-surface.md",
@@ -196,7 +195,7 @@
         ]
       },
       {
-        "prefixes": ["src/lib/media/", "src/lib/media-seed/"],
+        "prefixes": ["src/lib/media/"],
         "specs": [
           "media-figure.spec.ts",
           "media-hero.spec.ts",

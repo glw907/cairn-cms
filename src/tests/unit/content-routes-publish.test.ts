@@ -34,7 +34,7 @@ function multiRuntime(): CairnRuntime {
   const r = runtime();
   r.concepts.push({
     id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages',
-    routing: { routable: true, dated: false, inFeeds: false },
+    routing: { routable: true, dated: false },
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
@@ -76,7 +76,7 @@ function pagesRuntime(): CairnRuntime {
     concepts: [
       {
         id: 'pages', label: 'Page', singular: 'Page', dir: 'src/content/pages',
-        routing: { routable: true, dated: false, inFeeds: false },
+        routing: { routable: true, dated: false },
         permalink: '/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
@@ -332,7 +332,7 @@ describe('publishAction', () => {
       const rt = pagesRuntime();
       rt.concepts.push({
         id: 'snippets', label: 'Snippet', singular: 'Snippet', dir: 'src/content/snippets',
-        routing: { routable: false, dated: false, inFeeds: false },
+        routing: { routable: false, dated: false },
         permalink: '/:slug', datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
         schema: defineFieldset({}), summaryFields: [], validate: () => ({ ok: true as const, data: {} }),
@@ -373,7 +373,7 @@ describe('publishAction', () => {
       const rt = pagesRuntime();
       rt.concepts.push({
         id: 'notes', label: 'Note', singular: 'Note', dir: 'src/content/notes',
-        routing: { routable: true, dated: false, inFeeds: false },
+        routing: { routable: true, dated: false },
         permalink: '/:slug', datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
         schema: defineFieldset({}), summaryFields: [], validate: () => ({ ok: true as const, data: {} }),

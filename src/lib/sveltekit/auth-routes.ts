@@ -1,5 +1,5 @@
 // The SvelteKit handlers for the magic-link flow, consumed by a site's thin route shims.
-// The factory takes the composed runtime, which carries the site name and sender, and an
+// The factory takes the composed runtime, which carries the site name and email sender config, and an
 // injected send, so tests run the real handlers against a sink.
 import { error, redirect } from '@sveltejs/kit';
 import { requireOrigin, requireDb } from '../env.js';
@@ -37,7 +37,7 @@ import type { CairnEvent } from './types.js';
  * @beta
  */
 export interface AuthRoutesConfig {
-  /** The composed runtime; its `siteName` and `sender` are the identity the magic-link email carries. */
+  /** The composed runtime; its `siteName` and `email` are the identity the magic-link email carries. */
   runtime: CairnRuntime;
   /** Sends the built magic-link message, in place of the default Cloudflare Email sender. */
   send?: SendMagicLink;
@@ -237,7 +237,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // confirm the link went out before telling an editor to check their inbox. The cost is one
     // email-API round trip on the login POST, the right trade for a login flow.
     try {
-      await send(env, buildMagicLinkMessage({ to: email, siteName: config.runtime.siteName, sender: config.runtime.sender, link }));
+      await send(env, buildMagicLinkMessage({ to: email, siteName: config.runtime.siteName, sender: config.runtime.email, link }));
     } catch (err) {
       // Map the binding failure to its registered condition (carried as a CairnError with the
       // original as cause), and log the greppable code plus the conditionId so the next onboarding
@@ -480,8 +480,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
 
 /**
  * What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. The view
- * components post named actions, so a hand-mounted route registers each under the name its view
- * posts (`request`, `confirm`, `logout`); a `default` action never receives a named post.
+ * components post the named actions `request`, `confirm`, and `logout`; a `default` action never
+ * receives a named post.
  * @beta
  */
 export interface AuthRoutes {

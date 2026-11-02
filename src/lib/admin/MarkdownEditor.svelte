@@ -7,12 +7,11 @@ textarea carries the value so the form still submits, and the hidden field mirro
 throughout. The host owns the toolbar and the card chrome, driving selection transforms through
 `EditorApi.format`; the design-accurate preview lives in EditPage through the adapter's render.
 Swapping the editor stays a one-file change.
-@public
 -->
 <script module lang="ts">
   import type { FigureAtImage, FormatKind } from './markdown-format.js';
   import type { MediaLibrary } from '../media/library-entry.js';
-  import type { ComponentRegistry } from '../render/registry.js';
+  import type { BlockRegistry } from '../render/registry.js';
 
   /** The directive container at the caret: the opener's name, the block's markdown, and the
    *  document character offsets of its inclusive line range. */
@@ -26,8 +25,7 @@ Swapping the editor stays a one-file change.
   /** The buffer-scoped editing surface `registerEditor` hands the host on mount, once per mounted
    *  editor: every capability the host can drive against the buffer, insertion, selection, the
    *  view, history, and the tidy/image-placeholder subsystems, as one uniform grant, since the
-   *  host is always EditPage, which always needs the whole surface.
-   *  @public */
+   *  host is always EditPage, which always needs the whole surface. */
   export interface EditorApi {
     // Insertion: writes directly into the document.
     /** Inserts block text at the cursor, separated from adjacent text by a blank line where text
@@ -107,13 +105,13 @@ Swapping the editor stays a one-file change.
      *  when off the lint compartment reconfigures to empty (the underlines vanish, the Worker stays
      *  idle). The footer toggle drives this. */
     spellcheck?: boolean;
-    /** The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt", from EditData. The
+    /** The dictionary filename, e.g. "dictionary-en-us.txt", from EditData. The
      *  source resolves it to a real asset URL and hands it to the spellcheck Worker's init. Defaults to
      *  US English. */
     spellcheckDictionary?: string;
     /** The committed personal-dictionary words, from EditData.siteDictionary. The lint
      *  source seeds the spellcheck Worker's personal layer with these at init, so a word another editor
-     *  committed answers correct from the first lint. Empty by default (dialect-only). */
+     *  committed answers correct from the first lint. Empty by default (base dictionary only). */
     siteDictionary?: ReadonlyArray<string>;
   }
 
@@ -135,7 +133,7 @@ Swapping the editor stays a one-file change.
     fragmentTitles?: import('./editor-include.js').FragmentTitles;
     /** Reports the directive container at the caret (or null when outside any container) whenever
      *  the reported value changes; the host resolves it against the registry to offer Edit-block. */
-    onComponentAtCaret?: (info: ComponentAtCaret | null) => void;
+    onBlockAtCaret?: (info: ComponentAtCaret | null) => void;
     /** Reports the media image at the caret (or null when the caret is not on one) whenever the
      *  reported value changes; the host opens the figure control over it to wrap, edit, or unwrap a
      *  `:::figure`. The figure transforms write source through `EditorApi.replaceRange`. */
@@ -168,12 +166,12 @@ Swapping the editor stays a one-file change.
      *  turns this on for the real entry-editing surface. The safety invariant governs a fold this
      *  creates exactly as it governs a manual one: a touch or an edit reaching it springs it open. */
     foldOnMount?: boolean;
-    /** The site's component registry. The fold pill and the gutter fold control resolve a folded
+    /** The site's block registry. The fold pill and the gutter fold control resolve a folded
      *  block's directive name through it, so a block reads its human `label` (falling back to the
      *  raw directive name for an engine-native directive like `include`, or one the registry does
-     *  not carry); the pill's tooltip also carries the matched component's `use` line, when it has
+     *  not carry); the pill's tooltip also carries the matched block's `use` line, when it has
      *  one. Absent, both fall back to the raw directive name with no tooltip, today's behavior. */
-    registry?: ComponentRegistry;
+    registry?: BlockRegistry;
   }
 </script>
 
@@ -184,7 +182,8 @@ Swapping the editor stays a one-file change.
   import { padInsertedBlock, paddedInsertSpan } from './insert-padding.js';
   import { firstImageFile, guardDropTarget } from './client-ingest.js';
   import { htmlToMarkdown } from './paste-html-to-markdown.js';
-  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
+  import { MEDIA_BASE_CONTEXT_KEY } from './media-base-context.js';
+  import { DEFAULT_MEDIA_BASE } from '../media/naming.js';
 
   interface Props extends StableEditorProps, UnstableEditorProps {}
 
@@ -195,7 +194,7 @@ Swapping the editor stays a one-file change.
     onImageIngest,
     mediaLibrary = {},
     fragmentTitles = {},
-    onComponentAtCaret,
+    onBlockAtCaret,
     onMediaImageAtCaret,
     completionSources = [],
     focusMode = false,
@@ -771,7 +770,7 @@ Swapping the editor stays a one-file change.
     // posture Preview takes). The compartment starts empty and the tidyMode effect swaps this in.
     tidyReadonlyExt = [stateMod.EditorState.readOnly.of(true), viewMod.EditorView.editable.of(false)];
     // Build the spellcheck extension once: the lint source resolves the dictionary asset URL from the
-    // dialect-resolved filename and posts it to the Worker's init. The compartment starts with the
+    // filename and posts it to the Worker's init. The compartment starts with the
     // extension only when spellcheck is on, so a site that opens with it off never spins up the Worker.
     spellcheckExt = await spellcheckMod.cairnSpellcheck({
       dictionaryFile: spellcheckDictionary,
@@ -912,7 +911,7 @@ Swapping the editor stays a one-file change.
             if (update.docChanged) value = update.state.doc.toString();
             // A doc edit can change the block's span and a caret move can change which block the
             // caret sits in, so the reporter runs on either; the dedupe below absorbs the no-ops.
-            if (onComponentAtCaret && (update.docChanged || update.selectionSet))
+            if (onBlockAtCaret && (update.docChanged || update.selectionSet))
               reportComponentAtCaret(update.state);
             // The media-image reporter rides the same two triggers: a caret move lands on or off an
             // image, an edit shifts the figure's span. The dedupe absorbs the keystroke no-ops.
@@ -972,7 +971,7 @@ Swapping the editor stays a one-file change.
     });
     // Report the caret's starting container once the editor exists, so a caret that mounts inside
     // a block is known without waiting for the first move.
-    if (onComponentAtCaret) reportComponentAtCaret(view.state);
+    if (onBlockAtCaret) reportComponentAtCaret(view.state);
     if (onMediaImageAtCaret) reportMediaImageAtCaret(view.state);
     mounted = true;
   });
@@ -1053,7 +1052,7 @@ Swapping the editor stays a one-file change.
     view.dispatch({ effects: tidyReadonlyCompartment.reconfigure(on ? tidyReadonlyExt : []) });
   });
 
-  // The last value handed to onComponentAtCaret, so the reporter fires only on a change. The
+  // The last value handed to onBlockAtCaret, so the reporter fires only on a change. The
   // identity compared is name + markdown + from + to. A pure caret move within one block leaves all
   // four unchanged, so it does not refire; an edit inside the block changes the markdown even when
   // it keeps the same length (an equal-length replacement leaves from and to unchanged), so the
@@ -1061,7 +1060,7 @@ Swapping the editor stays a one-file change.
   let lastCaretReport: ComponentAtCaret | null = null;
 
   // Compute the directive container at the caret from a CodeMirror state and report it through
-  // onComponentAtCaret, deduped so a caret move within the same block does not refire. fenceScan
+  // onBlockAtCaret, deduped so a caret move within the same block does not refire. fenceScan
   // lines are 0-based; doc.line(n) is 1-based, so the line range maps with a +1 on each bound.
   function reportComponentAtCaret(state: import('@codemirror/state').EditorState) {
     const doc = state.doc;
@@ -1091,7 +1090,7 @@ Swapping the editor stays a one-file change.
         prev.to === next.to);
     if (same) return;
     lastCaretReport = next;
-    onComponentAtCaret?.(next);
+    onBlockAtCaret?.(next);
   }
 
   // The last media-image report, so the reporter fires only on a change. The compared identity is

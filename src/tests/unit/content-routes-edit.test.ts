@@ -226,7 +226,7 @@ describe('editLoad', () => {
     expect(without.preview).toBeNull();
 
     editFetch('---\ntitle: Hello\n---\nThe body.');
-    const preview = { stylesheets: ['/assets/site.css'], bodyClass: 'site', containerClass: 'prose' };
+    const preview = { stylesheets: ['/assets/site.css'], containerClass: 'prose' };
     const styled = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await styled.editLoad(editEvent('2026-05-hello'));
     expect(data.preview).toEqual(preview);
@@ -236,15 +236,13 @@ describe('editLoad', () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const preview = {
       stylesheets: ['/assets/site.css'],
-      bodyClass: 'static-page',
       containerClass: 'page-measure',
-      byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
+      byConcept: { posts: { containerClass: 'post-module' } },
     };
     const routes = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.preview).toEqual({
       stylesheets: ['/assets/site.css'],
-      bodyClass: 'post-body',
       containerClass: 'post-module',
     });
     expect(data.preview).not.toHaveProperty('byConcept');
@@ -284,33 +282,14 @@ describe('editLoad', () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const preview = {
       stylesheets: ['/assets/site.css'],
-      bodyClass: 'static-page',
       containerClass: 'page-measure',
-      byConcept: { pages: { bodyClass: 'page-body' } },
+      byConcept: { pages: { containerClass: 'page-body' } },
     };
     const routes = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.preview).toEqual({
       stylesheets: ['/assets/site.css'],
-      bodyClass: 'static-page',
       containerClass: 'page-measure',
-    });
-  });
-
-  it('merges a partial byConcept override over the top-level values', async () => {
-    editFetch('---\ntitle: Hello\n---\nThe body.');
-    const preview = {
-      stylesheets: ['/assets/site.css'],
-      bodyClass: 'static-page',
-      containerClass: 'page-measure',
-      byConcept: { posts: { containerClass: 'post-module' } },
-    };
-    const routes = createContentRoutes({ runtime: { ...runtime(), preview } });
-    const data = await routes.editLoad(editEvent('2026-05-hello'));
-    expect(data.preview).toEqual({
-      stylesheets: ['/assets/site.css'],
-      bodyClass: 'static-page',
-      containerClass: 'post-module',
     });
   });
 
@@ -318,14 +297,12 @@ describe('editLoad', () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const preview = {
       stylesheets: ['/assets/site.css'],
-      bodyClass: 'static-page',
       containerClass: 'page-measure',
-      byConcept: { posts: { bodyClass: undefined, containerClass: 'post-module' } },
+      byConcept: { posts: { containerClass: undefined } },
     };
     const routes = createContentRoutes({ runtime: { ...runtime(), preview } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
-    expect(data.preview?.bodyClass).toBe('static-page');
-    expect(data.preview?.containerClass).toBe('post-module');
+    expect(data.preview?.containerClass).toBe('page-measure');
   });
 
   it('ships the manifest link targets, and an empty list when the manifest is missing', async () => {
@@ -461,7 +438,7 @@ describe('editLoad address-collision advisory', () => {
       concepts: [
         {
           id: 'pages', label: 'Page', singular: 'Page', dir: 'src/content/pages',
-          routing: { routable: true, dated: false, inFeeds: false },
+          routing: { routable: true, dated: false },
           permalink: '/:slug',
           datePrefix: 'day',
           fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],

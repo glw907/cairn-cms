@@ -13,7 +13,7 @@ function concept(id: string, routable: boolean): ConceptDescriptor {
     label: id,
     singular: id,
     dir: `src/content/${id}`,
-    routing: { routable, dated: false, inFeeds: false },
+    routing: { routable, dated: false },
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [],

@@ -16,7 +16,7 @@ import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId } from '
 import { pendingBranch } from '../content/pending.js';
 import { parseManifest, inboundLinks, inboundIncludes, type LinkTarget, type EntryRef } from '../content/manifest.js';
 import { log } from '../log/index.js';
-import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
+import { DEFAULT_DICTIONARY_FILE, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
 import { keyKnownUnhealthy, tidyKeyPresent } from './tidy-key-health.js';
 import { parseMediaManifest } from '../media/manifest.js';
@@ -127,7 +127,7 @@ export interface EditData {
    */
   preview: ResolvedPreview | null;
   /**
-   * The spellcheck dictionary file for the site's configured dialect (default US English), resolved
+   * The spellcheck dictionary file (US English), resolved
    *  once at compose. The editor resolves it to a real asset URL on the main thread and hands that URL
    *  to the spellcheck Worker's `init`, the same way `mediaLibrary` is threaded in. Just the filename,
    *  e.g. "dictionary-en-us.txt".
@@ -137,7 +137,7 @@ export interface EditData {
    * The committed personal-dictionary words for the site: the durable, shared, reviewable
    *  layer the editor seeds the spellcheck Worker's personal set from, the way `mediaLibrary` is handed
    *  in. Read from the git-committed `dictionary.txt` at editor load; empty when the file is absent or
-   *  unreadable (the editor degrades to dialect-only). The dialect dictionary and the session ignore
+   *  unreadable (the editor degrades to the base dictionary). The base dictionary and the session ignore
    *  list are the other two layers; only this one is committed.
    */
   siteDictionary: string[];
@@ -193,7 +193,6 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
   const override = preview.byConcept?.[conceptId];
   return {
     stylesheets: preview.stylesheets,
-    bodyClass: override?.bodyClass ?? preview.bodyClass,
     containerClass: override?.containerClass ?? preview.containerClass,
   };
 }
@@ -308,7 +307,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
     // never throws on a missing or unreadable media.json; the projection below treats null as empty.
     // The committed personal dictionary joins the concurrent batch, read from the default branch. A
     // rejected read degrades to null so the edit never throws on a missing or unreadable dictionary;
-    // the projection below treats null as an empty word list (the editor falls back to dialect-only).
+    // the projection below treats null as an empty word list (the editor falls back to the base dictionary).
     const [headSha, mainRaw, manifestRaw, mediaRaw, dictionaryRaw] = await Promise.all([
       backend.branchHead(branch),
       backend.readFile(path, backend.defaultBranch),
@@ -496,12 +495,12 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       published,
       publishActions: resolvePublishActions(ctx.publishActions, { concept: concept.id, id }),
       preview: resolvePreview(runtime.preview, concept.id),
-      // composeRuntime always resolves this from the site config's dialect; default a hand-built
+      // composeRuntime always sets this to the default dictionary; default a hand-built
       // runtime that omits it to the US English dictionary so the editor always has a real filename.
-      spellcheckDictionary: runtime.spellcheckDictionary ?? dictionaryFileForDialect(undefined),
+      spellcheckDictionary: runtime.spellcheckDictionary ?? DEFAULT_DICTIONARY_FILE,
       // The committed personal-dictionary words, normalized to the canonical sorted, deduplicated set
       // so the editor seeds the Worker's personal layer with a clean list. A missing or unreadable file
-      // is an empty list (the dialect-only fallback).
+      // is an empty list (the base-dictionary fallback).
       siteDictionary: mergeDictionaryWords(parseDictionary(dictionaryRaw), []),
       // The editor-tier tidy facts: the master switch, the model (for the head pill), and the resolved
       // conventions (the because-line and category inference read only these). The API key is never

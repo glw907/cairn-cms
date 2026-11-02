@@ -80,8 +80,7 @@ function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): st
       ? 'JSON.stringify({ manifest: formatManifest(built), problems })'
       : '(verifyEntries(problems), verifyReferences(built), verifyManifest(built, committed, cairn), "ok")';
   return `
-import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
-import { formatManifest, verifyEntries, verifyManifest, verifyReferences } from '@glw907/cairn-cms';
+import { buildSiteManifest, formatManifest, verifyEntries, verifyManifest, verifyReferences } from '@glw907/cairn-cms/internal';
 import { cairn } from ${JSON.stringify(opts.configModule)};
 ${committedImport}
 const files = import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true });

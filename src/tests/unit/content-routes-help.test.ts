@@ -21,7 +21,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
       postsConcept(),
       {
         id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages',
-        routing: { routable: true, dated: false, inFeeds: false },
+        routing: { routable: true, dated: false },
         permalink: '/:slug', datePrefix: 'day', fields: [], schema: postsConcept().schema, summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },

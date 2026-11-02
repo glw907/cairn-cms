@@ -12,7 +12,7 @@ function descriptor(over: Partial<ConceptDescriptor> = {}): ConceptDescriptor {
     label: 'Posts',
     singular: 'Posts',
     dir: 'src/content/posts',
-    routing: { routable: true, dated: true, inFeeds: true },
+    routing: { routable: true, dated: true },
     permalink: '/posts/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title' }],
@@ -37,7 +37,7 @@ describe('entryIdentity', () => {
   it('keeps the id as the slug for a non-dated concept', () => {
     const pages = descriptor({
       id: 'pages',
-      routing: { routable: true, dated: false, inFeeds: false },
+      routing: { routable: true, dated: false },
       permalink: '/:slug',
       datePrefix: 'day',
     });

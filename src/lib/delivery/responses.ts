@@ -11,7 +11,7 @@ import type { AiPosture } from '../content/types.js';
  *  header, so a site that wants one sets it at the route.
  * @public
  */
-export function rssResponse(channel: FeedChannel, items: FeedItem[]): Response {
+export function buildRssResponse(channel: FeedChannel, items: FeedItem[]): Response {
   return new Response(buildRssFeed(channel, items), {
     headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' },
   });
@@ -22,7 +22,7 @@ export function rssResponse(channel: FeedChannel, items: FeedItem[]): Response {
  *  header, so a site that wants one sets it at the route.
  * @public
  */
-export function jsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Response {
+export function buildJsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Response {
   return new Response(buildJsonFeed(channel, items), {
     headers: { 'Content-Type': 'application/feed+json; charset=utf-8' },
   });
@@ -33,7 +33,7 @@ export function jsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Respo
  *  site that wants one sets it at the route.
  * @public
  */
-export function sitemapResponse(urls: SitemapUrl[]): Response {
+export function buildSitemapResponse(urls: SitemapUrl[]): Response {
   return new Response(buildSitemap(urls), {
     headers: { 'Content-Type': 'application/xml; charset=utf-8' },
   });
@@ -43,7 +43,7 @@ export function sitemapResponse(urls: SitemapUrl[]): Response {
  * A robots.txt response. `posture` passes through to {@link buildRobots} unchanged.
  * @public
  */
-export function robotsResponse(opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }): Response {
+export function buildRobotsResponse(opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }): Response {
   return new Response(buildRobots(opts), {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
@@ -56,7 +56,7 @@ export function robotsResponse(opts: { sitemapUrl: string; disallow?: string[]; 
  *  that bypasses it (a hand-rolled `site.byPermalink`) can serve a body `markdownEntries` never listed.
  * @public
  */
-export function markdownResponse(opts: { body: string }): Response {
+export function buildMarkdownResponse(opts: { body: string }): Response {
   return new Response(opts.body, {
     headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
   });

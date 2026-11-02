@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { buildComponentInsert } from '../../lib/render/component-insert.js';
-import { defineComponent } from '../../lib/render/registry.js';
+import { defineBlock } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 
 const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }), description: 'd', use: 'u' };
-const callout = defineComponent({
+const callout = defineBlock({
   ...base, name: 'callout', label: 'Callout',
   attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }) },
   slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }, { name: 'body', label: 'Body', kind: 'markdown' }],

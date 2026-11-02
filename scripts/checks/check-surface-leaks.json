@@ -13,22 +13,16 @@
       "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md#audit-sveltekit-advisorynotice."
     },
     {
-      "name": "Change",
-      "subpath": "/admin",
+      "name": "ConceptEntryData",
+      "subpath": "/sveltekit",
       "model": "type-checker",
-      "standing-unverdicted": "First surfaced by this rider's derivation (Task 9, internals-C, 2026-09-04), once its /admin clause started walking the barrel's plain type exports mechanically instead of skipping the subpath outright. `Change` (src/lib/admin/tidy-diff.ts:36) is never exported from any subpath and is reachable through TidyApi.enter's `changes: Change[]` parameter, one hop past the already-named `TidyApi`."
+      "standing-unverdicted": "The arm `EntryData` is built from, reached through `PreviewData`. A site names the whole shape as `EntryData` or `EntryData<typeof site>` and one arm through `Extract` on `concept`, so the arm's own name is not public surface."
     },
     {
       "name": "ConfirmData",
       "subpath": "/sveltekit",
       "model": "type-checker",
       "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md#audit-sveltekit-confirmdata."
-    },
-    {
-      "name": "DatePrefix",
-      "subpath": "/sveltekit",
-      "model": "renderer",
-      "standing-unverdicted": "First surfaced by this rider's derivation (2026-09-02), never audited or verdicted. `DatePrefix` (src/lib/content/ids.ts:41) is exported from root but expanded, not named, inside `ConceptDescriptor.datePrefix` on /sveltekit: the NavIcon-class per-subpath shape, a dts-bundling artifact, not a decision anyone made."
     },
     {
       "name": "DictionaryAddFailure",
@@ -53,12 +47,6 @@
       "subpath": "/sveltekit",
       "model": "type-checker",
       "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md#audit-sveltekit-editorsdata."
-    },
-    {
-      "name": "EngineScreenId",
-      "subpath": ".",
-      "model": "renderer",
-      "standing-unverdicted": "Never ledger-verdicted; one of the three names https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (exported by name on /sveltekit, api-surface.md:540 era anchor, but expanded inline inside root's NavLayoutEngineRef.screen). This rider is the owner section 1 says the leak is waiting for."
     },
     {
       "name": "EntrySummary",
@@ -151,12 +139,6 @@
       "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md#audit-sveltekit-navconcept."
     },
     {
-      "name": "NavIcon",
-      "subpath": ".",
-      "model": "renderer",
-      "standing-unverdicted": "Never ledger-verdicted; one of the three names https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (exported by name on /sveltekit, expanded inline inside root's NavLayoutEntry.icon). This rider is the owner section 1 says the leak is waiting for."
-    },
-    {
       "name": "NavPageOption",
       "subpath": "/sveltekit",
       "model": "type-checker",
@@ -209,18 +191,6 @@
       "subpath": "/delivery",
       "model": "type-checker",
       "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1): /delivery re-renders SlotDef through its own InferFieldset instantiation."
-    },
-    {
-      "name": "SlotKind",
-      "subpath": "/delivery/data",
-      "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1): /delivery/data re-renders SlotDef through its own InferFieldset instantiation."
-    },
-    {
-      "name": "SlotKind",
-      "subpath": "/sveltekit",
-      "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1): /sveltekit re-renders SlotDef through its own InferFieldset instantiation."
     },
     {
       "name": "TidyFailure",

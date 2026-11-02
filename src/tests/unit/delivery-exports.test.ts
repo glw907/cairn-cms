@@ -2,18 +2,21 @@ import { describe, it, expect } from 'vitest';
 import * as root from '../../lib/index.js';
 
 describe('delivery exports', () => {
-  it('exposes the delivery builders from the data subpath', async () => {
-    const data = await import('../../lib/delivery/data.js');
+  it('exposes the delivery builders from the delivery entry', async () => {
+    const barrel = await import('../../lib/delivery/index.js');
     for (const name of [
       'createSiteResolver',
       'buildExcerpt',
-      'buildRssFeed',
-      'buildJsonFeed',
-      'buildSitemap',
-      'buildRobots',
       'buildSeoMeta',
     ]) {
-      expect(typeof (data as Record<string, unknown>)[name]).toBe('function');
+      expect(typeof (barrel as Record<string, unknown>)[name]).toBe('function');
+    }
+  });
+
+  it('keeps the feed, sitemap, and robots builders behind the response helpers', async () => {
+    const barrel = await import('../../lib/delivery/index.js');
+    for (const name of ['buildRssFeed', 'buildJsonFeed', 'buildSitemap', 'buildRobots']) {
+      expect(name in barrel).toBe(false);
     }
   });
 
@@ -26,10 +29,10 @@ describe('delivery exports', () => {
     expect(typeof barrel.createPublicRoutes).toBe('function');
   });
 
-  it('exposes the response helpers from the data subpath', async () => {
-    const data = await import('../../lib/delivery/data.js');
-    for (const name of ['rssResponse', 'jsonFeedResponse', 'sitemapResponse', 'robotsResponse']) {
-      expect(typeof (data as Record<string, unknown>)[name]).toBe('function');
+  it('exposes the response helpers from the delivery entry', async () => {
+    const barrel = await import('../../lib/delivery/index.js');
+    for (const name of ['buildRssResponse', 'buildJsonFeedResponse', 'buildSitemapResponse', 'buildRobotsResponse']) {
+      expect(typeof (barrel as Record<string, unknown>)[name]).toBe('function');
     }
   });
 
@@ -39,7 +42,7 @@ describe('delivery exports', () => {
       'createContentIndex',
       'createSiteResolver',
       'buildRssFeed',
-      'rssResponse',
+      'buildRssResponse',
       'createPublicRoutes',
     ]) {
       expect(name in root).toBe(false);

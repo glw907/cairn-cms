@@ -8,8 +8,9 @@ export class CairnError extends Error {
 
   constructor(conditionId: string, options?: { cause?: unknown; message?: string }) {
     const resolved = condition(conditionId);
+    // The registry remediation follows the title or the explicit message, so the thrown text names the next step.
     super(
-      options?.message ?? resolved.title,
+      `${(options?.message ?? resolved.title).replace(/\.$/, '')}. ${resolved.remediation}`,
       options?.cause !== undefined ? { cause: options.cause } : undefined
     );
     this.name = 'CairnError';

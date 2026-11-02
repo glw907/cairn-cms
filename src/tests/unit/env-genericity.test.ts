@@ -138,7 +138,7 @@ void typeOnlyEditorRoutesAssignability;
 // loadHealth: takes CairnEvent (C2 breaking-window, R4), checked against the same
 // SiteServerLoadEvent a site's `/admin/healthz` route load calls it with.
 function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime: CairnRuntime): void {
-  loadHealth(siteEvent, runtime) satisfies Promise<HealthData>;
+  loadHealth(siteEvent, { runtime }) satisfies Promise<HealthData>;
 }
 void typeOnlyHealthLoadAssignability;
 

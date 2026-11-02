@@ -28,8 +28,6 @@ vocabulary:
     label: Routes
   - value: season-notes
     label: Season Notes
-spellcheck:
-  dialect: en-US
 tidy:
   enabled: true
   conventions:

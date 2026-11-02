@@ -1,6 +1,6 @@
 // Setup for `S12-tidy-and-posture`: a site where tidy was switched off and whose robots route
 // predates the posture pass-through. The site config's tidy block keeps the house conventions but
-// reads `enabled: false`, and the robots route calls robotsResponse without `posture`, so setting
+// reads `enabled: false`, and the robots route calls buildRobotsResponse without `posture`, so setting
 // `aiPosture` on the adapter alone changes no byte of the served robots.txt.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

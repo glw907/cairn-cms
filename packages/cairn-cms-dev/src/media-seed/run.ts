@@ -4,7 +4,7 @@
 // injected SeedDeps, so this stays testable without a network or a real wrangler install; the
 // bin wires the real ones. A per-item failure is caught and counted, never abandoning the rest
 // of the run.
-import { r2Key } from '../media/naming.js';
+import { r2Key } from '@glw907/cairn-cms/internal';
 import { contentTypeForExt, downloadUrl } from './assemble.js';
 import type { SeedItem } from './assemble.js';
 

@@ -381,7 +381,7 @@ export function createSpellWorker(): SpellWorker {
 // from CONSUMER app code; the library's source cannot self-import by package name, so it uses the
 // portable `new URL('./asset', import.meta.url)` form Vite resolves inside dependencies too. The
 // showcase E2E proves the whole chain through the real consumer build; if resolution ever fails there,
-// only these two URL lines change. The dictionary filename is the dialect-resolved one the main thread
+// only these two URL lines change. The dictionary filename is the one the main thread
 // passes in; the wasm filename is fixed.
 
 /** The real wasm asset URL, resolved module-relative the same way the worker is. */
@@ -394,8 +394,7 @@ export function resolveWasmUrl(): string {
  *  `new URL(..., import.meta.url)`. The literal path is load-bearing. A templated `new URL` makes Vite
  *  and rolldown treat the directory as a glob and parse every sibling module to build it, including the
  *  `.svelte` components that still carry `lang="ts"` in `dist`, and the glob parser chokes on the TS
- *  syntax and breaks the consumer build. This set mirrors the dialect map in `nav/site-config.ts`; add
- *  one line per new shipped dialect dictionary.
+ *  syntax and breaks the consumer build. Add one line per new shipped dictionary.
  */
 const DICTIONARY_URLS: Record<string, () => string> = {
   'dictionary-en-us.txt': () =>
@@ -404,9 +403,8 @@ const DICTIONARY_URLS: Record<string, () => string> = {
 
 /**
  * The real dictionary asset URL for a dictionary filename, resolved module-relative. The caller
- *  passes the dialect-resolved filename (default `dictionary-en-us.txt`). `dictionaryFileForDialect`
- *  already collapses an unknown dialect to the default, so an unmapped name falls back the same way
- *  rather than pointing at an asset that does not ship.
+ *  passes the composed filename (default `dictionary-en-us.txt`). An unmapped name falls back to
+ *  the default rather than pointing at an asset that does not ship.
  */
 export function resolveDictionaryUrl(dictionaryFile: string): string {
   const resolve = DICTIONARY_URLS[dictionaryFile] ?? DICTIONARY_URLS['dictionary-en-us.txt'];
@@ -434,11 +432,11 @@ export interface SpellcheckOptions {
    * The committed personal-dictionary words the source seeds the Worker's personal layer
    *  with, posted as one batch `addWord` right after `init`. The git-backed site dictionary is the
    *  durable layer; the editor reads it at load (EditData.siteDictionary) and hands it here, so a word
-   *  another editor committed answers correct from the first lint. Empty by default (dialect-only).
+   *  another editor committed answers correct from the first lint. Empty by default (base dictionary only).
    */
   siteWords?: ReadonlyArray<string>;
   /**
-   * The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt". The source resolves it to
+   * The dictionary filename, e.g. "dictionary-en-us.txt". The source resolves it to
    *  a real asset URL and posts it in the Worker's `init`. Defaults to US English.
    */
   dictionaryFile?: string;
@@ -570,8 +568,8 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   const siteWords = options.siteWords ?? [];
   const arbiter = arbitrateChecked();
   // The wasm and dictionary URLs the Worker fetches, resolved module-relative unless the caller
-  // overrides them (a test injecting a fake Worker passes canned URLs). The dictionary filename is the
-  // dialect-resolved one; the wasm filename is fixed.
+  // overrides them (a test injecting a fake Worker passes canned URLs). The dictionary filename
+  // defaults to US English; the wasm filename is fixed.
   const assetUrls = options.assetUrls ?? {
     wasmUrl: resolveWasmUrl(),
     dictionaryUrl: resolveDictionaryUrl(options.dictionaryFile ?? 'dictionary-en-us.txt'),

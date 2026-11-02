@@ -190,7 +190,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
 
   /**
    * The repo-relative site-config path the settings save reads and commits: the same committed
-   *  YAML the nav editor edits, named once by `editor.siteConfigPath`.
+   *  YAML the nav editor edits, named once by the runtime.
    */
   function siteConfigPath(): string {
     return runtime.siteConfigPath;

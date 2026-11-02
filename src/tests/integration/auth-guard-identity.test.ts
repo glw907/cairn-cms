@@ -10,7 +10,7 @@ import { sessionCookieName } from '../../lib/auth/crypto.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
-import type { IdentityResolver, ResolvedIdentity, IdentityRefusal } from '../../lib/sveltekit/guard.js';
+import type { IdentityResolver, ResolvedIdentity, IdentityFailure } from '../../lib/sveltekit/guard.js';
 
 const db = env.AUTH_DB;
 
@@ -61,7 +61,7 @@ function resolved(email: string, displayName?: string): ResolvedIdentity {
   return { ok: true, email, displayName };
 }
 
-function refused(reason: string): IdentityRefusal {
+function refused(reason: string): IdentityFailure {
   return { ok: false, reason };
 }
 

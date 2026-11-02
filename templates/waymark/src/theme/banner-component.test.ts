@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { banner } from './markdown-components.js';
-import type { ComponentContext } from '@glw907/cairn-cms';
+import { banner } from './markdown-blocks.js';
+import type { BlockContext } from '@glw907/cairn-cms';
 
 /** The slice of a component context the banner's `build` reads. */
-function contextFor(attributes: Record<string, string>): ComponentContext {
+function contextFor(attributes: Record<string, string>): BlockContext {
   return {
     attributes: { ...attributes },
     attr: (key) => attributes[key],

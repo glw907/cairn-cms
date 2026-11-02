@@ -8,13 +8,14 @@
 // CairnAdminRoutes block additionally proves the nine media-janitorial actions the membership
 // decision withdraws are genuinely absent from the narrowed type, not merely unlisted, the same
 // shape model `retires-task2-sanctioned-leak-replacements.test.ts` uses for a leak proof.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
+import type { D1Database } from '@cloudflare/workers-types';
 import { createCairnAdmin, createCairnAdminInternal, type CairnAdminRoutes } from '../../lib/sveltekit/cairn-admin.js';
 import { createAuthRoutes, type AuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { createEditorRoutes, type EditorRoutes } from '../../lib/sveltekit/editors-routes.js';
 import { createNavRoutes, type NavRoutes } from '../../lib/sveltekit/nav-routes.js';
 import { createPublicRoutes, type PublicRoutes } from '../../lib/delivery/public-routes.js';
-import { createSectionAction, type SectionAction } from '../../lib/sveltekit/section-action.js';
+import { createSectionAction, type PlainSectionAction, type SectionAction } from '../../lib/sveltekit/section-action.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
 
@@ -129,3 +130,27 @@ function typeOnlySectionActionContract<Env, Db>(resolveDb: (env: Env | undefined
   action satisfies (event: CairnEvent) => Promise<unknown>;
 }
 void typeOnlySectionActionContract;
+
+// createSectionAction's two overloads: a resolver types `ctx.db` as the resolved binding, proven
+// with an exact match so an `any` fails; an omitted key leaves `ctx` with no `db` member at all.
+function typeOnlySectionActionDb(
+  env: { APP_DB?: D1Database },
+  resolveDb: (env: { APP_DB?: D1Database } | undefined) => D1Database | undefined,
+): void {
+  const opts = { action: 'test', entity: 'thing' };
+  createSectionAction({ resolveDb: () => env.APP_DB })(async ({ ctx }) => {
+    expectTypeOf(ctx.db).toEqualTypeOf<D1Database>();
+  }, opts);
+  createSectionAction<{ APP_DB?: D1Database }, D1Database>({ resolveDb })(async ({ ctx }) => {
+    expectTypeOf(ctx.db).toEqualTypeOf<D1Database>();
+  }, opts);
+
+  const plain: PlainSectionAction = createSectionAction({});
+  plain(async ({ ctx }) => {
+    // @ts-expect-error a section with no resolveDb has no ctx.db.
+    void ctx.db;
+  }, opts);
+  // @ts-expect-error naming a Db promises a resolver, so the empty config does not compile.
+  createSectionAction<{ APP_DB?: D1Database }, D1Database>({});
+}
+void typeOnlySectionActionDb;

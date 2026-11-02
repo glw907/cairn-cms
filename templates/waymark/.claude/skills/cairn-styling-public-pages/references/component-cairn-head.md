@@ -1,6 +1,6 @@
 # CairnHead
 
-Renders a page's SEO head from a `SeoMeta` value into `svelte:head`. It carries no CSS, so it reads no class and no token and pulls in no stylesheet. Import it from `@glw907/cairn-cms/delivery/head`.
+Renders a page's SEO head from a `SeoMeta` value into `svelte:head`. It carries no CSS, so it reads no class and no token and pulls in no stylesheet. Import it from `@glw907/cairn-cms/public`.
 
 Rendered markup:
 

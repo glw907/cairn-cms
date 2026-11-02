@@ -18,7 +18,7 @@ export const prerender = false;
 
 export const GET: RequestHandler = async (event) => {
   try {
-    const health = await loadHealth(event, runtime);
+    const health = await loadHealth(event, { runtime });
     return Response.json(health, { status: health.ok ? 200 : 503, headers: NO_STORE });
   } catch {
     return Response.json(

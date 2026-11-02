@@ -419,9 +419,9 @@ async function loadRegistry(root) {
     optimizeDeps: { noDiscovery: true, include: [] },
   });
   try {
-    const list = await server.ssrLoadModule('/src/theme/markdown-components.ts');
+    const list = await server.ssrLoadModule('/src/theme/markdown-blocks.ts');
     const engine = await server.ssrLoadModule('@glw907/cairn-cms');
-    return /** @type {{ name: string, hydrate?: boolean, preview?: unknown }[]} */ (list.components).map((def) => ({
+    return /** @type {{ name: string, hydrate?: boolean, preview?: unknown }[]} */ (list.blocks).map((def) => ({
       name: def.name,
       hydrate: def.hydrate === true,
       previewMarkdown: engine.previewMarkdown(def),

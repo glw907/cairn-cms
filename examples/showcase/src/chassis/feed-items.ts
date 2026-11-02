@@ -1,12 +1,11 @@
 // The pure half of the feed: maps a site's posts into cairn-cms/delivery's FeedItem shape from
 // injected pieces, so a unit test drives it without the theme's Svelte imports. feed.ts binds it
 // to this site.
-import type { CairnAdapter } from '@glw907/cairn-cms';
+import type { CairnAdapter, MediaResolve } from '@glw907/cairn-cms';
 import {
   createFragmentResolver,
   createLinkResolver,
   type FeedItem,
-  type MediaResolve,
   type SiteResolver,
 } from '@glw907/cairn-cms/delivery';
 

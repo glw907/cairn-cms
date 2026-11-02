@@ -19,12 +19,11 @@ function runtime(): CairnRuntime {
     siteName: 'Test Site',
     siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [
-      { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
-      { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
+      { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
+      { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
     ],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+    email: { from: 'cms@test' },
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     media: { enabled: false },
@@ -179,10 +178,10 @@ describe('auth actions', () => {
     await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent' });
   });
 
-  it('the mail carries the runtime site name, sender, and reply-to', async () => {
+  it('the mail carries the runtime site name, email sender, and reply-to', async () => {
     const { db } = fakeD1({ 'FROM editor WHERE': { email: 'ed@t', display_name: 'Ed Editor', role: 'editor' } });
     const sent: { from: string; replyTo?: string; subject: string }[] = [];
-    const rt = { ...runtime(), siteName: 'Renamed Site', sender: { from: 'cms@test', replyTo: 'help@test' } };
+    const rt = { ...runtime(), siteName: 'Renamed Site', email: { from: 'cms@test', replyTo: 'help@test' } };
     const admin = createCairnAdmin({
       runtime: rt,
       auth: {

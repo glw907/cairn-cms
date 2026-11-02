@@ -61,7 +61,7 @@ through tokens and never restyles its structure. `site-*` is the theme's chrome 
 classes and custom properties (`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`).
 `sg-*` is the styleguide route's demo classes, scoped to `/styleguide` and never read anywhere
 else. A directive class with no prefix at all (`.callout`, `.alert`, `.banner`) comes from the
-theme's `markdown-components.ts`, which stamps it in each component's `build()`; a theme may
+theme's `markdown-blocks.ts`, which stamps it in each component's `build()`; a theme may
 rename it, and it never collides with anything the engine fixes. `.card` is not a directive, and the
 chassis primitive is `.cairn-card`. The names the engine itself fixes are `figure` with
 `cairn-place-*`, `.table-scroll`, `pre.shiki` with `.cairn-tok-*`, and `include`; the registry is the
@@ -73,7 +73,7 @@ chassis primitive is `.cairn-card`. The names the engine itself fixes are `figur
 `cairn.config.ts` adapter (concepts, fields, registered components, backend) as input; none of
 them declares any content model or component. A theme with a different set of
 concepts or fields changes only `cairn.config.ts`; a different set of registered components
-changes `markdown-components.ts` (and `icons.ts` for a different glyph set).
+changes `markdown-blocks.ts` (and `icons.ts` for a different glyph set).
 
 **The token system (`tokens.css`).** `tokens.css` imports `@glw907/cairn-cms/cairn-public.css`
 right after Tailwind. The engine owns the roles that file carries: the status inks
@@ -139,11 +139,11 @@ diamond list bullet, the margin-hanging pull quote) sits behind `.prose[data-flo
 default; a theme opts in by adding one `data-flourish` attribute to its `.prose` root, no CSS edit.
 
 **Component-grammar wiring (`render.ts`).** `makeIconRenderer(icons)` wires a theme's icon set
-into the engine's `renderGlyph` helper; a theme's `defineComponent()` build functions call the
+into the engine's `renderGlyph` helper; a theme's `defineBlock()` build functions call the
 returned function and never import `renderGlyph` directly. This file also exports `headRow`, the
 icon-plus-heading head a titled component's `build()` calls (the alert directive is the one call
 site); both helpers are chassis-owned, not engine exports. `headRow` stamps `cairn-head-title` on
-its heading element, and the alert directive's build function (`markdown-components.ts`)
+its heading element, and the alert directive's build function (`markdown-blocks.ts`)
 stamps `cairn-alert-body` on its wrapper; both are chassis-owned class names, not part of the
 engine's emitted-classes registry (the `cairn-styling-public-pages` skill's stylesheet contract). Swapping the icon set (the
 `icons: IconSet` object in `icons.ts`) never touches a component's `build()`.
@@ -153,7 +153,7 @@ engine's emitted-classes registry (the `cairn-styling-public-pages` skill's styl
 straight quotes into curly ones, `--`/`---` into en/em dashes, and `...` into a real ellipsis. It
 runs over the mdast tree, so it only ever visits text nodes; inline code, fenced code blocks, and
 link URLs stay untouched structurally, with no allowlist or escaping needed. `cairn.config.ts`
-wires it once, at its one `createRenderer({ components, remarkPlugins: proseTypography, ... })` call, so
+wires it once, at its one `createRenderer({ blocks, remarkPlugins: proseTypography, ... })` call, so
 both the public render and the editor's live preview inherit it.
 
 **The theme-toggle mechanism (`theme-toggle.ts`).** `resolveTheme`/`applyTheme`/`toggleTheme` know
@@ -252,7 +252,7 @@ a build it silently breaks) fails this file's promise.
 | `feed.ts` | `feed.xml/+server.ts`, `feed.json/+server.ts`. | Delete the file and the two feed route files (or replace their bodies with a theme's mapping); nothing else references it. |
 | `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
 | `dev-gate.ts` | `hooks.server.ts`, `cairn.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), the one branch in `hooks.server.ts` and the one in `cairn.server.ts` that read the flag, and the `__CAIRN_DEV_BUILD__` define in `vite.config.ts` with its `app.d.ts` declaration; the gate defaults closed everywhere else, so nothing else changes behavior. |
-| `render.ts` | `markdown-components.ts` (the `makeIconRenderer` and `headRow` imports) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon and `headRow` imports (inlining `headRow`'s icon-plus-heading shape at its one call site), and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or a remark plugin instead), needs nothing else. |
+| `render.ts` | `markdown-blocks.ts` (the `makeIconRenderer` and `headRow` imports) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon and `headRow` imports (inlining `headRow`'s icon-plus-heading shape at its one call site), and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or a remark plugin instead), needs nothing else. |
 | `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example), through `src/theme/theme-names.ts`'s `ThemeToggleConfig`. | Delete the file, `SiteHeader.svelte`'s imports of it and of `theme-names.ts`, its `theme` state and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block; delete `theme-names.ts` and `theme-names.test.ts` with them. A theme with no light/dark switch, or a switch built from scratch, needs nothing else. |
 | `archive.ts` | `(site)/+page.server.ts`, `(site)/archive/[page]/+page.server.ts`. | Not a bare deletion while the paginated archive exists: a theme wanting a different archive shape (a flat list, an infinite scroll, no pagination) replaces both server routes' imports with the theme's slicing in the same change, and may delete the `/archive/[page]` route directory with it. |
 | `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |

@@ -10,10 +10,10 @@ import {
   downloadUrl,
   resolveBucket,
   seedMedia,
-} from '../../lib/media-seed/index.js';
-import type { MediaSeedArgs, SeedDeps, SeedItem } from '../../lib/media-seed/index.js';
-import { stripControlChars } from '../../lib/media-seed/assemble.js';
-import { readR2Buckets } from '../../lib/media-seed/wrangler-config.js';
+} from './index.js';
+import type { MediaSeedArgs, SeedDeps, SeedItem } from './index.js';
+import { stripControlChars } from './assemble.js';
+import { readR2Buckets } from './wrangler-config.js';
 
 /** Narrows `parseArgs`' union return, since the `--help` shape never carries `headers`/`from`. */
 function expectParsed(args: ReturnType<typeof parseArgs>): MediaSeedArgs {
@@ -322,19 +322,19 @@ describe('bin.ts readFileUnderCwd containment', () => {
     vi.resetModules();
     const originalArgv = process.argv;
     process.argv = [process.execPath, 'bin.js', '--from', 'https://example.com'];
-    vi.doMock('../../lib/media-seed/wrangler-config.js', () => ({
+    vi.doMock('./wrangler-config.js', () => ({
       readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
         await readFile('../outside.json');
         return null;
       },
     }));
     try {
-      await expect(import('../../lib/media-seed/bin.js')).rejects.toThrow(
+      await expect(import('./bin.js')).rejects.toThrow(
         'cairn-media-seed: refusing to read outside the project directory: ../outside.json'
       );
     } finally {
       process.argv = originalArgv;
-      vi.doUnmock('../../lib/media-seed/wrangler-config.js');
+      vi.doUnmock('./wrangler-config.js');
       vi.resetModules();
     }
   });
@@ -355,19 +355,19 @@ describe('bin.ts readFileUnderCwd symlink escape', () => {
     const linkName = `cairn-media-seed-symlink-escape-${process.pid}`;
     const linkPath = join(cwd, linkName);
     symlinkSync(outside, linkPath, 'dir');
-    vi.doMock('../../lib/media-seed/wrangler-config.js', () => ({
+    vi.doMock('./wrangler-config.js', () => ({
       readR2Buckets: async (readFile: (relPath: string) => Promise<string | null>) => {
         await readFile(`${linkName}/secret.txt`);
         return null;
       },
     }));
     try {
-      await expect(import('../../lib/media-seed/bin.js')).rejects.toThrow(
+      await expect(import('./bin.js')).rejects.toThrow(
         `cairn-media-seed: refusing to read outside the project directory: ${linkName}/secret.txt`
       );
     } finally {
       process.argv = originalArgv;
-      vi.doUnmock('../../lib/media-seed/wrangler-config.js');
+      vi.doUnmock('./wrangler-config.js');
       vi.resetModules();
       rmSync(linkPath, { force: true });
       rmSync(outside, { recursive: true, force: true });
@@ -382,9 +382,9 @@ describe('bin.ts realDeps.writeTempFile symlink escape', () => {
     // module for its realDeps export never pollutes this test run's own exit code.
     const originalArgv = process.argv;
     process.argv = [process.execPath, 'bin.js', '--help'];
-    let realDeps: (typeof import('../../lib/media-seed/bin.js'))['realDeps'];
+    let realDeps: (typeof import('./bin.js'))['realDeps'];
     try {
-      ({ realDeps } = await import('../../lib/media-seed/bin.js'));
+      ({ realDeps } = await import('./bin.js'));
     } finally {
       process.argv = originalArgv;
     }
@@ -533,13 +533,16 @@ describe('seedMedia', () => {
 });
 
 // A packaging lesson this repo's other bins already learned: prove the emitted bin runs under
-// plain Node from dist. The unit suite must pass without a prior `npm run package`, so this
-// spawns only when the built bin exists and skips (via skipIf) otherwise.
-const BIN = resolve(process.cwd(), 'dist/media-seed/bin.js');
-const built = existsSync(BIN);
+// plain Node from dist. A missing build fails the first spec rather than skipping, so a wrong
+// path cannot pass silently.
+const BIN = resolve(process.cwd(), 'packages/cairn-cms-dev/dist/media-seed/bin.js');
 
-describe('packaged bin (needs dist/media-seed/bin.js; run npm run package to unskip)', () => {
-  it.skipIf(!built)('prints usage and exits 0 on --help, without requiring --from', () => {
+describe('packaged bin (needs packages/cairn-cms-dev/dist/media-seed/bin.js; run npm run package first)', () => {
+  it('has been built', () => {
+    expect(existsSync(BIN), 'missing; run "npm run package" first').toBe(true);
+  });
+
+  it('prints usage and exits 0 on --help, without requiring --from', () => {
     const out = spawnSync(process.execPath, [BIN, '--help'], {
       cwd: tmpdir(),
       env: { PATH: process.env.PATH },
@@ -549,7 +552,7 @@ describe('packaged bin (needs dist/media-seed/bin.js; run npm run package to uns
     expect(out.stdout).toContain('Usage: cairn-media-seed');
   });
 
-  it.skipIf(!built)('prints usage to stderr and exits 2 on a missing --from', () => {
+  it('prints usage to stderr and exits 2 on a missing --from', () => {
     const out = spawnSync(process.execPath, [BIN], {
       cwd: tmpdir(),
       env: { PATH: process.env.PATH },
@@ -559,7 +562,7 @@ describe('packaged bin (needs dist/media-seed/bin.js; run npm run package to uns
     expect(out.stderr).toContain('Usage: cairn-media-seed');
   });
 
-  it.skipIf(!built)('prints usage to stderr and exits 2 on an unknown flag', () => {
+  it('prints usage to stderr and exits 2 on an unknown flag', () => {
     const out = spawnSync(process.execPath, [BIN, '--from', 'https://example.com', '--bogus'], {
       cwd: tmpdir(),
       env: { PATH: process.env.PATH },
@@ -569,7 +572,7 @@ describe('packaged bin (needs dist/media-seed/bin.js; run npm run package to uns
     expect(out.stderr).toContain('Usage: cairn-media-seed');
   });
 
-  it.skipIf(!built)('exits 2 naming --bucket when no wrangler config is present', () => {
+  it('exits 2 naming --bucket when no wrangler config is present', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-bin-'));
     const out = spawnSync(process.execPath, [BIN, '--from', 'https://example.com'], {
       cwd: dir,
@@ -580,7 +583,7 @@ describe('packaged bin (needs dist/media-seed/bin.js; run npm run package to uns
     expect(out.stderr).toContain('--bucket');
   });
 
-  it.skipIf(!built)('reports a clean zero-item summary and exits 0 from a bare site with a bucket flag', () => {
+  it('reports a clean zero-item summary and exits 0 from a bare site with a bucket flag', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-bin-'));
     const out = spawnSync(
       process.execPath,
@@ -591,7 +594,7 @@ describe('packaged bin (needs dist/media-seed/bin.js; run npm run package to uns
     expect(out.stdout).toContain('0 synced, 0 failed, of 0 manifest entries');
   });
 
-  it.skipIf(!built)('resolves the sole r2_buckets entry from wrangler.jsonc with no --bucket flag', () => {
+  it('resolves the sole r2_buckets entry from wrangler.jsonc with no --bucket flag', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-bin-'));
     writeFileSync(
       join(dir, 'wrangler.jsonc'),

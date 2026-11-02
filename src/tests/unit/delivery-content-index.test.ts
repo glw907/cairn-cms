@@ -8,7 +8,7 @@ import type { ContentIndex, RawFile } from '../../lib/delivery/content-index.js'
 const [posts] = normalizeConcepts({
   posts: {
     dir: 'd',
-    routing: 'feed',
+    routing: 'dated',
     fields: {
       title: fields.text({ label: 'Title' }),
       date: fields.date({ label: 'Date' }),
@@ -81,7 +81,7 @@ describe('content index slug', () => {
     const [posts] = normalizeConcepts({
       posts: {
         dir: 'd',
-        routing: 'feed',
+        routing: 'dated',
         permalink: '/:year/:month/:day/:slug',
         datePrefix: 'day',
         fields: {
@@ -150,7 +150,7 @@ describe('content index reads the taxonomy-marked field', () => {
   const [marked] = normalizeConcepts({
     posts: {
       dir: 'd',
-      routing: 'feed',
+      routing: 'dated',
       fields: {
         title: fields.text({ label: 'Title' }),
         date: fields.date({ label: 'Date' }),
@@ -189,7 +189,7 @@ describe('content index reads the taxonomy-marked field', () => {
     const [unmarked] = normalizeConcepts({
       posts: {
         dir: 'd',
-        routing: 'feed',
+        routing: 'dated',
         fields: {
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
@@ -211,7 +211,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
     const [unmarked] = normalizeConcepts({
       posts: {
         dir: 'd',
-        routing: 'feed',
+        routing: 'dated',
         fields: {
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
@@ -235,7 +235,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
     const [unmarked] = normalizeConcepts({
       posts: {
         dir: 'd',
-        routing: 'feed',
+        routing: 'dated',
         fields: {
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
@@ -253,7 +253,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
     const [marked] = normalizeConcepts({
       posts: {
         dir: 'd',
-        routing: 'feed',
+        routing: 'dated',
         fields: {
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
@@ -270,7 +270,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
     const [plain] = normalizeConcepts({
       posts: {
         dir: 'd',
-        routing: 'feed',
+        routing: 'dated',
         fields: {
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
@@ -311,7 +311,7 @@ describe('createContentIndex degrades a date-token permalink miss to a problem',
   const [dated] = normalizeConcepts({
     posts: {
       dir: 'd',
-      routing: 'feed',
+      routing: 'dated',
       permalink: '/:year/:month/:day/:slug',
       datePrefix: 'day',
       fields: {

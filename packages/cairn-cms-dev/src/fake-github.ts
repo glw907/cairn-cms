@@ -489,7 +489,7 @@ export function seedFragments(): void {
 
 /**
  * The site-config path the vocabulary route reads and commits. It mirrors the engine's default for
- * `editor.siteConfigPath`, which the route resolves through `runtime.siteConfigPath`.
+ * site-config path, which the route resolves through `runtime.siteConfigPath`.
  */
 const SEED_SITE_CONFIG_PATH = 'src/theme/site.config.yaml';
 

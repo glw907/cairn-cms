@@ -1,9 +1,11 @@
 # The daisy absorption ritual
 
 The admin (`cairn-admin.css`) and the admin toolkit (`@glw907/cairn-cms/admin-toolkit`) both
-assemble their markup from a curated blessed set of daisyUI 5 classes, compiled once by
-`scripts/build/build-admin-css.mjs` from `src/lib/admin/admin-css-safelist.ts` plus whatever class
-the `.svelte` sources themselves reference. A daisy release can rename a class, drop one, or
+assemble their markup from daisyUI 5 classes, compiled once by `scripts/build/build-admin-css.mjs`.
+The build compiles every daisyUI component and utility class except calendar, from the `@source
+inline(...)` line `scripts/build/daisyui-classes.mjs` generates, plus the labeled compatibility
+safelists in `scripts/build/admin-css.input.css` and whatever class the `.svelte` sources
+themselves reference. A daisy release can rename a class, drop one, or
 change what a class renders, and the admin has no other signal that happened: a class the build
 no longer compiles simply stops styling anything, silently, with no error. This ritual is the
 maintainer's routine check against that risk, run against every daisy release Dependabot opens a
@@ -15,14 +17,13 @@ PR for (`.github/dependabot.yml`), not only a major.
    removed, or behavior-changed class, and any new component that looks useful (see below).
 2. **Rebuild the admin sheet:** `npm run package`. This recompiles `dist/admin/cairn-admin.css`
    against the new daisy version.
-3. **Verify every blessed-set class still compiles.** The grep surface is two places:
-   `src/lib/admin/admin-css-safelist.ts` (the classes deliberately compiled ahead of any
-   component referencing them) and each toolkit component's own markup (`StatusChip`, `Pagination`,
-   `AdminTable`, `ListToolbar`; `PageHeader` and `EmptyState` carry none). Between the two, every
-   class the admin or the toolkit depends on is named somewhere greppable; confirm each one still
-   appears in the rebuilt `dist/admin/cairn-admin.css`. A class that vanished is the blast
-   radius: trace it to the safelist entry or the component that assembles it before accepting the
-   bump.
+3. **Verify every blessed-set class still compiles.** The grep surface is two places: the
+   compatibility safelists in `scripts/build/admin-css.input.css` (classes kept in the sheet for
+   consumers) and each toolkit component's own markup (`StatusChip`, `Pagination`, `AdminTable`,
+   `ListToolbar`; `PageHeader` and `EmptyState` carry none). Between the two, every class the admin
+   or the toolkit depends on is named somewhere greppable; confirm each one still appears in the
+   rebuilt `dist/admin/cairn-admin.css`. A class that vanished is the blast radius: trace it to the
+   safelist entry or the component that assembles it before accepting the bump.
 4. **Run the visual suite** in `examples/showcase`: `CI=1 npx playwright test admin-visual
    site-visual`. A daisy class that renders differently, rather than vanishing outright, shows up
    here as a pixel diff, not a missing selector.
@@ -41,12 +42,12 @@ misrender on a minor too.
 
 ## The safelist is the compile-side contract, not a cache of what is used today
 
-`admin-css-safelist.ts` exists to compile a class ahead of any shipped component referencing it, so
-a site-authored admin screen (or a future toolkit component) can reach for the blessed vocabulary
-immediately rather than waiting on an engine consumer to unlock it. **Once a class enters the
-blessed set, an engine component adopting it and later dropping that reference is never grounds to
-prune the class from the safelist.** The safelist's scope is "blessed for the admin and the
-toolkit to use," not "referenced by a shipped component today"; those are two different questions,
-and only the first one governs pruning. Removing an entry is a deliberate call against the blessed
-vocabulary itself (a class daisy retired, say), never a side effect of an unrelated component
-change.
+The full daisyUI compile and the safelists in `admin-css.input.css` exist to compile a class ahead
+of any shipped component referencing it, so a site-authored admin screen (or a future toolkit
+component) can reach for the blessed vocabulary immediately rather than waiting on an engine
+consumer to unlock it. **Once a class enters the blessed set, an engine component adopting it and
+later dropping that reference is never grounds to prune the class from the safelist.** The
+safelist's scope is "blessed for the admin and the toolkit to use," not "referenced by a shipped
+component today"; those are two different questions, and only the first one governs pruning.
+Removing an entry is a deliberate call against the blessed vocabulary itself (a class daisy
+retired, say), never a side effect of an unrelated component change.

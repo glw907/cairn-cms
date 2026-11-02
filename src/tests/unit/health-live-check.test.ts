@@ -40,8 +40,7 @@ function runtime(installationId: string): CairnRuntime {
     siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '123', installationId }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+    email: { from: 'cms@test' },
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     media: { enabled: false },
@@ -151,7 +150,7 @@ describe('the live token check is bounded per isolate', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => tokenResponse());
     const rt = runtime(nextInstallation());
     const results = await Promise.all(
-      Array.from({ length: 5 }, () => loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), rt)),
+      Array.from({ length: 5 }, () => loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), { runtime: rt })),
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({ repositories: ['r'] });
@@ -329,13 +328,13 @@ describe('the plain signing check is memoized per isolate', () => {
     const sign = vi.spyOn(crypto.subtle, 'sign');
     const rt = runtime(nextInstallation());
 
-    const a = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: first }, false), rt);
+    const a = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: first }, false), { runtime: rt });
     expect(sign).toHaveBeenCalledTimes(1);
-    const b = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: first }, false), rt);
+    const b = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: first }, false), { runtime: rt });
     expect(sign).toHaveBeenCalledTimes(1);
     expect(b.checks.githubAppSigning).toEqual(a.checks.githubAppSigning);
 
-    await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: second }, false), rt);
+    await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: second }, false), { runtime: rt });
     expect(sign).toHaveBeenCalledTimes(2);
   });
 });
@@ -347,7 +346,7 @@ describe('the live token check never touches the shared token cache', () => {
       .spyOn(globalThis, 'fetch')
       .mockImplementationOnce(async () => tokenResponse())
       .mockImplementation(async () => new Response(JSON.stringify({ token: 'ghs_publishpath' }), { status: 201 }));
-    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), runtime(installationId));
+    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), { runtime: runtime(installationId) });
     expect(data.checks.githubAppToken).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     // A cache hit would answer the live check's token with no fetch; a miss mints anew.
@@ -385,7 +384,7 @@ describe('loadHealth with ?live=1', () => {
   it('reports the token check and folds it into ok: a refused key fails the payload', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 401 }));
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), runtime(nextInstallation()));
+    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), { runtime: runtime(nextInstallation()) });
     expect(data.checks.githubAppSigning.ok).toBe(true);
     expect(data.checks.githubAppToken).toEqual({ ok: false, detail: 'key_refused' });
     expect(data.ok).toBe(false);
@@ -393,7 +392,7 @@ describe('loadHealth with ?live=1', () => {
 
   it('passes with both checks passing, and reports the signing fingerprint', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => tokenResponse());
-    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), runtime(nextInstallation()));
+    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), { runtime: runtime(nextInstallation()) });
     expect(data.ok).toBe(true);
     expect(data.checks.githubAppToken).toEqual({ ok: true });
     expect(data.checks.githubAppSigning.fingerprint).toMatch(/^SHA256:[A-Za-z0-9+/]{43}=$/);
@@ -401,7 +400,7 @@ describe('loadHealth with ?live=1', () => {
 
   it('makes no fetch and reports no token check with no key, so ok is the signing check', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch');
-    const data = await loadHealth(healthEvent({}, true), runtime(nextInstallation()));
+    const data = await loadHealth(healthEvent({}, true), { runtime: runtime(nextInstallation()) });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(data.checks).not.toHaveProperty('githubAppToken');
     expect(data.ok).toBe(data.checks.githubAppSigning.ok);
@@ -411,7 +410,7 @@ describe('loadHealth with ?live=1', () => {
   it('makes no fetch and reports no token check for a provider that is not a GitHub App', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch');
     const rt = { ...runtime(nextInstallation()), backend: { kind: 'other' } } as unknown as CairnRuntime;
-    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), rt);
+    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), { runtime: rt });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(data.checks).not.toHaveProperty('githubAppToken');
     expect(data.ok).toBe(data.checks.githubAppSigning.ok);
@@ -421,7 +420,7 @@ describe('loadHealth with ?live=1', () => {
   it('makes no fetch and reports no token check for a key that fails the signing check', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch');
     const unusable = btoa('not a key');
-    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: unusable }, true), runtime(nextInstallation()));
+    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: unusable }, true), { runtime: runtime(nextInstallation()) });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(data.checks).not.toHaveProperty('githubAppToken');
     expect(data.checks.githubAppSigning.ok).toBe(false);
@@ -430,7 +429,7 @@ describe('loadHealth with ?live=1', () => {
 
   it('never serializes any part of the key', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => tokenResponse());
-    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), runtime(nextInstallation()));
+    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), { runtime: runtime(nextInstallation()) });
     const serialized = JSON.stringify(data);
     const inner = atob(keyB64).replace(/-----[^-]+-----/g, '');
     const leaked: string[] = [];
@@ -444,7 +443,7 @@ describe('loadHealth with ?live=1', () => {
 
   it('makes no fetch on the plain call', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch');
-    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, false), runtime(nextInstallation()));
+    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, false), { runtime: runtime(nextInstallation()) });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(data.checks).not.toHaveProperty('githubAppToken');
   });

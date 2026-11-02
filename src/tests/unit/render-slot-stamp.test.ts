@@ -4,11 +4,11 @@ import remarkParse from 'remark-parse';
 import remarkDirective from 'remark-directive';
 import { visit } from 'unist-util-visit';
 import { remarkDirectiveStamp } from '../../lib/render/remark-directives.js';
-import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { defineBlock, defineRegistry } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import type { Root } from 'mdast';
 
-const callout = defineComponent({
+const callout = defineBlock({
   name: 'callout',
   label: 'Callout',
   description: 'd',
@@ -23,7 +23,7 @@ const callout = defineComponent({
     { name: 'points', label: 'Points', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
   ],
 });
-const registry = defineRegistry({ components: [callout] });
+const registry = defineRegistry({ blocks: [callout] });
 
 function stamp(md: string): Root {
   const tree = unified().use(remarkParse).use(remarkDirective).parse(md) as Root;

@@ -46,9 +46,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   import type { MediaLibraryEntry } from '../media/library-entry.js';
   import type { MediaLibraryData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { UsageEntry } from '../media/usage.js';
-  import { publicPath } from '../media/naming.js';
+  import { DEFAULT_MEDIA_BASE, publicPath } from '../media/naming.js';
   import { formatMediaToken } from '../media/reference.js';
-  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
+  import { MEDIA_BASE_CONTEXT_KEY } from './media-base-context.js';
   import { segmentTintClass } from './segmented-control.js';
   import { confirmGateMatches } from './typed-confirm.js';
   import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';
@@ -84,9 +84,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     AdminTable,
     StatusChip,
     EmptyState,
-    formatCivilDate,
     type ListToolbarFilter,
   } from '../admin-toolkit/index.js';
+  import { formatShortMonthDay } from '../admin-toolkit/format.js';
 
   interface Props {
     /** The media library load's data: the unioned assets, the per-hash usage overlay, and a
@@ -878,7 +878,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   <StatusChip register="warning" label="no references found" size="xs" />
                 {/if}
               </td>
-              <td class="w-24 text-right type-body tabular-nums text-muted">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</td>
+              <td class="w-24 text-right type-body tabular-nums text-muted">{formatShortMonthDay(asset.createdAt)}</td>
               <td class="w-12 text-right">
                 <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
                   <Trash2Icon class="h-4 w-4" aria-hidden="true" />
@@ -1099,7 +1099,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <dt class="text-muted">Type</dt>
           <dd class="m-0 text-right">{typeLabel(asset)}</dd>
           <dt class="text-muted">Added</dt>
-          <dd class="m-0 text-right tabular-nums">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</dd>
+          <dd class="m-0 text-right tabular-nums">{formatShortMonthDay(asset.createdAt)}</dd>
         </dl>
       </div>
 

@@ -6,7 +6,7 @@ import { devBackendContent } from '#chassis/dev-gate.js';
 // cairn-template:exclude-end
 import { runtime } from '#chassis/cairn.server.js';
 
-// createAdminAction's authorization refusals (see the SvelteKit reference's "Refusal channels")
+// createSectionAction's session and CSRF refusals (see the SvelteKit reference's "Refusal channels")
 // throw SvelteKit's redirect()/error(), which SvelteKit renders correctly with no site
 // mapping. SvelteKit's default handleError (a console.error of every server error) covers
 // everything else, so this file declares no handleError hook.

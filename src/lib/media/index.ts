@@ -8,11 +8,6 @@
 // stay in their modules unexported here. The R2-touching pieces (`store.ts`,
 // `delivery-bucket.ts`) and the delivery-route factory and `requireBucket` stay on `/sveltekit`, off
 // this surface, so the public `.d.ts` for `/media` names no kit or workers-types type.
-// `MediaConfig`'s canonical home is `.`; a recorded R4 re-export here because `createMediaResolver`
-// names it on this subpath.
-export type { MediaConfig } from '../content/types.js';
 export { readCommittedManifest, type MediaEntry, type MediaManifest } from './manifest.js';
 export { parseMediaToken, formatMediaToken, type MediaRef } from './reference.js';
-// `MediaResolve`'s canonical home is `.`; a recorded R4 re-export here because
-// `createMediaResolver`'s return type names it.
-export { createMediaResolver, type MediaResolve } from '../render/resolve-media.js';
+export { createMediaResolver } from '../render/resolve-media.js';

@@ -1,5 +1,5 @@
 import type { RequestHandler, EntryGenerator } from './$types';
-import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
+import { createPublicRoutes, buildMarkdownResponse } from '@glw907/cairn-cms/delivery';
 import { publicRoutesConfig } from '#chassis/public-routes.js';
 
 // Prerendered, same as every other public route (robots.txt, sitemap.xml, feed.xml). This is not
@@ -15,5 +15,5 @@ export const entries: EntryGenerator = () => routes.markdownEntries();
 
 export const GET: RequestHandler = async ({ url }) => {
   const { body } = await routes.markdownLoad({ url });
-  return markdownResponse({ body });
+  return buildMarkdownResponse({ body });
 };

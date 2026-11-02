@@ -42,8 +42,8 @@ elsewhere (`check:comments`) and not restated here.
   `content-routes.ts` failure family, ~460-655). `Failure` is the family suffix; `Refusal` and
   `Skip` are retired as type-name suffixes (a discriminant value or a field name is not a
   suffix), per the ledger's `convention-failure-suffix`. `RevertOutcome` is its one ruled
-  exception. `IdentityRefusal` (`sveltekit/guard.ts`) is a live straggler no entry argues for,
-  ruled a rename to `IdentityFailure` (BACKLOG #187). A hard end-of-request is
+  exception. `IdentityFailure` (`sveltekit/guard.ts`) is the identity seam's refusal arm and
+  follows the suffix. A hard end-of-request is
   `error(status, message)`. A `redirect(303, '?error=...')` bounce is only for a failure on a
   page whose reload restores safe state; never a substitute for `fail` inside a form action.
   Ad hoc `fail(400, { error })` literals and dropped `satisfies` annotations converge.

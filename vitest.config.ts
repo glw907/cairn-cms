@@ -99,7 +99,7 @@ export default defineConfig({
           // built dist. Under the full run's concurrent IO that spawn starves and flakes, so they
           // run in their own single-fork project below; exclude them here so they do not run twice.
           exclude: [
-            'src/tests/unit/delivery-data-dist-spawn.test.ts',
+            'src/tests/unit/delivery-dist-spawn.test.ts',
             'src/tests/unit/media-seed-dist-spawn.test.ts',
             'src/tests/unit/packaging-boundary.test.ts',
             'src/tests/unit/reproductions-manifest-dist-spawn.test.ts',
@@ -124,7 +124,7 @@ export default defineConfig({
           name: 'unit-dist-spawn',
           unstubGlobals: true,
           include: [
-            'src/tests/unit/delivery-data-dist-spawn.test.ts',
+            'src/tests/unit/delivery-dist-spawn.test.ts',
             'src/tests/unit/media-seed-dist-spawn.test.ts',
             'src/tests/unit/packaging-boundary.test.ts',
             'src/tests/unit/reproductions-manifest-dist-spawn.test.ts',

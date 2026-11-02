@@ -1,9 +1,19 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+
+// A getter, so a test flips the dev branch at run time: the wrapper reads `DEV` per call.
+const mocks = vi.hoisted(() => ({ DEV: true }));
+vi.mock('esm-env', () => ({
+  get DEV() {
+    return mocks.DEV;
+  },
+  BROWSER: false,
+  NODE: true,
+}));
+
 import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { createAdminAction, UnauditedActionError, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
-import type { AccessMap } from '../../lib/auth/access.js';
 import type { Editor } from '../../lib/auth/types.js';
 
 const editor: Editor = { email: 'owner@example.com', displayName: 'Owner', role: 'owner', capability: 'owner' };
@@ -24,7 +34,6 @@ function makeEvent(opts: {
   editor?: Editor | null;
   extra?: Record<string, string>;
   auditSink?: (record: AdminActionAuditRecord) => void;
-  access?: AccessMap;
 }): CairnEvent {
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
@@ -45,7 +54,6 @@ function makeEvent(opts: {
     locals: {
       cairnEditor: opts.editor === undefined ? editor : opts.editor,
       cairnAuditSink: opts.auditSink,
-      cairnAccess: opts.access,
     },
     setHeaders: () => {},
   };
@@ -265,169 +273,22 @@ describe('createAdminAction: the handler runs with a verified editor and a bound
   });
 });
 
-describe('createAdminAction: opt-in authorization', () => {
-  const staff: Editor = { email: 'staff@example.com', displayName: 'Staff', role: 'editor', capability: 'editor' };
-  const target = '/admin/team/events';
-  const csrf = { cookie: 'MATCH', csrfField: 'MATCH' } as const;
-
-  /** A wrapped handler that records its calls and audits, opted into the access check. */
-  function guarded(access?: { target: string; ownerOnly?: boolean }) {
-    const handler = vi.fn(async ({ ctx }: { ctx: { audit: (r: { action: string; entity: string }) => void } }) => {
-      ctx.audit({ action: 'approve', entity: 'event' });
-      return { ok: true } as const;
-    });
-    return { handler, action: createAdminAction(handler, access ? { access } : {}) };
-  }
-
-  it('leaves an omitted access option at today’s behavior: no map, no rule, handler still runs', async () => {
-    // The zero-config default attaches an empty access map, so default-on enforcement would 403
-    // every consumer that never declared one. Absent means absent.
-    const { handler, action } = guarded();
-    expect(await action(makeEvent({ ...csrf, editor: staff, access: {} }))).toEqual({ ok: true });
-    expect(handler).toHaveBeenCalledOnce();
-  });
-
-  it('runs the handler when the map admits the session for the declared target', async () => {
-    const { handler, action } = guarded({ target });
-    expect(await action(makeEvent({ ...csrf, editor: staff, access: { [target]: ['editor'] } }))).toEqual({ ok: true });
-    expect(handler).toHaveBeenCalledOnce();
-  });
-
-  it('audits and throws 403 when the map carries no rule for the target, owner included', async () => {
-    const sink = vi.fn();
-    const { handler, action } = guarded({ target });
-    const event = makeEvent({ ...csrf, access: { '/admin/other': ['editor'] }, auditSink: sink });
-    expect(await httpErrorStatusOf(action(event))).toBe(403);
-    expect(handler).not.toHaveBeenCalled();
-    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: no access rule', actor: editor.email }));
-  });
-
-  it('audits and throws 403 when no access map is attached at all', async () => {
-    // Fail-closed: an opted-in action on a route the guard never ran is refused, not admitted.
-    const sink = vi.fn();
-    const { handler, action } = guarded({ target });
-    expect(await httpErrorStatusOf(action(makeEvent({ ...csrf, auditSink: sink })))).toBe(403);
-    expect(handler).not.toHaveBeenCalled();
-    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: no access rule' }));
-  });
-
-  it('audits and throws 403 when the rule exists but the role is not admitted', async () => {
-    const sink = vi.fn();
-    const { handler, action } = guarded({ target });
-    const event = makeEvent({ ...csrf, editor: staff, access: { [target]: ['owner'] }, auditSink: sink });
-    expect(await httpErrorStatusOf(action(event))).toBe(403);
-    expect(handler).not.toHaveBeenCalled();
-    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: role not admitted' }));
-  });
-
-  it('audits and throws 403 for ownerOnly against an admitted non-owner session', async () => {
-    const sink = vi.fn();
-    const { handler, action } = guarded({ target, ownerOnly: true });
-    const event = makeEvent({ ...csrf, editor: staff, access: { [target]: ['editor'] }, auditSink: sink });
-    expect(await httpErrorStatusOf(action(event))).toBe(403);
-    expect(handler).not.toHaveBeenCalled();
-    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: not owner' }));
-  });
-
-  it('logs auth.access.refused with the session and the target on a refusal', async () => {
-    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    const { action } = guarded({ target });
-    await httpErrorStatusOf(action(makeEvent({ ...csrf, editor: staff, access: { [target]: ['owner'] } })));
-    expect(warnSpy).toHaveBeenCalledWith('auth.access.refused', {
-      email: staff.email,
-      role: staff.role,
-      target,
-      reason: 'role',
-    });
-    warnSpy.mockRestore();
-  });
-
-  const reasonRows: Array<{ name: string; access: AccessMap; target: string; ownerOnly: boolean; reason: string }> = [
-    { name: 'no rule for the target', access: { '/admin/other': ['editor'] }, target, ownerOnly: false, reason: 'no_rule' },
-    {
-      name: 'a rule shadowed by a deeper key',
-      access: { '/admin/team': ['editor'], '/admin/team/events/archive': ['editor'] },
-      target: '/admin/team/[id]',
-      ownerOnly: false,
-      reason: 'shadowed',
-    },
-    { name: 'a role the rule does not list', access: { [target]: ['owner'] }, target, ownerOnly: false, reason: 'role' },
-    { name: 'ownerOnly on an admitted non-owner', access: { [target]: ['editor'] }, target, ownerOnly: true, reason: 'role' },
-  ];
-
-  it.each(reasonRows)('records reason $reason for $name', async (row) => {
-    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    const { action } = guarded({ target: row.target, ownerOnly: row.ownerOnly });
-    await httpErrorStatusOf(action(makeEvent({ ...csrf, editor: staff, access: row.access })));
-    expect(warnSpy).toHaveBeenCalledWith(
-      'auth.access.refused',
-      expect.objectContaining({ reason: row.reason }),
-    );
-    warnSpy.mockRestore();
-  });
-
-  it('refuses before the handler and before the unaudited check, so no unaudited record follows', async () => {
-    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
-    const { action } = guarded({ target });
-    await httpErrorStatusOf(action(makeEvent({ ...csrf, editor: staff, access: { [target]: ['owner'] } })));
-    expect(errorSpy).not.toHaveBeenCalledWith('admin.action.unaudited', expect.anything());
-    errorSpy.mockRestore();
-  });
-
-  it('keeps the wrapped return type at T, never widening it to an ActionFailure union', async () => {
-    // A compile-time assertion: authorization refusals throw here, so the handler's own success
-    // type is still the whole of what a caller awaits. Widening would break every call site.
-    const typed: (event: CairnEvent) => Promise<{ ok: true }> = createAdminAction(
-      async () => ({ ok: true }) as const,
-      { access: { target } },
-    );
-    expect(typeof typed).toBe('function');
-  });
-});
-
-describe('createAdminAction: a none-capability session under the access option', () => {
-  const noneStaff: Editor = { email: 'none@example.com', displayName: 'None', role: 'staff', capability: 'none' };
-  const target = '/admin/team/events';
-  const csrf = { cookie: 'MATCH', csrfField: 'MATCH' } as const;
-
-  function guarded() {
-    const handler = vi.fn(async ({ ctx }: { ctx: { audit: (r: { action: string; entity: string }) => void } }) => {
-      ctx.audit({ action: 'approve', entity: 'event' });
-      return { ok: true } as const;
-    });
-    return { handler, action: createAdminAction(handler, { access: { target } }) };
-  }
-
-  it('runs the handler on an href rule that names its role', async () => {
-    const { handler, action } = guarded();
-    expect(await action(makeEvent({ ...csrf, editor: noneStaff, access: { [target]: ['staff'] } }))).toEqual({ ok: true });
-    expect(handler).toHaveBeenCalledOnce();
-  });
-
-  it('audits and throws 403 on an href rule that names only another role', async () => {
-    const sink = vi.fn();
-    const { handler, action } = guarded();
-    const event = makeEvent({ ...csrf, editor: noneStaff, access: { [target]: ['editor'] }, auditSink: sink });
-    expect(await httpErrorStatusOf(action(event))).toBe(403);
-    expect(handler).not.toHaveBeenCalled();
-    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: role not admitted' }));
-  });
-});
-
 describe('createAdminAction: the required audit emit', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    mocks.DEV = true;
   });
 
   it('throws a 500 in dev when the handler emits zero audit records', async () => {
-    const action = createAdminAction(async () => ({ ok: true }), { isDev: true });
+    const action = createAdminAction(async () => ({ ok: true }));
     const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' });
     expect(await statusOf(action(event))).toBe(500);
   });
 
   it('logs admin.action.unaudited and still resolves in production', async () => {
+    mocks.DEV = false;
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const action = createAdminAction(async () => ({ ok: true }), { isDev: false });
+    const action = createAdminAction(async () => ({ ok: true }));
     const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' });
     const result = await action(event);
     expect(result).toEqual({ ok: true });
@@ -435,15 +296,16 @@ describe('createAdminAction: the required audit emit', () => {
   });
 
   it('exempts a fail() return from the unaudited check in dev: no throw, the fail() result passes through', async () => {
-    const action = createAdminAction(async () => fail(400, { error: 'missing' }), { isDev: true });
+    const action = createAdminAction(async () => fail(400, { error: 'missing' }));
     const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' });
     const result = await action(event);
     expect(result).toEqual(fail(400, { error: 'missing' }));
   });
 
   it('exempts a fail() return from the unaudited check in production: no admin.action.unaudited log', async () => {
+    mocks.DEV = false;
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const action = createAdminAction(async () => fail(404, { error: 'not found' }), { isDev: false });
+    const action = createAdminAction(async () => fail(404, { error: 'not found' }));
     const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' });
     const result = await action(event);
     expect(result).toEqual(fail(404, { error: 'not found' }));
@@ -451,7 +313,7 @@ describe('createAdminAction: the required audit emit', () => {
   });
 
   it('still requires an audit on a normal (non-fail) success return', async () => {
-    const action = createAdminAction(async () => ({ ok: true }), { isDev: true });
+    const action = createAdminAction(async () => ({ ok: true }));
     const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' });
     expect(await statusOf(action(event))).toBe(500);
   });

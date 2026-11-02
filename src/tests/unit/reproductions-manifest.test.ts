@@ -23,7 +23,7 @@ const IDS = [
   'editor/details-panel',
   'editor/figure-dialog',
   'editor/tidy-review',
-  'editor/collapsed-layout-block',
+  'editor/collapsed-block',
   'publish/header-band',
   'publish/history-list',
   'publish/pending-list',

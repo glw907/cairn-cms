@@ -35,7 +35,7 @@ export const testAdapter: CairnAdapter = {
     // routing so every dated-behavior test riding this fixture sees a dated concept.
     posts: {
       dir: 'src/content/posts',
-      routing: 'feed',
+      routing: 'dated',
       fields: postFieldset.fields,
     },
     pages: {

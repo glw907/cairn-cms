@@ -350,6 +350,7 @@ export function formValues(
  * significant string's committed shape (`author: '123'`), and an unlimited line width keeps a scalar
  * with no newline on the one line the byte-preserving rewriters read (a string holding a newline
  * writes as a block scalar). An empty record writes the body alone.
+ * @public
  */
 export function serializeMarkdown(frontmatter: object, body: string): string {
   const yaml = stringify(frontmatter, { singleQuote: true, lineWidth: 0 });

@@ -11,7 +11,7 @@
     "src/lib/sveltekit/guard.ts:76 AuthGuardConfig.identity: replaces magic-link session resolution with the site's gate",
     "src/lib/sveltekit/guard.ts:88 IdentityResolver: resolve proves who is making the request; logoutUrl is validated as root-relative or https",
     "src/lib/sveltekit/guard.ts:297 the guard awaits identity.resolve on every guarded admin request and looks the returned email up in the roster",
-    "src/lib/sveltekit/guard.ts:114 IdentityRefusal reasons: missing, invalid, audience, issuer, expired, no_email, keys",
+    "src/lib/sveltekit/guard.ts:114 IdentityFailure reasons: missing, invalid, audience, issuer, expired, no_email, keys",
     "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/replace-magic-links-with-cloudflare-access.md (Write the verifier; Close the exposures outside the application)",
     "Cloudflare, Validate JWTs: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/"
   ],

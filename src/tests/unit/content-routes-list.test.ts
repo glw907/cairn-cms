@@ -451,7 +451,7 @@ describe('createAction', () => {
       label: 'Pages',
       singular: 'Pages',
       dir: 'src/content/pages',
-      routing: { routable: true, dated: false, inFeeds: false },
+      routing: { routable: true, dated: false },
       permalink: '/:slug',
       datePrefix: 'day',
       fields: [],

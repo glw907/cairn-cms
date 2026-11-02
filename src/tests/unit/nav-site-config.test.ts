@@ -10,10 +10,8 @@ import {
   validateVocabulary,
   readVocabulary,
   setVocabulary,
-  dictionaryFileForDialect,
   resolveTidyConventions,
   defaultTidyConventions,
-  DEFAULT_DIALECT,
 } from '../../lib/nav/site-config.js';
 import { condition, CairnError } from '../../lib/diagnostics/index.js';
 
@@ -110,13 +108,10 @@ describe('parseSiteConfig', () => {
     expect(() => parseSiteConfig('description: x\n')).toThrow(/needs a siteName/);
   });
 
-  it('reads an optional spellcheck.dialect', () => {
-    const config = parseSiteConfig('siteName: S\nspellcheck:\n  dialect: en-GB\n');
-    expect(config.spellcheck?.dialect).toBe('en-GB');
-  });
-
-  it('leaves spellcheck undefined when the key is absent', () => {
-    expect(parseSiteConfig('siteName: S\n').spellcheck).toBeUndefined();
+  it('rejects a spellcheck key as unrecognized, listing the known keys', () => {
+    expect(() => parseSiteConfig('siteName: S\nspellcheck:\n  dialect: en-GB\n')).toThrow(
+      /unrecognized key "spellcheck"; known keys are siteName, description, author, locale, menus, tidy, vocabulary/,
+    );
   });
 
   it('throws on a stale per-concept content block, pointing to defineConcept (Contract v2)', () => {
@@ -155,29 +150,12 @@ describe('parseSiteConfig', () => {
       'locale: en-US',
       'menus:',
       '  primary: []',
-      'spellcheck:',
-      '  dialect: en-US',
       'tidy:',
       '  enabled: false',
       'vocabulary: []',
       '',
     ].join('\n');
     expect(() => parseSiteConfig(raw)).not.toThrow();
-  });
-});
-
-describe('dictionaryFileForDialect', () => {
-  it('defaults to the US English dictionary when the dialect is unset', () => {
-    expect(dictionaryFileForDialect(undefined)).toBe('dictionary-en-us.txt');
-    expect(DEFAULT_DIALECT).toBe('en-US');
-  });
-
-  it('resolves an explicit en-US dialect to the US English dictionary', () => {
-    expect(dictionaryFileForDialect('en-US')).toBe('dictionary-en-us.txt');
-  });
-
-  it('falls back to the default dictionary for an unknown dialect', () => {
-    expect(dictionaryFileForDialect('xx-ZZ')).toBe('dictionary-en-us.txt');
   });
 });
 
@@ -189,6 +167,13 @@ describe('SiteConfigError', () => {
     expect(err.name).toBe('SiteConfigError');
     expect(err.message).toBe('bad');
     expect(condition(err.conditionId).id).toBe('config.site-config-invalid');
+  });
+});
+
+describe('editor-facing validation errors', () => {
+  it('keep the message exactly as thrown, without the registry remediation', () => {
+    expect(new NavValidationError('too deep').message).toBe('too deep');
+    expect(new SiteConfigError('bad').conditionId).toBe('config.site-config-invalid');
   });
 });
 

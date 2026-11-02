@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { createRenderer, defineRegistry, renderGlyph } from '../../lib/index.js';
 import * as engine from '../../lib/index.js';
-import * as authoring from '../../lib/render/authoring.js';
 
 describe('engine entry render surface', () => {
   it('keeps the core render entry points on the root barrel', () => {
@@ -23,28 +23,26 @@ describe('engine entry render surface', () => {
   });
 
   it('still hides the internal hast helpers from the root entry', () => {
-    for (const name of ['isElement', 'strProp', 'markFirstList']) {
+    for (const name of ['isElement', 'strProp']) {
       expect(name in engine).toBe(false);
     }
   });
 
-  it('is type-only: /render carries no runtime export (ComponentContext erases at build)', () => {
-    // The re-homed trio (iconSpan, cardShell, headRow) is covered by the same assertion.
-    expect(Object.keys(authoring)).toEqual([]);
+  it('publishes no render subpath; BlockContext is a root type', () => {
+    const { exports } = JSON.parse(readFileSync('package.json', 'utf8')) as { exports: Record<string, unknown> };
+    expect('./render' in exports).toBe(false);
   });
 
-  it('omits strAttr from /render; the reader moved onto ComponentContext.attr', () => {
-    expect('strAttr' in authoring).toBe(false);
+  it('omits strAttr from the root entry; the reader moved onto BlockContext.attr', () => {
+    expect('strAttr' in engine).toBe(false);
   });
 
-  it('omits rehypeDispatch from /render but keeps it reachable from its module', async () => {
-    expect('rehypeDispatch' in authoring).toBe(false);
+  it('keeps rehypeDispatch reachable from its module', async () => {
     const dispatch = await import('../../lib/render/rehype-dispatch.js');
     expect(typeof dispatch.rehypeDispatch).toBe('function');
   });
 
-  it('omits isElement from /render but keeps it reachable from its module', async () => {
-    expect('isElement' in authoring).toBe(false);
+  it('keeps isElement reachable from its module', async () => {
     const dispatch = await import('../../lib/render/rehype-dispatch.js');
     expect(typeof dispatch.isElement).toBe('function');
   });

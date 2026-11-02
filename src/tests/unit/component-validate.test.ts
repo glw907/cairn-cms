@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { validateComponent } from '../../lib/render/component-validate.js';
-import { defineComponent } from '../../lib/render/registry.js';
+import { defineBlock } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import { log } from '../../lib/log/index.js';
 
 const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }), description: 'd', use: 'u' };
-const alert = defineComponent({
+const alert = defineBlock({
   ...base, name: 'alert', label: 'Alert',
   attributes: { role: fields.select({ label: 'Role', required: true, options: ['info', 'warning'] }) },
   slots: [{ name: 'body', label: 'Body', kind: 'markdown', required: true }],
@@ -41,13 +41,13 @@ describe('validateComponent', () => {
   });
 });
 
-const link = defineComponent({
+const link = defineBlock({
   ...base, name: 'link', label: 'Link',
   attributes: { href: fields.text({ label: 'Href', required: true }) },
   slots: [{ name: 'body', label: 'Body', kind: 'markdown', required: true }],
 });
 
-const patterned = defineComponent({
+const patterned = defineBlock({
   ...base, name: 'patterned', label: 'Patterned',
   attributes: { href: fields.text({ label: 'Href', pattern: '^https://' }) },
   slots: [{ name: 'body', label: 'Body', kind: 'markdown' }],
@@ -75,7 +75,7 @@ describe('validateComponent custom validate', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('reports the string a validator returns as that field error', async () => {
-    const def = defineComponent({
+    const def = defineBlock({
       ...base, name: 'cv', label: 'CV',
       attributes: { name: fields.text({ label: 'Name' }) },
       behavior: { name: { validate: () => 'No good.' } },
@@ -87,7 +87,7 @@ describe('validateComponent custom validate', () => {
   });
 
   it('treats a null return as valid', async () => {
-    const def = defineComponent({
+    const def = defineBlock({
       ...base, name: 'cv', label: 'CV',
       attributes: { name: fields.text({ label: 'Name' }) },
       behavior: { name: { validate: () => null } },
@@ -99,7 +99,7 @@ describe('validateComponent custom validate', () => {
 
   it('passes the value and the sibling record to the validator', async () => {
     const seen: Array<unknown> = [];
-    const def = defineComponent({
+    const def = defineBlock({
       ...base, name: 'cv', label: 'CV',
       attributes: { min: fields.text({ label: 'Min' }), max: fields.text({ label: 'Max' }) },
       behavior: {
@@ -121,7 +121,7 @@ describe('validateComponent custom validate', () => {
 
   it('treats a throwing validator as valid and does not crash', async () => {
     const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    const def = defineComponent({
+    const def = defineBlock({
       ...base, name: 'boom', label: 'Boom',
       attributes: { name: fields.text({ label: 'Name' }) },
       behavior: { name: { validate: () => { throw new Error('kaboom'); } } },
@@ -134,7 +134,7 @@ describe('validateComponent custom validate', () => {
   });
 
   it('reports the required error before running pattern or validate on an empty value', async () => {
-    const def = defineComponent({
+    const def = defineBlock({
       ...base, name: 'req', label: 'Req',
       attributes: { name: fields.text({ label: 'Name', required: true, pattern: '^x' }) },
       behavior: { name: { validate: () => 'val' } },
@@ -160,7 +160,7 @@ describe('validateComponent attribute-key detection', () => {
 });
 
 describe('validateComponent attribute vocabulary', () => {
-  const counted = defineComponent({
+  const counted = defineBlock({
     ...base, name: 'counted', label: 'Counted',
     attributes: { count: fields.number({ label: 'Count', min: 1 }) },
     slots: [{ name: 'body', label: 'Body', kind: 'markdown' }],
@@ -183,7 +183,7 @@ describe('validateComponent attribute vocabulary', () => {
 });
 
 describe('validateComponent boolean attribute', () => {
-  const toggle = defineComponent({
+  const toggle = defineBlock({
     ...base, name: 'toggle', label: 'Toggle',
     attributes: { open: fields.boolean({ label: 'Open' }) },
     slots: [{ name: 'body', label: 'Body', kind: 'markdown', required: true }],

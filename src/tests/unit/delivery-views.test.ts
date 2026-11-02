@@ -12,7 +12,7 @@ const ORIGIN = 'https://example.com';
 const descriptors = normalizeConcepts({
   posts: {
     dir: 'posts',
-    routing: 'feed',
+    routing: 'dated',
     fields: {
       title: fields.text({ label: 'Title' }),
       date: fields.date({ label: 'Date' }),

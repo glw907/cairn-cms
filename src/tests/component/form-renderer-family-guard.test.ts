@@ -3,7 +3,7 @@ import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import FieldInput from '../../lib/admin/FieldInput.svelte';
 import ComponentForm from '../../lib/admin/ComponentForm.svelte';
-import { defineComponent, type ComponentValues } from '../../lib/render/registry.js';
+import { defineBlock, type ComponentValues } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import type { NamedField } from '../../lib/content/types.js';
 
@@ -203,7 +203,7 @@ const base = {
   use: 'u',
 };
 
-const iconDef = defineComponent({
+const iconDef = defineBlock({
   ...base,
   name: 'marker',
   label: 'Marker',
@@ -239,7 +239,7 @@ describe('ComponentForm validation convention (controlled state + inline touched
 
   it('binds the working values out live so the host preview reads each keystroke (controlled coupling)', async () => {
     let values: ComponentValues | undefined;
-    const grid = defineComponent({
+    const grid = defineBlock({
       ...base,
       name: 'note',
       label: 'Note',

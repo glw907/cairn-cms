@@ -1,11 +1,11 @@
 // cairn-cms: the remark step that stamps a parsed component directive with the hast data markers
 // (data-primitive, data-slot, data-role, the data-attr<Key> set) rehype-dispatch.ts reads back to
-// route it to its ComponentRegistry entry's `render`. This is the mdast-to-hast handoff for every
+// route it to its BlockRegistry entry's `render`. This is the mdast-to-hast handoff for every
 // component in the render pipeline.
 import type { Paragraph, PhrasingContent, Root, Text } from 'mdast';
 import type { ContainerDirective, LeafDirective, TextDirective } from 'mdast-util-directive';
 import { visit } from 'unist-util-visit';
-import { dataAttrProp, type ComponentRegistry } from './registry.js';
+import { dataAttrProp, type BlockRegistry } from './registry.js';
 
 // mdast-util-directive carries the `[label]` as a paragraph whose `data.directiveLabel` is set.
 function isDirectiveLabel(node: unknown): boolean {
@@ -58,7 +58,7 @@ function restoreLiteral(node: TextDirective | LeafDirective): PhrasingContent[] 
 /**
  * Remark plugin that tags each registered directive node so the rehype dispatch can render it, leaving unknown directives untouched.
  */
-export function remarkDirectiveStamp(registry: ComponentRegistry) {
+export function remarkDirectiveStamp(registry: BlockRegistry) {
   const known = new Set(registry.names);
   return (tree: Root) => {
     visit(tree, 'containerDirective', (node: ContainerDirective) => {

@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
 import type { Root, Element, ElementContent } from 'hast';
-import { rehypeDispatch, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
+import { rehypeDispatch, isElement } from '../../lib/render/rehype-dispatch.js';
 import { defineRegistry } from '../../lib/render/registry.js';
-import type { ComponentContext } from '../../lib/render/registry.js';
+import type { BlockContext } from '../../lib/render/registry.js';
 
 // Local fixture helper: pull the <h2> out as a .card-title and wrap it in an
 // .cairn-head row. The engine no longer ships a heading-sniffing splitHead, so the
@@ -24,7 +24,7 @@ function fixtureCardShell(classes: string[], body: ElementContent[]): Element {
 }
 
 const reg = defineRegistry({
-  components: [
+  blocks: [
     {
       name: 'card',
       label: '',
@@ -72,14 +72,8 @@ describe('rehypeDispatch', () => {
     expect(second.properties.dataRise).toBe('1');
   });
 
-  it('markFirstList tags the first <ul> with cairn-grid', () => {
-    const ul = h('ul', [h('li', ['a'])]);
-    const out = markFirstList([h('p', ['x']), ul]);
-    expect(out?.properties?.className).toContain('cairn-grid');
-  });
-
   const islandReg = defineRegistry({
-    components: [
+    blocks: [
       {
         name: 'converter',
         label: '',
@@ -135,7 +129,7 @@ describe('rehypeDispatch', () => {
   // The engine serializes the island's props from `ctx.attributes` after `build()` returns, so a
   // build that reassigns the context's attributes decides what reaches `data-cairn-props`.
   const rebuildReg = defineRegistry({
-    components: [
+    blocks: [
       {
         name: 'clears',
         label: '',
@@ -197,7 +191,7 @@ describe('rehypeDispatch', () => {
   });
 });
 
-function ctxWith(attributes: Record<string, string | boolean>): ComponentContext {
+function ctxWith(attributes: Record<string, string | boolean>): BlockContext {
   return {
     attributes,
     slot: () => [],

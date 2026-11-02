@@ -33,7 +33,7 @@
     "markdown"
   ],
   "scripts": {
-    "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/media-seed/bin.js dist/audit/bin.js dist/guidance/bin.js && tsc -p packages/cairn-cms-dev/tsconfig.build.json",
+    "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/audit/bin.js dist/guidance/bin.js && tsc -p packages/cairn-cms-dev/tsconfig.build.json && chmod +x packages/cairn-cms-dev/dist/media-seed/bin.js",
     "check:package": "npm run package && publint --strict && T=$(mktemp -d) && trap 'rm -rf \"$T\"' EXIT && npm pack --ignore-scripts --silent --pack-destination \"$T\" && attw \"$T\"/*.tgz --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error && node scripts/checks/check-package-files.mjs && node scripts/checks/check-skill-budget.mjs",
     "check:audit-pack": "npm run package && node scripts/checks/check-audit-pack.mjs",
     "check:options": "npm run package && node scripts/checks/check-options.mjs",
@@ -119,25 +119,14 @@
       "types": "./dist/islands/index.d.ts",
       "default": "./dist/islands/index.js"
     },
-    "./render": {
-      "types": "./dist/render/authoring.d.ts",
-      "svelte": "./dist/render/authoring.js",
-      "default": "./dist/render/authoring.js"
-    },
     "./delivery": {
       "types": "./dist/delivery/index.d.ts",
       "svelte": "./dist/delivery/index.js",
       "default": "./dist/delivery/index.js"
     },
-    "./delivery/head": {
-      "types": "./dist/delivery/head.d.ts",
-      "svelte": "./dist/delivery/head.js",
-      "default": "./dist/delivery/head.js"
-    },
-    "./delivery/data": {
-      "types": "./dist/delivery/data.d.ts",
-      "svelte": "./dist/delivery/data.js",
-      "default": "./dist/delivery/data.js"
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
     },
     "./media": {
       "types": "./dist/media/index.d.ts",
@@ -183,7 +172,6 @@
   },
   "bin": {
     "cairn-manifest": "./dist/vite/bin.js",
-    "cairn-media-seed": "./dist/media-seed/bin.js",
     "cairn-audit": "./dist/audit/bin.js",
     "cairn-guidance": "./dist/guidance/bin.js"
   },

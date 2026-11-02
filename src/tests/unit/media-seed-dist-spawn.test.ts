@@ -1,23 +1,25 @@
 // cairn-cms: rot-proof cairn-media-seed's bucket resolution against the EMITTED dist, the same
-// gap delivery-data-dist-spawn.test.ts closes for /delivery/data. media-seed.test.ts's own
-// "packaged bin" describe block already spawns dist/media-seed/bin.js for the flag-parsing and
+// gap delivery-dist-spawn.test.ts closes for /delivery. media-seed.test.ts's own
+// "packaged bin" describe block already spawns that bin for the flag-parsing and
 // no-config paths; this file adds the one path those specs do not cover, resolving a real
 // r2_buckets entry from a fixture site's wrangler.jsonc, under plain Node outside the vitest
 // transform, so a packaging regression in the bin's own import of the copied wrangler-config
-// module surfaces as a non-zero spawn. It needs dist/media-seed/bin.js, so it skips (via
-// skipIf) when the package has not been built, the same precedent as
-// delivery-data-dist-spawn.test.ts.
+// module surfaces as a non-zero spawn. It needs the dev package's dist/media-seed/bin.js and
+// fails, not skips, when the package has not been built.
 import { describe, it, expect } from 'vitest';
 import { existsSync, mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-const BIN = resolve(process.cwd(), 'dist/media-seed/bin.js');
-const built = existsSync(BIN);
+const BIN = resolve(process.cwd(), 'packages/cairn-cms-dev/dist/media-seed/bin.js');
 
-describe('packaged media-seed bin resolves a real r2_buckets entry (needs dist/media-seed/bin.js; run npm run package to unskip)', () => {
-  it.skipIf(!built)('reads the sole r2_buckets bucket_name from a fixture wrangler.jsonc and seeds zero manifest entries', () => {
+describe('packaged media-seed bin resolves a real r2_buckets entry (needs packages/cairn-cms-dev/dist/media-seed/bin.js; run npm run package first)', () => {
+  it('has been built', () => {
+    expect(existsSync(BIN), 'missing; run "npm run package" first').toBe(true);
+  });
+
+  it('reads the sole r2_buckets bucket_name from a fixture wrangler.jsonc and seeds zero manifest entries', () => {
     const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-dist-spawn-'));
     try {
       writeFileSync(

@@ -3,13 +3,13 @@ import { createGithubApp } from '../../lib/index.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { createLinkResolver, createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
-import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { defineBlock, defineRegistry } from '../../lib/render/registry.js';
 import { verifyEntries } from '../../lib/content/manifest.js';
 import { fields } from '../../lib/content/fields.js';
 
 const adapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) } },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'dated', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) } },
     pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
@@ -26,7 +26,7 @@ const files = {
 // A posts concept whose validate requires a non-empty title, so an empty-title file fails.
 const requiredTitleAdapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) } },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'dated', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: { title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) } },
     pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: { title: fields.text({ label: 'Title' }) } },
   },
   backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
@@ -233,9 +233,7 @@ describe('buildSiteManifest directive check', () => {
     email: { from: 'a@b.c' },
     rendering: {
       render: ({ body }) => Promise.resolve(body),
-      components: defineRegistry({
-        components: [defineComponent({ name: 'callout', label: 'Callout', description: 'd', build: (ctx) => ctx.node, slots: [{ name: 'item', label: 'Item', kind: 'markdown' }] })],
-      }),
+      blocks: [defineBlock({ name: 'callout', label: 'Callout', description: 'd', build: (ctx) => ctx.node, slots: [{ name: 'item', label: 'Item', kind: 'markdown' }] })],
     },
   });
 

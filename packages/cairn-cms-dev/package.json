@@ -16,6 +16,9 @@
     "dist",
     "README.md"
   ],
+  "bin": {
+    "cairn-media-seed": "./dist/media-seed/bin.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

@@ -6,7 +6,17 @@ import { enumerateExports, moduleExports } from '../../../scripts/checks/dts-exp
 
 // The four names the surface-pruning pass demotes from the /sveltekit barrel (Task 2), verbatim
 // from `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`.
-const DEMOTED = ['isPublicAdminPath', 'parseAdminPath', 'AdminView', 'NavRoutesDeps', 'AuthBranding', 'RequestOutcome'];
+const DEMOTED = [
+  'isPublicAdminPath',
+  'parseAdminPath',
+  'AdminView',
+  'NavRoutesDeps',
+  'AuthBranding',
+  'RequestOutcome',
+  'createAdminAction',
+  'AdminActionOptions',
+  'requireEditor',
+];
 
 // Six names this list once kept, retired from the /sveltekit barrel by the retires pass, Task 2:
 // sanctioned NavIcon-class closure leaks (the F-1 hybrid ruling, r4-rederivation section 7). Each
@@ -36,6 +46,19 @@ const RETIRED_TIER1 = ['MediaDeleteFailure', 'MediaUpdateFailure', 'MediaReplace
 // platform wrapper for this type to describe.
 const RETIRED_PLATFORM = ['PlatformContext'];
 
+// The E9 hand-mount names: no site route needs them, since `createCairnAdmin` composes each, so they
+// leave every barrel. The two delivery names are listed here too, so this one assertion covers the
+// whole set against the /sveltekit entry.
+const HIDDEN_HAND_MOUNT = [
+  'createContentRoutes',
+  'createAuthRoutes',
+  'createEditorRoutes',
+  'mintPreview',
+  'revokePreview',
+  'buildNewlyPublished',
+  'parseManifest',
+];
+
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
 // section (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the
 // four demotions above and the six retired leaks above.
@@ -43,11 +66,10 @@ const KEPT = [
   'createAuthGuard',
   'requireSession',
   'requireOwner',
-  'createAuthRoutes',
+  'createSectionAction',
+  'PlainSectionAction',
   'AuthRoutesConfig',
   'LoginRequestOutcome',
-  'createEditorRoutes',
-  'createContentRoutes',
   'createMediaRoute',
   'AdminShellData',
   'ListData',
@@ -68,8 +90,6 @@ const KEPT = [
   'CairnEvent',
   'CookieJar',
   'HandleInput',
-  'CairnEnv',
-  'EmailSender',
 ];
 
 const DTS = resolve(
@@ -111,6 +131,12 @@ describe('sveltekit barrel prune', () => {
     expect(stillPresent).toEqual([]);
   });
 
+  it('no longer resolves the hand-mount names from the /sveltekit subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const stillPresent = HIDDEN_HAND_MOUNT.filter((name) => names.has(name));
+    expect(stillPresent).toEqual([]);
+  });
+
   it('still resolves every keep-list name from the /sveltekit subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const missing = KEPT.filter((name) => !names.has(name));
@@ -131,8 +157,7 @@ describe('sveltekit barrel prune', () => {
     expect(memberNames).not.toContain('tidyTimeoutMs');
     // navFilter is the per-request custom-navLayout filter seam, added alongside `tidy`; attention
     // is the per-session pending-work seam (admin access-and-attention pass), added alongside it;
-    // preview is the mint action's link-lifetime config (spec part 3, "Public preview for a
-    // non-editor"); runtime is the composed runtime the bag's own factory closes over.
-    expect(memberNames).toEqual(['runtime', 'tidy', 'navFilter', 'attention', 'preview']);
+    // runtime is the composed runtime the bag's own factory closes over.
+    expect(memberNames).toEqual(['runtime', 'tidy', 'navFilter', 'attention']);
   });
 });

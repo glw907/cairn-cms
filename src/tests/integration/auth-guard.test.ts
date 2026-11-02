@@ -304,11 +304,11 @@ describe('admin security headers (Unit 2)', () => {
     expect(res.headers.get('X-Frame-Options')).toBeNull();
   });
 
-  it('restores includeSubDomains when the site opts in on createAuthGuard', async () => {
-    const guard = asHandle(createAuthGuard({ runtime: {}, includeSubDomains: true }));
+  it('sends HSTS at max-age alone on a guarded admin response', async () => {
+    const guard = asHandle(createAuthGuard({ runtime: {} }));
     const cookies = await seedSession('own2@x.dev');
     const res = await guard({ event: event('/admin', cookies), resolve: async () => new Response('ok') });
-    expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000; includeSubDomains');
+    expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000');
   });
 });
 

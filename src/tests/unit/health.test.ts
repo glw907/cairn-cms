@@ -11,8 +11,7 @@ function runtime(): CairnRuntime {
     siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '123', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+    email: { from: 'cms@test' },
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     media: { enabled: false },
@@ -29,19 +28,19 @@ function event(env: Record<string, unknown>) {
 describe('loadHealth', () => {
   it('reports the signing check as not applicable for a non-GitHub provider', async () => {
     const rt = { ...runtime(), backend: { kind: 'other' } } as unknown as CairnRuntime;
-    const data = await loadHealth(event({}), rt);
+    const data = await loadHealth(event({}), { runtime: rt });
     expect(data.ok).toBe(true);
     expect(data.checks.githubAppSigning).toEqual({ ok: true, detail: 'not-applicable' });
   });
 
   it('reports a failure when the key is unset, without throwing', async () => {
-    const data = await loadHealth(event({}), runtime());
+    const data = await loadHealth(event({}), { runtime: runtime() });
     expect(data.ok).toBe(false);
     expect(data.checks.githubAppSigning.ok).toBe(false);
   });
 
   it('reports a failure with a coarse detail for a bad key, never the key itself', async () => {
-    const data = await loadHealth(event({ GITHUB_APP_PRIVATE_KEY_B64: 'bm90LWEta2V5' }), runtime());
+    const data = await loadHealth(event({ GITHUB_APP_PRIVATE_KEY_B64: 'bm90LWEta2V5' }), { runtime: runtime() });
     expect(data.ok).toBe(false);
     expect(data.checks.githubAppSigning.detail).toBeTruthy();
     expect(JSON.stringify(data)).not.toContain('bm90LWEta2V5');
@@ -58,7 +57,7 @@ describe('loadHealth when the check itself throws', () => {
         throw new Error('the provider read threw');
       },
     }) as CairnRuntime;
-    await expect(loadHealth(event({}), rt)).rejects.toThrow('the provider read threw');
+    await expect(loadHealth(event({}), { runtime: rt })).rejects.toThrow('the provider read threw');
     expect(sink).toHaveBeenCalledTimes(1);
     const { timestamp, ...record } = sink.mock.calls[0][0] as Record<string, unknown>;
     expect(typeof timestamp).toBe('string');

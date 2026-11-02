@@ -284,7 +284,7 @@ Each stands alone. Nothing else folds into them, apart from #280's one tag.
 ### #287 Find out whether a zone HSTS setting survives the admin's header: **fold**
 - Mechanism: `src/lib/sveltekit/admin-response.ts:40`: `headers.set('Strict-Transport-Security', 'max-age=63072000');`, applied at `src/lib/sveltekit/guard.ts:413`: `applySecurityHeaders(response.headers);`
 - Reason: the test could run from here, and it points one way: the edge wins. Read today, `https://ecxc.ski/`, `/admin`, and `/admin/login` all answer one header, `max-age=63072000; includeSubDomains`, and `907.life` does the same on `/` and `/admin/login`. `/admin` is the guard's 303, which sets no HSTS at all per `docs/architecture.md:52`, so the edge adds it there. Neither site's `src/` or `static/` sets the header. `cairn.pub`, with no header on `/`, shows the engine's plain `max-age=63072000` on `/admin/login`.
-- Limits: the sites run older engines (`^0.84.4`, `^0.95.0`), and the zone setting itself is unread because the worktree guard refused the token read. A guarded signed-in response is untested, though it uses the same call.
+- Limits: the sites run older engines (`^0.84.4`, `^0.95.0`), and the zone setting itself is unread, because that read was refused. A guarded signed-in response is untested, though it uses the same call.
 - Fix: state the result where the item asks: the zone's setting overrides the admin's header, so a pin holds. Update `admin-response.ts:27`'s doc comment.
 - Class ordinary. Files: `src/lib/sveltekit/admin-response.ts`, `skills/cairn-extending-a-site/references/admin-access.md`, `MIGRATION-NOTES.md`. 15 min.
 
@@ -343,7 +343,7 @@ Each stands alone. Nothing else folds into them, apart from #280's one tag.
 ### #211 Measure tidy's latency on real entries: **fold**
 - Mechanism: `src/lib/sveltekit/content-routes-context.ts:299`: `const DEFAULT_TIDY_TIMEOUT_MS = 30_000;`, `src/lib/sveltekit/content-routes-tidy.ts:52`: `const MAX_TIDY_CHARS = 24_000;`
 - Reason: real entries are in reach, despite the item's history: `~/Projects/aksailingclub-org/src/content/pages/bylaws.md` and five other files over 12 KB sit on this host.
-- Fix: run tidy's real prompt over a spread of sizes up to the cap on each model, then keep or change the numbers and rewrite both doc comments. Needs an Anthropic key, which I did not confirm (the store read was refused), and a few dollars of calls. The latency is the workstation's, not a Worker's.
+- Fix: run tidy's real prompt over a spread of sizes up to the cap on each model, then keep or change the numbers and rewrite both doc comments. The latency is the workstation's, not a Worker's. The plan moves this item after the release.
 - Class ordinary. Files: `src/lib/sveltekit/content-routes-context.ts`, `src/lib/sveltekit/content-routes-tidy.ts`. 40 min.
 
 ### #190 Require draft-preview links to be minted from a POST action: **drop**
@@ -452,8 +452,8 @@ Each stands alone. Nothing else folds into them, apart from #280's one tag.
 1. **#207:** the trial logs and the rubric sentence are not on this host.
 2. **#246, #247, #248:** each waits on the ruling recommended above.
 3. **#250:** the guard's source wasn't found, so its home repo is open.
-4. **#287:** folded on observed headers from two zones on older engines. The zone setting and a signed-in response are unread. Reading the setting needs `$CLOUDFLARE_API_TOKEN` from a session the guard allows.
-5. **#211:** an Anthropic key's presence is unconfirmed, since the store read was refused.
+4. **#287:** folded on observed headers from two zones on older engines. The zone setting and a signed-in response are unread: the read was refused, so #287 rests on the observed headers.
+5. **#211:** the plan moves it after the release.
 6. **#70:** the 30 of 36 `cairn-styling-public-pages` references with no literal route may be routed by pattern; the audit decides.
 7. **#266:** whether `package.json` and the lockfile are in `component-rerun-triggers.mjs` was not read.
 8. **#272:** whether the `workstation` `cairn-pass` adapter carries a copy of the path map was not checked.

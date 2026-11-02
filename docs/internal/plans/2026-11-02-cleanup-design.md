@@ -19,7 +19,7 @@ record. No bump, no publish.
 | 38 `Consumers must:` lines | 124 actionable, plus p2-p4's | The reset replaces them with one rebuild line |
 | R9 removes "up to 2,000 lines of past-pass detail" | `Now`, `Next`, `Later` are 214 bullets, mostly open filed items, with no done marks | Per-bullet read, 2,000 is a ceiling and not a target (T14) |
 | Ergonomics 8 pins `cairn doctor` at a tool tag | No usable tag: `tool/v1.1.0` fails a rebuilt site, and `tool/v2.0.0` can't resolve | Done-gate line now; the workflow step is filed for after the tag (T9) |
-| Pass 9 step 17 tags `tool/v2.0.0` | `tool/go.mod:1` has no `/v2`. Go: "Starting with major version 2, module paths must have a major version suffix like `/v2`" (go.dev/ref/mod). `go install ...@latest` stays on v1 | New find, so it lands here under the sheet's cutoff (T15) |
+| Pass 9 step 17 tags `tool/v2.0.0` | `tool/go.mod:1` has no `/v2`. Go: "Starting with major version 2, module paths must have a major version suffix like `/v2`" (go.dev/ref/mod). `go install ...@latest` on the old path stays on v1 | New find, so it lands here under the sheet's cutoff (T15), with `tool/Makefile:7` and `tool.yml:176` |
 | `/styleguide` leaves production | An exclude also removes it from `npm run dev`, needs a nav strip, and breaks `theme-fixture`'s template arm | T7 takes all three |
 | `--yes` "a doc names the manual path" | Also a code change: `chapter3.mjs:938-943` still consents | T7. Its file is on the `auth-data` map |
 | R8: "e2e shard work" | One shard exists, so #208's "every retry was in shard 1" carries no signal | T10 removes the matrix; the backlog text is corrected |
@@ -35,13 +35,14 @@ tests the pre-hydration cause directly rather than sampling for it.
 
 ## Calls for `cairn-cms-9b`
 
-Each is reversible and stated in the plan's "Stops". The plan is built on the recommended reading.
+The first is the pass's one stop, and it holds the launch. The rest are recommended readings in the plan's
+section of that name: each is reversible, the plan is written to it, and the conductor may overrule any.
 
-1. The path is calibrated (S1).
-2. #248: reuse `throttled`, keep the oracle, add the binding (S2).
+1. Stop: does the plan answer to the calibrated path or to reader sizes (S1)?
+2. #248: reuse `throttled`, keep the oracle, add the binding to the request action only (S2).
 3. #247: hash ids and delete the prior row, accept the other two (S3).
 4. #246 waits on #245's proof at the real install (S4).
-5. #211 needs a key in a session's environment, so it moves after the release (S5).
+5. #211 moves after the release (S5).
 
 ## Out of scope
 

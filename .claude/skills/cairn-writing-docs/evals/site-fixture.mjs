@@ -1,5 +1,5 @@
 // cairn-cms: the site fixture for the site suite. It builds, once per arm, an emitted site the way
-// `.github/workflows/scaffold.yml` does: pack the engine and the dev backend at the arm's ref, emit
+// the scaffold gate once did: pack the engine and the dev backend at the arm's ref, emit
 // the template with `file:` specs, install, and run `cairn-guidance install`. A strip list removes
 // paths from the engine tarball first, which is how the ablation arm loses the technical docs.
 // The built site is cached by ref and strip list; a trial copies it, hard-linking `node_modules`.

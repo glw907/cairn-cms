@@ -6,7 +6,7 @@
 //
 // The 2026-08-05 instance: a step name was written `- name: Gate self-test: the markers ARE
 // present ...`. An unquoted colon-and-space inside a plain scalar is a mapping indicator, so both
-// e2e.yml and scaffold.yml stopped parsing and both went dark in the same push. Quoting the value
+// e2e.yml and create-site.yml stopped parsing and both went dark in the same push. Quoting the value
 // fixes it; this test is what catches the next one.
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -130,8 +130,8 @@ describe('.github/ci-green.json classifies every workflow by trigger shape', () 
 
 describe('the test jobs keep their gates and report their retries', () => {
   const TEST_WORKFLOWS = ['test.yml', 'e2e.yml', 'design.yml'];
-  // The workflows that gate a pull_request; the ones above plus the scaffold and create-site gates.
-  const PR_WORKFLOWS = [...TEST_WORKFLOWS, 'scaffold.yml', 'create-site.yml'];
+  // The workflows that gate a pull_request; the ones above plus the create-site gate.
+  const PR_WORKFLOWS = [...TEST_WORKFLOWS, 'create-site.yml'];
   const TEST_STEP = /\bnpm\b[^\n]*\btest\b/;
   const stepsOf = (name: string): Step[] =>
     Object.values(loadWorkflow(name).jobs ?? {}).flatMap((job) => job.steps ?? []);

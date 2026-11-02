@@ -229,7 +229,7 @@ describe('createPublicRoutes entryLoad', () => {
   });
 
   it('resolves cairn links and fails the build on a dangling token', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render } = createRenderer();
     function linkRoutes(body: string) {
       const linkSite = createSiteResolver([
         { descriptor: pages, index: createContentIndex([
@@ -237,7 +237,7 @@ describe('createPublicRoutes entryLoad', () => {
           { path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' },
         ], pages) },
       ]);
-      return createPublicRoutes({ site: linkSite, render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
+      return createPublicRoutes({ site: linkSite, render: ({ body, resolveLink, resolveMedia }) => render({ body, resolveLink, resolveMedia }), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
     }
 
     const ok = await linkRoutes('[about](cairn:pages/about)').entryLoad({ url: new URL('https://example.com/home') });
@@ -274,7 +274,7 @@ describe('createPublicRoutes entryLoad', () => {
     // createFragmentResolver never sets previewTitle (only EditPage's client-side resolver does), so
     // the same entry through the real render pipeline must come back byte-identical to a splice
     // with no boundary wrapper: this is the provable public-path half of the preview-only cue.
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render } = createRenderer();
     const [fragments] = normalizeConcepts({
       fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
@@ -286,7 +286,7 @@ describe('createPublicRoutes entryLoad', () => {
     ]);
     const fragmentRoutes = createPublicRoutes({
       site: fragmentSite,
-      render: ({ body, resolveFragment }) => renderMarkdown(body, { resolveFragment }),
+      render: ({ body, resolveFragment }) => render({ body, resolveFragment }),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -317,7 +317,7 @@ describe('composeEntryData', () => {
   });
 
   it('substitutes the link resolver override in place of the build-backed resolver', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render } = createRenderer();
     const linkSite = createSiteResolver([
       { descriptor: pages, index: createContentIndex([
         { path: '/g/home.md', raw: '---\ntitle: Home\n---\n\n[about](cairn:pages/about)' },
@@ -325,8 +325,8 @@ describe('composeEntryData', () => {
     ]);
     const linkConfig = {
       site: linkSite,
-      render: ({ body, resolve, resolveMedia }: { body: string; resolve?: (ref: { concept: string; id: string }) => string | undefined; resolveMedia?: MediaResolve }) =>
-        renderMarkdown(body, { resolve, resolveMedia }),
+      render: ({ body, resolveLink, resolveMedia }: { body: string; resolveLink?: (ref: { concept: string; id: string }) => string | undefined; resolveMedia?: MediaResolve }) =>
+        render({ body, resolveLink, resolveMedia }),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -341,7 +341,7 @@ describe('composeEntryData', () => {
   });
 
   it('substitutes the fragment resolver override in place of the build-backed resolver', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render } = createRenderer();
     const [fragments] = normalizeConcepts({
       fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
@@ -354,7 +354,7 @@ describe('composeEntryData', () => {
     const fragmentConfig = {
       site: fragmentSite,
       render: ({ body, resolveFragment }: { body: string; resolveFragment?: (id: string) => string | undefined }) =>
-        renderMarkdown(body, { resolveFragment }),
+        render({ body, resolveFragment }),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',

@@ -91,6 +91,12 @@
       "standing-unverdicted": "First surfaced by the identity-seam pass (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-09-07-identity-seam-pass.md, Task 3), the hand-off half of LoginData's discriminated split. Never exported from any subpath, per the same one-hop precedent LoginData and ConfirmData already carry (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md#audit-sveltekit-logindata): reached only as Extract<AdminData, { view: 'login' }>['page']."
     },
     {
+      "name": "KeyedNavLayout",
+      "subpath": ".",
+      "model": "type-checker",
+      "standing-unverdicted": "`KeyedNavLayout` (src/lib/sveltekit/admin-nav.ts) appears only in `defineAdapter`'s parameter, which keys `editor.navLayout`'s `screen` to the adapter's concepts. A site never writes the name, since it declares the layout inline, so no barrel exports it."
+    },
+    {
       "name": "LinkTarget",
       "subpath": "/sveltekit",
       "model": "type-checker",

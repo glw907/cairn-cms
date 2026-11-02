@@ -105,7 +105,7 @@ describe('the GitHub-slug contract', () => {
   for (const { markdown, id, source } of cases) {
     it(`slugs "${markdown.replace(/^#+\s*/, '')}" as ${id} (${source})`, async () => {
       const { renderDocument } = createRenderer();
-      const { headings } = await renderDocument(markdown);
+      const { headings } = await renderDocument({ body: markdown });
       expect(headings).toHaveLength(1);
       expect(headings[0]?.id).toBe(id);
     });
@@ -118,9 +118,7 @@ describe('the GitHub-slug contract', () => {
     // GitHub slugs the first occurrence plain and suffixes every repeat with -1, -2, and so on,
     // which is what the page's own section links depend on.
     const { renderDocument } = createRenderer();
-    const { headings } = await renderDocument(
-      '## Connect your domain\n\n### You know it worked when\n\nText\n\n## Turn on sign-in email\n\n### You know it worked when\n\nText\n\n## Connect to Workers Builds\n\n### You know it worked when',
-    );
+    const { headings } = await renderDocument({ body: '## Connect your domain\n\n### You know it worked when\n\nText\n\n## Turn on sign-in email\n\n### You know it worked when\n\nText\n\n## Connect to Workers Builds\n\n### You know it worked when' });
     expect(headings.map((heading) => heading.id)).toEqual([
       'connect-your-domain',
       'you-know-it-worked-when',

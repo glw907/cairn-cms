@@ -183,6 +183,31 @@ export interface NavLayoutSection {
  */
 export type NavLayout = (NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection)[];
 
+/**
+ * The {@link NavLayout} tree with each `screen` keyed to the engine's six screens or `ConceptId`, the
+ *  form `defineAdapter` checks a declared layout against, so a misspelled screen fails type-checking
+ *  before `validateNavLayout` throws at server start. Entries and sections keep their
+ *  {@link NavLayoutEntry} and {@link NavLayoutSection} shapes.
+ * @public
+ */
+export type KeyedNavLayout<ConceptId extends string> = readonly (
+  | NavLayoutEntry
+  | (NavLayoutEngineRef & {
+      /** The engine screen this node places: a declared concept id or one of the fixed utility screens. */
+      screen: (typeof ENGINE_SCREEN_IDS)[number] | ConceptId;
+    })
+  | (Omit<NavLayoutSection, 'children'> & {
+      /** The group's site entries and keyed engine references, in display order, one level deep. */
+      children: readonly (
+        | NavLayoutEntry
+        | (NavLayoutEngineRef & {
+            /** The engine screen this node places: a declared concept id or one of the fixed utility screens. */
+            screen: (typeof ENGINE_SCREEN_IDS)[number] | ConceptId;
+          })
+      )[];
+    })
+)[];
+
 /** True when a navLayout node is a section (carries `children`) rather than an entry or an engine reference. */
 function isNavLayoutSection(
   node: NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection,

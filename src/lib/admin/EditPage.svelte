@@ -1486,7 +1486,7 @@ island.
           body: md,
           concept: data.conceptId,
           frontmatter: data.frontmatter,
-          resolve,
+          resolveLink: resolve,
           resolveMedia: resolveMediaRef,
           resolveFragment: resolveFragmentRef,
         });

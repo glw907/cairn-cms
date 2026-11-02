@@ -7,22 +7,16 @@ import { defineRegistry } from '../../lib/render/registry.js';
 
 describe('createRenderer', () => {
   it('empty-registry renderer renders plain markdown', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
-    expect(await renderMarkdown('# Hi\n\nText')).toContain('<h1');
+    const { render } = createRenderer();
+    expect(await render({ body: '# Hi\n\nText' })).toContain('<h1');
   });
 
   it('renders plain markdown with no registry argument', async () => {
-    const { renderMarkdown } = createRenderer();
-    const html = await renderMarkdown('# Hello\n\nA paragraph.');
+    const { render } = createRenderer();
+    const html = await render({ body: '# Hello\n\nA paragraph.' });
     expect(html).toContain('<h1');
     expect(html).toContain('Hello');
     expect(html).toContain('<p>A paragraph.</p>');
-  });
-
-  it('exposes the remark/rehype plugin arrays for editor-preview wiring', () => {
-    const r = createRenderer(defineRegistry({ components: [] }));
-    expect(Array.isArray(r.remarkPlugins)).toBe(true);
-    expect(Array.isArray(r.rehypePlugins)).toBe(true);
   });
 
   it('renders a registered component and stamps the data-rise ordinal', async () => {
@@ -42,8 +36,8 @@ describe('createRenderer', () => {
         },
       ],
     });
-    const { renderMarkdown } = createRenderer(reg);
-    const html = await renderMarkdown(':::box\ncontent\n:::');
+    const { render } = createRenderer({ components: reg });
+    const html = await render({ body: ':::box\ncontent\n:::' });
     expect(html).toContain('class="box"');
     expect(html).toContain('data-rise="0"');
   });
@@ -53,8 +47,8 @@ describe('createRenderer', () => {
     // `label` rule flags as a critical violation even though the box is read-only. The pipeline gives
     // each task-list checkbox an aria-label derived from its item text (the visible label), so the
     // control carries its name programmatically while the engine still ships the real disabled input.
-    const { renderMarkdown } = createRenderer();
-    const html = await renderMarkdown('- [x] Write the draft\n- [ ] Publish it');
+    const { render } = createRenderer();
+    const html = await render({ body: '- [x] Write the draft\n- [ ] Publish it' });
     expect(html).toContain('class="task-list-item"');
     expect(html).toContain('type="checkbox"');
     // Each checkbox names itself from the adjacent item text, in source order.
@@ -75,8 +69,8 @@ describe('createRenderer', () => {
         },
       ],
     });
-    const { renderMarkdown } = createRenderer(registry);
-    const html = await renderMarkdown(':::converter{from="mi" rate="1.609"}\n:::');
+    const { render } = createRenderer({ components: registry });
+    const html = await render({ body: ':::converter{from="mi" rate="1.609"}\n:::' });
     expect(html).toContain('data-cairn-island="converter"');
     expect(html).toContain('class="fallback"');
     // the number field is a JSON number in the escaped prop payload (rehypeStringify escapes the
@@ -104,10 +98,8 @@ describe('createRenderer', () => {
     }
 
     it('runs a site rehypePlugins entry over the rendered tree', async () => {
-      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
-        rehypePlugins: [rehypeWrapTables],
-      });
-      const html = await renderMarkdown('| a | b |\n| - | - |\n| 1 | 2 |');
+      const { render } = createRenderer({ rehypePlugins: [rehypeWrapTables] });
+      const html = await render({ body: '| a | b |\n| - | - |\n| 1 | 2 |' });
       expect(html).toContain('class="table-scroll"');
       expect(html).toContain('<table>');
     });
@@ -119,10 +111,8 @@ describe('createRenderer', () => {
           if (node.tagName === 'script') sawScript = true;
         });
       };
-      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
-        rehypePlugins: [probe],
-      });
-      await renderMarkdown('<script>alert(1)</script>\n\nText');
+      const { render } = createRenderer({ rehypePlugins: [probe] });
+      await render({ body: '<script>alert(1)</script>\n\nText' });
       expect(sawScript).toBe(false);
     });
 
@@ -133,33 +123,25 @@ describe('createRenderer', () => {
           sawResolvedUrl = node.url;
         });
       };
-      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
-        remarkPlugins: [probe],
-      });
-      await renderMarkdown('[a post](cairn:posts/hello)', {
-        resolve: () => '/posts/hello',
-      });
+      const { render } = createRenderer({ remarkPlugins: [probe] });
+      await render({ body: '[a post](cairn:posts/hello)', resolveLink: () => '/posts/hello' });
       expect(sawResolvedUrl).toBe('/posts/hello');
     });
 
-    it('exposes the site plugins on the returned remark/rehype arrays', () => {
-      const customRemark = () => () => {};
-      const customRehype = () => () => {};
-      const r = createRenderer(defineRegistry({ components: [] }), {
-        remarkPlugins: [customRemark],
-        rehypePlugins: [customRehype],
-      });
-      expect(r.remarkPlugins[r.remarkPlugins.length - 1]).toBe(customRemark);
-      expect(r.rehypePlugins[r.rehypePlugins.length - 1]).toBe(customRehype);
+    it('applies the bag resolveMedia when an input has none, and an input one wins', async () => {
+      const { render } = createRenderer({ resolveMedia: () => '/bag.png' });
+      const md = '![alt](media:blue-running-shoes.a1b2c3d4e5f6a7b8)';
+      expect(await render({ body: md })).toContain('/bag.png');
+      const own = await render({ body: md, resolveMedia: () => '/own.png' });
+      expect(own).toContain('/own.png');
+      expect(own).not.toContain('/bag.png');
     });
   });
 
   describe('renderDocument', () => {
     it('returns ordered headings with depth and id, alongside the rendered html', async () => {
       const { renderDocument } = createRenderer();
-      const { html, headings } = await renderDocument(
-        '# Title\n\n## Section One\n\nText\n\n### Sub A\n\n## Section Two',
-      );
+      const { html, headings } = await renderDocument({ body: '# Title\n\n## Section One\n\nText\n\n### Sub A\n\n## Section Two' });
       expect(html).toContain('<h1');
       expect(headings).toEqual([
         { id: 'title', text: 'Title', depth: 1 },
@@ -171,19 +153,19 @@ describe('createRenderer', () => {
 
     it('includes an h1 heading at depth 1', async () => {
       const { renderDocument } = createRenderer();
-      const { headings } = await renderDocument('# Just A Title');
+      const { headings } = await renderDocument({ body: '# Just A Title' });
       expect(headings).toEqual([{ id: 'just-a-title', text: 'Just A Title', depth: 1 }]);
     });
 
     it('flattens an inline-code heading to plain text and strips backticks from the slug', async () => {
       const { renderDocument } = createRenderer();
-      const { headings } = await renderDocument('## The `renderMarkdown` helper');
+      const { headings } = await renderDocument({ body: '## The `renderMarkdown` helper' });
       expect(headings).toEqual([{ id: 'the-rendermarkdown-helper', text: 'The renderMarkdown helper', depth: 2 }]);
     });
 
     it('suffixes a duplicate heading id the same way github-slugger does', async () => {
       const { renderDocument } = createRenderer();
-      const { headings } = await renderDocument('## How it went\n\nText\n\n## How it went');
+      const { headings } = await renderDocument({ body: '## How it went\n\nText\n\n## How it went' });
       expect(headings.map((heading) => heading.id)).toEqual(['how-it-went', 'how-it-went-1']);
     });
 
@@ -191,18 +173,16 @@ describe('createRenderer', () => {
       const addHeading = () => (tree: HastRoot) => {
         tree.children.push(h('h2', { id: 'appended' }, 'Appended By Site') as unknown as Element);
       };
-      const { renderDocument } = createRenderer(defineRegistry({ components: [] }), {
-        rehypePlugins: [addHeading],
-      });
-      const { headings } = await renderDocument('# Title');
+      const { renderDocument } = createRenderer({ rehypePlugins: [addHeading] });
+      const { headings } = await renderDocument({ body: '# Title' });
       expect(headings).toContainEqual({ id: 'appended', text: 'Appended By Site', depth: 2 });
     });
   });
 
   describe('table-scroll default', () => {
     it('wraps a rendered table in a scrollable, labeled region by default', async () => {
-      const { renderMarkdown } = createRenderer();
-      const html = await renderMarkdown('| Name | Age |\n| - | - |\n| Ada | 36 |');
+      const { render } = createRenderer();
+      const html = await render({ body: '| Name | Age |\n| - | - |\n| Ada | 36 |' });
       expect(html).toContain('class="table-scroll"');
       expect(html).toContain('role="region"');
       expect(html).toContain('tabindex="0"');
@@ -212,10 +192,8 @@ describe('createRenderer', () => {
     });
 
     it('opts out of the default table wrap with tableScroll: false', async () => {
-      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
-        tableScroll: false,
-      });
-      const html = await renderMarkdown('| Name | Age |\n| - | - |\n| Ada | 36 |');
+      const { render } = createRenderer({ tableScroll: false });
+      const html = await render({ body: '| Name | Age |\n| - | - |\n| Ada | 36 |' });
       expect(html).not.toContain('table-scroll');
       expect(html).toContain('<table>');
     });
@@ -230,10 +208,8 @@ describe('createRenderer', () => {
           }
         });
       };
-      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
-        rehypePlugins: [probe],
-      });
-      await renderMarkdown('| a | b |\n| - | - |\n| 1 | 2 |');
+      const { render } = createRenderer({ rehypePlugins: [probe] });
+      await render({ body: '| a | b |\n| - | - |\n| 1 | 2 |' });
       expect(sawWrapper).toBe(true);
     });
   });

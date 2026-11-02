@@ -205,7 +205,7 @@ export async function composeEntryData(
       body: entry.body,
       concept: entry.concept,
       frontmatter: entry.frontmatter,
-      resolve: overrides?.resolveLink ?? createLinkResolver(site),
+      resolveLink: overrides?.resolveLink ?? createLinkResolver(site),
       resolveFragment,
       resolveMedia,
     }),

@@ -67,10 +67,10 @@ function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutes
     // Resolves every `cairn:<concept>/<id>` token in the body against the injected resolver,
     // marking a miss rather than throwing, so the test proves loadPreview wired a non-throwing
     // resolver in without exercising the real markdown pipeline (covered elsewhere).
-    render: async ({ body, resolve }) =>
+    render: async ({ body, resolveLink }) =>
       body.replace(/cairn:([a-z0-9-]+)\/([a-z0-9-]+)/g, (_m, concept: string, id: string) => {
-        // loadPreview always substitutes a resolveLink override, so `resolve` is always defined here.
-        const url = resolve?.({ concept, id });
+        // loadPreview always substitutes a resolveLink override, so `resolveLink` is always defined here.
+        const url = resolveLink?.({ concept, id });
         return url ? `[link:${url}]` : '[broken]';
       }),
     origin: ORIGIN,
@@ -83,11 +83,10 @@ function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutes
 /** The real render pipeline, so a body `media:` token's resolution (or its broken marker) reflects
  *  what composeEntryData actually threads into `render`, not a hand-rolled stand-in. */
 function mediaRenderPublicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutesConfig {
-  const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+  const { render } = createRenderer();
   return {
     site: createSiteResolver([]),
-    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
-      renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
+    render,
     origin: ORIGIN,
     siteName: 'Test',
     description: 'Test description.',

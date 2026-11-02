@@ -150,7 +150,8 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
     // Read the head BEFORE the content, so this expectedHead is at-or-before the bytes the commit
     // merges. The nav write lands on the default branch and triggers a deploy, so it is fail-closed:
     // a concurrent commit to the config moves the head off this value and the commit throws a
-    // conflict, surfacing the reload-and-reapply prompt below rather than a silent last-writer-wins.
+    // conflict, surfacing the notice below rather than a silent last-writer-wins. The form keeps the
+    // editor's working copy, so saving again replaces the other change and reloading drops the edits.
     const head = await backend.branchHead(backend.defaultBranch);
     const raw = await backend.readFile(runtime.siteConfigPath, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');

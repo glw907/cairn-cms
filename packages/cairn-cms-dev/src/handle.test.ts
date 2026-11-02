@@ -271,6 +271,14 @@ test('a missing access rule names the fix under the dev handle even with a deplo
   });
 });
 
+test('an unknown content value throws, naming the three valid values', () => {
+  expect(() => devBackendHandle({ content: 'fixture' as never, runtime: {} })).toThrow(
+    "'repository' | 'fixtures' | 'empty'",
+  );
+});
+
+// This test mutates the module-level fake-github store (it empties main), so it must stay the last
+// test in this file.
 test("content: 'empty' serves an in-memory repo with no entries and a site config", async () => {
   const handle = devBackendHandle({ content: 'empty', runtime: {} });
   const event = eventFor('/admin') as any;
@@ -280,4 +288,9 @@ test("content: 'empty' serves an in-memory repo with no entries and a site confi
 
   expect(await backend.readEntries('src/content/posts', 'main')).toEqual([]);
   expect(await backend.readFile('src/theme/site.config.yaml', 'main')).toMatch(/^siteName: \S/);
+
+  // A second build (a Vite dev re-run of hooks.server.ts) must not move main's head.
+  const head = await backend.branchHead('main');
+  devBackendHandle({ content: 'empty', runtime: {} });
+  expect(await backend.branchHead('main')).toBe(head);
 });

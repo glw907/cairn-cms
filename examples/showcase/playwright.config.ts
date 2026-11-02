@@ -42,7 +42,10 @@ export default defineConfig({
   //
   // The second entry serves the same build as an empty first-run site: `--var CAIRN_DEV_CONTENT:empty`
   // selects the dev backend's empty content, on ports two above the first pair. It starts after the
-  // first entry has built, so it needs no build step.
+  // first entry has built, so it needs no build step. It persists to its own state directory so the
+  // two wrangler processes never share `.wrangler/state`. Locally an existing listener on either port
+  // is reused (reuseExistingServer is true outside CI), so a stale build can serve the empty-site
+  // specs, which is why the e2e line refuses to start when either port is held.
   webServer: [
     {
       command: [
@@ -54,7 +57,7 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: `npx wrangler dev --port ${Number(E2E_PORT) + 2} --inspector-port ${Number(E2E_PORT) + 3} --var CAIRN_DEV_BACKEND:1 --var CAIRN_DEV_CONTENT:empty --var PUBLIC_ORIGIN:http://localhost:${Number(E2E_PORT) + 2}`,
+      command: `npx wrangler dev --port ${Number(E2E_PORT) + 2} --inspector-port ${Number(E2E_PORT) + 3} --persist-to .wrangler/state-empty --var CAIRN_DEV_BACKEND:1 --var CAIRN_DEV_CONTENT:empty --var PUBLIC_ORIGIN:http://localhost:${Number(E2E_PORT) + 2}`,
       port: Number(E2E_PORT) + 2,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

@@ -103,6 +103,7 @@ func guardRoleWiring(text string) guardWiring {
 var authRoleWiring = Check{
 	ID:        "auth.role-wiring",
 	PassTitle: "Guard carries the declared role vocabulary",
+	SkipTitle: "Guard role vocabulary",
 	Condition: spine.ConditionAuthRoleWiringMissing,
 	Run: func(s Snapshot) Result {
 		facts, found, err := readSiteFacts(s)

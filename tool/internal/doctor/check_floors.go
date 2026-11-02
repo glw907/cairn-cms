@@ -344,6 +344,7 @@ var lockfiles = []string{"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
 var configDependencyFloors = Check{
 	ID:        "config.dependency-floors",
 	PassTitle: "Framework dependencies meet the engine floor",
+	SkipTitle: "Framework dependency floors",
 	Condition: spine.ConditionConfigDependencyFloorsUnmet,
 	Run: func(s Snapshot) Result {
 		peers, found, err := readEnginePeers(s)

@@ -27,6 +27,7 @@ const (
 var configMediaBucket = Check{
 	ID:        "config.media-bucket",
 	PassTitle: "Media bucket binding is declared",
+	SkipTitle: "Media bucket binding",
 	Condition: spine.ConditionConfigMediaBucketMissing,
 	Run: func(s Snapshot) Result {
 		facts, found, err := readSiteFacts(s)

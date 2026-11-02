@@ -282,6 +282,7 @@ func robotsURL(origin string) (target *url.URL, ok bool) {
 var aiPostureEffective = Check{
 	ID:        "ai.posture-effective",
 	PassTitle: "The stated AI posture is the served one",
+	SkipTitle: "Stated AI posture",
 	Condition: spine.ConditionAIPostureNotEffective,
 	Run: func(s Snapshot) Result {
 		facts, found, err := readSiteFacts(s)

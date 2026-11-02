@@ -94,21 +94,20 @@ Readiness checklist:
   commit, with the first Builds deploy watched to `success` end to end against a live scratch site
   (the account's existing 907-life Builds usage was left untouched throughout). **T4d shipped the
   localhost console and T5 split, leaving one open item: T5a'**, the browser door's public-repo
-  half (the public template repo, the Deploy button, C3 `--template` compatibility), which rides
-  release one's cut. **Pass D is done** (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-08-14-pass-d-docs-reset.md`,
-  post-mortem appended there); the tool and template still publish in the same cut as release
-  one.
+  half (the public template repo, the Deploy button, C3 `--template` compatibility), which comes
+  after the release. **Pass D is done** (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-08-14-pass-d-docs-reset.md`,
+  post-mortem appended there); the tool is tagged at the stable cut, and the template repo and
+  Deploy button come after the release.
 
   **T5 split at execution** (Geoff, 2026-08-13). **T5a is done**: the sync script that generates the
   template repo wholesale from the bake plus an overlay, its GitHub Actions wiring (a release job,
   a manual dispatch, and a weekly drift cron), a build gate that proves the tree the sync would
-  push actually builds, and the deploy guide's three-door framing. **T5a' waits for release one**:
+  push actually builds, and the deploy guide's three-door framing. **T5a' waits for the release**:
   the public repo, its first sync, the live button spike, the spike-derived overlay content and
   completion checklist, and the C3 `--template` verification. The reason is a finding, not a
   scheduling preference: the bake emits the showcase's current tree while the emitted engine spec
   resolves to the last published version, so a template synced today imports engine symbols the
-  registry does not serve. Release one resolves it by definition, and the ordering above already
-  put the template repo in that cut.
+  registry does not serve. The release resolves it by definition, and the template repo follows it.
 
   **Why the console is its own pass** (Geoff, 2026-08-11): it was bundled with email because the
   email chapter was assumed to have a long wait worth watching, and the research found that
@@ -142,7 +141,7 @@ Readiness checklist:
   `createPreviewRoute(runtime): RequestHandler` reservation is superseded by the shipped
   `loadPreview`, a site-mounted `Load` under R1's grammar; see
   `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-06-history-revert-preview-design.md`, "Part 3"), holding
-  unpublished for release one. Release intent (Geoff, 2026-08-01): the three bundle into one
+  unpublished for the release. Release intent (Geoff, 2026-08-01): the three bundle into one
   release, the next cut after the ASC-seams window publishes, however many passes they take to
   land.
 
@@ -158,18 +157,18 @@ same way: ship it, batch its `Consumers must:` line, and let this note stand as 
 rather than re-litigating it pass by pass.
 
 **Clean breaks, no aliases, until the Waymark rebuilds land (Geoff, 2026-09-27).** Every
-consumer site (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub) is to be
+consumer site (ecxc-ski, 907-life, aksailingclub-org, cairn-pub) is to be
 rebuilt from the Waymark theme, re-skinned to each site's personality. A site rebuilt from the
 template carries no migration burden, so a breaking rename (the `./components` to `./admin`
 case) is cheap now: take the clean break with one `Consumers must:` line rather than a
 compatibility alias or a compromise that keeps a confusing name or seam. Once the rebuilt sites
-are live, each break costs one migration per site again, so re-check this with Geoff when the first
+are live, each break costs one upgrade per site again, so re-check this with Geoff when the first
 rebuilt site goes live.
 
 **Promote the two public theme rules to error tier (theme identity pass C, 2026-09-29; a roadmap
 intent, not a shipped promise).** `theme-conformance` and `theme-contrast` ship at advisory tier on a
 consumer, and the changelog makes no promise about their tier. Promote both to error at the first
-minor cut after all five sites (the four consumer sites and cairn.pub) report zero advisory
+minor cut after all four sites (ecxc-ski, 907-life, aksailingclub-org, and cairn.pub) report zero advisory
 findings from them, counted by the `cairn-releasing` step that runs the audit's public scope over each
 site at every cut. `public-literals` stays advisory. A site that reports findings is asked to clear
 them first; no calendar date is attached.
@@ -179,16 +178,17 @@ scale heuristic, and switch the numbers to their compatibility meaning (patch = 
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
 `cairn-release-process-and-versioning` memory.
 
-### The pre-beta pass series, now the one-release path (organized 2026-08-01; rewritten 2026-10-09)
+### The pre-beta pass series and the release (organized 2026-08-01; rewritten 2026-10-09)
 
 The 2026-08-01 series recommended two releases: release one carrying everything that impacts a
 current consumer site, then release two as `1.0.0-beta.1`. Geoff's 2026-10-07 rulings replace that
-shape. **One release follows docs stage 5, and it is a `0.x` minor, the old "release one".**
+shape. **The release follows docs stage 5, and it is a `0.x` minor, the old "release one".**
 `1.0.0-beta.1` cannot be that cut: beta waits for the new ASC site and ecxc by Geoff's 2026-08-26
-ruling ("Toward 1.0"), and no site migrates before the release, so the sites reach the release first
-and the beta follows their migrations. Engine passes land on `main` and never release. The path, with
-each pass in its slot, is the sequence in `docs/STATUS.md`. "Release one" elsewhere in this file
-means the one release.
+ruling ("Toward 1.0"), and no site rebuilds before the release, so the sites reach the release first
+and the beta follows their rebuilds. Engine passes land on `main` and never release. The sequence:
+run the whole pass sheet, and that release is the first; 907.life's rebuild drives the next release;
+each later site rebuild may drive its own. "The release" elsewhere in this file means that first
+release.
 
 What the old series carried, as it stands:
 
@@ -209,15 +209,15 @@ What the old series carried, as it stands:
     which makes the changelog convention a parseable shape so the `cairn` tool's cross-site upgrade verb
     can read it. It is scoped forward-only with no backfill of the historical entries, which is why it
     has to land before the release rather than after. **Contract landed** (tool-gates): the
-    grammar and `check:consumers-must` are in, ruled contract only, forward-only, and no verb; the
-    `migrate` wording is left to pass 8's R9. The release also carries the admin design items P2 the zero-state
+    grammar and `check:consumers-must` are in, ruled contract only, forward-only, and no verb. The
+    release also carries the admin design items P2 the zero-state
     pass, P3 the admin at the viewport extremes, and P4 the sign-in touchpoints with the
     keyboard-and-screen-reader walkthrough (the release is now the forcing function the public beta
     was). The editors arm's screenshots show the zero states and the sign-in screens, so stage 4's
     close pulls forward whichever of these changes what they show.
   - **After the release:** P5, the `CairnMediaLibrary` split. It changes no page, and it needs its own
     designed pass against the `admin-visual` baseline and the e2e media suite.
-- **After the release and the site migrations:** the widened go-public pass, the dress rehearsal, and
+- **After the release and the site rebuilds:** the widened go-public pass, the dress rehearsal, and
   `1.0.0-beta.1` itself, under the beta gate below.
 
 ### The beta gate — DECIDED (Geoff, 2026-07-02; step 10 is now mechanics)
@@ -384,14 +384,6 @@ The original decision framing, for the record:
   width so it stops being responsive at all. **Trigger: the editors rewrite, which is the first pass
   to publish a callout-carrying reproduction.**
 
-- **`cairn-audit`'s rendered focus-indicator rule passes vacuously on a page with no tab stops.**
-  `src/lib/audit/rules/rendered/focus-renders.ts:181` returns `[]` when the tab order is empty, which is
-  indistinguishable from "checked everything and found nothing". Containment makes this reachable for the
-  first time: point the audit at a `/repro` route and every tab stop is gone, so the rule reports green
-  having checked nothing. The repo's own preference is a gate that fails over a note that waits, so the
-  fix is to report "no tab stops to check" as its own outcome rather than folding it into no-findings.
-  Found at the containment pass's review gate. **Trigger: the next pass that touches `cairn-audit`.**
-
 - **The story suite proves the media reproductions against images it never serves.** Nothing maps
   `/repro-assets/*` in the browser test project, so every fixture image 404s during the engine's own
   story-mount run and `CairnMediaLibrary`'s `onerror` swaps the tile for its "Image missing" block,
@@ -420,23 +412,19 @@ The original decision framing, for the record:
   What remains owed here is the editors arm's rebuild (stage 4), which renders in
   cairn-pub against the built seam.
 
-- **The template repo's pre-release notice comes off when `create-cairn-site` publishes.**
+- **The template repo's pre-release notice stays until the Deploy button ships, after the release.**
   `packages/create-cairn-site/template-repo/README.md` still opens "generated, pre-release" and
-  defers the Deploy button and completion checklist to a live button verification. `0.95.0` was
-  written to retire it (the obligation rides that release's own changelog entry), and the release
-  deliberately did not: the tool is held on the defects below, and the live button spike that
-  supplies the replacement content is unrun, so dropping the notice would promise a button that
-  does not exist. A `WATCH` comment sits on the notice itself. Retire both in the change that
-  publishes the tool.
+  defers the Deploy button and completion checklist to a live button verification. The tool is
+  tagged at the stable cut and the template repo and button come after the release, so publishing
+  the tool no longer retires the notice: the live button spike supplies the replacement content,
+  and dropping the notice before then would promise a button that does not exist. A `WATCH`
+  comment sits on the notice itself. Retire both in the change that ships the button.
 
-- **Four first-run defects in `create-cairn-site`, found by the 2026-08-17 capture run, all
-  owed before release one publishes the tool.** The run took four invocations to reach a live
-  site where the plan expected one, and only a live run could have surfaced the first two. The
-  fourth surfaced later, at the pass's own register gate, reading the committed fixture against
-  the tool's behavior. The evidence throughout is the committed fixtures under
+- **A first-run defect in `create-cairn-site`, found by the 2026-08-17 capture run and owed
+  before the release publishes the tool.** The evidence is the committed fixtures under
   `packages/create-cairn-site/test/fixtures/transcripts/`.
 
-  3. **Every scaffold ships the placeholder sign-in from-address `cms@showcase.test`.** The
+  **Every scaffold ships the placeholder sign-in from-address `cms@showcase.test`.** The
      domain chapter never personalizes it on the workers.dev path (`writeEmailFrom` in
      `packages/create-cairn-site/src/cloudflare/config.mjs` runs only once a domain is connected).
      The retired npm doctor's credentialed run reported three red zone-derived failures on a site
@@ -446,51 +434,6 @@ The original decision framing, for the record:
      false reds on a workers.dev site is unverified. The scaffolder defect stands either way.
      Candidate: derive the from-address, or have `cairn health` report the email check as
      not-applicable until a domain is connected.
-  4. **The scaffold hand-over still says the GitHub and Cloudflare steps have not shipped.**
-     `packages/create-cairn-site/src/scaffold.mjs:250` prints "Those steps arrive with the next
-     release", and the same run then walks the reader straight through both of them. The string
-     predates the chapters and nothing caught it, because no gate reads the tool's own prose
-     against the tool's own behavior. Evidence: `01-create-cairn-site.txt`. Candidate: rewrite the
-     hand-over to name what comes next in this run. Two more instances of the same root surfaced
-     in the 2026-08-18 backfill mining: `bin.mjs:258` calls `printLiveInfo` unconditionally on any
-     chapter-2 park, so "Connect your own domain any time by re-running..." prints directly after
-     the park message that just said the connection is in progress, and `chapter3.mjs:975` titles
-     a step "Get a fresh Cloudflare API token" before `collectBuildsToken` has had the chance to
-     revalidate a saved one, with no prompt and no browser trip. Both belong to this entry's root
-     rather than as unrelated copy bugs. **Folded into #177 and done in the scaffold setup pass
-     (2026-11-01):** the hand-over, the park message, and the token step copy now say what the run does.
-
-- **The DMARC instruction in `own-your-domain.md` was a faithful mirror of a bug in the CLI's own
-  closing copy, filed off Pass D's Task 13 production gate (2026-08-14).**
-  `packages/create-cairn-site/src/cloudflare/chapter2.mjs:801-804` prints "add it to that
-  [DMARC] record too" to the admin's terminal at the end of a real run, and
-  `packages/create-cairn-site/README.md:253-255` repeats it; both are wrong the same way the
-  docs page was (Cloudflare's `_dmarc` TXT record is `v=DMARC1; p=reject;`, a policy with no
-  sender field to add anything to — the real mechanism is SPF/DKIM, which neither string names).
-  The docs half was fixed on the old admin page the harvest has since deleted; the CLI's terminal
-  output (`chapter2.mjs:806-809` today) and its own README still print the unexecutable
-  instruction. `chapter2.test.mjs:1830-1857`'s assertions
-  (`/_dmarc\./`, `/reject/i`, `/newsletter/`) do not block a corrected string. Full evidence:
-  https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md, claims-sweep rank 4 under
-  `docs/admin`. **Folded into #184 and done in the scaffold setup pass (2026-11-01):** the closing copy
-  now tells the owner to authenticate each new service instead of adding it to the record.
-
-- **The media allow-list permits AVIF; no editor upload path can ever produce one, filed off Pass
-  D's Task 13 production gate (2026-08-14).** `DEFAULT_ALLOWED_TYPES`
-  (`src/lib/media/config.ts:37`) includes `image/avif`, and the server-side sniffer and its
-  content-route check (`content-routes-media.ts:520`) both honor it, but every editor upload runs
-  through `ingestFile` (`src/lib/admin/client-ingest.ts`) first, which accepts only JPEG,
-  PNG, WebP, GIF, and HEIC-via-re-encode; an AVIF sniffs correctly and then falls through to
-  `throw new IngestError('decode-unsupported')`. An editor who drops an AVIF gets a failure card
-  with no explanation the allow-list would predict. AVIF is reachable only through developer-side
-  paths (the seeding assembler, delivery of already-stored objects), never through the editor UI.
-  The old editors media-library page, since deleted, correctly omitted AVIF from what the editor
-  can upload (confirmed by the gate's own verifier, which refuted a proposed docs fix that would
-  have added it); the fix belongs in the engine, either an AVIF passthrough branch in `ingestFile` (AVIF is
-  web-native and `createImageBitmap` decodes it in current browsers) or a documented note in the
-  extend track that the server allow-list exceeds what the editor UI can submit. Full evidence:
-  https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md, "The refutations" section
-  (claims:editors rank 9).
 
 - **Vertical alignment's declared follow-up, filed off the cairn-wide pass (2026-08-07).** A
   cairn-wide inventory measured both the admin and the public surface for vertical-alignment
@@ -649,7 +592,7 @@ The original decision framing, for the record:
   existence or ownership probe. The consent copy does print the derived names, and frames reuse as
   reassurance ("deploying again later updates it") rather than warning that an existing resource
   belonging to a different site will be taken over. T3's review named this and proposed three
-  fixes; none landed. Account-safety, and it outlives the Node CLI. **After the one release:** the
+  fixes; none landed. Account-safety, and it outlives the Node CLI. **After the release:** the
   scaffold setup pass added a copy warning at the consent step (#177) and left the existence probe
   here, so it lands once the real install has shown how a resume that crashed before its record saved
   looks to the probe.
@@ -692,13 +635,6 @@ The original decision framing, for the record:
   - No gate checks a `docs/internal/...` path cited in a comment under `src/lib`; the design-arc log
     moved to `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/` and nothing flagged the stale citations in `EditorToolbar.svelte`
     and `EditPage.svelte`. A check that every cited path exists would catch the next move.
-  - The sample outputs in `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md` (the `norms card` output near line 598 and
-    the border-contrast exemption sample) are hand-copied from `src/lib/audit/norms.ts` and
-    `src/lib/audit/border-contrast.ts`; nothing ties them, and they drifted once into a merge conflict.
-  - `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS`,
-    `scripts/checks/check-leaks.mjs:473`; only `templates/waymark` is a template root), and its `src`
-    ships in the package's `files`. Trigger: before that package's first publish. **Done in the
-    scaffold setup pass (2026-11-01):** the check now scans the package.
   - `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` still holds the maintainer's
     home path and a `glw907.workers.dev` URL (12 matches), lists the scaffold migrations as `0000` and
     `0003` with no `0001` (line 837), and ends the key step with "re-run this step" (line 942, where
@@ -737,25 +673,6 @@ The original decision framing, for the record:
   Trigger: the final engine batch (`docs/STATUS.md`'s sequence) at the latest, and sooner if any engine
   pass touches these files.
 
-- **Reference-arm corrections the extend rebuild surfaced (stage 2a's close, 2026-10-07).** Trigger:
-  stage 2b, whose pages link these entries, or the engine pass's own docs step, whichever comes
-  first. `createRenderer` omits `unsafeDisableSanitize` and lists its hast steps out of pipeline
-  order (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/core.md:616`); the reference index calls the Extension API "the frozen
-  contract" (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/README.md:21`, `scripts/checks/reference-coverage.mjs:70`) though it
-  broke at `0.86.0` and `0.94.0`; `core.md:174-176` and two comments say the preview frame pins a
-  white ground (it follows `base-100`); `public-css.md:67-71` names a different home for the
-  `--cairn-cta-*` keys than Waymark uses; the admin motion tokens have no published home and
-  `cairn-audit.md:91,241` link into `docs/internal/`; the motion rules read two scope keys
-  (`src/lib/audit/run.ts:226`) and `frame-offset` counts per run while the reference says per screen
-  (`motion-property.ts:395-396`; fix `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md`); no entry lists the five selected-segment forms of
-  a `btn` or the shell's fixed brand mark; `createSectionAction`'s entry omits the 429 copy and a thrown
-  `redirect()`'s path; the `ExpandableRow` example heads its trigger column with a bare `<th></th>`
-  (`admin-toolkit.md:840`); no page catalogues the five migrations (`auth-store.md`);
-  `NO_PENDING_REQUEST_ERROR`'s entry states its condition too narrowly; the `cli-cairn-media-seed`
-  `--from` row never says the path ignores `assets.publicBase`; `cairn logs`, `cairn health`, and
-  `cairn sites` have no command page; the roster is called an "allowlist" 14 times
-  (`log-events.md`, `auth-store.md`, `admin.md`, `sveltekit.md`).
-
 - **`cairn-audit` and the public theme contract, from the cairn-themes Survey (2026-10-07).** The
   audit has no recipe for a standalone theme package (a contrast-only entry sheet that imports
   `cairn-public.css`, named in `public.stylesheets`); daisyUI 5 gives a form field no ground or
@@ -765,15 +682,6 @@ The original decision framing, for the record:
   adds field-ground and field-border roles to the public theme contract with `theme-contrast` pairs,
   and maps the component borders onto one role. Trigger: the theme initiative's next pass. The
   audit's exit code and report gaps are in the engine pass entry (Now).
-
-- **The tidy model catalog does not know `claude-haiku-5-5` or `claude-sonnet-5-5` (October dependency
-  sweep, 2026-10-07; record https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-10-07-dependency-sweep.md).** `@anthropic-ai/sdk`
-  0.132 lists both ids. `claude-sonnet-5-5` already resolves by prefix in `EFFORT_TIER_PREFIXES`
-  (`src/lib/sveltekit/content-routes-tidy.ts:58`), but `TIDY_MODEL_LABELS`
-  (`content-routes-settings.ts:130-132`) has no label for it, and a Haiku 5.5 id would fall to the
-  no-effort branch of `supportsEffort` without anyone having checked that it rejects the parameter.
-  Which models the editor setting offers is a product call. Trigger: the next pass that touches the
-  tidy model setting, or an owner asking for a newer default.
 
 - **Held dependency majors (October dependency sweep, 2026-10-07).** Each waits on a condition a
   tripwire can read. `devalue` 6: `@sveltejs/kit` declares `devalue` `^6` (cairn's
@@ -1297,7 +1205,7 @@ The original decision framing, for the record:
   generated site so the filtered read still resolves locally. That same pass should also
   re-record every transcript fixture under `packages/create-cairn-site/test/fixtures/transcripts/`:
   the `01-*` fixtures still print "Node 22 or later" and `03-doctor-credentialed` predates the
-  `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: after the one
+  `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: after the
   release, since the design needs a live first deploy to see the order the secrets arrive in.
 
 - **`.toolkit-toolbar-select`'s and `.toolkit-toolbar-facet`'s edges fall under the WCAG 1.4.11
@@ -1379,93 +1287,6 @@ The original decision framing, for the record:
   migration rather than a migration of its own. Found by the pass's review gate while confirming the
   lockout defect the store fix closed.
 
-- **Cairn's own admin's error tier is clean (design infrastructure Pass 3, 2026-07-29).** The advisory-tier
-  debt this pass did not touch stands unchanged:
-  - **Advisory, `border-contrast` (132 of the 210 in three classes).** Table row
-    dividers are `base-content` at 5% alpha, reading 1.10 light and 1.14 dark, 70 findings and the
-    largest single class in the corpus: a rule whose whole job is separating rows, doing almost
-    none of it.
-  - **Advisory, `weight-budget` (2, both true positives and the only two in the corpus).**
-    `/admin/login` renders no `<main>` landmark at all, a real landmark gap rather than an audit
-    inconvenience. `/admin/media`'s content region renders three font weights against the two-weight
-    budget, all three genuine card content: filename 500, reference badge 600, status-chip label
-    400. **Sequencing hazard, do not lose:** fixing the login landmark immediately creates two new
-    `screen-anatomy` false positives, because that rule's only working exemption today is an
-    accidental `if (!mainEl) return null`. Give `screen-anatomy` a positive scope predicate first.
-
-- **The rendered rules' own calibration follow-ups** (design infrastructure Pass 2, 2026-07-28). All six advisory rules stay advisory (`chip-ground-collision`
-  joined the group this pass, demoted in from error tier; see below), and the evidence for promotion
-  is not close, so what remains is repair rather than promotion.
-  `interactive-contrast` is a demotion candidate and the only one that gates: 3 findings on a
-  consumer home page, all false positives, and 0 on cairn's own tree. `border-contrast` is the most
-  repairable of the advisory five, but its exemption keys on the literal string
-  `--cairn-card-border`, which no consumer can reach structurally. `screen-anatomy` judges every
-  drawer-less page an office screen, so every consumer page in existence. `touch-targets` omits WCAG
-  2.5.8's spacing exception, which would exempt the 62x16 sort button at its measured 47px nearest
-  neighbour.
-
-- **The rule repairs Task 18's review gate confirmed but deferred** (design infrastructure Pass 2,
-  2026-07-28). Six defects the gate found were fixed with fixtures; these six were confirmed and
-  left, each because closing it is a scope expansion or loosens a gating rule and deserves its own
-  adversarial pass rather than a gate-stage edit. Each is documented at the code, so a reader meets
-  it in context.
-  - `touch-targets` samples one 390px viewport, and SC 2.5.8 carries no viewport qualifier. Borrow
-    `viewport-overflow`'s width list; the cost of leaving it is a control that passes at 390 and
-    fails at 320 going unmeasured.
-  - `touch-targets` and `interactive-contrast` hold different definitions of a control. The first
-    misses `textarea`, `<area>`, the widget roles, and a `tabindex`-plus-handler custom control; the
-    second carries a wider list plus a `cursor: pointer` fallback. One shared selector in the page
-    helpers is the repair. Widening a gating rule's net changes the measured baseline, which is why
-    it is not taken here.
-  - `touch-targets` collapses findings per selector signature, so a count is a count of shapes.
-    `interactive-contrast` deliberately refuses the same idiom. Two error-tier rules disagreeing on
-    this means a developer cannot read either count as a remediation estimate.
-  - `chip-ground-collision`'s overlapping-painter test is a bounding-box intersection with no
-    paint-order reading, and daisyUI paints a background-image on every `.btn`, so any chip
-    overlapping a button or an icon downgrades from a gating error to an advisory. Narrowing it
-    loosens the downgrade path on a gating rule.
-  - `border-contrast`'s `RATIFIED_HAIRLINE_FLOOR` is a literal 1.15 sitting 0.04 under the pairing
-    its own doc calls invariant, so a consumer re-tune that softens the hairline more than roughly
-    4% re-reports every `.card-shell` on every page. Derive the floor from the page's own resolved
-    token pairing instead of pinning cairn's number, which also closes the consumer-reachability
-    asymmetry the friction log records.
-  - `resolveColors` returns `null` for both an empty string and a color the browser refused, so
-    `resolveGround` composites a refused color away as if the layer painted nothing. The repair is
-    separate sentinels at that boundary, the way `probeSelectors` already separates "nothing
-    matched" from "the browser refused this selector". Fixing it inside `resolveGround` is wrong and
-    two pinned fixtures in `color.test.ts` demonstrate it.
-  - `weight-budget`'s title-band clause exempts `PageHeader`'s whole caller-authored action slot,
-    and its heading test matches a heading anywhere in the header's subtree. Narrow the clause to
-    the heading's own flow.
-  - `derivedSides` forces two style recalcs plus a scroll per bordered element, run twice per page.
-    Batching the sentinel probe onto `documentElement` costs one recalc instead of N. Wall-clock
-    only, on a consumer's CI.
-
-- **The design ratchet's own reviewer-triage rule repairs (D2, 2026-07-31)**, filed as promotion
-  prerequisites rather than fixed at the gate.
-  `field-edge-alignment`'s clustering compares each control's left edge only to the PREVIOUS
-  member in the sorted sequence, not to a fixed column anchor, so a chain of sub-`CLUSTER_GAP_PX`
-  gaps can drift a whole run into one merged column (a false positive on a legitimate
-  multi-column stagger) while a single gap over 80px splits what was really one staggered column
-  into two (a silent miss). Its finding message also always recommends `register="stacked"`,
-  a real remedy only for a control composed inside `FieldLabel`, and a wrong one for a control
-  the rule matches (`.input`/`.select`/`.textarea`) that was never wrapped that way.
-  `container-inset-asymmetry` reads a raw inset with no floor, so an absolutely positioned or
-  negative-margin child can drive the computed inset negative and the asymmetry math with it;
-  clamp with `Math.max(0, inset)` on each side. `one-filled-action` reimplements its own
-  unescaped `selectorFor` instead of the shared `helpers.signature` the other rendered rules
-  install, so its surface key is not reliably a parseable CSS selector, and it keys a surface as
-  `` `${selector}#${landmarks.indexOf(landmark)}` ``, which prints the sentinel `#-1` whenever the
-  topmost open layer is itself a `nav`/`aside` landmark (`landmarks` is queried from the layer
-  root's descendants only, so the layer's own root element is never in the list its own index is
-  read against). `form-font-parity` (already advisory, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md`) walks
-  only the first `[data-theme='cairn-admin']`/`[data-theme='cairn-admin-dark']` wrapper on the
-  page, so a page mounting more than one is only partly checked. Its explicit-face exemption net's
-  three named gaps, variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
-  and Tailwind 4's `font-(family-name:--x)` shorthand, closed in the conformance pass, 2026-09-01;
-  the rule stays advisory, and the multi-wrapper walk limitation above is the one gap this line still
-  files.
-
 - **Three design-system gaps found in the same triage.** The legend padding
   reset (`cairn-admin.css`'s `base` layer, design ratchet Task 1) is repaired per call site
   rather than structurally: `ComponentForm.svelte` carries its own `px-1` on the one legend that
@@ -1527,19 +1348,6 @@ The original decision framing, for the record:
   the 0.91.1 hotfix pass; full detail in the ASC repo's trial log).** The
   rest were verified against the code (or against ASC's own adversarially-verified evidence) at
   the fold:
-  - **The rendered audit's identity guard and its non-2xx precondition leave a hole between
-    them, and the status flattening opens it (harness, high).** The 0.91.0 post-hydration
-    identity guard catches a swap (SSR identity vs settled identity); a configured path that was
-    never a route SSRs the consumer's 404 and hydrates the same 404, so the identities agree and
-    the guard passes it. The only check that would catch it is the non-2xx precondition
-    (`rendered.ts`), which the admin-shell status flattening (kit#12987 entry below) defeats:
-    ASC's twelve-page run would have measured a 404 as a real screen had a configured path been
-    wrong. Remedy candidates from the filing: read the page's own embedded status, or compare
-    settled identity against the requested route rather than only against what the server sent.
-  - **The rendered summary's two totals are computed differently (DX, low).** The advisories
-    total counts printed lines while the suppressed total is `(xN)`-weighted, so a reader
-    hand-reconciling ASC's 393 advisories against 217 suppressed finds a discrepancy that has no
-    meaning. Pick one convention for both.
   - **A CodeMirror decoration throw on a consumer edit desk (defect, medium).** ASC's
     `/admin/bulletins/2026-03-membership-open` throws `Ranges must be added sorted by 'from'
     position and 'startSide'` at 1440 in both themes; the editor still mounts and stays reactive,
@@ -1635,10 +1443,10 @@ The original decision framing, for the record:
   repeatable slots render bare text inputs regardless of `itemFields`; the fix is an
   image-typed repeatable-slot widget in `ComponentForm` or an `image` carve-in for component
   attributes, an additive contract change and its own designed task given the phase-3a focus
-  hazard). The launch component set is complete without it; the aksailingclub migration's
+  hazard). The launch component set is complete without it; the aksailingclub rebuild's
   photo debt revisits this after launch.
   (2) **Inline icons** — the directive vocabulary is container-only by design, so the shipped icon
-  component is block-level; the aksailingclub migration's 99x inline usage needs either a site-level
+  component is block-level; the aksailingclub rebuild's 99x inline usage needs either a site-level
   render plugin (charter-clean, the default answer) or a deliberate engine decision to admit text
   directives (a design question, not a task). Figure needs no component at all: the engine owns
   `:::figure` natively, and the name is reserved — the docs pass records this.
@@ -1721,42 +1529,11 @@ The original decision framing, for the record:
   every engine `throw` and `fail(...)` string against the standard the conventions already state:
   can a stranger act on this without us. Most comply; the sweep catches the stragglers, and it
   pairs naturally with the dress rehearsal, which is where stragglers bite a zero-context user.
-- **Pre-beta design: the zero-state audit (Geoff, 2026-08-01).** Every beta user starts in the
-  exact state the passes never look at: a fresh site with no content, no media, no second editor.
-  One deliberate pass proves every admin screen renders a designed zero state rather than a blank
-  table, and that the first-run path (empty dashboard, first entry, first publish) reads as a
-  guided arc. The highest-leverage design item in the pre-beta set because it is every stranger's
-  first five minutes. **Done** in `p2-p4`: Navigation, Tags, and Help have designed zero states, a
-  second dev server serves an empty site, and ten `admin-zero-*` baselines hold posts, tags,
-  navigation, media, and help at 320 and 2560. No first-run card or sample-free scaffold was built.
-- **Pre-beta design: the admin at the viewport extremes (Geoff, 2026-08-01).** The five-viewport
-  composed standard is enforced for the public artifacts through the showcase's CI matrix; the
-  admin has visual baselines but has never been held to composed-at-320-and-2560, never merely
-  unbroken, screen by screen. Editors open admins on phones constantly. **Done** in `p2-p4`: 32
-  baselines hold eight screens at 320 and 2560 in both themes. The editors table stacks Email and
-  Role below `sm`, and the publish filter shows a scroll cue. The Tidy settings row at 320 is
-  backlog #294.
-- **Pre-beta design: the sign-in touchpoints (Geoff, 2026-08-01).** The login screen, the
-  magic-link email itself, and the confirm page are the first impression for every editor a
-  developer invites, and the email has never had a design pass; it is the one piece of cairn UI
-  that renders in an inbox next to professionally designed mail. **Done** in `p2-p4`: one wording
-  for a failed link on the sign-in and confirm pages, a designed email, and `auth.link.sent` in the
-  logs. No client-rendering test of the email exists.
-- **Pre-beta design: a keyboard-and-screen-reader walkthrough of the three core flows (Geoff,
-  2026-08-01).** Sign in, edit-and-save, publish, run end-to-end the way an assistive-tech user
-  experiences them. The per-pass a11y reviewer catches component-level issues; nobody has run the
-  flows whole. One attended session with findings filed; the public beta is the forcing function.
-  The keyboard half is **done** in `p2-p4` (`keyboard-walk.spec.ts`, no findings). The screen-reader
-  half is backlog #290, ahead of the beta gate.
 - **Pre-beta DX: the zero-credential quickstart (Geoff, 2026-08-01).** The dev backend already
   lets the engine run without the GitHub App; verify the whole first-contact path (scaffold, local
   admin, edit, preview) closes with zero accounts, no GitHub App, no Cloudflare, no email sender,
   then make "try cairn in five minutes" the tutorial's first chapter with provisioning deferred to
   deploy time. Needs verification before documentation; nothing lowers adoption friction more.
-- **Pre-beta DX: publish the surface snapshot as a machine artifact (Geoff, 2026-08-01).**
-  `scripts/checks/api-surface.md` is already an exact, gate-enforced rendering of the whole public
-  contract, precisely what an AI agent wants and cannot get from rendered docs. Ship it (or a JSON
-  sibling) in the package or on the docs site; nearly free, and pairs with the filed `/llms` page.
 - **Pre-beta DX: make the diagnostic pair consumer-complete (Geoff, 2026-08-01).** `cairn doctor`
   covers config and `cairn-audit` covers the design layer. What remains: verify `cairn-audit` runs cleanly from a consumer site (not only this
   repo), document the two as the first commands to run when something is wrong, and have the
@@ -1812,21 +1589,6 @@ The original decision framing, for the record:
   the provisioning-script entry above names as non-provisionable (App creation and installation);
   the difference is that this one is about telling an operator the wall is still up.
 
-- **`cairn-audit`'s rendered page-identity guard passes a route that renders an error page.**
-  Surfaced 2026-08-05 by the `cairn-pub` migration, the same report. The guard compares a page's
-  settled DOM against the identity its server-rendered response carried, which catches a route that
-  hydrates into different chrome. It cannot catch a route that renders the same error page in both
-  captures: on that run `/admin/signups` was returning the site's public error page under a valid
-  session, the two captures agreed, every rule ran against the error page under the screen's name,
-  and the run reported zero errors across all seven pages. The findings read as wrong only to a
-  human scanning them (`header.site-header`, an accent-filled "Return to homepage"), which is the
-  reading a gate exists to spare. Candidate: assert a 2xx response status on the no-JavaScript
-  baseline capture the harness already takes, and report a non-2xx as a harness finding at error
-  tier the way a stale allowlist entry is. The config docs already promise the run fails on "any
-  configured page rendering outside 2xx", so this is closer to a defect than a feature; the case
-  that escapes is a page whose framework answers 200 and renders an error boundary, which is
-  exactly what SvelteKit did here.
-
 - **A narrowed, manifest-backed resolver for `loadPreview` (filed 2026-08-06, preview pass).** The
   shipped v1 hands `loadPreview` the site's own `PublicRoutesConfig`, globbed build-time corpus
   included, so the never-prerendered preview route pulls that whole corpus into the deployed
@@ -1852,30 +1614,6 @@ The original decision framing, for the record:
   a Workers `RateLimit` binding directly to the load, matching the engine's own idiom rather than
   leaning on the zone's edge rules alone. **Trigger:** real-world spray traffic against a deployed
   `/preview/[token]` route.
-
-- **The refused-action editor cluster: four non-enhanced forms plus a shared announcement gap
-  (docs friction log, triaged 2026-08-14; C2b review round). Done in `p2-p4`: the five screens submit
-  through `use:enhance` with one shared helper (`src/lib/admin/refusal.ts`), keep the working copy,
-  and move focus to the alert; the polite regions are gone.** Four admin forms still post
-  full-page with no `use:enhance` (verified: `NavTree.svelte:53`, and the same pattern in
-  `VocabularyAdmin`, `CairnTidySettings`, `ConceptList`'s create dialog), so a refused submit
-  re-renders a fresh document and drops whatever the editor was mid-typing (a drag-reordered
-  tree, an in-progress rename, an edited conventions block, the create dialog's typed
-  title/slug/date); only `EditPage` survives this, by echoing the posted body back. The same
-  four screens plus `ManageEditors` route their refusal through `aria-live="polite"`
-  (`NavTree.svelte:131`, and the same pattern in the other four), while `EditPage` gives a
-  refused submit its own assertive region (`EditPage.svelte:1834`) with no screen moving focus
-  to the banner (WCAG 3.3.7 Redundant Entry (2.2), 3.3.1, 4.1.3, 2.4.3; ARIA APG). **Verdict:
-  this earns its own small pass rather than riding an unrelated one.** The shared root cause
-  (no `use:enhance`, so a refusal has no live-region-friendly mutation to announce and no state
-  to preserve) means the two candidate mechanisms, `use:enhance` across the four forms or
-  echoing the posted payload back per failure type, both close the whole cluster in one design
-  rather than five piecemeal patches; picking one mechanism and applying it uniformly is the
-  point. Pairs naturally with the pre-beta keyboard-and-screen-reader walkthrough above (Now),
-  since the walkthrough would otherwise rediscover this defect live, and belongs before that
-  session rather than after it. The refused-save frontmatter gap below is the same shape, one
-  screen further along (`EditPage` half-fixed already); fold the two into one pass if the
-  sequencing allows.
 
 - **Pre-existing security findings outside the C2b refusal-channel diff (docs friction log,
   triaged 2026-08-14; found by the C2b review round, security MEDIUM 5 and LOW 9).**
@@ -2018,12 +1756,6 @@ The original decision framing, for the record:
   catalogue citations, rebuttals of designs nobody wrote). Trigger: the next tool pass that
   edits `tool/internal/health` for its own reasons.
 
-- **`viewport-overflow`'s settle check waits the full 500 ms on a page with a scroll-driven
-  animation (0.98.0 cut).** A page carrying `animation-timeline: scroll()` keeps an animation
-  running and finite, so the settle check never sees the page go quiet and every finding on such a
-  page carries the "may be transient" suffix. Fix: exclude animations whose timeline is not a
-  `DocumentTimeline` from the settle check. Trigger: a consumer reports the noise.
-
 - **`rounded-t-full` and the other side forms of `full` pass `radius-scale` silently on a `badge`
   (theme identity pass B, 2026-09-29).** The rule flags `rounded-full` on an element that carries
   `badge`, but only the whole-corner form; a side form of `full` falls through. No plan decision
@@ -2075,14 +1807,6 @@ The original decision framing, for the record:
   `<details>`/`.cairn-caret` groups in `CairnAdminShell.svelte` (documented at
   `admin-design-system.md:369-374`) could become DaisyUI's `collapse`/`collapse-arrow`; cosmetic
   value only. **Trigger:** the next pass that touches any of the five named files.
-
-- **The reference track has no dedicated page for the `./admin-sources.css` subpath export; it gets
-  one section inside `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md` instead (extend-2 friction, 2026-09-20).**
-  The reference coverage gate read only `.d.ts`-typed exports, so a CSS-only subpath is not
-  gated either way; grouping the admin-sources documentation with the audit config it feeds is a
-  legitimate reading of the reference arm's page structure, not a known bug, but the docs rebuild
-  is the point where the arm's page-per-subpath convention gets a deliberate read. Trigger: the
-  docs rebuild's reference-arm pass.
 
 - **The showcase's own public route map is written nowhere a plan author reads (extend-1,
   2026-09-20).** extend-1's stylesheet-seam proof was planned against a `/posts` archive route the

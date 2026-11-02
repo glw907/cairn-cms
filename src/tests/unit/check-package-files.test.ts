@@ -337,26 +337,24 @@ describe('checkRuleReachability', () => {
   it('passes a file list of only registered rules and the helpers they import', () => {
     const result = checkRuleReachability(
       ['dist/index.js', 'dist/audit/rules/static/index.js', 'dist/audit/rules/static/gap-scale.js'],
-      new Set(['index', 'gap-scale', 'utility']),
-      new Set(['index'])
+      new Set(['index', 'gap-scale', 'utility'])
     );
     expect(result).toEqual({ ok: true, count: 2 });
   });
 
   it('fails naming the offending file when a registry does not reach it', () => {
     const result = checkRuleReachability(
-      ['dist/index.js', 'dist/audit/rules/rendered/one-filled-action.js', 'dist/audit/rules/rendered/vertical-metrics.js'],
-      new Set(['index']),
-      new Set(['index', 'one-filled-action'])
+      ['dist/index.js', 'dist/audit/rules/static/gap-scale.js', 'dist/audit/rules/static/vertical-metrics.js'],
+      new Set(['index', 'gap-scale'])
     );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('dist/audit/rules/rendered/vertical-metrics.js');
+    expect(result.error).toContain('dist/audit/rules/static/vertical-metrics.js');
     expect(result.error).toContain('register');
   });
 
-  it('ignores files outside the two packed rule directories', () => {
-    expect(checkRuleReachability(['dist/index.js', 'CHANGELOG.md'], new Set(), new Set())).toEqual({
+  it('ignores files outside the packed rule directory', () => {
+    expect(checkRuleReachability(['dist/index.js', 'CHANGELOG.md'], new Set())).toEqual({
       ok: true,
       count: 0
     });
@@ -404,8 +402,8 @@ describe('walkModuleGraph', () => {
 
 describe('parseRelativeImportSpecifiers', () => {
   it('extracts a relative specifier from a single-line import', () => {
-    expect(parseRelativeImportSpecifiers("import { x } from '../../rendered.js';\n")).toEqual([
-      '../../rendered.js'
+    expect(parseRelativeImportSpecifiers("import { x } from '../../markup.js';\n")).toEqual([
+      '../../markup.js'
     ]);
   });
 

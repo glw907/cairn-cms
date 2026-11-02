@@ -15,10 +15,8 @@
 //
 // This rule only sees marker suppression an element's classes cause: a class the compiled
 // sheet resolves DIRECTLY on that element's selector position, never a descendant selector
-// scoped to some ANCESTOR's class (daisyUI's `.menu :where(li)`, `.breadcrumbs > li`). That gap is
-// closed by the rendered-mode counterpart (`rules/rendered/list-role.ts`), which reads each item's
-// actual computed `display` in a live browser instead of a second class-source lookup here; this
-// static half stays the cheap, no-browser-required first pass.
+// scoped to some ANCESTOR's class (daisyUI's `.menu :where(li)`, `.breadcrumbs > li`). That gap
+// stays open here: only a browser reading each item's computed `display` can see it.
 import { conditionalConditions, selectorClassNames, splitSelectorList } from '../../sheet.js';
 import type { ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule, StaticRuleContext } from '../../types.js';
@@ -223,7 +221,7 @@ export const listRole: StaticRule = {
             .find((value) => value !== undefined);
           if (!hit) continue;
           cause = `an item's class "${hit.name}" resolves to "display: ${hit.value}"${conditionSuffix(hit.conditions)}`;
-          // Aligned with the rendered rule's item-level remedy: HTML-AAM maps <li> to listitem
+          // HTML-AAM maps <li> to listitem
           // by its parent relationship (a direct child of <ul>/<ol>, or of an element with
           // role="list"), a mapping this exact display change already disrupts, so an explicit role
           // on the item is the defensive fix rather than relying on that mapping alone.

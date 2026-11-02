@@ -8,9 +8,8 @@
 //
 // The engine ships no instance of this condition itself: the packaged sheet has no first/last-child
 // trim, and `ExpandableRow.svelte`'s zebra handling is a sticky-cell mechanism, a different
-// interaction. The grounding is a consumer site's measured evidence, the same
-// DaisyUI-plus-UA-default shape the `container-inset-asymmetry` keep already stands as precedent
-// for. `DEFAULT_STATIC_SCOPE`'s three roots (`src/routes/admin`, `src/lib/admin`,
+// interaction. The grounding is a consumer site's measured evidence.
+// `DEFAULT_STATIC_SCOPE`'s three roots (`src/routes/admin`, `src/lib/admin`,
 // `src/lib/admin-toolkit`) are all admin surfaces, so this rule reads only a site's admin rows;
 // the interaction is plain CSS with no admin-specific vocabulary, but it no longer reaches a site's
 // public-side components, since none of the default roots are public ones. That narrowing is

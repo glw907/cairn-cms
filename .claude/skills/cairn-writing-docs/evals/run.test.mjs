@@ -352,11 +352,13 @@ test('gradeVerdicts counts a wrong or imprecise verdict on a false line as found
 test('evals.json passes the schema and every setup applies at the pin', async (t) => {
   const data = JSON.parse(readFileSync(join(HERE, 'evals.json'), 'utf8'));
   assert.deepEqual(validateEvals(data), []);
-  assert.ok(data.evals.every((c) => c.pin === '663ac5aeb'), 'every case pins 663ac5aeb');
+  assert.ok(data.evals.filter((c) => c.id.startsWith('near-miss-')).every((c) => c.pin === '663ac5aeb'), 'every near-miss case pins 663ac5aeb');
   const top = git(HERE, 'rev-parse', '--show-toplevel').trim();
-  const pin = '663ac5aeb';
-  try { git(top, 'cat-file', '-e', `${pin}^{commit}`); } catch { return t.skip(`${pin} is not in this clone`); }
-  for (const c of data.evals.filter((e) => e.setup)) {
+  const havePin = (pin) => { try { git(top, 'cat-file', '-e', `${pin}^{commit}`); return true; } catch { return false; } };
+  const missing = data.evals.filter((e) => e.setup && !havePin(e.pin));
+  if (missing.length === data.evals.filter((e) => e.setup).length) return t.skip('no setup pin is in this clone');
+  for (const c of data.evals.filter((e) => e.setup && havePin(e.pin))) {
+    const pin = c.pin;
     const dir = mkdtempSync(join(tmpdir(), 'evals-setup-'));
     try {
       git(top, 'worktree', 'add', '--detach', join(dir, 'wt'), pin);

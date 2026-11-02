@@ -8,6 +8,12 @@
   Placement: Needs Geoff's decision before the release.
 
 ## Medium
+- [ ] **#208** Trace the `createDialog` e2e flake `#bug` `#cairn-cms` *(2026-11-01)*
+  The create dialog stayed hidden after 5s in 6 of 10 `e2e` runs, including runs before #172, at `golden-path.spec.ts:185` and `public-preview-tokens.spec.ts:141`, and once in `publish-pending-word.spec.ts` beside a `lane:fast` run. Pre-hydration is unproven: 150 of 150 unloaded clicks opened it. A workerd connection reset does not correlate. The `admin-visual` command palette and media-selected flakes and the `preview.spec` flakes in runs 41337975192 and 41272060298 are not investigated.
+  Placement: Cleanup round.
+- [ ] **#209** Queue a seed `addWord` posted before the spellcheck worker is ready `#bug` `#cairn-cms` *(2026-11-01)*
+  A seed `addWord` sent before `ready` reaches `!handler` in the worker and is dropped, which contradicts the comment at `src/lib/admin/spellcheck.ts:658`. Read from the code, not reproduced.
+  Placement: Pass 5.
 - [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)*
   `packages/create-cairn-site/src/cloudflare/chapter2.mjs` writes the sender into `src/theme/cairn.config.ts` and then builds and deploys in one step (search `writeEmailFrom`). A crash after the write and before the deploy leaves the sender written but undeployed, and the resume sees `writeEmailFrom` return false (the address is already correct) and skips the build and deploy, so the running site keeps the placeholder sender and sign-in email fails or sends from the wrong address. Fix candidate: save a marker before the write and clear it after the deploy, or compare the deployed config. Found by the scaffold-setup pass's review.
   Placement: After the release.

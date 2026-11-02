@@ -30,8 +30,7 @@ Contents:
   template keys (`layout`, `aliases`, `published`).
 - **Dates.** A `date` field takes `YYYY-MM-DD`. An unquoted timestamp parses as a `Date` and the
   field takes its UTC day, so `2024-03-12 20:00:00 -08:00` becomes `2024-03-13`. Take the day from
-  the filename when it carries one, and only fall back to the frontmatter. A `datetime` field needs
-  the timestamp as a quoted string with its offset.
+  the filename when it carries one, and only fall back to the frontmatter.
 - **Drafts.** Only boolean `draft: true` is a draft. `draft: 'true'`, `draft: yes`, and
   `published: false` all read as published; map each old marker to `draft: true`.
 - **Tags.** Slug each (`Travel Notes` → `travel-notes`) under the taxonomy field's key.

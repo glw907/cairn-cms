@@ -91,7 +91,10 @@ export const cairn = defineAdapter({
         author: fields.reference({ concept: 'pages', label: 'Author' }),
         // A many reference to other posts: array(reference) exercising the chip-list editor arm and
         // the multi-edge extractor, delivered as a list of resolved targets.
-        related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Related post' }), label: 'Related posts' }),
+        related: fields.array({
+          item: fields.reference({ concept: 'posts', label: 'Related post' }),
+          label: 'Related posts',
+        }),
         // The taxonomy marker: one creatable multiselect per concept whose validated values surface on
         // ContentSummary.tags and feed categories. cairn ships no public tag pages; a site filters its
         // archive over this data (the size-gated template filter), so the marker carries no routing.

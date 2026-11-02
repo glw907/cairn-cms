@@ -421,10 +421,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // A re-login from a browser that still holds a session replaces that row rather than adding
     // a second one. The prior id is read here, after the consume returned an email, so a failed
     // confirm changes nothing, and under both cookie-name forms, as logoutAction reads it.
-    const priorId =
-      event.cookies.get(sessionCookieName(secure)) ?? event.cookies.get(sessionCookieName(!secure));
+    const priorIds = [sessionCookieName(secure), sessionCookieName(!secure)]
+      .map((name) => event.cookies.get(name))
+      .filter((value): value is string => !!value);
     const id = generateSessionId();
-    await createSession(db, id, email, now + SESSION_TTL_MS, now, priorId);
+    await createSession(db, id, email, now + SESSION_TTL_MS, now, priorIds);
     log.info('auth.session.created', { email });
     // The nonce has done its job; a spent pending cookie left in the browser would outlive the
     // token it was bound to. `secure` here is the same variable the pending cookie was read

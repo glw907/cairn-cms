@@ -219,9 +219,9 @@ export async function consumeToken(
 /**
  * Create a session row. The row stores the id's digest, never the id, the same exposure rule
  * `magic_token` follows for its token, so a read of the table yields nothing a browser can
- * present. `priorId` is the session id this browser already held, if any; its row goes in the
- * same batch as the insert, so a re-login leaves one row per browser while another device's
- * session survives.
+ * present. `priorIds` are the session ids this browser already held (one per cookie-name form);
+ * their rows go in the same batch as the insert, so a re-login leaves one row per browser while
+ * another device's session survives.
  */
 export async function createSession(
   db: D1Database,
@@ -229,12 +229,11 @@ export async function createSession(
   email: string,
   expiresAt: number,
   now: number,
-  priorId?: string,
+  priorIds: readonly string[] = [],
 ): Promise<void> {
-  const prior =
-    priorId === undefined
-      ? []
-      : [db.prepare('DELETE FROM session WHERE id = ?').bind(await hashToken(priorId))];
+  const prior = await Promise.all(
+    priorIds.map(async (priorId) => db.prepare('DELETE FROM session WHERE id = ?').bind(await hashToken(priorId))),
+  );
   await db.batch([
     // Sweep expired sessions on login, so abandoned rows do not accumulate (no cron needed).
     // issueToken's sweep (above) runs the identical unindexed idiom against magic_token, and

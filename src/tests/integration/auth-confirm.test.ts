@@ -129,6 +129,40 @@ describe('one session row per browser', () => {
     expect(await countRows('session')).toBe(1);
   });
 
+  it('removes both cookie forms rows in the confirm batch and leaves a second device row', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await createSession(db, 'sid-secure-form', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    await createSession(db, 'sid-bare-form', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    await createSession(db, 'sid-other-device', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    const token = generateToken();
+    const now = Date.now();
+    await issueToken(db, 'ed@x.dev', await hashToken(token), now + 10_000, now, await hashToken(PENDING_NONCE));
+    const cookies = makeCookies({
+      ...pendingSeed(),
+      [sessionCookieName(true)]: 'sid-secure-form',
+      [sessionCookieName(false)]: 'sid-bare-form',
+    });
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    expect(await rowExists('sid-secure-form')).toBe(false);
+    expect(await rowExists('sid-bare-form')).toBe(false);
+    expect(await rowExists('sid-other-device')).toBe(true);
+    expect(await countRows('session')).toBe(2);
+  });
+
+  it('a failed confirm with both cookie forms leaves both rows', async () => {
+    await liveToken('ed@x.dev');
+    await createSession(db, 'sid-secure-form', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    await createSession(db, 'sid-bare-form', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    const cookies = makeCookies({
+      ...pendingSeed(),
+      [sessionCookieName(true)]: 'sid-secure-form',
+      [sessionCookieName(false)]: 'sid-bare-form',
+    });
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token: 'bogus' }, cookies })));
+    expect(await rowExists('sid-secure-form')).toBe(true);
+    expect(await rowExists('sid-bare-form')).toBe(true);
+  });
+
   it('a failed confirm with a session cookie leaves that row', async () => {
     await liveToken('ed@x.dev');
     await createSession(db, 'sid-this-browser', 'ed@x.dev', Date.now() + 10_000, Date.now());

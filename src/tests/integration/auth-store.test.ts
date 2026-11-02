@@ -293,7 +293,7 @@ describe('sessions (server-side, role read live)', () => {
     const future = Date.now() + 10_000;
     await createSession(db, 'sid-this-browser', 'ed@x.dev', future, Date.now());
     await createSession(db, 'sid-other-device', 'ed@x.dev', future, Date.now());
-    await createSession(db, 'sid-this-browser-again', 'ed@x.dev', future, Date.now(), 'sid-this-browser');
+    await createSession(db, 'sid-this-browser-again', 'ed@x.dev', future, Date.now(), ['sid-this-browser']);
     expect(await resolveSession(db, 'sid-this-browser', Date.now())).toBeNull();
     expect(await resolveSession(db, 'sid-other-device', Date.now())).not.toBeNull();
     expect(await resolveSession(db, 'sid-this-browser-again', Date.now())).not.toBeNull();

@@ -154,8 +154,8 @@ describe('FieldInput dispatches each field type to its arm', () => {
     expect(document.querySelector('[role="radiogroup"]')).not.toBeNull();
   });
 
-  it('maps url, email, and datetime to their native input types in the fallback arm', async () => {
-    for (const [type, expected] of [['url', 'url'], ['email', 'email'], ['datetime', 'datetime-local']] as const) {
+  it('maps url to its native input type in the fallback arm', async () => {
+    for (const [type, expected] of [['url', 'url']] as const) {
       const field = { type, name: 'x', label: 'X' } as NamedField;
       const { unmount } = await render(FieldInput, { field, frontmatter: {}, ...shared() });
       const input = document.querySelector<HTMLInputElement>('input[name="x"]')!;

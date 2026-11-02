@@ -234,20 +234,6 @@ describe('FieldInput arm dispatch (characterization: every FieldDescriptor arm)'
     expect(input?.value).toBe('https://example.com');
   });
 
-  it('renders an email input for an email field', async () => {
-    const field: NamedField = { type: 'email', name: 'contact', label: 'Contact' };
-    await render(FieldInput, { field, frontmatter: { contact: 'a@b.c' }, ...shared() });
-    const input = document.querySelector<HTMLInputElement>('input[name="contact"]');
-    expect(input?.type).toBe('email');
-  });
-
-  it('renders a datetime-local input for a datetime field', async () => {
-    const field: NamedField = { type: 'datetime', name: 'when', label: 'When' };
-    await render(FieldInput, { field, frontmatter: { when: '2026-06-26T14:30' }, ...shared() });
-    const input = document.querySelector<HTMLInputElement>('input[name="when"]');
-    expect(input?.type).toBe('datetime-local');
-  });
-
   it('renders a checkbox for a boolean field', async () => {
     const field: NamedField = { type: 'boolean', name: 'draft', label: 'Draft' };
     await render(FieldInput, { field, frontmatter: { draft: true }, ...shared() });

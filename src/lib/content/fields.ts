@@ -130,13 +130,6 @@ export interface UrlField extends FieldBase {
   type: 'url';
 }
 /**
- * An email-address input whose format the validator enforces.
- * @public
- */
-export interface EmailField extends FieldBase {
-  type: 'email';
-}
-/**
  * A calendar-date input.
  * @public
  */
@@ -145,19 +138,6 @@ export interface DateField extends FieldBase {
   /** Earliest allowed date as YYYY-MM-DD. Enforced at the save, never rendered on the input. */
   min?: string;
   /** Latest allowed date as YYYY-MM-DD. Enforced at the save, never rendered on the input. */
-  max?: string;
-}
-/**
- * A date-and-time input. A quoted string is kept as written; a `Date` that YAML parsed from an
- * unquoted ISO timestamp becomes a zoneless `YYYY-MM-DDTHH:mm` string read in UTC, dropping the
- * seconds and the offset.
- * @public
- */
-export interface DatetimeField extends FieldBase {
-  type: 'datetime';
-  /** Earliest allowed moment as an ISO string. Not yet enforced by the save or rendered on the input. */
-  min?: string;
-  /** Latest allowed moment as an ISO string. Not yet enforced by the save or rendered on the input. */
   max?: string;
 }
 /**
@@ -245,9 +225,7 @@ export type FieldDescriptor =
   | SelectField
   | MultiselectField
   | UrlField
-  | EmailField
   | DateField
-  | DatetimeField
   | BooleanField
   | IconField
   | ImageField
@@ -275,12 +253,8 @@ export const fields = {
   multiselect: <const O extends Omit<MultiselectField, 'type'>>(o: O): MultiselectField & O => ({ type: 'multiselect', ...o }),
   /** A URL field. */
   url: <const O extends Omit<UrlField, 'type'>>(o: O): UrlField & O => ({ type: 'url', ...o }),
-  /** An email-address field. */
-  email: <const O extends Omit<EmailField, 'type'>>(o: O): EmailField & O => ({ type: 'email', ...o }),
   /** A calendar-date field. */
   date: <const O extends Omit<DateField, 'type'>>(o: O): DateField & O => ({ type: 'date', ...o }),
-  /** A date-and-time field. */
-  datetime: <const O extends Omit<DatetimeField, 'type'>>(o: O): DatetimeField & O => ({ type: 'datetime', ...o }),
   /** A boolean checkbox field. */
   boolean: <const O extends Omit<BooleanField, 'type'>>(o: O): BooleanField & O => ({ type: 'boolean', ...o }),
   /** An icon field whose value is a glyph name from the adapter's icon set. */

@@ -1,12 +1,15 @@
 // cairn-cms: frontmatter form decoding and on-disk serialization. `frontmatterFromForm`
 // is the form-to-data half of the edit loop; `serializeMarkdown`/`parseMarkdown` are the
 // on-disk write/read pair. Kept as one seam so a site owns its serialization contract
-// (quoting, key order) without the save endpoint reaching for gray-matter directly.
-import matter from 'gray-matter';
+// (quoting, key order) without the save endpoint reaching for a YAML library directly.
+import { parse, stringify } from 'yaml';
+import { splitFrontmatter } from './frontmatter-region.js';
 import type { ImageValue, NamedField } from './types.js';
 import type { FieldDescriptor } from './fields.js';
 import { coerceStringList } from './coerce.js';
 import { unreachable } from './unreachable.js';
+
+const BOM = '\uFEFF';
 
 /**
  * True when a multiselect field is a closed checkbox group: it declares an options vocabulary and is
@@ -51,7 +54,7 @@ function decodeField(name: string, field: FieldDescriptor, form: FormData): unkn
       }
       return Object.keys(obj).length > 0 ? obj : undefined;
     }
-    // text, textarea, number-as-string, url, email, date, datetime, icon: a trimmed non-empty
+    // text, textarea, number-as-string, url, date, icon: a trimmed non-empty
     // string. reference and array are declaration-time forbidden as an object leaf or array item
     // (fieldset.ts's checkContainerNesting), so a real fieldset never routes either arm here, but
     // that guard is structural, not type-level; this arm's trimmed-string reading is what they get
@@ -62,9 +65,7 @@ function decodeField(name: string, field: FieldDescriptor, form: FormData): unkn
     case 'number':
     case 'select':
     case 'url':
-    case 'email':
     case 'date':
-    case 'datetime':
     case 'icon':
     case 'reference':
     case 'array': {
@@ -167,7 +168,7 @@ export function frontmatterFromForm(
         if (obj !== undefined) data[field.name] = obj;
         break;
       }
-      // text, textarea, number, select, url, email, date, datetime, icon: every top-level type
+      // text, textarea, number, select, url, date, icon: every top-level type
       // with no dedicated case reads as a plain scalar. FormData.get returns null for an absent
       // field; normalize to an empty string so a caller reading a text value never gets null.
       case 'text':
@@ -175,9 +176,7 @@ export function frontmatterFromForm(
       case 'number':
       case 'select':
       case 'url':
-      case 'email':
       case 'date':
-      case 'datetime':
       case 'icon':
         data[field.name] = form.get(field.name) ?? '';
         break;
@@ -199,40 +198,11 @@ export function frontmatterFromForm(
 
 /**
  * Coerce a frontmatter date value to the `YYYY-MM-DD` an `<input type="date">` wants.
- * gray-matter parses an unquoted YAML date into a JS Date, so a string-only read would
- * leave the input empty and drop the date on save. A parsed YAML date is UTC midnight, so
- * slicing the ISO string avoids a local-timezone shift.
+ * An unquoted YAML date reads as the text it was written, so the leading day is the value.
  */
 export function dateInputValue(value: unknown): string {
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? '' : value.toISOString().slice(0, 10);
-  }
   if (typeof value === 'string') {
     const match = value.match(/^\d{4}-\d{2}-\d{2}/);
-    return match ? match[0] : '';
-  }
-  return '';
-}
-
-/**
- * Coerce a frontmatter datetime value to the naive-local, minute-precision `YYYY-MM-DDTHH:mm` an
- * `<input type="datetime-local">` wants. A datetime is round-tripped as TEXT, so a stored value is
- * already this string; the `Date` branch is the fallback for a value gray-matter parsed into a JS
- * `Date` from an unquoted full-ISO scalar. UTC getters read the value back as it was written,
- * avoiding a local-timezone shift.
- */
-export function datetimeInputValue(value: unknown): string {
-  if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) return '';
-    const yyyy = value.getUTCFullYear().toString().padStart(4, '0');
-    const mm = (value.getUTCMonth() + 1).toString().padStart(2, '0');
-    const dd = value.getUTCDate().toString().padStart(2, '0');
-    const hh = value.getUTCHours().toString().padStart(2, '0');
-    const min = value.getUTCMinutes().toString().padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-  }
-  if (typeof value === 'string') {
-    const match = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
     return match ? match[0] : '';
   }
   return '';
@@ -260,13 +230,11 @@ export function isCalendarDate(s: string): boolean {
 }
 
 /**
- * Canonicalize one raw reference value to its target id. A Date (a YAML-parsed unquoted date-shaped id)
- * becomes its UTC-sliced `YYYY-MM-DD` string, so a stored id never depends on the reader's timezone; a
- * string is trimmed; anything else is the empty string. `validate`, `extractReferenceEdges`, and
+ * Canonicalize one raw reference value to its target id. A string is trimmed; anything else is the
+ * empty string (a date-shaped id reads as the string it was written, so it needs no special case). `validate`, `extractReferenceEdges`, and
  * `formValues` all read through this, so a hand-edited or rewriter-emitted value canonicalizes identically.
  */
 export function referenceIdFromValue(value: unknown): string {
-  if (value instanceof Date) return dateInputValue(value);
   if (typeof value === 'string') return value.trim();
   return '';
 }
@@ -316,11 +284,6 @@ export function formValues(
       case 'date':
         out[field.name] = dateInputValue(value);
         break;
-      // A datetime round-trips as text; a value gray-matter parsed into a Date reformats to the
-      // naive-local minute-precision string the datetime-local input wants.
-      case 'datetime':
-        out[field.name] = datetimeInputValue(value);
-        break;
       case 'boolean':
         out[field.name] = value === true;
         break;
@@ -333,8 +296,8 @@ export function formValues(
       case 'image':
         out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
         break;
-      // A reference canonicalizes through the shared coercer: a YAML-parsed Date becomes its
-      // UTC-sliced id, never String(Date) timezone garbage.
+      // A reference canonicalizes through the shared coercer: a date-shaped id stays the
+      // string it was written as.
       case 'reference':
         out[field.name] = referenceIdFromValue(value);
         break;
@@ -346,7 +309,7 @@ export function formValues(
       }
       case 'array': {
         // An array(reference) canonicalizes through the shared coercer: a lone scalar becomes a
-        // single-element list rather than dropping to [], and each element is UTC-sliced.
+        // single-element list rather than dropping to [], and each element is trimmed.
         if (field.item.type === 'reference') out[field.name] = referenceIdsFromValue(value);
         else {
           const elements = Array.isArray(value) ? value : [];
@@ -359,14 +322,13 @@ export function formValues(
         }
         break;
       }
-      // text, textarea, number, select, url, email, icon: a plain string input. A nullish value
+      // text, textarea, number, select, url, icon: a plain string input. A nullish value
       // reads as empty, anything else stringifies (a string passes through unchanged).
       case 'text':
       case 'textarea':
       case 'number':
       case 'select':
       case 'url':
-      case 'email':
       case 'icon':
         out[field.name] = value == null ? '' : String(value);
         break;
@@ -383,21 +345,31 @@ export function formValues(
   return out;
 }
 
-/** Reassemble a markdown file from frontmatter and body for committing. */
+/**
+ * Reassemble a markdown file from frontmatter and body for committing. A single-quoted scalar keeps a
+ * significant string's committed shape (`author: '123'`), and an unlimited line width keeps every
+ * scalar on the one line the byte-preserving rewriters read. An empty record writes the body alone.
+ */
 export function serializeMarkdown(frontmatter: object, body: string): string {
-  return matter.stringify(body, frontmatter);
+  const yaml = stringify(frontmatter, { singleQuote: true, lineWidth: 0 });
+  const content = body.endsWith('\n') ? body : `${body}\n`;
+  return yaml === '{}\n' ? content : `---\n${yaml}---\n${content}`;
 }
 
 /**
- * Parse a markdown file into its frontmatter and body: the read-side inverse of serialize.
+ * Parse a markdown file into its frontmatter and body: the read-side inverse of serialize. Values read
+ * under the YAML 1.2 core schema, so a date stays the text it was written. A file with no block has an
+ * empty record, and malformed YAML throws on every read.
  * @public
  */
 export function parseMarkdown(source: string): {
   frontmatter: Record<string, unknown>;
   body: string;
 } {
-  // Empty options skip gray-matter's source cache, which would otherwise swallow a parse failure
-  //  after the first throw and read the same malformed file as an empty header the next time.
-  const parsed = matter(source, {});
-  return { frontmatter: parsed.data, body: parsed.content };
+  const text = source.startsWith(BOM) ? source.slice(BOM.length) : source;
+  const { fmBlock, body } = splitFrontmatter(text);
+  if (fmBlock === '') return { frontmatter: {}, body };
+  const yaml = fmBlock.replace(/^---[ \t]*\r?\n/, '').replace(/---\r?\n?$/, '');
+  // A scalar or list block returns as parsed, so the cast names the common case rather than a check.
+  return { frontmatter: (parse(yaml) ?? {}) as Record<string, unknown>, body };
 }

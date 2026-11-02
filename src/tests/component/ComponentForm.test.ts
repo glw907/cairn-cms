@@ -234,16 +234,14 @@ describe('ComponentForm submit label', () => {
 // so those five bypass defineComponent to exercise the same generic fallback the type checker still
 // has to cover.
 describe('ComponentForm attribute-arm dispatch (characterization: every FieldDescriptor arm)', () => {
-  it('renders the generic fallback input for text, number, url, email, date, and datetime, each with its matching HTML input type', async () => {
+  it('renders the generic fallback input for text, number, url, and date, each with its matching HTML input type', async () => {
     const def = defineComponent({
       ...base, name: 'kinds', label: 'Kinds',
       attributes: {
         title: fields.text({ label: 'Title' }),
         count: fields.number({ label: 'Count' }),
         site: fields.url({ label: 'Site' }),
-        contact: fields.email({ label: 'Contact' }),
         day: fields.date({ label: 'Day' }),
-        when: fields.datetime({ label: 'When' }),
       },
     });
     const screen = await render(ComponentForm, { def, onInsert: () => {} });
@@ -251,9 +249,7 @@ describe('ComponentForm attribute-arm dispatch (characterization: every FieldDes
     expect(typeOf('Title')).toBe('text');
     expect(typeOf('Count')).toBe('number');
     expect(typeOf('Site')).toBe('url');
-    expect(typeOf('Contact')).toBe('email');
     expect(typeOf('Day')).toBe('date');
-    expect(typeOf('When')).toBe('datetime-local');
   });
 
   it('renders the icon picker radiogroup when an icon set is supplied, and the generic fallback text input otherwise', async () => {

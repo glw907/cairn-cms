@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import matter from 'gray-matter';
 import {
   frontmatterFromForm,
   formValues,
   dateInputValue,
-  datetimeInputValue,
   isCalendarDate,
   serializeMarkdown,
   parseMarkdown,
@@ -168,14 +166,13 @@ describe('frontmatterFromForm', () => {
 });
 
 // `frontmatterFromForm`'s top-level default arm absorbs every type without its own case: text,
-// textarea, number, select, url, email, date, datetime, icon. text/textarea/date are already
-// characterized above; this pins the remaining five, which read as a plain, possibly-empty string.
+// textarea, number, select, url, date, icon. text/textarea/date are already
+// characterized above; this pins the remaining four, which read as a plain, possibly-empty string.
 describe('frontmatterFromForm default-arm absorption (top level)', () => {
   const fields: NamedField[] = [
     { type: 'number', name: 'count', label: 'Count' },
     { type: 'select', name: 'status', label: 'Status', options: ['a', 'b'] },
     { type: 'url', name: 'site', label: 'Site' },
-    { type: 'email', name: 'contact', label: 'Contact' },
     { type: 'icon', name: 'glyph', label: 'Glyph' },
   ];
 
@@ -184,14 +181,12 @@ describe('frontmatterFromForm default-arm absorption (top level)', () => {
     form.set('count', '5');
     form.set('status', 'a');
     form.set('site', 'https://example.com');
-    form.set('contact', 'a@b.c');
     form.set('glyph', 'leaf');
 
     expect(frontmatterFromForm(fields, form)).toEqual({
       count: '5',
       status: 'a',
       site: 'https://example.com',
-      contact: 'a@b.c',
       glyph: 'leaf',
     });
   });
@@ -201,7 +196,6 @@ describe('frontmatterFromForm default-arm absorption (top level)', () => {
       count: '',
       status: '',
       site: '',
-      contact: '',
       glyph: '',
     });
   });
@@ -221,7 +215,7 @@ describe('frontmatterFromForm default-arm absorption (top level)', () => {
 
 // `decodeField` (the nested-use sibling: object leaves, array rows) shares the same default arm,
 // but its own explicit cases are boolean/multiselect/image/object, so text/textarea/date land here
-// too, alongside number/select/url/email/datetime/icon and (structurally, though the
+// too, alongside number/select/url/icon and (structurally, though the
 // declaration-time checkContainerNesting guard never lets a real fieldset reach this with either)
 // reference/array.
 describe('decodeField default-arm absorption (nested; every arm not explicitly cased)', () => {
@@ -235,9 +229,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
       count: { type: 'number', label: 'Count' },
       status: { type: 'select', label: 'Status', options: ['a', 'b'] },
       site: { type: 'url', label: 'Site' },
-      contact: { type: 'email', label: 'Contact' },
       when: { type: 'date', label: 'When' },
-      scheduled: { type: 'datetime', label: 'Scheduled' },
       glyph: { type: 'icon', label: 'Glyph' },
       author: { type: 'reference', concept: 'pages', label: 'Author' },
       extra: { type: 'array', item: { type: 'text', label: 'Extra' }, label: 'Extra' },
@@ -251,9 +243,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
     form.set('meta.count', '5');
     form.set('meta.status', 'a');
     form.set('meta.site', 'https://example.com');
-    form.set('meta.contact', 'a@b.c');
     form.set('meta.when', '2026-01-05');
-    form.set('meta.scheduled', '2026-01-05T09:00');
     form.set('meta.glyph', 'leaf');
     form.set('meta.author', 'jane-doe');
     form.set('meta.extra', 'x');
@@ -264,9 +254,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
       count: '5',
       status: 'a',
       site: 'https://example.com',
-      contact: 'a@b.c',
       when: '2026-01-05',
-      scheduled: '2026-01-05T09:00',
       glyph: 'leaf',
       author: 'jane-doe',
       extra: 'x',
@@ -282,9 +270,6 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
 });
 
 describe('dateInputValue', () => {
-  it('formats a Date as YYYY-MM-DD with no timezone shift', () => {
-    expect(dateInputValue(new Date('2026-05-14T00:00:00.000Z'))).toBe('2026-05-14');
-  });
   it('slices an ISO datetime string to the date', () => {
     expect(dateInputValue('2026-05-14T10:30:00Z')).toBe('2026-05-14');
   });
@@ -295,7 +280,6 @@ describe('dateInputValue', () => {
     expect(dateInputValue(undefined)).toBe('');
     expect(dateInputValue(null)).toBe('');
     expect(dateInputValue(42)).toBe('');
-    expect(dateInputValue(new Date('nonsense'))).toBe('');
     expect(dateInputValue('not a date')).toBe('');
   });
 });
@@ -333,9 +317,7 @@ describe('serialize and parse', () => {
     const out = serializeMarkdown(data, body);
     expect(out).toMatch(/^---\n/);
 
-    const parsed = matter(out);
-    expect(parsed.data).toEqual(data);
-    expect(parsed.content.trim()).toBe(body.trim());
+    expect(parseMarkdown(out)).toEqual({ frontmatter: data, body });
   });
 
   it('parses a file back into frontmatter and body', () => {
@@ -346,27 +328,81 @@ describe('serialize and parse', () => {
   it('round-trips a nested image object, quoting the media: token and omitting an absent caption', () => {
     const data = { image: { src: 'media:a.0123456789abcdef', alt: 'x' } };
     const out = serializeMarkdown(data, '');
-    // The media: token carries a colon, so gray-matter must quote it rather than read it as a YAML map.
+    // The media: token carries a colon, so the writer must keep it a string rather than a YAML map.
     const parsed = parseMarkdown(out);
     expect(parsed.frontmatter).toEqual(data);
     expect((parsed.frontmatter.image as { caption?: string }).caption).toBeUndefined();
   });
 
-  it('round-trips a datetime value as a naive-local string through the full save-load cycle', () => {
-    // A datetime is stored as TEXT, so the YYYY-MM-DDTHH:mm string must survive
-    // frontmatterFromForm -> serializeMarkdown -> parseMarkdown -> formValues without
-    // re-parsing into a JS Date and going blank.
-    const fields: NamedField[] = [{ type: 'datetime', name: 'when', label: 'When' }];
-    const form = new FormData();
-    form.set('when', '2026-06-26T14:30');
+  it('reads a bare date as the text it was written', () => {
+    expect(parseMarkdown('---\ndate: 2024-03-15\n---\n').frontmatter).toEqual({ date: '2024-03-15' });
+  });
 
-    const decoded = frontmatterFromForm(fields, form);
-    expect(decoded.when).toBe('2026-06-26T14:30');
+  it('keeps the day and offset of a timestamp as written', () => {
+    expect(parseMarkdown('---\ndate: 2024-03-15 20:00:00 -08:00\n---\n').frontmatter).toEqual({
+      date: '2024-03-15 20:00:00 -08:00',
+    });
+  });
 
-    const out = serializeMarkdown(decoded, '');
-    const parsed = parseMarkdown(out);
-    // The stored value reads back to the same naive-local string the input wants, never blank.
-    expect(datetimeInputValue(parsed.frontmatter.when)).toBe('2026-06-26T14:30');
+  it('keeps an undeclared key through a parse and a serialize', () => {
+    const source = '---\ntitle: A\nlegacy_id: 7\n---\nBody\n';
+    const { frontmatter, body } = parseMarkdown(source);
+    expect(serializeMarkdown(frontmatter, body)).toBe(source);
+  });
+
+  it('writes a string shaped like another scalar so it reparses as a string', () => {
+    const data = { id: '123', flag: 'true', year: '2026' };
+    const out = serializeMarkdown(data, 'Body\n');
+    expect(out).toContain("id: '123'\n");
+    expect(parseMarkdown(out).frontmatter).toEqual(data);
+  });
+
+  it('writes a long description on one line', () => {
+    const description = 'word '.repeat(60).trim();
+    const out = serializeMarkdown({ description }, 'Body\n');
+    expect(out).toBe(`---\ndescription: ${description}\n---\nBody\n`);
+  });
+
+  it('writes the body alone for an empty record, adding one trailing newline', () => {
+    expect(serializeMarkdown({}, 'Body')).toBe('Body\n');
+    expect(serializeMarkdown({}, 'Body\n')).toBe('Body\n');
+  });
+
+  it('reads an empty block as an empty record', () => {
+    expect(parseMarkdown('---\n---\nbody')).toEqual({ frontmatter: {}, body: 'body' });
+  });
+
+  it('strips a leading BOM', () => {
+    expect(parseMarkdown('\uFEFF---\ntitle: A\n---\nbody\n')).toEqual({
+      frontmatter: { title: 'A' },
+      body: 'body\n',
+    });
+    expect(parseMarkdown('\uFEFFplain\n')).toEqual({ frontmatter: {}, body: 'plain\n' });
+  });
+
+  it('reads CRLF fences', () => {
+    expect(parseMarkdown('---\r\ntitle: A\r\n---\r\nbody\r\n')).toEqual({
+      frontmatter: { title: 'A' },
+      body: 'body\r\n',
+    });
+  });
+
+  it('reads a comment-only block as an empty record', () => {
+    expect(parseMarkdown('---\n# a note\n---\nbody\n')).toEqual({ frontmatter: {}, body: 'body\n' });
+  });
+
+  it('accepts spaces after the opening fence and rejects a longer fence or an unclosed block', () => {
+    expect(parseMarkdown('--- \ntitle: a\n---\n').frontmatter).toEqual({ title: 'a' });
+    const longer = '----\na\n---\n';
+    expect(parseMarkdown(longer)).toEqual({ frontmatter: {}, body: longer });
+    const unclosed = '---\ntitle: a\n';
+    expect(parseMarkdown(unclosed)).toEqual({ frontmatter: {}, body: unclosed });
+  });
+
+  it('throws on malformed YAML on every read', () => {
+    const source = '---\ntitle: [unclosed\n---\nbody\n';
+    expect(() => parseMarkdown(source)).toThrow();
+    expect(() => parseMarkdown(source)).toThrow();
   });
 });
 
@@ -375,15 +411,13 @@ describe('formValues', () => {
     const fields: NamedField[] = [
       { type: 'text', name: 'title', label: 'Title' },
       { type: 'date', name: 'date', label: 'Date' },
-      { type: 'datetime', name: 'when', label: 'When' },
       { type: 'boolean', name: 'draft', label: 'Draft' },
       { type: 'multiselect', name: 'tags', label: 'Tags' },
       { type: 'image', name: 'image', label: 'Hero' },
     ];
     const frontmatter = {
       title: 'First Snow',
-      date: new Date('2026-01-05T00:00:00.000Z'),
-      when: new Date('2026-06-26T14:30:00.000Z'),
+      date: '2026-01-05',
       draft: true,
       tags: ['training', 'racing'],
       image: { src: 'media:a.0123456789abcdef', alt: 'A ridge' },
@@ -392,7 +426,6 @@ describe('formValues', () => {
     expect(formValues(fields, frontmatter)).toEqual({
       title: 'First Snow',
       date: '2026-01-05',
-      when: '2026-06-26T14:30',
       draft: true,
       tags: ['training', 'racing'],
       image: { src: 'media:a.0123456789abcdef', alt: 'A ridge' },
@@ -415,19 +448,5 @@ describe('formValues', () => {
     const mystery: NamedField = { type: 'mystery', name: 'x', label: 'X' } as unknown as NamedField;
     expect(formValues([mystery], { x: 42 })).toEqual({ x: '42' });
     expect(formValues([mystery], {})).toEqual({ x: '' });
-  });
-});
-
-describe('datetimeInputValue', () => {
-  it('passes a naive-local YYYY-MM-DDTHH:mm string through', () => {
-    expect(datetimeInputValue('2026-06-26T14:30')).toBe('2026-06-26T14:30');
-  });
-  it('formats a Date with UTC getters, no timezone shift', () => {
-    expect(datetimeInputValue(new Date('2026-06-26T14:30:00.000Z'))).toBe('2026-06-26T14:30');
-  });
-  it('returns empty for a missing or invalid value', () => {
-    expect(datetimeInputValue(undefined)).toBe('');
-    expect(datetimeInputValue(new Date('nonsense'))).toBe('');
-    expect(datetimeInputValue('not a datetime')).toBe('');
   });
 });

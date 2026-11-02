@@ -349,8 +349,6 @@ export const EXCLUDED_PATHS = {
   'ArrayField.type': BUILDER_TAG,
   'BooleanField.type': BUILDER_TAG,
   'DateField.type': BUILDER_TAG,
-  'DatetimeField.type': BUILDER_TAG,
-  'EmailField.type': BUILDER_TAG,
   'IconField.type': BUILDER_TAG,
   'ImageField.type': BUILDER_TAG,
   'MultiselectField.type': BUILDER_TAG,

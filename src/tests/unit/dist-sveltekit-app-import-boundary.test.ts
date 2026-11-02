@@ -40,7 +40,7 @@ interface ExportsTarget {
  * the virtual module), so marking them external would hide the very regression this test exists to
  * catch. Every other external is a real Node builtin, a workerd built-in module, or a
  * workers-only npm package the barrel's dependency graph reaches for reasons unrelated to
- * `$app`/`$env` (`gray-matter`'s `fs` read, `@anthropic-ai/sdk`'s `node:*` credential-chain probes
+ * `$app`/`$env` (`@anthropic-ai/sdk`'s `node:*` credential-chain probes
  * and its `standardwebhooks` dependency, the engine's own `cloudflare:workers` read), each one
  * resolvable in a real Wrangler/workerd bundle (`node:*` through `nodejs_compat`, `cloudflare:*` as
  * a runtime built-in Wrangler's bundler leaves external, `standardwebhooks` through

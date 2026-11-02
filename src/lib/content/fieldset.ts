@@ -6,7 +6,7 @@
 import type { FieldDescriptor, ImageValue } from './fields.js';
 import type { ValidationIssue, ValidationResult } from './types.js';
 import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
-import { datetimeInputValue, dateInputValue, isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
+import { isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 import { isValidId } from './ids.js';
 import { log } from '../log/index.js';
@@ -14,7 +14,6 @@ import { log } from '../log/index.js';
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
 const URL_RE = /^https?:\/\/\S+$/;
 /** Accept a single address conservatively: exactly one at-sign and a dotted domain, nothing more. */
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /**
  * Function-valued behavior a field descriptor cannot carry as plain data, keyed by field name. A
@@ -122,12 +121,9 @@ type InferRecord<RR extends Record<string, FieldDescriptor>, R = RemoveIndex<RR>
 export type InferFieldset<S> = S extends Fieldset<infer R> ? InferRecord<R> : never;
 
 // Coerce a raw value to the trimmed string the empty check and constraints run on. A parsed value may
-// arrive from parseMarkdown, not only a form string: a Date on a date or datetime field, a JS number on
-// a number field. A finite 0 coerces to '0', never read as empty, since 0 is a real number a YAML scalar
+// arrive from parseMarkdown, not only a form string: a JS number on a number field. A finite 0 coerces to '0', never read as empty, since 0 is a real number a YAML scalar
 // carries; a NaN or non-finite number stays '' and routes to the number error in validateField.
 function coerceToText(type: FieldDescriptor['type'], value: unknown): string {
-  if (type === 'date' && value instanceof Date) return dateInputValue(value);
-  if (type === 'datetime' && value instanceof Date) return datetimeInputValue(value);
   if (type === 'number' && typeof value === 'number' && Number.isFinite(value)) return String(value);
   if (typeof value === 'string') return value.trim();
   return '';
@@ -184,7 +180,7 @@ function validateField(
     if (field.item.type === 'reference') {
       // array(reference): coerceToText returns '' for an array, so the empty-first drop below would
       // silently lose an optional list or falsely error a required one. The canonicalizer coerces a
-      // lone scalar to one element and a Date element to its id. Each element must pass isValidId (the
+      // lone scalar to one element. Each element must pass isValidId (the
       // item's reference rule); a required empty list errors; the value is set only when the
       // list is non-empty.
       const list = referenceIdsFromValue(value);
@@ -260,8 +256,8 @@ function validateField(
   }
 
   // Every other type is "not provided when empty" first, then coerced. `coerceToText` turns a parsed
-  // value into its string form BEFORE the empty check, so a real parsed value (a Date on a date or
-  // datetime field, a number on a number field) is not read as empty.
+  // value into its string form BEFORE the empty check, so a real parsed value (a number on a
+  // number field) is not read as empty.
   const text = coerceToText(field.type, value);
   if (text === '') {
     return field.required ? { issues: [{ path, message: `${label} is required` }] } : { issues: [] };
@@ -287,10 +283,6 @@ function validateField(
       if (!URL_RE.test(text)) return { issues: [{ path, message: `${label} is not a valid URL` }] };
       return { value: text, issues: [] };
     }
-    case 'email': {
-      if (!EMAIL_RE.test(text)) return { issues: [{ path, message: `${label} is not a valid email address` }] };
-      return { value: text, issues: [] };
-    }
     case 'date': {
       if (!isCalendarDate(text)) return { issues: [{ path, message: `${label} must be a valid date (YYYY-MM-DD)` }] };
       const boundsError = dateBoundsError(text, field, label);
@@ -304,9 +296,7 @@ function validateField(
       return { value: text, issues: [] };
     }
     // text and textarea also enforce the string-length and pattern constraints (v1 parity);
-    // datetime and icon stay a plain string: datetime's bounds are not constrained here (there
-    // is no v1 datetime equivalent to match) and icon's value is a glyph name, not a format the
-    // site constrains.
+    // icon stays a plain string: its value is a glyph name, not a format the site constrains.
     case 'text':
     case 'textarea': {
       const lengthError = stringLengthError(text, field, label);
@@ -315,7 +305,6 @@ function validateField(
       if (formatError != null) return { issues: [{ path, message: formatError }] };
       return { value: text, issues: [] };
     }
-    case 'datetime':
     case 'icon':
       return { value: text, issues: [] };
     default:
@@ -323,7 +312,7 @@ function validateField(
       // above, so `field` is typed `never` here; adding a member without a case fails
       // `npm run check` on the line below. This is a save-validation request path, so a gap
       // defeated only by an unsafe cast degrades to the same bare-string, no-further-validation
-      // value as the datetime/icon arms above, rather than throwing.
+      // value as the icon arm above, rather than throwing.
       field satisfies never;
       return { value: text, issues: [] };
   }
@@ -432,8 +421,8 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
  *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
  *  and the Standard Schema conformance property whose issues map each error to a single-segment path.
  * @remarks
- * The validator reads a parsed value as well as a form string (a numeric `number`, a `Date` on a
- * `datetime` field, a lone scalar on a `multiselect`), recurses one level into an `object` and an
+ * The validator reads a parsed value as well as a form string (a numeric `number`, a lone scalar
+ * on a `multiselect`), recurses one level into an `object` and an
  * `array`, and on failure returns the flat `errors` map keyed by top-level field plus `issues` located
  * by multi-segment path. `config.refine` runs only after every per-field rule passes. A leaf declared
  * `required: true` is a required key in the inferred type.

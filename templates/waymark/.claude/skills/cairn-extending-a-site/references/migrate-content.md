@@ -30,12 +30,11 @@ Contents:
   template keys (`layout`, `aliases`, `published`).
 - **Dates.** A `date` field takes `YYYY-MM-DD`. An unquoted timestamp parses as a `Date` and the
   field takes its UTC day, so `2024-03-12 20:00:00 -08:00` becomes `2024-03-13`. Take the day from
-  the filename when it carries one, and only fall back to the frontmatter. A `datetime` field needs
-  the timestamp as a quoted string with its offset.
+  the filename when it carries one, and only fall back to the frontmatter.
 - **Drafts.** Only boolean `draft: true` is a draft. `draft: 'true'`, `draft: yes`, and
   `published: false` all read as published; map each old marker to `draft: true`.
 - **Tags.** Slug each (`Travel Notes` → `travel-notes`) under the taxonomy field's key.
-- **Text fields.** Text-type fields read a number, date, or boolean as empty; stringify them.
+- **Text fields.** Text-type fields read a number or boolean as empty; stringify them.
 - **Body.** Rewrite each shortcode as a container directive of a registered component (`:::note`).
   Old image URLs keep working where they still serve; only `media:` references are rewritten.
 
@@ -49,7 +48,7 @@ const TO = 'src/content/posts';
 const PREFIX = 10; // datePrefix: year 4, month 7, day 10
 const ID_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-const toDay = (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v ?? '').match(/^\d{4}-\d{2}-\d{2}/)?.[0]);
+const toDay = (v) => (String(v ?? '').match(/^\d{4}-\d{2}-\d{2}/)?.[0]);
 const toSlug = (t) => String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 function toFrontmatter(old, filename) {

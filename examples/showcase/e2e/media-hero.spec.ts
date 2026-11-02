@@ -101,7 +101,7 @@ test('Part A: set a hero through the field, the hidden inputs carry the structur
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
 
   // The fake-github recorder shows the .md commit on the pending branch, its frontmatter carrying the
-  // nested image object: gray-matter serializes the structured value, so the committed text holds the
+  // nested image object: the serializer writes the structured value, so the committed text holds the
   // media: ref, the alt, and the caption.
   await expect(async () => {
     const commit = await (await request.get('/test/last-commit')).json();

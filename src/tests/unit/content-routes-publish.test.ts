@@ -935,7 +935,7 @@ describe('undeclared frontmatter keys through a save or publish', () => {
 
     const saved = gh.read(BRANCH, ENTRY_PATH) ?? '';
     expect(saved).toContain('draft: true');
-    expect(saved).toContain('updated: 2026-01-01T00:00:00.000Z');
+    expect(saved).toContain('updated: 2026-01-01\n');
     expect(saved).toMatch(/seo:\n {2}noindex: true\n {2}tags:\n {4}- a/);
     expect(saved).not.toContain('subtitle');
   });

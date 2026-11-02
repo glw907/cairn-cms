@@ -11,8 +11,6 @@ const fields: NamedField[] = [
   { type: 'number', name: 'count', label: 'Count', integer: true, min: 0, max: 10 },
   { type: 'select', name: 'status', label: 'Status', options: ['draft', 'published'] },
   { type: 'url', name: 'site', label: 'Site' },
-  { type: 'email', name: 'contact', label: 'Contact' },
-  { type: 'datetime', name: 'when', label: 'When' },
   { type: 'multiselect', name: 'tags', label: 'Tags', options: ['training', 'racing'] },
   { type: 'multiselect', name: 'keywords', label: 'Keywords', creatable: true },
 ];
@@ -29,8 +27,6 @@ function props() {
         count: '3',
         status: 'published',
         site: 'https://example.com',
-        contact: 'a@b.c',
-        when: '2026-06-26T14:30',
         tags: ['training'],
         keywords: ['alpha', 'beta'],
       },
@@ -92,20 +88,6 @@ describe('EditPage v2 field arms', () => {
     const page = await render(EditPage, props());
     await openDetails(page);
     await expect.element(page.getByLabelText('Site')).toHaveAttribute('type', 'url');
-  });
-
-  it('renders an email input typed as email', async () => {
-    const page = await render(EditPage, props());
-    await openDetails(page);
-    await expect.element(page.getByLabelText('Contact')).toHaveAttribute('type', 'email');
-  });
-
-  it('renders a datetime-local input carrying the naive-local value', async () => {
-    const page = await render(EditPage, props());
-    await openDetails(page);
-    const when = page.getByLabelText('When');
-    await expect.element(when).toHaveAttribute('type', 'datetime-local');
-    await expect.element(when).toHaveValue('2026-06-26T14:30');
   });
 
   it('renders a closed multiselect as a checkbox group with the stored value checked', async () => {

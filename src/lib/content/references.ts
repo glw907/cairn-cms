@@ -1,9 +1,9 @@
 // cairn-cms: the typed frontmatter content graph. A `reference` field stores a target's id in
 // frontmatter; this module surgically rewrites that id on rename. The rewriter is byte-preserving:
-// it splices the value substring by source offset rather than round-tripping through gray-matter
+// it splices the value substring by source offset rather than round-tripping through the YAML serializer
 // (which reformats YAML and is not byte stable), so every other byte of the entry, body, sibling
 // keys, comments, and the exact CRLF/BOM bytes, survives the edit exactly.
-import matter from 'gray-matter';
+import { parse } from 'yaml';
 import { isValidId } from './ids.js';
 import { referenceIdFromValue, referenceIdsFromValue } from './frontmatter.js';
 import type { NamedField } from './types.js';
@@ -70,13 +70,13 @@ const BOM = '﻿';
 
 /**
  * Whether `id` would not reparse as a YAML string, so the rewriter must single-quote it. The
- *  predicate is gray-matter's parse: an unquoted `true`/`false`/`null`, a number, a hex/octal
- *  literal, or a date-shaped scalar parses to a non-string, which the edge's `isValidId` guard then
+ *  predicate is the YAML parse: an unquoted `true`/`false`/`null`, a number, a hex/octal
+ *  literal parses to a non-string (a date-shaped scalar stays a string), which the edge's `isValidId` guard then
  *  silently drops. cairn ids never need escaping inside single quotes (they exclude `'`), so a single
  *  quote pair is always enough.
  */
 function needsQuoting(id: string): boolean {
-  return typeof (matter(`---\nx: ${id}\n---\n`).data as { x: unknown }).x !== 'string';
+  return typeof (parse(`x: ${id}`) as { x: unknown }).x !== 'string';
 }
 
 /**
@@ -147,7 +147,7 @@ export function rewriteFrontmatterReference(
       // serializeMarkdown commits a YAML-significant id quoted (`author: '123'`), so the token can
       // match inside an existing quote pair. The replacement already self-quotes when needed, so
       // extend the splice over both adjacent quote bytes to avoid nesting a fresh pair (which would
-      // emit `''true''` and make js-yaml throw for the whole file). Only extend when the byte before
+      // emit `''true''` and make the parse throw for the whole file). Only extend when the byte before
       // the match and the byte after the match-end are the same quote char immediately adjacent, so a
       // value that merely contains a quote elsewhere is untouched.
       const before = fmBlock[start - 1];

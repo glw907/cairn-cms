@@ -278,7 +278,7 @@ export function previewValues(def: ComponentDef): ComponentValues {
 
 /** The descriptor types that serialize to a single directive-attribute string (decision 2). */
 const ATTRIBUTE_TYPES: Set<FieldDescriptor['type']> = new Set([
-  'text', 'textarea', 'number', 'select', 'url', 'email', 'date', 'datetime', 'boolean', 'icon',
+  'text', 'textarea', 'number', 'select', 'url', 'date', 'boolean', 'icon',
 ]);
 
 /** Reject an attribute type that cannot serialize to a single directive-attribute string (decision 2). */
@@ -286,7 +286,7 @@ function checkComponentAttributes(name: string, attributes: Record<string, Field
   for (const [key, field] of Object.entries(attributes)) {
     if (!ATTRIBUTE_TYPES.has(field.type)) {
       throw new Error(
-        `cairn: component "${name}" attribute "${key}" is type "${field.type}"; a directive attribute must be a single-value scalar (text, textarea, number, select, url, email, date, datetime, boolean, or icon).`,
+        `cairn: component "${name}" attribute "${key}" is type "${field.type}"; a directive attribute must be a single-value scalar (text, textarea, number, select, url, date, boolean, or icon).`,
       );
     }
   }
@@ -298,7 +298,7 @@ function checkComponentAttributes(name: string, attributes: Record<string, Field
  *  or pattern fails at module load. The built `attributeSchema` is what {@link validateComponent} runs.
  * @remarks
  * A directive attribute is one flat string, so `attributes` may hold only the scalar leaves `text`,
- * `textarea`, `number`, `select`, `url`, `email`, `date`, `datetime`, `boolean`, and `icon`. A
+ * `textarea`, `number`, `select`, `url`, `date`, `boolean`, and `icon`. A
  * cross-field attribute rule goes in the co-bundled `behavior` table, keyed by attribute name.
  * A component with `attributes` or `slots` opens the insert form; one with neither is picked by its
  * `insertTemplate`, and a component with neither a schema nor an `insertTemplate` does not appear

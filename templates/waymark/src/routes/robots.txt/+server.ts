@@ -1,12 +1,12 @@
 import type { RequestHandler } from './$types';
-import { robotsResponse } from '@glw907/cairn-cms/delivery';
+import { buildRobotsResponse } from '@glw907/cairn-cms/delivery';
 import { siteMeta } from '#chassis/content.js';
 import { cairn } from '#theme/cairn.config.js';
 
 export const prerender = true;
 
 export const GET: RequestHandler = () => {
-  return robotsResponse({
+  return buildRobotsResponse({
     sitemapUrl: siteMeta.origin + '/sitemap.xml',
     disallow: ['/admin'],
     posture: cairn.aiPosture,

@@ -40,7 +40,7 @@ export type {
   SiteRender,
   // `ConceptConfig.datePrefix` and `ConceptDescriptor.routing` name these.
   RoutingRule,
-  // `CairnAdapter.aiPosture` names this, and `robotsResponse` on `/delivery` reads it.
+  // `CairnAdapter.aiPosture` names this, and `buildRobotsResponse` on `/delivery` reads it.
   AiPosture,
 } from './content/types.js';
 export { defineConcept } from './content/concepts.js';

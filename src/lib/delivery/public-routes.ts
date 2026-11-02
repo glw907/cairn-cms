@@ -283,7 +283,7 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
  *  even if the route is not prerendered. Both read only through the injected `SiteResolver`, so
  *  nothing outside the resolver's committed content reaches a response. `markdownEntries` lists one
  *  `.md`-suffixed path per entry whose frontmatter `robots` lacks `noindex`. Serve the twin with
- *  `markdownResponse` from a prerendered `+server.ts`, never a runtime one, so the served set is what
+ *  `buildMarkdownResponse` from a prerendered `+server.ts`, never a runtime one, so the served set is what
  *  a build against `main` produced.
  * @scaffold
  */

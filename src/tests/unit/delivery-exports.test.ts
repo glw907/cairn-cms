@@ -31,7 +31,7 @@ describe('delivery exports', () => {
 
   it('exposes the response helpers from the delivery entry', async () => {
     const barrel = await import('../../lib/delivery/index.js');
-    for (const name of ['rssResponse', 'jsonFeedResponse', 'sitemapResponse', 'robotsResponse']) {
+    for (const name of ['buildRssResponse', 'buildJsonFeedResponse', 'buildSitemapResponse', 'buildRobotsResponse']) {
       expect(typeof (barrel as Record<string, unknown>)[name]).toBe('function');
     }
   });
@@ -42,7 +42,7 @@ describe('delivery exports', () => {
       'createContentIndex',
       'createSiteResolver',
       'buildRssFeed',
-      'rssResponse',
+      'buildRssResponse',
       'createPublicRoutes',
     ]) {
       expect(name in root).toBe(false);

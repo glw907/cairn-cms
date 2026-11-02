@@ -2,7 +2,7 @@
   input: |
     A failing `ai.posture-effective` check reports the `ai.posture-not-effective` warning, which means
     the served file carries nothing consistent with the declared posture, or carries the other
-    posture's directives. Check first that the robots route passes `aiPosture` to `robotsResponse`
+    posture's directives. Check first that the robots route passes `aiPosture` to `buildRobotsResponse`
     and that the build carrying it has deployed. If both hold, look for a managed layer that the
     zone's operator controls ahead of the origin.
   contains: Cairn.ProseProcedure

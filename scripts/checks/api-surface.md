@@ -158,9 +158,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/delivery`
 
 - `buildExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
+- `buildJsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
+- `buildMarkdownResponse`: (opts: { body: string }) => Response
+- `buildRobotsResponse`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => Response
+- `buildRssResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
 - `buildSiteDescriptors`: (adapter: CairnAdapter) => ConceptDescriptor[]
 - `buildSiteManifest`: (adapter: CairnAdapter, files: Record<string, string>) => SiteManifestBuild
+- `buildSitemapResponse`: (urls: SitemapUrl[]) => Response
 - `buildSitemapView`: (site: UntypedSiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `ContentEntry`: { frontmatter: F; body: string; concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; summaryFields: { [x: string]: unknown } }
 - `ContentIndex`: { all: (opts?: { includeDrafts?: boolean }) => ContentSummary[]; byId: (id: string) => ContentEntry<F> | undefined; byTag: (tag: string, opts?: { includeDrafts?: boolean }) => ContentSummary[]; allTags: () => { tag: string; count: number }[]; adjacent: (id: string) => { newer?: ContentSummary; older?: ContentSummary }; problems: () => ContentProblem[] }
@@ -175,21 +180,16 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EntryRef`: { concept: string; id: string; title: string; permalink: string; excerpt?: string }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
-- `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `ManifestProblem`: { concept: string; id: string; path: string; draft: boolean; errors: { [x: string]: string } }
-- `markdownResponse`: (opts: { body: string }) => Response
 - `PublicRoutes`: { entryLoad: (event: { url: URL }) => Promise<EntryData>; entries: () => { path: string }[]; markdownEntries: () => { path: string }[]; markdownLoad: (event: { url: URL }) => Promise<{ body: string }> }
 - `PublicRoutesConfig`: { site: UntypedSiteResolver; render: (input: RenderInput) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia: MediaResolve | null }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `resolveImageUrl`: (image: string, origin: string) => string | undefined
 - `resolveReferences`: (site: UntypedSiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, EntryRef | EntryRef[]>
-- `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => Response
-- `rssResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `SeoFields`: { description?: string; image?: string; robots?: string; author?: string }
 - `SeoInput`: { title: string; description: string; canonicalUrl: string; siteName: string; type?: "website" | "article"; published?: string; modified?: string; feeds?: { rss?: string; json?: string }; image?: string; imageAlt?: string; robots?: string; author?: string }
 - `SeoMeta`: { title: string; meta: { name?: string; property?: string; content: string }[]; links: { rel: string; type?: string; href: string; title?: string }[]; jsonLd: { [x: string]: unknown } }
 - `SiteManifestBuild`: { manifest: Manifest; problems: ManifestProblem[] }
-- `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `SiteResolver`: string extends keyof A["content"] ? UntypedSiteResolver : TypedSiteResolver<A>
 - `TypedSiteResolver`: { concept: <K extends keyof A["content"] & string>(id: K) => ContentIndex<NonNullable<A["content"][K]> extends ConceptConfig<infer S extends Record<string, FieldDescriptor>> ? InferFieldset<S> : Record<string, unknown>>; byPermalink: (path: string) => ContentEntry<Record<string, unknown>> | undefined; paths: () => { path: string }[]; all: () => ContentSummary[]; routable: (id: string) => boolean }

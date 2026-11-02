@@ -60,17 +60,17 @@ them. The hero and social image come from the key `image` alone: declare
 `resolveMedia` other than `null` turns hero resolution on.
 
 Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` with
-`routes.markdownEntries()` and `markdownResponse({ body })` from `routes.markdownLoad({ url })`, and
+`routes.markdownEntries()` and `buildMarkdownResponse({ body })` from `routes.markdownLoad({ url })`, and
 `markdownUrl` on `CairnHead`. `noindex` entries get no twin.
 
 ## Feeds, sitemap, robots
 
 - Feeds: map `posts.all()` to `FeedItem`s (render bodies with an origin-prefixing link resolver from
-  `createLinkResolver(site)`), return `rssResponse(channel, items)` or `jsonFeedResponse`, and set
+  `createLinkResolver(site)`), return `buildRssResponse(channel, items)` or `buildJsonFeedResponse`, and set
   `feeds` in the config so entry heads link them.
-- Sitemap: `sitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn), origin, extraRoutes)`
+- Sitemap: `buildSitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn), origin, extraRoutes)`
   takes `lastmod` from `updated` then `date`, skips `noindex` entries, and adds non-entry pages.
-- Robots: `robotsResponse({ sitemapUrl, disallow: ['/admin'], posture })`. Pass the adapter's
+- Robots: `buildRobotsResponse({ sitemapUrl, disallow: ['/admin'], posture })`. Pass the adapter's
   `aiPosture` as `posture` (`references/tidy-and-ai-posture.md`).
 - `noindex` entries stay out of the sitemap but still appear in feeds; filter feed items with
   `readSeoFields`.

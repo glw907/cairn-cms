@@ -137,7 +137,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     severity: 'warning',
     title: 'The stated AI posture is not the served one',
     why: 'The adapter declares an aiPosture, but the robots.txt the origin actually serves carries nothing consistent with it, so the stance crawlers read is not the stance the site states.',
-    remediation: "Check that the site's robots.txt route passes aiPosture to robotsResponse and that the build carrying it deployed. If the served file is not the one cairn emits, something ahead of the origin is writing it, which a zone's managed robots.txt does by prepending; this check cannot see which. Look at the zone's robots.txt and AI Crawl Control settings in the Cloudflare dashboard.",
+    remediation: "Check that the site's robots.txt route passes aiPosture to buildRobotsResponse and that the build carrying it deployed. If the served file is not the one cairn emits, something ahead of the origin is writing it, which a zone's managed robots.txt does by prepending; this check cannot see which. Look at the zone's robots.txt and AI Crawl Control settings in the Cloudflare dashboard.",
     docsAnchor: 'is-it-working.md#make-the-stated-ai-posture-effective',
   },
   'auth.store-unreachable': {

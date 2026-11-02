@@ -145,7 +145,7 @@ export interface ConceptUrlPolicy {
 }
 
 /**
- * A site's stated stance toward AI training crawlers, read by `buildRobots`/`robotsResponse`
+ * A site's stated stance toward AI training crawlers, read by `buildRobots`/`buildRobotsResponse`
  * (`/delivery`). `'decline'` emits `Disallow: /` for every token in the engine's crawler table
  * plus `Content-Signal: ai-train=no`; `'invite'` emits an affirmative `Content-Signal` and no
  * `Disallow`. Unset (the default on every site today) emits neither: the engine states no

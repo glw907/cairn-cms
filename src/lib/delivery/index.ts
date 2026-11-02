@@ -28,7 +28,7 @@ export { buildSeoMeta } from './seo.js';
 export type { SeoInput, SeoMeta } from './seo.js';
 export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
-export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from './responses.js';
+export { buildRssResponse, buildJsonFeedResponse, buildSitemapResponse, buildRobotsResponse, buildMarkdownResponse } from './responses.js';
 export { buildSiteManifest } from './manifest.js';
 export type { EntryRef, SiteManifestBuild, ManifestProblem } from '../content/manifest.js';
 export { createPublicRoutes } from './public-routes.js';

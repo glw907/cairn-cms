@@ -9,7 +9,7 @@ describe('delivery data barrel', { timeout: 20_000 }, () => {
     const barrel = await import('../../lib/delivery/index.js');
     expect(typeof barrel.buildSiteManifest).toBe('function');
     expect(typeof barrel.createSiteResolver).toBe('function');
-    expect(typeof barrel.rssResponse).toBe('function');
+    expect(typeof barrel.buildRssResponse).toBe('function');
     expect(typeof barrel.createPublicRoutes).toBe('function');
   });
 

@@ -22,13 +22,13 @@ export const cairn = defineAdapter({
 });
 `,
   'src/routes/robots.txt/+server.ts': `import type { RequestHandler } from './$types';
-import { robotsResponse } from '@glw907/cairn-cms/delivery';
+import { buildRobotsResponse } from '@glw907/cairn-cms/delivery';
 import { siteMeta } from '#chassis/content.js';
 
 export const prerender = true;
 
 export const GET: RequestHandler = () =>
-  robotsResponse({ sitemapUrl: siteMeta.origin + '/sitemap.xml', disallow: ['/admin'] });
+  buildRobotsResponse({ sitemapUrl: siteMeta.origin + '/sitemap.xml', disallow: ['/admin'] });
 `,
   'wrangler.jsonc': `{
   "name": "cairn-showcase",

@@ -87,18 +87,18 @@ off. The save rewrites only `tidy.conventions`, so a comment inside that block i
 1. On the adapter, set `aiPosture: 'decline'` (or `'invite'`). Unset emits nothing, byte-identical
    to a site that never states one.
 2. Pass it to the robots route. Setting it on the adapter alone changes nothing served: the route
-   must hand it to `robotsResponse`. Older scaffolds omit this line.
+   must hand it to `buildRobotsResponse`. Older scaffolds omit this line.
 
    ```ts
    // src/routes/robots.txt/+server.ts
-   import { robotsResponse } from '@glw907/cairn-cms/delivery';
+   import { buildRobotsResponse } from '@glw907/cairn-cms/delivery';
    import { siteMeta } from '#chassis/content.js';
    import { cairn } from '#theme/cairn.config.js';
 
    export const prerender = true;
 
    export function GET(): Response {
-     return robotsResponse({
+     return buildRobotsResponse({
        sitemapUrl: siteMeta.origin + '/sitemap.xml',
        disallow: ['/admin'],
        posture: cairn.aiPosture,

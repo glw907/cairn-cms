@@ -61,7 +61,7 @@ const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
 // keeps that answer's output byte-identical to the template.
 const AI_POSTURE_COMMENT_BLOCK = [
   "  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the",
-  "  // site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture",
+  "  // site's robots.txt route passes it to buildRobotsResponse, and CairnAdapter.aiPosture",
   '  // documents both values; the cairn-extending-a-site skill helps pick.',
   '  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate',
   "  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.",
@@ -77,7 +77,7 @@ const AI_POSTURE_COMMENT_BLOCK = [
 function aiPostureBlock(value) {
   return [
     "  // aiPosture states this site's stance toward AI training crawlers; the site's robots.txt",
-    '  // route passes it to robotsResponse, and CairnAdapter.aiPosture',
+    '  // route passes it to buildRobotsResponse, and CairnAdapter.aiPosture',
     '  // documents both values; the cairn-extending-a-site skill helps pick.',
     `  aiPosture: '${value}',`,
   ].join('\n');

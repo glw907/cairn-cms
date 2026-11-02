@@ -130,6 +130,24 @@ func TestEngineCheckBehindWithNoConsumersMustIsOK(t *testing.T) {
 	}
 }
 
+func TestEngineCheckResetChangelogShapeIsOK(t *testing.T) {
+	changelog := "## Unreleased\n\nConsumers must: rebuild the site from `create-cairn-site`; this release has no upgrade path from an earlier version.\n\n## 0.98.0\n\nThe changelog from this version back lives in the tag.\n"
+	c := engineClients(
+		engineFile{path: "package.json", body: enginePackageJSON("^0.95.0")},
+		engineFile{path: "CHANGELOG.md", body: changelog},
+	)
+	got := (engineCheck{}).Run(context.Background(), engineRecord(), c, Options{})
+	if got.State != spine.OK {
+		t.Errorf("State = %v, want OK: the skipped releases have no section in the reset changelog", got.State)
+	}
+	if behind := fieldValue[int](t, got.Fields, "releasesBehind"); behind != 2 {
+		t.Errorf("releasesBehind field = %d, want 2", behind)
+	}
+	if state := fieldValue[bool](t, got.Fields, "consumersMust"); state {
+		t.Error("consumersMust field is true, want false")
+	}
+}
+
 func TestEngineCheckBehindWithConsumersMustIsFailing(t *testing.T) {
 	changelog := "## 0.97.0\n\nConsumers must: nothing.\n\n## 0.96.0\n\nConsumers must: rename `Foo` to `Bar`.\n\n## 0.95.0\n\nConsumers must: nothing.\n"
 	c := engineClients(

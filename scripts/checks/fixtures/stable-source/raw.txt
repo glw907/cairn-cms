@@ -1,0 +1,9 @@
+:100644 100644 da405e6af 73e57a12d M	CHANGELOG.md
+:100644 100644 1b78be504 25591f0f6 M	MIGRATION-NOTES.md
+:100644 100644 657055136 c453e3c45 M	guidance-hashes.json
+:100644 100644 962c80958 47a963a2c M	package-lock.json
+:100644 100644 d62ad3f0b 7a7ae8621 M	package.json
+:100644 100644 ba0004acf df769f443 M	packages/cairn-cms-dev/package.json
+:100644 100644 d85c45ba6 50e9e44f1 M	packages/create-cairn-site/package.json
+:100644 100644 d62912f03 3b84c6b26 M	templates/waymark/.claude/cairn/VERSION
+:100644 100644 a7c25affe defc0eaf3 M	templates/waymark/package.json

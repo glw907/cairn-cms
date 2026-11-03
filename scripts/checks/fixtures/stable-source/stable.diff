@@ -1,0 +1,131 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index da405e6af..73e57a12d 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,4 +1,4 @@
+-## 0.99.0-rc.2
++## 0.99.0
+ 
+ <!-- release-size: minor -->
+ 
+diff --git a/MIGRATION-NOTES.md b/MIGRATION-NOTES.md
+index 1b78be504..25591f0f6 100644
+--- a/MIGRATION-NOTES.md
++++ b/MIGRATION-NOTES.md
+@@ -82,10 +82,10 @@ reference walks them.
+ 
+ Only the release in this file has notes here. The notes of earlier releases live in their git tags.
+ 
+-## 0.99.0-rc.2
++## 0.99.0
+ 
+ This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,
+-carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc2) for every name
++carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990) for every name
+ and behavior that changed. The steps below are the ones that fall on whoever deploys the rebuilt site.
+ 
+ - **Expect every editor to sign in again once.** Session ids are stored as a SHA-256 digest, so a
+diff --git a/package-lock.json b/package-lock.json
+index 962c80958..47a963a2c 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "@glw907/cairn-cms",
+-  "version": "0.99.0-rc.2",
++  "version": "0.99.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "@glw907/cairn-cms",
+-      "version": "0.99.0-rc.2",
++      "version": "0.99.0",
+       "license": "MIT",
+       "workspaces": [
+         "packages/*"
+@@ -9319,7 +9319,7 @@
+     },
+     "packages/cairn-cms-dev": {
+       "name": "@glw907/cairn-cms-dev",
+-      "version": "0.99.0-rc.2",
++      "version": "0.99.0",
+       "license": "MIT",
+       "bin": {
+         "cairn-media-seed": "dist/media-seed/bin.js"
+@@ -9336,7 +9336,7 @@
+       }
+     },
+     "packages/create-cairn-site": {
+-      "version": "0.99.0-rc.2",
++      "version": "0.99.0",
+       "license": "MIT",
+       "dependencies": {
+         "@clack/prompts": "^1.8.1"
+diff --git a/package.json b/package.json
+index d62ad3f0b..7a7ae8621 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@glw907/cairn-cms",
+-  "version": "0.99.0-rc.2",
++  "version": "0.99.0",
+   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
+   "type": "module",
+   "engines": {
+diff --git a/packages/cairn-cms-dev/package.json b/packages/cairn-cms-dev/package.json
+index ba0004acf..df769f443 100644
+--- a/packages/cairn-cms-dev/package.json
++++ b/packages/cairn-cms-dev/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@glw907/cairn-cms-dev",
+-  "version": "0.99.0-rc.2",
++  "version": "0.99.0",
+   "description": "Local-development fake backend for cairn-cms sites. Never install in production.",
+   "type": "module",
+   "license": "MIT",
+diff --git a/packages/create-cairn-site/package.json b/packages/create-cairn-site/package.json
+index d85c45ba6..50e9e44f1 100644
+--- a/packages/create-cairn-site/package.json
++++ b/packages/create-cairn-site/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "create-cairn-site",
+-  "version": "0.99.0-rc.2",
++  "version": "0.99.0",
+   "description": "Create a cairn CMS site: scaffold a branded Waymark starter and run it locally.",
+   "license": "MIT",
+   "type": "module",
+diff --git a/templates/waymark/.claude/cairn/VERSION b/templates/waymark/.claude/cairn/VERSION
+index d62912f03..3b84c6b26 100644
+--- a/templates/waymark/.claude/cairn/VERSION
++++ b/templates/waymark/.claude/cairn/VERSION
+@@ -1 +1 @@
+-0.99.0-rc.2
+\ No newline at end of file
++0.99.0
+\ No newline at end of file
+diff --git a/templates/waymark/package.json b/templates/waymark/package.json
+index a7c25affe..defc0eaf3 100644
+--- a/templates/waymark/package.json
++++ b/templates/waymark/package.json
+@@ -25,7 +25,7 @@
+     "cf-typegen": "wrangler types --env-file=.dev.vars.example --include-runtime=false"
+   },
+   "dependencies": {
+-    "@glw907/cairn-cms": "^0.99.0-rc.2",
++    "@glw907/cairn-cms": "^0.99.0",
+     "hastscript": "^9.0.3",
+     "remark-smartypants": "^3.0.3"
+   },
+@@ -34,7 +34,7 @@
+     "@fontsource-variable/figtree": "^5.3.0",
+     "@fontsource-variable/source-code-pro": "^5.3.1",
+     "@fontsource-variable/source-sans-3": "^5.3.1",
+-    "@glw907/cairn-cms-dev": "^0.99.0-rc.2",
++    "@glw907/cairn-cms-dev": "^0.99.0",
+     "@sveltejs/adapter-cloudflare": "^8.0.2",
+     "@sveltejs/kit": "^3.1.1",
+     "@sveltejs/vite-plugin-svelte": "^7.3.1",

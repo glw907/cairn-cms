@@ -8,12 +8,19 @@ name: Publish to npm
 #
 # Release flow: bump "version" in package.json, then either publish a GitHub
 # Release or run this workflow manually. `prepublishOnly` (svelte-package) builds
-# dist as part of `npm publish`.
+# dist as part of `npm publish`. A candidate publishes to `gate`, which no tester's install
+# command reads; a dispatch with `promote` set moves a candidate that passed the release gate to
+# `next` and, for create-cairn-site, `latest`.
 
 on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      promote:
+        description: A passed candidate's version (for example 0.99.0-rc.3) to move to the next dist-tag; leave empty to publish as a release does
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -21,6 +28,7 @@ permissions:
 
 jobs:
   publish:
+    if: github.event_name == 'release' || inputs.promote == ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -29,11 +37,13 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version).
-      # WATCH: pinned to the 11.x line because npm 12.0.0 (2026-07-08) ships without its
-      # sigstore module and every publish fails on MODULE_NOT_FOUND in libnpmpublish;
-      # move back to npm@latest once a fixed 12.x publishes cleanly.
-      - run: npm install -g npm@11
+      # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version), and a
+      # dist-tag change over OIDC needs >= 11.21.0.
+      # WATCH: pinned to the 11.x line at that floor because npm 12.0.0 (2026-07-08) ships without
+      # its sigstore module and every publish fails on MODULE_NOT_FOUND in libnpmpublish; the 12
+      # line's 12.2.0 is the first to carry the dist-tag support, so move to npm@latest only once
+      # a 12.x publishes cleanly.
+      - run: npm install -g npm@^11.21.0
       # A committed, in-sync lockfile lets this job resolve the exact dependency tree every other
       # workflow in the repo already installs with (test.yml, e2e.yml, design.yml,
       # tsgo.yml, tool-conditions.yml), so the published build gets the same reproducibility
@@ -55,8 +65,9 @@ jobs:
       # `latest` whatever the version's shape. A prerelease published to `latest` would serve a
       # candidate to every bare `npm install @glw907/cairn-cms`, while the caret ranges the
       # consumer sites pin would not resolve it at all, so the one audience it reached would be
-      # the one that never asked for it. ROADMAP's "Toward 1.0" names `next` as the prerelease
-      # dist-tag, and `latest` keeps pointing at the last stable until a stable supersedes it.
+      # the one that never asked for it. A candidate waits on `gate`, hidden from `next`, until the
+      # release gate passes and the promote job moves it; `latest` keeps pointing at the last
+      # stable until a stable supersedes it.
       #
       # The already-published guard mirrors publish-dev's, and for the same reason: the two
       # packages publish in separate jobs that can fail apart, so re-running a release to recover
@@ -66,7 +77,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           case "$VERSION" in
-            *-*) TAG=next ;;
+            *-*) TAG=gate ;;
             *)   TAG=latest ;;
           esac
           if npm view "@glw907/cairn-cms@$VERSION" version >/dev/null 2>&1; then
@@ -86,6 +97,7 @@ jobs:
   # version in lockstep but can publish apart (that first cut published the dev backend
   # manually); re-running a release must not fail on the half that already landed.
   publish-dev:
+    if: github.event_name == 'release' || inputs.promote == ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -95,7 +107,7 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       # Same npm pin as the engine job above; see its WATCH comment.
-      - run: npm install -g npm@11
+      - run: npm install -g npm@^11.21.0
       # The package ships dist/, which the root `package` script builds (after the engine's own
       # dist/, whose types the dev declarations import). `npm ci` runs it through the root prepare.
       - uses: ./.github/actions/bounded-install
@@ -108,7 +120,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           case "$VERSION" in
-            *-*) TAG=next ;;
+            *-*) TAG=gate ;;
             *)   TAG=latest ;;
           esac
           if npm view "@glw907/cairn-cms-dev@$VERSION" version >/dev/null 2>&1; then
@@ -139,6 +151,7 @@ jobs:
   # One `run:` block holds all of it, since a guard's `exit 0` ends only its own step.
   publish-create-site:
     needs: [publish, publish-dev]
+    if: github.event_name == 'release' || inputs.promote == ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -148,7 +161,7 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       # Same npm pin as the engine job above; see its WATCH comment.
-      - run: npm install -g npm@11
+      - run: npm install -g npm@^11.21.0
       - uses: ./.github/actions/bounded-install
         timeout-minutes: 22
         with:
@@ -160,7 +173,7 @@ jobs:
           VERSION=$(node -p "require('../../package.json').version")
           PKG_VERSION=$(node -p "require('./package.json').version")
           case "$VERSION" in
-            *-*) TAG=next ;;
+            *-*) TAG=gate ;;
             *)   TAG=latest ;;
           esac
           if ! out=$(npm view create-cairn-site version 2>&1); then
@@ -198,3 +211,44 @@ jobs:
           [ -f "$TGZ" ] || { echo "::error::pack produced no tarball"; exit 1; }
           echo "publishing create-cairn-site@$VERSION to the '$TAG' dist-tag"
           npm publish "$TGZ" --access public --tag "$TAG" --provenance
+
+  # Moves a candidate that passed the release gate from `gate` to `next`. It installs no
+  # dependencies and checks out nothing: it needs only npm and the OIDC token, and an install here
+  # would run a lockfile's scripts with a publish-capable token in reach. The version arrives
+  # through `env:` and the script validates it, so no expression expands inside the shell text.
+  # create-cairn-site moves last because it is the testers' entry point; a split `next` is
+  # recovered by dispatching the same version again, since `dist-tag add` is idempotent.
+  promote:
+    if: github.event_name == 'workflow_dispatch' && inputs.promote != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@^11.21.0
+      - name: Move the candidate to next
+        env:
+          PROMOTE_VERSION: ${{ inputs.promote }}
+        run: |
+          PKGS="@glw907/cairn-cms @glw907/cairn-cms-dev create-cairn-site"
+          trap 'for p in $PKGS; do npm dist-tag ls "$p"; done' EXIT
+          V="$PROMOTE_VERSION"
+          if ! printf '%s\n' "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.-]+$'; then
+            echo "::error::promote takes a prerelease version, got '$V'"
+            exit 1
+          fi
+          for p in $PKGS; do
+            if [ "$(npm view "$p@$V" version 2>/dev/null)" != "$V" ]; then
+              echo "::error::$p@$V is not on the registry; nothing was moved"
+              exit 1
+            fi
+          done
+          npm dist-tag add "@glw907/cairn-cms@$V" next
+          npm dist-tag add "@glw907/cairn-cms-dev@$V" next
+          npm dist-tag add "create-cairn-site@$V" next
+          npm dist-tag add "create-cairn-site@$V" latest

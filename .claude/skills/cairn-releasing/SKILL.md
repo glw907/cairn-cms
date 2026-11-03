@@ -196,9 +196,10 @@ Under trusted publishing the `--provenance` flag is unnecessary: provenance is a
 
 ### Gate the candidate
 
-A candidate on `gate` is judged before anyone installs it. Before the first leg, check that Email
-Sending is on for `carin-test.org`, that the account is on Workers Paid (the estate inventory records
-both), and that the harness's credentials work:
+A candidate on `gate` is judged before anyone installs it. Before the first leg, check that the
+account's Email Sending product is live and that the account is on Workers Paid (the estate
+inventory records both), and that the harness's credentials work. `carin-test.org` itself needs no
+setup: the CLI onboards its apex sending subdomain on the first email-on leg, and teardown leaves it:
 
 ```bash
 bash scripts/gate/run-gate.sh --smoke

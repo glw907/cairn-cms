@@ -23,17 +23,12 @@ that file as its changelog input (`cairn-releasing` step 3). The release cut ren
 
 ## Immediate next action
 
-Pass 8, `cleanup`, is merged at `6dc3fe1e6`. Pass 9, the release, runs per the sheet: the dependency
-sweep `cairn-cms-dep-sweep` is the last merge before the cut, and nothing else runs from it on. The
-conductor then runs the release sweep and cuts the first candidate to `next`.
-
-The release sitting is where Geoff reads the release packet and rules each major on the sweep's
-survey. The lists for it are in #188's body: the ROADMAP bullets kept in doubt, the set-asides (the
-`precheck`, the audit-wrapper fold, the eval deny-list half of #191), the reviewers' non-blocking
-finds, and T13's measurement tables, with the triage in
-`~/.local/state/cairn-agent-first/2026-11-02-backlog-triage.json`. Three bars read unmet by Geoff's
-choice (the install and editor sittings, and the docs review of the human pages). Evaluate reads
-unmet: the blind grade of #207 found claim 2 missed by two of three answers and claim 7 by one.
+`0.99.0-rc.1` is on npm `next` for `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` (cut commit
+`38746f674`). The release sitting is ready in Geoff's queue: the triage, the proof tests and gates,
+and the five held majors, plus the first hand publish of `create-cairn-site` from
+`~/.local/state/cairn-agent-first/create-cairn-site-0.99.0-rc.1.tgz` and its `npm trust` binding.
+After it, the session cuts `0.99.0-rc.2` inside npm's two-day window, runs the real install, and
+brings the stable cut to Geoff.
 
 ## Open decisions and watches
 

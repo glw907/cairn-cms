@@ -72,7 +72,9 @@ beside it.
 Toolkit components (`@glw907/cairn-cms/admin-toolkit`) assemble daisyUI classes and carry their
 own scoped styles, and they render correctly only inside the admin shell, which loads the admin
 sheet and theme. Outside `/admin` nothing supplies either. A component's `@component` comment
-lists its class inventory. Before inventing a height or a padding, take the value from the
+lists its class inventory. The toolkit also exports `MediaPicker` (with the `MediaLibraryEntry` and
+`MediaSelection` types), `ToolbarDisclosure` (with its `ToolbarDisclosureTriggerAttrs` and
+`ToolbarDisclosurePanelAttrs` types), and `formatCivilDate`. Before inventing a height or a padding, take the value from the
 "Write this, get this" table above.
 
 ## Register rules

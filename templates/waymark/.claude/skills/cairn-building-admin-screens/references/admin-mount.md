@@ -69,6 +69,12 @@ export const load = admin.shellLoad;
 <CairnAdminShell data={data.shell}>{@render children()}</CairnAdminShell>
 ```
 
+- The scaffold adds a fifth file, `src/routes/admin/+error.svelte`, so a failure under `/admin`
+  renders inside the admin shell. A 403 reads **You don't have access to this page.** with the
+  role copy, except that a 403 whose message starts `No access rule` (the guard throws it on a
+  dev-backend request) shows that message as written. A 404 reads **This page doesn't exist.**, and
+  any other status shows the thrown message. A failure in the admin layout's own load falls through
+  to the root error page. A hand-built site adds an `+error.svelte` to get the same result.
 - Keep `prerender = false` on the catch-all. A site that prerenders by default would otherwise
   bake a build-time snapshot of a session-gated page.
 - The layout pair is what puts a custom screen inside the shell: every `/admin/**` route renders
@@ -144,10 +150,25 @@ import { runtime } from '#chassis/cairn.server.js';
 
 export const prerender = false;
 export const GET: RequestHandler = async (event) => {
-  const report = await loadHealth(event, { runtime });
-  return Response.json(report, { status: report.ok ? 200 : 503 });
+  const headers = { 'cache-control': 'no-store' };
+  try {
+    const report = await loadHealth(event, { runtime });
+    return Response.json(report, { status: report.ok ? 200 : 503, headers });
+  } catch {
+    // loadHealth has already logged health.failed; answer with a fixed body, never the message.
+    return Response.json(
+      { ok: false, checks: { githubAppSigning: { ok: false, detail: 'health check failed' } } },
+      { status: 503, headers },
+    );
+  }
 };
 ```
+
+The scaffold's route is this shape: `no-store` on every answer, and a thrown check answers 503 with
+the fixed body in place of an unguarded 500. `/healthz?live=1` mints one installation token and
+reports it under `githubAppToken`. A settled verdict answers every live request in the same
+isolate for 60 seconds, and parallel callers share one mint. The admin side of the check is
+`docs/admin/rotate-the-github-app-key.md`.
 
 `prerender = false` is required on a site that prerenders by default: without it the build
 freezes a permanent `ok: false` taken when the GitHub App key is absent.

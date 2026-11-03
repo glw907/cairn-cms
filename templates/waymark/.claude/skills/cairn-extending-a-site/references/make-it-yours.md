@@ -16,3 +16,9 @@ then run `npx cairn-manifest` and `npm run check`.
 6. **Tags.** Replace the `vocabulary` entries in the same file with your own tags.
 7. **Rebuild the manifest.** Run `npx cairn-manifest` after any content file is added, removed,
    or renamed. A stale manifest fails the build.
+
+## Help contact
+
+The admin's Help screen ends in a **Get help** hand-off. Set `editor.supportContact` on the adapter
+to an email, a URL, or a name and instruction to point your editors at you. Left unset, the hand-off
+uses cairn's hosted help at `https://cairn.pub/help`, and an explicit `''` renders no hand-off.

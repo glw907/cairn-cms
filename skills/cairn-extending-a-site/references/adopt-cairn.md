@@ -96,8 +96,9 @@ Done when `npm run check` and `npm run build` pass. A build failure table is in
    `content`: `'repository'` (the default) overlays each branch in memory on the working tree and
    writes nothing to disk, and throws under workerd; `'fixtures'` serves the package's seeded
    sample repo and runs anywhere; `'empty'` holds only `site.config.yaml` with a `siteName`, so
-   every concept lists nothing, and runs under workerd. In `'repository'` mode the admin shows
-   **Edits are held in memory.** until the dev server stops.
+   every concept lists nothing, and runs under workerd. While the dev backend holds content in memory
+   (all three modes do) the admin shows **Edits are held in memory.**; they are discarded when the dev
+   server stops.
 
 ## Production
 

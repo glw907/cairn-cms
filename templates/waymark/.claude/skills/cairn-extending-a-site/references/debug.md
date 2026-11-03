@@ -51,7 +51,7 @@ the Worker env. Do not add a database first. Check in this order:
 3. If the database is bound under another name, change `resolveDb` to read that name. Adding a
    binding under the name the code reads creates a second, empty database.
 4. Only if no binding exists for that data, declare one in `wrangler.jsonc`, create and migrate it,
-   and regenerate the `Env` types.
+   and regenerate the `Env` types with `npm run cf-typegen`.
 
 A stale line in `worker-configuration.d.ts` can keep a wrong binding name type-checking; the
 generated types are not proof the binding exists.

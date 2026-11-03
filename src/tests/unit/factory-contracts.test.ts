@@ -6,8 +6,7 @@
 // directly and back again, proving the declared contract and the factory's actual return are
 // mutually assignable with no `ReturnType<typeof f>` detour anywhere in the chain. The
 // CairnAdminRoutes block additionally proves the nine media-janitorial actions the membership
-// decision withdraws are genuinely absent from the narrowed type, not merely unlisted, the same
-// shape model `retires-task2-sanctioned-leak-replacements.test.ts` uses for a leak proof.
+// decision withdraws are genuinely absent from the narrowed type, not merely unlisted.
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import type { D1Database } from '@cloudflare/workers-types';
 import { createCairnAdmin, createCairnAdminInternal, type CairnAdminRoutes } from '../../lib/sveltekit/cairn-admin.js';
@@ -19,8 +18,8 @@ import { createSectionAction, type PlainSectionAction, type SectionAction } from
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
 
-// The one runtime test in this compile-only file, the same reason env-genericity.test.ts and
-// retires-task2-sanctioned-leak-replacements.test.ts each carry one: vitest fails a `.test.ts`
+// The one runtime test in this compile-only file, the same reason env-genericity.test.ts
+// carries one: vitest fails a `.test.ts`
 // that declares no suite. The `typeOnly*` functions below never run; `npm run check` reads them.
 describe('factory-contracts: contract-first declared returns (conventions pass, Task 2)', () => {
   it('is a compile-only fixture, collected so the file is a test module', () => {
@@ -38,7 +37,7 @@ function typeOnlyCairnAdminContract(runtime: CairnRuntime): void {
 
   // The membership decision (Task 2's own ledger annotation): the nine media-janitorial actions
   // genuinely do not exist on the narrowed contract, a type-level capability withdrawal proven
-  // here the same way the sanctioned-leak fixture proves a retired name's absence.
+  // here as a type-level proof of absence.
   // @ts-expect-error mediaDelete is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaDelete;
   // @ts-expect-error mediaUpdate is one of the nine actions CairnAdminRoutes withdraws.

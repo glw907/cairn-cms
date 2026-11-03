@@ -13,8 +13,8 @@
   default pending his word.
 - **Base:** `main` at `1ae692ae1`, plus the design at `3c78ef3ab`. **Branch:**
   `worktree-setup-fix-pass`, pushed to `glw907/cairn-cms`.
-- **Estimate:** design 540 path minutes, ceiling 1,080. Plan path **655** (below), after the review
-  fold and the verification fold. No cut is planned. Cut order if a run passes the ceiling: the quiet build (T1 part 3), then
+- **Estimate:** design 540 path minutes, ceiling 1,080. Plan path **665** (below), after the review
+  fold and the verification fold, plus 10 for the magic-link sign-in. No cut is planned. Cut order if a run passes the ceiling: the quiet build (T1 part 3), then
   T6b's App deletion by browser (leave the Apps for a hand cleanup and file it), then fork 2's email
   read.
 - **Executor:** Sonnet medium, `cairn-cms-setup-fix`. T2 upshifts `cairn-implementer` to Opus at
@@ -24,11 +24,17 @@
   conductor's release steps after the merge. This plan's own proofs are unit, integration, CI, and
   one credential smoke (T6a) that writes only throwaway `cairn-e2e-gate-probe-*` resources.
 - **Open points (design revision 2's three decisions, fold record "Owner forks"):** each is marked
-  `FORK n` where it lands. All three build yes by default, the conductor's word pending Geoff's.
-  The executor builds the default and doesn't wait.
+  `FORK n` where it lands. All three are settled yes: Geoff ruled FORK 1 in packet
+  `20261102T231208-1546926`, and FORK 2 and FORK 3 rode that packet as the conductor's calls,
+  unreversed. The same packet granted the stable-cut rule, so the conductor cuts the stable.
+- **The gate mailbox (Geoff, 2026-11-02: "we can create an email account specificially for
+  automated testing"):** the gate's owner address and the machine account's GitHub email are
+  `cairn-gate@probe.907.life`, a dedicated ward mailbox (password `STALWART_PASSWORD_CAIRN_GATE`),
+  added by a servers-repo PR. FORK 2 grows into a real magic-link sign-in on B2.
   - FORK 1, a user-owned `ws-cairn-gate` minted through `tmp-token-setup`: default yes. It changes
     no task, only the Pre-flight token row.
-  - FORK 2, the gate reads a sign-in email's From: default yes. It changes T6b.
+  - FORK 2, the gate reads a sign-in email's From and signs in through its link: yes. It changes
+    T6b.
   - FORK 3, promotion also moves `create-cairn-site@latest`: default yes. It changes T4.
 
 ## Sweep verdicts
@@ -175,14 +181,14 @@ the fold record's "Verification" section.
 
 | Item | Who, when | Check that shows it done |
 |---|---|---|
-| GitHub machine account, 2FA on, its password and TOTP secret in the age store as `CAIRN_GATE_GH_PASSWORD` and `CAIRN_GATE_GH_TOTP_SECRET`, its login as `CAIRN_GATE_GH_LOGIN`, Proton Pass holding the record | `[you]`, before launch (the conductor is gathering it) | `grep -oE '^export (CAIRN_GATE_GH_LOGIN\|CAIRN_GATE_GH_PASSWORD\|CAIRN_GATE_GH_TOTP_SECRET)=' ~/.local/secrets` prints three names, never a value |
+| GitHub machine account on the email `cairn-gate@probe.907.life`, 2FA on, its password and TOTP secret in the age store as `CAIRN_GATE_GH_PASSWORD` and `CAIRN_GATE_GH_TOTP_SECRET`, its login as `CAIRN_GATE_GH_LOGIN`, Proton Pass holding the record | `[you]`, before launch (the conductor is gathering it) | `grep -oE '^export (CAIRN_GATE_GH_LOGIN\|CAIRN_GATE_GH_PASSWORD\|CAIRN_GATE_GH_TOTP_SECRET)=' ~/.local/secrets` prints three names, never a value |
 | A classic token for the machine account, scopes `repo` and `delete_repo`, as `CAIRN_GATE_GH_TOKEN` (finding 5; added by the plan, now in design revision 2's pre-flight) | `[you]`, before the first gate run; blocks no executor task | `bash -c 'source ~/.local/secrets && GH_TOKEN="$CAIRN_GATE_GH_TOKEN" gh api -i user'` shows the machine login and an `X-OAuth-Scopes` header naming `repo` and `delete_repo` |
 | `ws-cairn-gate`, minted from chapter 3's eight keys (`CHAPTER3_PERMISSION_KEYS`, `prefill.mjs:79`: Zone, DNS, Workers Scripts, SSL and Certificates, Email Sending, Workers Builds Configuration, D1, Workers R2 Storage, each edit), every zone-level group limited to `carin-test.org`. **User-owned**, minted through `tmp-token-setup` (inventory item 6; design revision 2, **FORK 1** default), its inventory row recorded as an exception to rule 2 until Builds accepts account-owned tokens. Age store `CF_WS_CAIRN_GATE_TOKEN`; inventory row added; the temporary token deleted. If Geoff answers FORK 1 no, the token is account-owned through `tmp-account-tokens` and the gate's Builds legs run on his browser sign-in (design revision 2) | `[you]` makes the temporary token; the conductor mints, stores, and deletes, before launch | The T6a smoke's verdicts (it calls both verify routes, the Builds routes, and the write probes, through Node `fetch`, never `curl` argv) |
 | Pre-launch permission list (finding 4): `Bash(bash scripts/gate/run-gate.sh *)`, `Bash(gh workflow run publish.yml -f promote=*)`, and, for the stable cut's literal sha (T4), `Bash(gh release create v* --target * --title *)`. The existing `Bash(gh release create v* --target main *)` and `Bash(gh release create v* --prerelease *)` match neither `--target <sha>` form, and a glob can't narrow a sha further | `[you]`, one workstation PR, before launch: T6a's smoke runs the first | All three strings appear in `~/.claude/settings.json`'s `permissions.allow` |
 | "Allow npm dist-tag" on the `publish.yml` trusted publisher of `@glw907/cairn-cms`, `@glw907/cairn-cms-dev`, and `create-cairn-site`: npmjs.com → the package → Settings → Trusted publishing → the configuration → tick **Allow npm dist-tag** → save. Off by default (<https://docs.npmjs.com/trusted-publishers>, "Managing dist-tags with trusted publishing") | `[you]`, after the merge, before `rc.3` | The box shows ticked on all three settings pages. That is all this check proves: a no-op promotion writes nothing, since `npm dist-tag add` returns "is already set to version" before its authenticated request. The first real promotion, `rc.3` to `next`, is the probe; if it reports the trusted publisher cannot manage dist-tags, the design's fallback stands and promotion becomes Geoff's `npm dist-tag add` in a sitting |
 | Added by the plan, now in design revision 2's pre-flight: Cloudflare's Workers and Pages GitHub App connected to the machine account with **All repositories**, through Geoff's Cloudflare dashboard (`catalogue.mjs:703`'s route: `https://dash.cloudflare.com/?to=/:account/workers-and-pages`), since Playwright holds no Cloudflare session and a selected-repositories install parks every new gate repository at `builds-repo-not-selected` (`chapter3.mjs:1053`) | `[you]`, before the first gate run; blocks no executor task | After `ws-cairn-gate` is minted user-owned (the Builds routes take only a user token), the conductor creates a throwaway `cairn-e2e-gate-probe-<ts>` repository on the machine account with `CAIRN_GATE_GH_TOKEN`; `PUT .../builds/repos/connections` for it, signed with `ws-cairn-gate`, answers 200; then it deletes the connection by its returned uuid and the repository |
 | `carin-test.org` has Email Sending on, and the account is on Workers Paid | conductor, before the first gate run | Email Sending: `GET /zones/:id/email/sending/subdomains` (`api.mjs:528`) with the gate token. Workers Paid: no token can read the plan (`GET /accounts/{id}/subscriptions` answers 10000), so the record is `~/.claude/docs/cloudflare-estate-inventory.md:4-6` |
-| The gate's owner address accepts mail and is not Geoff's inbox | conductor, before the first gate run | `GATE_OWNER_EMAIL=probe@probe.907.life`, the ward test mailbox whose password is `STALWART_PASSWORD_TEST` (`~/Projects/servers/docs/addresses.md:60`) |
+| The gate's owner address accepts mail and is not Geoff's inbox | conductor, before the first gate run | `GATE_OWNER_EMAIL=cairn-gate@probe.907.life`, the gate's own ward mailbox, password `STALWART_PASSWORD_CAIRN_GATE` in the age store; the servers PR that adds it is merged and deployed, and a JMAP session request to `https://907.life/.well-known/jmap` with that login answers 200. The machine account's GitHub email is the same address |
 | The gate host | conductor, before the first gate run | The host it names has the age store synced and `npx playwright install chromium` done; the smoke prints `hostname` |
 | Geoff's own install, install B's first leg in his browser | `[you]`, once per stable, before the cut (design) | His published edit fetched from the workers.dev address |
 
@@ -249,9 +255,9 @@ this pass:
 |---|---|---|
 | Pair A | T1 (80) beside T4 (150) | 150 |
 | Pair B | T2 (275, Opus high) beside T6a (150) | 275 |
-| Pair C | T6b (180) beside T5 (67) then T3 (20) | 180 |
+| Pair C | T6b (190) beside T5 (67) then T3 (20) | 190 |
 | Close | whole-branch review, two security reads, fold, CI, PR body | 50 |
-| **Total** | | **655** |
+| **Total** | | **665** |
 
 Each pair's two sides touch disjoint files. T5 reads T1's and T2's final copy, so it waits for
 Pair B. T3 runs after T5 on the same side, so `CHANGELOG.md` has one writer per side at a time.
@@ -776,7 +782,7 @@ plan states as invariants, not as code.
 
 ### T6b. The gate harness: GitHub's pages, the admin publish, the legs, teardown, and the record
 
-180 min, `runner`. Sonnet medium. After T6a.
+190 min, `runner`. Sonnet medium. After T6a.
 
 - **Files (new):** `scripts/gate/browser.mjs`, `scripts/gate/legs.mjs`, `scripts/gate/teardown.mjs`,
   `scripts/gate/record.mjs`, tests `src/tests/unit/gate-{browser,legs,teardown,record}.test.ts` with
@@ -833,16 +839,20 @@ plan states as invariants, not as code.
   - **B2:** re-run, domain `carin-test.org`, email on (the Builds path, no local deploy); the
     closing block holds `This site is set up end to end.` and the connected sentence; publish; the
     fetch finds the marker on `https://carin-test.org/<entry path>`; `robots.txt` holds the domain's
-    sitemap URL, which proves the origin reached the repository. **FORK 2 (default yes):** then
-    request a sign-in link for `GATE_OWNER_EMAIL` at `https://carin-test.org/admin/login`, noting
-    the request time. Then poll `probe@probe.907.life` over JMAP (`fetch` to the session at
-    `https://907.life/.well-known/jmap`, basic auth with `STALWART_PASSWORD_TEST`, passed to the
-    browser process only) every 15 s for up to 10 minutes, in every mailbox (a new domain's first
-    mail can land in Junk), for a message received after the request time, addressed to the gate
-    owner, with the subject `Sign in to <site name>` (`src/lib/email.ts:62`). Never "the newest
-    message": the mailbox also takes the monitor's daily probe
-    (`~/Projects/servers/docs/addresses.md:60`). Assert that message's From is
-    `no-reply@carin-test.org`; no match within the budget fails the leg.
+    sitemap URL, which proves the origin reached the repository. **FORK 2, the real sign-in:** then, in
+    a fresh browser context with no admin session, request a sign-in link for `GATE_OWNER_EMAIL`
+    at `https://carin-test.org/admin/login`, noting the request time. Poll
+    `cairn-gate@probe.907.life` over JMAP (`fetch` to the session at
+    `https://907.life/.well-known/jmap`, basic auth with `STALWART_PASSWORD_CAIRN_GATE`, passed to
+    the browser process only) every 15 s for up to 10 minutes, in every mailbox (a new domain's
+    first mail can land in Junk), for a message received after the request time, addressed to the
+    gate owner, with the subject `Sign in to <site name>` (`src/lib/email.ts:62`). Never "the
+    newest message": GitHub's mail to the machine account lands in the same mailbox. Assert that
+    message's From is `no-reply@carin-test.org`. Take the one sign-in URL from its text body (its
+    origin must be `https://carin-test.org`, else the leg fails), open it in that fresh context,
+    click **Sign in**, and publish a second marker (`gate-<version>-B2mail-<epoch>`) through that
+    session; the fetch finds it on `https://carin-test.org/<entry path>`. No matching message
+    within the budget, a wrong From, or a sign-in that doesn't reach the admin fails the leg.
   - Teardown B.
 
   Each leg's verdict comes from an evaluator, `evaluateLeg(leg, results)`, over the driver's
@@ -879,12 +889,14 @@ plan states as invariants, not as code.
     with a screenshot path and one `notify-send` call (stubbed), resumes when the fixture page
     changes, and fails the leg only at a test-sized timeout; while it is held, no teardown call is
     made (stub records none); TOTP fills the 2FA field.
-  - FORK 2's read, against a stub JMAP server: a newer monitor probe message and an earlier run's
+  - FORK 2's read, against a stub JMAP server: a newer GitHub message and an earlier run's
     sign-in message are both skipped, and only the message after the request time, to the owner,
-    with the sign-in subject is read; a message in Junk is found; none within the budget fails.
+    with the sign-in subject is read; a message in Junk is found; none within the budget fails; a
+    sign-in URL on another origin is refused; the URL taken from the fixture's text body is the one
+    the browser opens.
   - Legs: `evaluateLeg` fails a leg on `found: false`; on a wrong alert text; on a missing closing
     sentence; on a CLI exit 0 with no fetch result; on A1 when `--absent` saw the marker; on A2 or
-    B2 when `robots.txt` lacks the domain's sitemap URL; under FORK 2, on B2 when the From differs.
+    B2 when `robots.txt` lacks the domain's sitemap URL; under FORK 2, on B2 when the From differs or the mail session's marker isn't fetched.
     Each passes with every input right.
   - Names: `0.99.0-rc.3` and `1.0.0` each give a name of 34 characters or fewer.
   - Teardown: a name without the prefix is refused with no call made (stub fetch records none); a
@@ -909,7 +921,7 @@ plan states as invariants, not as code.
   the merge route: approval-queue verdict only, `autoMode` allow 7, and the conductor's two
   run-sheet lines below), the three FORK points as built with their defaults, `## Planning misses`, `## Tooling` (each skill, agent, gate, or hook that failed,
   misled, or was missing, with its fix or backlog number; seeds below), found items, and the score
-  with the plan's path, 655, beside the actual.
+  with the plan's path, 665, beside the actual.
 - Delete the plan files in a final commit.
 
 The conductor's release steps after the merge, recorded under `## Decisions`, both in

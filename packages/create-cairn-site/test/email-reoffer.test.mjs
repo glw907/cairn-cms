@@ -1,7 +1,7 @@
 // The email re-offer (#183), driven in process against runChapter2 through its confirm and
 // promptSecretFn seams. A record that declined email sign-in is asked again on a later run, from
-// `paid-plan-declined` or from `builds-connect-declined` while it still carries `emailDeclinedAt`,
-// and never once Workers Builds is connected.
+// `paid-plan-declined` or from either of chapter 3's terminal steps while it still carries
+// `emailDeclinedAt`, whether or not Workers Builds is connected.
 // bin.mjs's routing into and out of this behavior is proven in resume-chapter3.test.mjs, which
 // can reach it only unprompted; the prompted paths live here.
 import test from 'node:test';
@@ -169,10 +169,10 @@ for (const [label, record, expected] of [
   ['builds-connect-declined with emailDeclinedAt', { step: 'builds-connect-declined', cloudflare: { emailDeclinedAt: DECLINED_AT } }, true],
   ['builds-connect-declined without emailDeclinedAt', { step: 'builds-connect-declined', cloudflare: {} }, false],
   ['a decline whose onboarding is done', { step: 'paid-plan-declined', cloudflare: { emailOnboardedAt: DECLINED_AT } }, false],
-  ['builds-live with a trigger', { step: 'builds-live', cloudflare: { emailDeclinedAt: DECLINED_AT, buildsTriggerUuid: 't-1' } }, false],
-  ['builds-live without a trigger', { step: 'builds-live', cloudflare: { emailDeclinedAt: DECLINED_AT } }, false],
-  ['paid-plan-declined with a trigger', { step: 'paid-plan-declined', cloudflare: { buildsTriggerUuid: 't-1' } }, false],
-  ['builds-connect-declined with a trigger', { step: 'builds-connect-declined', cloudflare: { emailDeclinedAt: DECLINED_AT, buildsTriggerUuid: 't-1' } }, false],
+  ['builds-live with a trigger', { step: 'builds-live', cloudflare: { emailDeclinedAt: DECLINED_AT, buildsTriggerUuid: 't-1' } }, true],
+  ['builds-live without emailDeclinedAt', { step: 'builds-live', cloudflare: { buildsTriggerUuid: 't-1' } }, false],
+  ['paid-plan-declined with a trigger', { step: 'paid-plan-declined', cloudflare: { buildsTriggerUuid: 't-1' } }, true],
+  ['builds-connect-declined with a trigger', { step: 'builds-connect-declined', cloudflare: { emailDeclinedAt: DECLINED_AT, buildsTriggerUuid: 't-1' } }, true],
 ]) {
   test(`hasOpenEmailDecline: ${label} is ${expected ? 'open' : 'not open'}`, () => {
     assert.equal(hasOpenEmailDecline(record), expected);
@@ -229,20 +229,17 @@ test('reoffer: --yes without --email declines without a prompt and names the fla
 
 /**
  * Run chapter 3 against a seeded email decline with a token in the environment, and report the
- * outcome or the error. Past the admission the chapter goes on to connect, which this fixture
- * (no numeric repository id) refuses by throwing, so a connect shows as a saved
- * `buildsTokenSavedAt` and a skip as none.
+ * state it left. Past the admission the chapter goes on to connect, which this fixture (no numeric
+ * repository id) refuses by throwing, so a connect shows as a saved `buildsTokenSavedAt`.
  */
 async function runChapter3Seeded(siteId, dir, args) {
-  const logs = [];
-  let outcome;
   try {
-    outcome = await runChapter3({
+    await runChapter3({
       siteId,
       record: await loadSite(siteId),
       dir,
       args,
-      log: (line) => logs.push(line),
+      log: () => {},
       dryRun: false,
       openBrowser: neverOpensBrowser,
       confirm: mustNotBeCalled('confirm'),
@@ -252,61 +249,20 @@ async function runChapter3Seeded(siteId, dir, args) {
       isTTY: false,
     });
   } catch {
-    outcome = undefined;
+    // The connect refusal above; the saved state is what this test reads.
   }
-  return { outcome, logs, state: await loadSite(siteId) };
+  return loadSite(siteId);
 }
 
-test('--yes with an open email decline skips Builds without consent and keeps the email offer open', async (t) => {
+test('--yes without --connect on a record with an open email decline connects Builds', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   await setupCloudflare(t);
-  await seedDeclined('skip-builds', dir, 'paid-plan-declined', {});
+  await seedDeclined('yes-connects', dir, 'paid-plan-declined', {});
 
-  const { outcome, logs, state } = await runChapter3Seeded('skip-builds', dir, { yes: true });
+  const state = await runChapter3Seeded('yes-connects', dir, { yes: true });
 
-  assert.equal(outcome?.outcome, 'builds-skipped');
-  assert.equal(state.step, 'paid-plan-declined', 'the email offer stays open');
-  assert.equal(hasOpenEmailDecline(state), true);
-  assert.equal('buildsTokenSavedAt' in state.cloudflare, false, 'Builds was not connected');
-  assert.equal('buildsDeclinedAt' in state.cloudflare, false, 'nobody answered, so no Builds decline is written');
-  assert.ok(logs.some((line) => line.includes('Skipping Workers Builds')), `expected a skip line, got: ${logs.join('\n')}`);
-});
-
-test('--yes --connect with an open email decline still connects Builds', async (t) => {
-  await freshStateDir(t);
-  const dir = await fixtureScaffoldDir(t);
-  await setupCloudflare(t);
-  await seedDeclined('skip-connect', dir, 'paid-plan-declined', {});
-
-  const { outcome, state } = await runChapter3Seeded('skip-connect', dir, { yes: true, connect: true });
-
-  assert.notEqual(outcome?.outcome, 'builds-skipped');
   assert.equal(typeof state.cloudflare.buildsTokenSavedAt, 'string', 'the chapter went past admission');
-});
-
-test('--yes with no email decline connects Builds', async (t) => {
-  await freshStateDir(t);
-  const dir = await fixtureScaffoldDir(t);
-  await setupCloudflare(t);
-  await seedDeclined('skip-none', dir, 'domain-live', {}, { emailDeclinedAt: undefined });
-
-  const { outcome, state } = await runChapter3Seeded('skip-none', dir, { yes: true });
-
-  assert.notEqual(outcome?.outcome, 'builds-skipped');
-  assert.equal(typeof state.cloudflare.buildsTokenSavedAt, 'string');
-});
-
-test('--yes with a Builds token kept from an earlier --connect still connects', async (t) => {
-  await freshStateDir(t);
-  const dir = await fixtureScaffoldDir(t);
-  await setupCloudflare(t);
-  await seedDeclined('skip-kept', dir, 'paid-plan-declined', {}, { buildsTokenSavedAt: '2026-10-31T00:00:00.000Z' });
-
-  const { outcome, logs } = await runChapter3Seeded('skip-kept', dir, { yes: true });
-
-  assert.notEqual(outcome?.outcome, 'builds-skipped');
-  assert.equal(logs.some((line) => line.includes('Skipping Workers Builds')), false, 'the chapter was already admitted');
 });
 
 test('reoffer: a run that cannot ask (no terminal, no --yes) declines without calling confirm', async (t) => {

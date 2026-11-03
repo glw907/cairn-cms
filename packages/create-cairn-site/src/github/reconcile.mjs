@@ -64,6 +64,10 @@ async function readBlobText({ owner, repo, token }, sha) {
  *  tool-owned files
  * @property {string} userToken a user access token, already obtained (from oauth.mjs's
  *  `reauthorize`) by the caller; this function never mints or persists one itself
+ * @property {(files: Array<{ path: string, remote: string | null, local: string }>) => void} [guard]
+ *  called with the repository's copy (null when the repository lacks the file) and the local
+ *  copy of each tool-owned file once a difference is found and before any blob is written; a
+ *  throw from it aborts the reconcile with nothing committed
  */
 
 /**
@@ -75,7 +79,7 @@ async function readBlobText({ owner, repo, token }, sha) {
  * @returns {Promise<{ changed: boolean, commitSha?: string }>} whether a commit was made, and
  *  its sha when one was
  */
-export async function reconcileRepo({ record, dir, userToken }) {
+export async function reconcileRepo({ record, dir, userToken, guard }) {
   const { owner, repo, defaultBranch } = record.repo;
   const token = userToken;
 
@@ -92,6 +96,7 @@ export async function reconcileRepo({ record, dir, userToken }) {
   }
 
   const localContents = {};
+  const compared = [];
   let changed = false;
   for (const relativePath of RECONCILED_FILES) {
     const local = await readFile(path.join(dir, relativePath), 'utf8');
@@ -99,15 +104,13 @@ export async function reconcileRepo({ record, dir, userToken }) {
     const blobSha = findBlobSha(tree, relativePath);
     // A missing repo file counts as differing, the same as a content mismatch: either way the
     // repo does not yet carry what the local scaffold has.
-    if (!blobSha) {
-      changed = true;
-      continue;
-    }
-    const remote = await readBlobText({ owner, repo, token }, blobSha);
+    const remote = blobSha ? await readBlobText({ owner, repo, token }, blobSha) : null;
     if (remote !== local) changed = true;
+    compared.push({ path: relativePath, remote, local });
   }
 
   if (!changed) return { changed: false };
+  guard?.(compared);
 
   const blobEntries = [];
   for (const relativePath of RECONCILED_FILES) {

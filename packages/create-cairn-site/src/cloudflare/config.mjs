@@ -205,6 +205,25 @@ export async function writePublicOrigin(dir, url) {
  */
 const EMAIL_FROM_PATTERN = /(email:\s*\{\s*from:\s*')([^']*)('\s*\})/;
 
+/** What `maskToolOwnedValues` puts in place of each value this tool writes. */
+const TOOL_OWNED_PLACEHOLDER = '<tool-owned>';
+
+/**
+ * Replace the three values this tool writes into its two config files (wrangler.jsonc's
+ * `PUBLIC_ORIGIN`, cairn.config.ts's `publicOrigin` export, and its `email: { from }` address)
+ * with one placeholder, each matched by the same pattern its writer uses. Two copies of a file
+ * that mask to the same text differ only in those values, which is what lets a commit of this
+ * checkout's copy change nothing else in the repository.
+ * @param {string} content a config file's text
+ * @returns {string} the text with each tool-owned value replaced by the placeholder
+ */
+export function maskToolOwnedValues(content) {
+  return content
+    .replace(PUBLIC_ORIGIN_PATTERN, `"PUBLIC_ORIGIN": "${TOOL_OWNED_PLACEHOLDER}"`)
+    .replace(PUBLIC_ORIGIN_EXPORT_PATTERN, (_whole, prefix, _value, suffix) => prefix + TOOL_OWNED_PLACEHOLDER + suffix)
+    .replace(EMAIL_FROM_PATTERN, (_whole, prefix, _value, suffix) => prefix + TOOL_OWNED_PLACEHOLDER + suffix);
+}
+
 /**
  * Rewrite the scaffold's `email: { from: '...' }` address in cairn.config.ts to the site's real
  * sender address, verified live against Cloudflare's onboarded apex (the T4b spike). Idempotent:

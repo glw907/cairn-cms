@@ -476,9 +476,9 @@ for (const [label, step, seed, idSuffix] of [
 // Chapter 2 meets the open decline at entry, and `--yes` with no `--email` declines again with the
 // reoffered copy and no network call. Its outcome, `paid-plan-declined`, is one of chapter 2's
 // TERMINAL_STEPS and the record carries no Builds field, so bin.mjs's continueIntoChapter2 falls
-// straight through into chapter 3 in the same call. The decline is still open and the run has
-// `--yes`, so chapter 3 skips Builds instead of connecting it; the two assertions this test exists
-// for (the resume line, the reoffered copy) both print before that.
+// straight through into chapter 3 in the same call, which connects under `--yes` and stops at its
+// token hop (no CAIRN_CF_API_TOKEN); the two assertions this test exists for (the resume line, the
+// reoffered copy) both print before that.
 test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-offer, then falls through into chapter 3', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
@@ -501,7 +501,7 @@ test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-
     fakeOpenerDir,
   });
 
-  assert.equal(result.code, 0, `expected a clean exit after chapter 3 skipped Builds, got ${result.code}. stderr: ${result.stderr}`);
+  assert.equal(result.code, 1, `expected chapter 3's token-hop stop, got ${result.code}. stderr: ${result.stderr}`);
   assert.ok(
     result.stdout.includes('Resuming'),
     `expected the resume line proving bin.mjs did not return early, got: ${result.stdout}`,
@@ -511,13 +511,8 @@ test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-
     `expected the re-offered copy, which only chapter 2's admission prints, got: ${result.stdout}`,
   );
   assert.ok(
-    result.stdout.includes('Skipping Workers Builds'),
-    `expected chapter 3's admission to skip Builds, got: ${result.stdout}`,
-  );
-  assert.equal(
     result.stdout.includes('Get a fresh Cloudflare API token'),
-    false,
-    `Builds must not connect while the email offer is open, got: ${result.stdout}`,
+    `expected chapter 3 to connect even with the email offer open, got: ${result.stdout}`,
   );
 
   const state = await loadSite(siteId);

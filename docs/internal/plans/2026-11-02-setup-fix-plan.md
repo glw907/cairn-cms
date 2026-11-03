@@ -7,10 +7,14 @@
 - **Design:** `2026-11-02-setup-fix-design.md` beside this file, approved 2026-11-02 in packet
   `20261102T213128-1466750`, revision 1 (the unattended gate) approved in packet
   `20261102T221501-1497206`. Its "Calls the conductor made" and "Standing answers" stand.
+  Revision 2 (merged at `34ac945f3`) makes the gate token user-owned through `tmp-token-setup` and
+  adds the machine account's GitHub token and the Workers Builds connection to its pre-flight; its
+  three decisions are open for Geoff, and the conductor has ruled each recommendation as the
+  default pending his word.
 - **Base:** `main` at `1ae692ae1`, plus the design at `3c78ef3ab`. **Branch:**
   `worktree-setup-fix-pass`, pushed to `glw907/cairn-cms`.
-- **Estimate:** design 540 path minutes, ceiling 1,080. Plan path **620** (below), after the review
-  fold. No cut is planned. Cut order if a run passes the ceiling: the quiet build (T1 part 3), then
+- **Estimate:** design 540 path minutes, ceiling 1,080. Plan path **655** (below), after the review
+  fold and the verification fold. No cut is planned. Cut order if a run passes the ceiling: the quiet build (T1 part 3), then
   T6b's App deletion by browser (leave the Apps for a hand cleanup and file it), then fork 2's email
   read.
 - **Executor:** Sonnet medium, `cairn-cms-setup-fix`. T2 upshifts `cairn-implementer` to Opus at
@@ -19,10 +23,11 @@
 - **Ends at PR-ready.** No bump, no publish. The `rc.3` cut, the gate, and promotion are the
   conductor's release steps after the merge. This plan's own proofs are unit, integration, CI, and
   one credential smoke (T6a) that writes only throwaway `cairn-e2e-gate-probe-*` resources.
-- **Open points (owner forks, fold record "Owner forks"):** each is marked `FORK n` where it lands.
+- **Open points (design revision 2's three decisions, fold record "Owner forks"):** each is marked
+  `FORK n` where it lands. All three build yes by default, the conductor's word pending Geoff's.
   The executor builds the default and doesn't wait.
-  - FORK 1, a user-owned gate token: default is the approved design (account-owned). It changes no
-    task.
+  - FORK 1, a user-owned `ws-cairn-gate` minted through `tmp-token-setup`: default yes. It changes
+    no task, only the Pre-flight token row.
   - FORK 2, the gate reads a sign-in email's From: default yes. It changes T6b.
   - FORK 3, promotion also moves `create-cairn-site@latest`: default yes. It changes T4.
 
@@ -30,7 +35,8 @@
 
 A fresh scoped sweep at `5ca74df33`, by a read-only agent, against the design's sweep as
 baseline. Three verdicts differ from the design: #206 and #202 fold, #245 rewords. The keeps,
-rewords, and dones land in this branch's first commit. Folds close at the pass close. The drop
+rewords, and dones landed in this branch's sweep commit, `6ec019cb7` (`BACKLOG.md` only), made by the
+planning session. Folds close at the pass close. The drop
 waits for Geoff's word in the packet.
 
 | Item | Verdict | Reason |
@@ -38,8 +44,8 @@ waits for Geoff's word in the packet.
 | #317 | fold, T2 | The `--yes` Builds skip it would preview is deleted: `chapter3.mjs:948` `if (args.yes && !args.connect && hasOpenEmailDecline(record)) {`. |
 | #206 | fold, T2 | T2 sends `builds-live` records back into chapter 2, and `chapter2.mjs:99` `return idx === -1 ? 0 : idx;` reads every chapter 3 step as `live`, so T2 must derive the effective step from the record's fields anyway. |
 | #202 | fold, T2 | T2 rewrites the email hop that holds the crash window: `chapter2.mjs:918-921` writes the address, skips the deploy on `if (!addressChanged) return;`, and saves `emailFrom` only after (`:925`). |
-| #185 | reword, keep after the `rc.3` gate | The quiet build removes the build-path lines; the deploy's asset list and the stale closing lines stay for the recapture. |
-| #274 | keep after the gate | Needs a real recapture. |
+| #185 | reword, keep for the recapture before the final candidate | The quiet build removes the build-path lines; the deploy's asset list and the stale closing lines stay for the recapture, which lands before the final candidate's cut (T4's skill text). |
+| #274 | keep for the recapture before the final candidate | Needs a real recapture. |
 | #245 | reword, keep | The scoped token landed in 28ada0fba, before `rc.1`; the gate's publishes run through it. What stays unproven is a Contents-only App on the adopt path. |
 | #246, #304, #204, #302, #324, #168, #331 to #335 | keep | Outside the pass's files or blocked elsewhere. |
 | #205 | keep | Moving `id-token` to job level narrows nothing while every job publishes. T4 writes the new promote job with job-level permissions and no `npm ci`, so the pass doesn't widen it. |
@@ -63,9 +69,9 @@ Found while planning, not this pass's work (the executor files them, numbered pa
 
 ## Findings that shape the plan
 
-Each was checked at the cited source. None changes the approved design's outcome except finding 7,
-which is the fold record's one design change; each changes how a task reaches it, and the conductor
-has them.
+Each was checked at the cited source. None changes the approved design's outcome; finding 7 is now
+design revision 2's own call. Each changes how a task reaches the outcome, and the conductor has
+them.
 
 1. **The stray spinner frame is npx's, and a terminal erases it.** The `rc.2` capture's last bytes
    are `⠙ ESC[1G ESC[0K` after the closing text: npm's exec spinner draws one frame and erases its
@@ -78,7 +84,7 @@ has them.
    `Paste your Cloudflare API token` (`prefill.mjs:113`). The design's driver runs without `--yes`,
    so the harness answers that paste prompt with the gate token, and the browser half skips the
    prefill URL (`prefill.mjs:282`). No seam is added.
-3. **An account-owned token and `wrangler whoami`.** `deploy.mjs:100` skips `wrangler login` only
+3. **The gate token and `wrangler whoami`.** `deploy.mjs:100` skips `wrangler login` only
    when `whoami` prints `/you are logged in/i` (`deploy.mjs:48`), and a fresh run reads
    `whoami --json`'s accounts (`account.mjs:61-79`). Whether both hold for the gate token is
    unproven; T6a's smoke reads them on the template's wrangler.
@@ -94,15 +100,16 @@ has them.
    Builds offer writes `builds-connect-declined`, whose re-run branch (`bin.mjs:615-639`) only
    prints. T2 reopens the domain offer at both chapter 3 terminal steps when the record has no
    domain, which keeps the design's "connecting a domain still works after Builds".
-7. **The Builds API refuses account-owned tokens (FORK 1, the design change).** Cloudflare: "The
+7. **The Builds API refuses account-owned tokens (design revision 2, FORK 1).** Cloudflare: "The
    Builds API requires a **user-scoped** API token. Account-scoped tokens are not supported and will
    return 'Invalid token' errors" (<https://developers.cloudflare.com/workers/ci-cd/builds/api-reference/>),
    and for build tokens "only user tokens are supported, with account-owned token support coming
    soon" (<https://developers.cloudflare.com/workers/ci-cd/builds/configuration/>). Chapter 3 calls
    `GET /user/tokens/verify` (`api.mjs:558`) and registers the pasted token as the build token
-   (`chapter3.mjs:1088-1100`). So an account-owned `ws-cairn-gate` fails legs A2, B1, and B2. No
-   CLI change is planned: a `/user` verify fallback would only move the failure one call later, and
-   a user-owned token needs none. T6a's smoke gives the live verdict.
+   (`chapter3.mjs:1088-1100`). So an account-owned `ws-cairn-gate` would fail legs A2, B1, and B2,
+   and revision 2 mints it user-owned, as a recorded exception to the token scheme's rule 2. No CLI
+   change is planned: a user-owned token passes `/user/tokens/verify` as it is. T6a's smoke gives
+   the live verdict.
 8. **The reconcile commits whole files.** `reconcileRepo` uploads the local `wrangler.jsonc` and
    `src/theme/cairn.config.ts` whole when either differs (`reconcile.mjs:96-133`). Weeks after Builds
    went live that can revert a developer's edit made through GitHub, so T2's chapter 2 hop guards
@@ -126,7 +133,7 @@ The conductor ruled these planning misses at the design stage (2026-11-02). The 
   Revision 1 had the first harness run install Cloudflare's App on the machine account, but the
   connection starts from a Cloudflare dashboard session, which Playwright doesn't hold. The same walk
   catches it: each browser step, and whose session it runs in.
-- **The account-owned gate token** (finding 7, FORK 1, a design change). Revision 1 picked an
+- **The account-owned gate token** (finding 7, settled by design revision 2). Revision 1 picked an
   account-owned `ws-cairn-gate` by the token scheme's rule 2 without checking the Builds API's token
   requirement. The design's credential call should have quoted the API docs of every route the token
   signs.
@@ -136,21 +143,25 @@ The conductor ruled these planning misses at the design stage (2026-11-02). The 
 Read every task for owner steps, credentials, and writes against auto mode. The executor needs no
 credential before T6a's smoke; the conductor's ruling holds the launch until the gate's Cloudflare
 token and machine-account sign-in are in the store, so the smoke runs in the pass. The two items
-marked "added by the plan" block no executor task: the smoke skips its GitHub-token checks when the
-token is absent, and no task connects Builds. The conductor carries both to Geoff before the first
-gate run.
+marked "added by the plan" (now also in design revision 2's pre-flight) block no executor task: the
+smoke skips its GitHub-token checks when the token is absent, and no task connects Builds. The
+conductor carries both to Geoff before the first gate run.
 
 Permissions checked: each task's writes were read against `autoMode` in `~/.claude/settings.json`
 and the repo's `.claude/settings.json` (no `autoMode` block). `.claude/skills/cairn-releasing/SKILL.md`
-(T4) and `.claude/skills/cairn-running-passes/SKILL.md` (T6a) ride `autoMode` allow 9 (the run
-sheet's line for `.claude/skills/` in a cairn-cms worktree); a write was probed here on
-2026-11-02 and reverted. `.github/workflows/publish.yml` (T4) is an ordinary worktree edit on a
+(T4) and `.claude/skills/cairn-running-passes/SKILL.md` (T6a) ride `autoMode` allow 10, the cairn
+run sheet's rule ("edits and commits to CLAUDE.md files and to files under .claude/skills/ and
+.claude/rules/ are allowed when they implement a task of a plan under that sheet"); a write was
+probed here on 2026-11-02 and reverted. `.github/workflows/publish.yml` (T4) is an ordinary worktree edit on a
 protected path. No task writes `CLAUDE.md`, `.claude/rules/`, settings, or hooks. T6a's smoke
 runs `bash scripts/gate/run-gate.sh --smoke`, which sources `~/.local/secrets` itself, the pattern
 `CLAUDE.md` names for a script; no other task reads a secret. **Merge:** this is an `auth-data` PR
-and the live admin smoke is not run (see Standing answers), so allow 10's condition ("a PR on an
-`auth-data` path also has its security read and live smoke") is unmet; the PR merges only under
-allow 6, on an approval-queue packet verdict of approve for its head. A refused write or credential
+and the live admin smoke is not run (see Standing answers), so `autoMode` allow 11's condition ("a
+PR on an `auth-data` path also has its security read and live smoke") and the merge word in
+`~/.local/state/cairn-agent-first/design-audit/run-sheet.md:27` ("an `auth-data` path adds the
+security read and the live smoke") are unmet. The PR merges only under allow 7 ("after an
+`approval-queue packet` call naming that PR returned a decision whose part for it has verdict
+approve and that head"), on Geoff's approve verdict for its head. A refused write or credential
 read is a stop for the conductor, never a thing to route around, and no step reads a credential
 another way.
 
@@ -158,16 +169,18 @@ Reviewed: `standards:spec-plan-review` at the depth its table sets for `auth-dat
 with three lenses, each a fresh reviewer: mechanics and the workstation lens
 (`2026-11-02-setup-fix-plan-review-mechanics.md`), contract and criteria
 (`-review-contract.md`), and failure risk (`-review-failure.md`), folded per
-`2026-11-02-setup-fix-fold-record.md`. A fresh verification read of this revision is still to come.
+`2026-11-02-setup-fix-fold-record.md`. A fresh verification read of the folded plan ran
+(`2026-11-02-setup-fix-fold-verification.md`: 0 blockers, 4 majors, 15 minors) and was folded per
+the fold record's "Verification" section.
 
 | Item | Who, when | Check that shows it done |
 |---|---|---|
 | GitHub machine account, 2FA on, its password and TOTP secret in the age store as `CAIRN_GATE_GH_PASSWORD` and `CAIRN_GATE_GH_TOTP_SECRET`, its login as `CAIRN_GATE_GH_LOGIN`, Proton Pass holding the record | `[you]`, before launch (the conductor is gathering it) | `grep -oE '^export (CAIRN_GATE_GH_LOGIN\|CAIRN_GATE_GH_PASSWORD\|CAIRN_GATE_GH_TOTP_SECRET)=' ~/.local/secrets` prints three names, never a value |
-| **Added by the plan.** A classic token for the machine account, scopes `repo` and `delete_repo`, as `CAIRN_GATE_GH_TOKEN` (finding 5) | `[you]`, before the first gate run; blocks no executor task | `bash -c 'source ~/.local/secrets && GH_TOKEN="$CAIRN_GATE_GH_TOKEN" gh api -i user'` shows the machine login and an `X-OAuth-Scopes` header naming `repo` and `delete_repo` |
-| `ws-cairn-gate`, minted from chapter 3's eight keys (`CHAPTER3_PERMISSION_KEYS`, `prefill.mjs:79`: Zone, DNS, Workers Scripts, SSL and Certificates, Email Sending, Workers Builds Configuration, D1, Workers R2 Storage, each edit), every zone-level group limited to `carin-test.org`. Account-owned through `tmp-account-tokens` (inventory item 6) per the approved design; **FORK 1**: if Geoff answers yes, user-owned through `tmp-token-setup` instead, with the exception recorded in the inventory. Age store `CF_WS_CAIRN_GATE_TOKEN`; inventory row added; the temporary token deleted | `[you]` makes the temporary token; the conductor mints, stores, and deletes, before launch | The T6a smoke's verdicts (it calls both verify routes, the Builds routes, and the write probes, through Node `fetch`, never `curl` argv) |
-| Pre-launch permission list (finding 4): `Bash(bash scripts/gate/run-gate.sh *)` and `Bash(gh workflow run publish.yml -f promote=*)` in `permissions.allow` | `[you]`, one workstation PR, before launch: T6a's smoke runs the first | Both strings appear in `~/.claude/settings.json`'s `permissions.allow` |
+| A classic token for the machine account, scopes `repo` and `delete_repo`, as `CAIRN_GATE_GH_TOKEN` (finding 5; added by the plan, now in design revision 2's pre-flight) | `[you]`, before the first gate run; blocks no executor task | `bash -c 'source ~/.local/secrets && GH_TOKEN="$CAIRN_GATE_GH_TOKEN" gh api -i user'` shows the machine login and an `X-OAuth-Scopes` header naming `repo` and `delete_repo` |
+| `ws-cairn-gate`, minted from chapter 3's eight keys (`CHAPTER3_PERMISSION_KEYS`, `prefill.mjs:79`: Zone, DNS, Workers Scripts, SSL and Certificates, Email Sending, Workers Builds Configuration, D1, Workers R2 Storage, each edit), every zone-level group limited to `carin-test.org`. **User-owned**, minted through `tmp-token-setup` (inventory item 6; design revision 2, **FORK 1** default), its inventory row recorded as an exception to rule 2 until Builds accepts account-owned tokens. Age store `CF_WS_CAIRN_GATE_TOKEN`; inventory row added; the temporary token deleted. If Geoff answers FORK 1 no, the token is account-owned through `tmp-account-tokens` and the gate's Builds legs run on his browser sign-in (design revision 2) | `[you]` makes the temporary token; the conductor mints, stores, and deletes, before launch | The T6a smoke's verdicts (it calls both verify routes, the Builds routes, and the write probes, through Node `fetch`, never `curl` argv) |
+| Pre-launch permission list (finding 4): `Bash(bash scripts/gate/run-gate.sh *)`, `Bash(gh workflow run publish.yml -f promote=*)`, and, for the stable cut's literal sha (T4), `Bash(gh release create v* --target * --title *)`. The existing `Bash(gh release create v* --target main *)` and `Bash(gh release create v* --prerelease *)` match neither `--target <sha>` form, and a glob can't narrow a sha further | `[you]`, one workstation PR, before launch: T6a's smoke runs the first | All three strings appear in `~/.claude/settings.json`'s `permissions.allow` |
 | "Allow npm dist-tag" on the `publish.yml` trusted publisher of `@glw907/cairn-cms`, `@glw907/cairn-cms-dev`, and `create-cairn-site`: npmjs.com → the package → Settings → Trusted publishing → the configuration → tick **Allow npm dist-tag** → save. Off by default (<https://docs.npmjs.com/trusted-publishers>, "Managing dist-tags with trusted publishing") | `[you]`, after the merge, before `rc.3` | The box shows ticked on all three settings pages. That is all this check proves: a no-op promotion writes nothing, since `npm dist-tag add` returns "is already set to version" before its authenticated request. The first real promotion, `rc.3` to `next`, is the probe; if it reports the trusted publisher cannot manage dist-tags, the design's fallback stands and promotion becomes Geoff's `npm dist-tag add` in a sitting |
-| **Added by the plan.** Cloudflare's Workers and Pages GitHub App connected to the machine account with **All repositories**, through Geoff's Cloudflare dashboard (`catalogue.mjs:703`'s route: `https://dash.cloudflare.com/?to=/:account/workers-and-pages`), since Playwright holds no Cloudflare session and a selected-repositories install parks every new gate repository at `builds-repo-not-selected` (`chapter3.mjs:1053`) | `[you]`, before the first gate run; blocks no executor task | The conductor creates a throwaway `cairn-e2e-gate-probe-<ts>` repository on the machine account, `PUT .../builds/repos/connections` for it answers 200, then deletes the connection by its returned uuid and the repository |
+| Added by the plan, now in design revision 2's pre-flight: Cloudflare's Workers and Pages GitHub App connected to the machine account with **All repositories**, through Geoff's Cloudflare dashboard (`catalogue.mjs:703`'s route: `https://dash.cloudflare.com/?to=/:account/workers-and-pages`), since Playwright holds no Cloudflare session and a selected-repositories install parks every new gate repository at `builds-repo-not-selected` (`chapter3.mjs:1053`) | `[you]`, before the first gate run; blocks no executor task | After `ws-cairn-gate` is minted user-owned (the Builds routes take only a user token), the conductor creates a throwaway `cairn-e2e-gate-probe-<ts>` repository on the machine account with `CAIRN_GATE_GH_TOKEN`; `PUT .../builds/repos/connections` for it, signed with `ws-cairn-gate`, answers 200; then it deletes the connection by its returned uuid and the repository |
 | `carin-test.org` has Email Sending on, and the account is on Workers Paid | conductor, before the first gate run | Email Sending: `GET /zones/:id/email/sending/subdomains` (`api.mjs:528`) with the gate token. Workers Paid: no token can read the plan (`GET /accounts/{id}/subscriptions` answers 10000), so the record is `~/.claude/docs/cloudflare-estate-inventory.md:4-6` |
 | The gate's owner address accepts mail and is not Geoff's inbox | conductor, before the first gate run | `GATE_OWNER_EMAIL=probe@probe.907.life`, the ward test mailbox whose password is `STALWART_PASSWORD_TEST` (`~/Projects/servers/docs/addresses.md:60`) |
 | The gate host | conductor, before the first gate run | The host it names has the age store synced and `npx playwright install chromium` done; the smoke prints `hostname` |
@@ -210,7 +223,8 @@ this pass:
 - **T6a's smoke fails a credential check** (a verify route, `wrangler whoami`, a Builds route, a
   write probe): record the verdicts under `## Decisions`, tell the conductor, and keep going. T2,
   T3, T4, T5, and T6b's unit work continue, the PR opens, and the PR body lists the harness as
-  blocked on that verdict. A Builds-route failure is FORK 1's evidence, not a harness bug. Any other
+  blocked on that verdict. A Builds-route failure on a user-owned token is a credential finding for
+  the conductor, not a harness bug. Any other
   smoke failure with a traced cause in the harness is fixed forward.
 - **CI per pair:** after each pair lands on the branch, read CI on the head and list any red check
   under `## Decisions` with its cause before the next pair starts.
@@ -226,18 +240,18 @@ this pass:
 - **The live admin smoke** on the close checklist is not run: no engine auth path changes here (the
   `auth-data` paths are the setup CLI's), and the gate after the merge is the live proof. The
   executor records it as not run, with this reason, under `## Decisions`. Because the run sheet's
-  merge word and `autoMode` allow 10 require the smoke for an `auth-data` merge, this PR merges only
-  on Geoff's approval-queue verdict (allow 6), and the PR body says so.
+  merge word and `autoMode` allow 11 require the smoke for an `auth-data` merge, this PR merges only
+  on Geoff's approval-queue verdict (allow 7), and the PR body says so.
 
 ## Path
 
 | Step | Tasks | Path |
 |---|---|---|
-| Pair A | T1 (80) beside T4 (140) | 140 |
-| Pair B | T2 (265, Opus high) beside T6a (150) | 265 |
-| Pair C | T6b (165) beside T5 (67) then T3 (20) | 165 |
+| Pair A | T1 (80) beside T4 (150) | 150 |
+| Pair B | T2 (275, Opus high) beside T6a (150) | 275 |
+| Pair C | T6b (180) beside T5 (67) then T3 (20) | 180 |
 | Close | whole-branch review, two security reads, fold, CI, PR body | 50 |
-| **Total** | | **620** |
+| **Total** | | **655** |
 
 Each pair's two sides touch disjoint files. T5 reads T1's and T2's final copy, so it waits for
 Pair B. T3 runs after T5 on the same side, so `CHANGELOG.md` has one writer per side at a time.
@@ -293,15 +307,17 @@ fixes. In Pair A only T1 writes `CHANGELOG.md`; T4's line is T5's.
   - From a record at `live`, `--yes`, no `--domain`, no token: stdout holds the domain skip line,
     then the repo-and-doctor block, then the Builds admission title (`Connect to Workers Builds`),
     and no `This site is set up end to end.`; stderr holds the token hop's `Next:` line; exit 1; the
-    fake Cloudflare, if started, recorded no Builds request.
+    fake Cloudflare, started for this test, recorded no Builds route.
   - From a record at `live`, `--yes`, no `--domain`, `CAIRN_CF_API_TOKEN` set, against the fake
     Cloudflare and fake GitHub on the pattern at `resume-chapter3.test.mjs:267`: the Builds title
     appears, the fake Cloudflare recorded one trigger, the `builds-reconcile-parked` row prints with
     its `Next:` line, and the saved step is `builds-connected`. (Contract M3.)
-  - A seeded `builds-live` record with a domain, plain re-run: stdout holds
+  - A seeded `builds-live` record with a domain and `emailOnboardedAt`, plain re-run: stdout holds
     `This site is set up end to end.` exactly once and the connected sentence.
-  - A seeded `builds-connect-declined` record with a domain and no open email decline, plain re-run:
-    the not-connected sentence with the site's `--dir`, and no `set up end to end`.
+  - A seeded `builds-connect-declined` record with a domain and `emailOnboardedAt`, plain re-run:
+    the not-connected sentence with the site's `--dir`, and no `set up end to end`. (Both carry
+    `emailOnboardedAt` so T2's reopen routing, which has no row for it, leaves them out of
+    chapter 2.)
   - A park (a record at `delegated` whose plain re-run parks, the shape `src/bin-closing.test.mjs`
     seeds) prints `printLiveInfo`'s block with the not-connected sentence and no Builds title.
   - A seeded record at a chapter 1 step with no `cloudflare.url` prints no publish sentence.
@@ -318,7 +334,7 @@ fixes. In Pair A only T1 writes `CHANGELOG.md`; T4's line is T5's.
 
 ### T2. Chapter 2 works on a Builds site, through the repository
 
-265 min, `auth-data`. **`cairn-implementer` at Opus, effort `high`**: new correctness logic the
+275 min, `auth-data`. **`cairn-implementer` at Opus, effort `high`**: new correctness logic the
 plan states as invariants, not as code.
 
 - **Files:** `src/cloudflare/chapter2.mjs`, `chapter3.mjs`, `hostname.mjs`, `catalogue.mjs` (the
@@ -366,9 +382,17 @@ plan states as invariants, not as code.
     reconcile commit did **not** land (the OAuth trip declined, the ref PATCH refused at
     `reconcile.mjs:135-137`, a GitHub error, or `builds-config-diverged`), as today's restore at
     `hostname.mjs:384-400` does, and is left once it did, since the domain answered before the write
-    (`hostname.mjs:373-374`). Under `--yes`, the reconcile parks as today (`chapter3.mjs:247-250`,
-    `builds-reconcile-parked`); chapter 2 returns that park, writes no step, and a later
-    interactive run resumes it.
+    (`hostname.mjs:373-374`). The one exception is the `--yes` park, which lands no commit and still
+    leaves the origin on disk for the next run to commit: under `--yes`, the reconcile parks as today
+    (`chapter3.mjs:247-250`, `builds-reconcile-parked`); chapter 2 returns that park, writes no step,
+    and a later interactive run resumes it.
+  - **The sender step on a connected record.** Today the step returns early when the address is
+    already written (`chapter2.mjs:918-919`, `addressChanged = await writeEmailFrom(dir, from);` /
+    `if (!addressChanged) return;`) and saves `emailFrom` after it (`:925`). On a connected record
+    the shared hop runs on every pass through the sender step, whatever `writeEmailFrom` returned:
+    the hash gate makes a repeat free, and a crash between the write and the commit would otherwise
+    save `emailFrom` with the repository never carrying the sender (#202 on the Builds path).
+    `emailFrom` is saved only after the hop's watched `success` (or its hash-equal no-op).
 - **The token.** On a connected record, chapter 2's token hop asks for chapter 3's eight keys:
   pass `permissionKeys: CHAPTER3_PERMISSION_KEYS` (`prefill.mjs:79`) to the `ensureApiToken` call
   at `chapter2.mjs:585`, since the watch reads Builds.
@@ -469,6 +493,9 @@ plan states as invariants, not as code.
     stdout holds `Resuming` and chapter 2's next hop, never chapter 3's admission title.
   - `--yes` without `--connect` on a record with an open email decline now connects Builds
     (replaces the `builds-skipped` tests).
+  - #202 on the Builds path (module): a crash after `writeEmailFrom` and before the reconcile commit
+    (the fake GitHub refuses the ref PATCH once). The re-run finds the address already written,
+    still runs the hop, commits the sender, watches one build, and only then saves `emailFrom`.
   - #202: a crash after `writeEmailFrom` and before the deploy (the fake wrangler bin fails once),
     then a re-run: exactly one `wrangler deploy` on the re-run, and `emailFrom` saved.
   - `grep -rn 'builds-skipped\|no longer offers it\|offers to turn it on only until' packages/create-cairn-site skills`
@@ -504,13 +531,13 @@ plan states as invariants, not as code.
 
 ### T4. Candidates publish to `gate`, a dispatch promotes to `next`, a stable is cut only from a passed tree, and the skill gates each candidate
 
-140 min, `runner`. Sonnet medium.
+150 min, `runner`. Sonnet medium.
 
 - **Files:** `.github/workflows/publish.yml`, `src/tests/unit/workflow-yaml.test.ts`,
   `scripts/checks/check-stable-source.mjs` (new), `src/tests/unit/check-stable-source.test.ts`
   (new) with its fixture under `scripts/checks/fixtures/stable-source/` (new),
   `.claude/skills/cairn-releasing/SKILL.md` (steps 6 and 7, the gate step, and the first-release
-  section), `ROADMAP.md` (the `next` wording at `:30` and `:33`). No `CHANGELOG.md` line: T5 writes
+  section), `ROADMAP.md` (the `next` wording at `:30`, `:34`, and `:36`). No `CHANGELOG.md` line: T5 writes
   it.
 - **1. The tag.** In all three jobs, `*-*) TAG=next ;;` (`publish.yml:69`, `:111`, `:163`) becomes
   `*-*) TAG=gate ;;`, and the comment at `:54-59` says why: a candidate waits on `gate`, hidden from
@@ -533,9 +560,10 @@ plan states as invariants, not as code.
 - **3. The stable check.** `check-stable-source.mjs` takes no target argument: it runs
   `git fetch origin main` and refuses unless `HEAD` equals `origin/main`, then reads `next` for all
   three packages (`npm view <pkg> dist-tags.next`), refuses when they differ or when tag `v<next>`
-  is absent, and reads the change set from `git diff --name-status v<next> HEAD`. It refuses any
-  status other than `M`, any file outside this list, and then reads lines only within the list with
-  `git diff --text`. The list is the cut's own file set (`git show --stat 1ae692ae1`):
+  is absent, and reads the change set from `git diff --raw v<next> HEAD`. It refuses any status
+  other than `M`, any entry whose old and new modes differ (a mode-only change reports `M` under
+  `--name-status` and shows no `+` or `-` line), any file outside this list, and then reads lines
+  only within the list with `git diff --text`. The list is the cut's own file set (`git show --stat 1ae692ae1`):
   - `package.json`, `package-lock.json`, `packages/cairn-cms-dev/package.json`,
     `packages/create-cairn-site/package.json`: every changed line is a `"version":` line.
   - `templates/waymark/package.json`: every changed line is a
@@ -553,11 +581,19 @@ plan states as invariants, not as code.
   cuts a new candidate. Keep the rules a pure exported function over parsed diff output and inject
   the command runner, so the tests need no registry or repo state.
 - **4. The skill.** In `cairn-releasing`: step 6's dist-tag sentences (`SKILL.md:165-167`) say a
-  candidate goes to `gate` and a stable to `latest`; the stable cut runs
-  `node scripts/checks/check-stable-source.mjs`, doesn't cut on a failure, and passes
-  `--target "$(git rev-parse HEAD)"` to `gh release create` (replacing `--target main` at `:160`),
-  the sha the check read; `:184`'s `--tag next` becomes `--tag gate`. Then two new subsections after
-  step 6, in order:
+  candidate goes to `gate` and a stable to `latest`. Step 6's commit sentence (`:156-157`, "plus
+  STATUS if it is part of this cut") says a stable cut commit carries only the version fields and
+  the headings, and STATUS lands after the release. The stable cut runs
+  `node scripts/checks/check-stable-source.mjs`, doesn't cut on a failure, and the check prints the
+  sha it read; the stable's `gh release create` passes that sha literally, `--target <sha>`
+  (replacing `--target main` at `:160` for the stable only; a candidate keeps `--target main`
+  with `--prerelease`), never a `$( )` substitution. `:184`'s `--tag next` becomes `--tag gate`.
+  A new paragraph in step 6 states the order the stable rule forces: a stable is cut only from the
+  final gated candidate's tree, so the transcript recapture and every quoted docs block it updates
+  land **before** the final candidate is cut (recapture, then `rc.N`, then the gate, promotion, and
+  Geoff's own install, then the stable). A recapture merged after the final candidate fails the
+  stable check by design and means one more candidate. Then two new subsections after step 6, in
+  order:
   - **"Gate the candidate":** the pre-gate checks (Email Sending on `carin-test.org`, Workers Paid
     per the inventory, `bash scripts/gate/run-gate.sh --smoke`), the command
     `bash scripts/gate/run-gate.sh --all --version <v>`, the pass bar (every leg's fetch, page read,
@@ -592,13 +628,16 @@ plan states as invariants, not as code.
     anchor; `guidance-hashes.json` with the hashes check stubbed to exit 0), **passes**; the same
     fixture with one code line added to `templates/waymark/package.json` fails naming it; a one-line
     change in `src/` fails naming the file; a CHANGELOG body change fails; a binary file change
-    fails; a pure rename fails; the hashes check exiting 1 fails; `HEAD` differing from
+    fails; a pure rename fails; a mode-only change to `package.json` (a `--raw` entry `100644`→
+    `100755`) fails; a `docs/STATUS.md` change fails; the hashes check exiting 1 fails; `HEAD` differing from
     `origin/main` fails; differing `next` across the three packages fails; a missing `v<next>` tag
     fails.
   - The skill: `grep -n -- '--tag next' .claude/skills/cairn-releasing/SKILL.md` prints nothing;
     `grep -c 'run-gate.sh --all --version' .claude/skills/cairn-releasing/SKILL.md` prints 1 or
     more; `grep -n 'check-stable-source' .claude/skills/cairn-releasing/SKILL.md` precedes the
-    `gh release create` line; `npm run check` passes the skill's form checks.
+    `gh release create` line; `grep -n 'rev-parse HEAD)' .claude/skills/cairn-releasing/SKILL.md`
+    prints nothing; `grep -n -i 'recapture' .claude/skills/cairn-releasing/SKILL.md` names it
+    before the final candidate's cut; `npm run check` passes the skill's form checks.
   - The fast lane passes. CI is green on the head (the path is protected, so the task waits for
     `ciWait`, off the path).
 - **The live reads** belong to the conductor's release steps, written into the skill: after the
@@ -622,8 +661,8 @@ plan states as invariants, not as code.
     site doesn't change until `--connect` or a hand deploy. Add the `builds-config-diverged` row
     (T2) if the page lists the setup tool's act rows.
   - Then search, per `.claude/rules/docs-with-code.md`:
-    `grep -rn -i 'workers builds\|--connect\|rebuild\|set up end to end' docs/admin docs/editors skills`,
-    read every hit outside history, and fix what is false (`skills/cairn-extending-a-site/references/public-routes.md:28`
+    `grep -rn -i --exclude=rotate-the-github-app-key.md --exclude=publish-and-history.md 'workers builds\|--connect\|rebuild\|set up end to end' docs/admin docs/editors skills`
+    (T3 owns the two excluded pages), read every hit outside history, and fix what is false (`skills/cairn-extending-a-site/references/public-routes.md:28`
     is one candidate: on a Builds site, setup commits the origin and Builds rebuilds).
 - **CHANGELOG:** T4's `## Unreleased` line: a candidate now publishes to the hidden `gate` tag and
   reaches `next` only after it passes the release gate.
@@ -719,8 +758,11 @@ plan states as invariants, not as code.
     (`test/fake-github.mjs`, `fake-cloudflare.mjs`, `fake-bin.mjs`, the env bases the resume tests
     use) from a seeded `live` record, with the shim first on `PATH` and the leg B1 table: the domain
     prompt is answered no by text, the run reaches the Builds admission prompt and answers yes, and
-    the run ends at the chapter 3 token hop's paste prompt (the no-network stop), which the test
-    answers with an invalid token and asserts the token error. This is what proves the table's
+    the run reaches the chapter 3 token hop's paste prompt with `CAIRN_CLOUDFLARE_API_BASE` pointed
+    at the fake. The fake accepts any bearer (`resume-chapter3.test.mjs:276-278`), so the test arms
+    `failNext('zone_list', 403, ...)` twice, once for the first paste and once for the one retry
+    `ensureApiToken` allows (`prefill.mjs:218`), and the table answers both pastes; the run ends on
+    the token's refusal row with a non-zero exit and no live `api.cloudflare.com` call. This is what proves the table's
     domain and Builds keys match the CLI's real prompts; the first gate run proves the rest.
   - Fetch check against a local HTTP server: the marker appearing on the third poll passes with
     `attempts: 3`; never appearing fails at a test-sized budget; `--absent` passes when 200, control
@@ -734,7 +776,7 @@ plan states as invariants, not as code.
 
 ### T6b. The gate harness: GitHub's pages, the admin publish, the legs, teardown, and the record
 
-165 min, `runner`. Sonnet medium. After T6a.
+180 min, `runner`. Sonnet medium. After T6a.
 
 - **Files (new):** `scripts/gate/browser.mjs`, `scripts/gate/legs.mjs`, `scripts/gate/teardown.mjs`,
   `scripts/gate/record.mjs`, tests `src/tests/unit/gate-{browser,legs,teardown,record}.test.ts` with
@@ -742,20 +784,25 @@ plan states as invariants, not as code.
 - **`browser.mjs`** (root `playwright`, `package.json:269`): a stored session for the machine
   account at `~/.local/state/cairn-gate/github-session.json`, mode 0600, outside git; a fresh
   sign-in with password and a TOTP code when the session is gone, and the same code for a sudo
-  prompt. Tracing and video stay off. It tails the shim's URL log while the CLI runs and classifies
-  each URL before acting:
+  prompt. Tracing and video stay off. It launches Chromium headed (`headless: false`), so a held page
+  can take Geoff's click. It tails the shim's URL log while the CLI runs and classifies each URL
+  before acting (the CLI's `openBrowser` call sites are `prefill.mjs:282`, `cloudflare/chapter.mjs:276`,
+  `install.mjs:239`, `manifest.mjs:165`, `oauth.mjs:108`, and `bin.mjs:351`):
   - the loopback manifest page (`http://127.0.0.1:...`): submit it, then click **Create GitHub
     App** on GitHub's page;
   - a GitHub App install page: choose the machine account and **Install**;
   - a GitHub OAuth authorize page: approve;
-  - Cloudflare's Workers and Pages App install, on the first run: the same way;
   - the site's sign-in link (a workers.dev URL carrying the confirm path,
     `cloudflare/chapter.mjs:276`, `bin.mjs:351`): open it at once and click **Sign in**, keeping
     that install's admin session in its own browser context;
   - a `dash.cloudflare.com` prefill URL (`prefill.mjs:282`): log and skip (the driver pastes the
     token);
-  - anything else: stop the run with a screenshot path and the design's standing answer (Geoff
-    clicks once).
+  - anything else (an unrecognised GitHub page, a redesign, a bot check): **hold**, the design's
+    "asks for your clicks once". The page stays open in the headed window for the step's 10
+    minutes, a screenshot path is logged, and `notify-send` (normal urgency, the calm-desktop rule)
+    names the page and the leg. A click that moves the page on resumes the leg. Only the timeout
+    fails the leg; the CLI and the exit trap wait while the page is held, so teardown never runs on
+    the hold itself, only after the timeout or a later failure.
 
   Each step waits at most 10 minutes. **The admin half** publishes on the workers.dev admin for
   every leg: a publish needs no `PUBLIC_ORIGIN` match, since `requireOrigin` is called only by the
@@ -787,10 +834,15 @@ plan states as invariants, not as code.
     closing block holds `This site is set up end to end.` and the connected sentence; publish; the
     fetch finds the marker on `https://carin-test.org/<entry path>`; `robots.txt` holds the domain's
     sitemap URL, which proves the origin reached the repository. **FORK 2 (default yes):** then
-    request a sign-in link for `GATE_OWNER_EMAIL` at `https://carin-test.org/admin/login`, read the
-    newest message for `probe@probe.907.life` over JMAP (`fetch` to the session at
+    request a sign-in link for `GATE_OWNER_EMAIL` at `https://carin-test.org/admin/login`, noting
+    the request time. Then poll `probe@probe.907.life` over JMAP (`fetch` to the session at
     `https://907.life/.well-known/jmap`, basic auth with `STALWART_PASSWORD_TEST`, passed to the
-    browser process only), and assert its From is `no-reply@carin-test.org`.
+    browser process only) every 15 s for up to 10 minutes, in every mailbox (a new domain's first
+    mail can land in Junk), for a message received after the request time, addressed to the gate
+    owner, with the subject `Sign in to <site name>` (`src/lib/email.ts:62`). Never "the newest
+    message": the mailbox also takes the monitor's daily probe
+    (`~/Projects/servers/docs/addresses.md:60`). Assert that message's From is
+    `no-reply@carin-test.org`; no match within the budget fails the leg.
   - Teardown B.
 
   Each leg's verdict comes from an evaluator, `evaluateLeg(leg, results)`, over the driver's
@@ -813,7 +865,8 @@ plan states as invariants, not as code.
   install's state record, the capture, and the URL log.
   - **`--teardown-stale`** runs first in `--all` and on demand: for every earlier run directory
     with a recorded install, it runs the same teardown. `run-gate.sh` also traps exit and runs
-    teardown for every install this run created.
+    teardown for every install this run created; a held page (above) keeps the run alive, so the
+    trap fires only after the hold times out or a later step fails.
 - **`record.mjs`** writes a `## Gate` table to release `v<version>`'s body with
   `gh release edit v<version> --notes-file <file>`: leg, path, URL, commit, marker, fetch time,
   verdict. It runs after each leg. It reads the body first and replaces an earlier `## Gate`
@@ -822,8 +875,13 @@ plan states as invariants, not as code.
 - **Acceptance, each able to fail:**
   - Browser, against hand-built HTML fixtures of the manifest, install, authorize, sign-in, and
     GitHub sign-in pages served locally: the classifier sends each URL to its action; the right
-    control is clicked on each; a `dash.cloudflare.com` URL is skipped; an unknown page stops with
-    a screenshot path; TOTP fills the 2FA field.
+    control is clicked on each; a `dash.cloudflare.com` URL is skipped; an unknown page is held
+    with a screenshot path and one `notify-send` call (stubbed), resumes when the fixture page
+    changes, and fails the leg only at a test-sized timeout; while it is held, no teardown call is
+    made (stub records none); TOTP fills the 2FA field.
+  - FORK 2's read, against a stub JMAP server: a newer monitor probe message and an earlier run's
+    sign-in message are both skipped, and only the message after the request time, to the owner,
+    with the sign-in subject is read; a message in Junk is found; none within the budget fails.
   - Legs: `evaluateLeg` fails a leg on `found: false`; on a wrong alert text; on a missing closing
     sentence; on a CLI exit 0 with no fetch result; on A1 when `--absent` saw the marker; on A2 or
     B2 when `robots.txt` lacks the domain's sitemap URL; under FORK 2, on B2 when the From differs.
@@ -841,19 +899,29 @@ plan states as invariants, not as code.
 ## Close
 
 - Whole-branch `standards:diff-reviewer`, then `standards:web-auth-security-reviewer` and
-  `standards:cloudflare-workers-reviewer` on the `auth-data` diff, folded with no open finding.
-  `standards:svelte-reviewer` reads the one `EditPage.svelte` line.
+  `standards:cloudflare-workers-reviewer` on the `auth-data` diff, folded with no open finding. The
+  whole-branch review covers the one `EditPage.svelte` string literal.
 - Green CI on the head. List every retried test as flake evidence.
 - Finalize the `## Unreleased` entries in `CHANGELOG.md` and `MIGRATION-NOTES.md`.
 - File the found items. Close #317, #206, #202 in BACKLOG.
 - The PR body per `pass-core` "Close": `## Brief`, what landed, each security verdict,
   `## Decisions` (the spinner evidence, the smoke's verdicts, the live admin smoke not run and why,
-  the merge route: approval-queue verdict only, allow 6, and the line "the conductor repoints
-  run-sheet steps 11 and 12 at `cairn-releasing`'s gate step"), the three FORK points as built with
-  their defaults, `## Planning misses`, `## Tooling` (each skill, agent, gate, or hook that failed,
+  the merge route: approval-queue verdict only, `autoMode` allow 7, and the conductor's two
+  run-sheet lines below), the three FORK points as built with their defaults, `## Planning misses`, `## Tooling` (each skill, agent, gate, or hook that failed,
   misled, or was missing, with its fix or backlog number; seeds below), found items, and the score
-  with the plan's path, 620, beside the actual.
+  with the plan's path, 655, beside the actual.
 - Delete the plan files in a final commit.
+
+The conductor's release steps after the merge, recorded under `## Decisions`, both in
+`~/.local/state/cairn-agent-first/design-audit/run-sheet.md`:
+
+- Repoint steps 11 and 12 at `cairn-releasing`'s "Gate the candidate" step.
+- Reorder steps 14 and 15 (`run-sheet.md:476-477`) so step 14's recapture ("Replace the fixtures,
+  update `create-your-site.md` and any other quoted blocks, fact-check, merge") lands before the
+  final candidate is cut, and that candidate is gated, promoted, and installed by Geoff before
+  step 15 ("Stable, on your call's conditions") runs. Step 15's command becomes
+  `gh release create v0.99.0 --target <sha> --title <title> --notes-file <file>`, with the sha that
+  `check-stable-source.mjs` printed, in place of `--target main`.
 
 `## Tooling` seeds from planning: the worktree guard refused a `sed` over a variable-held path to a
 file outside the worktree (read with the Read tool instead); the design stated the teardown rule

@@ -27,8 +27,8 @@
 // token); T4b exercises the delete half for real: a decline writes `step: 'paid-plan-declined'`
 // and deletes the token at the moment it happens, and a LATER re-entry on a record with an open
 // decline (hasOpenEmailDecline) asks the email question again before any token hop, since a
-// decline is a choice an owner can still reconsider until Workers Builds is connected. A no, or a
-// run that cannot ask, prints the
+// decline is a choice an owner can still reconsider, before or after Workers Builds is connected.
+// A no, or a run that cannot ask, prints the
 // row's reoffered copy and leaves the step; a yes continues as a resume at `domain-live`. The
 // step name stays `paid-plan-declined`, a stable contract the Go tool mirrors
 // (tool/internal/spine/step.go) and existing site records already carry, even though Workers Paid
@@ -46,13 +46,21 @@
 // is untouched. The catalogue survives only on `error.cause` here: runActions (runner.mjs) rewraps
 // a thrown error with its action's title before it reaches this catch, the same rewrap this
 // module's tests already work around by asserting on the message rather than `err.catalogue`.
+//
+// WORKERS BUILDS. On a record with Builds connected (isBuildsConnected), every configuration change
+// this chapter makes reaches the repository before the next Builds deploy, and this chapter never
+// builds or deploys locally: the cutover's origin and the sender address are each committed
+// through chapter 3's reconcile and the Builds deploy of that commit is watched
+// (chapter3.mjs's `deployConfigThroughBuilds`). A record entering from one of chapter 3's
+// terminal steps has no chapter 2 step to resume from, so its effective step comes from its fields
+// (effectiveStepAfterBuilds).
 import { confirm as clackConfirm, text as clackText, select as clackSelect, isCancel } from '@clack/prompts';
 import { resolveNs as systemResolveNs } from 'node:dns/promises';
 import { exitOnCancel, promptSecret } from '../prompts.mjs';
 import { defineAction, runActions } from '../runner.mjs';
 import { loadSite, updateSite, saveSite } from '../state.mjs';
 import { ensureAccountId } from './account.mjs';
-import { ensureApiToken } from './prefill.mjs';
+import { ensureApiToken, CHAPTER3_PERMISSION_KEYS } from './prefill.mjs';
 import { makeApi } from './api.mjs';
 import { ensureZone, checkDelegation, delegationInstructions } from './zone.mjs';
 import { readCurrentRecords, carryOverRecords } from './records.mjs';
@@ -62,6 +70,7 @@ import { defaultFromAddress, ensureSendingDomain, sendTestMessage } from './emai
 import { writeEmailFrom } from './config.mjs';
 import { buildSite, deployWorker } from './deploy.mjs';
 import { cloudflareError } from './catalogue.mjs';
+import { deployConfigThroughBuilds, CHAPTER3_TERMINAL_STEPS } from './chapter3.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
 import { createWaitForClear, shouldHold, PROPAGATION_HOLD_CLASS } from '../hold-loop.mjs';
 import { createConsoleServer } from '../console/server.mjs';
@@ -120,7 +129,8 @@ function isTerminalStep(step) {
  * True once Workers Builds is connected for a record: a saved `cloudflare.buildsTriggerUuid`, or a
  * record at `builds-live`, which is only ever reached after the trigger is saved. From then on
  * editors publish to the repository and Builds deploys from it, so the owner's local tree can lag
- * the live site, and nothing in chapter 2 may build or deploy from it again.
+ * the live site: chapter 2 commits its changes to the repository and lets Builds deploy them,
+ * and never builds or deploys from that tree itself.
  * @param {{ step?: string, cloudflare?: { buildsTriggerUuid?: string } } | null | undefined} record
  *  the site's state record
  * @returns {boolean}
@@ -130,21 +140,38 @@ export function isBuildsConnected(record) {
 }
 
 /**
- * True for a record whose owner declined email sign-in, has not turned it on since, and has not
- * connected Workers Builds: no `cloudflare.emailOnboardedAt`, no Builds connection
- * (`isBuildsConnected`), and either `paid-plan-declined` (whatever its other fields) or
- * `builds-connect-declined` still carrying `cloudflare.emailDeclinedAt`. Chapter 3 overwrites
- * `step`, so at `builds-connect-declined` the timestamp is the only surviving trace of the decline.
- * A connected record is never open: turning email on ends in a local build and deploy, which would
- * replace a site Builds deploys from the repository with the owner's possibly older checkout.
- * @param {{ step?: string, cloudflare?: { emailOnboardedAt?: string, emailDeclinedAt?: string,
- *  buildsTriggerUuid?: string } } | null | undefined} record the site's state record
+ * True for a record whose owner declined email sign-in and has not turned it on since: no
+ * `cloudflare.emailOnboardedAt`, and either `paid-plan-declined` (whatever its other fields) or one
+ * of chapter 3's terminal steps still carrying `cloudflare.emailDeclinedAt`. Chapter 3 overwrites
+ * `step`, so at its terminal steps the timestamp is the only surviving trace of the decline.
+ * @param {{ step?: string, cloudflare?: { emailOnboardedAt?: string, emailDeclinedAt?: string } }
+ *  | null | undefined} record the site's state record
  * @returns {boolean}
  */
 export function hasOpenEmailDecline(record) {
-  if (!record || record.cloudflare?.emailOnboardedAt || isBuildsConnected(record)) return false;
+  if (!record || record.cloudflare?.emailOnboardedAt) return false;
   if (record.step === 'paid-plan-declined') return true;
-  return record.step === 'builds-connect-declined' && Boolean(record.cloudflare?.emailDeclinedAt);
+  return CHAPTER3_TERMINAL_STEPS.includes(record.step) && Boolean(record.cloudflare?.emailDeclinedAt);
+}
+
+/**
+ * The chapter 2 step a record at one of chapter 3's terminal steps resumes from, read from its
+ * fields, since `stepIndex` would read the unlisted step as `live`. No domain is `live` (the domain
+ * question). A domain that went live or carries an email decision is `domain-live` (the email
+ * question), or `email-onboarded` once onboarding is done. A domain short of both was stranded
+ * mid chapter 2 by an earlier `--connect`: `records-carried` once its carry-over is saved, which
+ * resumes at delegation without re-reading records `readCurrentRecords` would now refuse, and
+ * `zone-created` before that.
+ * @param {{ cloudflare?: { domain?: string, domainLiveAt?: string, emailDeclinedAt?: string,
+ *  emailOnboardedAt?: string, carryOver?: object } }} record the site's state record
+ * @returns {string} the effective step
+ */
+function effectiveStepAfterBuilds(record) {
+  const cloudflare = record.cloudflare ?? {};
+  if (!cloudflare.domain) return 'live';
+  if (cloudflare.emailOnboardedAt) return 'email-onboarded';
+  if (cloudflare.domainLiveAt || cloudflare.emailDeclinedAt) return 'domain-live';
+  return cloudflare.carryOver ? 'records-carried' : 'zone-created';
 }
 
 /**
@@ -325,6 +352,12 @@ const EMAIL_ADMISSION_DETAIL =
  *  test seam defaulting to hold-loop.mjs's `createWaitForClear`
  * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
  *  serves through; a test seam defaulting to the console module's `createConsoleServer`
+ * @property {(ms: number) => Promise<void>} [sleepFn] the Workers Builds watch's pacing, on a
+ *  record with Builds connected; a test seam defaulting to a real timer
+ * @property {number} [pollIntervalMs] the Workers Builds watch's poll interval; defaults to
+ *  chapter 3's
+ * @property {number} [maxPollAttempts] the Workers Builds watch's poll budget, in attempts;
+ *  defaults to chapter 3's
  */
 
 /**
@@ -396,8 +429,10 @@ function composeCutoverWaitForClear({
  *  `'delegation-propagating'` | `'hostname-records-absent'` | `'hostname-resolver-lagging'` |
  *  `'certificate-pending'` | `'paid-plan-declined'` | `'email-not-ready'` |
  *  `'email-sender-propagating'` | `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a
- *  record already at one of TERMINAL_STEPS, that step's name. A delegation park also carries
- *  the row's `state` and printed `message`
+ *  record already at one of TERMINAL_STEPS, that step's name. A record with Workers Builds
+ *  connected can also park at `'builds-reconcile-parked'`, `'build-not-started'`, or
+ *  `'build-running'`, with no step written. A delegation park also carries the row's `state` and
+ *  printed `message`
  */
 export async function runChapter2({
   siteId,
@@ -421,8 +456,12 @@ export async function runChapter2({
   stdinIsTTY = Boolean(process.stdin.isTTY),
   createWaitForClearFn = createWaitForClear,
   createConsoleServerFn = createConsoleServer,
+  sleepFn,
+  pollIntervalMs,
+  maxPollAttempts,
 }) {
   const frame = { dryRun, log };
+  const buildsConnected = isBuildsConnected(record);
 
   /**
    * Run the email question as its own hop and report whether the owner said yes. `--yes` answers
@@ -459,6 +498,55 @@ export async function runChapter2({
   let step = record?.step;
   let emailAdmitted = false;
 
+  // Entering from `builds-connect-declined`, chapter 2's first step write replaces the step that
+  // held the Builds decline, so that write records it (bin.mjs's settle restores the step from
+  // it), unless a later `--connect` already consented: a chapter 3 token marker or a connection
+  // means the owner said yes to Builds after the decline, and that answer stands.
+  let buildsDeclinePending =
+    !dryRun &&
+    record?.step === 'builds-connect-declined' &&
+    !record.cloudflare?.buildsDeclinedAt &&
+    !record.cloudflare?.buildsTokenSavedAt &&
+    !record.cloudflare?.buildsConnectionUuid;
+
+  /**
+   * Write a chapter 2 step, carrying the Builds decline marker on the first write that needs it.
+   * @param {{ step: string, cloudflare?: object }} patch the step and any fields saved with it
+   * @returns {Promise<void>}
+   */
+  async function writeStep(patch) {
+    if (buildsDeclinePending) {
+      buildsDeclinePending = false;
+      await updateSite(siteId, {
+        ...patch,
+        cloudflare: { ...patch.cloudflare, buildsDeclinedAt: new Date().toISOString() },
+      });
+      return;
+    }
+    await updateSite(siteId, patch);
+  }
+
+  /**
+   * Run the Workers Builds hop over this checkout's config, with this run's seams.
+   * @param {object} api the Cloudflare API client
+   * @param {() => void} [onLanded] called once the repository carries the config
+   * @returns {ReturnType<typeof deployConfigThroughBuilds>}
+   */
+  function deployThroughBuilds(api, onLanded) {
+    return deployConfigThroughBuilds({
+      siteId,
+      dir,
+      args,
+      log,
+      openBrowser,
+      api,
+      onLanded,
+      sleepFn,
+      pollIntervalMs,
+      maxPollAttempts,
+    });
+  }
+
   if (!dryRun && hasOpenEmailDecline(record)) {
     // The saved token goes first, and the rest of the run works from a copy without it, so a
     // decline cannot leave a credential behind and a yes cannot reuse the deleted one.
@@ -485,17 +573,8 @@ export async function runChapter2({
     }
 
     // Saved before the token hop, so a crash after it resumes at `domain-live` under the normal
-    // rules. Leaving a Builds decline this way records it, since the step that held it is gone,
-    // unless a later `--connect` already consented: a chapter 3 token marker or a connection
-    // means the owner said yes to Builds after the decline, and that answer stands.
-    const buildsDeclineStands =
-      record.step === 'builds-connect-declined' &&
-      !record.cloudflare?.buildsTokenSavedAt &&
-      !record.cloudflare?.buildsConnectionUuid;
-    await updateSite(siteId, {
-      step: 'domain-live',
-      ...(buildsDeclineStands ? { cloudflare: { buildsDeclinedAt: new Date().toISOString() } } : {}),
-    });
+    // rules.
+    await writeStep({ step: 'domain-live' });
     step = 'domain-live';
     emailAdmitted = true;
   } else if (!dryRun && isTerminalStep(record?.step)) {
@@ -508,6 +587,8 @@ export async function runChapter2({
       log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
     }
     return { outcome: record.step };
+  } else if (!dryRun && CHAPTER3_TERMINAL_STEPS.includes(record?.step)) {
+    step = effectiveStepAfterBuilds(record);
   }
 
   let domain = record?.cloudflare?.domain;
@@ -582,7 +663,17 @@ export async function runChapter2({
       "Opens Cloudflare's create-token page with the permissions this chapter needs already " +
         'filled in, and asks you to paste the token back.',
       async () => {
-        token = await ensureApiToken({ record, log, openBrowser, yes: args.yes, promptSecretFn, env, argv });
+        // A record with Builds connected watches Builds deploys, so it asks for chapter 3's keys.
+        token = await ensureApiToken({
+          record,
+          log,
+          openBrowser,
+          yes: args.yes,
+          promptSecretFn,
+          env,
+          argv,
+          ...(buildsConnected ? { permissionKeys: CHAPTER3_PERMISSION_KEYS } : {}),
+        });
         if (!dryRun && token !== record?.cloudflare?.apiToken) {
           await saveChapter2Token(siteId, token);
         }
@@ -606,7 +697,7 @@ export async function runChapter2({
         },
       );
       if (!dryRun) {
-        await updateSite(siteId, {
+        await writeStep({
           step: 'zone-created',
           cloudflare: { domain, zoneId, nameServers, alreadyActive },
         });
@@ -678,7 +769,7 @@ export async function runChapter2({
         return { outcome: 'carry-over-declined' };
       }
       if (!dryRun) {
-        await updateSite(siteId, { step: 'records-carried', cloudflare: { carryOver } });
+        await writeStep({ step: 'records-carried', cloudflare: { carryOver } });
       }
     }
 
@@ -739,7 +830,7 @@ export async function runChapter2({
         };
       }
       if (!dryRun) {
-        await updateSite(siteId, { step: 'delegated' });
+        await writeStep({ step: 'delegated' });
       }
     }
 
@@ -747,6 +838,7 @@ export async function runChapter2({
     // else that is not `live` (resolved-but-wrong-site, the attach itself, the redeploy) throws.
     if (!hasReached(step, 'domain-live')) {
       let cutoverOutcome;
+      let cutoverPark;
       await runStep(
         frame,
         'Connect your domain to your site',
@@ -785,10 +877,16 @@ export async function runChapter2({
             // in production and a hermetic stub in a test that injects one.
             dns: { resolve, nameServers },
             waitForClear,
+            deployThroughBuilds: buildsConnected ? (onLanded) => deployThroughBuilds(api, onLanded) : undefined,
           });
           cutoverOutcome = result.outcome;
+          cutoverPark = result.message;
         },
       );
+      if (!dryRun && cutoverPark) {
+        // A Workers Builds park, already printed by the hop that reached it.
+        return { outcome: cutoverOutcome, domain, message: cutoverPark };
+      }
       if (!dryRun && cutoverOutcome !== 'live') {
         // cutOverHostname itself returns only the outcome name, the same pure-step contract every
         // other producer in this chapter follows; this is the one place that turns a wait outcome
@@ -798,7 +896,7 @@ export async function runChapter2({
         return { outcome: cutoverOutcome, domain, message: parkError.message };
       }
       if (!dryRun) {
-        await updateSite(siteId, { step: 'domain-live' });
+        await writeStep({ step: 'domain-live', cloudflare: { domainLiveAt: new Date().toISOString() } });
       }
     }
 
@@ -829,7 +927,7 @@ export async function runChapter2({
       if (!dryRun && !emailConsented) {
         const declineErr = cloudflareError('paid-plan-declined', { dir, reoffered });
         log(declineErr.message);
-        await updateSite(siteId, {
+        await writeStep({
           step: 'paid-plan-declined',
           cloudflare: { emailDeclinedAt: new Date().toISOString() },
         });
@@ -862,7 +960,7 @@ export async function runChapter2({
         return { outcome: 'email-not-ready', domain };
       }
       if (!dryRun) {
-        await updateSite(siteId, { step: 'email-onboarded', cloudflare: { emailOnboardedAt: onboardedAt } });
+        await writeStep({ step: 'email-onboarded', cloudflare: { emailOnboardedAt: onboardedAt } });
       }
     }
 
@@ -906,21 +1004,33 @@ export async function runChapter2({
       return { outcome: sendWaitError.catalogue.code, domain, message: sendWaitError.message };
     }
 
-    // --- Sender address, then one deploy. Both skip when the address is already correct, so a
-    // park-and-resume never buys a second deploy; the redeploy needs a fresh build first.
-    let addressChanged = false;
+    // --- Sender address, then one deploy. `emailFrom` is saved only once the running site
+    // carries the address, so a run that stopped between the write and the deploy deploys on its
+    // re-run even though the address on disk is already correct; the redeploy needs a fresh build
+    // first. On a record with Builds connected the Builds hop runs on every pass instead: its hash
+    // gate makes a repeat free, and skipping it on an already-written address would save
+    // `emailFrom` with the repository never carrying the sender.
+    let senderPark;
     await runStep(
       frame,
       'Update your sign-in email address',
       `Writes ${from} into your site's config as its sign-in sender, then builds and redeploys so ` +
-        'the running site carries it. Skipped once the address is already correct.',
+        'the running site carries it. Skipped once the running site already carries it.',
       async () => {
-        addressChanged = await writeEmailFrom(dir, from);
-        if (!addressChanged) return;
+        const addressChanged = await writeEmailFrom(dir, from);
+        if (buildsConnected) {
+          senderPark = (await deployThroughBuilds(api)).parked;
+          return;
+        }
+        if (!addressChanged && record?.cloudflare?.emailFrom === from) return;
         await buildSite({ dir, log });
         await deployWorker({ dir, log, accountId });
       },
     );
+    if (!dryRun && senderPark) {
+      // A Workers Builds park, already printed by the hop that reached it.
+      return { outcome: senderPark.catalogue.code, domain, message: senderPark.message };
+    }
     if (!dryRun) {
       await updateSite(siteId, { cloudflare: { emailFrom: from } });
     }
@@ -959,7 +1069,7 @@ export async function runChapter2({
     );
 
     if (!dryRun) {
-      await updateSite(siteId, { step: 'email-live' });
+      await writeStep({ step: 'email-live' });
       await deleteApiToken(siteId);
     }
 

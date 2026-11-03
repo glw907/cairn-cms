@@ -232,6 +232,41 @@ test('reconcileRepo: a rejected ref PATCH maps to builds-push-refused', async (t
   );
 });
 
+test('reconcileRepo: a guard that throws on the compared copies stops the reconcile before any write', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const { dir, record } = await pushInitialRepo(t, github);
+  const pushedWrangler = await readFile(path.join(dir, WRANGLER_RELATIVE), 'utf8');
+  await writeFile(path.join(dir, WRANGLER_RELATIVE), '{ "name": "alpine-club", "account_id": "acct-123" }\n');
+  const requestsBefore = github.requests.length;
+  let compared;
+
+  await assert.rejects(
+    () =>
+      reconcileRepo({
+        record,
+        dir,
+        userToken: 'fake-user-token',
+        guard: (files) => {
+          compared = files;
+          throw new Error('diverged');
+        },
+      }),
+    /diverged/,
+  );
+
+  assert.deepEqual(
+    compared.map((file) => file.path),
+    [WRANGLER_RELATIVE, CAIRN_CONFIG_RELATIVE],
+  );
+  assert.equal(compared[0].remote, pushedWrangler, 'the guard sees the repository copy');
+  assert.match(compared[0].local, /acct-123/, 'and the local copy');
+  const writes = github.requests.slice(requestsBefore).filter((r) => r.method === 'POST' || r.method === 'PATCH');
+  assert.deepEqual(writes, [], 'no blob, tree, commit, or ref write');
+});
+
 test('RECONCILE_COMMIT_MESSAGE is never read back as an idempotence sentinel', async (t) => {
   // Documents the deliberate choice, rather than asserting behavior a future refactor could
   // silently break without a red test: the message constant exists for the commit body only.

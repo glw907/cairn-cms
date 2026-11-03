@@ -1600,7 +1600,7 @@ test('runChapter3: skipped surfaces builds-not-runnable naming the outcome', asy
   const cloudflare = await setupCloudflare(t);
   const github = await setupGithub(t);
   const repo = await seedGithubRepo(github, dir);
-  const siteId = 'builds-skipped-site-abc123';
+  const siteId = 'builds-yes-connect-site-abc123';
   await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
 
   const skippingSleep = async () => {

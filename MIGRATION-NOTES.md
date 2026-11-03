@@ -89,6 +89,10 @@ Only the release in this file has notes here. The notes of earlier releases live
   token, exits 1 at the token step where it exited 0 before. A script that passes no token should set
   `CAIRN_CF_API_TOKEN`, or stop the script at the live site. With a token, the run connects Workers
   Builds and parks at the first reconcile, which needs a sign-in trip that `--yes` never opens.
+- **A site set up on an earlier release on workers.dev with no domain can connect Workers Builds.**
+  Re-run `npx create-cairn-site --dir <dir>` and answer no to the domain to reach the Builds offer, or
+  run `npx create-cairn-site --dir <dir> --connect` directly. A domain or email sign-in turned on
+  afterward is committed to the repository and deployed by Builds.
 
 ## 0.99.0-rc.2
 

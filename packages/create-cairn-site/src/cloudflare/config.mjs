@@ -205,16 +205,73 @@ export async function writePublicOrigin(dir, url) {
  */
 const EMAIL_FROM_PATTERN = /(email:\s*\{\s*from:\s*')([^']*)('\s*\})/;
 
+/** What `maskToolOwnedValues` puts in place of each value this tool writes. */
+const TOOL_OWNED_PLACEHOLDER = '<tool-owned>';
+
+/**
+ * Replace the three values this tool writes into its two config files (wrangler.jsonc's
+ * `PUBLIC_ORIGIN`, cairn.config.ts's `publicOrigin` export, and its `email: { from }` address)
+ * with one placeholder, each matched by the same pattern its writer uses. Two copies of a file
+ * that mask to the same text differ only in those values, which is what lets a commit of this
+ * checkout's copy change nothing else in the repository.
+ * @param {string} content a config file's text
+ * @returns {string} the text with each tool-owned value replaced by the placeholder
+ */
+export function maskToolOwnedValues(content) {
+  return content
+    .replace(PUBLIC_ORIGIN_PATTERN, `"PUBLIC_ORIGIN": "${TOOL_OWNED_PLACEHOLDER}"`)
+    .replace(PUBLIC_ORIGIN_EXPORT_PATTERN, (_whole, prefix, _value, suffix) => prefix + TOOL_OWNED_PLACEHOLDER + suffix)
+    .replace(EMAIL_FROM_PATTERN, (_whole, prefix, _value, suffix) => prefix + TOOL_OWNED_PLACEHOLDER + suffix);
+}
+
+/**
+ * Read the tool-owned values a config file carries, by the same patterns `maskToolOwnedValues`
+ * masks: `PUBLIC_ORIGIN`, `publicOrigin`, and `email.from`. A value the file lacks is absent.
+ * @param {string} content a config file's text
+ * @returns {Record<string, string>} each found value, keyed by its name
+ */
+export function readToolOwnedValues(content) {
+  /** @type {Record<string, string>} */
+  const values = {};
+  const wranglerOrigin = /"PUBLIC_ORIGIN":\s*"([^"]*)"/.exec(content);
+  if (wranglerOrigin) values.PUBLIC_ORIGIN = wranglerOrigin[1];
+  const exportOrigin = PUBLIC_ORIGIN_EXPORT_PATTERN.exec(content);
+  if (exportOrigin) values.publicOrigin = exportOrigin[2];
+  const emailFrom = EMAIL_FROM_PATTERN.exec(content);
+  if (emailFrom) values['email.from'] = emailFrom[2];
+  return values;
+}
+
+/**
+ * Refuse a sender address that is not a plain `local@host` before it is written. cairn.config.ts
+ * takes it inside a single-quoted TypeScript literal unescaped, and the file is committed and
+ * built, so a quote, whitespace, or control character would splice code into it. The host is held
+ * to the same character set `assertBareOrigin` holds a hostname to.
+ * @param {string} address the sender address about to be written
+ * @returns {void}
+ */
+function assertPlainAddress(address) {
+  if (!/^[A-Za-z0-9._%+-]+@[a-z0-9.-]+$/i.test(address)) {
+    throw new Error(
+      `writeEmailFrom: ${JSON.stringify(address)} is not a plain address such as ` +
+        'no-reply@example.com (letters, digits, and . _ % + - before the @, and letters, digits, ' +
+        'dots, and hyphens after it, with no quote or space), so cairn.config.ts was not changed.',
+    );
+  }
+}
+
 /**
  * Rewrite the scaffold's `email: { from: '...' }` address in cairn.config.ts to the site's real
  * sender address, verified live against Cloudflare's onboarded apex (the T4b spike). Idempotent:
  * a file whose address already matches is left untouched and the function reports no change, so
- * the caller can skip a redundant deploy on a resumed run.
+ * the caller can skip a redundant deploy on a resumed run. An address that is not a plain
+ * `local@host` (`assertPlainAddress`) throws before the file is read.
  * @param {string} dir the scaffold root
  * @param {string} address the site's real sender address (`no-reply@<domain>`)
  * @returns {Promise<boolean>} true when the file changed, false when the address was already correct
  */
 export async function writeEmailFrom(dir, address) {
+  assertPlainAddress(address);
   const configPath = path.join(dir, CAIRN_CONFIG_RELATIVE);
   const content = await readFile(configPath, 'utf8');
   const match = EMAIL_FROM_PATTERN.exec(content);

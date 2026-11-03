@@ -88,6 +88,41 @@ test('buildSite failure maps to build-failed with the fake stderr in the message
   );
 });
 
+test('buildSite prints one line on success and keeps the build output off the log', async (t) => {
+  const dir = tmpdir();
+  const fake = await makeFakeBin('npm');
+  t.after(() => fake.close());
+  await fake.respond('run build', { code: 0, stdout: '[plugin vite:css-post] unused selector\nbuilt.\n' });
+  process.env.CAIRN_NPM_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_NPM_BIN; });
+
+  const { buildSite } = await import('./deploy.mjs');
+  const log = [];
+  await buildSite({ dir, log: (line) => log.push(line) });
+
+  assert.ok(log.includes('Built your site.'), `got: ${log.join('|')}`);
+  assert.equal(log.some((line) => line.includes('vite:css-post')), false, `got: ${log.join('|')}`);
+});
+
+test('buildSite prints the captured build output before build-failed when the build fails', async (t) => {
+  const dir = tmpdir();
+  const fake = await makeFakeBin('npm');
+  t.after(() => fake.close());
+  await fake.respond('run build', { code: 1, stdout: '[plugin vite:css-post] unused selector\n', stderr: 'Error: boom' });
+  process.env.CAIRN_NPM_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_NPM_BIN; });
+
+  const { buildSite } = await import('./deploy.mjs');
+  const log = [];
+  await assert.rejects(
+    () => buildSite({ dir, log: (line) => log.push(line) }),
+    (err) => err.catalogue?.code === 'build-failed' && /boom/.test(err.message),
+  );
+
+  assert.ok(log.some((line) => line.includes('vite:css-post')), `got: ${log.join('|')}`);
+  assert.equal(log.includes('Built your site.'), false);
+});
+
 test('ensureLogin makes zero further calls when whoami reports an account', async (t) => {
   const dir = tmpdir();
   const fake = await makeFakeBin('wrangler');

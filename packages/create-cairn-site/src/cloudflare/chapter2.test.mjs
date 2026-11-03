@@ -7,7 +7,7 @@ import { EventEmitter } from 'node:events';
 import { makeFakeBin } from '../../test/fake-bin.mjs';
 import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
 import { makeApi, SENDING_DISABLED_CODE } from './api.mjs';
-import { saveSite, loadSite } from '../state.mjs';
+import { saveSite, loadSite, updateSite } from '../state.mjs';
 import { createWaitForClear, consoleUrlLine } from '../hold-loop.mjs';
 import { cloudflareError } from './catalogue.mjs';
 
@@ -1781,12 +1781,12 @@ test('email hop order: a test-send propagation park exits 0 and a resume repeats
   assert.equal(deploys.length, 1, 'the resumed run must still deploy the rewritten address exactly once');
 });
 
-test('email hop order: the deploy is skipped when the sender address is already correct', async (t) => {
+test('email hop order: the deploy is skipped when the sender address is already written and saved', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const domain = 'already-correct.example';
-  // Pre-write the exact address writeEmailFrom would otherwise write, so its skip-when-
-  // correct guard fires and no build or deploy ever runs.
+  // Pre-write the exact address writeEmailFrom would otherwise write, and save it as emailFrom,
+  // the shape a run that already deployed it leaves, so no build or deploy ever runs.
   await writeFile(
     path.join(dir, 'src', 'theme', 'cairn.config.ts'),
     `export default {\n  email: { from: 'no-reply@${domain}' },\n};\n`,
@@ -1803,6 +1803,7 @@ test('email hop order: the deploy is skipped when the sender address is already 
       domain,
       alreadyActive: true,
       emailOnboardedAt: new Date().toISOString(),
+      emailFrom: `no-reply@${domain}`,
     },
   });
 
@@ -1831,6 +1832,43 @@ test('email hop order: the deploy is skipped when the sender address is already 
     0,
     'the address was already correct, so no build should have run either',
   );
+});
+
+test('email hop order: a deploy that failed after the sender was written deploys once on the re-run, then saves emailFrom', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const { domain } = await seedDomainLiveSite(t, 'site-email-redeploy', dir, {
+    emailOnboardedAt: new Date().toISOString(),
+  });
+  await updateSite('site-email-redeploy', { step: 'email-onboarded' });
+  const wrangler = await setupWrangler(t);
+  await wrangler.respond('deploy', { code: 1, stderr: 'ERROR: deploy interrupted\n' });
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const input = async () => ({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-redeploy',
+    record: await loadSite('site-email-redeploy'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+  await assert.rejects(runChapter2(await input()));
+  const afterCrash = await loadSite('site-email-redeploy');
+  assert.equal(afterCrash.cloudflare.emailFrom, undefined, 'a failed deploy saves no emailFrom');
+  assert.match(await readFile(path.join(dir, 'src', 'theme', 'cairn.config.ts'), 'utf8'), new RegExp(`no-reply@${domain}`));
+
+  await wrangler.respond('deploy', { code: 0, stdout: `Deployed (0.1 sec)\n  ${WORKERS_DEV_URL}\n` });
+  const deploysBefore = (await wrangler.invocations()).filter((inv) => inv.argv.includes('deploy')).length;
+  const outcome = await runChapter2(await input());
+
+  assert.equal(outcome.outcome, 'email-live');
+  const deploysAfter = (await wrangler.invocations()).filter((inv) => inv.argv.includes('deploy')).length;
+  assert.equal(deploysAfter - deploysBefore, 1, 'the re-run deploys the already-written address exactly once');
+  assert.equal((await loadSite('site-email-redeploy')).cloudflare.emailFrom, `no-reply@${domain}`);
 });
 
 // --- Email terminal-state token rule (Task 8, Step 3) -----------------------------------------

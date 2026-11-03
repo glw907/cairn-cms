@@ -54,6 +54,7 @@ const EXPECTED_KIND = {
   'build-running': 'wait',
   'builds-deploy-failed': 'act',
   'builds-not-runnable': 'act',
+  'builds-config-diverged': 'act',
   'builds-reconcile-parked': 'wait'
 };
 
@@ -128,6 +129,7 @@ const SAMPLE_PARAMS = {
     outcome: 'skipped',
     buildUrl: 'https://dash.cloudflare.com/acct/workers/services/view/alpine/production/builds/abc'
   },
+  'builds-config-diverged': { dir: './alpine', files: ['src/theme/cairn.config.ts'] },
   'builds-reconcile-parked': { dir: './alpine' }
 };
 
@@ -182,7 +184,7 @@ test('every catalogue code message ends in exactly one Next: line', () => {
   }
 });
 
-test('the Builds rows add exactly eight codes, none colliding with build-failed or build-not-runnable', () => {
+test('the Builds rows add exactly nine codes, none colliding with build-failed or build-not-runnable', () => {
   // 37 pre-Builds codes, plus Task 2's split: hostname-propagating retired (-1), replaced by
   // hostname-records-absent and hostname-resolver-lagging (+2), plus deploy-plan-declined,
   // chapter 1's pre-deploy decline row, added alongside the pre-existing paid-plan-declined
@@ -196,6 +198,7 @@ test('the Builds rows add exactly eight codes, none colliding with build-failed 
     'build-running',
     'builds-deploy-failed',
     'builds-not-runnable',
+    'builds-config-diverged',
     'builds-reconcile-parked'
   ];
   assert.equal(
@@ -448,11 +451,42 @@ test('paid-plan-declined differs between its first and re-offered forms', () => 
   assert.match(reoffered.message, /Next:/);
 });
 
-test('paid-plan-declined, in both forms, says the offer ends once Workers Builds is connected', () => {
+test('paid-plan-declined, in both forms, keeps the offer open with no Workers Builds deadline', () => {
   for (const reoffered of [false, true]) {
     const err = cloudflareError('paid-plan-declined', { dir: './alpine', reoffered });
-    assert.match(err.message, /before you connect Workers Builds/);
+    assert.match(err.catalogue.next, /any time\.$/);
+    assert.doesNotMatch(err.message, /Workers Builds|no longer offers/);
   }
+});
+
+test('cutover-deploy-failed after a landed Workers Builds commit says the repository names the domain and claims no restore', () => {
+  const err = cloudflareError('cutover-deploy-failed', {
+    dir: './alpine',
+    detail: 'The build log ends with:\nFailed: npm run build',
+    buildsCommitted: true
+  });
+  assert.match(err.message, /repository now names your domain/);
+  assert.match(err.message, /next successful build/);
+  assert.match(err.message, /re-run starts one and watches it/);
+  assert.match(err.message, /Failed: npm run build/);
+  assert.doesNotMatch(err.message, /restored/);
+});
+
+test('cutover-deploy-failed before a Workers Builds commit landed names the commit, not a rebuild, and says it restored', () => {
+  const err = cloudflareError('cutover-deploy-failed', { dir: './alpine', detail: 'GitHub refused', viaBuilds: true });
+  assert.match(err.message, /Committing your site's new address/);
+  assert.match(err.message, /restored/);
+  assert.doesNotMatch(err.message, /wrangler/);
+});
+
+test('builds-config-diverged names each file and says to run git pull in --dir', () => {
+  const err = cloudflareError('builds-config-diverged', {
+    dir: './alpine',
+    files: ['wrangler.jsonc', 'src/theme/cairn.config.ts']
+  });
+  assert.match(err.message, /wrangler\.jsonc and src\/theme\/cairn\.config\.ts/);
+  assert.match(err.message, /nothing was committed/);
+  assert.equal(err.catalogue.next, 'run git pull in ./alpine, then re-run npx create-cairn-site --dir ./alpine.');
 });
 
 test('paid-plan-missing deep-links the plan page and states the price', () => {
@@ -527,6 +561,14 @@ test('builds-deploy-failed carries the log tail and the build dashboard link', (
   assert.match(err.message, /error occurred while running deploy command/);
   assert.match(err.message, /dash\.cloudflare\.com/);
   assert.match(err.message, /log ends with/);
+});
+
+test('builds-deploy-failed and builds-not-runnable do not call the deploy the first, since chapter 2 reaches them too', () => {
+  for (const code of ['builds-deploy-failed', 'builds-not-runnable']) {
+    const err = cloudflareError(code, SAMPLE_PARAMS[code]);
+    assert.match(err.message, /^The Workers Builds deploy did not/);
+    assert.doesNotMatch(err.message, /first/);
+  }
 });
 
 test('builds-deploy-failed says the log was truncated, not that it ends there, when logTruncated is set', () => {

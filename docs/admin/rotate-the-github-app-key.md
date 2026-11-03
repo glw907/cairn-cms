@@ -83,7 +83,7 @@ The site's `/healthz` page proves at once that the new key signs, and a publish 
 
 5. In the editor, publish the edit. Publishing saves the edit first.
 
-   The note reads "Published. The live site is rebuilding." A completed publish confirms the new key. If the publish doesn't complete, go to [Recover from a failed key](#recover-from-a-failed-key). If the entry changed on GitHub after you opened it, the editor refuses the publish and shows "Your edits are saved. Publish again." That refusal isn't a key failure, and [Troubleshoot a live site](./troubleshooting.md#a-save-or-publish-reports-a-conflict-or-fails) covers it.
+   The note reads "Published. The live site shows this change once the site rebuilds." A completed publish confirms the new key. If the publish doesn't complete, go to [Recover from a failed key](#recover-from-a-failed-key). If the entry changed on GitHub after you opened it, the editor refuses the publish and shows "Your edits are saved. Publish again." That refusal isn't a key failure, and [Troubleshoot a live site](./troubleshooting.md#a-save-or-publish-reports-a-conflict-or-fails) covers it.
 
 6. In [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/), query records whose `event` field is `github.unreachable`, over the time since the push.
 

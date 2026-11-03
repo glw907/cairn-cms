@@ -159,6 +159,41 @@ test('reconcileRepo: a differing wrangler.jsonc commits both files in one commit
   assert.equal(wranglerContent, '{ "name": "alpine-club", "account_id": "acct-123" }\n');
 });
 
+test('reconcileRepo: a line-ending-only difference makes no commit', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const { dir, record } = await pushInitialRepo(t, github);
+  const wrangler = await readFile(path.join(dir, WRANGLER_RELATIVE), 'utf8');
+  await writeFile(path.join(dir, WRANGLER_RELATIVE), wrangler.replace(/\n/g, '\r\n'));
+  const requestsBefore = github.requests.length;
+
+  const result = await reconcileRepo({ record, dir, userToken: 'fake-user-token' });
+
+  assert.deepEqual(result, { changed: false });
+  const writes = github.requests.slice(requestsBefore).filter((r) => r.method === 'POST' || r.method === 'PATCH');
+  assert.deepEqual(writes, []);
+});
+
+test('reconcileRepo: a real difference in a CRLF checkout uploads LF content', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const { dir, record } = await pushInitialRepo(t, github);
+  const { owner, repo, defaultBranch } = record.repo;
+  await writeFile(path.join(dir, WRANGLER_RELATIVE), '{\r\n  "name": "alpine-club",\r\n  "account_id": "acct-123"\r\n}\r\n');
+
+  const result = await reconcileRepo({ record, dir, userToken: 'fake-user-token' });
+
+  assert.equal(result.changed, true);
+  const gitEntry = github.state.gitObjects.get(`${owner}/${repo}`);
+  const byPath = Object.fromEntries(readHeadTree(github, owner, repo, defaultBranch).map((e) => [e.path, e.sha]));
+  const uploaded = Buffer.from(gitEntry.blobs.get(byPath[WRANGLER_RELATIVE]), 'base64').toString('utf8');
+  assert.equal(uploaded, '{\n  "name": "alpine-club",\n  "account_id": "acct-123"\n}\n');
+});
+
 test('reconcileRepo: a file the admin added after the scaffold push survives the reconcile', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());
@@ -231,6 +266,68 @@ test('reconcileRepo: a rejected ref PATCH maps to builds-push-refused', async (t
     }
   );
 });
+
+test('reconcileRepo: a guard that throws on the compared copies stops the reconcile before any write', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const { dir, record } = await pushInitialRepo(t, github);
+  const pushedWrangler = await readFile(path.join(dir, WRANGLER_RELATIVE), 'utf8');
+  await writeFile(path.join(dir, WRANGLER_RELATIVE), '{ "name": "alpine-club", "account_id": "acct-123" }\n');
+  const requestsBefore = github.requests.length;
+  let compared;
+
+  await assert.rejects(
+    () =>
+      reconcileRepo({
+        record,
+        dir,
+        userToken: 'fake-user-token',
+        guard: (files) => {
+          compared = files;
+          throw new Error('diverged');
+        },
+      }),
+    /diverged/,
+  );
+
+  assert.deepEqual(
+    compared.map((file) => file.path),
+    [WRANGLER_RELATIVE, CAIRN_CONFIG_RELATIVE],
+  );
+  assert.equal(compared[0].remote, pushedWrangler, 'the guard sees the repository copy');
+  assert.match(compared[0].local, /acct-123/, 'and the local copy');
+  const writes = github.requests.slice(requestsBefore).filter((r) => r.method === 'POST' || r.method === 'PATCH');
+  assert.deepEqual(writes, [], 'no blob, tree, commit, or ref write');
+});
+
+// Each read the diff rests on is refused rather than read as empty: a failed read must never
+// commit over the repository's real copy.
+for (const [label, route, status, body, message] of [
+  ['a failed ref read', 'refs-read', 404, { message: 'Not Found' }, /HTTP 404/],
+  ['a failed head-commit read', 'commits', 500, { message: 'boom' }, /HTTP 500/],
+  ['a head commit with no tree', 'commits', 200, { sha: 'no-tree' }, /no tree/],
+  ['a failed tree read', 'trees-read', 502, { message: 'bad gateway' }, /HTTP 502/],
+  ['a truncated tree listing', 'trees-read', 200, { sha: 'x', tree: [], truncated: true }, /truncated/],
+  ['a failed blob read', 'blobs-read', 403, { message: 'Forbidden' }, /HTTP 403/],
+]) {
+  test(`reconcileRepo: ${label} refuses the reconcile with no write`, async (t) => {
+    const github = await startFakeGithub();
+    t.after(() => github.close());
+    pointAtFake(t, github);
+
+    const { dir, record } = await pushInitialRepo(t, github);
+    await writeFile(path.join(dir, WRANGLER_RELATIVE), '{ "name": "alpine-club", "account_id": "acct-123" }\n');
+    const requestsBefore = github.requests.length;
+    github.failNext(route, status, body);
+
+    await assert.rejects(() => reconcileRepo({ record, dir, userToken: 'fake-user-token' }), message);
+
+    const writes = github.requests.slice(requestsBefore).filter((r) => r.method === 'POST' || r.method === 'PATCH');
+    assert.deepEqual(writes, [], 'no blob, tree, commit, or ref write');
+  });
+}
 
 test('RECONCILE_COMMIT_MESSAGE is never read back as an idempotence sentinel', async (t) => {
   // Documents the deliberate choice, rather than asserting behavior a future refactor could

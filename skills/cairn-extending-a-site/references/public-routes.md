@@ -25,7 +25,7 @@ Contents:
   the `publicOrigin` export in `src/theme/cairn.config.ts` (the scaffold ships
   `'https://showcase.test'`), and the build writes it into canonicals, `og:url`, feeds, and the
   sitemap. `PUBLIC_ORIGIN` in `wrangler.jsonc` is the Worker's runtime value for the same host.
-  Setup writes both values, then rebuilds. A hand change to the domain edits both, then rebuilds.
+  Setup writes both values. On a site not connected to Workers Builds it then rebuilds and redeploys; on a Builds site it commits both files to the repository and Builds rebuilds. A hand change to the domain edits both, then rebuilds.
 - One exported `PublicRoutesConfig` (`site`, `render`, `origin`, `siteName`, `description`,
   the required `resolveMedia` with `null` for a site with no media, plus `defaultImage` and
   `feeds`) shared by every route.

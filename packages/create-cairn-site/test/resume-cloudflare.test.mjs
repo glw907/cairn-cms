@@ -16,6 +16,7 @@ import { mkdtemp, mkdir, rm, writeFile, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { makeStubOpenerDir } from './stub-opener.mjs';
 import { makeFakeBin } from './fake-bin.mjs';
 import { saveSite } from '../src/state.mjs';
 
@@ -56,14 +57,7 @@ async function freshStateDir(t) {
  * @returns {Promise<string>} the directory's absolute path
  */
 async function makeFakeOpenerDir(t) {
-  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-fake-opener-'));
-  t.after(() => rm(dir, { recursive: true, force: true }));
-  for (const name of ['xdg-open', 'open', 'cmd']) {
-    const scriptPath = path.join(dir, name);
-    await writeFile(scriptPath, '#!/bin/sh\nexit 0\n');
-    await chmod(scriptPath, 0o755);
-  }
-  return dir;
+  return (await makeStubOpenerDir(t)).dir;
 }
 
 /**
@@ -280,7 +274,10 @@ test('bin.mjs resumes a pushed record and notes an --owner-email override in the
     { stateDir, wranglerBin: fake.binPath, npmBin: fake.binPath, fakeOpenerDir },
   );
 
-  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  // The run goes live, skips the domain under --yes, and on into Workers Builds, which stops at
+  // its token hop for want of a token.
+  assert.equal(result.code, 1, `expected exit 1 at chapter 3's token hop, got ${result.code}. stderr: ${result.stderr}`);
+  assert.ok(result.stderr.includes('Next:'), `expected the token hop's Next: line, got: ${result.stderr}`);
   assert.ok(
     result.stdout.includes(
       "Resuming Alpine Club at pushed (using this run's --owner-email instead of the saved answer).",

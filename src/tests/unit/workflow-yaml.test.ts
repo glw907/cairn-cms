@@ -9,7 +9,9 @@
 // e2e.yml and create-site.yml stopped parsing and both went dark in the same push. Quoting the value
 // fixes it; this test is what catches the next one.
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { chmodSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, resolve } from 'node:path';
 import { parse } from 'yaml';
 
@@ -221,5 +223,103 @@ describe('the test jobs keep their gates and report their retries', () => {
       .filter((run) => run.includes('test:e2e'));
     expect(runs.length).toBeGreaterThanOrEqual(3);
     for (const run of runs) expect(run).toMatch(/--reporter=dot(,html|,blob)?,json\b/);
+  });
+});
+
+describe('publish.yml gates a candidate before it reaches next', () => {
+  type PublishJob = Job & { permissions?: Record<string, string>; steps?: (Step & { env?: Record<string, string> })[] };
+  const jobs = (loadWorkflow('publish.yml').jobs ?? {}) as Record<string, PublishJob>;
+  const publishJobs = ['publish', 'publish-dev', 'publish-create-site'];
+  const PACKAGES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev', 'create-cairn-site'];
+  const promoteScript = (jobs.promote?.steps ?? []).map((s) => s.run ?? '').find((run) => run.includes('dist-tag add')) ?? '';
+
+  it('maps a prerelease to gate in each publish job and none to next', () => {
+    for (const id of publishJobs) {
+      const script = (jobs[id].steps ?? []).map((s) => s.run ?? '').join('\n');
+      expect(script, id).toContain('*-*) TAG=gate ;;');
+      expect(script, id).not.toMatch(/\*-\*\)\s*TAG=next/);
+    }
+  });
+
+  it('skips each publish job on a promote dispatch and keeps a bare dispatch publishing', () => {
+    for (const id of publishJobs) {
+      expect(jobs[id].if, id).toBe("github.event_name == 'release' || inputs.promote == ''");
+    }
+  });
+
+  it('declares the promote job with job-level OIDC, no install, and next for each package', () => {
+    const promote = jobs.promote;
+    expect(promote.if).toBe("github.event_name == 'workflow_dispatch' && inputs.promote != ''");
+    expect(promote.permissions?.['id-token']).toBe('write');
+    const steps = promote.steps ?? [];
+    expect(steps.some((s) => /npm ci|bounded-install/.test(`${s.run ?? ''}${s.uses ?? ''}`))).toBe(false);
+    expect(steps.some((s) => (s.uses ?? '').startsWith('actions/checkout'))).toBe(false);
+    expect(promoteScript).not.toContain('${{');
+    const adds = [...promoteScript.matchAll(/npm dist-tag add "([^"@]*@?[^"@]+)@\$V" next/g)].map((m) => m[1]);
+    expect(adds).toEqual(PACKAGES);
+  });
+
+  it('pins every npm install step to ^11.21.0', () => {
+    const installs = Object.values(jobs)
+      .flatMap((job) => job.steps ?? [])
+      .filter((s) => (s.run ?? '').startsWith('npm install -g npm@'));
+    expect(installs.length).toBe(4);
+    for (const step of installs) expect(step.run).toBe('npm install -g npm@^11.21.0');
+  });
+
+  describe('the promote script under bash with a stub npm', () => {
+    // The stub logs every call; `view` prints the version unless the package is in MISSING.
+    function run(version: string, missing = ''): { status: number | null; calls: string[]; out: string } {
+      const dir = mkdtempSync(resolve(tmpdir(), 'promote-'));
+      const log = resolve(dir, 'calls.log');
+      writeFileSync(log, '');
+      const stub = resolve(dir, 'npm');
+      writeFileSync(
+        stub,
+        [
+          '#!/bin/bash',
+          'echo "$*" >> "$NPM_LOG"',
+          'if [ "$1" = view ]; then',
+          '  pkg="${2%@*}"',
+          '  [ "$pkg" = "$MISSING" ] && exit 1',
+          '  echo "${2##*@}"',
+          'fi',
+          'if [ "$1" = dist-tag ] && [ "$2" = ls ]; then echo "tags of $3"; fi',
+          'exit 0'
+        ].join('\n')
+      );
+      chmodSync(stub, 0o755);
+      const result = spawnSync('bash', ['-e', '-c', promoteScript], {
+        encoding: 'utf8',
+        env: { PATH: `${dir}:${process.env.PATH}`, PROMOTE_VERSION: version, NPM_LOG: log, MISSING: missing }
+      });
+      const calls = readFileSync(log, 'utf8').split('\n').filter(Boolean);
+      return { status: result.status, calls, out: result.stdout };
+    }
+    const adds = (calls: string[]) => calls.filter((c) => c.startsWith('dist-tag add'));
+
+    it('refuses a stable version and moves nothing', () => {
+      const r = run('0.99.0');
+      expect(r.status).not.toBe(0);
+      expect(adds(r.calls)).toEqual([]);
+    });
+
+    it('refuses when one package lacks the version, moves nothing, and prints every tag state', () => {
+      const r = run('0.99.0-rc.3', 'create-cairn-site');
+      expect(r.status).not.toBe(0);
+      expect(adds(r.calls)).toEqual([]);
+      for (const pkg of PACKAGES) expect(r.out).toContain(`tags of ${pkg}`);
+    });
+
+    it('moves the three packages to next with create-cairn-site last, then its latest', () => {
+      const r = run('0.99.0-rc.3');
+      expect(r.status).toBe(0);
+      expect(adds(r.calls)).toEqual([
+        'dist-tag add @glw907/cairn-cms@0.99.0-rc.3 next',
+        'dist-tag add @glw907/cairn-cms-dev@0.99.0-rc.3 next',
+        'dist-tag add create-cairn-site@0.99.0-rc.3 next',
+        'dist-tag add create-cairn-site@0.99.0-rc.3 latest'
+      ]);
+    });
   });
 });

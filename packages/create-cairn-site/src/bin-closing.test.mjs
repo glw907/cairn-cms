@@ -12,11 +12,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFakeBin } from '../test/fake-bin.mjs';
 import { startFakeCloudflare } from '../test/fake-cloudflare.mjs';
-import { saveSite } from './state.mjs';
+import { makeStubOpenerDir } from '../test/stub-opener.mjs';
+import { saveSite, loadSite } from './state.mjs';
 
 const execFileAsync = promisify(execFile);
 const BIN_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'bin.mjs');
 const DOMAIN_HINT = 'Connect your domain any time';
+const NOT_CONNECTED_SENTENCE = 'Workers Builds is not connected, so a publish from your admin commits to GitHub';
+const CONNECTED_SENTENCE = 'Workers Builds deploys it, so your live site updates by itself.';
 
 /**
  * Seed a `live` site record and run bin.mjs against it with a fake wrangler and Cloudflare.
@@ -24,9 +27,11 @@ const DOMAIN_HINT = 'Connect your domain any time';
  * @param {string} siteId the site id to seed
  * @param {object} cloudflareOverrides fields merged over the record's `cloudflare` object
  * @param {string[]} args the CLI arguments after `--dir <dir>`
- * @returns {Promise<{ code: number, stdout: string, stderr: string }>} the run's outcome
+ * @param {{ step?: string, dropUrl?: boolean }} [seed] the record's step, a
+ *  `CAIRN_CF_API_TOKEN` for the child, and whether to leave the record's `cloudflare.url` out
+ * @returns {Promise<{ code: number, stdout: string, stderr: string, requests: Array<{ path: string }> }>} the run's outcome and the fake Cloudflare's requests
  */
-async function runLive(t, siteId, cloudflareOverrides, args) {
+async function runLive(t, siteId, cloudflareOverrides, args, { step = 'live', dropUrl = false } = {}) {
   const stateDir = await mkdtemp(path.join(tmpdir(), 'cairn-closing-state-'));
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-closing-scaffold-'));
   t.after(() => rm(stateDir, { recursive: true, force: true }));
@@ -51,7 +56,7 @@ async function runLive(t, siteId, cloudflareOverrides, args) {
   await saveSite(siteId, {
     name: 'Closing Block Site',
     dir,
-    step: 'live',
+    step,
     ownerEmail: 'owner@example.com',
     github: {
       appId: 99,
@@ -66,9 +71,16 @@ async function runLive(t, siteId, cloudflareOverrides, args) {
       ...cloudflareOverrides,
     },
   });
+  if (dropUrl) {
+    const saved = await loadSite(siteId);
+    delete saved.cloudflare.url;
+    await saveSite(siteId, saved);
+  }
 
+  const stub = await makeStubOpenerDir(t);
   const env = {
     ...process.env,
+    PATH: `${stub.dir}:${process.env.PATH ?? ''}`,
     CAIRN_STATE_DIR: stateDir,
     CAIRN_WRANGLER_BIN: fake.binPath,
     CAIRN_CLOUDFLARE_API_BASE: cloudflare.apiBase,
@@ -80,24 +92,27 @@ async function runLive(t, siteId, cloudflareOverrides, args) {
       input: '',
       timeout: 60000,
     });
-    return { code: 0, stdout, stderr };
+    return { code: 0, stdout, stderr, requests: cloudflare.requests, opened: await stub.opened() };
   } catch (err) {
-    return { code: err.code ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
+    return { code: err.code ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '', requests: cloudflare.requests, opened: await stub.opened() };
   }
 }
 
 test('the live block offers to connect a domain when none is saved', async (t) => {
-  const result = await runLive(t, 'closing-nodomn', {}, ['--yes']);
+  const result = await runLive(t, 'closing-nodomn', {}, ['--sign-in']);
   assert.equal(result.code, 0, `stderr: ${result.stderr}`);
   assert.ok(result.stdout.includes(DOMAIN_HINT), `expected the offer, got: ${result.stdout}`);
+  assert.ok(result.stdout.includes('--domain <name> and --email'), `expected the hint to name --email, got: ${result.stdout}`);
 });
 
 test('the live block does not offer to connect a domain a park already saved', async (t) => {
   const parked = { domain: 'parked.example', zoneId: 'zone-1', nameServers: ['a.ns.example', 'b.ns.example'] };
-  const result = await runLive(t, 'closing-parkd2', parked, ['--yes']);
+  const result = await runLive(t, 'closing-parkd2', parked, ['--sign-in']);
   assert.equal(result.code, 0, `stderr: ${result.stderr}`);
   assert.equal(result.stdout.includes(DOMAIN_HINT), false, `got: ${result.stdout}`);
   assert.ok(result.stdout.includes('Your site is live at:'), `expected the live block, got: ${result.stdout}`);
+  assert.ok(result.stdout.includes(NOT_CONNECTED_SENTENCE), `got: ${result.stdout}`);
+  assert.equal(result.stdout.includes('Connect to Workers Builds'), false, `got: ${result.stdout}`);
 });
 
 test('the live block after --sign-in does not offer a domain the record already holds', async (t) => {
@@ -105,4 +120,63 @@ test('the live block after --sign-in does not offer a domain the record already 
   const result = await runLive(t, 'closing-mailed', withEmail, ['--sign-in']);
   assert.equal(result.code, 0, `stderr: ${result.stderr}`);
   assert.equal(result.stdout.includes(DOMAIN_HINT), false, `got: ${result.stdout}`);
+});
+
+
+test('the live block says a publish does not deploy until Workers Builds is connected', async (t) => {
+  const result = await runLive(t, 'closing-pubnot', {}, ['--sign-in']);
+  assert.equal(result.code, 0, `stderr: ${result.stderr}`);
+  assert.ok(result.stdout.includes(NOT_CONNECTED_SENTENCE), `got: ${result.stdout}`);
+  assert.ok(result.stdout.includes('--connect, or deploy by hand.'), `got: ${result.stdout}`);
+});
+
+for (const [step, label, expectedSentence] of [
+  ['email-live', 'without', NOT_CONNECTED_SENTENCE],
+  ['paid-plan-declined', 'without', NOT_CONNECTED_SENTENCE],
+  ['email-live', 'with', CONNECTED_SENTENCE],
+  ['paid-plan-declined', 'with', CONNECTED_SENTENCE],
+]) {
+  test(`the ${step} closing block names whether a publish deploys, ${label} a Builds trigger`, async (t) => {
+    const overrides = {
+      domain: 'closed.example',
+      emailFrom: 'no-reply@closed.example',
+      ...(label === 'with' ? { buildsTriggerUuid: 'trigger-uuid-1' } : {}),
+    };
+    const result = await runLive(t, `closing-${step.replace(/[^a-z]/g, '').slice(0, 5)}${label[0]}`, overrides, ['--sign-in'], { step });
+    assert.equal(result.code, 0, `stderr: ${result.stderr}`);
+    assert.ok(result.stdout.includes(expectedSentence), `got: ${result.stdout}`);
+    const other = expectedSentence === CONNECTED_SENTENCE ? NOT_CONNECTED_SENTENCE : CONNECTED_SENTENCE;
+    assert.equal(result.stdout.includes(other), false, `got: ${result.stdout}`);
+  });
+}
+
+// A park is reached for real: a `.invalid` domain resolves no nameservers, so chapter 2 stops at
+// delegation-pending and bin.mjs keeps printLiveInfo rather than offering Workers Builds.
+const PARK_SEED = {
+  domain: 'closing-park.invalid',
+  zoneId: 'zone-park',
+  nameServers: ['a.ns.example', 'b.ns.example'],
+  // A saved token the fake accepts lets the account and token hops pass silently.
+  apiToken: 'fake-cf-token',
+};
+
+test('a park keeps the live block with the not-connected sentence and never reaches Builds', async (t) => {
+  const result = await runLive(t, 'closing-parkrn', PARK_SEED, [], { step: 'records-carried' });
+  assert.ok(result.stdout.includes('Update your domain\'s nameservers'), `expected the park, got: ${result.stdout}`);
+  assert.ok(result.stdout.includes('Your site is live at:'), `got: ${result.stdout}`);
+  assert.ok(result.stdout.includes(NOT_CONNECTED_SENTENCE), `got: ${result.stdout}`);
+  assert.equal(result.stdout.includes('Connect to Workers Builds'), false, `got: ${result.stdout}`);
+  assert.equal(result.requests.some((r) => r.path.includes('/builds')), false, 'a park sends no Builds request');
+});
+
+test('a park whose record has no live address prints no publish sentence', async (t) => {
+  const result = await runLive(t, 'closing-nourl1', PARK_SEED, [], {
+    step: 'records-carried',
+    dropUrl: true,
+  });
+  assert.ok(result.stdout.includes('Update your domain\'s nameservers'), `expected the park, got: ${result.stdout}`);
+  assert.ok(result.stdout.includes('Deploying it to the internet arrives with the next chapter.'), `got: ${result.stdout}`);
+  assert.equal(result.stdout.includes(NOT_CONNECTED_SENTENCE), false, `got: ${result.stdout}`);
+  assert.equal(result.stdout.includes(CONNECTED_SENTENCE), false, `got: ${result.stdout}`);
+  assert.equal(result.stdout.includes('Connect to Workers Builds'), false, `got: ${result.stdout}`);
 });

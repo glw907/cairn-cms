@@ -266,17 +266,18 @@ cannot do is invite anyone else, since there is no way to send them a link.
 Your way back in is `npx create-cairn-site --dir <dir> --sign-in`, which writes a fresh sign-in
 link straight into your site's database without touching email. Each one lasts 30 days, so nothing
 expires out from under you while you decide. Running the command again re-offers turning on email
-sign-in until you connect Workers Builds. Once Builds is connected, the command no longer offers
-it, so turn sign-in email on first. A `--yes` run without `--email` declines email and then skips
-the Builds chapter, so the offer stays open. To turn email on, run the command again from a
-terminal, or pass `--email` with `--yes`. To connect Builds anyway, pass `--connect`.
+sign-in any time, before or after you connect Workers Builds. A `--yes` run without `--email`
+declines email again. To turn email on, run the command again from a terminal, or pass `--email`
+with `--yes`.
 
 ### What it does
 
 The chapter onboards your domain for sending, sends one real message to your address to prove
 the path works, then writes `no-reply@<your-domain>` into your site's config and redeploys once so
 the running site uses it. The test send comes before the redeploy on purpose: there is no point
-deploying a site whose sending path is broken.
+deploying a site whose sending path is broken. On a site connected to Workers Builds, the chapter
+commits the change to your repository and lets Builds deploy it instead, as
+[After Builds is connected](#after-builds-is-connected) describes.
 
 Onboarding adds records under `cf-bounce.<your-domain>` and leaves the mail you already receive
 alone.
@@ -307,11 +308,8 @@ Builds, so every commit to your default branch deploys itself, no laptop involve
 interactive by default: it asks whether you want to connect. Unlike the domain and email
 chapters, `--yes` alone consents to this one rather than skipping it, since there is nothing
 about connecting a repository that costs money or commits you to anything ongoing, so an
-unattended run connects the repository and creates the trigger with no extra flag. The exception
-is a run that declined sign-in email: connecting Builds ends the email offer, so `--yes` skips
-this chapter unless you pass `--connect`. A run that already saved a Builds token from an earlier
-`--connect` still connects. It stops one
-hop short of the end: the config commit needs the sign-in click described below, and `--yes`
+unattended run connects the repository and creates the trigger with no extra flag, whether or not
+it declined sign-in email. It stops one hop short of the end: the config commit needs the sign-in click described below, and `--yes`
 never opens a browser, so an unattended run parks there and prints the command to finish
 interactively. Running the command again later, from a site that already finished this run,
 `--connect` opts in (or resumes a parked run) any time after your site is live on Cloudflare.
@@ -388,6 +386,30 @@ commits anything that has drifted on your machine since, such as a `PUBLIC_ORIGI
 last deployed but never pushed, or the `publicOrigin` in `src/theme/cairn.config.ts`. With `--yes`, a run that finds local drift stops and asks you to
 re-run interactively: committing the change needs the sign-in click above, and `--yes` never opens
 a browser.
+
+### After Builds is connected
+
+A site on Workers Builds deploys what its repository holds, so the domain and email chapters finish
+differently once Builds is connected, and neither builds or deploys from your machine. Each writes
+its change into `wrangler.jsonc` or `src/theme/cairn.config.ts` as before, commits both files to
+your repository through the same sign-in click this chapter uses, and watches the Builds deploy of
+that commit. Connecting a domain and turning on email in one run makes two commits and watches two
+builds.
+
+To reach them, run `npx create-cairn-site --dir <dir>` again. A site with no domain is asked the
+domain question, and a site whose owner declined email is asked the email question. On a site
+partway through the domain or email chapter, `--connect` resumes that chapter.
+
+Before it commits, the command compares the repository's copies of the two files with yours,
+ignoring the three values it writes: the site's address in each file and the sign-in sender. If
+anything else differs, the file changed in the repository since your checkout last pulled it, so
+the command commits nothing and asks you to run `git pull` in `--dir`, then run it again.
+
+If the Builds deploy fails after the commit lands, the repository already names your domain, so
+the command leaves both files on your machine as they are. Your site keeps working at its
+workers.dev address until a build succeeds, and running the command again starts a new build and
+watches it. A run with `--yes` cannot open the sign-in page, so it stops before committing and asks
+you to run the command again without `--yes`.
 
 ## Watching a wait
 

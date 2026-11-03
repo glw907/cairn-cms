@@ -2279,7 +2279,7 @@ describe('EditPage', () => {
       over: { flash: 'saved' as const },
       message: 'Saved. Your site keeps showing the published version until you publish.',
     },
-    { name: 'published', over: { flash: 'published' as const }, message: 'Published. The live site is rebuilding.' },
+    { name: 'published', over: { flash: 'published' as const }, message: 'Published. The live site shows this change once the site rebuilds.' },
     { name: 'discarded', over: { flash: 'discarded' as const }, message: 'Changes discarded.' },
     { name: 'renamed', over: { flash: 'renamed' as const, slug: 'new-slug' }, message: 'The address is now new-slug.' },
   ];

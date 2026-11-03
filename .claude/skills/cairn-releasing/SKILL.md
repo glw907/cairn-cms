@@ -153,26 +153,91 @@ breaks `npm run package`. Write the concrete token. A quick check:
 
 ## 6. Commit, land on `main`, cut the release
 
-Commit the version bump plus the finalized CHANGELOG (plus STATUS if it is part of
-this cut). Land it on `main` (fast-forward push, never force). Then:
+Commit the version bump plus the finalized CHANGELOG. A stable cut commit carries only the version
+fields and the headings, and STATUS lands after the release. Land it on `main` (fast-forward push,
+never force). A stable runs `scripts/checks/check-stable-source.mjs` first (below); a candidate
+does not. Then, for a candidate:
 
 ```bash
-gh release create v<x.y.z> --target main \
+gh release create v<x.y.z-rc.N> --target main --prerelease \
+  --title "v<x.y.z-rc.N>: <one-line summary of the window>" \
+  --notes-file <notes-file>
+```
+
+For a stable, run the stable-source check first. It refuses unless `HEAD` is `origin/main` and the diff
+from the tag `next` names is only the cut's version fields, pins, and headings, and it prints the sha it
+read. Do not cut on a failure. Pass that sha literally, never a `$( )` substitution:
+
+```bash
+node scripts/checks/check-stable-source.mjs
+gh release create v<x.y.z> --target <sha> \
   --title "v<x.y.z>: <one-line summary of the window>" \
   --notes-file <notes-file>
 ```
 
-This fires `publish.yml` (OIDC trusted publishing, `npm publish --access public`). The workflow derives
+Either fires `publish.yml` (OIDC trusted publishing, `npm publish --access public`). The workflow derives
 the dist-tag from the version: a stable number goes to `latest`, and any version carrying a prerelease
-suffix goes to `next`, so a candidate never reaches a bare `npm install`. Pass `--prerelease` to `gh release create` on a candidate so the GitHub "Latest" badge
-follows suit. A prerelease also has to clear `check:version`, which sizes an entry against the nearest
+suffix goes to `gate`, which no install command reads, so a candidate never reaches a bare
+`npm install` and never reaches `next` until it passes the gate below.
+
+**A stable is cut only from the final gated candidate's tree.** The transcript recapture and every
+quoted docs block it updates land before the final candidate is cut. The order is: recapture, then
+`rc.N`, then the gate, promotion, and Geoff's own install, then the stable. A recapture merged after the
+final candidate fails the stable check by design and means one more candidate. A changed CHANGELOG or
+MIGRATION-NOTES body line fails it too, so step 5's scrub runs at the candidate cut, and a stable whose
+diff would need a scrub cuts a new candidate. A prerelease also has to clear `check:version`, which sizes an entry against the nearest
 earlier heading whose numeric core differs, so `0.94.0-rc.1` and the `0.94.0` it promotes into declare
 their shared `<!-- release-size: minor -->` marker once, on whichever heading is current.
 
 **A consumer cannot reach a prerelease through its caret range.** A `^0.93.0` dependency does not resolve
 `0.94.0-rc.1`, by SemVer's own rule, so a site testing against a candidate pins the exact version
-(`"@glw907/cairn-cms": "0.94.0-rc.1"`) and moves back to a caret when the stable lands. The workflow runs `npm install -g npm@11` first because trusted publishing needs npm >= 11.5.1 and npm 12 is broken for publishing (see the `WATCH` comment in `publish.yml`).
+(`"@glw907/cairn-cms": "0.94.0-rc.1"`) and moves back to a caret when the stable lands. The workflow runs `npm install -g npm@^11.21.0` first because trusted publishing needs npm >= 11.5.1, a dist-tag change over OIDC needs 11.21.0, and npm 12 is broken for publishing (see the `WATCH` comment in `publish.yml`).
 Under trusted publishing the `--provenance` flag is unnecessary: provenance is automatic for this public repo.
+
+### Gate the candidate
+
+A candidate on `gate` is judged before anyone installs it. Before the first leg, check that the
+account's Email Sending product is live and that the account is on Workers Paid (the estate
+inventory records both), and that the harness's credentials work. `carin-test.org` itself needs no
+setup: the CLI onboards its apex sending subdomain on the first email-on leg, and teardown leaves it:
+
+```bash
+bash scripts/gate/run-gate.sh --smoke
+bash scripts/gate/run-gate.sh --all --version <x.y.z-rc.N>
+```
+
+A leg passes only when its fetch, its page read, its origin read, and the sign-in email's From all
+hold. After each leg, record the result under a `## Gate` heading in the candidate's release body. The
+standing answers:
+
+- A failed leg fixes forward to the next candidate, and the rerun covers only the legs the fix's path
+  touches.
+- A Workers Builds outage gets one rerun after 15 minutes.
+- A GitHub page the harness cannot pass asks Geoff once, and the fix is filed.
+
+Geoff runs install B's first leg on the final candidate in his own browser, with his own accounts,
+before the stable cut.
+
+### Promote a passed candidate
+
+```bash
+gh workflow run publish.yml -f promote=<x.y.z-rc.N>
+```
+
+The `promote` job moves `next` to the version on all three packages, `create-cairn-site` last, and then
+moves `create-cairn-site@latest` too. The engine packages' `latest` never moves to a candidate. Check:
+
+```bash
+npm view @glw907/cairn-cms dist-tags.next        # each of the three prints the version
+npm view @glw907/cairn-cms-dev dist-tags.next
+npm view create-cairn-site dist-tags.next
+npm view create-cairn-site dist-tags.latest
+```
+
+A split `next` recovers by dispatching the same version again, since `dist-tag add` is idempotent. If
+the run reports that the trusted publisher cannot manage dist-tags, Geoff runs
+`npm dist-tag add <pkg>@<x.y.z-rc.N> next` three times by hand. The first real promotion is the
+permission's probe.
 
 ### The first `create-cairn-site` release (owner steps)
 
@@ -181,7 +246,7 @@ cannot bind a trusted publisher to a package that does not exist. Publish no pla
 content that exists only to reserve a name. The owner does these once, in one terminal sitting on release
 day, since no session holds npm credentials or the account's 2FA:
 
-1. `npm login`, then `npm publish <tarball> --access public --tag next` on the release candidate's
+1. `npm login`, then `npm publish <tarball> --access public --tag gate` on the release candidate's
    real build, which the session bakes and packs.
 2. `npm trust github create-cairn-site --file publish.yml --repo glw907/cairn-cms --allow-publish`.
    `--allow-publish` is needed because `publish.yml` runs `npm publish` directly.
@@ -196,9 +261,13 @@ than move `latest` to `0.0.0`.
 
 ```bash
 gh run watch <run-id> --exit-status     # publish.yml must finish green
-npm view @glw907/cairn-cms version      # serves the new number on `latest`
-npm view create-cairn-site version      # serves the same number on `latest`
+npm view @glw907/cairn-cms version      # a stable serves the new number on `latest`
+npm view create-cairn-site version      # a stable serves the same number on `latest`
+npm view <pkg> dist-tags                # a candidate shows gate: <version> and next unchanged, on all three
 ```
+
+A candidate is verified on `gate`; its `next` check runs after promotion, when `next` reads the
+promoted version.
 
 Then run the audit's public scope over each consuming site you maintain and record the counts. In each
 site's checkout:

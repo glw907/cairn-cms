@@ -506,6 +506,30 @@ const ROWS = {
   'cutover-deploy-failed': {
     kind: 'act',
     build(params) {
+      // Workers Builds connected, and the commit naming the domain already landed: the origin on
+      // disk stays, since the repository already carries it and the next build deploys it.
+      if (params.buildsCommitted) {
+        return (
+          'Your repository now names your domain as its address, but the Workers Builds deploy ' +
+          'of that change did not finish. It reported:\n' +
+          `${params.detail}\n` +
+          'Your site is still working at its workers.dev address. The next successful build ' +
+          'serves it at your domain too, and a re-run starts one and watches it.\n' +
+          `Next: fix what was reported above, then re-run npx create-cairn-site --dir ` +
+          `${params.dir}.`
+        );
+      }
+      // Workers Builds connected, and the commit naming the domain never landed.
+      if (params.viaBuilds && params.detail && !params.restoreFailed) {
+        return (
+          "Committing your site's new address to your repository did not finish. It reported:\n" +
+          `${params.detail}\n` +
+          "The tool already restored your site's address on disk back to its workers.dev one, " +
+          'so your site is still working there and nothing is half-changed.\n' +
+          `Next: fix what was reported above, then re-run npx create-cairn-site --dir ` +
+          `${params.dir}.`
+        );
+      }
       if (params.restoreFailed) {
         return (
           'Rebuilding and redeploying your site after pointing it at your domain did not ' +
@@ -573,8 +597,7 @@ const ROWS = {
           `Your way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
           'each sign-in it writes lasts 30 days.\n' +
           'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
-          `${params.dir} to do it, before you connect Workers Builds: once Builds is ` +
-          'connected, this tool no longer offers it.'
+          `${params.dir} to do it, any time.`
         );
       }
       return (
@@ -586,8 +609,7 @@ const ROWS = {
         "writes a fresh sign-in link straight into the site's database without touching email. " +
         'Your current sign-in lasts 30 days.\n' +
         'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
-        `${params.dir} when you are ready, before you connect Workers Builds: once Builds is ` +
-        'connected, this tool no longer offers it.'
+        `${params.dir} when you are ready, any time.`
       );
     }
   },
@@ -763,7 +785,7 @@ const ROWS = {
           'managed to read before giving up:'
         : 'The build log ends with:';
       return (
-        `The first Workers Builds deploy did not finish successfully. ${logIntro}\n` +
+        `The Workers Builds deploy did not finish successfully. ${logIntro}\n` +
         `${params.detail}\n` +
         `Next: open the build at ${params.buildUrl} to see the full log, fix what it names, ` +
         `then re-run npx create-cairn-site --dir ${params.dir} --connect to trigger and watch ` +
@@ -775,10 +797,26 @@ const ROWS = {
     kind: 'act',
     build(params) {
       return (
-        'The first Workers Builds deploy did not run: Cloudflare marked it ' +
+        'The Workers Builds deploy did not run: Cloudflare marked it ' +
         `${params.outcome} rather than completing it.\n` +
         `Next: open the build at ${params.buildUrl} to see why, fix what it names, then ` +
         `re-run npx create-cairn-site --dir ${params.dir} --connect to trigger a new build.`
+      );
+    }
+  },
+  // Fires before a commit chapter 2 makes on a site Workers Builds deploys: the repository's copy
+  // of a tool-owned file differs from this checkout's in more than the values this tool writes, so
+  // committing the checkout's copy whole would revert an edit made in the repository.
+  'builds-config-diverged': {
+    kind: 'act',
+    build(params) {
+      const files = params.files.join(' and ');
+      return (
+        `Your repository has changes to ${files} that this checkout does not have, beyond the ` +
+        "values this tool writes. Committing this checkout's copy would undo them, so nothing " +
+        `was committed. Run git pull in ${params.dir} to bring those changes in.\n` +
+        `Next: run git pull in ${params.dir}, then re-run npx create-cairn-site --dir ` +
+        `${params.dir}.`
       );
     }
   },
@@ -826,8 +864,11 @@ export const WAIT_KIND_CODES = CATALOGUE_CODES.filter((code) => ROWS[code].kind 
  *  both string arrays, on the delegation rows, `reoffered`, a boolean, on paid-plan-declined to
  *  print the copy for a re-run after an earlier decline, `owner`/`repo` on
  *  builds-repo-not-selected, `detail`/`buildUrl`/`logTruncated` (a boolean, true only when
- *  getBuildLogs gave up against its page cap) on builds-deploy-failed, and `outcome`
- *  (`skipped`, `cancelled`, or another non-success value) on builds-not-runnable)
+ *  getBuildLogs gave up against its page cap) on builds-deploy-failed, `outcome`
+ *  (`skipped`, `cancelled`, or another non-success value) on builds-not-runnable, `files`, a
+ *  string array, on builds-config-diverged, and on cutover-deploy-failed either `buildsCommitted`
+ *  (a boolean: the Workers Builds commit naming the domain landed, so nothing was restored) or
+ *  `viaBuilds` (a boolean: that commit never landed, and the origin was restored))
  * @returns {Error & { catalogue: ChapterErrorInfo }} an Error whose message is the full printed
  *  text (ending in a "Next:" line) and whose `catalogue` property carries `{ code, kind, next }`
  */

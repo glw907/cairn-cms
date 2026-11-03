@@ -37,6 +37,7 @@ import { startFakeCloudflare } from './fake-cloudflare.mjs';
 import { saveSite, loadSite } from '../src/state.mjs';
 import { reconciledConfigHash } from '../src/cloudflare/chapter3.mjs';
 import { consoleUrlLine } from '../src/hold-loop.mjs';
+import { makeStubOpenerDir } from './stub-opener.mjs';
 import { SERVES_DURING_RUN_SENTENCE } from '../src/console/render.mjs';
 import { EXIT_TEXT } from '../src/console/exit-render.mjs';
 import { renderParkPage } from '../src/console/park-pages.mjs';
@@ -213,6 +214,7 @@ test('a spawned run holds the Builds discovery wait, serves state-derived consol
     CAIRN_STATE_DIR: stateDir,
     CAIRN_CLOUDFLARE_API_BASE: cloudflare.apiBase,
     CAIRN_CF_API_TOKEN: 'console-hold-env-token',
+    PATH: `${(await makeStubOpenerDir(t)).dir}:${process.env.PATH ?? ''}`,
     CAIRN_FORCE_HOLD: '1',
   });
   t.after(() => child.kill('SIGKILL'));
@@ -299,6 +301,7 @@ test('SIGINT while the hold is watching a running build persists the discovered 
     CAIRN_STATE_DIR: stateDir,
     CAIRN_CLOUDFLARE_API_BASE: cloudflare.apiBase,
     CAIRN_CF_API_TOKEN: 'console-hold-env-token',
+    PATH: `${(await makeStubOpenerDir(t)).dir}:${process.env.PATH ?? ''}`,
     CAIRN_FORCE_HOLD: '1',
   });
   t.after(() => child.kill('SIGKILL'));
@@ -338,6 +341,7 @@ test('SIGINT during a held Builds discovery wait closes the console, prints the 
     CAIRN_STATE_DIR: stateDir,
     CAIRN_CLOUDFLARE_API_BASE: cloudflare.apiBase,
     CAIRN_CF_API_TOKEN: 'console-hold-env-token',
+    PATH: `${(await makeStubOpenerDir(t)).dir}:${process.env.PATH ?? ''}`,
     CAIRN_FORCE_HOLD: '1',
   });
   t.after(() => child.kill('SIGKILL'));
@@ -376,6 +380,7 @@ test('SIGINT during a held Builds discovery wait serves the park page over the r
     CAIRN_STATE_DIR: stateDir,
     CAIRN_CLOUDFLARE_API_BASE: cloudflare.apiBase,
     CAIRN_CF_API_TOKEN: 'console-hold-env-token',
+    PATH: `${(await makeStubOpenerDir(t)).dir}:${process.env.PATH ?? ''}`,
     CAIRN_FORCE_HOLD: '1',
   });
   t.after(() => child.kill('SIGKILL'));

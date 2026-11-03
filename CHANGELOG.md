@@ -1,3 +1,16 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+- **A site whose owner skips the domain is offered Workers Builds in the same run, and each closing block says whether a publish deploys.** `create-cairn-site` no longer stops at the live block when the domain is declined. Every closing block states whether a publish from the admin reaches the live site, and "This site is set up end to end." prints only once Workers Builds is connected. A successful build prints one line, and the full output prints only when the build fails.
+- **Connecting a domain or turning on email after Workers Builds commits the change and lets Builds deploy it.** On a site connected to Workers Builds, `create-cairn-site` no longer builds or deploys from your machine: the domain and email chapters commit `wrangler.jsonc` and `src/theme/cairn.config.ts` to the repository and watch the Builds deploy of that commit. A re-run at either Builds step asks the domain question again when no domain is connected.
+- **The email offer no longer ends at Workers Builds.** A site whose owner declined email sign-in is asked again on a later run, before or after Builds is connected.
+- **`--yes` no longer skips Workers Builds after an email decline.** An unattended run connects Builds whether or not it declined email.
+- **The setup tool refuses to commit over repository edits to its two config files.** Before a domain or email commit on a Builds site, it compares the repository's `wrangler.jsonc` and `src/theme/cairn.config.ts` with the checkout's, ignoring the values the tool writes, and stops with a `git pull` step when anything else differs.
+- **The Builds commit path checks first and waits for the deploy to start.** Before it commits a domain or email change, the setup tool reads the Builds API with your token, so a token without the Workers Builds permission stops at the token step instead of after the commit. It then waits up to two minutes for the push build to appear, reuses that build on a re-run instead of starting a second, drops its saved token when it parks for a sign-in, and strips control characters from a failed build's log tail before printing it. A read that fails mid-reconcile now stops the commit.
+- **The admin's publish message no longer claims a rebuild is running.** After a publish it reads "Published. The live site shows this change once the site rebuilds.", because the admin cannot see a rebuild.
+- **A release candidate now publishes to the hidden `gate` dist-tag and reaches `next` only after it passes the release gate.** A candidate no longer moves `next` on its own: the gate run promotes it, and promotion also moves `create-cairn-site@latest` to the passed candidate until a stable supersedes it.
+
 ## 0.99.0-rc.2
 
 <!-- release-size: minor -->

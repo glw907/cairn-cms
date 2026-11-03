@@ -8,6 +8,11 @@ Approved by Geoff on 2026-11-02, packet `20261102T213128-1466750`, every recomme
 installs on every candidate; the neutral sentence "Published. The live site shows this change once
 the site rebuilds." with no new setting; the run's limit raised to 3,400 actual minutes.
 
+Revision 1, 2026-11-02: after approving, Geoff asked for the real install's browser steps to be
+automated, so the gate runs as a test without him. This revision makes the gate unattended on
+every candidate and moves his browser leg to once per stable. It changes only the gate; the rest
+stands as approved.
+
 ## Brief
 
 A site set up on its free workers.dev address will deploy every publish once this lands, and no
@@ -28,10 +33,13 @@ rebuilding. The fault has been in the code since `0.95.0`, and no check read the
 - Every closing screen says whether a publish goes live by itself. "This site is set up end to
   end" no longer prints before the domain and Builds steps.
 - The admin's publish message stops claiming a rebuild it can't see (your call below).
-- Each candidate publishes to a hidden `gate` tag first. The session runs two real installs from
-  it, publishes an edit at every stopping point, and passes only when it fetches each edit from
-  the live address. Then the candidate moves to `next`. A stable release is cut only from a tree a
-  passed candidate already proved.
+- Each candidate publishes to a hidden `gate` tag first. Two real installs run from it with no one
+  at the keyboard, publish an edit at every stopping point, and pass only when each edit is
+  fetched from the live address. Then the candidate moves to `next`. A stable release is cut only
+  from a tree a passed candidate already proved.
+- A test GitHub account and a scoped Cloudflare token stand in for your sign-ins on every
+  candidate. You run one install in your own browser once per stable, about 15 minutes, which
+  covers the real sign-in pages the test account skips.
 - Two small faults from the `rc.2` run go too: the page of build warnings on first setup and the
   stray spinner frame after the closing text.
 
@@ -42,49 +50,54 @@ rebuilding. The fault has been in the code since `0.95.0`, and no check read the
    a standing answer that runs out.
 3. The pass touches setup credentials and the publish workflow, so its PR comes to you as a packet
    with a security read and CI. The pass ends at that PR and publishes nothing.
-4. After the merge, you turn on dist-tag moves for the three npm trusted publishers (a few clicks
-   in one npm sign-in). The conductor cuts `rc.3` to the hidden tag, and you do the browser
-   approvals in one gate sitting. The gate is the live proof: a failure is fixed forward before any
-   tester sees the candidate.
-5. The rest of the release follows the run sheet from step 14: recapture, stable, verify.
+4. After the merge, you do a one-time setup: turn on dist-tag moves for the three npm trusted
+   publishers, create the GitHub test account, and make the short-lived token the session uses to
+   mint the gate's Cloudflare token. The conductor then cuts `rc.3` to the hidden tag and runs the
+   gate without you. The gate is the live proof: a failure is fixed forward before any tester sees
+   the candidate.
+5. Before the stable cut, you run your 15-minute install on the final candidate.
+6. The rest of the release follows the run sheet from step 14: recapture, stable, verify.
 
-### Decide: How much the gate installs for each candidate
+### Decide: Who clicks GitHub's App pages in the gate
 
-Every candidate costs you a sitting of browser approvals, about four per install. Two installs
-reach every setup step at least once and every stopping point a publish can land on. A third
-would add only the email-declined branch, which is a refusal the unit tests cover.
+GitHub has no API that creates or installs an App: the manifest page needs a click on "Create
+GitHub App", and installing is a page step too. A browser that Playwright drives can click both on
+a GitHub machine account, which GitHub's terms allow, one per person. GitHub's docs say nothing
+either way about driving its web pages, so a redesign or a bot check can break a run, and the
+fallback is your two clicks per install. The test Apps and repositories land on that account, away
+from glw907.
 
-Source: `packages/create-cairn-site/src/cloudflare/chapter2.mjs:94`, `chapter3.mjs:66`, and the
-`rc.2` run in the ledger.
+Source: GitHub's manifest-flow, installations API, and Terms of Service pages, linked under "The
+release gate".
 
-- Two installs on every candidate, about 45 minutes of your time (recommended)
-- Two installs only when setup code changed since the last passed gate, otherwise the workers.dev
-  half alone
-- Three installs, adding the email-declined path
-
-### Decide: What the admin says after a publish
-
-The admin can't see whether a site deploys on a commit. A truthful sentence fits both kinds of
-site with no new setting. A setting that the setup tool writes would let the message be exact on
-both, but it is new public surface for one sentence, and every site the tool sets up after this
-fix deploys on publish unless its owner declined.
-
-Source: `src/lib/admin/EditPage.svelte:1336`; the scope charter.
-
-- "Published. The live site shows this change once the site rebuilds." with no new setting
+- A GitHub machine account that Playwright drives, its password and 2FA secret in the age store
   (recommended)
-- A deploy setting the setup tool writes, with one message for each kind of site
+- You click Create and Install for each install, about four clicks per candidate
 
-### Decide: The run's minute limit
+### Decide: Which Cloudflare credential the gate uses
 
-The run sheet stops the run at 2,900 actual minutes at the next pass boundary. The run stands near
-2,520, and this pass is likely to take about 250 to 420 more, plus the gate sitting, so it lands
-on the line.
+The gate swaps `wrangler login` and the token pages for one account-owned API token, as wrangler's
+own end-to-end suite does. The token holds only what setup needs, with its zone permissions limited
+to `carin-test.org`. Its Workers permission reaches the whole account, as `ci-deploy`'s already
+does. A separate Cloudflare account would wall the gate off from production, but it needs Workers
+Paid of its own and the test domain moved there.
 
-Source: ledger "Rulings" 2026-11-01 and "Conductor state".
+Source: wrangler's e2e README; `~/.claude/docs/cloudflare-estate-inventory.md`.
 
-- Raise the limit to 3,400 for this pass and the release steps after it (recommended)
-- Keep 2,900, and the run stops at this pass's boundary for your word
+- One scoped gate token on the current account, made through the token scheme (recommended)
+- A separate Cloudflare account for testing, on Workers Paid, holding `carin-test.org`
+
+### Decide: How often you run an install yourself
+
+The token stands in for the real `wrangler login` and the prefilled token pages, so a Cloudflare
+change to either would slip past the unattended gate. One install in your own browser covers them:
+the default path to a published edit on workers.dev, about 15 minutes.
+
+Source: `packages/create-cairn-site/src/cloudflare/prefill.mjs`, whose prefill keys fail silently
+when Cloudflare drops one.
+
+- Once per stable, on the final candidate before the cut (recommended)
+- On every candidate, beside the unattended gate
 
 ### Worth knowing
 
@@ -93,15 +106,22 @@ Cloudflare's builder installs the engine from the npm registry and never sees a 
 hidden `gate` tag gives the same protection with real registry installs: testers on `next` never
 see a candidate until it passes.
 
+### Your calls of the first approval
+
+You approved the first version with every recommendation: two installs on every candidate, the
+neutral publish sentence with no new setting, and the run's limit at 3,400 actual minutes. They
+stand. Two installs now cost you no time per candidate.
+
 ### Standing answers
 
 The run uses these without asking you.
 
-- The plan's path estimate is 420 minutes and its ceiling 840. A plan over 840 after its cuts
-  stops for you.
+- The plan's path estimate is 540 minutes and its ceiling 1,080. A plan over 1,080 after its
+  cuts stops for you.
 - A gate leg that fails is fixed forward on this branch's successor, published as the next
-  candidate to `gate`, and only the legs whose path the fix touches rerun. Each rerun still needs
-  your browser approvals.
+  candidate to `gate`, and only the legs whose path the fix touches rerun.
+- A GitHub page the harness can't get past (a redesign, a bot check) stops that run and asks for
+  your clicks once; the harness fix lands as a backlog item for the next pass.
 - A Builds deploy that fails for a cause outside the change (a Cloudflare outage, a registry
   delay) gets one rerun after 15 minutes; a second failure stops for you.
 - The first install's Worker is removed before the second install takes the test domain. Both
@@ -194,7 +214,7 @@ the e2e assertion, and every page that quotes it (`docs/editors/publish-and-hist
    plan probes the permission on a throwaway dispatch before any task depends on it; if the probe
    fails, promotion becomes a `[you]` `npm dist-tag add` in the gate sitting. A version on `gate`
    still matches a caret range pinned to an earlier candidate; no site pins one.
-2. **Two installs, from `create-cairn-site@gate` under `clean-env`, the session driving:**
+2. **Two installs, from `create-cairn-site@gate` under `clean-env`, unattended:**
    - Install A, domain first: connect the test domain `carin-test.org` (its zone is already active
      on the account), turn email on, decline Builds. Publish an edit. The admin message reads as
      decided, and a fetch shows the live page unchanged. Run `--connect`, publish again, and fetch
@@ -207,15 +227,36 @@ the e2e assertion, and every page that quotes it (`docs/editors/publish-and-hist
    edit's unique marker, polling for up to 10 minutes. A success message, an exit code, or a commit
    on the remote never passes a leg. Each leg's record (path, URL, commit, marker, fetch time)
    goes in that candidate's GitHub release body, under a `## Gate` heading.
-4. **The harness.** The driver answers prompts by matching their text, so a prompt the run skips
-   can't stall it (the `rc.2` driver matched answers in order). Each browser trip times out after
-   10 minutes, as now.
+4. **The harness.** No CLI seam is added; the harness drives the real CLI.
+   - The driver answers prompts by matching their text, without `--yes`, so a prompt the run
+     skips can't stall it (the `rc.2` driver matched answers in order) and the reconcile runs
+     rather than parking.
+   - Every browser trip goes through `xdg-open` (`src/github/open.mjs`). A shim earlier on `PATH`
+     captures each URL and hands it to Playwright.
+   - Playwright runs a stored session for the GitHub machine account, with its TOTP secret for a
+     fresh sign-in or a sudo prompt. It clicks Create on the real manifest page and Install on the
+     install page (<https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest>,
+     <https://docs.github.com/en/rest/apps/installations>). The reconcile's repeat authorize needs
+     no click (<https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps>).
+     The session file stays out of git (<https://playwright.dev/docs/auth>).
+   - The gate token reaches wrangler as `CLOUDFLARE_API_TOKEN` with `CLOUDFLARE_ACCOUNT_ID`
+     (<https://developers.cloudflare.com/workers/wrangler/system-environment-variables/>), and the
+     CLI's chapters 2 and 3 as `CAIRN_CF_API_TOKEN` (`src/cloudflare/prefill.mjs`).
+   - Playwright opens the captured bootstrap sign-in link, publishes the edit, and the fetch
+     script checks the live address.
+   - After each run the harness deletes the Apps it made, through the same browser, since GitHub
+     offers no API for it and caps an account at 100 Apps
+     (<https://docs.github.com/en/apps/maintaining-github-apps/deleting-a-github-app>). It removes
+     the test repositories and the Workers with them.
+   - Each browser step times out after 10 minutes, as now.
+   - GitHub's terms allow one machine account per person
+     (<https://docs.github.com/en/site-policy/github-terms/github-terms-of-service>).
 5. **Promotion.** A passed gate moves the candidate to `next`, so `next` only ever names a passed
    candidate, and that is the signal the stable check reads. A stable is cut only from a commit
    whose tree matches the tag of the version `next` names, except for the version fields and the
    changelog heading. A script the release skill runs before `gh release create` enforces it; it is
-   a skill step, not a CI guard. After the stable publishes, install B's first leg runs once
-   against `latest`.
+   a skill step, not a CI guard. Before the cut, Geoff runs install B's first leg on the final
+   candidate in his own browser, with his own accounts.
 6. **Where it lives.** `cairn-releasing` gains the gate between "cut" and "verify", and the run
    sheet's steps 11 and 12 point at it.
 
@@ -229,6 +270,15 @@ The email-declined path's live leg, a deploy-status read in the admin, and migra
 - `[you]` Turn on "Allow npm dist-tag" for `@glw907/cairn-cms`, `@glw907/cairn-cms-dev`, and
   `create-cairn-site` on npmjs.com, after the merge and before `rc.3`. The plan probes the exact
   control and the check that shows it on.
+- `[you]` Create the GitHub machine account, unless you already hold one, with 2FA on. Its
+  password and TOTP secret reach the session through `secret-receive`, and Proton Pass keeps the
+  record.
+- `[you]` Make `tmp-account-tokens` from the token scheme's link
+  (`~/.claude/docs/cloudflare-estate-inventory.md`, item 6), so the session can mint the
+  account-owned gate token `ws-cairn-gate` (age store `CF_WS_CAIRN_GATE_TOKEN`), add its row to
+  the inventory, and delete the temporary token.
+- One time, the harness's first run installs Cloudflare's Workers Builds GitHub App on the
+  machine account through the same browser; if a page needs you, it asks once.
 - The session checks, before the gate, that `carin-test.org` has Email Sending on and the account
   is on Workers Paid.
 - The plan reads `gh workflow run publish.yml` for the promotion and the gate's teardown against
@@ -236,15 +286,15 @@ The email-declined path's live leg, a deploy-status read in the admin, and migra
 - The pass ends at its PR and publishes nothing. Cutting `rc.3`, the gate, and promotion are the
   conductor's release steps after the merge, so the PR's packet claims CI and the security read,
   never the gate.
-- Your gate sitting: about four browser approvals per install (the GitHub App, its install, the
-  Cloudflare sign-in, and the token pages), and one GitHub sign-in per reconcile.
+- Your one install per stable: the default path in your own browser, about 15 minutes.
 
 ### Risk and estimate
 
 The class is `auth-data` (`packages/create-cairn-site/src/{github,cloudflare}/**`) plus `runner`
 (`.github/workflows/**`). The close takes `standards:web-auth-security-reviewer` and
 `standards:cloudflare-workers-reviewer`. The gate on `rc.3`, after the merge, is the live proof. The
-estimate is 420 path minutes: routing and closing screens 60, the Builds-aware chapter 2 180, the
-message 20, the publish workflows and skill 90, the harness and fetch check 90, docs 60, with
+estimate is 540 path minutes: routing and closing screens 60, the Builds-aware chapter 2 180, the
+message 20, the publish workflows and skill 90, the unattended harness and fetch check 210, docs
+60, with
 the workflow and harness tasks paired beside chapter 2. Ten recent passes ran at 0.58 of plan.
 The chapter 2 task upshifts `cairn-implementer` to Opus, since it is new correctness logic.

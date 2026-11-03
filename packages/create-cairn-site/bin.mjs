@@ -98,6 +98,23 @@ function closingInfoLines(state) {
 }
 
 /**
+ * Build the sentence every closing block uses to say whether a publish from the admin reaches the
+ * live site: Workers Builds deploys it when connected, and otherwise a publish only commits.
+ * @param {{ dir: string, cloudflare?: object }} state the site's saved state record
+ * @returns {string}
+ */
+function publishLine(state) {
+  if (isBuildsConnected(state)) {
+    return 'Each publish from your admin commits to GitHub, and Workers Builds deploys it, so your live site updates by itself.';
+  }
+  return (
+    'Workers Builds is not connected, so a publish from your admin commits to GitHub and your live ' +
+    `site does not change. To deploy each publish, run npx create-cairn-site --dir ${state.dir} ` +
+    '--connect, or deploy by hand.'
+  );
+}
+
+/**
  * Print the block that names the finished site's GitHub repository and App, and, once the
  * Cloudflare chapter has reached its hops, the live URL and what exists on Cloudflare. Shared
  * by the fresh-run and resumed-run paths so every form of "the chapter is done" ends on identical
@@ -118,6 +135,8 @@ async function printLiveInfo(siteId) {
       '',
       "What exists now: one Worker, one database, one storage bucket, and the GitHub App's " +
         'private key, stored as a Worker secret.',
+      '',
+      publishLine(state),
     );
     // A saved domain means a run is already partway through connecting one (a park, an email
     // step), and that run printed its own next step; offering to start over would contradict it.
@@ -175,6 +194,8 @@ async function printEmailLiveInfo(siteId) {
     `Your sign-in sender address is ${state.cloudflare.emailFrom}. Cloudflare accepted a test ` +
       'message from it during setup; the doctor line below can check that again.',
     '',
+    publishLine(state),
+    '',
     doctorLine,
   ];
   console.log(lines.join('\n'));
@@ -201,6 +222,8 @@ async function printDeclinedInfo(siteId) {
     'Email sign-in is off, so you are still the only one who can sign in: use --sign-in any time ' +
       'to open a fresh link.',
     '',
+    publishLine(state),
+    '',
     doctorLine,
   ];
   console.log(lines.join('\n'));
@@ -223,12 +246,9 @@ async function printDeclinedInfo(siteId) {
 async function printBuildsChapterInfo(siteId, step) {
   const state = await loadSite(siteId);
   const { repoLines, doctorLine } = closingInfoLines(state);
-  const note =
-    step === 'builds-live'
-      ? 'Every commit to your default branch now builds and deploys itself through Workers Builds.'
-      : 'Workers Builds is not connected, so deploys still go through this CLI. Re-run with ' +
-        '--connect any time to connect it.';
-  const lines = ['', ...repoLines, '', note];
+  const lines = ['', ...repoLines, ''];
+  if (step === 'builds-live') lines.push('This site is set up end to end.');
+  lines.push(publishLine(state));
   if (state.cloudflare?.emailDeclinedAt && !state.cloudflare?.emailOnboardedAt && isBuildsConnected(state)) {
     lines.push(
       '',
@@ -289,7 +309,7 @@ async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
   const record = dryRun ? null : await loadSite(siteId);
   const outcome = await runChapter2({ siteId, record, dir, args: flags, log, dryRun });
   if (!dryRun) {
-    if (TERMINAL_STEPS.includes(outcome.outcome)) {
+    if (TERMINAL_STEPS.includes(outcome.outcome) || outcome.outcome === 'admission-declined') {
       const settled = await loadSite(siteId);
       const builds = settled?.cloudflare ?? {};
       const declined = outcome.outcome !== 'email-live';
@@ -371,7 +391,6 @@ async function runCloudflareAndReport({ siteId, siteName, dir, flags, log, dryRu
   const outcome = await runCloudflareChapter({ siteId, siteName, dir, flags, log, dryRun });
   if (!dryRun) {
     if (outcome !== 'live') return;
-    console.log('This site is set up end to end.');
   }
   await continueIntoChapter2({ siteId, dir, flags, log, dryRun });
 }

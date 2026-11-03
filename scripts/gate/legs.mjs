@@ -1,0 +1,443 @@
+// The gate's four legs. Each runs the real create-cairn-site CLI at one exact version, publishes an
+// edit through the install's admin, and passes only on what a script fetched from the live address.
+// A leg's verdict is `evaluateLeg`'s: a CLI exit code is never an input that can pass it.
+import { mkdir, readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { runDriver } from './driver.mjs';
+import { confirmSignIn, handleUrl, publishViaAdmin, requestSignInLink, tailUrlLog } from './browser.mjs';
+import { fetchCheck, fetchCheckAbsent } from './fetch-check.mjs';
+import { recordLeg } from './record.mjs';
+
+/** The test domain the gate's installs connect. */
+export const TEST_DOMAIN = 'carin-test.org';
+/** What the admin says after a publish. */
+export const PUBLISHED_ALERT = 'Published. The live site shows this change once the site rebuilds.';
+/** The closing block's publish lines. */
+export const CONNECTED_SENTENCE = 'Each publish from your admin commits to GitHub, and Workers Builds deploys it, so your live site updates by itself.';
+export const NOT_CONNECTED_SENTENCE =
+  'Workers Builds is not connected, so a publish from your admin commits to GitHub and your live site does not change.';
+export const END_TO_END_SENTENCE = 'This site is set up end to end.';
+/** The sender a sign-in email from the connected domain carries. */
+export const MAIL_SENDER = `no-reply@${TEST_DOMAIN}`;
+const INSTALL_NAME_LIMIT = 34;
+
+/**
+ * What each leg does. `install` names the install the leg runs on; `first` marks the leg that creates it.
+ * @type {Record<string, { install: 'a' | 'b', first: boolean, connect: boolean, domain: boolean, email: boolean, builds: boolean }>}
+ */
+export const LEG_PLANS = {
+  A1: { install: 'a', first: true, connect: false, domain: true, email: true, builds: false },
+  A2: { install: 'a', first: false, connect: true, domain: false, email: false, builds: true },
+  B1: { install: 'b', first: true, connect: false, domain: false, email: false, builds: true },
+  B2: { install: 'b', first: false, connect: false, domain: true, email: true, builds: false },
+};
+
+/**
+ * An install's name: `cairn-e2e-gate-<v>-<a|b>-<ddhhmm>`, `<v>` the version with every
+ * non-alphanumeric character removed.
+ * @param {string} version the exact version under test
+ * @param {'a' | 'b'} install which install
+ * @param {Date} [when] the run's start
+ * @returns {string} the name, at most 34 characters
+ */
+export function installName(version, install, when = new Date()) {
+  const two = (/** @type {number} */ n) => String(n).padStart(2, '0');
+  const stamp = `${two(when.getUTCDate())}${two(when.getUTCHours())}${two(when.getUTCMinutes())}`;
+  const name = `cairn-e2e-gate-${version.replace(/[^A-Za-z0-9]/g, '')}-${install}-${stamp}`;
+  if (name.length > INSTALL_NAME_LIMIT) throw new Error(`The install name "${name}" is ${name.length} characters; the limit is ${INSTALL_NAME_LIMIT}.`);
+  return name;
+}
+
+/** @param {string} text */
+const normalize = (text) => text.replace(/[│┃]/g, ' ').replace(/\s+/g, ' ').trim();
+
+/**
+ * @typedef {object} LegResults
+ * @property {string} closingText the CLI's final screen
+ * @property {string | null} alertText the admin's alert after the publish
+ * @property {import('./fetch-check.mjs').FetchCheckResult | null} fetch the marker fetch (A2, B1, B2)
+ * @property {(import('./fetch-check.mjs').FetchCheckResult & { absent: boolean, reason?: string }) | null} absent
+ *  the unchanged-page check (A1)
+ * @property {boolean} commitOnDefaultBranch whether the marker's commit is on the default branch (A1)
+ * @property {boolean} robotsHasSitemap whether `robots.txt` names the domain's sitemap (A2, B2)
+ * @property {{ from: string, fetch: import('./fetch-check.mjs').FetchCheckResult | null } | null} mail
+ *  the mail-borne sign-in's sender and its marker fetch (B2)
+ */
+
+/**
+ * Decide a leg. Only the closing text, the alert, and the fetch results count.
+ * @param {string} leg `A1`, `A2`, `B1`, or `B2`
+ * @param {LegResults} results what the leg gathered
+ * @returns {{ pass: boolean, failures: string[] }} the verdict and every reason it failed
+ */
+export function evaluateLeg(leg, results) {
+  /** @type {string[]} */
+  const failures = [];
+  const closing = normalize(results.closingText);
+  /** @param {string} sentence @param {string} what */
+  const needs = (sentence, what) => {
+    if (!closing.includes(sentence)) failures.push(`the closing block lacks ${what}`);
+  };
+  if (leg === 'A1') needs(NOT_CONNECTED_SENTENCE, 'the not-connected sentence');
+  if (leg === 'A2') needs(CONNECTED_SENTENCE, 'the connected sentence');
+  if (leg === 'B1' || leg === 'B2') {
+    needs(END_TO_END_SENTENCE, 'the end-to-end sentence');
+    needs(CONNECTED_SENTENCE, 'the connected sentence');
+  }
+  if (results.alertText !== PUBLISHED_ALERT) failures.push(`the publish alert read ${JSON.stringify(results.alertText)}`);
+  if (leg === 'A1') {
+    if (!results.commitOnDefaultBranch) failures.push("the marker's commit is not on the default branch");
+    if (!results.absent) failures.push('no unchanged-page check ran');
+    else if (!results.absent.absent) failures.push(`the unchanged-page check failed: ${results.absent.reason ?? 'unknown'}`);
+  } else {
+    if (!results.fetch) failures.push('no fetch result');
+    else if (!results.fetch.found) failures.push(`the fetch did not find the marker (status ${results.fetch.status})`);
+  }
+  if ((leg === 'A2' || leg === 'B2') && !results.robotsHasSitemap) failures.push(`robots.txt lacks https://${TEST_DOMAIN}/sitemap.xml`);
+  if (leg === 'B2') {
+    if (!results.mail) failures.push('no mail-borne sign-in ran');
+    else {
+      if (results.mail.from !== MAIL_SENDER) failures.push(`the sign-in mail came from ${results.mail.from}, not ${MAIL_SENDER}`);
+      if (!results.mail.fetch?.found) failures.push("the mail session's marker was not fetched");
+    }
+  }
+  return { pass: failures.length === 0, failures };
+}
+
+/**
+ * Run work, and tear down only when it throws. A held page keeps `work` pending, so teardown never
+ * runs on the hold itself, only after the hold times out or a later step fails.
+ * @template T
+ * @param {() => Promise<T>} work the leg
+ * @param {() => Promise<unknown>} teardown the cleanup
+ * @returns {Promise<T>}
+ */
+export async function guardedRun(work, teardown) {
+  try {
+    return await work();
+  } catch (error) {
+    await teardown();
+    throw error;
+  }
+}
+
+/**
+ * @typedef {object} MailQuery
+ * @property {string} login the mailbox
+ * @property {string} password its password; used for the basic-auth header only
+ * @property {string} siteName the site's name; the subject is `Sign in to <name>`
+ * @property {string} owner the address the link was requested for
+ * @property {number} sinceMs the time the request was made
+ * @property {string} expectedOrigin the origin the link must carry
+ * @property {string} [sessionUrl] the JMAP session (`https://907.life/.well-known/jmap`)
+ * @property {typeof fetch} [fetchImpl] the fetch
+ * @property {number} [budgetMs] how long to poll (10 minutes)
+ * @property {number} [intervalMs] the gap between polls (15 seconds)
+ * @property {(ms: number) => Promise<void>} [sleep] the wait
+ * @property {() => number} [now] the clock
+ */
+
+/**
+ * Poll the gate mailbox over JMAP for the sign-in message the request caused: received after the
+ * request, to the owner, with the site's sign-in subject, in any mailbox. Never "the newest message".
+ * @param {MailQuery} query
+ * @returns {Promise<{ found: true, from: string, url: string } | { found: false, reason: string }>}
+ *  a message and its link, or why none came; throws when the link is on another origin
+ */
+export async function findSignInMessage(query) {
+  const {
+    login,
+    password,
+    siteName,
+    owner,
+    sinceMs,
+    expectedOrigin,
+    sessionUrl = 'https://907.life/.well-known/jmap',
+    fetchImpl = fetch,
+    budgetMs = 10 * 60_000,
+    intervalMs = 15_000,
+    sleep = (/** @type {number} */ ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    now = Date.now,
+  } = query;
+  const authorization = `Basic ${Buffer.from(`${login}:${password}`).toString('base64')}`;
+  const sessionResponse = await fetchImpl(sessionUrl, { headers: { authorization } });
+  if (sessionResponse.status !== 200) return { found: false, reason: `the JMAP session answered ${sessionResponse.status}` };
+  const session = /** @type {{ apiUrl: string, primaryAccounts: Record<string, string> }} */ (await sessionResponse.json());
+  const accountId = session.primaryAccounts['urn:ietf:params:jmap:mail'];
+  const subject = `Sign in to ${siteName}`;
+  const deadline = now() + budgetMs;
+  for (;;) {
+    const response = await fetchImpl(session.apiUrl, {
+      method: 'POST',
+      headers: { authorization, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        using: ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'],
+        methodCalls: [
+          ['Email/query', { accountId, filter: { after: new Date(sinceMs - 2000).toISOString() }, sort: [{ property: 'receivedAt', isAscending: false }], limit: 50 }, 'q'],
+          [
+            'Email/get',
+            {
+              accountId,
+              '#ids': { resultOf: 'q', name: 'Email/query', path: '/ids' },
+              properties: ['receivedAt', 'from', 'to', 'subject', 'textBody', 'bodyValues'],
+              fetchTextBodyValues: true,
+            },
+            'g',
+          ],
+        ],
+      }),
+    });
+    if (response.status === 200) {
+      const answer = /** @type {{ methodResponses: Array<[string, { list?: any[] }, string]> }} */ (await response.json());
+      const list = answer.methodResponses.find((call) => call[0] === 'Email/get')?.[1].list ?? [];
+      const match = list
+        .filter(
+          (message) =>
+            Date.parse(message.receivedAt) >= sinceMs - 1000 &&
+            message.subject === subject &&
+            (message.to ?? []).some((/** @type {{ email?: string }} */ to) => to.email?.toLowerCase() === owner.toLowerCase()),
+        )
+        .sort((a, b) => Date.parse(b.receivedAt) - Date.parse(a.receivedAt))[0];
+      if (match) {
+        const part = match.textBody?.[0]?.partId;
+        const text = String(part ? (match.bodyValues?.[part]?.value ?? '') : '');
+        const link = /https?:\/\/[^\s<>"]+\/admin\/auth\/confirm\?token=[^\s<>"]+/.exec(text)?.[0];
+        if (!link) return { found: false, reason: 'the sign-in message has no link in its text body' };
+        if (new URL(link).origin !== expectedOrigin) throw new Error(`The sign-in link is on ${new URL(link).origin}, not ${expectedOrigin}; refusing to open it.`);
+        return { found: true, from: match.from?.[0]?.email ?? '', url: link };
+      }
+    }
+    if (now() + intervalMs > deadline) return { found: false, reason: 'no matching sign-in message arrived within the budget' };
+    await sleep(intervalMs);
+  }
+}
+
+/**
+ * Whether the domain's robots.txt names its own sitemap.
+ * @param {typeof fetch} [fetchImpl] the fetch
+ * @param {string} [origin] the origin to ask
+ * @returns {Promise<boolean>}
+ */
+export async function robotsHasSitemap(fetchImpl = fetch, origin = `https://${TEST_DOMAIN}`) {
+  try {
+    const response = await fetchImpl(`${origin}/robots.txt`, { headers: { 'cache-control': 'no-cache' } });
+    return response.status === 200 && (await response.text()).includes(`${origin}/sitemap.xml`);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The commit that put a marker into a file on the default branch, through the machine token.
+ * @param {{ fetchImpl?: typeof fetch, githubBase?: string, token: string, owner: string, repo: string, branch: string, filePath: string, marker: string }} input
+ * @returns {Promise<string | null>} the commit sha, or null when the branch's file lacks the marker
+ */
+export async function markerCommit({ fetchImpl = fetch, githubBase = 'https://api.github.com', token, owner, repo, branch, filePath, marker }) {
+  const headers = { authorization: `Bearer ${token}`, 'user-agent': 'cairn-gate' };
+  const file = await fetchImpl(`${githubBase}/repos/${owner}/${repo}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, {
+    headers: { ...headers, accept: 'application/vnd.github.raw+json' },
+  });
+  if (file.status !== 200 || !(await file.text()).includes(marker)) return null;
+  const commits = await fetchImpl(`${githubBase}/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(branch)}&path=${filePath}&per_page=1`, { headers });
+  if (commits.status !== 200) return null;
+  return /** @type {Array<{ sha: string }>} */ (await commits.json())[0]?.sha ?? null;
+}
+
+/**
+ * The answers the CLI's prompts take on a leg, matched by prompt text.
+ * @param {{ siteName: string, dir: string, ownerEmail: string, token: string, plan: (typeof LEG_PLANS)[string] }} input
+ * @returns {import('./driver.mjs').PromptEntry[]}
+ */
+export function promptTable({ siteName, dir, ownerEmail, token, plan }) {
+  return [
+    { match: 'Site name', kind: 'text', value: siteName },
+    { match: 'Short description', kind: 'text' },
+    { match: 'Brand color', kind: 'text' },
+    { match: 'AI training crawlers', kind: 'select', label: 'No preference' },
+    { match: 'Directory', kind: 'text', value: dir },
+    { match: 'Create the GitHub App and repository now?', kind: 'confirm', answer: true },
+    { match: 'Where should the GitHub App and repository live?', kind: 'select', label: 'My personal account' },
+    { match: 'Repository name', kind: 'text' },
+    { match: 'GitHub App name', kind: 'text' },
+    { match: 'Install, build, and deploy your site now?', kind: 'confirm', answer: true },
+    { match: 'Sign-in email', kind: 'text', value: ownerEmail },
+    { match: 'Which Cloudflare account', kind: 'select', label: '' },
+    { match: 'Paste your Cloudflare API token', kind: 'password', value: () => token },
+    { match: 'Connect a domain you own to this site now?', kind: 'confirm', answer: plan.domain },
+    { match: 'Which domain do you want to connect?', kind: 'text', value: TEST_DOMAIN },
+    { match: 'Copy these records into the new zone?', kind: 'confirm', answer: true },
+    { match: 'Turn on email sign-in for your domain now?', kind: 'confirm', answer: plan.email },
+    { match: 'Connect this repository to Workers Builds now?', kind: 'confirm', answer: plan.builds },
+  ];
+}
+
+/**
+ * @typedef {object} Install
+ * @property {string} name the install's name
+ * @property {string} dir its directory
+ * @property {import('playwright').BrowserContext} admin its admin browser context
+ * @property {boolean} signedIn whether that context holds an admin session
+ */
+
+/**
+ * @typedef {object} LegContext
+ * @property {string} leg `A1`, `A2`, `B1`, or `B2`
+ * @property {string} version the exact version
+ * @property {string} runDir the run directory
+ * @property {Record<string, string | undefined>} env the allowlisted environment
+ * @property {Record<string, string>} cliEnv the CLI child's environment
+ * @property {Install} install the install the leg runs on
+ * @property {import('./browser.mjs').Launched} launched the browser
+ * @property {import('./browser.mjs').Creds} creds the machine account
+ * @property {string} releaseNotesDir where the release notes file goes
+ * @property {(title: string, body: string) => void} notify the desktop notification
+ * @property {(line: string) => void} log one line per event
+ */
+
+/** @param {string} dir */
+async function readRecord(dir) {
+  for (const file of await readdir(dir).catch(() => [])) {
+    if (!file.endsWith('.json')) continue;
+    const record = JSON.parse(await readFile(path.join(dir, file), 'utf8'));
+    return /** @type {any} */ (record);
+  }
+  return null;
+}
+
+/**
+ * Run one leg end to end and record it.
+ * @param {LegContext} ctx
+ * @returns {Promise<{ pass: boolean, failures: string[] }>} the verdict
+ */
+export async function runLeg(ctx) {
+  const { leg, version, runDir, env, cliEnv, install, launched, creds, log } = ctx;
+  const plan = LEG_PLANS[leg];
+  const token = cliEnv.CLOUDFLARE_API_TOKEN;
+  const stateDir = path.join(runDir, 'state');
+  const urlLog = path.join(runDir, 'urls.log');
+  await mkdir(path.dirname(install.dir), { recursive: true });
+
+  /**
+   * Run the CLI at the exact version, handling every URL it opens.
+   * @param {string[]} extra the flags after `--dir`
+   */
+  async function runCli(extra) {
+    const abort = new AbortController();
+    /** @type {unknown} */
+    let handlerFailure;
+    const tail = tailUrlLog(urlLog, async (url) => {
+      if (handlerFailure) return;
+      try {
+        const kind = await handleUrl(url, {
+          github: launched.github,
+          admin: () => install.admin,
+          creds,
+          leg,
+          screenshotDir: path.join(runDir, 'holds'),
+          notify: ctx.notify,
+          log,
+        });
+        if (kind === 'signin') install.signedIn = true;
+      } catch (error) {
+        handlerFailure = error;
+        abort.abort(error instanceof Error ? error.message : String(error));
+      }
+    });
+    const result = await runDriver({
+      command: 'npx',
+      args: ['--yes', `create-cairn-site@${version}`, '--dir', install.dir, ...extra],
+      env: cliEnv,
+      cwd: path.dirname(install.dir),
+      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: env.GATE_OWNER_EMAIL ?? '', token, plan }),
+      logPath: path.join(runDir, 'driver.log'),
+      capturePath: path.join(runDir, 'capture.bin'),
+      signal: abort.signal,
+    });
+    await tail.stop();
+    return result;
+  }
+
+  const ownerFlags = plan.first ? ['--name', install.name, '--owner-email', env.GATE_OWNER_EMAIL ?? '', '--ai-posture', 'none'] : [];
+  const cli = await runCli([...ownerFlags, ...(plan.connect ? ['--connect'] : [])]);
+  if (cli.failure) return { pass: false, failures: [`the CLI run failed: ${cli.failure.split('\n')[0]}`] };
+
+  const record = await readRecord(stateDir);
+  const origin = String(record?.cloudflare?.url ?? '');
+  if (!origin) return { pass: false, failures: ['the state record holds no workers.dev address'] };
+
+  if (!install.signedIn) {
+    const signIn = await runCli(['--sign-in']);
+    if (signIn.failure || !install.signedIn) return { pass: false, failures: ['no admin session: the sign-in link was not opened and confirmed'] };
+  }
+
+  const epoch = Date.now();
+  const marker = `gate-${version}-${leg}-${epoch}`;
+  const published = await publishViaAdmin(install.admin, { origin, marker });
+  const liveUrl = `${leg === 'B1' ? origin : `https://${TEST_DOMAIN}`}${published.entryPath}`;
+
+  /** @type {LegResults} */
+  const results = { closingText: cli.screen, alertText: published.alertText, fetch: null, absent: null, commitOnDefaultBranch: false, robotsHasSitemap: false, mail: null };
+  let commit = '-';
+  if (leg === 'A1') {
+    const sha = await markerCommit({
+      token: env.GITHUB_TEST_TOKEN ?? '',
+      owner: record.github.repo.owner,
+      repo: record.github.repo.repo,
+      branch: record.github.repo.defaultBranch ?? 'main',
+      filePath: `src/content/pages/${published.entryPath.slice(1)}.md`,
+      marker,
+    });
+    results.commitOnDefaultBranch = sha !== null;
+    commit = sha ?? '-';
+    results.absent = await fetchCheckAbsent(liveUrl, marker, published.control, { budgetMs: 5 * 60_000 });
+  } else {
+    results.fetch = await fetchCheck(liveUrl, marker);
+  }
+  if (leg === 'A2' || leg === 'B2') results.robotsHasSitemap = await robotsHasSitemap();
+
+  /** @type {import('./fetch-check.mjs').FetchCheckResult | null} */
+  let lastFetch = results.fetch ?? results.absent;
+  if (leg === 'B2') {
+    const fresh = await launched.newAdminContext();
+    try {
+      const owner = env.GATE_OWNER_EMAIL ?? '';
+      const requestedAt = await requestSignInLink(fresh, { origin: `https://${TEST_DOMAIN}`, email: owner });
+      const found = await findSignInMessage({
+        login: owner,
+        password: env.STALWART_PASSWORD_CAIRN_GATE ?? '',
+        siteName: install.name,
+        owner,
+        sinceMs: requestedAt,
+        expectedOrigin: `https://${TEST_DOMAIN}`,
+      });
+      if (!found.found) {
+        results.mail = { from: '', fetch: null };
+        log(`mail: ${found.reason}`);
+      } else {
+        await confirmSignIn(fresh, found.url);
+        const second = `gate-${version}-B2mail-${Date.now()}`;
+        await publishViaAdmin(fresh, { origin: `https://${TEST_DOMAIN}`, marker: second });
+        results.mail = { from: found.from, fetch: await fetchCheck(`https://${TEST_DOMAIN}${published.entryPath}`, second) };
+      }
+    } finally {
+      await fresh.close();
+    }
+  }
+
+  const verdict = evaluateLeg(leg, results);
+  lastFetch = lastFetch ?? results.fetch;
+  await recordLeg({
+    version,
+    notesDir: ctx.releaseNotesDir,
+    row: {
+      leg,
+      path: published.entryPath,
+      url: liveUrl,
+      commit,
+      marker,
+      fetched: lastFetch?.fetchedAt ?? '-',
+      verdict: verdict.pass ? 'pass' : `fail: ${verdict.failures[0]}`,
+    },
+  });
+  return verdict;
+}

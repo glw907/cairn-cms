@@ -47,6 +47,7 @@ const ROWS = 40;
  * @property {number} [idleMs] how long without output before the run fails (10 minutes)
  * @property {number} [holdIdleMs] the limit while a progress page is held
  * @property {number} [settleMs] how long output must be quiet before a screen is read (150)
+ * @property {AbortSignal} [signal] ends the run as a failure when it aborts, with the signal's reason
  */
 
 /**
@@ -194,7 +195,11 @@ export function runDriver(options) {
     });
     child.stderr.on('data', (/** @type {Buffer} */ chunk) => out?.write(String(chunk)));
     armIdle();
+    const onAbort = () => fail(`aborted: ${String(options.signal?.reason ?? 'the gate stopped the run')}`);
+    if (options.signal?.aborted) onAbort();
+    else options.signal?.addEventListener('abort', onAbort, { once: true });
     child.on('close', (code) => {
+      options.signal?.removeEventListener('abort', onAbort);
       clearTimeout(settleTimer);
       clearTimeout(idleTimer);
       log(`exit ${code}`);

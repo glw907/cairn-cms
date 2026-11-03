@@ -284,13 +284,30 @@ export function tailUrlLog(file, onUrl, pollMs = 250) {
  */
 
 /**
+ * The environment a browser or notify-send child gets: the display and session-bus names, the
+ * XDG_* names, HOME, PATH, and LANG. Neither child needs a secret (the page logic runs in Node), so
+ * no token, password, or mailbox name is carried.
+ * @param {NodeJS.ProcessEnv} [parentEnv] the environment to draw from
+ * @returns {Record<string, string>} the child's environment
+ */
+export function childEnv(parentEnv = process.env) {
+  const names = ['DISPLAY', 'WAYLAND_DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS', 'HOME', 'PATH', 'LANG'];
+  /** @type {Record<string, string>} */
+  const env = {};
+  for (const [name, value] of Object.entries(parentEnv)) {
+    if (value !== undefined && (names.includes(name) || name.startsWith('XDG_'))) env[name] = value;
+  }
+  return env;
+}
+
+/**
  * Launch Chromium with the machine account's stored session. Tracing and video stay off.
  * @param {{ statePath: string, headless?: boolean }} options `headless` is false in production, so
  *  a held page can take a click; tests set it true
  * @returns {Promise<Launched>}
  */
 export async function launchBrowser({ statePath, headless = false }) {
-  const browser = await chromium.launch({ headless });
+  const browser = await chromium.launch({ headless, env: childEnv() });
   await mkdir(path.dirname(statePath), { recursive: true, mode: 0o700 });
   const github = await browser.newContext(existsSync(statePath) ? { storageState: statePath } : {});
   return {
@@ -424,10 +441,11 @@ export async function deleteGithubApp(context, slug, creds, { base = 'https://gi
  * The desktop notification, at normal urgency (the calm-desktop rule).
  * @param {string} title the title
  * @param {string} body the body
+ * @param {NodeJS.ProcessEnv} [parentEnv] the environment `notify-send` draws its own from
  * @returns {void}
  */
-export function notifyDesktop(title, body) {
-  const child = spawn('notify-send', ['-u', 'normal', title, body], { stdio: 'ignore', detached: true });
+export function notifyDesktop(title, body, parentEnv = process.env) {
+  const child = spawn('notify-send', ['-u', 'normal', title, body], { stdio: 'ignore', detached: true, env: childEnv(parentEnv) });
   child.on('error', () => {});
   child.unref();
 }

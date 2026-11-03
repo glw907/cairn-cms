@@ -18,6 +18,7 @@ import { makeApi } from '../src/cloudflare/api.mjs';
 import { saveSite, loadSite } from '../src/state.mjs';
 import { runChapter2 } from '../src/cloudflare/chapter2.mjs';
 import { reconciledConfigHash } from '../src/cloudflare/chapter3.mjs';
+import { cloudflareError } from '../src/cloudflare/catalogue.mjs';
 
 const WORKER_NAME = 'builds-domain-site';
 const WORKER_TAG = 'tag-builds-domain';
@@ -625,7 +626,7 @@ async function seedCommittedCutover(t, siteId, { reconciled, deployed }) {
   const reconciledFields = deployed
     ? { buildsReconciledHash: hash, buildsDeployedHash: hash }
     : reconciled
-      ? { buildsReconciledHash: hash, buildsPendingCommitSha: commitSha }
+      ? { buildsReconciledHash: hash, buildsPendingCommitSha: commitSha, buildsPendingHash: hash }
       : { buildsReconciledHash: 'hash-before-the-cutover' };
   await seedBuildsSite(siteId, dir, repo, {
     step: 'delegated',
@@ -755,6 +756,133 @@ test('#202 on the Builds path: a run that stopped before the sender commit lande
   assert.equal(cloudflare.state.builds.size, 1, 'one build watched');
   assert.deepEqual(await localBuildsAndDeploys(bin), []);
   assert.equal((await loadSite('builds-sender-crash')).cloudflare.emailFrom, `no-reply@${DOMAIN}`);
+});
+
+/** A settled, successful push build of `commitSha`, as the fake lists it. */
+function succeededPushBuild(cloudflare, uuid, commitSha, metadata = {}) {
+  cloudflare.state.builds.set(uuid, {
+    build_uuid: uuid,
+    status: 'stopped',
+    build_outcome: 'success',
+    created_on: new Date().toISOString(),
+    stopped_on: new Date().toISOString(),
+    trigger: { external_script_id: WORKER_TAG },
+    build_trigger_source: 'push_event',
+    build_trigger_metadata: { commit_hash: commitSha, branch: 'main', ...metadata },
+  });
+}
+
+test('a build parked for earlier config is never reused for the current config, even when --connect recorded the current hash', async (t) => {
+  await freshStateDir(t);
+  const { dir, hash, commitSha, cloudflare } = await seedCommittedCutover(t, 'stale-pending-build', { reconciled: true });
+  // Chapter 2 parked on config X's commit; a later --connect reconciled config Y (this checkout)
+  // and recorded its hash without touching the parked commit.
+  const saved = await loadSite('stale-pending-build');
+  saved.cloudflare.buildsPendingHash = 'hash-of-config-x';
+  await saveSite('stale-pending-build', saved);
+  succeededPushBuild(cloudflare, 'build-of-x', commitSha);
+
+  const { promise } = await run('stale-pending-build', dir, { sleepFn: settleBuilds(cloudflare) });
+  assert.equal((await promise).outcome, 'paid-plan-declined');
+
+  assert.equal(kicks(cloudflare).length, 1, 'a build of the current config is kicked, X\'s is not reused');
+  const state = await loadSite('stale-pending-build');
+  assert.equal(state.cloudflare.buildsDeployedHash, hash);
+  assert.equal(state.cloudflare.buildsPendingHash, undefined);
+});
+
+test('a pending push build whose trigger is another trigger is not reused', async (t) => {
+  await freshStateDir(t);
+  const { dir, commitSha, cloudflare } = await seedCommittedCutover(t, 'other-trigger-build', { reconciled: true });
+  succeededPushBuild(cloudflare, 'other-trigger', commitSha, { build_trigger_uuid: 'some-other-trigger' });
+
+  const { promise } = await run('other-trigger-build', dir, { sleepFn: settleBuilds(cloudflare) });
+  assert.equal((await promise).outcome, 'paid-plan-declined');
+
+  assert.equal(kicks(cloudflare).length, 1);
+});
+
+test('a pending push build carrying this trigger is reused', async (t) => {
+  await freshStateDir(t);
+  const { dir, commitSha, cloudflare } = await seedCommittedCutover(t, 'same-trigger-build', { reconciled: true });
+  succeededPushBuild(cloudflare, 'same-trigger', commitSha, { build_trigger_uuid: TRIGGER_UUID });
+
+  const { promise } = await run('same-trigger-build', dir, { sleepFn: settleBuilds(cloudflare) });
+  assert.equal((await promise).outcome, 'paid-plan-declined');
+
+  assert.deepEqual(kicks(cloudflare), []);
+});
+
+test('a trigger whose branch is a pattern is never kicked on that pattern', async (t) => {
+  await freshStateDir(t);
+  const { dir, cloudflare } = await seedCommittedCutover(t, 'wildcard-branch', { reconciled: true });
+  const saved = await loadSite('wildcard-branch');
+  delete saved.github.repo.defaultBranch;
+  await saveSite('wildcard-branch', saved);
+  cloudflare.state.buildTriggersByTag.get(WORKER_TAG)[0].branch_includes = ['release/*'];
+
+  const { promise } = await run('wildcard-branch', dir, { sleepFn: settleBuilds(cloudflare) });
+  const err = await promise.then(
+    () => assert.fail('the run should have thrown'),
+    (error) => error,
+  );
+
+  assert.match(err.message, /branch pattern release\/\*/);
+  assert.deepEqual(kicks(cloudflare), []);
+});
+
+test('a token the Builds watch rejects after the commit landed surfaces its own row and is cleared', async (t) => {
+  await freshStateDir(t);
+  const dir = await scaffoldDir(t);
+  const { cloudflare, github } = await setupFakes(t);
+  const repo = await seedRepo(github, dir);
+  await seedBuildsSite('landed-token-scope', dir, repo);
+
+  const { promise } = await run('landed-token-scope', dir, {
+    makeApiFn: (opts) => ({
+      ...makeApi(opts),
+      async listBuildsForWorker() {
+        throw cloudflareError('token-scope-missing', { dir });
+      },
+    }),
+  });
+  const err = await promise.then(
+    () => assert.fail('the run should have thrown'),
+    (error) => error,
+  );
+
+  assert.equal(reconcileCommits(github, repo).length, 1, 'the commit landed first');
+  assert.equal(err.cause?.catalogue?.code, 'token-scope-missing');
+  assert.equal('apiToken' in (await loadSite('landed-token-scope')).cloudflare, false, 'the token is cleared');
+  void cloudflare;
+});
+
+test('the sender step parked at the reconcile under --yes clears the token', async (t) => {
+  await freshStateDir(t);
+  const dir = await scaffoldDir(t);
+  const { github } = await setupFakes(t);
+  const repo = await seedRepo(github, dir);
+  const zone = await seedZone(dir);
+  await seedBuildsSite('builds-sender-park', dir, repo, {
+    step: 'email-onboarded',
+    cloudflare: {
+      domain: DOMAIN,
+      ...zone,
+      alreadyActive: true,
+      domainLiveAt: '2026-11-01T00:00:00.000Z',
+      emailOnboardedAt: '2026-11-01T00:00:00.000Z',
+      apiToken: 'saved-token',
+    },
+  });
+
+  const { promise } = await run('builds-sender-park', dir, {
+    args: { yes: true },
+    confirm: mustNotBeCalled('confirm'),
+    openBrowser: mustNotBeCalled('openBrowser'),
+  });
+
+  assert.equal((await promise).outcome, 'builds-reconcile-parked');
+  assert.equal('apiToken' in (await loadSite('builds-sender-park')).cloudflare, false, 'the token goes with the park');
 });
 
 // --- The effective step of a record entering from a chapter 3 terminal step --------------------

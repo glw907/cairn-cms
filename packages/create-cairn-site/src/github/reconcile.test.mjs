@@ -159,6 +159,41 @@ test('reconcileRepo: a differing wrangler.jsonc commits both files in one commit
   assert.equal(wranglerContent, '{ "name": "alpine-club", "account_id": "acct-123" }\n');
 });
 
+test('reconcileRepo: a line-ending-only difference makes no commit', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const { dir, record } = await pushInitialRepo(t, github);
+  const wrangler = await readFile(path.join(dir, WRANGLER_RELATIVE), 'utf8');
+  await writeFile(path.join(dir, WRANGLER_RELATIVE), wrangler.replace(/\n/g, '\r\n'));
+  const requestsBefore = github.requests.length;
+
+  const result = await reconcileRepo({ record, dir, userToken: 'fake-user-token' });
+
+  assert.deepEqual(result, { changed: false });
+  const writes = github.requests.slice(requestsBefore).filter((r) => r.method === 'POST' || r.method === 'PATCH');
+  assert.deepEqual(writes, []);
+});
+
+test('reconcileRepo: a real difference in a CRLF checkout uploads LF content', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const { dir, record } = await pushInitialRepo(t, github);
+  const { owner, repo, defaultBranch } = record.repo;
+  await writeFile(path.join(dir, WRANGLER_RELATIVE), '{\r\n  "name": "alpine-club",\r\n  "account_id": "acct-123"\r\n}\r\n');
+
+  const result = await reconcileRepo({ record, dir, userToken: 'fake-user-token' });
+
+  assert.equal(result.changed, true);
+  const gitEntry = github.state.gitObjects.get(`${owner}/${repo}`);
+  const byPath = Object.fromEntries(readHeadTree(github, owner, repo, defaultBranch).map((e) => [e.path, e.sha]));
+  const uploaded = Buffer.from(gitEntry.blobs.get(byPath[WRANGLER_RELATIVE]), 'base64').toString('utf8');
+  assert.equal(uploaded, '{\n  "name": "alpine-club",\n  "account_id": "acct-123"\n}\n');
+});
+
 test('reconcileRepo: a file the admin added after the scaffold push survives the reconcile', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());

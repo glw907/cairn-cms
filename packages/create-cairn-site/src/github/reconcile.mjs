@@ -120,13 +120,15 @@ export async function reconcileRepo({ record, dir, userToken, guard }) {
   const compared = [];
   let changed = false;
   for (const relativePath of RECONCILED_FILES) {
-    const local = await readFile(path.join(dir, relativePath), 'utf8');
+    // LF-normalized: a checkout that converted line endings (core.autocrlf) must neither count as
+    // a change nor commit CRLF over the repository's LF copies.
+    const local = (await readFile(path.join(dir, relativePath), 'utf8')).replace(/\r\n/g, '\n');
     localContents[relativePath] = local;
     const blobSha = findBlobSha(tree, relativePath);
     // A missing repo file counts as differing, the same as a content mismatch: either way the
     // repo does not yet carry what the local scaffold has.
     const remote = blobSha ? await readBlobText({ owner, repo, token }, blobSha) : null;
-    if (remote !== local) changed = true;
+    if (remote?.replace(/\r\n/g, '\n') !== local) changed = true;
     compared.push({ path: relativePath, remote, local });
   }
 

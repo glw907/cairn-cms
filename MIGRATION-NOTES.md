@@ -82,10 +82,10 @@ reference walks them.
 
 Only the release in this file has notes here. The notes of earlier releases live in their git tags.
 
-## 0.99.0-rc.1
+## 0.99.0-rc.2
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,
-carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc1) for every name
+carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc2) for every name
 and behavior that changed. The steps below are the ones that fall on whoever deploys the rebuilt site.
 
 - **Expect every editor to sign in again once.** Session ids are stored as a SHA-256 digest, so a

@@ -1,4 +1,4 @@
-## 0.99.0-rc.1
+## 0.99.0-rc.2
 
 <!-- release-size: minor -->
 

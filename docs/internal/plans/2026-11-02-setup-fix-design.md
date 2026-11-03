@@ -4,6 +4,10 @@ Facts are read at `main` commit `1ae692ae1` (the `0.99.0-rc.2` cut) unless marke
 `shared-standards`, the record the cairn run's packets carry. The plan goes on this branch,
 `setup-fix`.
 
+Approved by Geoff on 2026-11-02, packet `20261102T213128-1466750`, every recommendation taken: two
+installs on every candidate; the neutral sentence "Published. The live site shows this change once
+the site rebuilds." with no new setting; the run's limit raised to 3,400 actual minutes.
+
 ## Brief
 
 A site set up on its free workers.dev address will deploy every publish once this lands, and no

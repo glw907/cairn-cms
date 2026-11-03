@@ -84,7 +84,7 @@ Sign-in email is what lets anyone other than you sign in, because everyone else 
 
 The command asks in the same run once the domain is live. If the run stopped to wait for the nameserver switch, run it again.
 
-Your Workers Paid plan was confirmed at the deploy step, so this step doesn't ask about it again. If you answer no, nothing changes: the site keeps serving, and you keep signing in as the owner. A later run from a terminal asks again, until you connect Workers Builds. Once Builds is connected, the command no longer offers sign-in email, so turn it on before you connect Builds. A run that can't ask, such as `--yes` without `--email` or a script with no terminal, stays declined and prints the flags that turn sign-in email on unattended. Unless an earlier run began connecting Builds, a `--yes` run without `--email` also skips Workers Builds, so the offer stays open and you can turn sign-in email on in a later run. Pass `--connect` to connect Builds anyway, which ends the offer.
+Your Workers Paid plan was confirmed at the deploy step, so this step doesn't ask about it again. If you answer no, nothing changes: the site keeps serving, and you keep signing in as the owner. A later run from a terminal asks again, whether or not you have connected Workers Builds. A run that can't ask, such as `--yes` without `--email` or a script with no terminal, stays declined and prints the flags that turn sign-in email on unattended. A `--yes` run connects Workers Builds whether or not it declined email.
 
 A new domain has no sending history, so mail providers can take a while to trust it. If someone's first sign-in link doesn't arrive at once, this delay is the usual reason. It isn't a sign that anything is broken.
 
@@ -98,7 +98,9 @@ The command reports that Cloudflare accepted a test message sent from your site 
 
 ## Connect to Workers Builds
 
-Workers Builds is Cloudflare's service for building and deploying from a repository. Once it's connected, every push to the repository's default branch deploys the site without your computer or the setup command. The step is optional, separate from the domain parts, and available as soon as the site is live.
+Workers Builds is Cloudflare's service for building and deploying from a repository. Once it's connected, every push to the repository's default branch deploys the site without your computer or the setup command. The step is optional, separate from the domain parts, and available as soon as the site is live. If you decline the domain, the setup command offers Builds in the same run.
+
+Until Builds is connected, a publish from the admin commits to GitHub and the live site doesn't change. To deploy, connect Builds or deploy by hand.
 
 Workers Builds needs a second token that reaches every Cloudflare account and zone you own. It has the same five permissions as the first token, plus three that Workers Builds needs. Cloudflare keeps it as the build token and hands it to every build, so anyone who can push to your default branch can read it. Revoking or rolling the token later can break your automatic deploys: the next push builds and then fails. If you rotate tokens on a schedule, update this one too.
 
@@ -120,6 +122,8 @@ Workers Builds is free at this scale. [Workers pricing](https://developers.cloud
 ### You know it worked when
 
 The command watches your first Workers Builds deploy through to the end and confirms that the site answers. From then on, every commit to the default branch deploys itself.
+
+After Builds is connected, the command no longer builds or deploys from your computer. A domain or sign-in email change is committed to `wrangler.jsonc` and `src/theme/cairn.config.ts` in your repository, through the same sign-in click, and Builds deploys that commit. Run `git pull` in the site's folder afterward to bring the commit into your checkout. If your repository holds edits to either file that your checkout doesn't, the command stops before committing and tells you to run `git pull` and then run it again.
 
 A build deploys code and doesn't apply database migrations. A cairn update that ships a migration still needs a developer to run it. The package's `MIGRATION-NOTES.md` says how to apply one.
 

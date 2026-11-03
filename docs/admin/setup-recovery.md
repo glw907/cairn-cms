@@ -69,7 +69,7 @@ The following table lists where the sign-in email steps can stop, what each stop
 
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
-| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run from a terminal asks again, until you connect Workers Builds. After that, the command no longer offers it. For an unattended run, pass `--email` and `--yes`. Unless an earlier run began connecting Builds, a `--yes` run without `--email` skips Workers Builds so this offer stays open; to connect Builds anyway, pass `--connect`. |
+| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run from a terminal asks again, whether or not Workers Builds is connected. For an unattended run, pass `--email` and `--yes`. A `--yes` run connects Builds whether or not it declined email. |
 | The account isn't on Workers Paid | The command stopped when it tried to onboard sending. | **Act:** turn on the plan in Cloudflare's dashboard, then run the command again. |
 | The sending records are still spreading | A test send before the records settle fails. This is normal. | **Wait:** run the command again in a few minutes. It doesn't repeat the onboarding. |
 | The test send failed for another reason | Cloudflare refused the send, or the daily limit was reached. | **Act, or wait:** the command prints the cause. Fix it or wait for the limit to reset, then run the command again. |
@@ -80,7 +80,8 @@ The following table lists where the Workers Builds steps can stop, what each sto
 
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
-| You declined Workers Builds | Nothing is wrong. Deploys still go through the setup command. | **Act when you're ready:** run the command again with `--connect`. |
+| You declined Workers Builds | Nothing is wrong, but a publish from the admin commits to GitHub and the live site doesn't change until you connect Builds or deploy by hand. | **Act when you're ready:** run the command again with `--connect`. |
+| The command says your repository has changes to `wrangler.jsonc` or `src/theme/cairn.config.ts` | Builds is connected, and the repository's copy of a file the command writes differs from your checkout beyond the values the command sets. Committing your copy would undo those edits, so the command committed nothing. | **Act:** run `git pull` in the site's folder, then run the command again. |
 | Cloudflare's Workers and Pages GitHub App isn't authorized yet | Cloudflare needs a one-time authorization before it can watch any repository. | **Act:** authorize it from Cloudflare's dashboard, then run the command again with `--connect`. |
 | Your repository isn't on Cloudflare's list | That app watches only repositories you add. | **Act:** add the repository on [GitHub's installations page](https://github.com/settings/installations), then run the command again with `--connect`. |
 | The config commit or the first build hasn't finished | The commit needs a sign-in click, or the build is still running. | **Act, or wait:** run the command again with `--connect`. It resumes where it stopped. |

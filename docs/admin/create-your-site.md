@@ -110,12 +110,13 @@ Sign you in
 Writing your sign-in row to the site's database.
 [...]
 A sign-in page just opened; click Sign in there. The link works for ten minutes; if it expires, re-run with --sign-in for a fresh one.
-This site is set up end to end.
 ```
 
 The link works for ten minutes. If you miss it, [sign in again](#sign-in-again).
 
-The command then asks whether to connect a domain you own. Answering no changes nothing, and [Own your domain](./own-your-domain.md) covers connecting one now or later.
+The command then asks whether to connect a domain you own. Answering no changes nothing about the site, and the command goes on to offer Workers Builds, Cloudflare's service for deploying from your repository. [Own your domain](./own-your-domain.md) covers connecting a domain now or later, and connecting Builds.
+
+Until Workers Builds is connected, a publish from the admin commits to GitHub and the live site doesn't change. Once it's connected, Builds deploys each publish by itself. Each closing block of the command says which case your site is in, and the command prints `This site is set up end to end.` only once Builds is connected.
 
 ```mermaid
 flowchart LR

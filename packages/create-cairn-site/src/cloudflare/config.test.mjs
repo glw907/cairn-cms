@@ -4,7 +4,14 @@ import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { nameWranglerResources, writePublicOrigin, workerNameFor, writeEmailFrom } from './config.mjs';
+import {
+  nameWranglerResources,
+  writePublicOrigin,
+  workerNameFor,
+  writeEmailFrom,
+  maskToolOwnedValues,
+  readToolOwnedValues,
+} from './config.mjs';
 
 /**
  * Verbatim copy of the baked template's `wrangler.jsonc`: the showcase's file
@@ -435,4 +442,51 @@ test('writeEmailFrom rewrites the real baked template cairn.config.ts', async (t
   assert.equal(changed, true);
   const content = await readFile(path.join(dir, CAIRN_CONFIG_RELATIVE), 'utf8');
   assert.equal(parseEmailFrom(content), 'no-reply@alpine-club.example');
+});
+
+for (const unsafe of [
+  "no-reply@x.example' }, evil: (",
+  'no-reply@x.example\nexport const x = 1;',
+  'no reply@x.example',
+  'no-reply@x.example\u0007',
+  'no-reply@x"example',
+]) {
+  test(`writeEmailFrom refuses ${JSON.stringify(unsafe)} and leaves the file untouched`, async (t) => {
+    const dir = await cairnConfigFixtureDir(t);
+    await assert.rejects(() => writeEmailFrom(dir, unsafe), /is not a plain address/);
+    assert.equal(await readFile(path.join(dir, CAIRN_CONFIG_RELATIVE), 'utf8'), MINIMAL_CAIRN_CONFIG);
+  });
+}
+
+const MASK_WRANGLER = '{\n  "name": "site",\n  "vars": { "PUBLIC_ORIGIN": "https://a.example" }\n}\n';
+const MASK_CONFIG =
+  "export const publicOrigin = 'https://a.example';\nexport default { email: { from: 'cms@a.example' } };\n";
+
+test('maskToolOwnedValues masks exactly the three tool-owned values', () => {
+  assert.equal(
+    maskToolOwnedValues(MASK_WRANGLER),
+    maskToolOwnedValues(MASK_WRANGLER.replace('https://a.example', 'https://b.example')),
+  );
+  const swapped = MASK_CONFIG.replace("'https://a.example'", "'https://b.example'").replace(
+    'cms@a.example',
+    'no-reply@b.example',
+  );
+  assert.equal(maskToolOwnedValues(MASK_CONFIG), maskToolOwnedValues(swapped));
+  assert.doesNotMatch(maskToolOwnedValues(MASK_CONFIG), /a\.example/, 'no tool-owned value survives');
+});
+
+test('maskToolOwnedValues leaves a difference outside the tool-owned values visible', () => {
+  assert.notEqual(
+    maskToolOwnedValues(MASK_WRANGLER),
+    maskToolOwnedValues(MASK_WRANGLER.replace('"site"', '"renamed"')),
+  );
+  assert.notEqual(maskToolOwnedValues(MASK_CONFIG), maskToolOwnedValues(`${MASK_CONFIG}export const extra = 1;\n`));
+});
+
+test('readToolOwnedValues reads each tool-owned value a file carries', () => {
+  assert.deepEqual(readToolOwnedValues(MASK_WRANGLER), { PUBLIC_ORIGIN: 'https://a.example' });
+  assert.deepEqual(readToolOwnedValues(MASK_CONFIG), {
+    publicOrigin: 'https://a.example',
+    'email.from': 'cms@a.example',
+  });
 });

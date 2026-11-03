@@ -563,6 +563,14 @@ test('builds-deploy-failed carries the log tail and the build dashboard link', (
   assert.match(err.message, /log ends with/);
 });
 
+test('builds-deploy-failed and builds-not-runnable do not call the deploy the first, since chapter 2 reaches them too', () => {
+  for (const code of ['builds-deploy-failed', 'builds-not-runnable']) {
+    const err = cloudflareError(code, SAMPLE_PARAMS[code]);
+    assert.match(err.message, /^The Workers Builds deploy did not/);
+    assert.doesNotMatch(err.message, /first/);
+  }
+});
+
 test('builds-deploy-failed says the log was truncated, not that it ends there, when logTruncated is set', () => {
   const err = cloudflareError('builds-deploy-failed', {
     ...SAMPLE_PARAMS['builds-deploy-failed'],

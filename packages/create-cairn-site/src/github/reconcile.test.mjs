@@ -267,6 +267,33 @@ test('reconcileRepo: a guard that throws on the compared copies stops the reconc
   assert.deepEqual(writes, [], 'no blob, tree, commit, or ref write');
 });
 
+// Each read the diff rests on is refused rather than read as empty: a failed read must never
+// commit over the repository's real copy.
+for (const [label, route, status, body, message] of [
+  ['a failed ref read', 'refs-read', 404, { message: 'Not Found' }, /HTTP 404/],
+  ['a failed head-commit read', 'commits', 500, { message: 'boom' }, /HTTP 500/],
+  ['a head commit with no tree', 'commits', 200, { sha: 'no-tree' }, /no tree/],
+  ['a failed tree read', 'trees-read', 502, { message: 'bad gateway' }, /HTTP 502/],
+  ['a truncated tree listing', 'trees-read', 200, { sha: 'x', tree: [], truncated: true }, /truncated/],
+  ['a failed blob read', 'blobs-read', 403, { message: 'Forbidden' }, /HTTP 403/],
+]) {
+  test(`reconcileRepo: ${label} refuses the reconcile with no write`, async (t) => {
+    const github = await startFakeGithub();
+    t.after(() => github.close());
+    pointAtFake(t, github);
+
+    const { dir, record } = await pushInitialRepo(t, github);
+    await writeFile(path.join(dir, WRANGLER_RELATIVE), '{ "name": "alpine-club", "account_id": "acct-123" }\n');
+    const requestsBefore = github.requests.length;
+    github.failNext(route, status, body);
+
+    await assert.rejects(() => reconcileRepo({ record, dir, userToken: 'fake-user-token' }), message);
+
+    const writes = github.requests.slice(requestsBefore).filter((r) => r.method === 'POST' || r.method === 'PATCH');
+    assert.deepEqual(writes, [], 'no blob, tree, commit, or ref write');
+  });
+}
+
 test('RECONCILE_COMMIT_MESSAGE is never read back as an idempotence sentinel', async (t) => {
   // Documents the deliberate choice, rather than asserting behavior a future refactor could
   // silently break without a red test: the message constant exists for the commit body only.

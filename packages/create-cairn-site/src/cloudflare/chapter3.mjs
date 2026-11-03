@@ -53,7 +53,7 @@ import { ensureApiToken, CHAPTER3_PERMISSION_KEYS } from './prefill.mjs';
 import { makeApi } from './api.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
 import { deleteApiToken } from './chapter2.mjs';
-import { maskToolOwnedValues } from './config.mjs';
+import { maskToolOwnedValues, readToolOwnedValues } from './config.mjs';
 import { confirmHostname } from './hostname.mjs';
 import { defaultResolve } from './dns.mjs';
 import { githubRequest } from '../github/api.mjs';
@@ -115,6 +115,11 @@ const BUILD_POLL_HEARTBEAT_MESSAGE =
  * timeout is 20 minutes, per the catalogue's build-running row; this stays comfortably under it). */
 const DEFAULT_BUILD_POLL_INTERVAL_MS = 5000;
 const DEFAULT_MAX_POLL_ATTEMPTS = 180;
+
+/** How many reads, `DEFAULT_BUILD_POLL_INTERVAL_MS` apart, chapter 2's Builds hop gives a
+ * just-pushed commit to appear in the build list: two minutes for GitHub's push webhook to reach
+ * Workers Builds. */
+const DEFAULT_MAX_DISCOVERY_ATTEMPTS = 24;
 
 /**
  * Sleep for the given duration; the build watch's default pacing, overridden by a test's
@@ -304,16 +309,30 @@ async function pollBuildToStop({ api, buildUuid, log, sleepFn, pollIntervalMs, m
 }
 
 /**
+ * Matches every C0 and C1 control character except tab and newline, plus DEL. A build log is
+ * written by whatever the build ran, and it reaches the admin's terminal, where an escape
+ * sequence (an OSC 52 clipboard write, a cursor move) would act rather than print.
+ */
+const LOG_CONTROL_CHARACTERS = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g;
+
+/**
  * Reduce a build's logs to the trailing lines a failed-build row carries, reusing catalogue.mjs's
  * `trailingStderr` trim rather than reinventing it: the shape (an array of `[epochMillis,
  * text]` pairs) is different, but the "last few non-empty lines" rule is the same one every other
- * failing-child row in this tool already follows.
+ * failing-child row in this tool already follows. Control characters are stripped, and a line
+ * starting with `Next:` is dropped, since the row's own next step is read from its first such
+ * line and a build could otherwise print one that reads as this tool's instruction.
  * @param {{ lines?: Array<[number, string]> }} logs the build's logs, as `getBuildLogs` returns them
  * @returns {string} the trailing lines, joined back with newlines
  */
 function buildLogTail(logs) {
-  const lines = Array.isArray(logs?.lines) ? logs.lines.map(([, text]) => text) : [];
-  return trailingStderr(lines.join('\n'));
+  const lines = Array.isArray(logs?.lines) ? logs.lines.map(([, text]) => String(text)) : [];
+  const safe = lines
+    .join('\n')
+    .replace(LOG_CONTROL_CHARACTERS, '')
+    .split('\n')
+    .filter((line) => !line.trimStart().startsWith('Next:'));
+  return trailingStderr(safe.join('\n'));
 }
 
 /**
@@ -423,8 +442,9 @@ function composeBuildWatchWaitForClear({
  *
  * THE BUILD-WATCH HOLD (T4d Task 4b). The wait is one wait in two parts: a queue-lag race (a push,
  * or an earlier kick, may not have surfaced on `listBuildsForWorker` yet) followed by the build
- * itself, which is the long part. Absent an injected `waitForClear` this reads the list exactly
- * once, reports no build when nothing matches, and otherwise polls the build through
+ * itself, which is the long part. Absent an injected `waitForClear` this reads the list up to
+ * `discoveryAttempts` times (once by default), reports no build when nothing matches, and
+ * otherwise polls the build through
  * `pollBuildToStop`. Given one, the hold owns BOTH parts: each probe reads the list while no
  * build is known and `getBuild` once one is, and `cleared` means the build reached a terminal
  * status, never merely that it was found. That is what keeps the console up for the minutes an
@@ -450,6 +470,11 @@ function composeBuildWatchWaitForClear({
  * @param {(buildUuidKnown: boolean) => (probe: import('../hold-loop.mjs').HoldProbe) =>
  *  Promise<import('../hold-loop.mjs').HoldObservation>} [input.waitForClear] a factory for the
  *  injected hold, called once, right as the hold starts, with whether a build uuid is known then
+ * @param {number} [input.discoveryAttempts] how many times an unheld watch reads the build list
+ *  before it reports no build; defaults to one read. A caller watching for a push it just made
+ *  passes more, since the push reaches Workers Builds through a webhook some seconds later
+ * @param {number} [input.discoveryIntervalMs] the pause between those reads; defaults to
+ *  `pollIntervalMs`
  * @returns {Promise<{ buildUuid?: string, build?: object, budgetExceeded: boolean }>} the build
  *  found (no `buildUuid` when none was), its settled record, and whether the watch ran out of
  *  budget with that build still unsettled
@@ -466,6 +491,8 @@ async function watchBuild({
   discoveryCommitSha,
   needsDiscovery,
   waitForClear,
+  discoveryAttempts = 1,
+  discoveryIntervalMs = pollIntervalMs,
 }) {
   let buildUuid = knownBuildUuid;
   // The build as last read, whichever read found it: the discovery list entry carries the same
@@ -523,6 +550,10 @@ async function watchBuild({
     else budgetExceeded = Boolean(buildUuid);
   } else if (needsDiscovery) {
     await observeBuild();
+    for (let attempt = 1; !buildUuid && attempt < discoveryAttempts; attempt += 1) {
+      await sleepFn(discoveryIntervalMs);
+      await observeBuild();
+    }
   }
 
   if (!buildUuid) return { budgetExceeded: false };
@@ -714,17 +745,31 @@ export async function watchAndComplete({
  * repository's copy of a tool-owned file differs from this checkout's in anything but the values
  * this tool writes (`maskToolOwnedValues`). `reconcileRepo` uploads each file whole, so on a site
  * Workers Builds has deployed for weeks, committing this checkout's copy could revert an edit made
- * through GitHub.
+ * through GitHub. Line endings are compared as `\n`, so a checkout that converts them (git's
+ * `core.autocrlf`) does not read as an edit. When the commit proceeds, it prints one line naming
+ * each tool-owned value the commit changes in the repository.
  * @param {string} dir the `--dir` value, interpolated into the row
+ * @param {(line: string) => void} log receives the line naming the changed values
  * @returns {(files: Array<{ path: string, remote: string | null, local: string }>) => void} the
  *  guard, which throws `builds-config-diverged` naming each diverged file
  */
-function refuseRepositoryEdits(dir) {
+export function refuseRepositoryEdits(dir, log) {
+  /** @param {string} text */
+  const comparable = (text) => maskToolOwnedValues(text.replace(/\r\n/g, '\n'));
   return (files) => {
     const diverged = files
-      .filter(({ remote, local }) => remote === null || maskToolOwnedValues(remote) !== maskToolOwnedValues(local))
+      .filter(({ remote, local }) => remote === null || comparable(remote) !== comparable(local))
       .map((file) => file.path);
     if (diverged.length > 0) throw cloudflareError('builds-config-diverged', { dir, files: diverged });
+
+    const changes = [];
+    for (const { path: filePath, remote, local } of files) {
+      const before = readToolOwnedValues(/** @type {string} */ (remote));
+      for (const [name, value] of Object.entries(readToolOwnedValues(local))) {
+        if (before[name] !== value) changes.push(`${name} in ${filePath} to ${value}`);
+      }
+    }
+    if (changes.length > 0) log(`This commit changes ${changes.join(', and ')} in your repository.`);
   };
 }
 
@@ -740,13 +785,14 @@ function refuseRepositoryEdits(dir) {
 /**
  * Chapter 2's one hop on a site Workers Builds deploys, in place of a local build and deploy:
  * commit the two tool-owned files through the reconcile (guarded by `refuseRepositoryEdits`),
- * record `cloudflare.buildsReconciledHash` as soon as the commit lands, then find the build for
- * that commit and watch it to a settled outcome. On a watched `success` it records
- * `cloudflare.buildsDeployedHash`, the hash that build deployed. When the reconcile commits
- * nothing (the hash gate, or a repository that already matches) and `buildsDeployedHash` differs
- * from the current hash, it kicks one build and watches it, which is what finishes a run that
- * stopped after its commit landed; when they are equal, nothing deploys. Writes no `step`,
- * deletes no token, checks no host, and records none of chapter 3's build fields.
+ * record `cloudflare.buildsReconciledHash` and the commit's sha (`buildsPendingCommitSha`) as
+ * soon as the commit lands, then find the build for that commit and watch it to a settled
+ * outcome. On a watched `success` it records `cloudflare.buildsDeployedHash`, the hash that build
+ * deployed, and clears the commit's sha. When the reconcile commits nothing (the hash gate, or a
+ * repository that already matches) and `buildsDeployedHash` differs from the current hash, it
+ * watches the recorded commit's build or kicks one (`findOrKickBuild`), which is what finishes a
+ * run that stopped after its commit landed; when they are equal, nothing deploys. Writes no
+ * `step`, deletes no token, checks no host, and records none of chapter 3's build fields.
  * @param {object} input
  * @param {string} input.siteId the site whose record is read fresh and written to
  * @param {string} input.dir the scaffold root
@@ -760,6 +806,8 @@ function refuseRepositoryEdits(dir) {
  * @param {(ms: number) => Promise<void>} [input.sleepFn] the watch's pacing
  * @param {number} [input.pollIntervalMs] the watch's poll interval
  * @param {number} [input.maxPollAttempts] the watch's poll budget, in attempts
+ * @param {number} [input.maxDiscoveryAttempts] how many times, `pollIntervalMs` apart, the build
+ *  list is read for a just-landed commit's push build before the hop parks at `build-not-started`
  * @returns {Promise<BuildsDeployResult>} the hop's result; a failed or unrunnable build throws
  */
 export async function deployConfigThroughBuilds({
@@ -773,6 +821,7 @@ export async function deployConfigThroughBuilds({
   sleepFn = defaultSleep,
   pollIntervalMs = DEFAULT_BUILD_POLL_INTERVAL_MS,
   maxPollAttempts = DEFAULT_MAX_POLL_ATTEMPTS,
+  maxDiscoveryAttempts = DEFAULT_MAX_DISCOVERY_ATTEMPTS,
 }) {
   // Read fresh: an earlier hop in the same run may already have recorded a reconcile.
   const record = await loadSite(siteId);
@@ -782,26 +831,31 @@ export async function deployConfigThroughBuilds({
     args,
     log,
     openBrowser,
-    guard: refuseRepositoryEdits(dir),
+    guard: refuseRepositoryEdits(dir, log),
   });
   if (reconcileResult.parked) return { parked: reconcileResult.parked };
 
+  // First, so a failed state write below cannot leave a caller believing nothing landed.
+  onLanded?.();
   const { hash } = reconcileResult;
-  if (hash !== record.cloudflare?.buildsReconciledHash) {
+  if (reconcileResult.changed) {
+    await updateSite(siteId, {
+      cloudflare: { buildsReconciledHash: hash, buildsPendingCommitSha: reconcileResult.commitSha },
+    });
+  } else if (hash !== record.cloudflare?.buildsReconciledHash) {
     await updateSite(siteId, { cloudflare: { buildsReconciledHash: hash } });
   }
-  onLanded?.();
 
+  const tag = await resolveWorkerTag(api, dir, 'nothing to watch');
   let buildUuid;
   if (!reconcileResult.changed) {
     if (record.cloudflare?.buildsDeployedHash === hash) return { deployed: false };
-    const kicked = await api.kickBuild(record.cloudflare?.buildsTriggerUuid, record.github?.repo?.defaultBranch);
-    buildUuid = kicked.build_uuid;
+    buildUuid = await findOrKickBuild({ api, tag, record, hash });
   }
 
   const watched = await watchBuild({
     api,
-    tag: await resolveWorkerTag(api, dir, 'nothing to watch'),
+    tag,
     dir,
     log,
     sleepFn,
@@ -810,6 +864,7 @@ export async function deployConfigThroughBuilds({
     buildUuid,
     discoveryCommitSha: reconcileResult.changed ? reconcileResult.commitSha : undefined,
     needsDiscovery: Boolean(reconcileResult.changed),
+    discoveryAttempts: maxDiscoveryAttempts,
   });
   if (!watched.buildUuid || watched.budgetExceeded) {
     const parked = cloudflareError(watched.buildUuid ? 'build-running' : 'build-not-started', { dir });
@@ -817,8 +872,51 @@ export async function deployConfigThroughBuilds({
     return { parked };
   }
   await assertBuildSucceeded({ api, buildUuid: watched.buildUuid, build: watched.build, dir });
-  await updateSite(siteId, { cloudflare: { buildsDeployedHash: hash } });
+  await updateSite(siteId, { cloudflare: { buildsDeployedHash: hash, buildsPendingCommitSha: undefined } });
   return { deployed: true };
+}
+
+/**
+ * The build a re-run of `deployConfigThroughBuilds` watches when its reconcile committed nothing
+ * and the last watched deploy was of other config. When an earlier run's commit of this same
+ * config is recorded (`cloudflare.buildsPendingCommitSha`, saved with the hash it committed), its
+ * push build is looked up by commit and reused while it is queued, running, or succeeded, so a
+ * re-run after a park never starts a second build of one commit. Otherwise (no recorded commit,
+ * no build for it, or one that failed or did not run) one build is kicked on the trigger's branch.
+ * @param {{ api: object, tag: string, record: object, hash: string }} input `record` is the state
+ *  record as this hop read it, and `hash` the current config hash
+ * @returns {Promise<string>} the uuid of the build to watch
+ */
+async function findOrKickBuild({ api, tag, record, hash }) {
+  const pendingSha =
+    hash === record.cloudflare?.buildsReconciledHash ? record.cloudflare?.buildsPendingCommitSha : undefined;
+  if (pendingSha) {
+    const builds = await api.listBuildsForWorker(tag);
+    const existing = builds.find((build) => build.build_trigger_metadata?.commit_hash === pendingSha);
+    if (existing && (!isBuildSettled(existing) || existing.build_outcome === 'success')) {
+      return existing.build_uuid;
+    }
+  }
+
+  const triggerUuid = record.cloudflare?.buildsTriggerUuid;
+  // A record saved without the repository's default branch still has the branch on its trigger.
+  const branch =
+    record.github?.repo?.defaultBranch ??
+    (await api.listBuildTriggers(tag)).find((trigger) => trigger.trigger_uuid === triggerUuid)?.branch_includes?.[0];
+  const kicked = await api.kickBuild(triggerUuid, branch);
+  return kicked.build_uuid;
+}
+
+/**
+ * Make one cheap Workers Builds read (the trigger list for this site's Worker) so a token missing
+ * the Builds permission fails as `token-scope-missing` before anything is committed, rather than
+ * after a commit has landed with no way to watch its build.
+ * @param {object} api the Cloudflare API client to check
+ * @param {string} dir the scaffold root
+ * @returns {Promise<void>} resolves once the read succeeded
+ */
+export async function assertBuildsReachable(api, dir) {
+  await api.listBuildTriggers(await resolveWorkerTag(api, dir, 'nothing to deploy through'));
 }
 
 /**

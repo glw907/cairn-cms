@@ -785,7 +785,7 @@ const ROWS = {
           'managed to read before giving up:'
         : 'The build log ends with:';
       return (
-        `The first Workers Builds deploy did not finish successfully. ${logIntro}\n` +
+        `The Workers Builds deploy did not finish successfully. ${logIntro}\n` +
         `${params.detail}\n` +
         `Next: open the build at ${params.buildUrl} to see the full log, fix what it names, ` +
         `then re-run npx create-cairn-site --dir ${params.dir} --connect to trigger and watch ` +
@@ -797,7 +797,7 @@ const ROWS = {
     kind: 'act',
     build(params) {
       return (
-        'The first Workers Builds deploy did not run: Cloudflare marked it ' +
+        'The Workers Builds deploy did not run: Cloudflare marked it ' +
         `${params.outcome} rather than completing it.\n` +
         `Next: open the build at ${params.buildUrl} to see why, fix what it names, then ` +
         `re-run npx create-cairn-site --dir ${params.dir} --connect to trigger a new build.`

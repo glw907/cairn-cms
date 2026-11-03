@@ -919,6 +919,10 @@ for (const flags of [[], ['--yes', '--email']]) {
       delete process.env.CAIRN_CLOUDFLARE_API_BASE;
     });
     const created = await makeApi({ token: 'seed', accountId: 'acct-1', dir }).createZone('reoffer-live.example');
+    // The Worker and its trigger, which the sender hop's Builds check reads before any commit.
+    await writeFile(path.join(dir, 'wrangler.jsonc'), '{\n  "name": "chapter3-resume-site"\n}\n');
+    cloudflare.state.workerScripts.push({ id: 'chapter3-resume-site', tag: 'worker-tag-1' });
+    cloudflare.state.buildTriggersByTag.set('worker-tag-1', [{ trigger_uuid: 'trigger-uuid-1', external_script_id: 'worker-tag-1' }]);
 
     const siteId = makeSiteId(`relive-${flags.length}`);
     await seedSite(siteId, dir, 'builds-live', {
@@ -958,6 +962,7 @@ for (const flags of [[], ['--yes', '--email']]) {
       );
       assert.match(await readFile(configPath, 'utf8'), /no-reply@reoffer-live\.example/);
       assert.equal(state.step, 'email-onboarded', 'the park writes no step past onboarding');
+      assert.equal('apiToken' in state.cloudflare, false, 'the reconcile park clears the token');
     }
   });
 }

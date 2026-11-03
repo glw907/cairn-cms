@@ -25,7 +25,7 @@
     "cf-typegen": "wrangler types --env-file=.dev.vars.example --include-runtime=false"
   },
   "dependencies": {
-    "@glw907/cairn-cms": "^0.98.0",
+    "@glw907/cairn-cms": "^0.99.0-rc.1",
     "hastscript": "^9.0.3",
     "remark-smartypants": "^3.0.3"
   },
@@ -34,7 +34,7 @@
     "@fontsource-variable/figtree": "^5.3.0",
     "@fontsource-variable/source-code-pro": "^5.3.1",
     "@fontsource-variable/source-sans-3": "^5.3.1",
-    "@glw907/cairn-cms-dev": "^0.98.0",
+    "@glw907/cairn-cms-dev": "^0.99.0-rc.1",
     "@sveltejs/adapter-cloudflare": "^8.0.2",
     "@sveltejs/kit": "^3.1.1",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

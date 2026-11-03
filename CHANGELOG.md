@@ -1,4 +1,6 @@
-## Unreleased
+## 0.99.0-rc.1
+
+<!-- release-size: minor -->
 
 This release is the rebuild. It breaks the public surface, the platform, the content model, the sign-in
 store, and the scaffold together, so a site is not upgraded in place. Start a new site from

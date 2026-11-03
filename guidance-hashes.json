@@ -46,6 +46,42 @@
       "55b99a1497842e6f81b7c9cfc3ea4f6c720ff7ad363a553b629d53abcdd171e9",
       "fab0ff58b844501dd1dc7ebd35fb860cd2dbf8cf593df0c28bfe72b0d1e0374e"
     ],
+    ".claude/skills/cairn-building-admin-screens/SKILL.md": [
+      "9ca87a0231154da833edb2aca97e1ad44d9c4681dee57debad0b45ebb8880753"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/admin-mount.md": [
+      "d38ae84310d0289a6ab73535ed003a4f3c107ca133f90868df984df1d5147101"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/audit-rules.md": [
+      "f559b1838cb59ee6604947fbbcdccf885827a440d72daa426e98b1bf67e547c1"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/craft.md": [
+      "9e8cdb04b2e182c8397777fde7072e197bcc6eb3d747971fb59b6aa9fa79cb35"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/custom-screen.md": [
+      "4bf71061ffc3aa102e6a078009f0578d3c8de8d263c1f41123574a65680dcd9f"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/exemplar-detail.md": [
+      "2c40f5924b299087daefff89a5b17faa1157938f7b214f9fa5bc7497361a3cad"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/exemplar-kit.md": [
+      "46f92d3918a67071dc05a9cd2c27238bb3b8b5d71c9c96867de9b2b610605718"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/exemplar-list.md": [
+      "dac81adecc9433ea90b061c9e58b9632fe3cb49fa695e898e27f6a0bcefee372"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/extension-grammar.md": [
+      "ecb34f1ce0811c81192d240954bcd502410182743c799e378df6e5a5043b8aaf"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/form-anatomy.md": [
+      "54cd61e2586b99ae1b04e8a84af78482deb386a1b2520461431f625e581c9725"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/grader-prompt.md": [
+      "19c91063cac46d4bffd012099cb6d000d76ba3ef2329e342a191b0bf22f2916b"
+    ],
+    ".claude/skills/cairn-building-admin-screens/references/sidebar-and-access.md": [
+      "aec8908686b1e575cfaf9f683000ae8023f9b086a38421ab9004250d57c12a18"
+    ],
     ".claude/skills/cairn-consult/SKILL.md": [
       "c54fb55575635ee776f7500922f630ccd4ec8536f4fee00705e12ef001e518cc",
       "69aee0ca6dc37e36a481e9cb27205d615a517a530812c4b8c53e3683de1c13e3"
@@ -57,6 +93,15 @@
     ".claude/skills/cairn-consult/references/the-standard.md": [
       "a6b1d1613c7fee9afc31fa659fdcf4fc9662182f57af3d0b11e95eddb7d308bc",
       "dede0da1273ee31a5dc5d590eac57973411446b6082f863ee70150ae954b60db"
+    ],
+    ".claude/skills/cairn-consulting-the-engine/SKILL.md": [
+      "b653dc86c6b9bf1d21af38fff95b7749cfbf3a410df75a5d05e90bf6ef564042"
+    ],
+    ".claude/skills/cairn-consulting-the-engine/references/brief-template.md": [
+      "ac0e4da6e0a0d30bc7f949b7af3eea695c17596089d1e8a05a8a338e46415658"
+    ],
+    ".claude/skills/cairn-consulting-the-engine/references/the-standard.md": [
+      "9e48de9dd6dd121e6d090cf0afa1ea7f0c278b192e21b287abefd5e0dfa6541f"
     ],
     ".claude/skills/cairn-extend/SKILL.md": [
       "9f4e5753bd69fe07bbf0c70dd6625dddda4955e79d8dc7bb0c3e8794c6931415",
@@ -71,6 +116,60 @@
     ".claude/skills/cairn-extend/references/preflight.md": [
       "86661c9b8ff5e2ad983276fb63fa10803f447e2ce7c8ca2e21f7b7ca81b23078",
       "0bf15b9934dddd0bc129b16717043c1542fa83839bb658c235ada4d83a74bc99"
+    ],
+    ".claude/skills/cairn-extending-a-site/SKILL.md": [
+      "39b20cc26859309e6db10da27ce0a1f094f8537834d3e9bc5f3271398ed09928"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/admin-access.md": [
+      "235086c877ca8f4a4140fb01df066b4c076c98a271bb4f36238b42f49a4fc416"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/adopt-cairn.md": [
+      "5169fc50911ffd12e0abb54908c9f2f4f891cd925524b563a4ce0337b59316cd"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/audit.md": [
+      "b01a5d0e6095ab9cf20bbae6ec5453848de6a07500c86ab8d69306071c5bc8fd"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/cloudflare-access.md": [
+      "ee541f2d0e0622dcad1a8eb22095b47b9921d31938635a7bc9edbdc904a093c7"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/components-and-islands.md": [
+      "1baee7d1a6fb9937858a95c681b9651971a3baff3cea65554a494957690790d1"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/content-model.md": [
+      "42132707a74684d6c345aec8bae4736fa7c5640dee67bdb6f5cee6d147d7c7ec"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/daisyui-first.md": [
+      "e78364a23db87a2f9f2e65fbcf6faf860a80eb8d0cebedb6932b40cfc284a7dc"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/debug.md": [
+      "cd75ea5baf531fb3287b933fd1933be6ee449df269913962d1bf3b16feed27d0"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/draft-preview.md": [
+      "7dbcd549c4b2cd12c6fe594b864cb6e27fecab59a8e5c0dbdab99cf590512b3e"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/log-events.md": [
+      "28cf67bb7432bc4b503315e5951a44d7919d3d907083369d19b1657d1e744251"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/media.md": [
+      "f337bbe83689cfa46e423c775cbaad0138819102dd6de686c851e107e95a7973"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/migrate-content.md": [
+      "afe28432e6bfd4a29408e3bdabeea0bca4720a389ead8f127709d0d651288ec6"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/newly-published.md": [
+      "6766584a6bf7938699b43da9238f1385de2be3270cf3eb55496597ad5b41e93c"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/preflight.md": [
+      "0ab274ebf4471ac6f68ed36dc6858fe81a5fd4a8dc8e58990c9afe30e9366b80"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/public-routes.md": [
+      "8b17d9d5308071be082edd252a718cf31c0353a4cdf53dca030a28e49882bfa9"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/second-sign-in-group.md": [
+      "5c8f3fc67982841b7c1f68d88a1d308aaf779054da03374c8b759551cfc7d1ae"
+    ],
+    ".claude/skills/cairn-extending-a-site/references/tidy-and-ai-posture.md": [
+      "f376b99eb09045730ab9651b175fe2d2d5567cc2c987bd018a103904dfcbeebe"
     ],
     ".claude/skills/cairn-public/SKILL.md": [
       "ef8d01e3376f7e25db0531bee5966f1ee5298ead519bf334b4b28193c190ff1c",
@@ -188,6 +287,117 @@
     ".claude/skills/cairn-public/references/theme-starter.md": [
       "1fef155fff0a17ecf81dd35cd57f365dde85403fde50a4ca8822535fd23eb6e0",
       "e651563b14e7f3088268feaa7145f9baed27a070bf274de51b77bc57a353e3f0"
+    ],
+    ".claude/skills/cairn-styling-public-pages/SKILL.md": [
+      "76aa8824997aa4b58bcef1657a03bdf74d7be836625ab14c87a7f95610ed1be7"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/README.md": [
+      "4cafdec859319b67d7d9f269cb377b105a6317c3c4549531b092241c438765e6"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/checking-a-theme.md": [
+      "6ab900365d5ba9d4fe701bf04cf24a0be4b49d2196b71f6018390e4b90a8561f"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/component-cairn-head.md": [
+      "2f01dbbe88bd535a6e96aefecd0b6db507612383384707712a6f3f5ef39f2249"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/component-preview-banner.md": [
+      "4fd60309f5aa5e5eb348ff92615aeb5ca024a2820212baafef469a918b6c7181"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-band.md": [
+      "cee6165cc90d784854eb35477566be431b38b82d894e304bc2e926f0c66d12bf"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-card.md": [
+      "51803437fd1ae1f2f7ecf71243525a282690bceef587fa5a93e928853f5904c6"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-hero-lead.md": [
+      "4cfd97a54547918fc52210bd0b1988b3238a4511d759dfad5dcf7029cc92a578"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-hero-title.md": [
+      "82c69ea250ec25768b9a288fb2d94edbac4dadcf981943ca86b53403efda0398"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-hero.md": [
+      "030a4c784612e463bb44e4daa9b06b59ff34aa96cac100f8d04ad9bc91a241d6"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-section.md": [
+      "4fb4552e8b2e8171c83be3ab4139c4b62853f4607dfa92c36551da9f92d9f35b"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-sidebar-layout.md": [
+      "e531b7c75f06803c777914befa005865dc25b20cbcb7e25391fe4ffb0fca5eaf"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-site-main.md": [
+      "f7104826dc8d14409ced5ae04a65815316ff05b6ded954166649b464bc8c324c"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/composition-site-shell.md": [
+      "70dee3c3440c270a91c71c61d31dc351110d27d50994be4ba2fa5260c5176fd8"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-alert.md": [
+      "d7efbea124524f205df7c20b9997d13a8a6698a4de7d3a213437e6d089bb1b70"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-banner.md": [
+      "5221129cc14863dcdceb51c33ca5898cfdde76dbf6e85a8dd4eefff2231bcc20"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-callout.md": [
+      "7b62200f48196ead8e7475ee022d2aede8c0b2a1dad21ba618672a2441f49998"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-cta.md": [
+      "32ef10e3c766577a1cd6eb123bb3cd3c25932a2879ac4bb2c1b620a34a97c0c3"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-faq.md": [
+      "e14b69bed818c5e3b26f28ec019abd12142109a5062a97fa267baee60e6adaa1"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-figure.md": [
+      "44da67f9e16379d086f90ed134e6838911af57331201350c2562f96cea3c1038"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-icon.md": [
+      "aeac649cc1f13737ad255c27e4361e66953ca3723cf38285a9e6de04949a8bc4"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-include.md": [
+      "0a7f6774635e670208eab925cc58a6ff310c7877ee0f7fd9fe6e6d66f5db1278"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-micro-cta.md": [
+      "151dab8a48ceb9081a5ec2bcfb84a22af08d82ed7310a9e11af5eefa19136ebc"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-pull-quote.md": [
+      "3c9d5af4b1003a45a1363ec3fe950c9e6b909873fa0094cddfe3cde79c19430d"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/directive-video.md": [
+      "dcb7edb51c9fd24a85326475bc5af9777803e18e47b993fc2ce8adc15a438fbf"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/island-banner.md": [
+      "c8fcaf1982dce4f3a7ebbdb76f2d34507563848a60f28aef2691e58538125741"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/prose-blockquote.md": [
+      "23c10c5a115b921ed7eac790975216b4a345985ccf540dca282f843164a3d351"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/prose-code.md": [
+      "5c5a9a895f9b361b5aebbc718bde6e32cc80417d74b9ddbc768ba99f0987a0ff"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/prose-headings-and-lead.md": [
+      "fb07c9ad8ceabfa7d004f709618c2bfdaaf938e8f3fa760e3f80b388de82d9c2"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/prose-links.md": [
+      "9974c3a8a458e5d1fc394721a4e54cbbc77bab04851b092d2ff2a7d008e83470"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/prose-lists.md": [
+      "a5352c97561598c295a428f7f18254408f5e560170140d2a3a330fa16ca07af5"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/prose-tables-and-figures.md": [
+      "f7a6d4405cfeebb1092995534b7dd632687268432893eaf466d774e984def625"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/public-component.md": [
+      "942d6b796f63781d84df96a2090f6ed874c11130c4fdbbb0ee524c1700a65426"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/public-stylesheet-contract.md": [
+      "eee1fd8d206d7bbe2e0aab4066d01245ddb043eba4f36c26cb7a2862d8b5e4b9"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/retheme-by-tokens.md": [
+      "5dec3850d5c51beb40ed482c7aaaeffd68dedb75cc215d5472d6f871f13bfb4a"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/theme-directory.md": [
+      "399d8a65a0eb95b2ba6bfe3d2fe8534d0781bd8e07c792cdffc248c4b13677d6"
+    ],
+    ".claude/skills/cairn-styling-public-pages/references/theme-starter.md": [
+      "28f46c3367eca3257143ced07e847d3eb6a4670c32d761791b91ae08c61ce9ce"
     ]
   }
 }

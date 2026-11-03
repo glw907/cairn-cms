@@ -1,6 +1,6 @@
 {
   "name": "@glw907/cairn-cms",
-  "version": "0.98.0",
+  "version": "0.99.0-rc.1",
   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
   "type": "module",
   "engines": {
@@ -170,9 +170,9 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "cairn-manifest": "./dist/vite/bin.js",
-    "cairn-audit": "./dist/audit/bin.js",
-    "cairn-guidance": "./dist/guidance/bin.js"
+    "cairn-manifest": "dist/vite/bin.js",
+    "cairn-audit": "dist/audit/bin.js",
+    "cairn-guidance": "dist/guidance/bin.js"
   },
   "files": [
     "dist",

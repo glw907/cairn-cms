@@ -11,7 +11,9 @@ the site rebuilds." with no new setting; the run's limit raised to 3,400 actual 
 Revision 1, 2026-11-02: after approving, Geoff asked for the real install's browser steps to be
 automated, so the gate runs as a test without him. This revision makes the gate unattended on
 every candidate and moves his browser leg to once per stable. It changes only the gate; the rest
-stands as approved.
+stands as approved. Geoff approved it on 2026-11-02, packet `20261102T221501-1497206`, every
+recommendation taken: a GitHub machine account driven by Playwright; one scoped token,
+`ws-cairn-gate`, on the current account; his own install once per stable, before the cut.
 
 ## Brief
 

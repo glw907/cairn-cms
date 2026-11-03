@@ -15,6 +15,9 @@ stands as approved. Geoff approved it on 2026-11-02, packet `20261102T221501-149
 recommendation taken: a GitHub machine account driven by Playwright; one scoped token,
 `ws-cairn-gate`, on the current account; his own install once per stable, before the cut.
 
+Revision 2, 2026-11-02: the plan review found that Workers Builds accepts only user-owned tokens,
+and two smaller calls. The three decisions above are open; the rest stands.
+
 ## Brief
 
 A site set up on its free workers.dev address will deploy every publish once this lands, and no
@@ -60,46 +63,42 @@ rebuilding. The fault has been in the code since `0.95.0`, and no check read the
 5. Before the stable cut, you run your 15-minute install on the final candidate.
 6. The rest of the release follows the run sheet from step 14: recapture, stable, verify.
 
-### Decide: Who clicks GitHub's App pages in the gate
+### Decide: A user-owned gate token
 
-GitHub has no API that creates or installs an App: the manifest page needs a click on "Create
-GitHub App", and installing is a page step too. A browser that Playwright drives can click both on
-a GitHub machine account, which GitHub's terms allow, one per person. GitHub's docs say nothing
-either way about driving its web pages, so a redesign or a bot check can break a run, and the
-fallback is your two clicks per install. The test Apps and repositories land on that account, away
-from glw907.
+Workers Builds refuses account-owned tokens today, so the approved account-owned `ws-cairn-gate`
+would fail at the Builds step on every leg. Your token scheme makes a script's token
+account-owned so it outlives one person's login. A user-owned gate token is an exception to that
+rule, with the same eight permissions and its zone side on `carin-test.org` only.
 
-Source: GitHub's manifest-flow, installations API, and Terms of Service pages, linked under "The
-release gate".
+Source: <https://developers.cloudflare.com/workers/ci-cd/builds/api-reference/> ("Account-scoped
+tokens are not supported"); `~/.claude/docs/cloudflare-estate-inventory.md`, rules 2 and 6.
 
-- A GitHub machine account that Playwright drives, its password and 2FA secret in the age store
+- Mint `ws-cairn-gate` user-owned, recorded as an exception until Builds accepts account tokens
   (recommended)
-- You click Create and Install for each install, about four clicks per candidate
+- Keep it account-owned, and the gate's Builds legs run on your browser sign-in instead
 
-### Decide: Which Cloudflare credential the gate uses
+### Decide: Check the sign-in email's sender
 
-The gate swaps `wrangler login` and the token pages for one account-owned API token, as wrangler's
-own end-to-end suite does. The token holds only what setup needs, with its zone permissions limited
-to `carin-test.org`. Its Workers permission reaches the whole account, as `ci-deploy`'s already
-does. A separate Cloudflare account would wall the gate off from production, but it needs Workers
-Paid of its own and the test domain moved there.
+The gate proves each publish reaches the live site. It doesn't yet prove that a site with email
+sign-in sends from its own domain. Reading the From address of one sign-in email, from the ward
+probe mailbox, adds about 20 minutes to one task.
 
-Source: wrangler's e2e README; `~/.claude/docs/cloudflare-estate-inventory.md`.
+Source: the planner's fold record, task T6b.
 
-- One scoped gate token on the current account, made through the token scheme (recommended)
-- A separate Cloudflare account for testing, on Workers Paid, holding `carin-test.org`
+- Read the sender of one sign-in email after install B turns email on (recommended)
+- Leave email delivery to the domain chapter's own test send
 
-### Decide: How often you run an install yourself
+### Decide: Move the setup tool's latest tag on promotion
 
-The token stands in for the real `wrangler login` and the prefilled token pages, so a Cloudflare
-change to either would slip past the unattended gate. One install in your own browser covers them:
-the default path to a published edit on workers.dev, about 15 minutes.
+`npx create-cairn-site@latest` serves `0.99.0-rc.1`, since its first publish was by hand, and the
+re-run lines the tool prints carry no version. A tester's re-run can fetch `rc.1`, which deploys a
+stale local copy over a live Builds site. The engine packages' `latest` stays on the last stable.
 
-Source: `packages/create-cairn-site/src/cloudflare/prefill.mjs`, whose prefill keys fail silently
-when Cloudflare drops one.
+Source: `npm view create-cairn-site dist-tags`; the planner's fold record, task T4.
 
-- Once per stable, on the final candidate before the cut (recommended)
-- On every candidate, beside the unattended gate
+- Promotion moves `create-cairn-site@latest` to each passed candidate until the stable ships
+  (recommended)
+- Leave `latest` alone, and testers re-run with an explicit version
 
 ### Worth knowing
 
@@ -108,11 +107,13 @@ Cloudflare's builder installs the engine from the npm registry and never sees a 
 hidden `gate` tag gives the same protection with real registry installs: testers on `next` never
 see a candidate until it passes.
 
-### Your calls of the first approval
+### Your earlier calls
 
 You approved the first version with every recommendation: two installs on every candidate, the
 neutral publish sentence with no new setting, and the run's limit at 3,400 actual minutes. They
-stand. Two installs now cost you no time per candidate.
+stand. Two installs now cost you no time per candidate. On revision 1 you chose a GitHub machine
+account driven by Playwright, one scoped Cloudflare token on the current account, and your own
+install once per stable. Revision 2 changes only the token's ownership.
 
 ### Standing answers
 
@@ -275,12 +276,17 @@ The email-declined path's live leg, a deploy-status read in the admin, and migra
 - `[you]` Create the GitHub machine account, unless you already hold one, with 2FA on. Its
   password and TOTP secret reach the session through `secret-receive`, and Proton Pass keeps the
   record.
-- `[you]` Make `tmp-account-tokens` from the token scheme's link
-  (`~/.claude/docs/cloudflare-estate-inventory.md`, item 6), so the session can mint the
-  account-owned gate token `ws-cairn-gate` (age store `CF_WS_CAIRN_GATE_TOKEN`), add its row to
-  the inventory, and delete the temporary token.
-- One time, the harness's first run installs Cloudflare's Workers Builds GitHub App on the
-  machine account through the same browser; if a page needs you, it asks once.
+- `[you]` Make `tmp-token-setup` (My Profile > API Tokens, the "Create Additional Tokens"
+  template, TTL ending tomorrow; `~/.claude/docs/cloudflare-estate-inventory.md`, item 6), so the
+  session can mint the user-owned gate token `ws-cairn-gate` (age store `CF_WS_CAIRN_GATE_TOKEN`)
+  with the CLI's eight Edit groups (`prefill.mjs:44-50`), its zone groups on `carin-test.org`
+  only, add its row to the inventory as an exception to rule 2, and delete the temporary token.
+- `[you]` For the machine account: a classic personal access token with `repo` and `delete_repo`,
+  for repository teardown and the account check. Store names `CAIRN_GATE_GH_LOGIN`,
+  `CAIRN_GATE_GH_PASSWORD`, `CAIRN_GATE_GH_TOTP_SECRET`, `CAIRN_GATE_GH_TOKEN`. (Planning miss:
+  the plan review found it.)
+- `[you]` Before the first gate run: connect the machine account's GitHub to Workers Builds in the
+  Cloudflare dashboard, with All repositories. (Planning miss: the plan review found it.)
 - The session checks, before the gate, that `carin-test.org` has Email Sending on and the account
   is on Workers Paid.
 - The plan reads `gh workflow run publish.yml` for the promotion and the gate's teardown against

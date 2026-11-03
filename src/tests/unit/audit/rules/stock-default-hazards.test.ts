@@ -6,9 +6,7 @@ import { DEFAULT_STATIC_SCOPE, resolveConfig } from '../../../../lib/audit/confi
 import { parseComponent } from '../../../../lib/audit/markup.js';
 import { parseSheet } from '../../../../lib/audit/sheet.js';
 import { applySuppressions } from '../../../../lib/audit/suppress.js';
-import {
-  stockDefaultHazards,
-} from '../../../../lib/audit/rules/static/stock-default-hazards.js';
+import { stockDefaultHazards } from '../../../../lib/audit/rules/static/stock-default-hazards.js';
 import { walk } from '../../../../../scripts/walk-files.mjs';
 import type { ParsedComponent } from '../../../../lib/audit/markup.js';
 

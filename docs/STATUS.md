@@ -47,6 +47,5 @@ unmet: the blind grade of #207 found claim 2 missed by two of three answers and 
   is due for deletion at claude.ai/code/routines (an agent cannot); held majors
   (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
   (`trig_0193pPNoyxsTGeUhF1xx7woa`).
-- Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; `radius-scale` and the retired
-  patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
+- Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries).

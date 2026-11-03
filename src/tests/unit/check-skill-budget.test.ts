@@ -167,12 +167,12 @@ describe('checkTierMap', () => {
 
   it('fails naming a rule the doc claims at the wrong tier', () => {
     const documented = actualTierMap().map((e) =>
-      e.id === 'radius-scale' ? { ...e, tier: 'error' as const } : e
+      e.id === 'public-literals' ? { ...e, tier: 'error' as const } : e
     );
     const result = checkTierMap(documented, actualTierMap());
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('"radius-scale" as error tier');
+    expect(result.error).toContain('"public-literals" as error tier');
     expect(result.error).toContain('registry has it at advisory tier');
   });
 

@@ -3,6 +3,12 @@
 // `src/lib/audit`. This test reads those constants as source text, never through a git ref (CI
 // checks out at depth 1), and fails once the package version reaches one. With no such constant
 // in the tree it passes at every version, so a promoted rule leaves nothing to re-date.
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { walk } from '../../../../scripts/walk-files.mjs';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const AUDIT_DIR = resolve(ROOT, 'src/lib/audit');
 const PACKAGE_JSON = resolve(ROOT, 'package.json');

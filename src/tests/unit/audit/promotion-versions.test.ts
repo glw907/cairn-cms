@@ -1,15 +1,8 @@
-// The promotion-version tripwire. Every rule that reports a consumer-facing finding at advisory
-// tier for a fixed window names its own promotion release through a `*PROMOTION_VERSION`
-// constant, the way `radius-scale.ts` and `stock-default-hazards.ts`'s retired-patch arms do.
-// This test reads those constants
-// as source text, never through a git ref (CI checks out at depth 1), so it holds regardless of
-// how the working tree got here.
-import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { walk } from '../../../../scripts/walk-files.mjs';
-
+// The promotion-version tripwire. A rule that reports a consumer-facing finding at advisory tier
+// for a fixed window names its promotion release through a `*PROMOTION_VERSION` constant under
+// `src/lib/audit`. This test reads those constants as source text, never through a git ref (CI
+// checks out at depth 1), and fails once the package version reaches one. With no such constant
+// in the tree it passes at every version, so a promoted rule leaves nothing to re-date.
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const AUDIT_DIR = resolve(ROOT, 'src/lib/audit');
 const PACKAGE_JSON = resolve(ROOT, 'package.json');
@@ -23,17 +16,20 @@ interface PromotionConstant {
 const CONSTANT_PATTERN = /(\w*PROMOTION_VERSION)\s*=\s*'([^']+)'/g;
 
 /** Every `*PROMOTION_VERSION = '<x>'` constant under `src/lib/audit`, read as plain source text. */
-function findPromotionConstants(): PromotionConstant[] {
+function constantsIn(file: string, source: string): PromotionConstant[] {
   const found: PromotionConstant[] = [];
-  for (const file of walk(AUDIT_DIR, (name) => name.endsWith('.ts'))) {
-    const source = readFileSync(file, 'utf8');
-    CONSTANT_PATTERN.lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = CONSTANT_PATTERN.exec(source))) {
-      found.push({ file: relative(ROOT, file), name: match[1], version: match[2] });
-    }
+  CONSTANT_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = CONSTANT_PATTERN.exec(source))) {
+    found.push({ file, name: match[1], version: match[2] });
   }
   return found;
+}
+
+function findPromotionConstants(): PromotionConstant[] {
+  return walk(AUDIT_DIR, (name) => name.endsWith('.ts')).flatMap((file) =>
+    constantsIn(relative(ROOT, file), readFileSync(file, 'utf8'))
+  );
 }
 
 function packageVersion(): string {
@@ -52,17 +48,17 @@ function compareVersions(a: string, b: string): number {
 }
 
 describe('audit promotion-version tripwire', () => {
-  it('finds at least one PROMOTION_VERSION constant', () => {
-    // Non-vacuity: a run that found nothing proves nothing about the promises below.
-    expect(findPromotionConstants().length).toBeGreaterThan(0);
+  it('reads a constant out of source text', () => {
+    // Non-vacuity for the scan: the pattern finds a constant when one is written.
+    expect(constantsIn('x.ts', "export const SAMPLE_PROMOTION_VERSION = '1.2.3';")).toEqual([
+      { file: 'x.ts', name: 'SAMPLE_PROMOTION_VERSION', version: '1.2.3' },
+    ]);
   });
 
-  it('finds both new constants by name while the package version is below 0.99.0', () => {
-    const version = packageVersion();
-    if (compareVersions(version, '0.99.0') >= 0) return;
+  it('holds no constant for the promoted 0.99.0 findings', () => {
     const names = findPromotionConstants().map((constant) => constant.name);
-    expect(names).toContain('RADIUS_SCALE_PROMOTION_VERSION');
-    expect(names).toContain('RETIRED_PATCH_PROMOTION_VERSION');
+    expect(names).not.toContain('RADIUS_SCALE_PROMOTION_VERSION');
+    expect(names).not.toContain('RETIRED_PATCH_PROMOTION_VERSION');
   });
 
   it('fails a constant whose named version is at or below the package version', () => {

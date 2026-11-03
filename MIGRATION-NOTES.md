@@ -97,6 +97,9 @@ and behavior that changed. The steps below are the ones that fall on whoever dep
 - **Apply migrations by hand.** A rebuilt site carries `0000_auth.sql`, `0001_roles.sql`,
   `0003_preview.sql`, and `0004_login_nonce.sql`; run `npx wrangler d1 migrations apply AUTH_DB --remote`
   for a database that predates them. A Workers Builds deploy applies none.
+- **Fix `radius-scale` and retired-button-patch findings before `cairn-audit` gates a deploy.** They
+  were advisory and are now errors: use `rounded-selector`, `rounded-field`, or `rounded-box`, and
+  `btn btn-neutral`, `btn btn-soft btn-primary`, or no `shadow-none`.
 - **Grant the GitHub App Contents read and write,** and set `repo` to the repository's current name.
   `/healthz?live=1` reports a refusal as `token_request_refused`.
 - **Set HSTS in the zone if you want a policy other than the admin's.** A Cloudflare zone's own

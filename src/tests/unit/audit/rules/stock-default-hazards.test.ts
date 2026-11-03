@@ -8,7 +8,6 @@ import { parseSheet } from '../../../../lib/audit/sheet.js';
 import { applySuppressions } from '../../../../lib/audit/suppress.js';
 import {
   stockDefaultHazards,
-  RETIRED_PATCH_PROMOTION_VERSION,
 } from '../../../../lib/audit/rules/static/stock-default-hazards.js';
 import { walk } from '../../../../../scripts/walk-files.mjs';
 import type { ParsedComponent } from '../../../../lib/audit/markup.js';
@@ -233,9 +232,9 @@ describe('stock-default-hazards: retired ink-opener patch', () => {
     );
     const findings = check(file);
     expect(findings).toHaveLength(1);
-    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('btn btn-neutral');
-    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
+    expect(findings[0].message).not.toContain('advisory');
   });
 
   it('flags a variant-prefixed ink-hover patch on a btn', () => {
@@ -245,9 +244,9 @@ describe('stock-default-hazards: retired ink-opener patch', () => {
     );
     const findings = check(file);
     expect(findings).toHaveLength(1);
-    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('btn btn-neutral');
-    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
+    expect(findings[0].message).not.toContain('advisory');
   });
 
   it('is silent once the element already carries btn-neutral', () => {
@@ -264,9 +263,9 @@ describe('stock-default-hazards: retired Publish-tint patch', () => {
     );
     const findings = check(file);
     expect(findings).toHaveLength(1);
-    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('btn btn-soft btn-primary');
-    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
+    expect(findings[0].message).not.toContain('advisory');
   });
 
   it('is silent once the element already carries btn-soft', () => {
@@ -288,18 +287,18 @@ describe('stock-default-hazards: retired shadow-none cancel', () => {
     const file = parseComponent('Fixture.svelte', '<button class="btn shadow-none">Save</button>\n');
     const findings = check(file);
     expect(findings).toHaveLength(1);
-    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('nothing to add');
-    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
+    expect(findings[0].message).not.toContain('advisory');
   });
 
   it('flags a variant-prefixed shadow-none the same way', () => {
     const file = parseComponent('Fixture.svelte', '<button class="btn sm:shadow-none">Save</button>\n');
     const findings = check(file);
     expect(findings).toHaveLength(1);
-    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('nothing to add');
-    expect(findings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
+    expect(findings[0].message).not.toContain('advisory');
   });
 
   it('stays silent when a recipe arm already fired on the same element', () => {
@@ -313,9 +312,9 @@ describe('stock-default-hazards: retired shadow-none cancel', () => {
     );
     const inkFindings = check(inkRecipe);
     expect(inkFindings).toHaveLength(1);
-    expect(inkFindings[0].tier).toBe('advisory');
+    expect(inkFindings[0].tier).toBe('error');
     expect(inkFindings[0].message).toContain('btn btn-neutral');
-    expect(inkFindings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
+    expect(inkFindings[0].message).not.toContain('advisory');
 
     const tintRecipe = parseComponent(
       'Fixture.svelte',
@@ -323,9 +322,9 @@ describe('stock-default-hazards: retired shadow-none cancel', () => {
     );
     const tintFindings = check(tintRecipe);
     expect(tintFindings).toHaveLength(1);
-    expect(tintFindings[0].tier).toBe('advisory');
+    expect(tintFindings[0].tier).toBe('error');
     expect(tintFindings[0].message).toContain('btn btn-soft btn-primary');
-    expect(tintFindings[0].message).toContain(RETIRED_PATCH_PROMOTION_VERSION);
+    expect(tintFindings[0].message).not.toContain('advisory');
   });
 });
 
@@ -358,8 +357,8 @@ describe('stock-default-hazards: cairn\'s own admin tree', () => {
     // Edit block, Figure) are the one hazard this tree still carries. No gate runs this rule over
     // the engine's own tree, so the retired-class finding at error tier is counted here, not
     // enforced by a suppression.
-    expect(findings.filter((f) => f.tier === 'error')).toHaveLength(4);
-    expect(findings.filter((f) => f.tier === 'advisory')).toEqual([]);
+    expect(findings).toHaveLength(4);
+    expect(findings.every((f) => f.tier === 'error')).toBe(true);
     expect(findings.every((f) => f.message.includes('cairn-btn-guarded'))).toBe(true);
   });
 });

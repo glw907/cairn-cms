@@ -40,7 +40,7 @@ Two findings a new admin list meets most:
   `cairn-chip-quiet`, `cairn-chip-warning`, or `cairn-chip-outline` class. A bare focus-driven
   `.dropdown` takes a `popover` attribute or an explicit `class:dropdown-open` toggle. A native
   `disabled` on a guarded button becomes `aria-disabled`. A flat `base-300` card border, and the retired
-  `cairn-btn-guarded` class, each name their replacement in the message. Three advisory arms on a
+  `cairn-btn-guarded` class, each name their replacement in the message. Three arms on a
   `btn` name `btn btn-neutral`, `btn btn-soft btn-primary`, or drop a `shadow-none`.
 
 Keep the screen's behavior while fixing: the same rows, the same marker text on the same rows.
@@ -55,7 +55,7 @@ Error tier unless marked advisory. For the admin design register behind them, lo
 | `no-uncompiled-class` | A class that compiles into neither the admin sheet nor the component's scoped `<style>` |
 | `type-scale` | A text size not from a `--cairn-type-*` role |
 | `gap-scale` | A bracket spacing literal off the gap roles and off Tailwind's half-step grid |
-| `radius-scale` (advisory) | A corner that is not `rounded-selector`, `rounded-field`, or `rounded-box` |
+| `radius-scale` | A corner that is not `rounded-selector`, `rounded-field`, or `rounded-box` |
 | `stock-default-hazards` | See above |
 | `token-colors` | A hex, `rgb()`, named, or zero-chroma color literal (files in `static.paletteFiles` exempt) |
 | `grammar-boundary` | CSS redeclaring a grammar token |

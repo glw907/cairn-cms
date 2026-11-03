@@ -27,9 +27,19 @@ const SIZE_MARKER = /^<!-- release-size: \w+ -->$/;
 const ANCHOR = /\(\.\/CHANGELOG\.md#[0-9a-z-]+\)/;
 const ANCHOR_ALL = new RegExp(ANCHOR.source, 'g');
 
+/** @typedef {{ removed: string[], added: string[] }} ChangedLines */
+/** @typedef {(cmd: string, args: string[]) => { status: number | null, stdout: string }} Runner */
+
+/**
+ * @param {(line: string) => boolean} test
+ * @returns {(lines: ChangedLines) => boolean}
+ */
 const everyLine = (test) => ({ removed, added }) => [...removed, ...added].every(test);
 
-/** The files a stable cut may touch, each with the predicate over its removed and added lines. */
+/**
+ * The files a stable cut may touch, each with the predicate over its removed and added lines.
+ * @type {Record<string, (lines: ChangedLines) => boolean>}
+ */
 const RULES = {
   'package.json': everyLine((l) => VERSION_LINE.test(l)),
   'package-lock.json': everyLine((l) => VERSION_LINE.test(l)),
@@ -40,10 +50,12 @@ const RULES = {
   'CHANGELOG.md': everyLine((l) => HEADING.test(l) || SIZE_MARKER.test(l)),
   // A heading, or a body line whose only change is the CHANGELOG anchor it links to.
   'MIGRATION-NOTES.md': ({ removed, added }) => {
+    /** @param {string[]} side */
     const body = (side) => side.filter((l) => !HEADING.test(l));
     const before = body(removed);
     const after = body(added);
     const anchored = [...before, ...after].every((l) => ANCHOR.test(l));
+    /** @param {string[]} side */
     const flat = (side) => side.map((l) => l.replace(ANCHOR_ALL, '(./CHANGELOG.md#_)'));
     return (
       anchored &&
@@ -77,11 +89,13 @@ export function changedLines(diff) {
 
 /**
  * Check that HEAD is a stable cut of the tag `next` points at.
- * @param {(cmd: string, args: string[]) => { status: number | null, stdout: string }} run
+ * @param {Runner} run
  * @returns {{ ok: boolean, errors: string[], sha?: string, next?: string }}
  */
 export function checkStableSource(run) {
+  /** @param {string} cmd @param {string[]} args */
   const out = (cmd, args) => run(cmd, args).stdout.trim();
+  /** @param {...string} errors */
   const fail = (...errors) => ({ ok: false, errors });
 
   if (run('git', ['fetch', 'origin', 'main']).status !== 0) return fail('git fetch origin main failed');
@@ -129,6 +143,7 @@ export function checkStableSource(run) {
 }
 
 function main() {
+  /** @type {Runner} */
   const run = (cmd, args) => {
     const r = spawnSync(cmd, args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 });
     return { status: r.status, stdout: r.stdout ?? '' };

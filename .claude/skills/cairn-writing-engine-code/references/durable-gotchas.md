@@ -403,7 +403,7 @@ contention can also pass 600 seconds, so do not poll that either.
 ## Do not rebuild `dist` while `npm test` runs
 
 Several `check:*` scripts (`check:surface`, `check:consumers`, `check:package`, and more) run `npm run package` first, which rebuilds `dist/` in place. A few unit tests
-(`sveltekit-barrel-prune.test.ts`, `delivery-media-vite-barrel-prune.test.ts`) load `.d.ts` files out
+load `.d.ts` files out
 of `dist/` through `scripts/checks/dts-exports.mjs`. A rebuild that overlaps a running
 `npm test` can catch `dist/` mid-write and fail those tests with
 `cannot load .../dist/sveltekit/index.d.ts`, with nothing wrong in your code. Run `npm run package`
@@ -511,7 +511,7 @@ names. `npm run check` and `npm test` find them, so run both.
   (`sveltekit/content-routes.ts` forwards from the `content-routes-*.ts` files, then `index.ts`
   forwards again). A forwarding line is dead weight only if no real `import { type X }` reaches it.
   Check every layer.
-- The barrel-membership tests (`*-barrel-prune.test.ts`, `*-exports.test.ts`) read the packaged
+- The barrel-membership tests (`*-exports.test.ts`) read the packaged
   `dist/*.d.ts` inside an `it()` block, so `npm run check` never sees a stale `KEPT` entry. Grep
   every one of them for each retired name, and move a retired name to the file's demoted list with
   its "no longer resolves" assertion instead of deleting the line.

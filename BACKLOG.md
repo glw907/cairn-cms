@@ -129,9 +129,6 @@
 - [ ] **#290** Walk sign-in, edit-and-save, and publish with a screen reader (Orca) `#improvement` `#cairn-cms` *(2026-11-02)*
   `keyboard-walk.spec.ts` proves the keyboard path and the focus ring, not what a screen reader announces. This pass removed the polite `aria-live` regions from the Nav, Tags, Tidy, Create, and Editors screens, because the move of focus to the alert or the refused field replaces them; only a screen reader shows whether the refusal, the saved flash, and the publish result are still heard. The focused alert is a `div` with `tabindex="-1"` and no role (`focusOnMount`), so whether each screen reader speaks its text on focus is unproven; add `role="alert"` or a labelled group if one stays silent. The `ConceptList` screen keeps one polite region for a delete refusal, a publish-all bounce, and a load error, since none of those takes a focus move. Walk the three journeys in Orca with Firefox and with Chromium, and file what is not announced.
   Placement: site work, ahead of the beta gate.
-- [ ] **#284** Repoint the `cairn-writing-engine-code` idiom examples at public names `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
-  `references/code-idioms.md:188` and the eval `e3-seam-bug-fix.json` still name functions `cleanup-hide-internals` hid, so an implementer copying them reaches for a name a site can't import. The plan's pre-flight allowed T15 only the dead-name table's hits, and these aren't on it. Found by the `small-api` pass, PR #184.
-  Placement: After the release. The backlog sweep proposes dropping it.
 - [ ] **#274** Recapture the `cairn doctor` report transcript `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `04-doctor-report.txt` predates the `config.migrations` check, so the published report shows no such line, and `check:transcripts` passes anyway. Recapture from a real site. Found by T6.
   Placement: The release's real install, with #185.
@@ -141,50 +138,62 @@
 - [ ] **#246** Decide whether a long-lived Worker key should keep admin permissions `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   The Worker still holds a key for an App with `administration: write` and `workflows: write`, and the setup tool tells the user to choose "All repositories". A stolen `GITHUB_APP_PRIVATE_KEY_B64` can mint an unscoped token that reaches every repository in the installation, including repository deletion. Decide whether the Worker's key keeps those permissions or setup uses a separate App. Geoff's ruling keeps "All repositories" at `packages/create-cairn-site/src/github/install.mjs:237`; #203 tells the owner to narrow the installation afterward. Found by the pass 1a security read.
   Placement: The release's real install, with #245's proof.
-- [ ] **#245** Confirm a publish through the scoped token on the real install `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#245** Confirm a publish through the scoped token on the real install `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   The rc.2 install proves only a scaffolded App, which holds `contents`, `administration`, and `workflows`, while the App `adopt-cairn.md` teaches holds Contents alone. At the sitting, publish an entry through the token `installationToken` now mints (`repositories` plus `contents: write`). A ref write refused for workflows stops for Geoff, who is at that sitting, with the cause in hand; no fallback is written now. Found by pass 1a.
   Placement: Release, real install.
 
 - [ ] **#211** Measure tidy's latency on real entries against the deadline and the cap `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   `DEFAULT_TIDY_TIMEOUT_MS` is 30s (`src/lib/sveltekit/content-routes-context.ts`) and `MAX_TIDY_CHARS` is 24,000 (`src/lib/sveltekit/content-routes-tidy.ts`). The only record is one run per model with a stand-in prompt: at 12,935 characters, `claude-sonnet-5-5` took 20.6s and `claude-sonnet-5` took 40.1s. If a real proofread near the cap passes the deadline, an editor gets a timeout on text the cap allowed, and the retryable 502's "try again" copy will fail the same way. Measure real entries, then keep or change either number and correct both doc comments. Found by PR #177, whose planned proofread was set aside.
   Placement: After the release.
-- [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `packages/create-cairn-site/src/cloudflare/chapter2.mjs` writes the sender into `src/theme/cairn.config.ts` and then builds and deploys in one step (search `writeEmailFrom`). A crash after the write and before the deploy leaves the sender written but undeployed, and the resume sees `writeEmailFrom` return false (the address is already correct) and skips the build and deploy, so the running site keeps the placeholder sender and sign-in email fails or sends from the wrong address. Fix candidate: save a marker before the write and clear it after the deploy, or compare the deployed config. Found by the scaffold-setup pass's review.
+  Placement: After the release.
+- [ ] **#331** Take the held major vitest 5 `#improvement` `#deps` *(2026-11-02)*
+  Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: the browser plugin peers vitest 5; a dedicated pass runs `test.yml` green on 5.1.0.
+  Placement: After the release.
+- [ ] **#332** Take the held major typescript 7 `#improvement` `#deps` *(2026-11-02)*
+  Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: `tsgo.yml` runs green on 7, SvelteKit's peer admits `^7`, and a tsdoc lint path admits `^7`.
+  Placement: After the release.
+- [ ] **#333** Take the held major @types/node 26 `#improvement` `#deps` *(2026-11-02)*
+  Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: Geoff raises the Node floor.
+  Placement: After the release.
+- [ ] **#334** Take the held major devalue 6 `#improvement` `#deps` *(2026-11-02)*
+  Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: SvelteKit and Svelte admit `^6`.
+  Placement: After the release.
+- [ ] **#335** Take the held major @anthropic-ai/sdk 1 `#improvement` `#deps` *(2026-11-02)*
+  Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: migration notes confirm the fields read at `content-routes-context.ts`, the peer widens to `<2`, and the tidy test passes on 1.4.0.
   Placement: After the release.
 
 ## Low
 - [ ] **#249** Have `check:symbols` flag a removed name in `## Unreleased` prose `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Pass 1a removed `/auth-channel` and `auth.branding`, and `check:symbols` stayed green while `CHANGELOG.md` and `MIGRATION-NOTES.md` still taught both as live under `## Unreleased`. Only the whole-branch review caught them, over two rounds, since the second round's lines named "the auth channel" in plain words. Fail a name the surface diff removed when an unreleased entry states it outside a removal note. Found by pass 1a.
   Placement: After the release.
-- [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
   Placement: After the release.
 
-- [ ] **#205** Narrow `publish.yml`'s OIDC permission to the publish steps `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#205** Narrow `publish.yml`'s OIDC permission to the publish steps `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `.github/workflows/publish.yml:20` grants `id-token: write` workflow-wide, and each job runs `npm ci` and the template bake with install scripts enabled under it, the same as the sibling jobs, so a compromised dependency's install script could mint a publish token. The actions are pinned to tags, and `npm install -g npm@11` floats. Fix candidate: job-level permissions, or split build and publish into separate jobs, and pin the actions and npm. Found by the scaffold-setup pass's security review (L7).
   Placement: After the release.
 
-- [ ] **#204** Keep an env token out of the state file, and write the state file atomically `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#204** Keep an env token out of the state file, and write the state file atomically `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `runChapter2`'s token hop (`packages/create-cairn-site/src/cloudflare/chapter2.mjs`, search `saveChapter2Token`) copies a `CAIRN_CF_API_TOKEN` env token into the state file, including on the email re-offer, so a token the owner meant to keep only in the environment lands on disk until a terminal step deletes it. `saveSite` (`packages/create-cairn-site/src/state.mjs:60`) also writes in place without a temp file and rename, so a crash mid-write can truncate the record. Fix candidate: hold an env token in memory only, and write through a temp file and `rename`. Found by the scaffold-setup pass's security review (L3).
   Placement: After the release.
 
-- [ ] **#190** Require draft-preview links to be minted from a POST action `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
-  `draft-preview.md` and the S05 judge never say that minting changes state and so belongs in a form action, not a `load`. The ordering half closed in `admin-rest`, which left one known limit: an unmapped nonexistent id still answers `unknown-concept`, since `canReach` admits an unmapped target (`src/lib/auth/access.ts:198-199`).
-  Placement: After the release. The backlog sweep proposes dropping it.
 - [ ] **#191** Harden the eval harness's session sandbox further `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   The session sandbox's read-only filters in `ALLOWED_TOOLS` still allow writes or execution through flags, so `DENIED_TOOLS` is advisory and the fixture sandbox is the boundary. The judge-prompt fence and `cp -a` landed. The deny-list half was written and then reverted, because the live `claude -p` probe it needed was refused by the worktree guard. What remains: deny `sed *`, `*--output*` under `git diff`, `git show`, and `git log`, `*-O*` and `*--open-files-in-pager*` under `git grep`, `sort *-*o*`, and `git difftool*`, with the `git -C` forms, take `sed -n` out of the allow list, and probe each from a session outside a worktree guard. `*-O*` over-matches `git grep ...-Open...` and `sort *-*o*` over-matches `a-o.txt`; narrow them first.
   Placement: After the release.
-- [ ] **#168** Hand cairn.pub its routing contract with the release `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
+- [ ] **#168** Hand cairn.pub its routing contract with the release `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-02)*
   cairn.pub renders the doc arms from the installed engine, so the release owes it three things, from the 2026-09-22 handoff (kept at the `pre-agent-first` tag, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`). Keep the `https://cairn.pub/docs/<arm>/<page>` shape the `cairn` binary prints, with no extension, and redirect rather than move. Redirect every retired path to its successor, regenerating the table from the final page set. Before the `tool/v1.1.0` successor tag, confirm each `https://cairn.pub/docs/admin/<page>` URL a failure block prints resolves on the deployed site. Decide whether the `--json` schemas removed in db5ffdf7a still get a published home at `/schema/`. The three CLI reference pages left with the technical tracks and are out. The `0.98.0` pin ceiling stays until that release.
   Placement: After the release.
-- [ ] **#185** Re-capture the setup transcript with a neutral scratch path and host `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  The setup transcript is recaptured at the release's real install, with a neutral scratch path and host, not in a separate run. `packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt` (lines 323-324) holds the maintainer's home path (`/var/home/...`, from wrangler's asset-directory line) and the `glw907.workers.dev` URL, and `01d-resume.txt` is gone. List the stale transcript blocks the scaffold-setup PR names. No page quotes the path lines, and the package's `files` does not ship `test/`. Found by the pass 4 close review, 2026-10-31.
+- [ ] **#185** Re-capture the setup transcript with a neutral scratch path and host `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-02)*
+  The setup transcript is recaptured at the release's real install, with a neutral scratch path and host, not in a separate run. `packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt` (lines 766 and 990, wrangler's asset-directory line; host at line 906) holds the maintainer's home path (`/var/home/...`, from wrangler's asset-directory line) and the `glw907.workers.dev` URL, and `01d-resume.txt` is gone. List the stale transcript blocks the scaffold-setup PR names. No page quotes the path lines, and the package's `files` does not ship `test/`. Found by the pass 4 close review, 2026-10-31.
   Placement: The release.
-- [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)* *(swept 2026-11-01)*
+- [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)* *(swept 2026-11-02)*
   The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it.
   Placement: After the release.
 
-- [ ] **#195** Publish `create-cairn-site` before the release `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#195** Publish `create-cairn-site` before the release `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   `packages/create-cairn-site` is `0.0.0` in the repository, `npm view create-cairn-site` answers E404, and `docs/admin/create-your-site.md` and the root `README.md` open with `npx create-cairn-site`, so the command does not work from a registry until the package is published. The manifest, tarball contents, leak scan, and the `publish-create-site` job in `publish.yml` have landed; the job has never run. What remains is the release act: publish the first version by hand, set up npm trusted publishing for the package, watch the first OIDC run of `publish-create-site`, and run the real install.
   Placement: The release.
 
@@ -218,6 +227,10 @@
 - **#165** A dated filename whose prefix does not match the concept's `datePrefix` keeps date digits in its public...: Migration-only, cosmetic, and visible at the first URL check. The entry still works. (Geoff, 2026-10-31)
 - **#115** Return the finished link from mintPreview: `cleanup-custom-recipes` retired the hand-mount factories and the preview token verbs, so no site mints its own link. (Geoff, 2026-11-01)
 - **#116** Validate preview.ttlMs when the admin is constructed: `cleanup-custom-recipes` retired the preview lifetime option. (Geoff, 2026-11-01)
+- **#284** Repoint the `cairn-writing-engine-code` idiom examples at public names: no site-facing example names a hidden function now; `e3-seam-bug-fix.json` is an engine fixture and `authorizeAdminTarget` still exists, so engine-internal names are right for an engine task. (Geoff, 2026-11-02, release sitting)
+- **#190** Require draft-preview links to be minted from a POST action: minting is engine-only, through the POST mint action behind `requireOrigin`; no public mint verb remains (`index.ts` exports only `loadPreview`). (Geoff, 2026-11-02, release sitting)
+- **Accepted residual (#247):** the confirm page's token. `confirmLoad` puts the URL's token into page data and consumes nothing; only the CSRF-checked POST consumes it, atomically against the pending-login nonce, and `Referrer-Policy: strict-origin` keeps it out of referrers. A token on a single-use, browser-bound, referrer-stripped page adds no exposure beyond the link already in the inbox; the forwarded-link rebind is the one stated residual. (Geoff, 2026-11-02, release sitting)
+- **Accepted residual (#247):** the frame-ancestors-only CSP. Clickjacking is the threat these headers close; a full CSP would have to allow SvelteKit's inline hydration and every site's own admin screens and theme, which is site-owned policy outside the engine's scope. (Geoff, 2026-11-02, release sitting)
 
 ## Done
 - [x] **#259** Decide whether the browser upload takes AVIF `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-02)*

@@ -20,6 +20,7 @@ import { mkdtemp, rm, writeFile, readFile, chmod, mkdir } from 'node:fs/promises
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { makeStubOpenerDir } from './stub-opener.mjs';
 import { makeFakeBin } from './fake-bin.mjs';
 import { startFakeCloudflare } from './fake-cloudflare.mjs';
 import { startFakeGithub, pointAtFake } from './fake-github.mjs';
@@ -43,14 +44,7 @@ async function freshStateDir(t) {
 /** Build a directory of harmless no-op stand-ins for every platform opener open.mjs might spawn,
  * mirroring resume-chapter2.test.mjs's helper. */
 async function makeFakeOpenerDir(t) {
-  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-fake-opener-'));
-  t.after(() => rm(dir, { recursive: true, force: true }));
-  for (const name of ['xdg-open', 'open', 'cmd']) {
-    const scriptPath = path.join(dir, name);
-    await writeFile(scriptPath, '#!/bin/sh\nexit 0\n');
-    await chmod(scriptPath, 0o755);
-  }
-  return dir;
+  return (await makeStubOpenerDir(t)).dir;
 }
 
 /**

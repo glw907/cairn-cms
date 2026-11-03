@@ -114,7 +114,10 @@ test('buildSite prints the captured build output before build-failed when the bu
 
   const { buildSite } = await import('./deploy.mjs');
   const log = [];
-  await assert.rejects(() => buildSite({ dir, log: (line) => log.push(line) }), /boom/);
+  await assert.rejects(
+    () => buildSite({ dir, log: (line) => log.push(line) }),
+    (err) => err.catalogue?.code === 'build-failed' && /boom/.test(err.message),
+  );
 
   assert.ok(log.some((line) => line.includes('vite:css-post')), `got: ${log.join('|')}`);
   assert.equal(log.includes('Built your site.'), false);

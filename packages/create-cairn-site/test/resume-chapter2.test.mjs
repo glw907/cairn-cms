@@ -30,6 +30,7 @@ import { mkdtemp, rm, writeFile, chmod, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { makeStubOpenerDir } from './stub-opener.mjs';
 import { makeFakeBin } from './fake-bin.mjs';
 import { startFakeCloudflare } from './fake-cloudflare.mjs';
 import { saveSite, loadSite } from '../src/state.mjs';
@@ -60,14 +61,7 @@ async function freshStateDir(t) {
  * @returns {Promise<string>} the directory's absolute path
  */
 async function makeFakeOpenerDir(t) {
-  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-fake-opener-'));
-  t.after(() => rm(dir, { recursive: true, force: true }));
-  for (const name of ['xdg-open', 'open', 'cmd']) {
-    const scriptPath = path.join(dir, name);
-    await writeFile(scriptPath, '#!/bin/sh\nexit 0\n');
-    await chmod(scriptPath, 0o755);
-  }
-  return dir;
+  return (await makeStubOpenerDir(t)).dir;
 }
 
 /**

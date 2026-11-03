@@ -276,7 +276,7 @@ test('bin.mjs at live with --yes --domain enters chapter 2 instead of stopping a
   assert.ok(result.stderr.includes('Next:'), `expected the token hop's Next: line, got: ${result.stderr}`);
 });
 
-test('bin.mjs at live with --yes and no --domain skips chapter 2 with a hint and still prints the live block', async (t) => {
+test('bin.mjs at live with --yes and no --domain skips the domain, then offers Workers Builds and stops at its token hop', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -296,36 +296,27 @@ test('bin.mjs at live with --yes and no --domain skips chapter 2 with a hint and
     fakeOpenerDir,
   });
 
-  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  assert.equal(result.code, 1, `expected exit 1 at chapter 3's token hop, got ${result.code}. stdout: ${result.stdout}`);
+  const skipAt = result.stdout.indexOf('Skipping the domain chapter');
+  const repoAt = result.stdout.indexOf('Your private repository on GitHub:');
+  const buildsAt = result.stdout.indexOf('Connect to Workers Builds');
+  assert.ok(skipAt >= 0, `expected the unattended skip hint, got: ${result.stdout}`);
+  assert.ok(repoAt > skipAt, `expected the repo-and-doctor block after the skip, got: ${result.stdout}`);
+  assert.ok(buildsAt > repoAt, `expected the Builds admission after the block, got: ${result.stdout}`);
   assert.ok(
-    result.stdout.includes('Skipping the domain chapter'),
-    `expected the unattended skip hint, got: ${result.stdout}`,
+    result.stdout.includes('The App that publishes for you:') &&
+      result.stdout.includes('https://github.com/settings/installations') &&
+      result.stdout.includes('Run `cairn doctor` any time to check what is set up and what is still missing.'),
+    `expected the shared App link and doctor reminder, got: ${result.stdout}`,
   );
-  assert.ok(
-    result.stdout.includes('Your private repository on GitHub:'),
-    `expected the live info block, got: ${result.stdout}`,
-  );
-  assert.ok(
-    result.stdout.includes('Connect your domain any time by re-running'),
-    `expected the reworded next-chapter copy, got: ${result.stdout}`,
-  );
-  // The App link and the doctor reminder are the shared closing tail printLiveInfo,
-  // printDomainLiveInfo, and a completing chapter-2 run all end on; asserting them here and
-  // again on the domain-live terminal case below proves they stay identical between the two.
-  assert.ok(
-    result.stdout.includes('The App that publishes for you:'),
-    `expected the shared App link, got: ${result.stdout}`,
-  );
-  assert.ok(
-    result.stdout.includes('https://github.com/settings/installations'),
-    `expected the line pointing at the App's installation settings, got: ${result.stdout}`,
-  );
-  assert.ok(
-    result.stdout.includes('Run `cairn doctor` any time to check what is set up and what is still missing.'),
-    `expected the shared doctor reminder, got: ${result.stdout}`,
-  );
+  assert.equal(result.stdout.includes('This site is set up end to end.'), false, `got: ${result.stdout}`);
+  assert.ok(result.stderr.includes('Next:'), `expected the token hop's Next: line, got: ${result.stderr}`);
   assertNeverFellThrough(result.stdout);
-  assert.equal(cloudflare.requests.length, 0, 'a declined admission must make no Cloudflare API call');
+  assert.equal(
+    cloudflare.requests.some((r) => /builds/i.test(r.path ?? r.url ?? '')),
+    false,
+    'the token hop stops before any Builds route',
+  );
 
   const state = await loadSite('chapter2-livesk');
   assert.equal(state.step, 'live', 'a declined admission must not advance the saved step');
@@ -691,43 +682,6 @@ test('bin.mjs --start-over from a terminal chapter-2 step also refuses, same as 
 });
 
 // --- T4b.1 defect harvest: the email copy sites in bin.mjs must not promise delivery ------------
-
-test('bin.mjs at live prints the re-run hint naming --domain and --email, not the stale "later chapter" line', async (t) => {
-  const stateDir = await freshStateDir(t);
-  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
-  t.after(() => rm(dir, { recursive: true, force: true }));
-
-  const fake = await makeFakeBin('chapter2-live-rerun-hint');
-  t.after(() => fake.close());
-  const fakeOpenerDir = await makeFakeOpenerDir(t);
-  const cloudflare = await startFakeCloudflare();
-  t.after(() => cloudflare.close());
-
-  const siteId = 'chapter2-live-rehint';
-  await seedChapter2Site(siteId, dir, 'live');
-
-  const result = await runCli(['--dir', dir, '--yes'], {
-    stateDir,
-    wranglerBin: fake.binPath,
-    apiBase: cloudflare.apiBase,
-    fakeOpenerDir,
-  });
-
-  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
-  assert.equal(
-    result.stdout.includes('later chapter'),
-    false,
-    `T4b shipped email, so this line must be gone, got: ${result.stdout}`,
-  );
-  assert.ok(
-    result.stdout.includes('--domain'),
-    `expected the re-run hint to name --domain, got: ${result.stdout}`,
-  );
-  assert.ok(
-    result.stdout.includes('--email'),
-    `expected the re-run hint to name --email, got: ${result.stdout}`,
-  );
-});
 
 test('bin.mjs at email-live names the sender and Cloudflare\'s acceptance, never a flat delivery claim', async (t) => {
   const stateDir = await freshStateDir(t);

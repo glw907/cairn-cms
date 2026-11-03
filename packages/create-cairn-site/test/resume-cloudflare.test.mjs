@@ -280,7 +280,10 @@ test('bin.mjs resumes a pushed record and notes an --owner-email override in the
     { stateDir, wranglerBin: fake.binPath, npmBin: fake.binPath, fakeOpenerDir },
   );
 
-  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  // The run goes live, skips the domain under --yes, and on into Workers Builds, which stops at
+  // its token hop for want of a token.
+  assert.equal(result.code, 1, `expected exit 1 at chapter 3's token hop, got ${result.code}. stderr: ${result.stderr}`);
+  assert.ok(result.stderr.includes('Next:'), `expected the token hop's Next: line, got: ${result.stderr}`);
   assert.ok(
     result.stdout.includes(
       "Resuming Alpine Club at pushed (using this run's --owner-email instead of the saved answer).",

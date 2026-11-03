@@ -215,9 +215,12 @@ for (const step of ['builds-connected', 'config-reconciled']) {
   });
 }
 
+const CONNECTED_PUBLISH_LINE =
+  'Each publish from your admin commits to GitHub, and Workers Builds deploys it, so your live site updates by itself.';
+
 for (const [step, expectedNote] of [
-  ['builds-live', 'Every commit to your default branch now builds and deploys itself'],
-  ['builds-connect-declined', 'Workers Builds is not connected'],
+  ['builds-live', CONNECTED_PUBLISH_LINE],
+  ['builds-connect-declined', 'Workers Builds is not connected, so a publish from your admin commits to GitHub'],
 ]) {
   test(`bin.mjs at ${step} routes a plain re-run to the terminal branch, not the scaffolder`, async (t) => {
     const stateDir = await freshStateDir(t);
@@ -229,12 +232,20 @@ for (const [step, expectedNote] of [
     const fakeOpenerDir = await makeFakeOpenerDir(t);
 
     const siteId = makeSiteId(`term-${step}`);
-    await seedSite(siteId, dir, step);
+    // A domain and emailOnboardedAt keep the record out of chapter 2's reopen routing, so the
+    // plain re-run reaches only the terminal block.
+    await seedSite(siteId, dir, step, { domain: 'term-block.example', emailOnboardedAt: '2026-01-01T00:00:00.000Z' });
 
     const result = await runCli(['--dir', dir], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
 
     assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
     assert.ok(result.stdout.includes(expectedNote), `expected the terminal note, got: ${result.stdout}`);
+    const endToEnd = result.stdout.split('This site is set up end to end.').length - 1;
+    assert.equal(endToEnd, step === 'builds-live' ? 1 : 0, `set-up sentence count, got: ${result.stdout}`);
+    if (step === 'builds-connect-declined') {
+      assert.ok(result.stdout.includes('your live site does not change'), `got: ${result.stdout}`);
+      assert.ok(result.stdout.includes(`npx create-cairn-site --dir ${dir} --connect`), `got: ${result.stdout}`);
+    }
     assert.ok(
       result.stdout.includes('Your private repository on GitHub:'),
       `expected the shared repo line, got: ${result.stdout}`,
@@ -457,6 +468,7 @@ test('bin.mjs at builds-connect-declined routes a plain re-run to the terminal b
     result.stdout.includes('Workers Builds is not connected'),
     `expected the terminal note naming the still-declined state, got: ${result.stdout}`,
   );
+  assert.ok(result.stdout.includes('does not change'), `expected the publish claim, got: ${result.stdout}`);
   assert.equal(
     result.stdout.includes(CHAPTER3_ADMISSION_TITLE),
     false,
@@ -508,6 +520,7 @@ test('bin.mjs --connect at builds-connect-declined proceeds into admission, not 
     false,
     'the stale decline note must never print again once --connect has proceeded past it',
   );
+  assert.equal(result.stdout.includes('does not change'), false, 'the stale publish claim must not print either');
   assert.deepEqual(
     await fake.invocations(),
     [],
@@ -604,6 +617,63 @@ test('bin.mjs --connect at builds-live runs the re-reconcile hop rather than a n
 
   const state = await loadSite(siteId);
   assert.equal(state.step, 'builds-live', 'a parked reconcile must never advance the saved step');
+});
+
+// --- A record at `live` with no --domain reaches Builds in the same run (the declined-domain route)
+
+test('bin.mjs at live with --yes, no --domain, and a token connects Workers Builds and parks at the reconcile', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-live-connect-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await mkdir(path.join(dir, 'src', 'theme'), { recursive: true });
+  await writeFile(
+    path.join(dir, 'wrangler.jsonc'),
+    JSON.stringify({ name: 'chapter3-resume-site', vars: { PUBLIC_ORIGIN: 'http://localhost:4173' } }, null, 2),
+  );
+  await writeFile(
+    path.join(dir, 'src', 'theme', 'cairn.config.ts'),
+    "export const publicOrigin = 'https://showcase.test';\n",
+  );
+
+  const fake = await makeFakeBin('chapter3-live-connect');
+  t.after(() => fake.close());
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+
+  cloudflare.state.workerScripts.push({ id: 'chapter3-resume-site', tag: 'worker-tag-1' });
+  const siteId = makeSiteId('live-conn');
+  await seedSite(siteId, dir, 'live');
+  // Chapter 1 records the repository's numeric id; the default fixture omits it.
+  const seeded = await loadSite(siteId);
+  await saveSite(siteId, {
+    ...seeded,
+    github: { ...seeded.github, repo: { ...seeded.github.repo, id: 4242 } },
+  });
+
+  const result = await runCli(['--dir', dir, '--yes'], {
+    stateDir,
+    wranglerBin: fake.binPath,
+    apiBase: cloudflare.apiBase,
+    githubApiBase: github.apiBase,
+    fakeOpenerDir,
+    extraEnv: { CAIRN_CF_API_TOKEN: 'env-token' },
+  });
+
+  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stdout: ${result.stdout} stderr: ${result.stderr}`);
+  assert.ok(result.stdout.includes(CHAPTER3_ADMISSION_TITLE), `expected the Builds offer, got: ${result.stdout}`);
+  assert.ok(
+    result.stdout.includes('the reconcile found a real difference'),
+    `expected the reconcile-parked row, got: ${result.stdout}`,
+  );
+  assert.ok(result.stdout.includes('Next:'), `expected the parked row's Next: line, got: ${result.stdout}`);
+  const triggers = cloudflare.requests.filter((r) => r.method === 'POST' && /\/builds\/triggers/.test(r.path));
+  assert.equal(triggers.length, 1, 'exactly one Builds trigger is created');
+
+  const state = await loadSite(siteId);
+  assert.equal(state.step, 'builds-connected');
 });
 
 // === Step 3: preservation =========================================================================
@@ -819,6 +889,7 @@ for (const [step, extra, note] of [
       assert.ok(result.stdout.includes('chose again'), `expected the re-offered decline copy, got: ${result.stdout}`);
       assert.ok(result.stdout.includes('Re-run with --email'), `expected the flag line, got: ${result.stdout}`);
       assert.ok(result.stdout.includes(note), `expected the Builds closing block, got: ${result.stdout}`);
+      assert.ok(result.stdout.includes('does not change'), `expected the publish claim, got: ${result.stdout}`);
       assert.equal(result.stdout.includes(CHAPTER3_ADMISSION_TITLE), false, 'chapter 3 must not run');
       assert.equal(result.stdout.includes(SCAFFOLD_MARKER), false);
       assert.deepEqual(await fake.invocations(), []);
@@ -875,7 +946,7 @@ for (const flags of [[], ['--yes', '--email']]) {
     assert.equal(await readFile(configPath, 'utf8'), configBefore, 'the sender must not be rewritten');
     assert.deepEqual(cloudflare.requests.slice(requestsBefore), [], 'no Cloudflare call is made');
     assert.equal(result.stdout.includes('chose again'), false, `the email question must not be re-offered: ${result.stdout}`);
-    assert.ok(result.stdout.includes('Every commit to your default branch now builds'), `got: ${result.stdout}`);
+    assert.ok(result.stdout.includes(CONNECTED_PUBLISH_LINE), `got: ${result.stdout}`);
     assert.ok(
       result.stdout.includes('until Workers Builds is connected'),
       `expected the line saying the email offer ends once Builds is connected, got: ${result.stdout}`,

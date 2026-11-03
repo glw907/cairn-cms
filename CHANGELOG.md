@@ -1,3 +1,9 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+- **A site whose owner skips the domain is offered Workers Builds in the same run, and each closing block says whether a publish deploys.** `create-cairn-site` no longer stops at the live block when the domain is declined. Every closing block states whether a publish from the admin reaches the live site, and "This site is set up end to end." prints only once Workers Builds is connected. A successful build prints one line, and the full output prints only when the build fails.
+
 ## 0.99.0-rc.2
 
 <!-- release-size: minor -->

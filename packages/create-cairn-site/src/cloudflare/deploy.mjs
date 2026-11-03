@@ -72,7 +72,8 @@ export async function ensureInstalled({ dir, log }) {
 }
 
 /**
- * Build the site for deployment.
+ * Build the site for deployment. The build's own output stays quiet on success (one line) and
+ * prints in full only when the build fails, so a warning-heavy build does not bury the run.
  * @param {object} args
  * @param {string} args.dir the scaffold root
  * @param {(line: string) => void} args.log receives progress lines
@@ -80,10 +81,13 @@ export async function ensureInstalled({ dir, log }) {
  */
 export async function buildSite({ dir, log }) {
   log('Building your site; this can take a few minutes.');
-  const result = await runNpm(['run', 'build'], { cwd: dir, log });
+  const captured = [];
+  const result = await runNpm(['run', 'build'], { cwd: dir, log: (line) => captured.push(line) });
   if (result.code !== 0) {
+    for (const line of captured) log(line);
     throw cloudflareError('build-failed', { dir, detail: trailingStderr(result.stderr) });
   }
+  log('Built your site.');
 }
 
 /**

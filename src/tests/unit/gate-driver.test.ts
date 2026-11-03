@@ -210,4 +210,12 @@ describe('runDriver', () => {
     expect(held.result.failure).toBeUndefined();
     expect(held.result.code).toBe(0);
   });
+
+  it('ends a hung run as a failure when its abort signal fires, naming the reason', async () => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort('the held page timed out'), 300);
+    const aborted = await drive([{ kind: 'line', text: 'Working' }, { kind: 'hang' }], [], { signal: controller.signal });
+    expect(aborted.result.code).toBe(-1);
+    expect(aborted.result.failure).toContain('aborted: the held page timed out');
+  });
 });

@@ -7,6 +7,9 @@ the live address. Nothing here ships in a package.
 
 ```sh
 bash scripts/gate/run-gate.sh --smoke
+bash scripts/gate/run-gate.sh --all --version 0.99.0-rc.3
+bash scripts/gate/run-gate.sh --leg A1 --leg A2 --version 0.99.0-rc.3
+bash scripts/gate/run-gate.sh --teardown-stale
 ```
 
 `run-gate.sh` is the one entry. It sources `~/.local/secrets`, makes a run directory
@@ -40,6 +43,10 @@ delete failed names the resource it left behind.
 | `xdg-open` | A shim for the CLI's browser opener: it appends the URL to `$GATE_URL_LOG`. |
 | `fetch-check.mjs` | Polls a live URL for a marker, or proves a page stayed unchanged. |
 | `totp.mjs` | RFC 6238 codes for the machine account's sign-in. |
+| `browser.mjs` | Playwright: classifies each URL the CLI opens, clicks GitHub's pages, holds an unknown one, publishes through the admin. |
+| `legs.mjs` | The four legs, their verdict (`evaluateLeg`), and the sign-in mail read over JMAP. |
+| `teardown.mjs` | Removes one recorded install, by recorded name or uuid only. |
+| `record.mjs` | Writes the `## Gate` table to the release body. |
 
 ## The driver
 
@@ -72,7 +79,17 @@ The CLI child (and through it npm, Vite, and wrangler) gets `PATH` with this dir
 directory, and `GATE_URL_LOG`. It never gets a `GITHUB_TEST_*` name. The CLI reads its token at the
 paste prompt, not from the environment, because `CAIRN_CF_API_TOKEN` is read only under `--yes`.
 
+## The legs
+
+`--leg` takes A1, A2, B1, or B2 (repeat it for several, earlier leg first: A2 and B2 need the install A1 and B1 make in the same run) and needs `--version`, the exact version the CLI is installed at. `--all` runs teardown of any earlier run first, then A1 and A2, teardown A, B1 and B2, teardown B. A leg passes only on what `evaluateLeg` reads: the closing text, the admin alert, and the fetch results; a CLI exit code never passes a leg. After each leg `record.mjs` writes its row to release `v<version>`.
+
+The browser launches headed with the machine account's stored session (`~/.local/state/cairn-gate/github-session.json`, mode 0600). A page it does not recognise is held in that window for 10 minutes: a screenshot path is logged and `notify-send` names the page and the leg. Click through and the leg resumes; only the timeout fails it. Wait on it: teardown never runs on the hold itself.
+
+On B2 the gate also requests a real sign-in link for `GATE_OWNER_EMAIL`, reads it from the gate mailbox over JMAP (`STALWART_PASSWORD_CAIRN_GATE`), and publishes through that session.
+
 ## Cleanup
 
 The URL log, the capture, and the state record live only in the run directory. A sign-in URL in
 them carries a token, so nothing there is committed or pasted.
+
+`run-gate.sh` traps exit and runs `--teardown-run`, which removes every install this run recorded and did not already remove. Teardown deletes only the uuids and names the state record and the install's `wrangler.jsonc` hold, each checked against the `cairn-e2e-gate-` prefix first, and never a build token registration. It leaves the `carin-test.org` zone and its Email Sending. `--teardown-stale` does the same for every earlier run directory.

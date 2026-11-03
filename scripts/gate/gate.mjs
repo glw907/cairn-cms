@@ -5,11 +5,15 @@
 // The smoke prints one verdict per check and never a value. Every HTTP call goes through Node
 // `fetch` (or the CLI's own `makeApi`, which does the same), so no token is ever in argv.
 import { execFile } from 'node:child_process';
+import { readdir } from 'node:fs/promises';
 import { hostname } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { totpFromEnv } from './totp.mjs';
+import { deleteGithubApp, ensureGithubSession, launchBrowser, notifyDesktop } from './browser.mjs';
+import { LEG_PLANS, guardedRun, installName, runLeg } from './legs.mjs';
+import { teardownStateDir } from './teardown.mjs';
 
 const execFileAsync = promisify(execFile);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -240,9 +244,99 @@ export async function runSmoke({ env, runDir, deps = {} }) {
   return !failed;
 }
 
+const USAGE =
+  'Usage: run-gate.sh --smoke | --teardown-stale | --teardown-run | --leg <A1|A2|B1|B2> [--leg ...] --version <v> | --all --version <v>';
+
 /**
- * The command line. `--smoke` runs the credential smoke; the legs and teardown arrive with the
- * browser half.
+ * @param {string[]} argv the arguments
+ * @param {string} name a flag
+ * @returns {string[]} every value given to the flag
+ */
+function flagValues(argv, name) {
+  /** @type {string[]} */
+  const values = [];
+  argv.forEach((arg, i) => {
+    if (arg === name && argv[i + 1] !== undefined) values.push(argv[i + 1]);
+  });
+  return values;
+}
+
+/**
+ * The gate's browser and teardown wiring for one process. The browser launches on first use.
+ * @param {Record<string, string | undefined>} env the allowlisted environment
+ * @returns {{ getBrowser: () => Promise<import('./browser.mjs').Launched>, creds: import('./browser.mjs').Creds, teardownDeps: import('./teardown.mjs').TeardownDeps, close: () => Promise<void> }}
+ */
+function makeSession(env) {
+  const statePath = path.join(env.HOME ?? '', '.local', 'state', 'cairn-gate', 'github-session.json');
+  /** @type {Promise<import('./browser.mjs').Launched> | undefined} */
+  let launching;
+  /** @type {import('./browser.mjs').Creds} */
+  const creds = {
+    login: env.GITHUB_TEST_LOGIN ?? '',
+    password: env.GITHUB_TEST_PASSWORD ?? '',
+    totp: () => totpFromEnv(env),
+  };
+  const getBrowser = () => {
+    launching ??= launchBrowser({ statePath }).then(async (launched) => {
+      await ensureGithubSession(launched.github, creds);
+      return launched;
+    });
+    return launching;
+  };
+  return {
+    getBrowser,
+    creds,
+    teardownDeps: {
+      fetchImpl: fetch,
+      cloudflareBase: 'https://api.cloudflare.com/client/v4',
+      githubBase: 'https://api.github.com',
+      cloudflareToken: env.CF_WS_CAIRN_GATE_TOKEN ?? '',
+      githubToken: env.GITHUB_TEST_TOKEN ?? '',
+      accountId: GATE_ACCOUNT_ID,
+      deleteApp: async (slug) => deleteGithubApp((await getBrowser()).github, slug, creds),
+    },
+    close: async () => {
+      if (launching) await (await launching).close();
+    },
+  };
+}
+
+/**
+ * Tear down every install recorded under one run directory.
+ * @param {string} dir the run directory
+ * @param {import('./teardown.mjs').TeardownDeps} deps the teardown wiring
+ * @returns {Promise<string[]>} the steps left
+ */
+async function teardownRun(dir, deps) {
+  const { left } = await teardownStateDir({
+    stateDir: path.join(dir, 'state'),
+    deps,
+    cleanup: [path.join(dir, 'capture.bin'), path.join(dir, 'urls.log')],
+  });
+  for (const line of left) console.error(`teardown left: ${line}`);
+  return left;
+}
+
+/**
+ * Every earlier run directory with a recorded install gets the same teardown.
+ * @param {string} runDir this run's directory, which is skipped
+ * @param {import('./teardown.mjs').TeardownDeps} deps the teardown wiring
+ * @returns {Promise<string[]>} the steps left
+ */
+async function teardownStale(runDir, deps) {
+  const runs = path.dirname(runDir);
+  /** @type {string[]} */
+  const left = [];
+  for (const name of await readdir(runs).catch(() => /** @type {string[]} */ ([]))) {
+    const dir = path.join(runs, name);
+    if (dir !== runDir) left.push(...(await teardownRun(dir, deps)));
+  }
+  return left;
+}
+
+/**
+ * The command line. `--smoke` runs the credential smoke; `--leg` and `--all` run the legs;
+ * `--teardown-run` and `--teardown-stale` remove what a run or an earlier run left.
  * @param {string[]} argv the arguments after the script name
  * @param {Record<string, string | undefined>} env the allowlisted environment
  * @returns {Promise<number>} the exit code
@@ -254,10 +348,79 @@ export async function main(argv, env) {
     return 2;
   }
   if (argv.includes('--smoke')) return (await runSmoke({ env, runDir })) ? 0 : 1;
-  console.error('Usage: run-gate.sh --smoke');
-  return 2;
-}
 
+  const session = makeSession(env);
+  try {
+    if (argv.includes('--teardown-run')) return (await teardownRun(runDir, session.teardownDeps)).length === 0 ? 0 : 1;
+    if (argv.includes('--teardown-stale')) return (await teardownStale(runDir, session.teardownDeps)).length === 0 ? 0 : 1;
+
+    const all = argv.includes('--all');
+    const legs = all ? ['A1', 'A2', 'B1', 'B2'] : flagValues(argv, '--leg');
+    const version = flagValues(argv, '--version')[0];
+    if (legs.length === 0 || !version || legs.some((leg) => !(leg in LEG_PLANS))) {
+      console.error(USAGE);
+      return 2;
+    }
+    if (all) await teardownStale(runDir, session.teardownDeps);
+
+    const cliEnv = buildCliEnv({ runDir, parentEnv: env });
+    const launched = await session.getBrowser();
+    const started = new Date();
+    /** @type {Map<string, import('./legs.mjs').Install>} */
+    const installs = new Map();
+    let passed = true;
+    const names = { a: installName(version, 'a', started), b: installName(version, 'b', started) };
+
+    /** @param {string[]} group the legs of one install, in order */
+    const runGroup = async (group) => {
+      for (const leg of group) {
+        const plan = LEG_PLANS[leg];
+        let install = installs.get(plan.install);
+        if (!install) {
+          if (!plan.first) throw new Error(`Leg ${leg} needs the install an earlier leg makes; list ${plan.install === 'a' ? 'A1' : 'B1'} before it in the same run.`);
+          install = {
+            name: names[plan.install],
+            dir: path.join(runDir, 'installs', names[plan.install]),
+            admin: await launched.newAdminContext(),
+            signedIn: false,
+          };
+          installs.set(plan.install, install);
+        }
+        console.log(`leg ${leg} on ${install.name}`);
+        const verdict = await runLeg({
+          leg,
+          version,
+          runDir,
+          env,
+          cliEnv,
+          install,
+          launched,
+          creds: session.creds,
+          releaseNotesDir: path.join(runDir, 'notes'),
+          notify: notifyDesktop,
+          log: (line) => console.log(line),
+        });
+        console.log(`${verdict.pass ? 'pass' : 'FAIL'}     leg ${leg}${verdict.pass ? '' : `: ${verdict.failures.join('; ')}`}`);
+        if (!verdict.pass) {
+          passed = false;
+          return;
+        }
+      }
+    };
+
+    if (all) {
+      for (const group of [['A1', 'A2'], ['B1', 'B2']]) {
+        await guardedRun(() => runGroup(group), () => teardownRun(runDir, session.teardownDeps));
+        await teardownRun(runDir, session.teardownDeps);
+      }
+    } else {
+      await runGroup(legs);
+    }
+    return passed ? 0 : 1;
+  } finally {
+    await session.close();
+  }
+}
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   process.exitCode = await main(process.argv.slice(2), process.env);
 }

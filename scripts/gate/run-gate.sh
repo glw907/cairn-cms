@@ -25,11 +25,27 @@ while IFS= read -r name; do
   allowed+=("$name=${!name}")
 done < <(compgen -e | grep -E '^(CF_WS_CAIRN_GATE_TOKEN|STALWART_PASSWORD_CAIRN_GATE|GITHUB_TEST_[A-Z_]+|GATE_[A-Z_]+)$' || true)
 
-exec env -i \
-  "${allowed[@]}" \
-  PATH="$PATH" \
-  HOME="$HOME" \
-  TERM="${TERM:-xterm-256color}" \
-  LANG="${LANG:-C.UTF-8}" \
-  GATE_RUN_DIR="$run_dir" \
-  node "$here/gate.mjs" "$@"
+gate() {
+  env -i \
+    "${allowed[@]}" \
+    PATH="$PATH" \
+    HOME="$HOME" \
+    TERM="${TERM:-xterm-256color}" \
+    LANG="${LANG:-C.UTF-8}" \
+    GATE_RUN_DIR="$run_dir" \
+    node "$here/gate.mjs" "$@"
+}
+
+# Not `exec`: when the run ends, however it ends, every install this run recorded and did not
+# already remove is torn down. A page held for a click keeps the run alive, so this fires only
+# after the hold times out or a later step fails. A run that recorded nothing finds nothing to do.
+cleanup() {
+  local status=$?
+  trap - EXIT
+  gate --teardown-run || status=1
+  exit "$status"
+}
+trap cleanup EXIT
+trap 'exit 130' INT TERM
+
+gate "$@"

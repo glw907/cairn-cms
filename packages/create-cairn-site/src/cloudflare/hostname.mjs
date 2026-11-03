@@ -406,7 +406,12 @@ export async function cutOverHostname({
     const detail = stripNestedNext(err.message);
     // The repository already names the domain, so restoring the files on disk would only put
     // this checkout behind it; the next successful build serves the domain.
-    if (landed) throw cloudflareError('cutover-deploy-failed', { dir, detail, buildsCommitted: true });
+    if (landed) {
+      // A token the build watch cannot use is the row to act on, and chapter 2 clears the token
+      // from its code, which the committed wrapper would hide.
+      if (err?.catalogue?.code === 'token-scope-missing' || err?.catalogue?.code === 'token-invalid') throw err;
+      throw cloudflareError('cutover-deploy-failed', { dir, detail, buildsCommitted: true });
+    }
     // The site is still live and working on its workers.dev address; the rebuild or redeploy
     // under its new origin is what failed, so the origin on disk is restored rather than left
     // pointing at a Worker that was never actually redeployed to serve it.

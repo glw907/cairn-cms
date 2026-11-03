@@ -316,10 +316,16 @@ async function pollBuildToStop({ api, buildUuid, log, sleepFn, pollIntervalMs, m
 const LOG_CONTROL_CHARACTERS = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g;
 
 /**
+ * Matches the invisible formatting characters (soft hyphen, bidi marks and overrides, zero-width
+ * and joiner marks, the BOM) a line could start with to hide a `Next:` from a plain prefix check.
+ */
+const LOG_INVISIBLE_CHARACTERS = /[\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g;
+
+/**
  * Reduce a build's logs to the trailing lines a failed-build row carries, reusing catalogue.mjs's
  * `trailingStderr` trim rather than reinventing it: the shape (an array of `[epochMillis,
  * text]` pairs) is different, but the "last few non-empty lines" rule is the same one every other
- * failing-child row in this tool already follows. Control characters are stripped, and a line
+ * failing-child row in this tool already follows. Control and invisible formatting characters are stripped, and a line
  * starting with `Next:` is dropped, since the row's own next step is read from its first such
  * line and a build could otherwise print one that reads as this tool's instruction.
  * @param {{ lines?: Array<[number, string]> }} logs the build's logs, as `getBuildLogs` returns them
@@ -330,6 +336,7 @@ function buildLogTail(logs) {
   const safe = lines
     .join('\n')
     .replace(LOG_CONTROL_CHARACTERS, '')
+    .replace(LOG_INVISIBLE_CHARACTERS, '')
     .split('\n')
     .filter((line) => !line.trimStart().startsWith('Next:'));
   return trailingStderr(safe.join('\n'));
@@ -840,7 +847,11 @@ export async function deployConfigThroughBuilds({
   const { hash } = reconcileResult;
   if (reconcileResult.changed) {
     await updateSite(siteId, {
-      cloudflare: { buildsReconciledHash: hash, buildsPendingCommitSha: reconcileResult.commitSha },
+      cloudflare: {
+        buildsReconciledHash: hash,
+        buildsPendingCommitSha: reconcileResult.commitSha,
+        buildsPendingHash: hash,
+      },
     });
   } else if (hash !== record.cloudflare?.buildsReconciledHash) {
     await updateSite(siteId, { cloudflare: { buildsReconciledHash: hash } });
@@ -872,14 +883,17 @@ export async function deployConfigThroughBuilds({
     return { parked };
   }
   await assertBuildSucceeded({ api, buildUuid: watched.buildUuid, build: watched.build, dir });
-  await updateSite(siteId, { cloudflare: { buildsDeployedHash: hash, buildsPendingCommitSha: undefined } });
+  await updateSite(siteId, {
+    cloudflare: { buildsDeployedHash: hash, buildsPendingCommitSha: undefined, buildsPendingHash: undefined },
+  });
   return { deployed: true };
 }
 
 /**
  * The build a re-run of `deployConfigThroughBuilds` watches when its reconcile committed nothing
  * and the last watched deploy was of other config. When an earlier run's commit of this same
- * config is recorded (`cloudflare.buildsPendingCommitSha`, saved with the hash it committed), its
+ * config is recorded (`cloudflare.buildsPendingCommitSha`, saved beside the hash it committed,
+ * `buildsPendingHash`), its
  * push build is looked up by commit and reused while it is queued, running, or succeeded, so a
  * re-run after a park never starts a second build of one commit. Otherwise (no recorded commit,
  * no build for it, or one that failed or did not run) one build is kicked on the trigger's branch.
@@ -888,21 +902,30 @@ export async function deployConfigThroughBuilds({
  * @returns {Promise<string>} the uuid of the build to watch
  */
 async function findOrKickBuild({ api, tag, record, hash }) {
-  const pendingSha =
-    hash === record.cloudflare?.buildsReconciledHash ? record.cloudflare?.buildsPendingCommitSha : undefined;
+  const pendingSha = hash === record.cloudflare?.buildsPendingHash ? record.cloudflare?.buildsPendingCommitSha : undefined;
+  const triggerUuid = record.cloudflare?.buildsTriggerUuid;
   if (pendingSha) {
     const builds = await api.listBuildsForWorker(tag);
-    const existing = builds.find((build) => build.build_trigger_metadata?.commit_hash === pendingSha);
+    const existing = builds.find((build) => {
+      const metadata = build.build_trigger_metadata;
+      const buildTrigger = metadata?.build_trigger_uuid;
+      return metadata?.commit_hash === pendingSha && (!buildTrigger || !triggerUuid || buildTrigger === triggerUuid);
+    });
     if (existing && (!isBuildSettled(existing) || existing.build_outcome === 'success')) {
       return existing.build_uuid;
     }
   }
 
-  const triggerUuid = record.cloudflare?.buildsTriggerUuid;
   // A record saved without the repository's default branch still has the branch on its trigger.
   const branch =
     record.github?.repo?.defaultBranch ??
     (await api.listBuildTriggers(tag)).find((trigger) => trigger.trigger_uuid === triggerUuid)?.branch_includes?.[0];
+  // A trigger's branch pattern is not a branch a manual kick can build.
+  if (typeof branch === 'string' && branch.includes('*')) {
+    throw new Error(
+      `The build trigger watches the branch pattern ${branch}, so this tool cannot tell which branch to build.`,
+    );
+  }
   const kicked = await api.kickBuild(triggerUuid, branch);
   return kicked.build_uuid;
 }
@@ -1130,7 +1153,13 @@ export async function runChapter3({
         return { outcome: reconcileResult.parked.catalogue.code, message: reconcileResult.parked.message };
       }
       if (reconcileResult.hash !== record?.cloudflare?.buildsReconciledHash) {
-        await updateSite(siteId, { cloudflare: { buildsReconciledHash: reconcileResult.hash } });
+        await updateSite(siteId, {
+          cloudflare: {
+            buildsReconciledHash: reconcileResult.hash,
+            buildsPendingCommitSha: undefined,
+            buildsPendingHash: undefined,
+          },
+        });
       }
       if (!reconcileResult.changed) {
         const message = 'Nothing to reconcile: your repository already matches your local deploy config.';
@@ -1394,7 +1423,11 @@ export async function runChapter3({
     if (!dryRun) {
       await updateSite(siteId, {
         step: 'config-reconciled',
-        cloudflare: { buildsReconciledHash: reconcileResult.hash },
+        cloudflare: {
+          buildsReconciledHash: reconcileResult.hash,
+          buildsPendingCommitSha: undefined,
+          buildsPendingHash: undefined,
+        },
       });
     }
 

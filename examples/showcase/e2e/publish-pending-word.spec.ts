@@ -57,7 +57,9 @@ test('a publish with a pending dictionary word lands without a conflict and comm
   await page.locator('.navbar').getByRole('button', { name: 'Publish', exact: true }).click();
   await expect(page).toHaveURL(/published=1/, { timeout: 10_000 });
   await expect(
-    page.locator('.alert', { hasText: 'Published. The live site is rebuilding.' }),
+    page.locator('.alert', {
+      hasText: 'Published. The live site shows this change once the site rebuilds.',
+    }),
   ).toBeVisible();
   await expect(page.locator('.alert', { hasText: 'Publish again' })).toHaveCount(0);
 

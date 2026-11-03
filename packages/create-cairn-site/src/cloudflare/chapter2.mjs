@@ -60,7 +60,7 @@ import { exitOnCancel, promptSecret } from '../prompts.mjs';
 import { defineAction, runActions } from '../runner.mjs';
 import { loadSite, updateSite, saveSite } from '../state.mjs';
 import { ensureAccountId } from './account.mjs';
-import { ensureApiToken, CHAPTER3_PERMISSION_KEYS } from './prefill.mjs';
+import { ensureApiToken, CHAPTER2_BUILDS_PERMISSION_KEYS } from './prefill.mjs';
 import { makeApi } from './api.mjs';
 import { ensureZone, checkDelegation, delegationInstructions } from './zone.mjs';
 import { readCurrentRecords, carryOverRecords } from './records.mjs';
@@ -70,7 +70,7 @@ import { defaultFromAddress, ensureSendingDomain, sendTestMessage } from './emai
 import { writeEmailFrom } from './config.mjs';
 import { buildSite, deployWorker } from './deploy.mjs';
 import { cloudflareError } from './catalogue.mjs';
-import { deployConfigThroughBuilds, CHAPTER3_TERMINAL_STEPS } from './chapter3.mjs';
+import { assertBuildsReachable, deployConfigThroughBuilds, CHAPTER3_TERMINAL_STEPS } from './chapter3.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
 import { createWaitForClear, shouldHold, PROPAGATION_HOLD_CLASS } from '../hold-loop.mjs';
 import { createConsoleServer } from '../console/server.mjs';
@@ -663,7 +663,8 @@ export async function runChapter2({
       "Opens Cloudflare's create-token page with the permissions this chapter needs already " +
         'filled in, and asks you to paste the token back.',
       async () => {
-        // A record with Builds connected watches Builds deploys, so it asks for chapter 3's keys.
+        // A record with Builds connected kicks and watches Builds deploys, so it asks for the
+        // Builds key too.
         token = await ensureApiToken({
           record,
           log,
@@ -672,7 +673,7 @@ export async function runChapter2({
           promptSecretFn,
           env,
           argv,
-          ...(buildsConnected ? { permissionKeys: CHAPTER3_PERMISSION_KEYS } : {}),
+          ...(buildsConnected ? { permissionKeys: CHAPTER2_BUILDS_PERMISSION_KEYS } : {}),
         });
         if (!dryRun && token !== record?.cloudflare?.apiToken) {
           await saveChapter2Token(siteId, token);
@@ -845,6 +846,10 @@ export async function runChapter2({
         'Connects your domain to your already-deployed site, confirms it answers there, then ' +
           "switches your site's address over, rebuilds it, and redeploys once.",
         async () => {
+          // Checked before the cutover starts, and outside its restore-and-rethrow, so a token
+          // without the Builds key fails as itself, is cleared, and is asked for again before any
+          // commit lands.
+          if (buildsConnected) await assertBuildsReachable(api, dir);
           const waitForClear = composeCutoverWaitForClear({
             runArgs: args,
             isTTY,
@@ -884,7 +889,10 @@ export async function runChapter2({
         },
       );
       if (!dryRun && cutoverPark) {
-        // A Workers Builds park, already printed by the hop that reached it.
+        // A Workers Builds park, already printed by the hop that reached it. The `--yes` reconcile
+        // park's re-run is an interactive one, which collects a token, so the token goes with it,
+        // as it does on chapter 3's; a build park keeps it for the re-run's watch.
+        if (cutoverOutcome === 'builds-reconcile-parked') await deleteApiToken(siteId);
         return { outcome: cutoverOutcome, domain, message: cutoverPark };
       }
       if (!dryRun && cutoverOutcome !== 'live') {
@@ -1017,6 +1025,7 @@ export async function runChapter2({
       `Writes ${from} into your site's config as its sign-in sender, then builds and redeploys so ` +
         'the running site carries it. Skipped once the running site already carries it.',
       async () => {
+        if (buildsConnected) await assertBuildsReachable(api, dir);
         const addressChanged = await writeEmailFrom(dir, from);
         if (buildsConnected) {
           senderPark = (await deployThroughBuilds(api)).parked;
@@ -1028,7 +1037,9 @@ export async function runChapter2({
       },
     );
     if (!dryRun && senderPark) {
-      // A Workers Builds park, already printed by the hop that reached it.
+      // A Workers Builds park, already printed by the hop that reached it; the token goes with
+      // the reconcile park, as on the cutover's.
+      if (senderPark.catalogue.code === 'builds-reconcile-parked') await deleteApiToken(siteId);
       return { outcome: senderPark.catalogue.code, domain, message: senderPark.message };
     }
     if (!dryRun) {

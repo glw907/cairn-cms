@@ -469,10 +469,139 @@ test('Builds cutover under --yes parks at the reconcile, writes no step, and com
 
   assert.equal(outcome.outcome, 'builds-reconcile-parked');
   assert.equal(logs.filter((line) => line.includes('This run is unattended (--yes)')).length, 1, 'the park prints once');
-  assert.equal((await loadSite('builds-yes-park')).step, 'delegated');
+  const state = await loadSite('builds-yes-park');
+  assert.equal(state.step, 'delegated');
+  assert.equal('apiToken' in state.cloudflare, false, 'the interactive re-run this park asks for collects a token');
   assert.equal(reconcileCommits(github, repo).length, 0);
   assert.deepEqual(await localBuildsAndDeploys(bin), []);
   assert.deepEqual(kicks(cloudflare), []);
+});
+
+test('Builds token: chapter 2 asks for its own five keys plus workers_ci, and nothing for the build itself', async (t) => {
+  await freshStateDir(t);
+  const dir = await scaffoldDir(t);
+  const { cloudflare, github } = await setupFakes(t);
+  const repo = await seedRepo(github, dir);
+  await seedBuildsSite('builds-token-keys', dir, repo);
+  const opened = [];
+  const browser = oauthBrowser();
+
+  const { promise } = await run('builds-token-keys', dir, {
+    openBrowser: async (url) => {
+      opened.push(url);
+      await browser(url);
+    },
+    makeApiFn: pushBuilds(cloudflare, github, repo),
+  });
+  await promise;
+
+  const prefill = opened.find((url) => url.includes('permissionGroupKeys'));
+  const keys = JSON.parse(new URL(prefill).searchParams.get('permissionGroupKeys')).map((entry) => entry.key);
+  assert.deepEqual(keys, ['zone', 'dns', 'workers_scripts', 'ssl_and_certificates', 'email_sending', 'workers_ci']);
+});
+
+test('Builds token: a token without the Builds permission fails before any commit, and is cleared', async (t) => {
+  await freshStateDir(t);
+  const dir = await scaffoldDir(t);
+  const { cloudflare, github } = await setupFakes(t);
+  const repo = await seedRepo(github, dir);
+  await seedBuildsSite('builds-token-scope', dir, repo);
+  cloudflare.failNext('builds_triggers_list', 403, {
+    success: false,
+    errors: [{ code: 10000, message: 'Authentication error' }],
+    messages: [],
+    result: null,
+  });
+  const browser = oauthBrowser();
+
+  const { promise } = await run('builds-token-scope', dir, {
+    openBrowser: browser,
+    makeApiFn: pushBuilds(cloudflare, github, repo),
+  });
+  const err = await promise.then(
+    () => assert.fail('the run should have thrown'),
+    (error) => error,
+  );
+
+  assert.equal(err.cause?.catalogue?.code, 'token-scope-missing');
+  assert.equal(browser.trips.count, 0, 'no sign-in for a commit');
+  assert.equal(reconcileCommits(github, repo).length, 0, 'nothing committed');
+  assert.equal('apiToken' in (await loadSite('builds-token-scope')).cloudflare, false, 'the token is cleared');
+});
+
+/**
+ * A push-build fake whose webhook is late: the build list shows nothing until its `appearOn`th
+ * read, then behaves as `pushBuilds`. `reads` counts the list reads.
+ */
+function latePushBuilds(cloudflare, github, repo, appearOn) {
+  const reads = { count: 0 };
+  const make = (opts) => {
+    const api = pushBuilds(cloudflare, github, repo)(opts);
+    const real = makeApi(opts);
+    return {
+      ...api,
+      async listBuildsForWorker(tag) {
+        reads.count += 1;
+        return reads.count < appearOn ? real.listBuildsForWorker(tag) : api.listBuildsForWorker(tag);
+      },
+    };
+  };
+  return Object.assign(make, { reads });
+}
+
+test('Builds cutover: a push build that surfaces only on a later read is still found and watched, with no park', async (t) => {
+  await freshStateDir(t);
+  const dir = await scaffoldDir(t);
+  const { cloudflare, github } = await setupFakes(t);
+  const repo = await seedRepo(github, dir);
+  await seedBuildsSite('builds-late-webhook', dir, repo);
+  const late = latePushBuilds(cloudflare, github, repo, 4);
+  const sleeps = [];
+
+  const { promise } = await run('builds-late-webhook', dir, {
+    makeApiFn: late,
+    pollIntervalMs: 5000,
+    sleepFn: async (ms) => {
+      sleeps.push(ms);
+    },
+  });
+  assert.equal((await promise).outcome, 'paid-plan-declined');
+
+  assert.equal(late.reads.count, 4, 'the list was read until the build appeared');
+  assert.deepEqual(sleeps, [5000, 5000, 5000], 'paced between reads');
+  assert.deepEqual(kicks(cloudflare), []);
+  assert.equal((await loadSite('builds-late-webhook')).cloudflare.buildsDeployedHash, await reconciledConfigHash(dir));
+});
+
+test('Builds cutover: a push build that never surfaces parks after about two minutes, and the re-run watches it once it does, kicking none', async (t) => {
+  await freshStateDir(t);
+  const dir = await scaffoldDir(t);
+  const { cloudflare, github } = await setupFakes(t);
+  const repo = await seedRepo(github, dir);
+  await seedBuildsSite('builds-no-webhook', dir, repo);
+  let slept = 0;
+
+  const first = await run('builds-no-webhook', dir, {
+    pollIntervalMs: 5000,
+    sleepFn: async (ms) => {
+      slept += ms;
+    },
+  });
+  assert.equal((await first.promise).outcome, 'build-not-started');
+  const listReads = cloudflare.requests.filter((r) => r.method === 'GET' && r.path.includes(`/builds/workers/${WORKER_TAG}/builds`));
+  assert.ok(listReads.length > 1, 'more than one read');
+  assert.ok(slept >= 100_000 && slept <= 120_000, `bounded near two minutes, slept ${slept} ms`);
+  const parked = await loadSite('builds-no-webhook');
+  const [commit] = reconcileCommits(github, repo);
+  assert.equal(parked.cloudflare.buildsPendingCommitSha, commit.sha, 'the landed commit is recorded');
+
+  const rerun = await run('builds-no-webhook', dir, { makeApiFn: pushBuilds(cloudflare, github, repo) });
+  assert.equal((await rerun.promise).outcome, 'paid-plan-declined');
+  assert.deepEqual(kicks(cloudflare), [], 'the push build is watched, never a second one kicked');
+  assert.equal(reconcileCommits(github, repo).length, 1);
+  const state = await loadSite('builds-no-webhook');
+  assert.equal(state.cloudflare.buildsDeployedHash, await reconciledConfigHash(dir));
+  assert.equal(state.cloudflare.buildsPendingCommitSha, undefined);
 });
 
 // --- Crash points: each seeds the record a run that stopped there leaves --------------------------
@@ -490,8 +619,14 @@ async function seedCommittedCutover(t, siteId, { reconciled, deployed }) {
   const config = path.join(dir, CONFIG_PATH);
   await writeFile(wrangler, (await readFile(wrangler, 'utf8')).replace(WORKERS_DEV_URL, `https://${DOMAIN}`));
   await writeFile(config, (await readFile(config, 'utf8')).replace(WORKERS_DEV_URL, `https://${DOMAIN}`));
-  await reconcileRepo({ record: { repo }, dir, userToken: 'fake-user-token' });
+  const { commitSha } = await reconcileRepo({ record: { repo }, dir, userToken: 'fake-user-token' });
   const hash = await reconciledConfigHash(dir);
+  // The hash write carries the commit's sha, and a watched success clears it again.
+  const reconciledFields = deployed
+    ? { buildsReconciledHash: hash, buildsDeployedHash: hash }
+    : reconciled
+      ? { buildsReconciledHash: hash, buildsPendingCommitSha: commitSha }
+      : { buildsReconciledHash: 'hash-before-the-cutover' };
   await seedBuildsSite(siteId, dir, repo, {
     step: 'delegated',
     cloudflare: {
@@ -499,11 +634,10 @@ async function seedCommittedCutover(t, siteId, { reconciled, deployed }) {
       ...zone,
       alreadyActive: true,
       carryOver: { outcome: 'not-needed' },
-      ...(reconciled ? { buildsReconciledHash: hash } : { buildsReconciledHash: 'hash-before-the-cutover' }),
-      ...(deployed ? { buildsDeployedHash: hash } : {}),
+      ...reconciledFields,
     },
   });
-  return { dir, repo, hash, ...fakes };
+  return { dir, repo, hash, commitSha, ...fakes };
 }
 
 test('crash after the commit landed and before the hash write: the re-run finds the repository matching and kicks one build', async (t) => {
@@ -520,7 +654,7 @@ test('crash after the commit landed and before the hash write: the re-run finds 
   assert.equal(state.cloudflare.buildsDeployedHash, hash);
 });
 
-test('crash after the hash write: the re-run skips the sign-in and kicks one build', async (t) => {
+test('crash after the hash write, with no build for the commit: the re-run skips the sign-in and kicks one build', async (t) => {
   await freshStateDir(t);
   const { dir, hash, cloudflare } = await seedCommittedCutover(t, 'crash-after-hash', { reconciled: true });
 
@@ -530,7 +664,47 @@ test('crash after the hash write: the re-run skips the sign-in and kicks one bui
 
   assert.equal(browser.trips.count, 0, 'the hash gate skips the sign-in');
   assert.equal(kicks(cloudflare).length, 1);
-  assert.equal((await loadSite('crash-after-hash')).cloudflare.buildsDeployedHash, hash);
+  const state = await loadSite('crash-after-hash');
+  assert.equal(state.cloudflare.buildsDeployedHash, hash);
+  assert.equal(state.cloudflare.buildsPendingCommitSha, undefined, 'a watched success clears the commit');
+});
+
+test('crash after the hash write, with the push build queued: the re-run watches that build and kicks none', async (t) => {
+  await freshStateDir(t);
+  const { dir, hash, commitSha, cloudflare } = await seedCommittedCutover(t, 'crash-push-queued', { reconciled: true });
+  cloudflare.state.builds.set('push-build-queued', {
+    build_uuid: 'push-build-queued',
+    status: 'queued',
+    build_outcome: null,
+    created_on: new Date().toISOString(),
+    trigger: { external_script_id: WORKER_TAG },
+    build_trigger_source: 'push_event',
+    build_trigger_metadata: { commit_hash: commitSha, branch: 'main' },
+  });
+
+  const { promise } = await run('crash-push-queued', dir, { sleepFn: settleBuilds(cloudflare) });
+  assert.equal((await promise).outcome, 'paid-plan-declined');
+
+  assert.deepEqual(kicks(cloudflare), [], 'no second build of the same commit');
+  assert.equal(cloudflare.state.builds.get('push-build-queued').build_outcome, 'success', 'the push build was watched');
+  assert.equal((await loadSite('crash-push-queued')).cloudflare.buildsDeployedHash, hash);
+});
+
+test('a record saved without the default branch kicks on its trigger branch', async (t) => {
+  await freshStateDir(t);
+  const { dir, cloudflare } = await seedCommittedCutover(t, 'no-default-branch', { reconciled: true });
+  const saved = await loadSite('no-default-branch');
+  delete saved.github.repo.defaultBranch;
+  await saveSite('no-default-branch', saved);
+  cloudflare.state.buildTriggersByTag.get(WORKER_TAG)[0].branch_includes = ['trunk'];
+
+  const { promise } = await run('no-default-branch', dir, { sleepFn: settleBuilds(cloudflare) });
+  assert.equal((await promise).outcome, 'paid-plan-declined');
+
+  assert.deepEqual(
+    kicks(cloudflare).map((request) => request.body),
+    [{ branch: 'trunk' }],
+  );
 });
 
 test('crash after a watched success and before the step write: the re-run kicks nothing and reaches domain-live', async (t) => {

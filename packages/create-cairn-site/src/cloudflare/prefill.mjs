@@ -78,6 +78,14 @@ const BUILDS_PERMISSION_KEYS = [
  */
 export const CHAPTER3_PERMISSION_KEYS = [...PREFILL_PERMISSION_KEYS, ...BUILDS_PERMISSION_KEYS];
 
+/**
+ * The key set chapter 2 asks for on a site Workers Builds deploys: PREFILL_PERMISSION_KEYS plus
+ * `workers_ci`, which kicks, lists, and reads builds. Chapter 2 registers no build token, so the
+ * two data keys a build itself needs (`d1`, `workers_r2`) stay with chapter 3.
+ * @type {Array<{ key: string, type: 'edit' }>}
+ */
+export const CHAPTER2_BUILDS_PERMISSION_KEYS = [...PREFILL_PERMISSION_KEYS, BUILDS_PERMISSION_KEYS[0]];
+
 /** The name Cloudflare pre-fills into the create-token page's "Token name" field. */
 const PREFILL_TOKEN_NAME = 'cairn create-cairn-site';
 

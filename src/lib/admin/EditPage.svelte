@@ -1333,7 +1333,7 @@ island.
     if (failedInPlace) return '';
     if (data.flash === 'saved' && !draftWarning && !referenceWarning)
       return 'Saved. Your site keeps showing the published version until you publish.';
-    if (data.flash === 'published') return 'Published. The live site is rebuilding.';
+    if (data.flash === 'published') return 'Published. The live site shows this change once the site rebuilds.';
     if (data.flash === 'discarded') return 'Changes discarded.';
     if (data.flash === 'renamed') return `The address is now ${data.slug}.`;
     return '';

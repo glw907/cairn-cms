@@ -7,6 +7,7 @@
 - **The email offer no longer ends at Workers Builds.** A site whose owner declined email sign-in is asked again on a later run, before or after Builds is connected.
 - **`--yes` no longer skips Workers Builds after an email decline.** An unattended run connects Builds whether or not it declined email.
 - **The setup tool refuses to commit over repository edits to its two config files.** Before a domain or email commit on a Builds site, it compares the repository's `wrangler.jsonc` and `src/theme/cairn.config.ts` with the checkout's, ignoring the values the tool writes, and stops with a `git pull` step when anything else differs.
+- **The admin's publish message no longer claims a rebuild is running.** After a publish it reads "Published. The live site shows this change once the site rebuilds.", because the admin cannot see a rebuild.
 - **A release candidate now publishes to the hidden `gate` dist-tag and reaches `next` only after it passes the release gate.** A candidate no longer moves `next` on its own: the gate run promotes it.
 
 ## 0.99.0-rc.2

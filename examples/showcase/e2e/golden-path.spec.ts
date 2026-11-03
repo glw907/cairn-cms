@@ -216,7 +216,9 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await expect(page).toHaveURL(/published=1/, { timeout: 10_000 });
   // The flash text also lands in the sr-only live region, so target the visible alert.
   await expect(
-    page.locator('.alert', { hasText: 'Published. The live site is rebuilding.' }),
+    page.locator('.alert', {
+      hasText: 'Published. The live site shows this change once the site rebuilds.',
+    }),
   ).toBeVisible();
   const publishCommit = await (await request.get('/test/last-commit')).json();
   expect(publishCommit.branch).toBe('main');

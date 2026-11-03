@@ -174,6 +174,8 @@ test('publish by keyboard', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/published=1/, { timeout: 10_000 });
   await expect(
-    page.locator('.alert', { hasText: 'Published. The live site is rebuilding.' }),
+    page.locator('.alert', {
+      hasText: 'Published. The live site shows this change once the site rebuilds.',
+    }),
   ).toBeVisible();
 });

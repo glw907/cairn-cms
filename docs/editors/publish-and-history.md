@@ -83,7 +83,7 @@ To publish an entry, follow these steps:
 
 1. Open the entry and finish your edits.
 2. In the header, select **Publish**.
-3. Read the message under the header. It confirms that the entry published and adds that the live site is updating.
+3. Read the message under the header. It confirms that the entry published and adds that the live site shows the change once the site rebuilds.
 
 Your site may add links beside the message. **Publish** stays dimmed when there's nothing new to publish, which means no unsaved edits and no saved draft. A **Hidden** entry still publishes, but it stays off your site's lists and feeds.
 

@@ -10,16 +10,10 @@
 // directly in a scoped `<style>` block sits outside its remit, since that literal carries no class
 // token to read a role off of.
 //
-// Reported at advisory tier for one minor: a sweep can miss a site, and a false positive here
-// (an element the corner-role table doesn't yet name) is a worse failure mode than a missed one
-// while the mapping is still settling.
+// Reported at error tier: a corner outside the three roles fails cairn-audit.
 import { utilityBase } from './utility.js';
 import type { ClassToken, ParsedComponent } from '../../markup.js';
 import type { Finding, StaticRule } from '../../types.js';
-
-// The promotion version stated in every finding this rule raises: the minor release that moves
-// the finding out of advisory tier.
-export const RADIUS_SCALE_PROMOTION_VERSION = '0.99.0';
 
 type Role = 'selector' | 'field' | 'box';
 
@@ -59,13 +53,6 @@ function sidePart(side: string | undefined): string {
   return side ? `-${side}` : '';
 }
 
-function radiusMessage(body: string): string {
-  return (
-    `${body}. Reported at advisory tier until ${RADIUS_SCALE_PROMOTION_VERSION} promotes the ` +
-    'finding to error'
-  );
-}
-
 /** The class tokens written on one element, grouped by the element's start offset. */
 function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
   const map = new Map<number, Set<string>>();
@@ -88,26 +75,24 @@ function roleForElement(classes: Set<string>): Role | undefined {
 /** The exact replacement message for an arbitrary bracket or variable-shorthand radius token. */
 function arbitraryMessage(token: string, side: string | undefined, role: Role | undefined): string {
   if (role) {
-    return radiusMessage(
+    return (
       `class "${token}" is an arbitrary radius that already names the ratified role token; ` +
-        `write the class rounded${sidePart(side)}-${role} instead`
+      `write the class rounded${sidePart(side)}-${role} instead`
     );
   }
-  return radiusMessage(
-    `class "${token}" is an arbitrary radius with no ratified role token; ${THREE_ROLE_SENTENCE}`
-  );
+  return `class "${token}" is an arbitrary radius with no ratified role token; ${THREE_ROLE_SENTENCE}`;
 }
 
 /** The replacement message for a bare or fixed-size radius token. */
 function fixedMessage(token: string, side: string | undefined, elementClasses: Set<string>): string {
   const role = roleForElement(elementClasses);
   if (role) {
-    return radiusMessage(
+    return (
       `class "${token}" is a fixed Tailwind radius; this element's daisyUI class fixes its ` +
         `corner role to rounded${sidePart(side)}-${role}`
     );
   }
-  return radiusMessage(`class "${token}" is a fixed Tailwind radius; ${THREE_ROLE_SENTENCE}`);
+  return `class "${token}" is a fixed Tailwind radius; ${THREE_ROLE_SENTENCE}`;
 }
 
 /** The one message a token raises, or `undefined` when it passes. */
@@ -119,7 +104,7 @@ function messageFor(token: string, base: string, elementClasses: Set<string>): s
     // by the co-occurring badge class rather than by shape, since a true circle (a dot, disc,
     // medallion, spinner, avatar, or switch) keeps rounded-full on purpose.
     if (!elementClasses.has('badge')) return undefined;
-    return radiusMessage(
+    return (
       `class "rounded-full" is the pill geometry; chips leave the pill under the new corner ` +
         'scale, so this badge element takes rounded-selector instead'
     );
@@ -149,7 +134,7 @@ function messageFor(token: string, base: string, elementClasses: Set<string>): s
 
 export const radiusScale: StaticRule = {
   id: 'radius-scale',
-  tier: 'advisory',
+  tier: 'error',
   check(ctx) {
     const findings: Finding[] = [];
     for (const file of ctx.files) {
@@ -170,7 +155,7 @@ export const radiusScale: StaticRule = {
 function findingAt(file: ParsedComponent, token: ClassToken, message: string): Finding {
   return {
     ruleId: 'radius-scale',
-    tier: 'advisory',
+    tier: 'error',
     file: file.file,
     line: token.line,
     start: token.start,

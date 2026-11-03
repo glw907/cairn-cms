@@ -292,6 +292,10 @@ Consumers must: rebuild the site from `create-cairn-site`; this release has no u
   `screen-anatomy`, `touch-targets`, `viewport-overflow`, and `weight-budget`) are gone; remove Playwright if the audit was its only use. A new advisory rule, `public-route-prerender`,
   flags a public route that never chooses how it renders, and `--fail-on advisory` makes an advisory fail
   the run. A leftover `rendered` key in `cairn-audit.config.json` is ignored.
+- **`radius-scale` and the three retired-patch arms of `stock-default-hazards` now fail `cairn-audit`.**
+  They reported at advisory tier through `0.98.0`. A bare, fixed, or arbitrary `rounded-*` class, and
+  `bg-neutral`, `bg-primary/10`, or `shadow-none` on a `btn`, are error-tier findings, so the default exit
+  code is 1 until they are fixed. The rule messages no longer name a promotion version.
 
 ### Editor and admin behavior
 

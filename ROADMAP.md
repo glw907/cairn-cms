@@ -776,16 +776,6 @@ The original decision framing, for the record:
   the site provides) would change the example site's e2e, which runs on the fake, so it waits for a pass that
   owns that spec. Pass B changed `DevBackendConfig` (`content`, no `seedContent`) and left the double set alone.
 
-- **Promote `radius-scale` and the three retired-patch arms to error tier at `0.99.0` (theme
-  identity pass B, 2026-09-29).** They ship at advisory tier in `0.98.0` and every finding names
-  `0.99.0`. `src/tests/unit/audit/promotion-versions.test.ts` enforces it: it reads every
-  `*PROMOTION_VERSION` constant under `src/lib/audit` and fails once the package version reaches
-  one, naming the choice owed (promote and delete the constant, or re-date with a disclosed
-  changelog line). The three older `0.98.0` promises (`log-event-grammar`,
-  `log-secret-field`, the guarded-retirement arm) landed in `facc5fcf`, so the `0.98.0` version
-  commit no longer turns it red; `radius-scale` and the retired-patch arms stay advisory until
-  `0.99.0`. Trigger: the `0.99.0` version commit.
-
 - **`MarkdownEditor`'s `transformSelection` still replaces the whole document (theme identity pass
   B, 2026-09-29).** `insertLink` and `insertImage` dispatch `from: 0, to: doc.length`, the pattern
   the block insert dropped for a changed-span dispatch. The same consequences apply: every folded
@@ -1761,8 +1751,7 @@ The original decision framing, for the record:
   `badge`, but only the whole-corner form; a side form of `full` falls through. No plan decision
   names it, so no behavior changed. Fix: extend the `FULL_TOKEN` arm in
   `src/lib/audit/rules/static/radius-scale.ts` to the side forms. Trigger: the first real
-  `radius-scale` run over a consumer site that shows one, or the `0.99.0` promotion, whichever
-  comes first.
+  `radius-scale` run over a consumer site that shows one.
 
 - **Let an owner restrict the media purge alone (Geoff, 2026-09-29).** The media library's orphan
   scan and bulk purge sit behind the same `media` engine access as the rest of the library

@@ -49,13 +49,13 @@ Error tier unless marked.
 | `no-uncompiled-class` | a class compiles into no configured sheet and no scoped `<style>` defines it | use a class the admin sheet ships, move the file under `src/routes/admin` or `src/lib/admin`, or define it in the scoped style |
 | `type-scale` | a text-size class is not a `type-*` role (`text-sm`, `text-[13px]`) | use `type-title`, `type-heading`, `type-subtitle`, `type-body`, `type-meta`, `type-label`, or `type-chip` |
 | `gap-scale` | a bracketed margin, padding, or gap is off the `--cairn-gap-*` roles and Tailwind's half-steps | use `gap-label`, `gap-control`, `gap-group`, `gap-section`, or a named spacing step |
-| `radius-scale` (advisory, error at 0.99.0) | a bare, fixed, or arbitrary `rounded-*` class | `rounded-selector` (chip), `rounded-field` (control), `rounded-box` (card, dialog) |
+| `radius-scale` | a bare, fixed, or arbitrary `rounded-*` class | `rounded-selector` (chip), `rounded-field` (control), `rounded-box` (card, dialog) |
 | `stock-default-hazards` | `badge-ghost` | `StatusChip`, or `badge` plus `cairn-chip-quiet`, `cairn-chip-warning`, or `cairn-chip-outline` |
 | | a bare `dropdown` wrapper (opens on focus, ignores Escape) | a daisyUI popover dropdown (`popover` attribute) or an explicit `dropdown-open` state toggle |
 | | a native `disabled` on a guarded button | `aria-disabled`, with the reason in a `Tooltip` |
 | | `border-base-300` on a floating card | `card-shell card-shadow` |
 | | the retired `cairn-btn-guarded` class | wrap the control in `Tooltip` |
-| | (advisory) `bg-neutral` on a `btn`; `bg-primary/10` on a `btn`; `shadow-none` on a `btn` | `btn btn-neutral`; `btn btn-soft btn-primary`; delete it |
+| | `bg-neutral` on a `btn`; `bg-primary/10` on a `btn`; `shadow-none` on a `btn` | `btn btn-neutral`; `btn btn-soft btn-primary`; delete it |
 | `token-colors` | a hex, `rgb()`, named, or zero-chroma color outside `static.paletteFiles` | a palette token (`var(--color-*)`, `text-muted`) |
 | `grammar-boundary` | CSS redeclares a grammar token | retune palette tokens only |
 | `focus-parity` | a hand-written `:hover` selector has no `:focus-visible` (or `:focus-within`) sibling | add the sibling selector |

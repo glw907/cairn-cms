@@ -65,6 +65,8 @@ function toFrontmatter(old, filename) {
 }
 
 const block = (fm) => `---\n${Object.entries(fm).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join('\n')}\n---\n`;
+// serializeMarkdown(frontmatter, body) from '@glw907/cairn-cms' writes the same block the admin
+// save writes; use it in place of block() when the quoting matters.
 const toBody = (b) => b.replace(/\{\{<\s*note\s*>\}\}\n?([\s\S]*?)\{\{<\s*\/note\s*>\}\}/g, ':::note\n$1:::');
 
 await mkdir(TO, { recursive: true });
@@ -91,6 +93,13 @@ for (const filename of await readdir(FROM)) {
 ```
 
 For an undated concept, set `id` to `stem` and drop the date line and test. One concept per run.
+
+`parseMarkdown` reads frontmatter as YAML 1.2 (the `yaml` package's core schema): `10:30` stays the
+string `'10:30'`, `0755` reads as the number `755`, and a `<<` key stays a literal key instead of
+merging. Only a block that opens with a bare `---` line counts as frontmatter, so `---yaml` and
+`+++` do not. The first admin save rewrites the block through `serializeMarkdown`: ordinary double
+quotes drop, a string that would read as another type is single-quoted (`'123'`), and comments are
+lost.
 
 ## Check
 

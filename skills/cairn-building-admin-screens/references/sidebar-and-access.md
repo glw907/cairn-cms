@@ -125,7 +125,9 @@ export const cairn = defineAdapter({
   adapter's `editor.nav`.
 - `collapsed: true` applies only until a visitor's first toggle; from then on the
   `cairn-admin-nav-collapsed` cookie wins in both directions, so a section added later renders
-  open for that visitor.
+  open for that visitor. The shell writes that cookie and `cairn-admin-theme` from the browser,
+  with `path=/admin; max-age=31536000; samesite=lax`, plus `secure` over https. They carry no
+  `__Host-` prefix and are not HttpOnly.
 - With no `navLayout`, the engine builds a flat default: concepts, then the engine screens, with
   Help in the trailing group.
 

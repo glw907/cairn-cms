@@ -107,6 +107,10 @@ and behavior that changed. The steps below are the ones that fall on whoever dep
   `adopt-cairn.md` reference's "Agent tooling" section. The old command exits 1, which does not block.
 - **A site e2e finds controls by their new names:** `Edit block`, `Insert a block`, and a media tile's
   checkbox as the input under the option. A handler keyed on a 409 from rename expects 503.
+- **Regenerate the manifest if an image sits in an object or an array.** Manifest verification now reads
+  a nested image, so a site that declares one runs `npx cairn-manifest` and commits the result, or the
+  build fails with `content manifest is stale`. A site that calls `verifyManifest` directly passes its
+  adapter as the third argument.
 - **Run the `cairn` tool at `v2`.** Its Go module path is `github.com/glw907/cairn-cms/tool/v2`.
 
 ## 0.98.0

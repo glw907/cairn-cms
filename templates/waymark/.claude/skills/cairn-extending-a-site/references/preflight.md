@@ -40,7 +40,11 @@ against your own.
 ## 6. Run the gates the site has wired up
 
 `cairn-guidance install` writes only under `.claude/skills`, `.claude/agents`, and
-`.claude/cairn`; it wires no hook or script by itself. Run `npx cairn-guidance check` to see
+`.claude/cairn`; it wires no hook or script by itself. It also deletes a file an earlier install
+wrote that this version no longer ships, but only when the earlier `MANIFEST` lists the file and
+its hash matches a version the package shipped (`guidance-hashes.json`). An edited file stays, and
+the install names it on every run. `npx cairn-guidance install --dry-run` prints what it would
+write, delete, and keep, and changes nothing. Run `npx cairn-guidance check` to see
 whether this site's `check:cairn` script, audit config, and workflow are wired; it prints the
 snippet to add when one is missing. Each line reads `PASS` or `FIX`, and the last line counts them.
 It does not inspect the `Stop` hook. If a developer added the hook from `references/adopt-cairn.md`

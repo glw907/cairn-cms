@@ -73,7 +73,7 @@ The panel holds the following:
 
 To change the name, address, or default alt text, edit the field and select **Save**. **Changes saved.** confirms it.
 
-The default alt text applies the next time someone places the image. Changing it doesn't change alt text already set on entries that use the image. To fill in the default on published entries where the image has no alt text, select **Apply default alt to entries**. The window it opens lets you choose whether to overwrite alt text that entries already have.
+The default alt text applies the next time someone places the image. Changing it doesn't change alt text already set on entries that use the image. To fill in the default on published entries where the image has no alt text, select **Apply default alt to entries**. The window it opens lets you choose whether to overwrite alt text that entries already have. An image placed inside a gallery or card counts as used, but this action doesn't change it. The window lists those under **In a gallery or card**, and you write the alt text where the image sits in the entry.
 
 ## Replace an image
 
@@ -82,7 +82,7 @@ Replace an image when you have a better version of the same image. Every publish
 1. Select the image to open its details panel.
 1. Select **Replace image**.
 1. Select **Choose a file** and pick the new image.
-1. Read the review screen. Its title says how many published entries change, and the list names them.
+1. Read the review screen. Its title says how many published entries change, and the list names them. Replace also swaps an image placed inside a gallery or card, and the review counts it as **N in a gallery or card**.
 1. Type the image's address in the box. The label shows the address to type.
 1. Select **Replace in** followed by the number of entries, such as **Replace in 3 entries**.
 

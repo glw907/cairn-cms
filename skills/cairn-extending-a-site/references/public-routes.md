@@ -47,6 +47,10 @@ export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 The page renders `CairnHead` (`@glw907/cairn-cms/public`) with `seo={data.seo}`, then
 `{@html data.html}`. `titleTemplate` applies only when `title` is undefined.
 
+For a table of contents, call `renderer.renderDocument(input)` in place of `render`. It returns
+`{ html, headings }`, where `headings` is a `DocHeading[]` (`{ id, text, depth }`) in document
+order, collected from the final tree after slugging and any site `rehypePlugins`.
+
 `entryLoad` returns `EntryData<typeof site>`, a union over the adapter's concepts, so narrowing on
 `data.concept` types `data.entry.frontmatter` from that concept's fields: inside
 `if (data.concept === 'posts')`, `data.entry.frontmatter.image` is the posts field's value.
@@ -68,7 +72,9 @@ them. The hero and social image come from the key `image` alone: declare
 `defaultImage` only to a file that exists; the scaffold leaves it unset. A
 `resolveMedia` other than `null` turns hero resolution on.
 
-Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` with
+Markdown twin: an `md` matcher in `src/params.ts` (`export const params = defineParams({ md: (param)
+=> (param.endsWith('.md') ? param : undefined) })`, with `defineParams` from `@sveltejs/kit/params`;
+there is no `src/params/` directory), a `[...path=md]/+server.ts` with
 `routes.markdownEntries()` and `buildMarkdownResponse({ body })` from `routes.markdownLoad({ url })`, and
 `markdownUrl` on `CairnHead`. `noindex` entries get no twin.
 

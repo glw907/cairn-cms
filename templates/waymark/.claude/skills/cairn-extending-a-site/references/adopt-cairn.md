@@ -22,7 +22,14 @@ Contents:
 3. Imports: SvelteKit 3 throws on `$lib`. Use the `package.json` `imports` map
    (`"#lib/*": "./src/lib/*"`), and import site modules as `#lib/<file>.js`. Add the map if absent.
 4. A custom route that needs a binding reads it from `cloudflare:workers` (adapter 8 declares no
-   `App.Platform`), typed by `wrangler types --include-runtime=false`.
+   `App.Platform`), typed by `wrangler types --include-runtime=false`. The scaffold wraps the command
+as `npm run cf-typegen` (`wrangler types --env-file=.dev.vars.example --include-runtime=false`) and
+commits `worker-configuration.d.ts`; rerun it after adding or renaming a binding in
+`wrangler.jsonc` or a variable in `.dev.vars.example`.
+5. A test that imports code reaching the engine's server modules needs
+   `test.server.deps.inline: ['@glw907/cairn-cms']` in `vitest.config.ts`, so
+   `vi.mock('cloudflare:workers')` applies to the engine's import. Without it Node's loader
+   rejects the `cloudflare:` scheme. The scaffold sets it.
 
 ## Site config, adapter, content
 
@@ -80,8 +87,18 @@ Done when `npm run check` and `npm run build` pass. A build failure table is in
 
    Name `__CAIRN_DEV_BUILD__` directly at each call site; an imported constant survives Vite's fold
    and ships the dev backend. The `cairnManifest` plugin defines the flag; set no define of your own.
-5. `CAIRN_DEV_BACKEND=1 npm run dev` opens `/admin` signed in as owner. Edits live in memory
-   (`content: 'repository'`, which throws under workerd; use `'fixtures'` there).
+   The snippet's `process.env` read sees the flag under `vite dev` only. The scaffold's
+   `devBackendOptIn()` in `src/chassis/dev-gate.ts` also reads the Worker env through
+   `cloudflare:workers` (set by `wrangler dev --var CAIRN_DEV_BACKEND:1`), inside a `try` because that
+   env throws while a build prerenders. `src/app.d.ts` declares `CAIRN_DEV_BACKEND?: string` on
+   `Cloudflare.Env` by hand, because `wrangler types` never generates it.
+5. `CAIRN_DEV_BACKEND=1 npm run dev` opens `/admin` signed in as owner. `devBackendHandle` takes
+   `content`: `'repository'` (the default) overlays each branch in memory on the working tree and
+   writes nothing to disk, and throws under workerd; `'fixtures'` serves the package's seeded
+   sample repo and runs anywhere; `'empty'` holds only `site.config.yaml` with a `siteName`, so
+   every concept lists nothing, and runs under workerd. While the dev backend holds content in memory
+   (all three modes do) the admin shows **Edits are held in memory.**; they are discarded when the dev
+   server stops.
 
 ## Production
 
@@ -121,6 +138,7 @@ missing** (`config.bindings-missing`).
 
 Sign-in email: the site name and sender come from the runtime; a custom `auth.send`
 (`SendMagicLink`) replaces the sender, and must never put the body or link in a thrown message.
+The message's Reply-To is `email.replyTo` (one address); leave it out and the message carries none.
 
 ## Agent tooling
 

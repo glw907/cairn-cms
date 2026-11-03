@@ -272,6 +272,10 @@ A client that posts to an admin action with `fetch` instead of a form meets two 
 SvelteKit answers 415 to a form-action POST whose content type is not a form type, so label a raw
 body `text/plain` and sniff the bytes on the server. Send CSRF as an `X-Cairn-CSRF` header, which
 the guard clears without cloning the body; the token is `data.shell.csrf` in the page's data. The
+guard screens every unsafe-method `/admin` request whose content type is urlencoded, multipart,
+`text/plain`, or `application/x-sveltekit-formdata`, or that has no content type at all, so a
+bodiless or untyped `fetch` to a site's `+server.ts` endpoint sends the header too. A JSON POST
+is not screened: such an endpoint verifies the token itself. The
 response is SvelteKit's action envelope (`{ type, status, data }`) at the `fail()` status, so
 read the envelope whatever the status. The engine's media upload client,
 `node_modules/@glw907/cairn-cms/dist/admin/client-ingest.js` (`buildUploadRequest`), is the

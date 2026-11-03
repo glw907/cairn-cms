@@ -187,15 +187,15 @@ standing answers are taken as ruled. Counts: 1 blocker, 10 major (one an OWNER F
 - **Severity:** major. **Tag:** correctness.
 - **Location:** plan:457-463.
 - **Defect:** the one allowlisted child environment carries `CLOUDFLARE_API_TOKEN` and "the
-  `CAIRN_GATE_GH_*` names for the browser half". The CLI under test inherits that environment.
+  `GITHUB_TEST_*` names for the browser half". The CLI under test inherits that environment.
   The CLI then spawns `npm ci` with registry lifecycle scripts, `npm run build` with Vite plugins,
   and wrangler, so third-party code can read the machine account's password, TOTP secret, and
   `delete_repo` token. The CLI needs none of them.
 - **Fold:** build two allowlists. The CLI child gets `PATH`, `HOME`, `TERM`, `LANG`, the two
   `CLOUDFLARE_*` variables, `CAIRN_STATE_DIR`, and `GATE_URL_LOG`. Only the Playwright process and
-  the teardown process get `CAIRN_GATE_GH_*`. The driver needs the Cloudflare token only to answer
+  the teardown process get `GITHUB_TEST_*`. The driver needs the Cloudflare token only to answer
   the paste prompt. Add a test that spawns the stub CLI through the driver, dumps its environment,
-  and asserts that no `CAIRN_GATE_GH_*` variable is present.
+  and asserts that no `GITHUB_TEST_*` variable is present.
 
 ### M9. Chapter 3 verifies the token at `/user/tokens/verify`, which an account-owned token fails
 

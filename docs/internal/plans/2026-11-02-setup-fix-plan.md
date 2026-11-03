@@ -31,6 +31,11 @@
   automated testing"):** the gate's owner address and the machine account's GitHub email are
   `cairn-gate@probe.907.life`, a dedicated ward mailbox (password `STALWART_PASSWORD_CAIRN_GATE`),
   added by a servers-repo PR. FORK 2 grows into a real magic-link sign-in on B2.
+- **The machine account is `glw907-test`,** the workstation's one shared GitHub test account
+  (`~/.claude/docs/test-accounts.md`), 2FA on, its credentials in the age store as
+  `GITHUB_TEST_*`. Its page gotchas, found setting it up on 2026-11-03, bind T6b: wait on `load`
+  plus a short pause, never `networkidle` (GitHub holds live connections); never screenshot a page
+  showing a secret, since a screenshot read into a session lands in its transcript.
   - FORK 1, a user-owned `ws-cairn-gate` minted through `tmp-token-setup`: default yes. It changes
     no task, only the Pre-flight token row.
   - FORK 2, the gate reads a sign-in email's From and signs in through its link: yes. It changes
@@ -181,12 +186,12 @@ the fold record's "Verification" section.
 
 | Item | Who, when | Check that shows it done |
 |---|---|---|
-| GitHub machine account on the email `cairn-gate@probe.907.life`, 2FA on, its password and TOTP secret in the age store as `CAIRN_GATE_GH_PASSWORD` and `CAIRN_GATE_GH_TOTP_SECRET`, its login as `CAIRN_GATE_GH_LOGIN`, Proton Pass holding the record | `[you]`, before launch (the conductor is gathering it) | `grep -oE '^export (CAIRN_GATE_GH_LOGIN\|CAIRN_GATE_GH_PASSWORD\|CAIRN_GATE_GH_TOTP_SECRET)=' ~/.local/secrets` prints three names, never a value |
-| A classic token for the machine account, scopes `repo` and `delete_repo`, as `CAIRN_GATE_GH_TOKEN` (finding 5; added by the plan, now in design revision 2's pre-flight) | `[you]`, before the first gate run; blocks no executor task | `bash -c 'source ~/.local/secrets && GH_TOKEN="$CAIRN_GATE_GH_TOKEN" gh api -i user'` shows the machine login and an `X-OAuth-Scopes` header naming `repo` and `delete_repo` |
+| GitHub machine account on the email `cairn-gate@probe.907.life`, 2FA on, its password and TOTP secret in the age store as `GITHUB_TEST_PASSWORD` and `GITHUB_TEST_TOTP_SECRET`, its login as `GITHUB_TEST_LOGIN`, Proton Pass holding the record | Done 2026-11-03 (`glw907-test`) | `grep -oE '^export (GITHUB_TEST_LOGIN\|GITHUB_TEST_PASSWORD\|GITHUB_TEST_TOTP_SECRET)=' ~/.local/secrets` prints three names, never a value |
+| A classic token for the machine account, scopes `repo` and `delete_repo`, as `GITHUB_TEST_TOKEN` (finding 5; added by the plan, now in design revision 2's pre-flight) | Done 2026-11-03, no expiry | `bash -c 'source ~/.local/secrets && GH_TOKEN="$GITHUB_TEST_TOKEN" gh api -i user'` shows the machine login and an `X-OAuth-Scopes` header naming `repo` and `delete_repo` |
 | `ws-cairn-gate`, minted from chapter 3's eight keys (`CHAPTER3_PERMISSION_KEYS`, `prefill.mjs:79`: Zone, DNS, Workers Scripts, SSL and Certificates, Email Sending, Workers Builds Configuration, D1, Workers R2 Storage, each edit), every zone-level group limited to `carin-test.org`. **User-owned**, minted through `tmp-token-setup` (inventory item 6; design revision 2, **FORK 1** default), its inventory row recorded as an exception to rule 2 until Builds accepts account-owned tokens. Age store `CF_WS_CAIRN_GATE_TOKEN`; inventory row added; the temporary token deleted. If Geoff answers FORK 1 no, the token is account-owned through `tmp-account-tokens` and the gate's Builds legs run on his browser sign-in (design revision 2) | `[you]` makes the temporary token; the conductor mints, stores, and deletes, before launch | The T6a smoke's verdicts (it calls both verify routes, the Builds routes, and the write probes, through Node `fetch`, never `curl` argv) |
 | Pre-launch permission list (finding 4): `Bash(bash scripts/gate/run-gate.sh *)`, `Bash(gh workflow run publish.yml -f promote=*)`, and, for the stable cut's literal sha (T4), `Bash(gh release create v* --target * --title *)`. The existing `Bash(gh release create v* --target main *)` and `Bash(gh release create v* --prerelease *)` match neither `--target <sha>` form, and a glob can't narrow a sha further | `[you]`, one workstation PR, before launch: T6a's smoke runs the first | All three strings appear in `~/.claude/settings.json`'s `permissions.allow` |
 | "Allow npm dist-tag" on the `publish.yml` trusted publisher of `@glw907/cairn-cms`, `@glw907/cairn-cms-dev`, and `create-cairn-site`: npmjs.com → the package → Settings → Trusted publishing → the configuration → tick **Allow npm dist-tag** → save. Off by default (<https://docs.npmjs.com/trusted-publishers>, "Managing dist-tags with trusted publishing") | `[you]`, after the merge, before `rc.3` | The box shows ticked on all three settings pages. That is all this check proves: a no-op promotion writes nothing, since `npm dist-tag add` returns "is already set to version" before its authenticated request. The first real promotion, `rc.3` to `next`, is the probe; if it reports the trusted publisher cannot manage dist-tags, the design's fallback stands and promotion becomes Geoff's `npm dist-tag add` in a sitting |
-| Added by the plan, now in design revision 2's pre-flight: Cloudflare's Workers and Pages GitHub App connected to the machine account with **All repositories**, through Geoff's Cloudflare dashboard (`catalogue.mjs:703`'s route: `https://dash.cloudflare.com/?to=/:account/workers-and-pages`), since Playwright holds no Cloudflare session and a selected-repositories install parks every new gate repository at `builds-repo-not-selected` (`chapter3.mjs:1053`) | `[you]`, before the first gate run; blocks no executor task | After `ws-cairn-gate` is minted user-owned (the Builds routes take only a user token), the conductor creates a throwaway `cairn-e2e-gate-probe-<ts>` repository on the machine account with `CAIRN_GATE_GH_TOKEN`; `PUT .../builds/repos/connections` for it, signed with `ws-cairn-gate`, answers 200; then it deletes the connection by its returned uuid and the repository |
+| Added by the plan, now in design revision 2's pre-flight: Cloudflare's Workers and Pages GitHub App connected to the machine account with **All repositories**, through Geoff's Cloudflare dashboard (`catalogue.mjs:703`'s route: `https://dash.cloudflare.com/?to=/:account/workers-and-pages`), since Playwright holds no Cloudflare session and a selected-repositories install parks every new gate repository at `builds-repo-not-selected` (`chapter3.mjs:1053`) | `[you]`, before the first gate run; blocks no executor task | After `ws-cairn-gate` is minted user-owned (the Builds routes take only a user token), the conductor creates a throwaway `cairn-e2e-gate-probe-<ts>` repository on the machine account with `GITHUB_TEST_TOKEN`; `PUT .../builds/repos/connections` for it, signed with `ws-cairn-gate`, answers 200; then it deletes the connection by its returned uuid and the repository |
 | `carin-test.org` has Email Sending on, and the account is on Workers Paid | conductor, before the first gate run | Email Sending: `GET /zones/:id/email/sending/subdomains` (`api.mjs:528`) with the gate token. Workers Paid: no token can read the plan (`GET /accounts/{id}/subscriptions` answers 10000), so the record is `~/.claude/docs/cloudflare-estate-inventory.md:4-6` |
 | The gate's owner address accepts mail and is not Geoff's inbox | conductor, before the first gate run | `GATE_OWNER_EMAIL=cairn-gate@probe.907.life`, the gate's own ward mailbox, password `STALWART_PASSWORD_CAIRN_GATE` in the age store; the servers PR that adds it is merged and deployed, and a JMAP session request to `https://907.life/.well-known/jmap` with that login answers 200. The machine account's GitHub email is the same address |
 | The gate host | conductor, before the first gate run | The host it names has the age store synced and `npx playwright install chromium` done; the smoke prints `hostname` |
@@ -694,10 +699,10 @@ plan states as invariants, not as code.
   - **The CLI child** (and through it npm, Vite, and wrangler): `PATH` with `scripts/gate` first
     (for the shim), `HOME`, `TERM`, `LANG`, `CLOUDFLARE_API_TOKEN="$CF_WS_CAIRN_GATE_TOKEN"`,
     `CLOUDFLARE_ACCOUNT_ID=120c269ad6d3dfbe6d63a0bb53758ca0`, `CAIRN_STATE_DIR` under the run
-    directory, and `GATE_URL_LOG`. Never a `CAIRN_GATE_GH_*` name.
-  - **The browser process** (T6b): the `CAIRN_GATE_GH_*` names, `GATE_URL_LOG`, and no Cloudflare
+    directory, and `GATE_URL_LOG`. Never a `GITHUB_TEST_*` name.
+  - **The browser process** (T6b): the `GITHUB_TEST_*` names, `GATE_URL_LOG`, and no Cloudflare
     token.
-  - **Teardown** (T6b): the gate token, the account id, and `CAIRN_GATE_GH_TOKEN`.
+  - **Teardown** (T6b): the gate token, the account id, and `GITHUB_TEST_TOKEN`.
   - `record.mjs` (T6b) runs in `run-gate.sh`'s own environment, as glw907's `gh`.
 
   No secret name list is committed. It never echoes a value. Modes: `--smoke`,
@@ -742,7 +747,7 @@ plan states as invariants, not as code.
     `accounts` list naming the account id), both on the template's wrangler,
     `npx --yes wrangler@4.156.2` (`templates/waymark/package.json:55`), under the CLI child's
     environment;
-  - when `CAIRN_GATE_GH_TOKEN` is in the store: `GET /user` returns `CAIRN_GATE_GH_LOGIN`, and its
+  - when `GITHUB_TEST_TOKEN` is in the store: `GET /user` returns `GITHUB_TEST_LOGIN`, and its
     `X-OAuth-Scopes` names `repo` and `delete_repo`; otherwise the verdict is `skipped: not in
     store` (a pre-flight item, not the executor's);
   - a TOTP code computes.
@@ -758,7 +763,7 @@ plan states as invariants, not as code.
     CR; a stub printing an unknown marked prompt fails naming it; an unmarked line that matches a
     table key is never answered; the token string appears in neither stdout, the log, nor the
     capture.
-  - Env: the driver spawns a stub CLI that dumps its environment; no `CAIRN_GATE_GH_*` name is
+  - Env: the driver spawns a stub CLI that dumps its environment; no `GITHUB_TEST_*` name is
     present, and the two `CLOUDFLARE_*` names are.
   - Integration: the driver runs `node packages/create-cairn-site/bin.mjs` against the test fakes
     (`test/fake-github.mjs`, `fake-cloudflare.mjs`, `fake-bin.mjs`, the env bases the resume tests

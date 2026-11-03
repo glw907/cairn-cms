@@ -282,8 +282,8 @@ The email-declined path's live leg, a deploy-status read in the admin, and migra
   with the CLI's eight Edit groups (`prefill.mjs:44-50`), its zone groups on `carin-test.org`
   only, add its row to the inventory as an exception to rule 2, and delete the temporary token.
 - `[you]` For the machine account: a classic personal access token with `repo` and `delete_repo`,
-  for repository teardown and the account check. Store names `CAIRN_GATE_GH_LOGIN`,
-  `CAIRN_GATE_GH_PASSWORD`, `CAIRN_GATE_GH_TOTP_SECRET`, `CAIRN_GATE_GH_TOKEN`. (Planning miss:
+  for repository teardown and the account check. Store names `GITHUB_TEST_LOGIN`,
+  `GITHUB_TEST_PASSWORD`, `GITHUB_TEST_TOTP_SECRET`, `GITHUB_TEST_TOKEN`. (Planning miss:
   the plan review found it.)
 - `[you]` Before the first gate run: connect the machine account's GitHub to Workers Builds in the
   Cloudflare dashboard, with All repositories. (Planning miss: the plan review found it.)

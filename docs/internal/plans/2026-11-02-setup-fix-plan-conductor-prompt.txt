@@ -25,7 +25,7 @@ Pre-launch checks:
   - `ws-cairn-gate` as `CF_WS_CAIRN_GATE_TOKEN`, minted per FORK 1's answer from the eight groups, with the inventory row added and the temporary token deleted;
   - `Bash(bash scripts/gate/run-gate.sh *)`, `Bash(gh workflow run publish.yml -f promote=*)`, and `Bash(gh release create v* --target * --title *)` in `~/.claude/settings.json` `permissions.allow`. The last one is for the stable cut's literal sha; the existing `--target main *` and `--prerelease *` rules match neither form.
 - These rows hold the first gate run, not the launch:
-  - `CAIRN_GATE_GH_TOKEN` (repo and delete_repo), added by the plan;
+  - `GITHUB_TEST_TOKEN` (repo and delete_repo), added by the plan;
   - the Workers Builds connection with All repositories, added by the plan;
   - Email Sending on carin-test.org and Workers Paid;
   - the gate host;

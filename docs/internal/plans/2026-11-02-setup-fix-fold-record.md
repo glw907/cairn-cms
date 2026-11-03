@@ -108,7 +108,7 @@ Convergent findings fold once, at the root named first.
 | M5 | Root (settle order). |
 | M6 | Root (stable check). |
 | M7 | Root (teardown), as ruled: `--teardown-stale` plus an exit trap. |
-| M8 | Folded (ruling) into T6a: the CLI child's environment never carries a `CAIRN_GATE_GH_*` name, and a test dumps it. |
+| M8 | Folded (ruling) into T6a: the CLI child's environment never carries a `GITHUB_TEST_*` name, and a test dumps it. |
 | M9 | Same root as Mech 1: forked (fork 1). |
 | M10 | Forked (fork 3); its exact-version half is folded into T6b: every gate leg invokes `create-cairn-site@<exact version>`, never `@gate` or a bare name. |
 | m1 | Root (re-run kick), in part. |

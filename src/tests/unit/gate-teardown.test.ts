@@ -20,8 +20,9 @@ const record = {
 };
 
 /** A stub whose `failing` routes answer 500 and whose `gone` set answers 404 to a DELETE. */
-function stubDeps(options: { failing?: string[]; gone?: boolean } = {}) {
+function stubDeps(options: { failing?: string[]; gone?: boolean; unknownRoute?: boolean } = {}) {
   const calls: Array<{ method: string; url: string }> = [];
+  const printed: string[] = [];
   const apps: string[] = [];
   const fetchImpl = (async (input: string | URL, init?: RequestInit) => {
     const url = String(input);
@@ -29,6 +30,7 @@ function stubDeps(options: { failing?: string[]; gone?: boolean } = {}) {
     calls.push({ method, url });
     const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
     if (options.failing?.some((part) => url.includes(part))) return reply(500, { errors: [{ code: 1, message: 'boom' }] });
+    if (method === 'DELETE' && options.unknownRoute && url.includes('/accounts/')) return reply(404, { success: false, errors: [{ code: 7003, message: 'no route' }] });
     if (method === 'DELETE') return options.gone ? reply(404, {}) : reply(200, { success: true });
     if (url.includes('/workers/domains')) return reply(200, { result: options.gone ? [] : [{ id: 'dom-1', hostname: 'carin-test.org', service: NAME }] });
     if (url.includes('/d1/database')) return reply(200, { result: options.gone ? [] : [{ uuid: 'd1-uuid', name: `${NAME}-auth` }] });
@@ -41,12 +43,13 @@ function stubDeps(options: { failing?: string[]; gone?: boolean } = {}) {
     cloudflareToken: 'cf-token',
     githubToken: 'gh-token',
     accountId: 'acct',
+    print: (line) => printed.push(line),
     deleteApp: async (slug) => {
       apps.push(slug);
       return options.gone ? 'absent' : 'deleted';
     },
   };
-  return { deps, calls, apps };
+  return { deps, calls, apps, printed };
 }
 
 describe('teardownInstall', () => {
@@ -83,6 +86,22 @@ describe('teardownInstall', () => {
     const result = await teardownInstall({ record, wranglerText: WRANGLER, deps: stub.deps });
     expect(result.left).toEqual([]);
     expect(result.steps.every((step) => step.status === 'absent')).toBe(true);
+  });
+
+  it('treats a 404 with an unknown-route code as left, and logs the first 404 body once', async () => {
+    const stub = stubDeps({ unknownRoute: true });
+    const result = await teardownInstall({ record, wranglerText: WRANGLER, deps: stub.deps });
+    expect(result.left).toContain('Builds trigger');
+    expect(result.left).toContain(`R2 ${NAME}-media`);
+    expect(result.steps.find((step) => step.step === 'Builds trigger')?.detail).toContain('7003');
+    expect(stub.printed.filter((line) => line.includes('first 404'))).toHaveLength(1);
+    expect(stub.printed[0]).toContain('no route');
+  });
+
+  it('keeps a plain 404 as absent', async () => {
+    const stub = stubDeps({ gone: true });
+    await teardownInstall({ record, wranglerText: WRANGLER, deps: stub.deps });
+    expect(stub.printed.filter((line) => line.includes('first 404'))).toHaveLength(1);
   });
 
   it('attempts R2 and the repository after a D1 failure, and reports D1 left', async () => {
@@ -124,6 +143,18 @@ describe('teardownStateDir', () => {
     expect(stub.calls.filter((call) => call.method === 'DELETE')).toHaveLength(7);
     expect(await readdir(path.join(earlier, 'state'))).toEqual([]);
     expect(await readdir(earlier)).not.toContain('urls.log');
+  });
+
+  it('keeps the record when the wrangler.jsonc is gone, since the D1 and R2 names were never read', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'gate-runs-'));
+    dirs.push(root);
+    const earlier = await seedRun(root, '20261101T000000');
+    await rm(path.join(earlier, 'installs', NAME, 'wrangler.jsonc'));
+    const stub = stubDeps();
+    const out = await teardownStateDir({ stateDir: path.join(earlier, 'state'), deps: stub.deps, cleanup: [path.join(earlier, 'urls.log')], print: () => {} });
+    expect(out.left).toEqual(['site-abc123.json: D1/R2 names unread']);
+    expect(await readdir(path.join(earlier, 'state'))).toEqual(['site-abc123.json']);
+    expect(await readdir(earlier)).toContain('urls.log');
   });
 
   it('keeps the record and the logs when a step is left', async () => {

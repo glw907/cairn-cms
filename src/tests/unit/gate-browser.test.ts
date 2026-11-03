@@ -1,19 +1,21 @@
 // The gate's browser half against hand-built page fixtures. Every address is answered by a route
 // handler in the browser itself, so nothing reaches GitHub, Cloudflare, or a real site. The browser
 // is headless here (production launches it headed), and the desktop notification is a stub.
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { appendFile, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import { appendFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { BrowserContext, Route } from 'playwright';
+import { chromium, type BrowserContext, type Route } from 'playwright';
 import {
   HoldTimeoutError,
+  childEnv,
   classifyUrl,
   confirmSignIn,
   deleteGithubApp,
   handleUrl,
   launchBrowser,
+  notifyDesktop,
   publishViaAdmin,
   requestSignInLink,
   tailUrlLog,
@@ -271,6 +273,69 @@ describe('the session file', () => {
     expect((await stat(statePath)).mode & 0o777).toBe(0o600);
     await rm(dir, { recursive: true, force: true });
   }, 30_000);
+});
+
+describe('the children of the gate', () => {
+  const parent = {
+    DISPLAY: ':7',
+    WAYLAND_DISPLAY: 'wayland-9',
+    XAUTHORITY: '/x/auth',
+    XDG_RUNTIME_DIR: '/run/user/1',
+    DBUS_SESSION_BUS_ADDRESS: 'unix:path=/bus',
+    HOME: '/home/someone',
+    PATH: '/usr/bin',
+    CF_WS_CAIRN_GATE_TOKEN: 'fake-cf',
+    GITHUB_TEST_TOKEN: 'fake-gh',
+    GITHUB_TEST_PASSWORD: 'fake-pw',
+    GITHUB_TEST_TOTP_SECRET: 'fake-totp',
+    STALWART_PASSWORD_CAIRN_GATE: 'fake-mail',
+    GATE_URL_LOG: '/run/urls.log',
+  };
+  const secretName = /^(CF_|GITHUB_TEST_|STALWART)/;
+
+  it('childEnv carries the display and session names and no secret', () => {
+    const env = childEnv(parent);
+    expect(env).toMatchObject({ DISPLAY: ':7', WAYLAND_DISPLAY: 'wayland-9', XAUTHORITY: '/x/auth', XDG_RUNTIME_DIR: '/run/user/1', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/bus', HOME: '/home/someone' });
+    expect(Object.keys(env).filter((name) => secretName.test(name))).toEqual([]);
+  });
+
+  it('launchBrowser hands the browser the display names and no secret', async () => {
+    const saved = { ...process.env };
+    Object.assign(process.env, parent);
+    const spy = vi.spyOn(chromium, 'launch');
+    const dir = await mkdtemp(path.join(tmpdir(), 'gate-env-'));
+    try {
+      const second = await launchBrowser({ statePath: path.join(dir, 's.json'), headless: true });
+      await second.close();
+      const env = spy.mock.calls[0][0]?.env as Record<string, string>;
+      expect(env.DISPLAY).toBe(':7');
+      expect(env.DBUS_SESSION_BUS_ADDRESS).toBe('unix:path=/bus');
+      expect(Object.keys(env).filter((name) => secretName.test(name))).toEqual([]);
+    } finally {
+      spy.mockRestore();
+      for (const name of Object.keys(parent)) {
+        if (saved[name] === undefined) delete process.env[name];
+        else process.env[name] = saved[name];
+      }
+      await rm(dir, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  it('notifyDesktop runs notify-send with the session names and no secret', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'gate-notify-'));
+    try {
+      await mkdir(path.join(dir, 'bin'));
+      await writeFile(path.join(dir, 'bin', 'notify-send'), '#!/bin/sh\nenv > "$HOME/env-dump"\n', { mode: 0o755 });
+      notifyDesktop('t', 'b', { ...parent, HOME: dir, PATH: `${path.join(dir, 'bin')}:${process.env.PATH}` });
+      const dump = path.join(dir, 'env-dump');
+      for (let waited = 0; !existsSync(dump) && waited < 5000; waited += 50) await new Promise((resolve) => setTimeout(resolve, 50));
+      const text = await readFile(dump, 'utf8');
+      expect(text).toContain('DBUS_SESSION_BUS_ADDRESS=unix:path=/bus');
+      expect(text).not.toMatch(/^(CF_|GITHUB_TEST_|STALWART)/m);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('tailUrlLog', () => {

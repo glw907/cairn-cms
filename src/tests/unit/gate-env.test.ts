@@ -3,7 +3,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { buildCliEnv, runSmoke, GATE_ACCOUNT_ID } from '../../../scripts/gate/gate.mjs';
@@ -62,6 +63,34 @@ describe('buildCliEnv', () => {
     expect(seen.CLOUDFLARE_API_TOKEN).toBe(GATE_TOKEN);
     expect(seen.CLOUDFLARE_ACCOUNT_ID).toBe(GATE_ACCOUNT_ID);
     expect(seen.UNRELATED).toBeUndefined();
+  });
+});
+
+describe('run-gate.sh environment', () => {
+  /** Runs the script with a stub `node` that records the environment it was given. */
+  function envSeen(parent: Record<string, string>) {
+    const home = mkdtempSync(join(tmpdir(), 'gate-home-'));
+    dirs.push(home);
+    const bin = join(home, 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(bin, 'node'), '#!/bin/sh\nenv >> "$HOME/env-dump"\n', { mode: 0o755 });
+    const script = resolve('scripts/gate/run-gate.sh');
+    const result = spawnSync('bash', [script, '--stub-mode'], { env: { PATH: `${bin}:${process.env.PATH}`, HOME: home, ...parent }, encoding: 'utf8' });
+    expect(result.status).toBe(0);
+    return readFileSync(join(home, 'env-dump'), 'utf8');
+  }
+
+  it('carries the display and session-bus names to the gate when the parent sets them, and only those', () => {
+    const dump = envSeen({ DISPLAY: ':7', WAYLAND_DISPLAY: 'wayland-9', XAUTHORITY: '/x/auth', XDG_RUNTIME_DIR: '/run/user/1', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/bus', UNRELATED: 'leaks-if-inherited' });
+    for (const line of ['DISPLAY=:7', 'WAYLAND_DISPLAY=wayland-9', 'XAUTHORITY=/x/auth', 'XDG_RUNTIME_DIR=/run/user/1', 'DBUS_SESSION_BUS_ADDRESS=unix:path=/bus']) {
+      expect(dump.split('\n')).toContain(line);
+    }
+    expect(dump).not.toContain('UNRELATED');
+  });
+
+  it('passes none of them when the parent sets none', () => {
+    const dump = envSeen({});
+    expect(dump).not.toMatch(/^(DISPLAY|WAYLAND_DISPLAY|XAUTHORITY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS)=/m);
   });
 });
 

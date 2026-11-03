@@ -16,6 +16,7 @@ export const GATE_PREFIX = 'cairn-e2e-gate-';
  * @property {string} cloudflareToken the gate token
  * @property {string} githubToken the machine account's API token
  * @property {string} accountId the Cloudflare account
+ * @property {(line: string) => void} [print] where a first 404 body is logged; defaults to the console
  * @property {(slug: string) => Promise<'deleted' | 'absent'>} deleteApp deletes the App in the
  *  browser (its Advanced settings); resolves `absent` on a 404 page, rejects when it cannot
  */
@@ -74,6 +75,7 @@ export async function teardownInstall({ record, wranglerText, deps }) {
   const account = `${deps.cloudflareBase}/accounts/${accountId}`;
   /** @type {TeardownStep[]} */
   const steps = [];
+  let loggedNotFound = false;
 
   /**
    * @param {string} step the label
@@ -115,7 +117,17 @@ export async function teardownInstall({ record, wranglerText, deps }) {
    */
   async function del(url, token) {
     const { status, json } = await call(url, token, 'DELETE');
-    if (status === 404) return 'absent';
+    if (status === 404) {
+      if (!loggedNotFound) {
+        loggedNotFound = true;
+        (deps.print ?? console.log)(`teardown first 404 from ${url.split('?')[0]}: ${JSON.stringify(json).slice(0, 300)}`);
+      }
+      // Cloudflare answers 404 with 7000 or 7003 for a route it does not know; that is a wrong
+      // path, not an absent resource, and must not look like a clean teardown.
+      const code = json?.errors?.[0]?.code;
+      if (code === 7000 || code === 7003) throw new Error(`answered 404 (${code}: ${json.errors[0].message}), the route is unknown`);
+      return 'absent';
+    }
     if (status < 200 || status >= 300) {
       const first = json?.errors?.[0];
       throw new Error(`answered ${status}${first ? ` (${first.code}: ${first.message})` : ''}`);
@@ -199,6 +211,9 @@ export async function teardownStateDir({ stateDir, deps, cleanup = [], print = c
     }
     for (const step of result.steps) print(`teardown ${step.status.padEnd(7)} ${step.step}${step.detail ? `: ${step.detail}` : ''}`);
     if (!record.dir || wranglerText === '') print(`teardown note    ${file}: the install's wrangler.jsonc is gone, so its D1 and R2 names were not read`);
+    // Without the wrangler text the D1 and R2 names were never read, so deleting the record would
+    // orphan them for good.
+    if (record.cloudflare?.workerName && wranglerText === '') result.left.push('D1/R2 names unread');
     if (result.left.length === 0) await rm(recordPath, { force: true });
     else left.push(...result.left.map((step) => `${file}: ${step}`));
   }

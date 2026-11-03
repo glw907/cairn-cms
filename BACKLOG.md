@@ -5,6 +5,24 @@
 ## High
 
 ## Medium
+- [ ] **#341** Register a build token scoped to what a Workers Builds deploy needs, not the owner's whole setup token `#improvement` `#cairn-cms` `#security` *(2026-11-03)*
+  Chapter 3 registers the owner's eight-permission setup token as the Builds build token (`createBuildToken({ secret: token })`, `chapter3.mjs`), so any code a repository committer lands can read zone, DNS, SSL, email, D1, and R2 edit rights in a build. The setup-fix pass widens which `--yes` runs reach it (a declined domain now continues to Builds). Mint or ask for a narrower build token (Workers scripts, D1, R2) and record the choice in MIGRATION-NOTES. Found by the setup-fix close security read (web-auth reviewer M2); a design call.
+  Placement: After the release.
+- [ ] **#340** Pass the repository-edit guard to chapter 3's reconciles `#bug` `#cairn-cms` *(2026-11-03)*
+  Chapter 2's Builds hop refuses to commit over repository edits to `wrangler.jsonc` and `src/theme/cairn.config.ts` (`refuseRepositoryEdits`), but chapter 3's own `--connect` and builds-live reconciles (`chapter3.mjs` `performReconcile`) pass no guard, so they still upload both local files whole. The setup-fix pass made `reconcileRepo` refuse a failed read, which closes the worst case; the guard itself is a scope change from that plan. Found by the setup-fix close security read.
+  Placement: After the release.
+- [ ] **#339** Give chapter 3's unheld build watch the discovery retry chapter 2 now has `#improvement` `#cairn-cms` *(2026-11-03)*
+  `watchAndComplete` reads the build list once after its own reconcile commit when nothing holds the run (`--yes` or no terminal), the same webhook lag the setup-fix pass fixed for chapter 2 with `discoveryAttempts`. Pass the same budget. A manual kick also carries no commit hash, so a kicked build that parks at `build-running` is kicked again on the re-run. Found by the setup-fix close reviews.
+  Placement: After the release.
+- [ ] **#338** Fix `openBrowser` on Windows, where `cmd /c start` splits a URL at `&` `#bug` `#cairn-cms` *(2026-11-03)*
+  `packages/create-cairn-site/src/github/open.mjs:26` passes the URL to `cmd /c start "" <url>`; every OAuth and prefill URL holds an `&`, so the opened URL is cut short and the remainder runs as a command. None of the URL text is attacker-controlled, so this is a functional bug. Found by the setup-fix close security read; not in that diff.
+  Placement: After the release.
+- [ ] **#337** Remove the stale `rc: 0.6.0-rc.1` dist-tag from `@glw907/cairn-cms` `#improvement` `#cairn-cms` *(2026-11-03)*
+  Found while planning the setup-fix pass. A one-time `npm dist-tag rm` by the publisher.
+  Placement: The release.
+- [ ] **#336** Test the gate's leg orchestration and run its first live leg against a fake account `#improvement` `#cairn-cms` *(2026-11-03)*
+  `scripts/gate/legs.mjs` `runLeg` and `gate.mjs` `main` tie the harness together and are typechecked but untested; GitHub's real control names, the admin publish selectors, the CLI prompt table on a pty, Cloudflare's delete routes, and Stalwart's JMAP details have never run live. The first gate run is their test, under the design's standing answers; a failed leg here becomes a fix on this item. Found by the setup-fix close reviews.
+  Placement: The release.
 - [ ] **#330** Check the consolidated `## Unreleased` changelog for entries whose option is absent from source `#bug` `#docs` *(2026-11-02)*
   The release sweep's finders found two entries describing code that `src/lib` does not contain: `editor.siteConfigPath` and `editor.nav.configPath` (`compose.ts:59` hard-codes the default; `CHANGELOG.md:143` says both were removed), and `sanitizeSchema` with `unsafeDisableSanitize` (only `buildSanitizeSchema(registry)` exists in `src/lib/render/sanitize-schema.ts`). One finder reported each; no verifier read them. Grep each against `main` and prune or correct the entry before the cut.
   Placement: Before the release.
@@ -43,9 +61,6 @@
   Placement: After the release.
 - [ ] **#318** Mask the sign-in address in a rate-limit record without `split(address)` `#bug` `#cairn-cms` *(2026-11-02)*
   `auth-routes.ts` masks the address with `split(address)`, which misses a normalized IPv6 echo. Found by the session-store security review.
-  Placement: After the release.
-- [ ] **#317** Make `--yes --dry-run` preview the Workers Builds skip `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
-  A `--yes --dry-run` run does not print that a declined email offer skips Workers Builds, so the preview differs from the run.
   Placement: After the release.
 - [ ] **#316** Run the packaged Stop hook's `npm` with a shell on Windows `#bug` `#cairn-cms` *(2026-11-02)*
   The hook calls `spawnSync('npm')` with no shell, which spawns nothing on Windows. Found by the guidance owner pass.
@@ -141,9 +156,6 @@
 - [ ] **#211** Measure tidy's latency on real entries against the deadline and the cap `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   `DEFAULT_TIDY_TIMEOUT_MS` is 30s (`src/lib/sveltekit/content-routes-context.ts`) and `MAX_TIDY_CHARS` is 24,000 (`src/lib/sveltekit/content-routes-tidy.ts`). The only record is one run per model with a stand-in prompt: at 12,935 characters, `claude-sonnet-5-5` took 20.6s and `claude-sonnet-5` took 40.1s. If a real proofread near the cap passes the deadline, an editor gets a timeout on text the cap allowed, and the retryable 502's "try again" copy will fail the same way. Measure real entries, then keep or change either number and correct both doc comments. Found by PR #177, whose planned proofread was set aside.
   Placement: After the release.
-- [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
-  `packages/create-cairn-site/src/cloudflare/chapter2.mjs` writes the sender into `src/theme/cairn.config.ts` and then builds and deploys in one step (search `writeEmailFrom`). A crash after the write and before the deploy leaves the sender written but undeployed, and the resume sees `writeEmailFrom` return false (the address is already correct) and skips the build and deploy, so the running site keeps the placeholder sender and sign-in email fails or sends from the wrong address. Fix candidate: save a marker before the write and clear it after the deploy, or compare the deployed config. Found by the scaffold-setup pass's review.
-  Placement: After the release.
 - [ ] **#331** Take the held major vitest 5 `#improvement` `#deps` *(2026-11-02)* *(swept 2026-11-02)*
   Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: the browser plugin peers vitest 5; a dedicated pass runs `test.yml` green on 5.1.0.
   Placement: After the release.
@@ -163,9 +175,6 @@
 ## Low
 - [ ] **#249** Have `check:symbols` flag a removed name in `## Unreleased` prose `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Pass 1a removed `/auth-channel` and `auth.branding`, and `check:symbols` stayed green while `CHANGELOG.md` and `MIGRATION-NOTES.md` still taught both as live under `## Unreleased`. Only the whole-branch review caught them, over two rounds, since the second round's lines named "the auth channel" in plain words. Fail a name the surface diff removed when an unreleased entry states it outside a removal note. Found by pass 1a.
-  Placement: After the release.
-- [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
-  `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
   Placement: After the release.
 
 - [ ] **#205** Narrow `publish.yml`'s OIDC permission to the publish steps `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
@@ -226,6 +235,18 @@
 - **Accepted residual (#247):** the frame-ancestors-only CSP. Clickjacking is the threat these headers close; a full CSP would have to allow SvelteKit's inline hydration and every site's own admin screens and theme, which is site-owned policy outside the engine's scope. (Geoff, 2026-11-02, release sitting)
 
 ## Done
+- [x] **#317** Make `--yes --dry-run` preview the Workers Builds skip `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
+  A `--yes --dry-run` run does not print that a declined email offer skips Workers Builds, so the preview differs from the run.
+  Done: setup-fix. The `--yes` Builds skip it would have previewed is deleted.
+  Placement: After the release.
+- [x] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
+  `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
+  Done: setup-fix. Chapter 2 derives the effective step from the record's fields before any `hasReached` call.
+  Placement: After the release.
+- [x] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
+  `packages/create-cairn-site/src/cloudflare/chapter2.mjs` writes the sender into `src/theme/cairn.config.ts` and then builds and deploys in one step (search `writeEmailFrom`). A crash after the write and before the deploy leaves the sender written but undeployed, and the resume sees `writeEmailFrom` return false (the address is already correct) and skips the build and deploy, so the running site keeps the placeholder sender and sign-in email fails or sends from the wrong address. Fix candidate: save a marker before the write and clear it after the deploy, or compare the deployed config. Found by the scaffold-setup pass's review.
+  Done: setup-fix. A Builds record commits the sender through the repository on every pass and saves `emailFrom` after the watched build; a local record redeploys when `emailFrom` differs.
+  Placement: After the release.
 - [x] **#195** Publish `create-cairn-site` before the release `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-02)*
   `packages/create-cairn-site` is `0.0.0` in the repository, `npm view create-cairn-site` answers E404, and `docs/admin/create-your-site.md` and the root `README.md` open with `npx create-cairn-site`, so the command does not work from a registry until the package is published. The manifest, tarball contents, leak scan, and the `publish-create-site` job in `publish.yml` have landed; the job has never run. What remains is the release act: publish the first version by hand, set up npm trusted publishing for the package, watch the first OIDC run of `publish-create-site`, and run the real install.
   Done: the hand publish, the trust binding, and the first OIDC run of `publish-create-site` (1ae692ae1); the real install is now the setup-fix release gate.

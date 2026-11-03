@@ -325,7 +325,7 @@ describe('the children of the gate', () => {
     const dir = await mkdtemp(path.join(tmpdir(), 'gate-notify-'));
     try {
       await mkdir(path.join(dir, 'bin'));
-      await writeFile(path.join(dir, 'bin', 'notify-send'), '#!/bin/sh\nenv > "$HOME/env-dump"\n', { mode: 0o755 });
+      await writeFile(path.join(dir, 'bin', 'notify-send'), '#!/bin/sh\nenv > "$HOME/env-dump.part" && mv "$HOME/env-dump.part" "$HOME/env-dump"\n', { mode: 0o755 });
       notifyDesktop('t', 'b', { ...parent, HOME: dir, PATH: `${path.join(dir, 'bin')}:${process.env.PATH}` });
       const dump = path.join(dir, 'env-dump');
       for (let waited = 0; !existsSync(dump) && waited < 5000; waited += 50) await new Promise((resolve) => setTimeout(resolve, 50));

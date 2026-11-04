@@ -245,7 +245,7 @@ describe('runClose', () => {
           { label: 'fails', command: 'exit 3' },
           { label: 'after', command: `touch "${marker}"` },
         ],
-        { build: () => true, out: () => {}, err: () => {} },
+        { build: () => true, out: () => {}, err: () => {}, exists: () => true },
       );
       expect(exitCode).toBe(1);
       expect(existsSync(marker)).toBe(true);

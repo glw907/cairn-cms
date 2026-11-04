@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@glw907/cairn-cms": "^0.99.0-rc.3"
+  },
+  "devDependencies": {
+    "@glw907/cairn-cms-dev": "^0.99.0-rc.3"
+  }
+}

@@ -6,6 +6,12 @@
 
 ## Medium
 
+- [ ] **#347** Have the release's verify step wait for the registry, not read it once `#improvement` `#cairn-cms` *(2026-11-03)*
+  After `publish.yml` succeeds, npm answers "being processed and may take a few minutes", and `npm view` (`cairn-releasing` step 7 and "Gate the candidate") reported `rc.3` missing on two of three packages for about three minutes. A one-shot read looks like a failed publish, and a cached miss then poisons the gate's `npx` (#342). Poll `https://registry.npmjs.org/<pkg>` for the expected dist-tag, up to ten minutes, before verifying or gating. Found at the `rc.3` cut.
+- [ ] **#346** Make `check:close` say "run npm ci" when dependencies are missing `#improvement` `#cairn-cms` *(2026-11-03)*
+  On a checkout with no `node_modules`, `check:close` (`scripts/checks/close-prebuilt.mjs`) stops at `svelte-package: command not found`. With the root installed but not `examples/showcase`, six checks fail with config-load and `tailwindcss ENOENT` errors that read as real defects. Check both installs first and name the command. Found at the `rc.3` cut, on the main checkout.
+- [ ] **#345** Script the lockstep version bump for a release cut `#improvement` `#cairn-cms` *(2026-11-03)*
+  A cut edits eight files by hand: the root `package.json` and lockfile (four version lines), both package manifests, `templates/waymark/package.json`'s two pins, and `templates/waymark/.claude/cairn/VERSION`. At `rc.3`, writing `VERSION` with a trailing newline failed `check:template` until `npm run emit:template`, and `npm install --package-lock-only` added unrelated lockfile entries that had to be reverted. A `scripts/release/bump.mjs <version>` should write all of them and rebake the template, and the `cairn-releasing` skill's step 4 should call it. Found at the `rc.3` cut.
 - [ ] **#344** Make the gate smoke's account-verify check informational for the user-owned gate token `#bug` `#cairn-cms` *(2026-11-03)*
   The credential smoke checks `GET /accounts/<id>/tokens/verify` (`scripts/gate/gate.mjs:170`), which answers 401 for a user-owned token, and `ws-cairn-gate` must be user-owned for Workers Builds. The setup tool never calls that route, yet the FAIL makes every smoke exit 1, so a real credential failure would read the same as this expected one. Found on the `rc.3` gate run.
   Placement: the #341 pass, before `rc.4`.

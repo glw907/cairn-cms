@@ -298,6 +298,12 @@ imports new exports. Order: publish, verify on the registry, repoint each site a
 standalone lockfile (in an isolated temp dir so it resolves from the registry, not the workspace symlink),
 then push the sites. Flag any deferred live admin smoke tied to a site cutover.
 
+Each release leaves the next one smoother (Geoff, 2026-11-03). File every friction point met during
+the cut, the gate, or the publish to `BACKLOG.md` as it happens, with its mechanism, and prefer a
+script, check, or gate over a prose step. The release's hand-over carries a short retrospective: the
+friction list, what was fixed before the stable, and the backlog numbers of the rest, scheduled ahead
+of the next candidate.
+
 ## References
 
 - The release rule: `CLAUDE.md`, "Working here".

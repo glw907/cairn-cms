@@ -82,22 +82,10 @@ reference walks them.
 
 Only the release in this file has notes here. The notes of earlier releases live in their git tags.
 
-## Unreleased
-
-- **A `--yes` run with no `--domain` now goes on to Workers Builds.** `create-cairn-site --yes` used to stop
-  at the live site when it skipped the domain. It now continues into Workers Builds and, with no saved
-  token, exits 1 at the token step where it exited 0 before. A script that passes no token should set
-  `CAIRN_CF_API_TOKEN`, or stop the script at the live site. With a token, the run connects Workers
-  Builds and parks at the first reconcile, which needs a sign-in trip that `--yes` never opens.
-- **A site set up on an earlier release on workers.dev with no domain can connect Workers Builds.**
-  Re-run `npx create-cairn-site --dir <dir>` and answer no to the domain to reach the Builds offer, or
-  run `npx create-cairn-site --dir <dir> --connect` directly. A domain or email sign-in turned on
-  afterward is committed to the repository and deployed by Builds.
-
-## 0.99.0-rc.2
+## 0.99.0-rc.3
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,
-carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc2) for every name
+carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc3) for every name
 and behavior that changed. The steps below are the ones that fall on whoever deploys the rebuilt site.
 
 - **Expect every editor to sign in again once.** Session ids are stored as a SHA-256 digest, so a
@@ -127,6 +115,15 @@ and behavior that changed. The steps below are the ones that fall on whoever dep
   build fails with `content manifest is stale`. A site that calls `verifyManifest` directly passes its
   adapter as the third argument.
 - **Run the `cairn` tool at `v2`.** Its Go module path is `github.com/glw907/cairn-cms/tool/v2`.
+- **A `--yes` run with no `--domain` now goes on to Workers Builds.** `create-cairn-site --yes` used to stop
+  at the live site when it skipped the domain. It now continues into Workers Builds and, with no saved
+  token, exits 1 at the token step where it exited 0 before. A script that passes no token should set
+  `CAIRN_CF_API_TOKEN`, or stop the script at the live site. With a token, the run connects Workers
+  Builds and parks at the first reconcile, which needs a sign-in trip that `--yes` never opens.
+- **A site set up on an earlier release on workers.dev with no domain can connect Workers Builds.**
+  Re-run `npx create-cairn-site --dir <dir>` and answer no to the domain to reach the Builds offer, or
+  run `npx create-cairn-site --dir <dir> --connect` directly. A domain or email sign-in turned on
+  afterward is committed to the repository and deployed by Builds.
 
 ## 0.98.0
 

@@ -6,6 +6,10 @@
 
 ## Medium
 
+- [ ] **#349** Run the release gate once on a throwaway candidate before release day `#improvement` `#cairn-cms` *(2026-11-03)*
+  Each of the first three live gate runs on `0.99.0-rc.3` met one new harness surprise (a stale npx cache, then a GitHub button label), each costing a fix and a rerun while the release waited. A dry run against the current `gate` candidate, scheduled when a pass changes `scripts/gate/**` or GitHub's pages, would surface them off the release's critical path. Found at the `rc.3` gate.
+- [ ] **#348** Build the gate harness's GitHub page fixtures from captured real pages `#improvement` `#cairn-cms` *(2026-11-03)*
+  `src/tests/unit/gate-browser.test.ts` served an invented "Create GitHub App" button, so the harness's exact-match regex passed every test and failed the first live leg, where GitHub reads "Create GitHub App for glw907-test". Capture each GitHub page the harness drives (labels and roles only, no secrets) from a live run and serve those in the fixtures, refreshed when a live leg holds a page. Found at the `rc.3` gate.
 - [ ] **#347** Have the release's verify step wait for the registry, not read it once `#improvement` `#cairn-cms` *(2026-11-03)*
   After `publish.yml` succeeds, npm answers "being processed and may take a few minutes", and `npm view` (`cairn-releasing` step 7 and "Gate the candidate") reported `rc.3` missing on two of three packages for about three minutes. A one-shot read looks like a failed publish, and a cached miss then poisons the gate's `npx` (#342). Poll `https://registry.npmjs.org/<pkg>` for the expected dist-tag, up to ten minutes, before verifying or gating. Found at the `rc.3` cut.
 - [ ] **#346** Make `check:close` say "run npm ci" when dependencies are missing `#improvement` `#cairn-cms` *(2026-11-03)*

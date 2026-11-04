@@ -38,6 +38,11 @@ records are under `~/Projects/initiatives/shared-standards/plans/` and `specs/` 
 resuming the round reads the conductor prompt
 (`shared-standards/plans/2026-11-03-release-conductor-prompt.txt`) and the ledger.
 
+## Pass B (release-process-b)
+
+Session `cairn-cms-release-process-b` (job fac6c195), conductor `conductor-cairn-cms`. Stops land here.
+Base `3dd158c67`. Task in flight: B1.
+
 ## Open decisions and watches
 
 - `BACKLOG.md` lists open items, each with a `Placement` line, and `## Won't do` holds Geoff's

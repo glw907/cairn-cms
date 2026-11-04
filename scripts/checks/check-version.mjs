@@ -1,16 +1,17 @@
 // cairn-cms: the versioning gate. It pins package.json's version to the top CHANGELOG entry and
-// enforces the size rule from README's "Status": a minor bump (0.X.0) is reserved for a new
-// subsystem or public surface, refining or extending an existing surface is a patch even when it
-// adds a capability or an optional field. To keep a minor (or major) a deliberate, documented act,
-// its CHANGELOG entry must carry a `<!-- release-size: minor -->` or `<!-- release-size: major -->`
+// enforces the size rule: a minor bump (0.X.0) is for a new subsystem or a breaking change, and a
+// patch is everything else, so a patch whose entry asks the consumer to act (an actionable
+// `Consumers must:` line) fails. To keep a minor (or major) a deliberate, documented act, its
+// CHANGELOG entry must carry a `<!-- release-size: minor -->` or `<!-- release-size: major -->`
 // marker; a patch carries none. The core is a pure function so the test calls it directly; the CLI
 // reads the files and prints the terse pass/fail line.
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isActionable } from './check-consumers-must.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const RULE = 'see README "Status": a minor/major must introduce a new subsystem or public surface and carry a release-size marker; refining an existing surface is a patch';
+const RULE = 'a minor is for a new subsystem or a breaking change, a patch is everything else; every minor or major carries a release-size marker';
 
 // A version heading: `X.Y.Z`, optionally with a SemVer prerelease suffix (`0.94.0-rc.1`). Build
 // metadata (`+sha`) is deliberately unmatched, since this project never publishes one and letting
@@ -206,6 +207,12 @@ export function checkVersion(pkgVersion, changelogText) {
       return {
         ok: false,
         error: `the ${C.version} entry is a patch over ${S.version} but carries a release-size marker; either resize the release or drop the marker (${RULE})`
+      };
+    }
+    if (isActionable(body)) {
+      return {
+        ok: false,
+        error: `the ${C.version} entry is a patch over ${S.version} but carries an actionable "Consumers must:" line; a breaking change is a minor (${RULE})`
       };
     }
     return { ok: true, bump };

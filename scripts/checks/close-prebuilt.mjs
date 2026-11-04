@@ -14,7 +14,7 @@
 // Every selected component runs even after one fails, so one run reports every red check and
 // prints each check's seconds; the exit code is non-zero when any component or the build failed.
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { delimiter, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
@@ -121,6 +121,22 @@ export function selectSteps(steps, names) {
 }
 
 /**
+ * The installs a close needs, each with the command that makes it. A worktree missing either fails
+ * deep inside the build with an error that names neither.
+ * @param {(path: string) => boolean} [exists] - Seam for the file check.
+ * @param {string} [root] - The repo root.
+ * @returns {string[]} The `npm ci` commands to run, empty when both installs are present.
+ */
+export function missingInstalls(exists = existsSync, root = ROOT) {
+  const missing = [];
+  if (!exists(join(root, 'node_modules', '.bin', 'svelte-package'))) missing.push('npm ci');
+  if (!exists(join(root, 'examples', 'showcase', 'node_modules'))) {
+    missing.push('npm ci --prefix examples/showcase');
+  }
+  return missing;
+}
+
+/**
  * Build `dist` once, run every step, and report. A failing step never stops the ones after it.
  * @param {{ label: string, command: string }[]} steps - The steps to run, in order.
  * @param {{
@@ -129,7 +145,9 @@ export function selectSteps(steps, names) {
  *   now?: () => number,
  *   out?: (line: string) => void,
  *   err?: (line: string) => void,
- * }} [options] - Seams for the build, a step's execution, the clock (milliseconds), and output.
+ *   exists?: (path: string) => boolean,
+ * }} [options] - Seams for the build, a step's execution, the clock (milliseconds), output, and the
+ *   install check.
  * @returns {number} The process exit code: 0 when the build and every step passed, else 1.
  */
 export function runClose(steps, options = {}) {
@@ -138,6 +156,12 @@ export function runClose(steps, options = {}) {
   const now = options.now ?? (() => performance.now());
   const out = options.out ?? ((line) => console.log(line));
   const err = options.err ?? ((line) => console.error(line));
+
+  const missing = missingInstalls(options.exists);
+  if (missing.length > 0) {
+    err(`check:close: an install is missing; run ${missing.join(' and ')}`);
+    return 1;
+  }
 
   out('== npm run package (dist, built once for the whole close check) ==');
   if (!build()) {

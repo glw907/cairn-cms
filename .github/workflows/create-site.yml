@@ -238,7 +238,7 @@ jobs:
           # page, which keeps a broken shim red and a dead server (000) red.
           ok=0
           result=000
-          for i in $(seq 1 60); do
+          for _ in $(seq 1 60); do
             result=$(curl -sL -o /dev/null -w '%{http_code} %{url_effective}' http://127.0.0.1:4173/admin || true)
             case "$result" in
               "200 "*"/admin/login"*) ;;

@@ -28,8 +28,17 @@ The prepack bakes the gitignored template that most `packages/create-cairn-site`
 ## Risk classes
 
 - `auth-data`: `src/lib/{auth,auth-crypto,github}/**`, `src/lib/sveltekit/{csrf*,auth-*,commit-log,guard,preview}.ts`, `src/lib/admin/{csrf-context.ts,CsrfField.svelte}`, `migrations*/**`, `examples/showcase/migrations*/**`, `templates/*/migrations*/**`, `**/hooks.server.ts`, `**/preview/\[token\]/**` (escaped, because `[token]` is a character class in a pathspec), `**/admin/signups/**`, `tool/internal/secrets/**`, `packages/create-cairn-site/src/{github,cloudflare}/**`, `wrangler.*`.
-- `runner`: `scripts/checks/**`, `scripts/gate/**`, `.github/workflows/**`, `.github/ci-green.json`.
+- `runner`: `scripts/checks/**`, `scripts/gate/**`, `scripts/release/**`, `.github/workflows/**`, `.github/ci-green.json`.
 - `ordinary`: everything else.
+
+**Carve-out for `scripts/gate/` (Geoff, 2026-11-03).** A change that only follows a third-party
+page, such as a renamed GitHub button, lands as a direct change after the fast lane and a dry run, provided
+`evaluateLeg`, the prompt answers, and teardown are untouched. Any other `scripts/gate/` change is a
+`runner` pass and ends with one gate run (`cairn-releasing`, "Gate the candidate").
+
+**A harness-only fix after the final candidate** writes no `CHANGELOG.md` line, because
+`check-stable-source` refuses any changelog line that is not a version field or heading. It records itself
+in its PR or commit body instead.
 
 A chassis task (`examples/showcase/src/chassis/`, `templates/waymark/`) takes the class an engine change of its kind would take, and the engine's quality bar, since a developer copies that code.
 
@@ -51,4 +60,5 @@ The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, a
 ## References
 
 - `references/admin-smoke-test.md`: the per-pass local smoke test for a site's embedded `/admin`.
+- `references/launch-prompts.md`: the fields an executor prompt and a conductor prompt carry for a cairn pass.
 - `references/pass-gate-tiers.md`: the per-task gate tiers `scripts/checks/gate-tier.mjs` chooses from a diff, with the trigger globs per tier.

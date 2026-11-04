@@ -24,6 +24,7 @@ const PIN_LINE = new RegExp(`^\\s*"@glw907/cairn-cms(?:-dev)?": "\\^${SEMVER}",?
 const BARE_VERSION = new RegExp(`^${SEMVER}$`);
 const HEADING = new RegExp(`^## ${SEMVER}$`);
 const SIZE_MARKER = /^<!-- release-size: \w+ -->$/;
+const RELEASED_LINE = /^Released \d{4}-\d{2}-\d{2}\.$/;
 const ANCHOR = /\(\.\/CHANGELOG\.md#[0-9a-z-]+\)/;
 const ANCHOR_ALL = new RegExp(ANCHOR.source, 'g');
 
@@ -40,14 +41,14 @@ const everyLine = (test) => ({ removed, added }) => [...removed, ...added].every
  * The files a stable cut may touch, each with the predicate over its removed and added lines.
  * @type {Record<string, (lines: ChangedLines) => boolean>}
  */
-const RULES = {
+export const RULES = {
   'package.json': everyLine((l) => VERSION_LINE.test(l)),
   'package-lock.json': everyLine((l) => VERSION_LINE.test(l)),
   'packages/cairn-cms-dev/package.json': everyLine((l) => VERSION_LINE.test(l)),
   'packages/create-cairn-site/package.json': everyLine((l) => VERSION_LINE.test(l)),
   'templates/waymark/package.json': everyLine((l) => PIN_LINE.test(l)),
   'templates/waymark/.claude/cairn/VERSION': everyLine((l) => BARE_VERSION.test(l)),
-  'CHANGELOG.md': everyLine((l) => HEADING.test(l) || SIZE_MARKER.test(l)),
+  'CHANGELOG.md': everyLine((l) => HEADING.test(l) || SIZE_MARKER.test(l) || RELEASED_LINE.test(l)),
   // A heading, or a body line whose only change is the CHANGELOG anchor it links to.
   'MIGRATION-NOTES.md': ({ removed, added }) => {
     /** @param {string[]} side */
@@ -65,7 +66,48 @@ const RULES = {
     );
   }
 };
-const HASHES_FILE = 'guidance-hashes.json';
+/**
+ * Paths a stable cut may change freely: harness and test code, and inert records that ship in no
+ * package. A changed path in this set skips every check, status and mode included. A unit test
+ * pins the set against the shipped inputs, so a glob that covers one fails the suite.
+ * @type {readonly string[]}
+ */
+export const IGNORED = Object.freeze([
+  'scripts/gate/**',
+  'src/tests/**',
+  'packages/*/test/**',
+  'examples/showcase/e2e/**',
+  'docs/STATUS.md',
+  'BACKLOG.md',
+  'ROADMAP.md',
+  'docs/internal/**'
+]);
+
+/**
+ * @param {string} glob - A path glob where `**` spans directories and `*` stays inside one.
+ * @returns {RegExp} The anchored pattern for the glob.
+ */
+export function globToRegExp(glob) {
+  const escape = (/** @type {string} */ text) => text.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+  const body = glob
+    .split('**')
+    .map((part) => part.split('*').map(escape).join('[^/]*'))
+    .join('.*');
+  return new RegExp(`^${body}$`);
+}
+
+/**
+ * Whether a changed path is in the ignore set. A rename or copy entry carries a tab between its two
+ * paths and is never ignored, so a move out of an ignored path cannot hide.
+ * @param {string} path - A path from `git diff --raw`.
+ * @param {readonly string[]} [globs] - The ignore set; defaults to IGNORED.
+ * @returns {boolean} Whether the path is ignored.
+ */
+export function isIgnored(path, globs = IGNORED) {
+  return !path.includes('\t') && globs.some((g) => globToRegExp(g).test(path));
+}
+
+const HASHES_FILE ='guidance-hashes.json';
 const ALLOWED = new Set([...Object.keys(RULES), HASHES_FILE]);
 
 /**
@@ -120,6 +162,7 @@ export function checkStableSource(run) {
       continue;
     }
     const [, oldMode, newMode, status, path] = m;
+    if (isIgnored(path)) continue;
     if (status !== 'M') errors.push(`${path}: status ${status}, only a modification is allowed`);
     else if (oldMode !== newMode) errors.push(`${path}: mode ${oldMode} to ${newMode}`);
     else if (!ALLOWED.has(path)) errors.push(`${path}: outside the stable cut's file set`);

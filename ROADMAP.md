@@ -173,8 +173,10 @@ findings from them, counted by the `cairn-releasing` step that runs the audit's 
 site at every cut. `public-literals` stays advisory. A site that reports findings is asked to clear
 them first; no calendar date is attached.
 
-When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem / patch = everything else"
-scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
+Until then, a minor is a new subsystem or a breaking change, a patch is everything else, and every
+minor or major carries a `release-size` marker in its CHANGELOG section (`check:version` refuses a breaking
+change in a patch). When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem or
+breaking change / patch = everything else" scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
 `cairn-release-process-and-versioning` memory.
 

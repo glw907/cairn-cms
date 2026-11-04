@@ -139,7 +139,9 @@ export function judgeDiffs(pkg, diffs) {
       hashesChanged = true;
       continue;
     }
-    const rule = RULES[REPO_PATHS[pkg]?.[path] ?? path];
+    const rule = /** @type {Record<string, ((lines: { removed: string[], added: string[] }) => boolean) | undefined>} */ (RULES)[
+      REPO_PATHS[pkg]?.[path] ?? path
+    ];
     if (rule && rule(diff)) continue;
     const lines = [...diff.removed.map((l) => `-${l}`), ...diff.added.map((l) => `+${l}`)];
     errors.push(`${pkg}: ${path}: ${rule ? "changed lines outside the cut's shape" : "outside the stable cut's file set"}:\n    ${lines.slice(0, 20).join('\n    ')}`);

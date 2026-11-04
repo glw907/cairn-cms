@@ -4,7 +4,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { GATE_COLUMNS, recordLeg, recordPending, mergeGateSection, parseRows, renderGateSection } from '../../../scripts/gate/record.mjs';
+import { GATE_COLUMNS, recordLeg, recordPending, mergeGateSection, parseGateRows, renderGateSection } from '../../../scripts/gate/record.mjs';
 
 const dirs: string[] = [];
 afterEach(async () => {
@@ -92,7 +92,7 @@ describe('the Run column', () => {
     expect(GATE_COLUMNS).toHaveLength(8);
     expect(GATE_COLUMNS.at(-1)).toBe('Run');
     const rows = [row({ leg: 'A1', run: 'run-9' }), row({ leg: 'B2', verdict: 'fail: a; b', run: 'run-9' })];
-    expect(parseRows(renderGateSection(rows))).toEqual(rows);
+    expect(parseGateRows(renderGateSection(rows))).toEqual(rows);
   });
 });
 
@@ -103,7 +103,7 @@ describe('recordPending', () => {
     const earlier = mergeGateSection('## Added\n\n- a thing', row({ leg: 'A1', run: 'old' }));
     const stub = fakeGh({ code: 0, stdout: earlier });
     await recordPending({ version: '0.99.0-rc.3', legs, run: 'run-2', notesDir: await notesDir(), fresh: true, gh: stub.gh });
-    const rows = parseRows(stub.written[0]);
+    const rows = parseGateRows(stub.written[0]);
     expect(rows.map((r) => [r.leg, r.verdict, r.run])).toEqual(legs.map((leg) => [leg, 'pending', 'run-2']));
     expect(stub.written[0]).toContain('- a thing');
   });
@@ -113,7 +113,7 @@ describe('recordPending', () => {
     body = mergeGateSection(body, row({ leg: 'B1', run: 'old' }));
     const stub = fakeGh({ code: 0, stdout: body });
     await recordPending({ version: '0.99.0-rc.3', legs: ['A1', 'A2'], run: 'run-3', notesDir: await notesDir(), gh: stub.gh });
-    const rows = parseRows(stub.written[0]);
+    const rows = parseGateRows(stub.written[0]);
     expect(rows.map((r) => [r.leg, r.verdict, r.run])).toEqual([
       ['A1', 'pending', 'run-3'],
       ['A2', 'pending', 'run-3'],

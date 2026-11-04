@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { main, type makeSession } from '../../../scripts/gate/gate.mjs';
 import { runLeg } from '../../../scripts/gate/legs.mjs';
-import { mergeGateSection, parseRows, recordLeg, recordPending } from '../../../scripts/gate/record.mjs';
+import { mergeGateSection, parseGateRows, recordLeg, recordPending } from '../../../scripts/gate/record.mjs';
 
 type Deps = NonNullable<Parameters<typeof main>[2]>;
 type Row = Record<string, string>;
@@ -158,7 +158,7 @@ describe('main', () => {
       },
     });
     expect(code).toBe(1);
-    const rows = parseRows(body);
+    const rows = parseGateRows(body);
     expect(rows.find((r) => r.leg === 'A1')).toMatchObject({ verdict: 'pending', run: 'run-7' });
     expect(rows.find((r) => r.leg === 'A2')?.verdict).toBe('skipped: needs A1');
     expect(body).toContain('- a thing');

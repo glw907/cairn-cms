@@ -69,7 +69,7 @@ export function renderGateSection(rows) {
  * @param {string} body the release body
  * @returns {{ before: string, section: string, after: string }} the section is empty when absent
  */
-function splitBody(body) {
+export function splitBody(body) {
   const lines = body.split('\n');
   const start = lines.findIndex((line) => line.trim() === HEADING);
   if (start === -1) return { before: body, section: '', after: '' };
@@ -86,9 +86,10 @@ function splitBody(body) {
 /**
  * The rows an earlier `## Gate` section holds.
  * @param {string} section the section text
+ * @param {string[]} [rejected] collects a reason for each row left out, so a reader can fail on it
  * @returns {GateRow[]} the parsed rows
  */
-export function parseRows(section) {
+export function parseGateRows(section, rejected = []) {
   /** @type {GateRow[]} */
   const rows = [];
   for (const line of section.split('\n')) {
@@ -97,7 +98,10 @@ export function parseRows(section) {
       .replace(/^\||\|\s*$/g, '')
       .split(/(?<!\\)\|/)
       .map((cell) => unescapeCell(cell.trim()));
-    if (cells.length !== GATE_COLUMNS.length) continue;
+    if (cells.length !== GATE_COLUMNS.length) {
+      rejected.push(`a row has ${cells.length} cells, expected ${GATE_COLUMNS.length}: ${line.slice(0, 60)}`);
+      continue;
+    }
     const [leg, rowPath, url, commit, marker, fetched, verdict, run] = cells;
     rows.push({ leg, path: rowPath, url, commit, marker, fetched, verdict, run });
   }
@@ -113,7 +117,7 @@ export function parseRows(section) {
  */
 export function mergeGateSection(body, row) {
   const { before, section, after } = splitBody(body);
-  const kept = parseRows(section).filter((earlier) => earlier.leg !== row.leg);
+  const kept = parseGateRows(section).filter((earlier) => earlier.leg !== row.leg);
   const rendered = renderGateSection([...kept, row]);
   const head = before.trimEnd();
   const tail = after.trim() === '' ? '' : `\n${after.replace(/^\n+/, '')}`;

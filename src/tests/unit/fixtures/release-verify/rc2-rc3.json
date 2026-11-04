@@ -1,0 +1,187 @@
+{
+  "@glw907/cairn-cms": {
+    "CHANGELOG.md": {
+      "removed": [
+        "## 0.99.0-rc.2",
+        "  origin before writing it, and restores it when a cutover fails. `--yes` after a declined email offer",
+        "  skips Workers Builds (`--connect` or a saved Builds token still connects), and the closing block names"
+      ],
+      "added": [
+        "## 0.99.0-rc.3",
+        "- **The admin's publish message no longer claims a rebuild is running.** After a publish it reads \"Published. The live site shows this change once the site rebuilds.\", because the admin cannot see a rebuild.",
+        "  origin before writing it, and restores it when a cutover fails. The closing block names",
+        "- **`create-cairn-site` and Workers Builds.**",
+        "  - **A site whose owner skips the domain is offered Workers Builds in the same run, and each closing block says whether a publish deploys.** `create-cairn-site` no longer stops at the live block when the domain is declined. Every closing block states whether a publish from the admin reaches the live site, and \"This site is set up end to end.\" prints only once Workers Builds is connected. A successful build prints one line, and the full output prints only when the build fails.",
+        "  - **Connecting a domain or turning on email after Workers Builds commits the change and lets Builds deploy it.** On a site connected to Workers Builds, `create-cairn-site` no longer builds or deploys from your machine: the domain and email chapters commit `wrangler.jsonc` and `src/theme/cairn.config.ts` to the repository and watch the Builds deploy of that commit. A re-run at either Builds step asks the domain question again when no domain is connected.",
+        "  - **The email offer no longer ends at Workers Builds.** A site whose owner declined email sign-in is asked again on a later run, before or after Builds is connected.",
+        "  - **`--yes` no longer skips Workers Builds after an email decline.** An unattended run connects Builds whether or not it declined email.",
+        "  - **The setup tool refuses to commit over repository edits to its two config files.** Before a domain or email commit on a Builds site, it compares the repository's `wrangler.jsonc` and `src/theme/cairn.config.ts` with the checkout's, ignoring the values the tool writes, and stops with a `git pull` step when anything else differs.",
+        "  - **The Builds commit path checks first and waits for the deploy to start.** Before it commits a domain or email change, the setup tool reads the Builds API with your token, so a token without the Workers Builds permission stops at the token step instead of after the commit. It then waits up to two minutes for the push build to appear, reuses that build on a re-run instead of starting a second, drops its saved token when it parks for a sign-in, and strips control characters from a failed build's log tail before printing it. A read that fails mid-reconcile now stops the commit.",
+        "- **A release candidate now publishes to the hidden `gate` dist-tag and reaches `next` only after it passes the release gate.** A candidate no longer moves `next` on its own: the gate run promotes it, and promotion also moves `create-cairn-site@latest` to the passed candidate until a stable supersedes it."
+      ]
+    },
+    "MIGRATION-NOTES.md": {
+      "removed": [
+        "## 0.99.0-rc.2",
+        "carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc2) for every name"
+      ],
+      "added": [
+        "## 0.99.0-rc.3",
+        "carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc3) for every name",
+        "- **A `--yes` run with no `--domain` now goes on to Workers Builds.** `create-cairn-site --yes` used to stop",
+        "  at the live site when it skipped the domain. It now continues into Workers Builds and, with no saved",
+        "  token, exits 1 at the token step where it exited 0 before. A script that passes no token should set",
+        "  `CAIRN_CF_API_TOKEN`, or stop the script at the live site. With a token, the run connects Workers",
+        "  Builds and parks at the first reconcile, which needs a sign-in trip that `--yes` never opens.",
+        "- **A site set up on an earlier release on workers.dev with no domain can connect Workers Builds.**",
+        "  Re-run `npx create-cairn-site --dir <dir>` and answer no to the domain to reach the Builds offer, or",
+        "  run `npx create-cairn-site --dir <dir> --connect` directly. A domain or email sign-in turned on",
+        "  afterward is committed to the repository and deployed by Builds."
+      ]
+    },
+    "dist/admin/EditPage.svelte": {
+      "removed": [
+        "  if (data.flash === \"published\") return \"Published. The live site is rebuilding.\";"
+      ],
+      "added": [
+        "  if (data.flash === \"published\") return \"Published. The live site shows this change once the site rebuilds.\";"
+      ]
+    },
+    "docs/admin/create-your-site.md": {
+      "status": "reordered"
+    },
+    "docs/admin/own-your-domain.md": {
+      "status": "reordered"
+    },
+    "docs/admin/rotate-the-github-app-key.md": {
+      "removed": [
+        "   The note reads \"Published. The live site is rebuilding.\" A completed publish confirms the new key. If the publish doesn't complete, go to [Recover from a failed key](#recover-from-a-failed-key). If the entry changed on GitHub after you opened it, the editor refuses the publish and shows \"Your edits are saved. Publish again.\" That refusal isn't a key failure, and [Troubleshoot a live site](./troubleshooting.md#a-save-or-publish-reports-a-conflict-or-fails) covers it."
+      ],
+      "added": [
+        "   The note reads \"Published. The live site shows this change once the site rebuilds.\" A completed publish confirms the new key. If the publish doesn't complete, go to [Recover from a failed key](#recover-from-a-failed-key). If the entry changed on GitHub after you opened it, the editor refuses the publish and shows \"Your edits are saved. Publish again.\" That refusal isn't a key failure, and [Troubleshoot a live site](./troubleshooting.md#a-save-or-publish-reports-a-conflict-or-fails) covers it."
+      ]
+    },
+    "docs/admin/setup-recovery.md": {
+      "removed": [
+        "| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run from a terminal asks again, until you connect Workers Builds. After that, the command no longer offers it. For an unattended run, pass `--email` and `--yes`. Unless an earlier run began connecting Builds, a `--yes` run without `--email` skips Workers Builds so this offer stays open; to connect Builds anyway, pass `--connect`. |",
+        "| You declined Workers Builds | Nothing is wrong. Deploys still go through the setup command. | **Act when you're ready:** run the command again with `--connect`. |"
+      ],
+      "added": [
+        "| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run from a terminal asks again, whether or not Workers Builds is connected. For an unattended run, pass `--email` and `--yes`. A `--yes` run connects Builds whether or not it declined email. |",
+        "| You declined Workers Builds | Nothing is wrong, but a publish from the admin commits to GitHub and the live site doesn't change until you connect Builds or deploy by hand. | **Act when you're ready:** run the command again with `--connect`. |",
+        "| The command says your repository has changes to `wrangler.jsonc` or `src/theme/cairn.config.ts` | Builds is connected, and the repository's copy of a file the command writes differs from your checkout beyond the values the command sets. Committing your copy would undo those edits, so the command committed nothing. | **Act:** run `git pull` in the site's folder, then run the command again. |"
+      ]
+    },
+    "docs/editors/publish-and-history.md": {
+      "removed": [
+        "3. Read the message under the header. It confirms that the entry published and adds that the live site is updating."
+      ],
+      "added": [
+        "3. Read the message under the header. It confirms that the entry published and adds that the live site shows the change once the site rebuilds."
+      ]
+    },
+    "package.json": {
+      "removed": [
+        "  \"version\": \"0.99.0-rc.2\","
+      ],
+      "added": [
+        "  \"version\": \"0.99.0-rc.3\","
+      ]
+    },
+    "skills/cairn-extending-a-site/references/public-routes.md": {
+      "removed": [
+        "  Setup writes both values, then rebuilds. A hand change to the domain edits both, then rebuilds."
+      ],
+      "added": [
+        "  Setup writes both values. On a site not connected to Workers Builds it then rebuilds and redeploys; on a Builds site it commits both files to the repository and Builds rebuilds. A hand change to the domain edits both, then rebuilds."
+      ]
+    }
+  },
+  "@glw907/cairn-cms-dev": {
+    "package.json": {
+      "removed": [
+        "  \"version\": \"0.99.0-rc.2\","
+      ],
+      "added": [
+        "  \"version\": \"0.99.0-rc.3\","
+      ]
+    }
+  },
+  "create-cairn-site": {
+    "README.md": {
+      "status": "reordered"
+    },
+    "bin.mjs": {
+      "status": "reordered"
+    },
+    "package.json": {
+      "removed": [
+        "  \"version\": \"0.99.0-rc.2\","
+      ],
+      "added": [
+        "  \"version\": \"0.99.0-rc.3\","
+      ]
+    },
+    "src/cloudflare/catalogue.mjs": {
+      "status": "reordered"
+    },
+    "src/cloudflare/chapter2.mjs": {
+      "status": "reordered"
+    },
+    "src/cloudflare/chapter3.mjs": {
+      "status": "reordered"
+    },
+    "src/cloudflare/config.mjs": {
+      "status": "reordered"
+    },
+    "src/cloudflare/deploy.mjs": {
+      "removed": [
+        " * Build the site for deployment.",
+        "  const result = await runNpm(['run', 'build'], { cwd: dir, log });"
+      ],
+      "added": [
+        " * Build the site for deployment. The build's own output stays quiet on success (one line) and",
+        " * prints in full only when the build fails, so a warning-heavy build does not bury the run.",
+        "  const captured = [];",
+        "  const result = await runNpm(['run', 'build'], { cwd: dir, log: (line) => captured.push(line) });",
+        "    for (const line of captured) log(line);",
+        "  log('Built your site.');"
+      ]
+    },
+    "src/cloudflare/hostname.mjs": {
+      "status": "reordered"
+    },
+    "src/cloudflare/prefill.mjs": {
+      "status": "reordered"
+    },
+    "src/github/reconcile.mjs": {
+      "status": "reordered"
+    },
+    "template/.claude/cairn/VERSION": {
+      "removed": [
+        "0.99.0-rc.2"
+      ],
+      "added": [
+        "0.99.0-rc.3"
+      ]
+    },
+    "template/.claude/skills/cairn-extending-a-site/references/public-routes.md": {
+      "removed": [
+        "  Setup writes both values, then rebuilds. A hand change to the domain edits both, then rebuilds."
+      ],
+      "added": [
+        "  Setup writes both values. On a site not connected to Workers Builds it then rebuilds and redeploys; on a Builds site it commits both files to the repository and Builds rebuilds. A hand change to the domain edits both, then rebuilds."
+      ]
+    },
+    "template/package.json": {
+      "removed": [
+        "    \"@glw907/cairn-cms\": \"^0.99.0-rc.2\",",
+        "    \"@glw907/cairn-cms-dev\": \"^0.99.0-rc.2\","
+      ],
+      "added": [
+        "    \"@glw907/cairn-cms\": \"^0.99.0-rc.3\",",
+        "    \"@glw907/cairn-cms-dev\": \"^0.99.0-rc.3\","
+      ]
+    }
+  }
+}

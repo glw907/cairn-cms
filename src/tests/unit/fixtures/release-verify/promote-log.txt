@@ -1,0 +1,19 @@
+promote	Move the candidate to next	2026-11-01T10:00:00.1000000Z ##[group]Run PKGS="@glw907/cairn-cms @glw907/cairn-cms-dev create-cairn-site"
+promote	Move the candidate to next	2026-11-01T10:00:00.1000001Z ##[endgroup]
+promote	Move the candidate to next	2026-11-01T10:00:02.2000000Z dist-tags before the move:
+promote	Move the candidate to next	2026-11-01T10:00:03.3000000Z gate: 0.99.0-rc.3
+promote	Move the candidate to next	2026-11-01T10:00:03.3000001Z latest: 0.98.0
+promote	Move the candidate to next	2026-11-01T10:00:03.3000002Z next: 0.99.0-rc.2
+promote	Move the candidate to next	2026-11-01T10:00:04.4000000Z gate: 0.99.0-rc.3
+promote	Move the candidate to next	2026-11-01T10:00:04.4000001Z latest: 0.98.0
+promote	Move the candidate to next	2026-11-01T10:00:04.4000002Z next: 0.99.0-rc.2
+promote	Move the candidate to next	2026-11-01T10:00:05.5000000Z gate: 0.99.0-rc.3
+promote	Move the candidate to next	2026-11-01T10:00:05.5000001Z latest: 0.99.0-rc.2
+promote	Move the candidate to next	2026-11-01T10:00:05.5000002Z next: 0.99.0-rc.2
+promote	Move the candidate to next	2026-11-01T10:00:06.6000000Z + next: @glw907/cairn-cms@0.99.0-rc.3
+promote	Move the candidate to next	2026-11-01T10:00:07.7000000Z + next: @glw907/cairn-cms-dev@0.99.0-rc.3
+promote	Move the candidate to next	2026-11-01T10:00:08.8000000Z + next: create-cairn-site@0.99.0-rc.3
+promote	Move the candidate to next	2026-11-01T10:00:09.9000000Z + latest: create-cairn-site@0.99.0-rc.3
+promote	Move the candidate to next	2026-11-01T10:00:10.1000000Z gate: 0.99.0-rc.3
+promote	Move the candidate to next	2026-11-01T10:00:10.1000001Z latest: 0.98.0
+promote	Move the candidate to next	2026-11-01T10:00:10.1000002Z next: 0.99.0-rc.3

@@ -68,7 +68,7 @@ export function buildCliEnv({ runDir, parentEnv }) {
  */
 async function runWranglerDefault(args, env) {
   try {
-    const { stdout } = await execFileAsync('npx', ['--yes', WRANGLER, ...args], { env, timeout: 180_000 });
+    const { stdout } = await execFileAsync('npx', ['--yes', '--prefer-online', WRANGLER, ...args], { env, timeout: 180_000 });
     return stdout;
   } catch (error) {
     return /** @type {{ stdout?: string }} */ (error).stdout ?? '';
@@ -113,6 +113,19 @@ export async function runSmoke({ env, runDir, deps = {} }) {
     } catch (error) {
       failed = true;
       print(`FAIL     ${name}: ${scrub(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  /**
+   * Report a check that never fails the smoke, whatever it finds.
+   * @param {string} name the check
+   * @param {() => Promise<string>} run returns the detail; a throw is reported, not counted
+   */
+  async function info(name, run) {
+    try {
+      print(`info     ${name}: ${scrub(await run())}`);
+    } catch (error) {
+      print(`info     ${name}: ${scrub(error instanceof Error ? error.message : String(error))}`);
     }
   }
 
@@ -167,7 +180,8 @@ export async function runSmoke({ env, runDir, deps = {} }) {
       verifiedId = result.id;
       return `status ${result.status}`;
     });
-    await check('gate token at /accounts/<id>/tokens/verify', async () => {
+    // Informational: a user-owned token cannot use the account verify route, and the setup tool never calls it.
+    await info('gate token at /accounts/<id>/tokens/verify', async () => {
       const result = mustSucceed(await cf('GET', `/accounts/${GATE_ACCOUNT_ID}/tokens/verify`), 'the account verify route');
       return `status ${result.status}`;
     });

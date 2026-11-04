@@ -305,6 +305,28 @@ async function readRecord(dir) {
 }
 
 /**
+ * Say why the CLI run failed: the driver's reason or the exit code, then the last non-blank lines of
+ * its terminal capture with ANSI escapes and spinner glyphs removed. The capture is the CLI's
+ * terminal output, which prints no token.
+ * @param {{ code: number, failure?: string }} result the driver's result
+ * @param {string} capture the raw pty capture
+ * @param {number} [lines] how many trailing lines to keep
+ * @returns {string}
+ */
+export function cliFailureMessage(result, capture, lines = 8) {
+  const reason = result.failure ? result.failure.split('\n')[0] : `exit code ${result.code}`;
+  const tail = capture
+    // eslint-disable-next-line no-control-regex
+    .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*\u0007/g, '')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[⠀-⣿◇◆○●│└┌]/g, '').trim())
+    .filter(Boolean)
+    .slice(-lines);
+  return `the CLI run failed: ${reason}${tail.length ? `\nLast output:\n${tail.join('\n')}` : ''}`;
+}
+
+/**
  * Run one leg end to end and record it.
  * @param {LegContext} ctx
  * @returns {Promise<{ pass: boolean, failures: string[] }>} the verdict
@@ -345,7 +367,7 @@ export async function runLeg(ctx) {
     });
     const result = await runDriver({
       command: 'npx',
-      args: ['--yes', `create-cairn-site@${version}`, '--dir', install.dir, ...extra],
+      args: ['--yes', '--prefer-online', `create-cairn-site@${version}`, '--dir', install.dir, ...extra],
       env: cliEnv,
       cwd: path.dirname(install.dir),
       table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: env.GATE_OWNER_EMAIL ?? '', token, plan }),
@@ -359,11 +381,16 @@ export async function runLeg(ctx) {
 
   const ownerFlags = plan.first ? ['--name', install.name, '--owner-email', env.GATE_OWNER_EMAIL ?? '', '--ai-posture', 'none'] : [];
   const cli = await runCli([...ownerFlags, ...(plan.connect ? ['--connect'] : [])]);
-  if (cli.failure) return { pass: false, failures: [`the CLI run failed: ${cli.failure.split('\n')[0]}`] };
+  const capturePath = path.join(runDir, 'capture.bin');
+  if (cli.failure) return { pass: false, failures: [cliFailureMessage(cli, await readFile(capturePath, 'utf8').catch(() => ''))] };
 
   const record = await readRecord(stateDir);
   const origin = String(record?.cloudflare?.url ?? '');
-  if (!origin) return { pass: false, failures: ['the state record holds no workers.dev address'] };
+  if (!origin) {
+    const exited = cli.code !== 0;
+    const capture = exited ? await readFile(capturePath, 'utf8').catch(() => '') : '';
+    return { pass: false, failures: [exited ? cliFailureMessage(cli, capture) : 'the state record holds no workers.dev address'] };
+  }
 
   if (!install.signedIn) {
     const signIn = await runCli(['--sign-in']);

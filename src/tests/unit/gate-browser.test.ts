@@ -47,12 +47,12 @@ async function answer(route: Route) {
   };
 
   if (url.host === '127.0.0.1:4555') return html(page(form('https://github.com/settings/apps/new', 'Create the GitHub App', '<input type="hidden" name="manifest" value="{}">')));
-  if (key === 'POST github.com/settings/apps/new' || key === 'GET github.com/settings/apps/new') return gated(page(form('/settings/apps/create', 'Create GitHub App')));
+  if (key === 'POST github.com/settings/apps/new' || key === 'GET github.com/settings/apps/new') return gated(page(form('/settings/apps/create', 'Create GitHub App for glw907-test')));
   if (key === 'POST github.com/session') return html(page(form('/sessions/two-factor', 'Verify', '<input id="app_totp" name="app_totp">')));
   if (key === 'POST github.com/sessions/two-factor') {
     totpReceived = new URLSearchParams(request.postData() ?? '').get('app_totp');
     signedIn = totpReceived === '246810';
-    return html(page(signedIn ? form('/settings/apps/create', 'Create GitHub App') : '<p>Two-factor failed</p>'));
+    return html(page(signedIn ? form('/settings/apps/create', 'Create GitHub App for glw907-test') : '<p>Two-factor failed</p>'));
   }
   if (key === 'POST github.com/settings/apps/create') return html(page('<p>App created</p>'));
   if (url.host === 'github.com' && url.pathname === '/apps/gate-app/installations/new') return html(page(form(url.pathname, 'Install &amp; Authorize')));
@@ -145,7 +145,7 @@ describe('handleUrl', () => {
     ...overrides,
   });
 
-  it('submits the manifest, signs in with a TOTP code, and clicks Create GitHub App', async () => {
+  it('submits the manifest, signs in with a TOTP code, and clicks Create GitHub App, whose label ends with the account name', async () => {
     const kind = await handleUrl('http://127.0.0.1:4555/', options());
     expect(kind).toBe('manifest');
     expect(totpReceived).toBe('246810');

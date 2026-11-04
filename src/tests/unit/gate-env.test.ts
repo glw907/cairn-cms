@@ -158,7 +158,7 @@ describe('runSmoke', () => {
     expect(lines.filter((line) => line.startsWith('FAIL'))).toEqual([]);
     expect(ok).toBe(true);
     expect(lines[0]).toMatch(/^host \S+/);
-    expect(lines.filter((line) => line.startsWith('ok'))).toHaveLength(12);
+    expect(lines.filter((line) => line.startsWith('ok'))).toHaveLength(11);
     for (const secret of [GATE_TOKEN, GITHUB_TOKEN, 'pw-never-printed', PARENT_ENV.GITHUB_TEST_TOTP_SECRET]) {
       expect(lines.join('\n')).not.toContain(secret);
     }
@@ -175,6 +175,14 @@ describe('runSmoke', () => {
     expect(lines.some((line) => line.startsWith('ok') && line.includes('D1 write probe'))).toBe(true);
     // Without a token id the build token probe cannot run, and says so.
     expect(lines.some((line) => line.startsWith('FAIL') && line.includes('build token registration'))).toBe(true);
+  });
+
+  it('reports a refused account verify route as info and still returns true', async () => {
+    const acct = `GET /v4/accounts/${GATE_ACCOUNT_ID}/tokens/verify`;
+    const { ok, lines } = await smoke(PARENT_ENV, [acct]);
+    expect(ok).toBe(true);
+    expect(lines.some((line) => line.startsWith('FAIL'))).toBe(false);
+    expect(lines.find((line) => line.includes('/accounts/<id>/tokens/verify'))).toMatch(/^info .*answered 403/);
   });
 
   it('skips the GitHub account check when the machine token is not in the store', async () => {

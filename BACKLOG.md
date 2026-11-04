@@ -12,15 +12,6 @@
   On a checkout with no `node_modules`, `check:close` (`scripts/checks/close-prebuilt.mjs`) stops at `svelte-package: command not found`. With the root installed but not `examples/showcase`, six checks fail with config-load and `tailwindcss ENOENT` errors that read as real defects. Check both installs first and name the command. Found at the `rc.3` cut, on the main checkout.
 - [ ] **#345** Script the lockstep version bump for a release cut `#improvement` `#cairn-cms` *(2026-11-03)*
   A cut edits eight files by hand: the root `package.json` and lockfile (four version lines), both package manifests, `templates/waymark/package.json`'s two pins, and `templates/waymark/.claude/cairn/VERSION`. At `rc.3`, writing `VERSION` with a trailing newline failed `check:template` until `npm run emit:template`, and `npm install --package-lock-only` added unrelated lockfile entries that had to be reverted. A `scripts/release/bump.mjs <version>` should write all of them and rebake the template, and the `cairn-releasing` skill's step 4 should call it. Found at the `rc.3` cut.
-- [ ] **#344** Make the gate smoke's account-verify check informational for the user-owned gate token `#bug` `#cairn-cms` *(2026-11-03)*
-  The credential smoke checks `GET /accounts/<id>/tokens/verify` (`scripts/gate/gate.mjs:170`), which answers 401 for a user-owned token, and `ws-cairn-gate` must be user-owned for Workers Builds. The setup tool never calls that route, yet the FAIL makes every smoke exit 1, so a real credential failure would read the same as this expected one. Found on the `rc.3` gate run.
-  Placement: the #341 pass, before `rc.4`.
-- [ ] **#343** Surface the setup tool's own error when a gate leg's CLI exits before setup `#improvement` `#cairn-cms` *(2026-11-03)*
-  When `npx create-cairn-site` fails to start, the leg reports "the state record holds no workers.dev address" (`scripts/gate/legs.mjs:366`), and the real cause sits only in the run's `capture.bin`. On the `rc.3` run that cause was an npm `ETARGET`. A leg whose CLI exited non-zero should print the capture's last error lines.
-  Placement: the #341 pass, before `rc.4`.
-- [ ] **#342** Have the gate's `npx` read the registry fresh, so a run just after a publish finds the candidate `#bug` `#cairn-cms` *(2026-11-03)*
-  The legs run `npx --yes create-cairn-site@<version>` (`scripts/gate/legs.mjs:347`) through npm's local metadata cache. A cache filled before the candidate published answers `ETARGET` for up to its five-minute max-age, which failed both installs of the first `rc.3` gate run. Pass `--prefer-online`; the same holds for the `wrangler` call at `scripts/gate/gate.mjs:71` when it pins a version.
-  Placement: the #341 pass, before `rc.4`.
 - [ ] **#341** Register a build token scoped to what a Workers Builds deploy needs, not the owner's whole setup token `#improvement` `#cairn-cms` `#security` *(2026-11-03)*
   Chapter 3 registers the owner's eight-permission setup token as the Builds build token (`createBuildToken({ secret: token })`, `chapter3.mjs`), so any code a repository committer lands can read zone, DNS, SSL, email, D1, and R2 edit rights in a build. The setup-fix pass widens which `--yes` runs reach it (a declined domain now continues to Builds). Mint or ask for a narrower build token (Workers scripts, D1, R2) and record the choice in MIGRATION-NOTES. Found by the setup-fix close security read (web-auth reviewer M2); a design call.
   Placement: before the stable, its own pass and `rc.4` (Geoff, 2026-11-03, packet `20261103T125334-2611564`).
@@ -251,6 +242,15 @@
 - **Accepted residual (#247):** the frame-ancestors-only CSP. Clickjacking is the threat these headers close; a full CSP would have to allow SvelteKit's inline hydration and every site's own admin screens and theme, which is site-owned policy outside the engine's scope. (Geoff, 2026-11-02, release sitting)
 
 ## Done
+- [x] **#344** Make the gate smoke's account-verify check informational for the user-owned gate token `#bug` `#cairn-cms` *(2026-11-03 → 2026-11-03)*
+  The credential smoke checks `GET /accounts/<id>/tokens/verify` (`scripts/gate/gate.mjs:170`), which answers 401 for a user-owned token, and `ws-cairn-gate` must be user-owned for Workers Builds. The setup tool never calls that route, yet the FAIL makes every smoke exit 1, so a real credential failure would read the same as this expected one. Found on the `rc.3` gate run.
+  Done: gate-harness-fixes.
+- [x] **#343** Surface the setup tool's own error when a gate leg's CLI exits before setup `#improvement` `#cairn-cms` *(2026-11-03 → 2026-11-03)*
+  When `npx create-cairn-site` fails to start, the leg reports "the state record holds no workers.dev address" (`scripts/gate/legs.mjs:366`), and the real cause sits only in the run's `capture.bin`. On the `rc.3` run that cause was an npm `ETARGET`. A leg whose CLI exited non-zero should print the capture's last error lines.
+  Done: gate-harness-fixes.
+- [x] **#342** Have the gate's `npx` read the registry fresh, so a run just after a publish finds the candidate `#bug` `#cairn-cms` *(2026-11-03 → 2026-11-03)*
+  The legs run `npx --yes create-cairn-site@<version>` (`scripts/gate/legs.mjs:347`) through npm's local metadata cache. A cache filled before the candidate published answers `ETARGET` for up to its five-minute max-age, which failed both installs of the first `rc.3` gate run. Pass `--prefer-online`; the same holds for the `wrangler` call at `scripts/gate/gate.mjs:71` when it pins a version.
+  Done: gate-harness-fixes.
 - [x] **#317** Make `--yes --dry-run` preview the Workers Builds skip `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   A `--yes --dry-run` run does not print that a declined email offer skips Workers Builds, so the preview differs from the run.
   Done: setup-fix. The `--yes` Builds skip it would have previewed is deleted.

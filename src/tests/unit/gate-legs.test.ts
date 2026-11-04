@@ -9,6 +9,7 @@ import {
   MAIL_SENDER,
   NOT_CONNECTED_SENTENCE,
   PUBLISHED_ALERT,
+  cliFailureMessage,
   evaluateLeg,
   findSignInMessage,
   guardedRun,
@@ -225,5 +226,24 @@ describe('findSignInMessage', () => {
     const stub = await serve([signIn({ text: `Unsubscribe: https://carin-test.org/unsubscribe\nSign in: ${link('https://carin-test.org', 'TXT')}` })]);
     const result = await findSignInMessage({ ...base, sessionUrl: stub.sessionUrl, ...clock() });
     expect(result).toMatchObject({ found: true, url: link('https://carin-test.org', 'TXT') });
+  });
+});
+
+describe('cliFailureMessage', () => {
+  it('names the exit code and the last output lines, stripped of escapes and spinners', () => {
+    const capture = '\u001b[2K\u280b Resolving\r\n\u001b[31mnpm error code ETARGET\u001b[39m\r\n\n\u2502  npm error notarget No matching version\r\n';
+    expect(cliFailureMessage({ code: 1 }, capture)).toBe(
+      'the CLI run failed: exit code 1\nLast output:\nResolving\nnpm error code ETARGET\nnpm error notarget No matching version',
+    );
+  });
+
+  it('keeps the driver\'s reason line and only the last lines', () => {
+    const capture = Array.from({ length: 20 }, (_, i) => `line ${i}`).join('\n');
+    const message = cliFailureMessage({ code: -1, failure: 'no output for 10 minutes\nLast screen:\nx' }, capture, 3);
+    expect(message).toBe('the CLI run failed: no output for 10 minutes\nLast output:\nline 17\nline 18\nline 19');
+  });
+
+  it('reports the exit alone when there is no capture', () => {
+    expect(cliFailureMessage({ code: 2 }, '')).toBe('the CLI run failed: exit code 2');
   });
 });

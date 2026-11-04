@@ -215,7 +215,7 @@ export async function handleUrl(url, options) {
     const submit = page.getByRole('button', { name: /^create the github app$/i });
     if (await visible(submit)) await submit.first().click().catch(() => {});
     await settle(page, pageOptions?.pauseMs ?? 500);
-    acted = await clickControl(page, /^create github app$/i, creds, pageOptions);
+    acted = await clickControl(page, /^create github app\b/i, creds, pageOptions);
   } else if (kind === 'install') {
     const chooser = page.getByRole('link', { name: creds.login });
     if (!(await visible(page.getByRole('button', { name: controls.install }))) && (await visible(chooser))) {
@@ -431,8 +431,8 @@ export async function deleteGithubApp(context, slug, creds, { base = 'https://gi
     await page.close();
     return 'absent';
   }
-  if (!(await clickControl(page, /^delete github app$/i, creds, { pauseMs }))) throw new Error('The App settings page has no Delete GitHub App button.');
-  if (!(await clickControl(page, /^i understand, delete this github app$/i, creds, { pauseMs }))) throw new Error('The delete confirmation did not appear.');
+  if (!(await clickControl(page, /^delete github app\b/i, creds, { pauseMs }))) throw new Error('The App settings page has no Delete GitHub App button.');
+  if (!(await clickControl(page, /^i understand\b.*\bdelete\b.*github app/i, creds, { pauseMs }))) throw new Error('The delete confirmation did not appear.');
   await page.close();
   return 'deleted';
 }

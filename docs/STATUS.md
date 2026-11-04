@@ -4,31 +4,54 @@ Present tense only; history lives in git and PR bodies, orientation in `CLAUDE.m
 
 ## Current state
 
-Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`, with `@glw907/cairn-cms-dev`
-`0.98.0`); the Go tool is `tool/v1.1.0`. Prerelease `0.98.1-rc.2` is on npm `next`.
-`create-cairn-site` is unpublished (`BACKLOG.md` #195). cairn.pub pins `0.94.0-rc.1`, its ceiling
-`0.98.0` until the next release (`BACKLOG.md` #168 holds what cairn.pub is owed). `main` carries the
-agent-first pattern, media and publish, and both scaffold passes, all unreleased.
+Published stable: **`0.98.0`** on npm `latest` for `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`;
+the Go tool is `tool/v1.1.0`. The `0.99.0` release is in its candidate phase:
 
-**The sequence (Geoff, 2026-11-01).** One conductor runs the approved run sheet, passes 1a to 8, then
-the release, which is the first of several: a site rebuild drives each later one. Every site
-rebuilds; none migrates. The sheet is `~/.local/state/cairn-agent-first/design-audit/run-sheet.md`,
-with its rulings in `ledger.md` beside it. Engine passes land on `main` and never release.
+- `0.99.0-rc.3` (cut commit `4644cd35b`) is on the hidden `gate` dist-tag for all three packages. It
+  carries the setup fix (PR #193): a declined domain continues to Workers Builds, and a domain or email
+  change after Builds is committed and deployed by Builds.
+- `next` still serves `0.99.0-rc.2` on all three, and `create-cairn-site@latest` serves `0.99.0-rc.1`.
+  Both candidates carry the workers.dev publish-never-deploys defect, and neither is deprecated.
+- The release gate (`scripts/gate/`, run by `bash scripts/gate/run-gate.sh`) has run four times on
+  `rc.3` and never passed. Each run found one harness gap, fixed in `fc91768c5` and `a8cdf5944`. Run 4
+  went end to end, and its teardown removes everything. Its open findings are in the ledger
+  (`~/.local/state/cairn-agent-first/ledger.md`, the entries dated 2026-11-03).
+- Geoff ruled on 2026-11-03 that #341 (a narrow Workers Builds build token) lands before the stable,
+  as its own pass and `rc.4`. Run sheet step 11a records it.
 
-**The history files are reset.** `CHANGELOG.md` and `MIGRATION-NOTES.md` hold one consolidated
-`## Unreleased` and a `## 0.98.0` stub. The detail of `## Unreleased` before the reset sits in no tag;
-it is `git show c074feff5d32ad790bbf1272c0c41dfacccc1258:CHANGELOG.md`, and the release sweep reads
-that file as its changelog input (`cairn-releasing` step 3). The release cut renames both
-`## Unreleased` headings and derives the `release-size` marker at the cut.
+**The sequence (Geoff, 2026-11-01).** One conductor runs the approved run sheet
+(`~/.local/state/cairn-agent-first/design-audit/run-sheet.md`, rulings in `ledger.md` beside it).
+Steps 11 to 15 were rewritten on 2026-11-03 for the gated release, and step 20 adds the close-out
+Geoff asked for: a documented release process and Claude infra tuned for it.
 
 ## Immediate next action
 
-`0.99.0-rc.1` is on npm `next` for `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` (cut commit
-`38746f674`). The release sitting is ready in Geoff's queue: the triage, the proof tests and gates,
-and the five held majors, plus the first hand publish of `create-cairn-site` from
-`~/.local/state/cairn-agent-first/create-cairn-site-0.99.0-rc.1.tgz` and its `npm trust` binding.
-After it, the session cuts `0.99.0-rc.2` inside npm's two-day window, runs the real install, and
-brings the stable cut to Geoff.
+Plan, in a fresh session. Geoff stopped the gate's live trial and error on 2026-11-03: no more live
+gate runs until a plan finds the remaining gaps from the source. Launch prompt:
+
+> You are the planner for the cairn-cms `0.99.0` release's next pass, in a fresh session (Opus,
+> high). Read `docs/STATUS.md`, the run sheet's steps 11 to 20, and the ledger's 2026-11-03 entries.
+> Design one pass for Geoff's approval, through the `pass-core` and `cairn-pass` skills:
+> 1. A desk walkthrough of the four gate legs (A1, A2, B1, B2 in `scripts/gate/legs.mjs`) against
+>    the `create-cairn-site` source. For each leg: every prompt it meets given its flags, every URL it
+>    opens and the page GitHub really shows, every wait against the driver's limits, the DNS
+>    behavior, and each teardown step. Run 4's open findings come first: the harness clicks Save
+>    instead of Publish; the closing block lacks the not-connected sentence on A1 (product or
+>    expectation, unknown); an auto-approved OAuth authorize is held needlessly; the 600-second
+>    no-output limit did not fire during a 30-minute domain hold; and this host's resolver
+>    negative-caches `carin-test.org` for the zone's 1,800-second SOA minimum after a domain attach,
+>    which a real owner could hit too.
+> 2. Headless by default, with a `--headed` switch. An unrecognised page fails the leg, saving a
+>    screenshot and its control labels (Geoff, 2026-11-03).
+> 3. Backlog #341, and #345 to #349.
+> 4. The gaps in `~/.local/state/cairn-agent-first/release-process-research.md`. Bring the four it
+>    marks contestable to Geoff as decisions.
+> 5. Run sheet step 20: the release process documented and moved into scripts where mechanical, and
+>    Claude infra tuned for it through the `claude-infra` skill.
+> The pass ends at `rc.4`, gated once. Standing constraints: no stable without Geoff's "install
+> passed"; promotion only on a passed gate; Geoff's 2026-11-03 waiver of PR ceremony covered only the
+> two harness fixes already landed; vault and secrets work belongs to the security session
+> (`vault-key-setup-pass-cli`), and the gate reads only the age store.
 
 ## Open decisions and watches
 

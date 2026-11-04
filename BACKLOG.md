@@ -5,9 +5,19 @@
 ## High
 
 ## Medium
+
+- [ ] **#344** Make the gate smoke's account-verify check informational for the user-owned gate token `#bug` `#cairn-cms` *(2026-11-03)*
+  The credential smoke checks `GET /accounts/<id>/tokens/verify` (`scripts/gate/gate.mjs:170`), which answers 401 for a user-owned token, and `ws-cairn-gate` must be user-owned for Workers Builds. The setup tool never calls that route, yet the FAIL makes every smoke exit 1, so a real credential failure would read the same as this expected one. Found on the `rc.3` gate run.
+  Placement: the #341 pass, before `rc.4`.
+- [ ] **#343** Surface the setup tool's own error when a gate leg's CLI exits before setup `#improvement` `#cairn-cms` *(2026-11-03)*
+  When `npx create-cairn-site` fails to start, the leg reports "the state record holds no workers.dev address" (`scripts/gate/legs.mjs:366`), and the real cause sits only in the run's `capture.bin`. On the `rc.3` run that cause was an npm `ETARGET`. A leg whose CLI exited non-zero should print the capture's last error lines.
+  Placement: the #341 pass, before `rc.4`.
+- [ ] **#342** Have the gate's `npx` read the registry fresh, so a run just after a publish finds the candidate `#bug` `#cairn-cms` *(2026-11-03)*
+  The legs run `npx --yes create-cairn-site@<version>` (`scripts/gate/legs.mjs:347`) through npm's local metadata cache. A cache filled before the candidate published answers `ETARGET` for up to its five-minute max-age, which failed both installs of the first `rc.3` gate run. Pass `--prefer-online`; the same holds for the `wrangler` call at `scripts/gate/gate.mjs:71` when it pins a version.
+  Placement: the #341 pass, before `rc.4`.
 - [ ] **#341** Register a build token scoped to what a Workers Builds deploy needs, not the owner's whole setup token `#improvement` `#cairn-cms` `#security` *(2026-11-03)*
   Chapter 3 registers the owner's eight-permission setup token as the Builds build token (`createBuildToken({ secret: token })`, `chapter3.mjs`), so any code a repository committer lands can read zone, DNS, SSL, email, D1, and R2 edit rights in a build. The setup-fix pass widens which `--yes` runs reach it (a declined domain now continues to Builds). Mint or ask for a narrower build token (Workers scripts, D1, R2) and record the choice in MIGRATION-NOTES. Found by the setup-fix close security read (web-auth reviewer M2); a design call.
-  Placement: After the release.
+  Placement: before the stable, its own pass and `rc.4` (Geoff, 2026-11-03, packet `20261103T125334-2611564`).
 - [ ] **#340** Pass the repository-edit guard to chapter 3's reconciles `#bug` `#cairn-cms` *(2026-11-03)*
   Chapter 2's Builds hop refuses to commit over repository edits to `wrangler.jsonc` and `src/theme/cairn.config.ts` (`refuseRepositoryEdits`), but chapter 3's own `--connect` and builds-live reconciles (`chapter3.mjs` `performReconcile`) pass no guard, so they still upload both local files whole. The setup-fix pass made `reconcileRepo` refuse a failed read, which closes the worst case; the guard itself is a scope change from that plan. Found by the setup-fix close security read.
   Placement: After the release.

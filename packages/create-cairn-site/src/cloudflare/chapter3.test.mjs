@@ -1069,12 +1069,43 @@ test('runChapter3: --yes with a CAIRN_CF_BUILD_TOKEN that verify rejects stops b
         ...fastSeams(cloudflare),
       }),
     (err) => {
-      assert.equal(err.cause?.catalogue?.code, 'token-invalid');
+      assert.equal(err.cause?.catalogue?.code, 'build-token-invalid');
       return true;
     },
   );
   assert.equal(registrations(cloudflare).length, 0);
   assert.equal(triggerCreate(cloudflare), undefined);
+  // The setup token was fine; only the build token was refused, so the re-run reuses it.
+  assert.equal((await loadSite(siteId)).cloudflare.apiToken, 'env-token-value');
+});
+
+test('runChapter3: a build token rejected on both pastes stops on build-token-invalid and keeps the saved setup token', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-twice-badbuild-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+  const unknownToken = { success: false, errors: [{ code: 1000, message: 'Invalid API Token' }], messages: [], result: null };
+
+  const asked = [];
+  const answer = answeringBothPrompts(asked);
+  // failNext is one-shot, so each rejection is armed just before its own paste is verified.
+  const promptSecretFn = async (message) => {
+    if (message === BUILD_PROMPT) cloudflare.failNext('user_token_verify', 401, unknownToken);
+    return answer(message);
+  };
+  await assert.rejects(
+    () => runInteractively({ cloudflare, siteId, dir, promptSecretFn }),
+    (err) => {
+      assert.equal(err.cause?.catalogue?.code, 'build-token-invalid');
+      return true;
+    },
+  );
+  assert.deepEqual(asked, [SETUP_PROMPT, BUILD_PROMPT, BUILD_PROMPT]);
+  assert.equal(registrations(cloudflare).length, 0);
+  assert.equal((await loadSite(siteId)).cloudflare.apiToken, SETUP_TOKEN);
 });
 
 test('runChapter3: --yes with no cairn-build registration and no CAIRN_CF_BUILD_TOKEN stops on build-token-missing, registering nothing', async (t) => {
@@ -1717,6 +1748,41 @@ test('watchAndComplete: the post-success hostname confirm threads the injected r
   });
 
   assert.equal(result.outcome, 'hostname-resolver-lagging');
+});
+
+test("watchAndComplete: a post-success confirm the pinned probe turns live prints the resolver line once", async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const domain = 'pinned-watch.example';
+  const lagging = disagreeingResolve(domain);
+  const resolve = (servers) => {
+    const resolver = lagging(servers);
+    if (!servers) return resolver;
+    return { ...resolver, resolve4: async (name) => (name === domain ? ['192.0.2.10'] : resolver.resolve4(name)) };
+  };
+  const lines = [];
+
+  const result = await watchAndComplete({
+    siteId: 'watch-pinned-line-site',
+    record: { cloudflare: { domain } },
+    dir,
+    log: (line) => lines.push(line),
+    api: discoveryApi({ tag: WORKER_TAG }),
+    sleepFn: async () => {},
+    fetchImpl: alwaysUnreachableFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+    triggerUuid: 'trigger-1',
+    defaultBranch: 'main',
+    chapter3Reached: true,
+    lastBuildUuid: 'build-1',
+    lastBuildOutcome: undefined,
+    reconcileResult: undefined,
+    dns: { resolve, pinnedProbe: async () => ({ reachable: true, matches: true }) },
+  });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.equal(lines.filter((line) => line.includes('up to 30 minutes')).length, 1);
 });
 
 // The falsifiability control for runChapter3's two watchAndComplete call sites: neither ever

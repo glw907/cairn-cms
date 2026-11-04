@@ -734,7 +734,8 @@ export async function watchAndComplete({
   await assertBuildSucceeded({ api, buildUuid, build, dir });
 
   const currentOrigin = record?.cloudflare?.domain ?? new URL(record?.cloudflare?.url).host;
-  const hostOutcome = await confirmHostname(currentOrigin, fetchImpl, dns);
+  // One confirm on this path, so the resolver line a pinned `live` prints cannot repeat.
+  const hostOutcome = await confirmHostname(currentOrigin, fetchImpl, { ...dns, log });
   if (hostOutcome === 'hostname-not-serving') {
     throw cloudflareError('hostname-not-serving', { dir, domain: currentOrigin });
   }
@@ -1284,7 +1285,8 @@ export async function runChapter3({
   // Wrapped in one try/catch from the token hop onward (mirroring chapter2.mjs's T4b.1
   // half): a token-scope-missing or token-invalid failure anywhere below clears the saved token
   // before the error surfaces, so the re-run the row already tells the admin to do actually
-  // re-collects one instead of silently reusing the bad one.
+  // re-collects one instead of silently reusing the bad one. A refused build token is
+  // build-token-invalid instead, which keeps the saved token: that one was fine.
   try {
     await runStep(
       frame,

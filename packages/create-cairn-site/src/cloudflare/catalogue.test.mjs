@@ -56,7 +56,8 @@ const EXPECTED_KIND = {
   'builds-not-runnable': 'act',
   'builds-config-diverged': 'act',
   'builds-reconcile-parked': 'wait',
-  'build-token-missing': 'act'
+  'build-token-missing': 'act',
+  'build-token-invalid': 'act'
 };
 
 /** Plausible params for each code, enough to exercise every interpolation. */
@@ -132,7 +133,8 @@ const SAMPLE_PARAMS = {
   },
   'builds-config-diverged': { dir: './alpine', files: ['src/theme/cairn.config.ts'] },
   'builds-reconcile-parked': { dir: './alpine' },
-  'build-token-missing': { dir: './alpine' }
+  'build-token-missing': { dir: './alpine' },
+  'build-token-invalid': { dir: './alpine', detail: 'Cloudflare reports this token as expired.' }
 };
 
 test('the expected-kind table covers every code the module has rows for', () => {
@@ -186,7 +188,7 @@ test('every catalogue code message ends in exactly one Next: line', () => {
   }
 });
 
-test('the Builds rows add exactly ten codes, none colliding with build-failed or build-not-runnable', () => {
+test('the Builds rows add exactly eleven codes, none colliding with build-failed or build-not-runnable', () => {
   // 37 pre-Builds codes, plus Task 2's split: hostname-propagating retired (-1), replaced by
   // hostname-records-absent and hostname-resolver-lagging (+2), plus deploy-plan-declined,
   // chapter 1's pre-deploy decline row, added alongside the pre-existing paid-plan-declined
@@ -202,7 +204,8 @@ test('the Builds rows add exactly ten codes, none colliding with build-failed or
     'builds-not-runnable',
     'builds-config-diverged',
     'builds-reconcile-parked',
-    'build-token-missing'
+    'build-token-missing',
+    'build-token-invalid'
   ];
   assert.equal(
     CATALOGUE_CODES.length,
@@ -608,6 +611,21 @@ test('build-token-missing names CAIRN_CF_BUILD_TOKEN and the interactive alterna
   assert.match(err.catalogue.next, /CAIRN_CF_BUILD_TOKEN/);
   assert.match(err.catalogue.next, /without --yes/);
   assert.match(err.message, /\.\/alpine/);
+});
+
+test('build-token-invalid names the Workers Builds deploy token, keeps the API token, and asks for a paste only off --yes', () => {
+  const interactive = cloudflareError('build-token-invalid', SAMPLE_PARAMS['build-token-invalid']);
+  assert.match(interactive.message, /Workers Builds deploy token/);
+  assert.match(interactive.message, /Cloudflare reports this token as expired\./);
+  assert.match(interactive.message, /API token .* is kept/);
+  assert.match(interactive.catalogue.next, /paste it when asked for the Workers Builds deploy token/);
+  assert.doesNotMatch(interactive.catalogue.next, /CAIRN_CF_BUILD_TOKEN/);
+
+  const unattended = cloudflareError('build-token-invalid', { dir: './alpine', yes: true });
+  assert.match(unattended.message, /CAIRN_CF_BUILD_TOKEN/);
+  assert.doesNotMatch(unattended.message, /paste/);
+  assert.match(unattended.catalogue.next, /^set CAIRN_CF_BUILD_TOKEN/);
+  assert.match(unattended.catalogue.next, /--yes/);
 });
 
 test('WAIT_KIND_CODES holds exactly the wait-kind rows, in catalogue order, and nothing else', () => {

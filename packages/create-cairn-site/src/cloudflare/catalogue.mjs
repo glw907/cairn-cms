@@ -848,6 +848,31 @@ const ROWS = {
         '--yes, or re-run without --yes to be asked for one.'
       );
     }
+  },
+  // Fires when verify refuses the build token or reports it as not active. Its own row, not
+  // token-invalid: that row tells the admin to replace the API token, and chapter 3 clears the
+  // saved API token on it, though here the API token was fine.
+  'build-token-invalid': {
+    kind: 'act',
+    build(params) {
+      const source = params.yes ? 'The token in CAIRN_CF_BUILD_TOKEN' : 'The token you pasted';
+      const reported = params.detail
+        ? ` Cloudflare reported: ${params.detail}`
+        : ' It may be mistyped, expired, or revoked.';
+      const next = params.yes
+        ? 'Next: set CAIRN_CF_BUILD_TOKEN to an active token with Workers Scripts, D1, and ' +
+          `Workers R2 Storage edit permissions and re-run npx create-cairn-site --dir ${params.dir} ` +
+          '--connect --yes.'
+        : 'Next: create a new cairn-build token with Workers Scripts, D1, and Workers R2 Storage ' +
+          `edit permissions, then re-run npx create-cairn-site --dir ${params.dir} --connect and ` +
+          'paste it when asked for the Workers Builds deploy token.';
+      return (
+        `${source} for the Workers Builds deploy token was not accepted.${reported} Your saved ` +
+        'Cloudflare API token for this tool is kept. Nothing was registered, and your site is ' +
+        'untouched and still working.\n' +
+        next
+      );
+    }
   }
 };
 

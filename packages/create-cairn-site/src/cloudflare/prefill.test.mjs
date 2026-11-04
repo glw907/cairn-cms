@@ -648,14 +648,15 @@ test('ensureBuildToken asks once more after a paste verify rejects, and returns 
   assert.deepEqual(prompts, ['Paste your Workers Builds deploy token', 'Paste your Workers Builds deploy token']);
 });
 
-test('ensureBuildToken throws token-invalid when both pastes fail verify', async (t) => {
+test('ensureBuildToken throws build-token-invalid when both pastes fail verify', async (t) => {
   const cloudflare = await setup(t);
   const { ensureBuildToken } = await import('./prefill.mjs');
 
   const { pending, prompts } = interactiveBuildToken(ensureBuildToken, cloudflare, ['first-paste', 'second-paste'], 2);
 
   await assert.rejects(pending, (err) => {
-    assert.equal(err.catalogue.code, 'token-invalid');
+    assert.equal(err.catalogue.code, 'build-token-invalid');
+    assert.match(err.catalogue.next, /Workers Builds deploy token/);
     assert.doesNotMatch(err.message, /second-paste/);
     return true;
   });
@@ -664,7 +665,7 @@ test('ensureBuildToken throws token-invalid when both pastes fail verify', async
   assert.equal(verify.length, 2);
 });
 
-test('ensureBuildToken under --yes throws token-invalid when CAIRN_CF_BUILD_TOKEN fails verify', async (t) => {
+test('ensureBuildToken under --yes throws build-token-invalid when CAIRN_CF_BUILD_TOKEN fails verify', async (t) => {
   const cloudflare = await setup(t);
   const { ensureBuildToken } = await import('./prefill.mjs');
   cloudflare.failNext('user_token_verify', 401, VERIFY_UNKNOWN_TOKEN_BODY);
@@ -683,7 +684,9 @@ test('ensureBuildToken under --yes throws token-invalid when CAIRN_CF_BUILD_TOKE
         argv: [],
       }),
     (err) => {
-      assert.equal(err.catalogue.code, 'token-invalid');
+      assert.equal(err.catalogue.code, 'build-token-invalid');
+      assert.match(err.catalogue.next, /CAIRN_CF_BUILD_TOKEN/);
+      assert.doesNotMatch(err.message, /paste/);
       return true;
     },
   );
@@ -710,7 +713,7 @@ test('ensureBuildToken under --yes rejects a token verify reports as expired, th
         argv: [],
       }),
     (err) => {
-      assert.equal(err.catalogue.code, 'token-invalid');
+      assert.equal(err.catalogue.code, 'build-token-invalid');
       assert.match(err.message, /expired/);
       return true;
     },

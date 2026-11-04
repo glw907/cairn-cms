@@ -339,21 +339,30 @@ export async function ensureApiToken({
  * @param {{ dir: string | undefined, accountId: string | undefined }} scope interpolated into
  *  any thrown row
  * @param {typeof makeApi} makeApiFn builds the client the check signs with
+ * @param {boolean} yes whether the token came from CAIRN_CF_BUILD_TOKEN on an unattended run,
+ *  which picks the build-token-invalid row's wording
  * @returns {Promise<{ ok: true, id: string } | { ok: false, error: Error & { catalogue: object } }>}
- *  `id` is the token's Cloudflare id, which its Builds registration names
+ *  `id` is the token's Cloudflare id, which its Builds registration names; a refused or
+ *  not-active token comes back as `build-token-invalid`
  */
-async function verifyBuildToken(token, scope, makeApiFn) {
+async function verifyBuildToken(token, scope, makeApiFn, yes) {
   try {
     const result = await makeApiFn({ token, ...scope }).verifyToken();
     // Verify answers success for a token that exists, even one that is disabled or expired, so
     // the envelope alone does not say Builds could deploy with it.
     if (result.status !== 'active') {
       const detail = `Cloudflare reports this token as ${result.status ?? 'not active'}.`;
-      return { ok: false, error: cloudflareError('token-invalid', { dir: scope.dir, detail }) };
+      return { ok: false, error: cloudflareError('build-token-invalid', { dir: scope.dir, detail, yes }) };
     }
     return { ok: true, id: result.id };
   } catch (error) {
     if (!error?.catalogue) throw error;
+    // api.mjs names a refused bearer token-invalid, the API token's row, which chapter 3 answers
+    // by clearing the saved API token. A refused build token says nothing about that one.
+    const code = error.catalogue.code;
+    if (code === 'token-invalid' || code === 'token-scope-missing') {
+      return { ok: false, error: cloudflareError('build-token-invalid', { dir: scope.dir, yes }) };
+    }
     return { ok: false, error };
   }
 }
@@ -404,7 +413,7 @@ export async function ensureBuildToken({
   if (yes) {
     const fromEnv = env.CAIRN_CF_BUILD_TOKEN;
     if (!fromEnv) throw cloudflareError('build-token-missing', { dir });
-    const result = await verifyBuildToken(fromEnv, scope, makeApiFn);
+    const result = await verifyBuildToken(fromEnv, scope, makeApiFn, true);
     if (!result.ok) throw result.error;
     return { token: fromEnv, id: result.id };
   }
@@ -418,12 +427,12 @@ export async function ensureBuildToken({
   await openBrowser(BUILD_TOKEN_PREFILL_URL, log);
 
   const pasted = await promptSecretFn(BUILD_TOKEN_PROMPT);
-  const firstTry = await verifyBuildToken(pasted, scope, makeApiFn);
+  const firstTry = await verifyBuildToken(pasted, scope, makeApiFn, false);
   if (firstTry.ok) return { token: pasted, id: firstTry.id };
 
   log('That token did not work; check it and paste it again.');
   const repasted = await promptSecretFn(BUILD_TOKEN_PROMPT);
-  const secondTry = await verifyBuildToken(repasted, scope, makeApiFn);
+  const secondTry = await verifyBuildToken(repasted, scope, makeApiFn, false);
   if (secondTry.ok) return { token: repasted, id: secondTry.id };
   throw secondTry.error;
 }

@@ -11,7 +11,8 @@ type Step =
   | { kind: 'confirm' | 'select' | 'text' | 'password'; message: string; options?: string[] }
   | { kind: 'line'; text: string }
   | { kind: 'pause'; ms: number }
-  | { kind: 'hang' };
+  | { kind: 'hang' }
+  | { kind: 'spin'; ms: number; every?: number };
 
 /** A stub CLI: runs a JSON scenario, then writes what each prompt received to STUB_OUT. */
 const STUB = String.raw`
@@ -29,6 +30,19 @@ const out = (s) => process.stdout.write(s);
   for (const step of steps) {
     if (step.kind === 'line') { out(step.text + '\n'); continue; }
     if (step.kind === 'pause') { await new Promise((r) => setTimeout(r, step.ms)); continue; }
+    if (step.kind === 'spin') {
+      const frames = ['⠋', '⠙', '⠹', '⠸'];
+      const end = Date.now() + step.ms;
+      let n = 0;
+      while (Date.now() < end) {
+        n++;
+        if (step.every && n % step.every === 0) out('\x1b[2K\r' + frames[0] + ' step ' + n + '\n');
+        out('\x1b[2K\r' + frames[n % 4] + ' Working ' + n + 's');
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      out('\n');
+      continue;
+    }
     if (step.kind === 'hang') await new Promise(() => {});
     const body = step.kind === 'select'
       ? step.options.map((o, i) => '│  ' + (i === 0 ? '●' : '○') + ' ' + o)
@@ -199,7 +213,7 @@ describe('runDriver', () => {
   it('fails an idle run with the last screen, and lets a held progress page wait longer', async () => {
     const idle = await drive([{ kind: 'line', text: 'Working' }, { kind: 'hang' }], [], { idleMs: 400 });
     expect(idle.result.code).toBe(-1);
-    expect(idle.result.failure).toContain('no output');
+    expect(idle.result.failure).toContain('no progress');
     expect(idle.result.failure).toContain('Working');
 
     const held = await drive(
@@ -209,6 +223,35 @@ describe('runDriver', () => {
     );
     expect(held.result.failure).toBeUndefined();
     expect(held.result.code).toBe(0);
+  });
+
+  it('fails a spinner with a ticking counter that never changes the screen', async () => {
+    const { result } = await drive([{ kind: 'spin', ms: 60_000 }], [], { idleMs: 800 });
+    expect(result.code).toBe(-1);
+    expect(result.failure).toContain('no progress');
+  });
+
+  it('keeps a spinner run alive while a line changes every few seconds', async () => {
+    const { result } = await drive([{ kind: 'spin', ms: 3500, every: 10 }], [], { idleMs: 1000 });
+    expect(result.failure).toBeUndefined();
+    expect(result.code).toBe(0);
+  });
+
+  it('drops the hold limit once the marker line scrolls off the last line', async () => {
+    const started = Date.now();
+    const { result } = await drive(
+      [{ kind: 'line', text: 'Watch progress at http://127.0.0.1:1/' }, { kind: 'line', text: 'then more output' }, { kind: 'hang' }],
+      [],
+      { idleMs: 500, holdIdleMs: 60_000 },
+    );
+    expect(result.failure).toContain('no progress');
+    expect(Date.now() - started).toBeLessThan(10_000);
+  });
+
+  it('fails a run that outlives its wall clock', async () => {
+    const { result } = await drive([{ kind: 'spin', ms: 60_000, every: 5 }], [], { idleMs: 60_000, wallMs: 700 });
+    expect(result.code).toBe(-1);
+    expect(result.failure).toContain('the run exceeded its budget');
   });
 
   it('stops a run whose CLI keeps rejecting one prompt, naming the prompt', async () => {

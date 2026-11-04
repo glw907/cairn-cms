@@ -258,6 +258,7 @@
         ]
       },
       { "prefixes": ["src/lib/diagnostics/"], "specs": ["healthz.spec.ts", "golden-path.spec.ts"] },
+      { "prefixes": ["scripts/gate/browser.mjs"], "specs": ["gate-publish.spec.ts"] },
       {
         "prefixes": [
           "examples/showcase/src/routes/(site)/",

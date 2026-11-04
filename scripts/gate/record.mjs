@@ -10,7 +10,7 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 
 /** The table's columns, in order. */
-export const GATE_COLUMNS = ['Leg', 'Path', 'URL', 'Commit', 'Marker', 'Fetched', 'Verdict'];
+export const GATE_COLUMNS = ['Leg', 'Path', 'URL', 'Commit', 'Marker', 'Fetched', 'Verdict', 'Run'];
 const HEADING = '## Gate';
 
 /**
@@ -21,7 +21,8 @@ const HEADING = '## Gate';
  * @property {string} commit the marker's commit sha, or `-` when the leg has none
  * @property {string} marker the edit's unique marker
  * @property {string} fetched ISO time of the last fetch
- * @property {string} verdict `pass`, or `fail` with the first reason
+ * @property {string} verdict `pass`, `fail: <every reason>`, `pending`, or `skipped: needs <leg>`
+ * @property {string} run the run directory's name, which ties the row to one run
  */
 
 /**
@@ -57,7 +58,7 @@ export function renderGateSection(rows) {
   const sorted = [...rows].sort((a, b) => a.leg.localeCompare(b.leg));
   const lines = [HEADING, '', `| ${GATE_COLUMNS.join(' | ')} |`, `| ${GATE_COLUMNS.map(() => '---').join(' | ')} |`];
   for (const row of sorted) {
-    const cells = [row.leg, row.path, row.url, row.commit, row.marker, row.fetched, row.verdict];
+    const cells = [row.leg, row.path, row.url, row.commit, row.marker, row.fetched, row.verdict, row.run];
     lines.push(`| ${cells.map(escapeCell).join(' | ')} |`);
   }
   return `${lines.join('\n')}\n`;
@@ -68,7 +69,7 @@ export function renderGateSection(rows) {
  * @param {string} body the release body
  * @returns {{ before: string, section: string, after: string }} the section is empty when absent
  */
-function splitBody(body) {
+export function splitBody(body) {
   const lines = body.split('\n');
   const start = lines.findIndex((line) => line.trim() === HEADING);
   if (start === -1) return { before: body, section: '', after: '' };
@@ -85,9 +86,10 @@ function splitBody(body) {
 /**
  * The rows an earlier `## Gate` section holds.
  * @param {string} section the section text
+ * @param {string[]} [rejected] collects a reason for each row left out, so a reader can fail on it
  * @returns {GateRow[]} the parsed rows
  */
-function parseRows(section) {
+export function parseGateRows(section, rejected = []) {
   /** @type {GateRow[]} */
   const rows = [];
   for (const line of section.split('\n')) {
@@ -96,9 +98,12 @@ function parseRows(section) {
       .replace(/^\||\|\s*$/g, '')
       .split(/(?<!\\)\|/)
       .map((cell) => unescapeCell(cell.trim()));
-    if (cells.length !== GATE_COLUMNS.length) continue;
-    const [leg, rowPath, url, commit, marker, fetched, verdict] = cells;
-    rows.push({ leg, path: rowPath, url, commit, marker, fetched, verdict });
+    if (cells.length !== GATE_COLUMNS.length) {
+      rejected.push(`a row has ${cells.length} cells, expected ${GATE_COLUMNS.length}: ${line.slice(0, 60)}`);
+      continue;
+    }
+    const [leg, rowPath, url, commit, marker, fetched, verdict, run] = cells;
+    rows.push({ leg, path: rowPath, url, commit, marker, fetched, verdict, run });
   }
   return rows;
 }
@@ -112,11 +117,24 @@ function parseRows(section) {
  */
 export function mergeGateSection(body, row) {
   const { before, section, after } = splitBody(body);
-  const kept = parseRows(section).filter((earlier) => earlier.leg !== row.leg);
+  const kept = parseGateRows(section).filter((earlier) => earlier.leg !== row.leg);
   const rendered = renderGateSection([...kept, row]);
   const head = before.trimEnd();
   const tail = after.trim() === '' ? '' : `\n${after.replace(/^\n+/, '')}`;
   return `${head === '' ? '' : `${head}\n\n`}${rendered.trimEnd()}\n${tail}`;
+}
+
+/**
+ * Replace the `## Gate` section with exactly these rows.
+ * @param {string} body the release body as read
+ * @param {GateRow[]} rows the rows
+ * @returns {string} the new body
+ */
+function replaceGateSection(body, rows) {
+  const { before, after } = splitBody(body);
+  const head = before.trimEnd();
+  const tail = after.trim() === '' ? '' : `\n${after.replace(/^\n+/, '')}`;
+  return `${head === '' ? '' : `${head}\n\n`}${renderGateSection(rows).trimEnd()}\n${tail}`;
 }
 
 /**
@@ -134,6 +152,25 @@ async function ghDefault(args) {
 }
 
 /**
+ * Read the release body, transform its text, and write it back. A failed read, or an empty body,
+ * aborts with no write.
+ * @param {{ version: string, notesDir: string, gh: (args: string[]) => Promise<GhResult>, transform: (body: string) => string }} input
+ * @returns {Promise<void>}
+ */
+async function editBody({ version, notesDir, gh, transform }) {
+  const tag = `v${version}`;
+  const read = await gh(['release', 'view', tag, '--json', 'body', '--jq', '.body']);
+  if (read.code !== 0) throw new Error(`Could not read release ${tag}; the gate wrote nothing.`);
+  if (read.stdout.trim() === '') throw new Error(`Release ${tag} read back an empty body; the gate wrote nothing.`);
+  const next = transform(read.stdout.replace(/\n$/, ''));
+  await mkdir(notesDir, { recursive: true, mode: 0o700 });
+  const file = path.join(notesDir, `release-notes-${tag}.md`);
+  await writeFile(file, next, { mode: 0o600 });
+  const write = await gh(['release', 'edit', tag, '--notes-file', file]);
+  if (write.code !== 0) throw new Error(`gh release edit ${tag} failed (exit ${write.code}).`);
+}
+
+/**
  * Record one leg on release `v<version>`.
  * @param {{ version: string, row: GateRow, notesDir: string, gh?: (args: string[]) => Promise<GhResult> }} input
  *  `gh` runs the GitHub CLI as the maintainer (tests inject one); `notesDir` holds the notes file
@@ -141,14 +178,22 @@ async function ghDefault(args) {
  */
 export async function recordLeg({ version, row, notesDir, gh = ghDefault }) {
   assertNoToken([row]);
-  const tag = `v${version}`;
-  const read = await gh(['release', 'view', tag, '--json', 'body', '--jq', '.body']);
-  if (read.code !== 0) throw new Error(`Could not read release ${tag}; the gate wrote nothing.`);
-  if (read.stdout.trim() === '') throw new Error(`Release ${tag} read back an empty body; the gate wrote nothing.`);
-  const next = mergeGateSection(read.stdout.replace(/\n$/, ''), row);
-  await mkdir(notesDir, { recursive: true, mode: 0o700 });
-  const file = path.join(notesDir, `release-notes-${tag}.md`);
-  await writeFile(file, next, { mode: 0o600 });
-  const write = await gh(['release', 'edit', tag, '--notes-file', file]);
-  if (write.code !== 0) throw new Error(`gh release edit ${tag} failed (exit ${write.code}).`);
+  await editBody({ version, notesDir, gh, transform: (body) => mergeGateSection(body, row) });
+}
+
+/**
+ * Mark legs `pending` under a run id before any of them starts, so an earlier run's `pass` cannot
+ * stand for a leg this run has not finished. With `fresh` the whole `## Gate` section is replaced
+ * by exactly these rows; without it each row replaces only its own leg's earlier row.
+ * @param {{ version: string, legs: string[], run: string, notesDir: string, fresh?: boolean, gh?: (args: string[]) => Promise<GhResult> }} input
+ * @returns {Promise<void>}
+ */
+export async function recordPending({ version, legs, run, notesDir, fresh = false, gh = ghDefault }) {
+  const rows = legs.map((leg) => ({ leg, path: '-', url: '-', commit: '-', marker: '-', fetched: '-', verdict: 'pending', run }));
+  await editBody({
+    version,
+    notesDir,
+    gh,
+    transform: (body) => (fresh ? replaceGateSection(body, rows) : rows.reduce((acc, row) => mergeGateSection(acc, row), body)),
+  });
 }

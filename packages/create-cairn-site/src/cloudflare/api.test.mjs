@@ -215,6 +215,25 @@ test('a 400 with code 6003 maps to token-invalid and surfaces the nested error_c
   );
 });
 
+test('a 401 with code 1000 from token verify maps to token-invalid', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('user_token_verify', 401, {
+    success: false,
+    errors: [{ code: 1000, message: 'Invalid API Token' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.verifyToken(),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-invalid');
+      assert.match(err.message, /Invalid API Token/);
+      return true;
+    },
+  );
+});
+
 test('a 401 with code 10000 maps to token-invalid', async (t) => {
   const { cloudflare, api } = await setup(t);
   cloudflare.failNext('zone_get', 401, {

@@ -1,22 +1,18 @@
 // The gate's browser half: the pages a person would click while the CLI runs, and the admin publish.
-// It tails the shim's URL log, classifies each URL before acting, and holds any page it does not
-// recognise, headed, so Geoff can click it. Pages are waited on by `load` plus a short pause, never
-// `networkidle` (GitHub keeps live connections open), and a page showing a secret is never
-// screenshotted for a reader.
-import { spawn } from 'node:child_process';
-import { chmod, mkdir, open, stat } from 'node:fs/promises';
+// It tails the shim's URL log, classifies each URL before acting, and fails the leg at once on any
+// page it does not recognise, with a screenshot and a controls file to teach it from. Pages are
+// waited on by `load` plus a short pause, never `networkidle` (GitHub keeps live connections
+// open), and a page showing a secret is never screenshotted.
+import { chmod, mkdir, open, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
-
-/** One step's patience: a held page, or a control that never shows. */
-export const STEP_MS = 10 * 60_000;
 
 /** @param {number} ms */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * @typedef {'manifest' | 'install' | 'authorize' | 'signin' | 'skip' | 'hold'} UrlKind
+ * @typedef {'manifest' | 'install' | 'authorize' | 'signin' | 'skip' | 'unknown'} UrlKind
  */
 
 /**
@@ -29,7 +25,7 @@ export function classifyUrl(url) {
   try {
     parsed = new URL(url);
   } catch {
-    return 'hold';
+    return 'unknown';
   }
   if (parsed.pathname.endsWith('/admin/auth/confirm') && parsed.searchParams.has('token')) return 'signin';
   if (parsed.hostname === 'dash.cloudflare.com') return 'skip';
@@ -38,7 +34,7 @@ export function classifyUrl(url) {
     if (/^\/apps\/[^/]+\/installations\/new/.test(parsed.pathname)) return 'install';
     if (parsed.pathname === '/login/oauth/authorize') return 'authorize';
   }
-  return 'hold';
+  return 'unknown';
 }
 
 /**
@@ -122,56 +118,115 @@ export async function clickControl(page, control, creds, options = {}) {
   }
 }
 
+/** The sentence every one of the setup tool's loopback success pages ends with. */
+const LOOPBACK_DONE = 'Return to the terminal.';
+
+/** Raised when a page is not one the gate knows how to move on from. */
+export class UnrecognisedPageError extends Error {}
+
 /**
- * The page's content signature: it changes when the page moves on or a person clicks through.
- * @param {import('playwright').Page} page
- * @returns {Promise<string>}
+ * `host + pathname` of a URL, never its query, which can carry a code or a token.
+ * @param {string} url
+ * @returns {string}
  */
-async function signature(page) {
-  return `${page.url()}\n${await page.evaluate(() => document.body?.innerText ?? '')}`;
+function where(url) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.host}${parsed.pathname}`;
+  } catch {
+    return 'an unparseable address';
+  }
 }
 
 /**
- * @typedef {object} HoldOptions
- * @property {string} label what the page is, for the notification
- * @property {string} leg the leg that is waiting
- * @property {string} screenshotDir where the screenshot goes
- * @property {(title: string, body: string) => void} notify raises the desktop notification
- * @property {(line: string) => void} log receives the hold line (the screenshot path, never a value)
- * @property {number} [timeoutMs] how long to wait for a click (10 minutes)
- * @property {number} [pollMs] the gap between looks (1 second)
+ * @param {string} url
+ * @returns {boolean} true when the address carries a sign-in token or an OAuth code
  */
-
-/** The error a held page raises when nobody moved it on. */
-export class HoldTimeoutError extends Error {}
+function carriesSecret(url) {
+  try {
+    const { searchParams } = new URL(url);
+    return searchParams.has('token') || searchParams.has('code');
+  } catch {
+    return false;
+  }
+}
 
 /**
- * Keep a page open for a person's click. The leg resumes when the page's content or address
- * changes; only the timeout fails it.
- * @param {import('playwright').Page} page the page to hold
- * @param {HoldOptions} options
- * @returns {Promise<void>} resolves when the page moved on
+ * @param {import('playwright').Page} page
+ * @returns {Promise<string>} the page's visible text, whitespace collapsed
  */
-export async function holdPage(page, options) {
-  const { label, leg, screenshotDir, notify, log, timeoutMs = STEP_MS, pollMs = 1000 } = options;
-  await mkdir(screenshotDir, { recursive: true, mode: 0o700 });
-  const shot = path.join(screenshotDir, `hold-${leg}-${Date.now()}.png`);
-  await page.screenshot({ path: shot }).catch(() => {});
-  log(`HOLD leg ${leg}: ${label}; screenshot ${shot}`);
-  notify(`Gate leg ${leg} needs a click`, label);
-  const before = await signature(page);
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    await sleep(pollMs);
-    let now;
-    try {
-      now = await signature(page);
-    } catch {
-      return;
-    }
-    if (now !== before) return;
+async function pageText(page) {
+  const text = await page.evaluate(() => document.body?.innerText ?? '').catch(() => '');
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * One `role<TAB>name` line per button and link, under a `host/path` header. No input value, no
+ * link target, and no query string is read.
+ * @param {import('playwright').Page} page
+ * @returns {Promise<string>}
+ */
+async function controlsText(page) {
+  const lines = await page
+    .evaluate(() => {
+      /** @type {string[]} */
+      const found = [];
+      for (const element of document.querySelectorAll('button, [role="button"], a[href]')) {
+        const role = element.tagName === 'A' ? 'link' : 'button';
+        const name = (element.getAttribute('aria-label') ?? /** @type {HTMLElement} */ (element).innerText ?? '').replace(/\s+/g, ' ').trim();
+        found.push(`${role}\t${name}`);
+      }
+      return found;
+    })
+    .catch(() => /** @type {string[]} */ ([]));
+  return `# ${where(page.url())}\n${lines.join('\n')}\n`;
+}
+
+/**
+ * @typedef {object} Evidence
+ * @property {string} leg the running leg
+ * @property {string} dir where the files go (the run directory)
+ * @property {string} kind what the page was meant to be
+ * @property {(line: string) => void} log receives the file paths, never a value
+ */
+
+/**
+ * Write the controls file for the page, for the reader who must teach the gate a new page.
+ * @param {import('playwright').Page} page
+ * @param {Evidence} evidence
+ * @param {string} [tag] a word between the leg and the stamp, for a page that is not a failure
+ * @returns {Promise<string>} the stamp the files share
+ */
+async function writeControls(page, evidence, tag) {
+  await mkdir(evidence.dir, { recursive: true, mode: 0o700 });
+  const stamp = `${evidence.leg}-${tag ? `${tag}-` : ''}${Date.now()}`;
+  const file = path.join(evidence.dir, `${stamp}.controls.txt`);
+  await writeFile(file, await controlsText(page), { mode: 0o600 });
+  evidence.log(`controls ${file}`);
+  return stamp;
+}
+
+/**
+ * Fail the leg on a page the gate cannot move on from: write the screenshot (never of a sign-in
+ * page or an address carrying `token=` or `code=`) and the controls file, then throw. The message
+ * names the page by host and path and quotes at most 200 characters of its text, since it can
+ * land in a public release body.
+ * @param {import('playwright').Page} page the page
+ * @param {Evidence} evidence what the page was meant to be
+ * @param {string} [reason] why the page is wrong; without one the page is simply unrecognised
+ * @returns {Promise<never>}
+ */
+export async function failPage(page, evidence, reason) {
+  const stamp = await writeControls(page, evidence);
+  if (evidence.kind !== 'signin' && !carriesSecret(page.url())) {
+    const shot = path.join(evidence.dir, `${stamp}.png`);
+    await page.screenshot({ path: shot }).catch(() => {});
+    evidence.log(`screenshot ${shot}`);
   }
-  throw new HoldTimeoutError(`The page "${label}" was not clicked within ${Math.round(timeoutMs / 1000)} seconds.`);
+  const text = (await pageText(page)).slice(0, 200);
+  const at = `at ${where(page.url())}: ${JSON.stringify(text)}`;
+  if (reason) throw new Error(`leg ${evidence.leg}: ${reason} ${at}`);
+  throw new UnrecognisedPageError(`leg ${evidence.leg}: an unrecognised page (${evidence.kind}) ${at}`);
 }
 
 /**
@@ -179,58 +234,115 @@ export async function holdPage(page, options) {
  * @property {import('playwright').BrowserContext} github the machine account's context
  * @property {() => import('playwright').BrowserContext} admin the current install's admin context
  * @property {Creds} creds the machine account
- * @property {string} leg the running leg, for a hold's notification
- * @property {string} screenshotDir where a hold's screenshot goes
- * @property {(title: string, body: string) => void} notify the desktop notification
+ * @property {string} leg the running leg
+ * @property {string} evidenceDir where a failure's screenshot and controls file, and each handled
+ *  GitHub page's controls file, go
  * @property {(line: string) => void} log one line per event, never a value
- * @property {number} [holdTimeoutMs] a hold's patience
  * @property {PageOptions} [page] the page waits
  */
 
 /**
- * Act on one URL the CLI opened.
+ * Wait for the page to be the setup tool's loopback success page, answering account prompts and
+ * clicking `consent` once if GitHub shows it. Any other loopback page, or running out of time,
+ * fails the leg.
+ * @param {import('playwright').Page} page
+ * @param {{ consent?: RegExp }} what the consent control to click once, when GitHub asks
+ * @param {Creds} creds
+ * @param {PageOptions} pageOptions
+ * @param {Evidence} evidence
+ * @returns {Promise<void>}
+ */
+async function reachLoopback(page, { consent }, creds, pageOptions, evidence) {
+  const { pauseMs = 500, controlWaitMs = 30_000 } = pageOptions;
+  const deadline = Date.now() + controlWaitMs;
+  let clicked = false;
+  for (;;) {
+    let parsed;
+    try {
+      parsed = new URL(page.url());
+    } catch {
+      parsed = null;
+    }
+    if (parsed && parsed.protocol === 'http:' && parsed.hostname === '127.0.0.1') {
+      if (parsed.pathname === '/callback' || parsed.pathname === '/manifest') {
+        if ((await pageText(page)).endsWith(LOOPBACK_DONE)) return;
+        await failPage(page, evidence, 'the setup tool answered the browser with an error page');
+      }
+    } else if (await answerAccountPrompts(page, creds, pauseMs)) {
+      continue;
+    } else if (consent && !clicked) {
+      const button = page.getByRole('button', { name: consent });
+      if (await visible(button)) {
+        clicked = true;
+        await button.first().click();
+        await settle(page, pauseMs);
+        continue;
+      }
+    }
+    if (Date.now() > deadline) await failPage(page, evidence, "the setup tool's loopback page never came");
+    await sleep(250);
+  }
+}
+
+/**
+ * After a sign-in confirm, the admin must land on `/admin`.
+ * @param {import('playwright').Page} page
+ * @param {Evidence} evidence
+ * @param {number} [waitMs]
+ * @returns {Promise<void>}
+ */
+async function requireAdmin(page, evidence, waitMs = 30_000) {
+  const atAdmin = () => new URL(page.url()).pathname.replace(/\/$/, '') === '/admin';
+  await page.waitForURL(atAdmin, { timeout: waitMs }).catch(() => {});
+  if (!atAdmin()) await failPage(page, evidence, 'the sign-in did not land on /admin');
+}
+
+/**
+ * Act on one URL the CLI opened. Every GitHub kind is done when the setup tool's loopback page
+ * shows its success sentence; a sign-in is done when the admin lands on `/admin`. Anything else
+ * fails at once through `failPage`.
  * @param {string} url the logged URL
  * @param {UrlHandlerOptions} options
  * @returns {Promise<UrlKind>} what the URL was classified as
  */
 export async function handleUrl(url, options) {
-  const { github, admin, creds, leg, screenshotDir, notify, log, holdTimeoutMs, page: pageOptions } = options;
+  const { github, admin, creds, leg, evidenceDir, log, page: pageOptions = {} } = options;
   const kind = classifyUrl(url);
-  // A sign-in link carries a token, so no log line names the URL, only its kind.
-  log(`url ${kind}${kind === 'signin' ? '' : ` ${url}`}`);
+  // A sign-in link carries a token, so no log line names it; a code never reaches a log either.
+  log(`url ${kind}${kind === 'signin' ? '' : ` ${carriesSecret(url) ? where(url) : url}`}`);
   if (kind === 'skip') return kind;
   const context = kind === 'signin' ? admin() : github;
   const page = await context.newPage();
+  const evidence = { leg, dir: evidenceDir, log, kind };
+  const pauseMs = pageOptions.pauseMs ?? 500;
   await page.goto(url, { waitUntil: 'load' });
-  await settle(page, pageOptions?.pauseMs ?? 500);
-  /** @type {Record<string, RegExp>} */
-  const controls = {
-    install: /^install/i,
-    authorize: /^authorize/i,
-    signin: /^(sign in|confirm sign-in)$/i,
-  };
-  let acted = false;
-  if (kind === 'manifest') {
-    // The page submits itself; the button is for a script that did not run.
-    const submit = page.getByRole('button', { name: /^create the github app$/i });
-    if (await visible(submit)) await submit.first().click().catch(() => {});
-    await settle(page, pageOptions?.pauseMs ?? 500);
-    acted = await clickControl(page, /^create github app\b/i, creds, pageOptions);
-  } else if (kind === 'install') {
-    const chooser = page.getByRole('link', { name: creds.login });
-    if (!(await visible(page.getByRole('button', { name: controls.install }))) && (await visible(chooser))) {
-      await chooser.first().click();
-      await settle(page, pageOptions?.pauseMs ?? 500);
+  await settle(page, pauseMs);
+  if (kind === 'unknown') return failPage(page, evidence);
+  if (kind === 'signin') {
+    if (!(await clickControl(page, /^(sign in|confirm sign-in)$/i, creds, pageOptions))) await failPage(page, evidence, 'the sign-in page lacks its control');
+    await requireAdmin(page, evidence, pageOptions.controlWaitMs);
+  } else {
+    await writeControls(page, evidence, kind);
+    if (kind === 'manifest') {
+      // The page submits itself; the button is for a script that did not run.
+      const submit = page.getByRole('button', { name: /^create the github app$/i });
+      if (await visible(submit)) await submit.first().click().catch(() => {});
+      await settle(page, pauseMs);
+      await clickControl(page, /^create github app\b/i, creds, pageOptions);
+      await reachLoopback(page, {}, creds, pageOptions, evidence);
+    } else if (kind === 'install') {
+      const chooser = page.getByRole('link', { name: creds.login });
+      if (!(await visible(page.getByRole('button', { name: /^install/i }))) && (await visible(chooser))) {
+        await chooser.first().click();
+        await settle(page, pauseMs);
+      }
+      await clickControl(page, /^install/i, creds, pageOptions);
+      await reachLoopback(page, {}, creds, pageOptions, evidence);
+    } else {
+      await reachLoopback(page, { consent: /^authorize/i }, creds, pageOptions, evidence);
     }
-    acted = await clickControl(page, controls.install, creds, pageOptions);
-  } else if (kind !== 'hold') {
-    acted = await clickControl(page, controls[kind], creds, pageOptions);
   }
-  if (acted) {
-    await page.close().catch(() => {});
-    return kind;
-  }
-  await holdPage(page, { label: `${kind === 'hold' ? 'an unrecognised page' : `the ${kind} page without its control`} (${new URL(url).host})`, leg, screenshotDir, notify, log, timeoutMs: holdTimeoutMs });
+  await page.close().catch(() => {});
   return kind;
 }
 
@@ -238,11 +350,12 @@ export async function handleUrl(url, options) {
  * Tail the shim's URL log, calling `onUrl` for each new line, one at a time.
  * @param {string} file the log
  * @param {(url: string) => Promise<void>} onUrl the handler
- * @param {number} [pollMs] the gap between looks (250)
+ * @param {{ from?: number, pollMs?: number }} [options] `from` is the byte offset to start at (0), so
+ *  a tail begins at the log's current end; `pollMs` is the gap between looks (250)
  * @returns {{ stop: () => Promise<void> }} `stop` finishes the queued URLs, then ends the tail
  */
-export function tailUrlLog(file, onUrl, pollMs = 250) {
-  let offset = 0;
+export function tailUrlLog(file, onUrl, { from = 0, pollMs = 250 } = {}) {
+  let offset = from;
   let stopped = false;
   let buffer = '';
   const done = (async () => {
@@ -284,8 +397,8 @@ export function tailUrlLog(file, onUrl, pollMs = 250) {
  */
 
 /**
- * The environment a browser or notify-send child gets: the display and session-bus names, the
- * XDG_* names, HOME, PATH, and LANG. Neither child needs a secret (the page logic runs in Node), so
+ * The environment a browser child gets: the display and session-bus names, the
+ * XDG_* names, HOME, PATH, and LANG. The browser needs no secret (the page logic runs in Node), so
  * no token, password, or mailbox name is carried.
  * @param {NodeJS.ProcessEnv} [parentEnv] the environment to draw from
  * @returns {Record<string, string>} the child's environment
@@ -302,11 +415,11 @@ export function childEnv(parentEnv = process.env) {
 
 /**
  * Launch Chromium with the machine account's stored session. Tracing and video stay off.
- * @param {{ statePath: string, headless?: boolean }} options `headless` is false in production, so
- *  a held page can take a click; tests set it true
+ * @param {{ statePath: string, headless?: boolean }} options `headless` is true unless the run was
+ *  started with `--headed`
  * @returns {Promise<Launched>}
  */
-export async function launchBrowser({ statePath, headless = false }) {
+export async function launchBrowser({ statePath, headless = true }) {
   const browser = await chromium.launch({ headless, env: childEnv() });
   await mkdir(path.dirname(statePath), { recursive: true, mode: 0o700 });
   const github = await browser.newContext(existsSync(statePath) ? { storageState: statePath } : {});
@@ -367,16 +480,23 @@ export async function publishViaAdmin(context, { origin, marker, adminPath = '/a
   await editor.click();
   await page.keyboard.press('Control+End');
   await page.keyboard.type(`\n\n${marker}\n`);
-  const navbar = page.locator('.navbar');
-  const save = navbar.getByRole('button', { name: 'Save', exact: true });
-  if (await save.isEnabled().catch(() => false)) {
-    await save.click();
-    await settle(page, pauseMs);
+  // Publish is enabled while the editor is dirty, so it needs no Save first; a Save would only
+  // flash a message that also says "published".
+  await page.waitForFunction((text) => /** @type {HTMLInputElement | null} */ (document.querySelector('input[name="body"]'))?.value.includes(text), marker, { timeout: alertWaitMs });
+  const publish = page.locator('.navbar').getByRole('button', { name: 'Publish', exact: true });
+  /** @type {string} */
+  let alertText;
+  try {
+    await Promise.all([page.waitForURL(/[?&]published=1/, { timeout: alertWaitMs }), publish.click()]);
+    const feedback = page.locator('.cairn-feedback').first();
+    await feedback.waitFor({ state: 'visible', timeout: alertWaitMs });
+    alertText = (await feedback.innerText()).trim();
+  } catch {
+    const alert = page.locator('.alert:visible').first();
+    const shown = (await alert.innerText({ timeout: 1000 }).catch(() => '')).trim().slice(0, 200);
+    if (!shown) throw new Error(`The publish at ${where(page.url())} neither redirected nor showed an alert.`);
+    alertText = shown;
   }
-  await navbar.getByRole('button', { name: 'Publish', exact: true }).click();
-  const alert = page.locator('.alert', { hasText: 'Published' }).first();
-  await alert.waitFor({ state: 'visible', timeout: alertWaitMs });
-  const alertText = (await alert.innerText()).trim();
   await page.close();
   return { alertText, control, marker, entryPath: adminPath.replace(/^\/admin\/pages\//, '/') };
 }
@@ -395,6 +515,11 @@ export async function requestSignInLink(context, { origin, email, pauseMs = 500 
   const requestedAt = Date.now();
   await page.getByRole('button', { name: /^send sign-in link$/i }).click();
   await settle(page, pauseMs);
+  const sent = page.getByRole('heading', { name: 'Check your email' });
+  if (!(await sent.first().waitFor({ state: 'visible', timeout: 15_000 }).then(() => true, () => false))) {
+    const shown = (await page.locator('.alert').first().innerText({ timeout: 1000 }).catch(() => '')) || (await pageText(page));
+    throw new Error(`The sign-in link was not sent: ${where(page.url())} shows ${JSON.stringify(shown.replace(/\s+/g, ' ').trim().slice(0, 200))}.`);
+  }
   await page.close();
   return requestedAt;
 }
@@ -412,6 +537,9 @@ export async function confirmSignIn(context, url, pauseMs = 500) {
   await settle(page, pauseMs);
   await page.getByRole('button', { name: /^(sign in|confirm sign-in)$/i }).click();
   await settle(page, pauseMs);
+  const atAdmin = () => new URL(page.url()).pathname.replace(/\/$/, '') === '/admin';
+  await page.waitForURL(atAdmin, { timeout: 15_000 }).catch(() => {});
+  if (!atAdmin()) throw new Error(`The sign-in did not land on /admin: ${where(page.url())} shows ${JSON.stringify((await pageText(page)).slice(0, 200))}.`);
   await page.close();
 }
 
@@ -449,17 +577,4 @@ export async function deleteGithubApp(context, slug, creds, { base = 'https://gi
   if (!(await clickControl(page, /^i understand\b.*\bdelete\b.*github app/i, creds, { pauseMs }))) throw new Error('The delete confirmation did not appear.');
   await page.close();
   return 'deleted';
-}
-
-/**
- * The desktop notification, at normal urgency (the calm-desktop rule).
- * @param {string} title the title
- * @param {string} body the body
- * @param {NodeJS.ProcessEnv} [parentEnv] the environment `notify-send` draws its own from
- * @returns {void}
- */
-export function notifyDesktop(title, body, parentEnv = process.env) {
-  const child = spawn('notify-send', ['-u', 'normal', title, body], { stdio: 'ignore', detached: true, env: childEnv(parentEnv) });
-  child.on('error', () => {});
-  child.unref();
 }

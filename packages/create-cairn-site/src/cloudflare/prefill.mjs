@@ -1,7 +1,8 @@
 // Resolving the pasted Cloudflare API token that every chapter-2 call signs with. Pure over the
 // in-memory record, like account.mjs's ensureAccountId: this returns the resolved token and
 // never touches the state store itself, so the caller (chapter2.mjs) decides when and whether to
-// persist it.
+// persist it. It also collects the narrow build token chapter 3 registers with Workers Builds
+// (ensureBuildToken), which nothing persists at all.
 //
 // The prefill URL's permission keys are the one thing here that must be verified against the
 // live dashboard before shipping, never assumed from the vendor's docs alone: Cloudflare's
@@ -21,6 +22,7 @@
 import { promptSecret } from '../prompts.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
 import { makeApi } from './api.mjs';
+import { cloudflareError } from './catalogue.mjs';
 
 /**
  * The `permissionGroupKeys` Cloudflare's create-token template URL accepts: one entry per
@@ -50,44 +52,52 @@ export const PREFILL_PERMISSION_KEYS = [
 ];
 
 /**
- * The three keys chapter 3 (Builds connect) adds to PREFILL_PERMISSION_KEYS. All three confirmed
- * filling their rows on the live dashboard, the same bar every key above met: `workers_ci` on
- * 2026-08-12 (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-12-t4c-builds-spike.md), `d1` and `workers_r2` on 2026-08-13
- * through the full eight-key URL, pasted interactively during the T5 live e2e
+ * The keys a Workers Builds build itself deploys with, requested on the build token's prefill
+ * page. Each confirmed filling its row on the live dashboard, the same bar every key above met:
+ * `workers_scripts` on 2026-08-11 (above), `d1` and `workers_r2` on 2026-08-13 through a URL
+ * pasted interactively during the T5 live e2e
  * (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-13-t5-task8-live-e2e.md).
  *
  * The requirements behind the two data keys carry different evidence. `d1` is observed: a Builds
- * deploy of a cairn-shaped scaffold, run with a token missing it, died on `GET /d1/database/{id}`
+ * deploy of a cairn-shaped scaffold, run with a token missing it, died reading its D1 database
  * with `Authentication error [code: 10000]`. `workers_r2` is inferred: that failing build died at
  * the first D1 binding and never reached the R2 binding, and the successful deploy that followed
  * carried both keys, so no request log entry has ever named `workers_r2` alone. It stays as a
  * conservative include.
  * @type {Array<{ key: string, type: 'edit' }>}
  */
-const BUILDS_PERMISSION_KEYS = [
-  { key: 'workers_ci', type: 'edit' },
+export const BUILD_TOKEN_PERMISSION_KEYS = [
+  { key: 'workers_scripts', type: 'edit' },
   { key: 'd1', type: 'edit' },
   { key: 'workers_r2', type: 'edit' },
 ];
 
 /**
- * The chapter-3 union key set: PREFILL_PERMISSION_KEYS plus BUILDS_PERMISSION_KEYS. One token,
- * pasted once, has to authorize every call chapter 2 and chapter 3 both make (module header,
- * "The narrower reading, and why the chapter does not take it").
+ * The key set chapter 2 asks for on a site Workers Builds deploys: PREFILL_PERMISSION_KEYS plus
+ * `workers_ci`, which connects repositories and kicks, lists, and reads builds. `workers_ci`
+ * confirmed filling its row on 2026-08-12
+ * (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-12-t4c-builds-spike.md).
+ * No D1 or R2 key: this tool makes no D1 or R2 API call, and the build token carries those.
  * @type {Array<{ key: string, type: 'edit' }>}
  */
-export const CHAPTER3_PERMISSION_KEYS = [...PREFILL_PERMISSION_KEYS, ...BUILDS_PERMISSION_KEYS];
+export const CHAPTER2_BUILDS_PERMISSION_KEYS = [...PREFILL_PERMISSION_KEYS, { key: 'workers_ci', type: 'edit' }];
 
 /**
- * The key set chapter 2 asks for on a site Workers Builds deploys: PREFILL_PERMISSION_KEYS plus
- * `workers_ci`, which kicks, lists, and reads builds. Chapter 2 registers no build token, so the
- * two data keys a build itself needs (`d1`, `workers_r2`) stay with chapter 3.
+ * The key set chapter 3's setup token asks for: the same six keys as
+ * CHAPTER2_BUILDS_PERMISSION_KEYS, since every call chapter 3 makes beyond chapter 2's set is a
+ * Workers Builds call, which `workers_ci` covers.
  * @type {Array<{ key: string, type: 'edit' }>}
  */
-export const CHAPTER2_BUILDS_PERMISSION_KEYS = [...PREFILL_PERMISSION_KEYS, BUILDS_PERMISSION_KEYS[0]];
+export const CHAPTER3_PERMISSION_KEYS = CHAPTER2_BUILDS_PERMISSION_KEYS;
 
 /** The name Cloudflare pre-fills into the create-token page's "Token name" field. */
 const PREFILL_TOKEN_NAME = 'cairn create-cairn-site';
+
+/**
+ * The name the build token is created under and registered with Workers Builds as. Reuse matches
+ * a registration by this name, so later sites on the account find it.
+ */
+export const BUILD_TOKEN_NAME = 'cairn-build';
 
 /**
  * Build the prefilled create-token page for a given permission-group key list, over every
@@ -97,17 +107,21 @@ const PREFILL_TOKEN_NAME = 'cairn create-cairn-site';
  * zones", 2026-08-11.
  * @param {Array<{ key: string, type: 'edit' }>} [keys] the permission-group keys to request;
  *  defaults to PREFILL_PERMISSION_KEYS, the chapter-2 set
+ * @param {string} [name] the token name to pre-fill; defaults to the setup token's name
  * @returns {string} the full prefilled create-token URL
  */
-export function prefillUrl(keys = PREFILL_PERMISSION_KEYS) {
+export function prefillUrl(keys = PREFILL_PERMISSION_KEYS, name = PREFILL_TOKEN_NAME) {
   const params = new URLSearchParams({
     permissionGroupKeys: JSON.stringify(keys),
     accountId: '*',
     zoneId: 'all',
-    name: PREFILL_TOKEN_NAME,
+    name,
   });
   return `https://dash.cloudflare.com/profile/api-tokens?${params.toString()}`;
 }
+
+/** The build token's prefilled create-token page: the three build keys, named `cairn-build`. */
+export const BUILD_TOKEN_PREFILL_URL = prefillUrl(BUILD_TOKEN_PERMISSION_KEYS, BUILD_TOKEN_NAME);
 
 /**
  * The chapter-2 prefilled create-token page, built from PREFILL_PERMISSION_KEYS. Byte-stable
@@ -119,6 +133,12 @@ export const PREFILL_URL = prefillUrl();
 
 /** The question the first paste and the retry both ask, so the retry reads as the same request. */
 const PASTE_PROMPT = 'Paste your Cloudflare API token';
+
+/**
+ * The build token's paste prompt. It must not contain PASTE_PROMPT: the release gate's driver
+ * answers a prompt with the first table entry whose text the line includes.
+ */
+const BUILD_TOKEN_PROMPT = 'Paste your Workers Builds deploy token';
 
 /**
  * The shapes a real Cloudflare API token takes. Used only to catch a token mistakenly placed on
@@ -149,6 +169,23 @@ function findTokenShapedArg(argv) {
     const value = equals === -1 ? arg : arg.slice(equals + 1);
     return TOKEN_SHAPES.some((shape) => shape.test(value));
   });
+}
+
+/**
+ * Throw, before any call is made, when argv carries something shaped like a Cloudflare token.
+ * @param {string[]} argv the argument vector to scan
+ * @param {string} envName the environment variable the refusal points the admin to instead
+ * @returns {void}
+ */
+function refuseTokenShapedArg(argv, envName) {
+  const offender = findTokenShapedArg(argv);
+  if (!offender) return;
+  throw new Error(
+    `The command line carries what looks like a Cloudflare API token ("${offender}"). A ` +
+      'token must never be passed as a flag or argument: argv is visible to every other ' +
+      'process on the machine and often ends up in shell history.\n' +
+      `Next: remove it from the command line and set ${envName} in the environment instead.`,
+  );
 }
 
 /**
@@ -246,16 +283,7 @@ export async function ensureApiToken({
   argv = process.argv.slice(2),
   permissionKeys = PREFILL_PERMISSION_KEYS,
 }) {
-  const offender = findTokenShapedArg(argv);
-  if (offender) {
-    throw new Error(
-      `The command line carries what looks like a Cloudflare API token ("${offender}"). A ` +
-        'token must never be passed as a flag or argument: argv is visible to every other ' +
-        'process on the machine and often ends up in shell history.\n' +
-        'Next: remove it from the command line and set CAIRN_CF_API_TOKEN in the environment ' +
-        'instead.',
-    );
-  }
+  refuseTokenShapedArg(argv, 'CAIRN_CF_API_TOKEN');
 
   const scope = { dir: record?.dir, accountId: record?.cloudflare?.accountId };
   const saved = record?.cloudflare?.apiToken;
@@ -300,5 +328,111 @@ export async function ensureApiToken({
   const repasted = await promptSecretFn(PASTE_PROMPT);
   const secondTry = await validateToken(repasted, scope);
   if (secondTry.ok) return repasted;
+  throw secondTry.error;
+}
+
+/**
+ * Check a candidate build token through `GET /user/tokens/verify` on a client built on that
+ * token. Never `listZones`: the build token carries no zone permission, so a zone read would
+ * refuse a token that is exactly what was asked for.
+ * @param {string} token the build token to check
+ * @param {{ dir: string | undefined, accountId: string | undefined }} scope interpolated into
+ *  any thrown row
+ * @param {typeof makeApi} makeApiFn builds the client the check signs with
+ * @param {boolean} yes whether the token came from CAIRN_CF_BUILD_TOKEN on an unattended run,
+ *  which picks the build-token-invalid row's wording
+ * @returns {Promise<{ ok: true, id: string } | { ok: false, error: Error & { catalogue: object } }>}
+ *  `id` is the token's Cloudflare id, which its Builds registration names; a refused or
+ *  not-active token comes back as `build-token-invalid`
+ */
+async function verifyBuildToken(token, scope, makeApiFn, yes) {
+  try {
+    const result = await makeApiFn({ token, ...scope }).verifyToken();
+    // Verify answers success for a token that exists, even one that is disabled or expired, so
+    // the envelope alone does not say Builds could deploy with it.
+    if (result.status !== 'active') {
+      const detail = `Cloudflare reports this token as ${result.status ?? 'not active'}.`;
+      return { ok: false, error: cloudflareError('build-token-invalid', { dir: scope.dir, detail, yes }) };
+    }
+    return { ok: true, id: result.id };
+  } catch (error) {
+    if (!error?.catalogue) throw error;
+    // api.mjs names a refused bearer token-invalid, the API token's row, which chapter 3 answers
+    // by clearing the saved API token. A refused build token says nothing about that one.
+    const code = error.catalogue.code;
+    if (code === 'token-invalid' || code === 'token-scope-missing') {
+      return { ok: false, error: cloudflareError('build-token-invalid', { dir: scope.dir, yes }) };
+    }
+    return { ok: false, error };
+  }
+}
+
+/**
+ * @typedef {object} EnsureBuildTokenInput
+ * @property {string | undefined} dir the site's directory, interpolated into any thrown row
+ * @property {string | undefined} accountId the site's Cloudflare account id
+ * @property {(line: string) => void} log receives one printed line per call; never the token
+ * @property {(url: string, log: (line: string) => void) => Promise<void>} [openBrowser] opens the
+ *  build token's create-token page; defaults to open.mjs's real opener
+ * @property {boolean} [yes] true for a non-interactive run, which reads CAIRN_CF_BUILD_TOKEN and
+ *  never opens a browser or prompts
+ * @property {(message: string) => Promise<string>} [promptSecretFn] the paste prompt, a test seam
+ *  defaulting to prompts.mjs's promptSecret
+ * @property {Record<string, string | undefined>} [env] the environment CAIRN_CF_BUILD_TOKEN is
+ *  read from under `yes`; defaults to `process.env`
+ * @property {string[]} [argv] the argument vector scanned for a mistakenly-passed token; defaults
+ *  to `process.argv.slice(2)`
+ * @property {typeof makeApi} [makeApiFn] builds the client the verify call signs with; defaults to
+ *  api.mjs's `makeApi`
+ */
+
+/**
+ * Collect and verify the narrow token Workers Builds deploys with, for a caller that found no
+ * `cairn-build` registration to reuse. The token is returned, never saved: the caller hands it to
+ * Cloudflare's registration and drops it. An interactive run opens the build token's prefilled
+ * page and asks for the paste, with one retry, the same as ensureApiToken. An unattended run
+ * reads CAIRN_CF_BUILD_TOKEN and throws `build-token-missing` when it is unset. Either way a
+ * token-shaped argv entry is refused before any call.
+ * @param {EnsureBuildTokenInput} args
+ * @returns {Promise<{ token: string, id: string }>} the verified token and its Cloudflare id
+ */
+export async function ensureBuildToken({
+  dir,
+  accountId,
+  log,
+  openBrowser = defaultOpenBrowser,
+  yes = false,
+  promptSecretFn = promptSecret,
+  env = process.env,
+  argv = process.argv.slice(2),
+  makeApiFn = makeApi,
+}) {
+  refuseTokenShapedArg(argv, 'CAIRN_CF_BUILD_TOKEN');
+  const scope = { dir, accountId };
+
+  if (yes) {
+    const fromEnv = env.CAIRN_CF_BUILD_TOKEN;
+    if (!fromEnv) throw cloudflareError('build-token-missing', { dir });
+    const result = await verifyBuildToken(fromEnv, scope, makeApiFn, true);
+    if (!result.ok) throw result.error;
+    return { token: fromEnv, id: result.id };
+  }
+
+  log(
+    'Workers Builds deploys with a Cloudflare token of its own, narrower than the API token ' +
+      'this tool works with. ' +
+      `This account has none registered yet, so create one named ${BUILD_TOKEN_NAME}; later ` +
+      'sites on this account reuse it.',
+  );
+  await openBrowser(BUILD_TOKEN_PREFILL_URL, log);
+
+  const pasted = await promptSecretFn(BUILD_TOKEN_PROMPT);
+  const firstTry = await verifyBuildToken(pasted, scope, makeApiFn, false);
+  if (firstTry.ok) return { token: pasted, id: firstTry.id };
+
+  log('That token did not work; check it and paste it again.');
+  const repasted = await promptSecretFn(BUILD_TOKEN_PROMPT);
+  const secondTry = await verifyBuildToken(repasted, scope, makeApiFn, false);
+  if (secondTry.ok) return { token: repasted, id: secondTry.id };
   throw secondTry.error;
 }

@@ -5,14 +5,16 @@
 // The smoke prints one verdict per check and never a value. Every HTTP call goes through Node
 // `fetch` (or the CLI's own `makeApi`, which does the same), so no token is ever in argv.
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { hostname } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { totpFromEnv } from './totp.mjs';
-import { deleteGithubApp, ensureGithubSession, launchBrowser, notifyDesktop } from './browser.mjs';
-import { LEG_PLANS, guardedRun, installName, runLeg } from './legs.mjs';
+import { deleteGithubApp, ensureGithubSession, launchBrowser } from './browser.mjs';
+import { LEG_PLANS, installName, runLeg } from './legs.mjs';
+import { recordLeg, recordPending } from './record.mjs';
 import { teardownStateDir } from './teardown.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -23,6 +25,8 @@ const API_MODULE = new URL('../../packages/create-cairn-site/src/cloudflare/api.
 
 /** The Cloudflare account the gate token and its throwaway resources live on. */
 export const GATE_ACCOUNT_ID = '120c269ad6d3dfbe6d63a0bb53758ca0';
+/** That account's name, which the CLI's account select is answered with. */
+export const GATE_ACCOUNT_NAME = 'glw907';
 /** The test domain whose zone is active on that account. */
 const TEST_DOMAIN = 'carin-test.org';
 /** The wrangler the generated template pins (`templates/waymark/package.json`). */
@@ -259,7 +263,7 @@ export async function runSmoke({ env, runDir, deps = {} }) {
 }
 
 const USAGE =
-  'Usage: run-gate.sh --smoke | --teardown-stale | --teardown-run | --leg <A1|A2|B1|B2> [--leg ...] --version <v> | --all --version <v>';
+  'Usage: run-gate.sh --smoke | --teardown-stale | --teardown-run | --leg <A1|A2|B1|B2> [--leg ...] --version <v> | --all --version <v> [--headed]';
 
 /**
  * @param {string[]} argv the arguments
@@ -278,9 +282,10 @@ function flagValues(argv, name) {
 /**
  * The gate's browser and teardown wiring for one process. The browser launches on first use.
  * @param {Record<string, string | undefined>} env the allowlisted environment
+ * @param {{ headed?: boolean }} [options] `headed` launches the browser with a window (headless otherwise)
  * @returns {{ getBrowser: () => Promise<import('./browser.mjs').Launched>, creds: import('./browser.mjs').Creds, teardownDeps: import('./teardown.mjs').TeardownDeps, close: () => Promise<void> }}
  */
-function makeSession(env) {
+export function makeSession(env, { headed = false } = {}) {
   const statePath = path.join(env.HOME ?? '', '.local', 'state', 'cairn-gate', 'github-session.json');
   /** @type {Promise<import('./browser.mjs').Launched> | undefined} */
   let launching;
@@ -291,7 +296,7 @@ function makeSession(env) {
     totp: () => totpFromEnv(env),
   };
   const getBrowser = () => {
-    launching ??= launchBrowser({ statePath }).then(async (launched) => {
+    launching ??= launchBrowser({ statePath, headless: !headed }).then(async (launched) => {
       await ensureGithubSession(launched.github, creds);
       return launched;
     });
@@ -321,11 +326,14 @@ function makeSession(env) {
  * @param {import('./teardown.mjs').TeardownDeps} deps the teardown wiring
  * @returns {Promise<string[]>} the steps left
  */
-async function teardownRun(dir, deps) {
+export async function teardownRun(dir, deps) {
+  // A failed leg's captures are the evidence of why it failed, so they outlive the teardown.
+  const failed = existsSync(path.join(dir, 'failed'));
+  const captures = failed ? [] : (await readdir(dir).catch(() => /** @type {string[]} */ ([]))).filter((f) => /^capture-.*\.bin$/.test(f));
   const { left } = await teardownStateDir({
     stateDir: path.join(dir, 'state'),
     deps,
-    cleanup: [path.join(dir, 'capture.bin'), path.join(dir, 'urls.log')],
+    cleanup: [...captures.map((f) => path.join(dir, f)), ...(failed ? [] : [path.join(dir, 'urls.log')])],
   });
   for (const line of left) console.error(`teardown left: ${line}`);
   return left;
@@ -337,7 +345,7 @@ async function teardownRun(dir, deps) {
  * @param {import('./teardown.mjs').TeardownDeps} deps the teardown wiring
  * @returns {Promise<string[]>} the steps left
  */
-async function teardownStale(runDir, deps) {
+export async function teardownStale(runDir, deps) {
   const runs = path.dirname(runDir);
   /** @type {string[]} */
   const left = [];
@@ -349,13 +357,48 @@ async function teardownStale(runDir, deps) {
 }
 
 /**
+ * The collaborators `main` calls, injected so a test can run it without a browser or a release.
+ * @typedef {object} MainDeps
+ * @property {typeof makeSession} makeSession the browser and teardown wiring
+ * @property {typeof runLeg} runLeg runs one leg
+ * @property {Partial<import('./legs.mjs').LegDeps>} legDeps collaborators handed to every leg
+ * @property {typeof recordLeg} recordLeg writes a row for a leg that did not run
+ * @property {typeof recordPending} recordPending marks legs `pending` before the run starts
+ * @property {typeof teardownRun} teardownRun tears down one run directory
+ * @property {typeof teardownStale} teardownStale tears down every earlier run directory
+ */
+
+/** @type {MainDeps} */
+const DEFAULT_MAIN_DEPS = { makeSession, runLeg, legDeps: {}, recordLeg, recordPending, teardownRun, teardownStale };
+
+/**
+ * Split legs into one list per install, in the order given, so a failure in one install's legs
+ * never stops the other's.
+ * @param {string[]} legs the legs to run
+ * @returns {string[][]} the groups
+ */
+function groupByInstall(legs) {
+  /** @type {Map<string, string[]>} */
+  const groups = new Map();
+  for (const leg of legs) {
+    const key = LEG_PLANS[leg].install;
+    groups.set(key, [...(groups.get(key) ?? []), leg]);
+  }
+  return [...groups.values()];
+}
+
+/**
  * The command line. `--smoke` runs the credential smoke; `--leg` and `--all` run the legs;
- * `--teardown-run` and `--teardown-stale` remove what a run or an earlier run left.
+ * `--teardown-run` and `--teardown-stale` remove what a run or an earlier run left. A run first
+ * marks its legs `pending` under its run id and stops if it cannot; a group that fails or throws
+ * leaves the other group to run, and the legs after the failure get a `skipped` row.
  * @param {string[]} argv the arguments after the script name
  * @param {Record<string, string | undefined>} env the allowlisted environment
+ * @param {Partial<MainDeps>} [overrides] collaborators, defaulting to the real ones
  * @returns {Promise<number>} the exit code
  */
-export async function main(argv, env) {
+export async function main(argv, env, overrides = {}) {
+  const deps = { ...DEFAULT_MAIN_DEPS, ...overrides };
   const runDir = env.GATE_RUN_DIR;
   if (!runDir) {
     console.error('GATE_RUN_DIR is not set; start this through scripts/gate/run-gate.sh.');
@@ -363,10 +406,10 @@ export async function main(argv, env) {
   }
   if (argv.includes('--smoke')) return (await runSmoke({ env, runDir })) ? 0 : 1;
 
-  const session = makeSession(env);
+  const session = deps.makeSession(env, { headed: argv.includes('--headed') });
   try {
-    if (argv.includes('--teardown-run')) return (await teardownRun(runDir, session.teardownDeps)).length === 0 ? 0 : 1;
-    if (argv.includes('--teardown-stale')) return (await teardownStale(runDir, session.teardownDeps)).length === 0 ? 0 : 1;
+    if (argv.includes('--teardown-run')) return (await deps.teardownRun(runDir, session.teardownDeps)).length === 0 ? 0 : 1;
+    if (argv.includes('--teardown-stale')) return (await deps.teardownStale(runDir, session.teardownDeps)).length === 0 ? 0 : 1;
 
     const all = argv.includes('--all');
     const legs = all ? ['A1', 'A2', 'B1', 'B2'] : flagValues(argv, '--leg');
@@ -375,7 +418,29 @@ export async function main(argv, env) {
       console.error(USAGE);
       return 2;
     }
-    if (all) await teardownStale(runDir, session.teardownDeps);
+    if (all) await deps.teardownStale(runDir, session.teardownDeps);
+
+    const run = path.basename(runDir);
+    const notesDir = path.join(runDir, 'notes');
+    try {
+      await deps.recordPending({ version, legs, run, notesDir, fresh: all });
+    } catch (error) {
+      console.error(`Could not mark the legs pending: ${error instanceof Error ? error.message : String(error)}`);
+      return 1;
+    }
+
+    /**
+     * Write a row for a leg that did not run to its end, logging a failed write.
+     * @param {string} leg the leg
+     * @param {string} verdict the verdict cell
+     */
+    const recordUnrun = async (leg, verdict) => {
+      try {
+        await deps.recordLeg({ version, notesDir, row: { leg, path: '-', url: '-', commit: '-', marker: '-', fetched: '-', verdict, run } });
+      } catch (error) {
+        console.error(`could not write the ${leg} row: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    };
 
     const cliEnv = buildCliEnv({ runDir, parentEnv: env });
     const launched = await session.getBrowser();
@@ -387,48 +452,60 @@ export async function main(argv, env) {
 
     /** @param {string[]} group the legs of one install, in order */
     const runGroup = async (group) => {
-      for (const leg of group) {
-        const plan = LEG_PLANS[leg];
-        let install = installs.get(plan.install);
-        if (!install) {
-          if (!plan.first) throw new Error(`Leg ${leg} needs the install an earlier leg makes; list ${plan.install === 'a' ? 'A1' : 'B1'} before it in the same run.`);
-          install = {
-            name: names[plan.install],
-            dir: path.join(runDir, 'installs', names[plan.install]),
-            admin: await launched.newAdminContext(),
-            signedIn: false,
-          };
-          installs.set(plan.install, install);
+      for (const [index, leg] of group.entries()) {
+        /** @type {string | undefined} */
+        let stopped;
+        let entered = false;
+        try {
+          const plan = LEG_PLANS[leg];
+          let install = installs.get(plan.install);
+          if (!install) {
+            if (!plan.first) throw new Error(`Leg ${leg} needs the install an earlier leg makes; list ${plan.install === 'a' ? 'A1' : 'B1'} before it in the same run.`);
+            install = {
+              name: names[plan.install],
+              dir: path.join(runDir, 'installs', names[plan.install]),
+              admin: await launched.newAdminContext(),
+              signedIn: false,
+            };
+            installs.set(plan.install, install);
+          }
+          console.log(`leg ${leg} on ${install.name}`);
+          entered = true;
+          const verdict = await deps.runLeg(
+            {
+              accountName: GATE_ACCOUNT_NAME,
+              leg,
+              version,
+              runDir,
+              env,
+              cliEnv,
+              install,
+              launched,
+              creds: session.creds,
+              releaseNotesDir: notesDir,
+              log: (line) => console.log(line),
+            },
+            { recordLeg: deps.recordLeg, ...deps.legDeps },
+          );
+          console.log(`${verdict.pass ? 'pass' : 'FAIL'}     leg ${leg}${verdict.pass ? '' : `: ${verdict.failures.join('; ')}`}`);
+          if (!verdict.pass) stopped = leg;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`FAIL     leg ${leg}: ${message}`);
+          if (!entered) await recordUnrun(leg, `fail: ${message}`);
+          stopped = leg;
         }
-        console.log(`leg ${leg} on ${install.name}`);
-        const verdict = await runLeg({
-          leg,
-          version,
-          runDir,
-          env,
-          cliEnv,
-          install,
-          launched,
-          creds: session.creds,
-          releaseNotesDir: path.join(runDir, 'notes'),
-          notify: notifyDesktop,
-          log: (line) => console.log(line),
-        });
-        console.log(`${verdict.pass ? 'pass' : 'FAIL'}     leg ${leg}${verdict.pass ? '' : `: ${verdict.failures.join('; ')}`}`);
-        if (!verdict.pass) {
+        if (stopped) {
           passed = false;
+          for (const later of group.slice(index + 1)) await recordUnrun(later, `skipped: needs ${stopped}`);
           return;
         }
       }
     };
 
-    if (all) {
-      for (const group of [['A1', 'A2'], ['B1', 'B2']]) {
-        await guardedRun(() => runGroup(group), () => teardownRun(runDir, session.teardownDeps));
-        await teardownRun(runDir, session.teardownDeps);
-      }
-    } else {
-      await runGroup(legs);
+    for (const group of groupByInstall(legs)) {
+      await runGroup(group);
+      if (all) await deps.teardownRun(runDir, session.teardownDeps);
     }
     return passed ? 0 : 1;
   } finally {

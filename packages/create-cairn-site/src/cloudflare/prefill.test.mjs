@@ -468,24 +468,280 @@ test('prefillUrl() with no argument reproduces the chapter-2 URL exactly', async
   assert.equal(prefillUrl(), CHAPTER2_URL);
 });
 
-test('CHAPTER3_PERMISSION_KEYS is the five chapter-2 keys plus the three verified Builds keys', async () => {
-  const { PREFILL_PERMISSION_KEYS, CHAPTER3_PERMISSION_KEYS } = await import('./prefill.mjs');
-  assert.deepEqual(CHAPTER3_PERMISSION_KEYS, [
-    ...PREFILL_PERMISSION_KEYS,
-    { key: 'workers_ci', type: 'edit' },
-    { key: 'd1', type: 'edit' },
-    { key: 'workers_r2', type: 'edit' },
-  ]);
-  assert.equal(CHAPTER3_PERMISSION_KEYS.length, 8);
+test('CHAPTER3_PERMISSION_KEYS is the six-key chapter-2 Builds set, with no data keys', async () => {
+  const { CHAPTER3_PERMISSION_KEYS, CHAPTER2_BUILDS_PERMISSION_KEYS } = await import('./prefill.mjs');
+  assert.deepEqual(CHAPTER3_PERMISSION_KEYS, CHAPTER2_BUILDS_PERMISSION_KEYS);
+  assert.equal(CHAPTER3_PERMISSION_KEYS.length, 6);
+  const keys = CHAPTER3_PERMISSION_KEYS.map((entry) => entry.key);
+  assert.ok(!keys.includes('d1') && !keys.includes('workers_r2'), 'the setup token carries no data key');
 });
 
-test('prefillUrl(CHAPTER3_PERMISSION_KEYS) carries all eight keys', async () => {
+test('prefillUrl(CHAPTER3_PERMISSION_KEYS) carries all six keys', async () => {
   const { prefillUrl, CHAPTER3_PERMISSION_KEYS } = await import('./prefill.mjs');
   const url = new URL(prefillUrl(CHAPTER3_PERMISSION_KEYS));
   const keys = JSON.parse(url.searchParams.get('permissionGroupKeys'));
   assert.deepEqual(keys, CHAPTER3_PERMISSION_KEYS);
   assert.equal(url.searchParams.get('accountId'), '*');
   assert.equal(url.searchParams.get('zoneId'), 'all');
+});
+
+// --- the narrow build token ---------------------------------------------------------------------
+
+test('the build-token key set is Workers Scripts, D1, and R2 at edit, and nothing else', async () => {
+  const { BUILD_TOKEN_PERMISSION_KEYS } = await import('./prefill.mjs');
+  assert.deepEqual(BUILD_TOKEN_PERMISSION_KEYS, [
+    { key: 'workers_scripts', type: 'edit' },
+    { key: 'd1', type: 'edit' },
+    { key: 'workers_r2', type: 'edit' },
+  ]);
+});
+
+test('the build-token prefill URL requests the three build keys under the token name cairn-build', async () => {
+  const { BUILD_TOKEN_PREFILL_URL, BUILD_TOKEN_PERMISSION_KEYS } = await import('./prefill.mjs');
+  const url = new URL(BUILD_TOKEN_PREFILL_URL);
+  assert.equal(url.origin + url.pathname, 'https://dash.cloudflare.com/profile/api-tokens');
+  assert.deepEqual(JSON.parse(url.searchParams.get('permissionGroupKeys')), BUILD_TOKEN_PERMISSION_KEYS);
+  assert.equal(url.searchParams.get('name'), 'cairn-build');
+});
+
+test('ensureBuildToken opens the build-token page, asks for the deploy token, and verifies it with its own bearer, never listZones', async (t) => {
+  const cloudflare = await startFakeCloudflare({ tokenVerifyIds: { 'pasted-build-token': 'build-token-id-1' } });
+  t.after(() => cloudflare.close());
+  process.env.CAIRN_CLOUDFLARE_API_BASE = cloudflare.apiBase;
+  t.after(() => {
+    delete process.env.CAIRN_CLOUDFLARE_API_BASE;
+  });
+  const { ensureBuildToken, BUILD_TOKEN_PREFILL_URL } = await import('./prefill.mjs');
+
+  const opened = [];
+  const prompts = [];
+  const result = await ensureBuildToken({
+    dir: '/tmp/site',
+    accountId: 'acct-1',
+    log: () => {},
+    openBrowser: async (url) => {
+      opened.push(url);
+    },
+    promptSecretFn: async (message) => {
+      prompts.push(message);
+      return 'pasted-build-token';
+    },
+    argv: [],
+  });
+
+  assert.deepEqual(result, { token: 'pasted-build-token', id: 'build-token-id-1' });
+  assert.deepEqual(opened, [BUILD_TOKEN_PREFILL_URL]);
+  assert.deepEqual(prompts, ['Paste your Workers Builds deploy token']);
+  // The gate's driver answers the first prompt-table entry a line includes, so the build prompt
+  // must never carry the setup token's prompt inside it.
+  assert.ok(!prompts[0].includes('Paste your Cloudflare API token'));
+  const verify = cloudflare.requests.filter((r) => r.path === '/client/v4/user/tokens/verify');
+  assert.equal(verify.length, 1);
+  assert.equal(verify[0].headers.authorization, 'Bearer pasted-build-token');
+  assert.equal(
+    cloudflare.requests.some((r) => r.path.startsWith('/client/v4/zones')),
+    false,
+    'a narrow build token has no zone read, so it must never be checked through listZones',
+  );
+});
+
+test('ensureBuildToken under --yes reads CAIRN_CF_BUILD_TOKEN, never prompting or opening a browser', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+
+  const result = await ensureBuildToken({
+    dir: '/tmp/site',
+    accountId: 'acct-1',
+    log: () => {},
+    yes: true,
+    openBrowser: async () => {
+      throw new Error('openBrowser must not be called under --yes');
+    },
+    promptSecretFn: async () => {
+      throw new Error('promptSecretFn must not be called under --yes');
+    },
+    env: { CAIRN_CF_BUILD_TOKEN: 'env-build-token', CAIRN_CF_API_TOKEN: 'env-setup-token' },
+    argv: [],
+  });
+
+  assert.equal(result.token, 'env-build-token');
+  const verify = cloudflare.requests.find((r) => r.path === '/client/v4/user/tokens/verify');
+  assert.equal(verify.headers.authorization, 'Bearer env-build-token');
+});
+
+test('ensureBuildToken under --yes with no CAIRN_CF_BUILD_TOKEN throws build-token-missing, making no call', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+
+  await assert.rejects(
+    () =>
+      ensureBuildToken({
+        dir: '/tmp/site',
+        accountId: 'acct-1',
+        log: () => {},
+        yes: true,
+        env: { CAIRN_CF_API_TOKEN: 'env-setup-token' },
+        argv: [],
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'build-token-missing');
+      assert.match(err.message, /CAIRN_CF_BUILD_TOKEN/);
+      return true;
+    },
+  );
+  assert.equal(cloudflare.requests.length, 0);
+});
+
+/**
+ * What `GET /user/tokens/verify` answers for a well-formed token Cloudflare does not know,
+ * captured live on 2026-11-04 with a synthetic `cfut_` bearer.
+ */
+const VERIFY_UNKNOWN_TOKEN_BODY = {
+  success: false,
+  errors: [{ code: 1000, message: 'Invalid API Token' }],
+  messages: [],
+  result: null,
+};
+
+/**
+ * Run the interactive ensureBuildToken with a paste prompt that records each prompt and answers
+ * from `pastes` in order, arming one rejected verify before each of the first `rejectCount`
+ * answers (`failNext` is one-shot, so each rejection is armed just before its own verify).
+ * @param {(args: object) => Promise<{ token: string, id: string }>} ensureBuildToken
+ * @param {import('../../test/fake-cloudflare.mjs').FakeCloudflare} cloudflare
+ * @param {string[]} pastes the successive pasted values
+ * @param {number} rejectCount how many leading pastes verify rejects
+ * @returns {{ pending: Promise<{ token: string, id: string }>, prompts: string[] }}
+ */
+function interactiveBuildToken(ensureBuildToken, cloudflare, pastes, rejectCount) {
+  const prompts = [];
+  const pending = ensureBuildToken({
+    dir: '/tmp/site',
+    accountId: 'acct-1',
+    log: () => {},
+    openBrowser: async () => {},
+    promptSecretFn: async (message) => {
+      prompts.push(message);
+      if (prompts.length <= rejectCount) {
+        cloudflare.failNext('user_token_verify', 401, VERIFY_UNKNOWN_TOKEN_BODY);
+      }
+      return pastes[prompts.length - 1];
+    },
+    argv: [],
+  });
+  return { pending, prompts };
+}
+
+test('ensureBuildToken asks once more after a paste verify rejects, and returns the second paste', async (t) => {
+  const cloudflare = await startFakeCloudflare({ tokenVerifyIds: { 'second-paste': 'build-token-id-2' } });
+  t.after(() => cloudflare.close());
+  process.env.CAIRN_CLOUDFLARE_API_BASE = cloudflare.apiBase;
+  t.after(() => {
+    delete process.env.CAIRN_CLOUDFLARE_API_BASE;
+  });
+  const { ensureBuildToken } = await import('./prefill.mjs');
+
+  const { pending, prompts } = interactiveBuildToken(ensureBuildToken, cloudflare, ['first-paste', 'second-paste'], 1);
+  const result = await pending;
+
+  assert.deepEqual(result, { token: 'second-paste', id: 'build-token-id-2' });
+  assert.deepEqual(prompts, ['Paste your Workers Builds deploy token', 'Paste your Workers Builds deploy token']);
+});
+
+test('ensureBuildToken throws build-token-invalid when both pastes fail verify', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+
+  const { pending, prompts } = interactiveBuildToken(ensureBuildToken, cloudflare, ['first-paste', 'second-paste'], 2);
+
+  await assert.rejects(pending, (err) => {
+    assert.equal(err.catalogue.code, 'build-token-invalid');
+    assert.match(err.catalogue.next, /Workers Builds deploy token/);
+    assert.doesNotMatch(err.message, /second-paste/);
+    return true;
+  });
+  assert.equal(prompts.length, 2);
+  const verify = cloudflare.requests.filter((r) => r.path === '/client/v4/user/tokens/verify');
+  assert.equal(verify.length, 2);
+});
+
+test('ensureBuildToken under --yes throws build-token-invalid when CAIRN_CF_BUILD_TOKEN fails verify', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+  cloudflare.failNext('user_token_verify', 401, VERIFY_UNKNOWN_TOKEN_BODY);
+
+  await assert.rejects(
+    () =>
+      ensureBuildToken({
+        dir: '/tmp/site',
+        accountId: 'acct-1',
+        log: () => {},
+        yes: true,
+        promptSecretFn: async () => {
+          throw new Error('promptSecretFn must not be called under --yes');
+        },
+        env: { CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
+        argv: [],
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'build-token-invalid');
+      assert.match(err.catalogue.next, /CAIRN_CF_BUILD_TOKEN/);
+      assert.doesNotMatch(err.message, /paste/);
+      return true;
+    },
+  );
+});
+
+test('ensureBuildToken under --yes rejects a token verify reports as expired, though the envelope says success', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+  cloudflare.failNext('user_token_verify', 200, {
+    success: true,
+    errors: [],
+    messages: [],
+    result: { id: 'expired-token-id', status: 'expired' },
+  });
+
+  await assert.rejects(
+    () =>
+      ensureBuildToken({
+        dir: '/tmp/site',
+        accountId: 'acct-1',
+        log: () => {},
+        yes: true,
+        env: { CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
+        argv: [],
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'build-token-invalid');
+      assert.match(err.message, /expired/);
+      return true;
+    },
+  );
+});
+
+test('ensureBuildToken refuses a token-shaped argv entry before any call, naming CAIRN_CF_BUILD_TOKEN', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+  const tokenShaped = `cfut_${'D'.repeat(48)}`;
+
+  await assert.rejects(
+    () =>
+      ensureBuildToken({
+        dir: '/tmp/site',
+        accountId: 'acct-1',
+        log: () => {},
+        yes: true,
+        env: { CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
+        argv: ['--yes', tokenShaped],
+      }),
+    (err) => {
+      assert.match(err.message, /CAIRN_CF_BUILD_TOKEN/);
+      assert.match(err.message, new RegExp(tokenShaped));
+      return true;
+    },
+  );
+  assert.equal(cloudflare.requests.length, 0);
 });
 
 test('a token failing listZones still maps to token-scope-missing when permissionKeys is passed', async (t) => {

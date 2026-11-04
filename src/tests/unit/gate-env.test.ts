@@ -88,6 +88,16 @@ describe('run-gate.sh environment', () => {
     expect(dump).not.toContain('UNRELATED');
   });
 
+  it('hands --headed on to the gate', () => {
+    const home = mkdtempSync(join(tmpdir(), 'gate-home-'));
+    dirs.push(home);
+    mkdirSync(join(home, 'bin'));
+    writeFileSync(join(home, 'bin', 'node'), '#!/bin/sh\necho "$@" >> "$HOME/args-dump"\n', { mode: 0o755 });
+    const result = spawnSync('bash', [resolve('scripts/gate/run-gate.sh'), '--all', '--version', '1.0.0', '--headed'], { env: { PATH: `${join(home, 'bin')}:${process.env.PATH}`, HOME: home }, encoding: 'utf8' });
+    expect(result.status).toBe(0);
+    expect(readFileSync(join(home, 'args-dump'), 'utf8')).toMatch(/gate\.mjs --all --version 1\.0\.0 --headed$/m);
+  });
+
   it('passes none of them when the parent sets none', () => {
     const dump = envSeen({});
     expect(dump).not.toMatch(/^(DISPLAY|WAYLAND_DISPLAY|XAUTHORITY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS)=/m);

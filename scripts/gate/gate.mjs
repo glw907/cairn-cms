@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { totpFromEnv } from './totp.mjs';
-import { deleteGithubApp, ensureGithubSession, launchBrowser, notifyDesktop } from './browser.mjs';
+import { deleteGithubApp, ensureGithubSession, launchBrowser } from './browser.mjs';
 import { LEG_PLANS, guardedRun, installName, runLeg } from './legs.mjs';
 import { teardownStateDir } from './teardown.mjs';
 
@@ -259,7 +259,7 @@ export async function runSmoke({ env, runDir, deps = {} }) {
 }
 
 const USAGE =
-  'Usage: run-gate.sh --smoke | --teardown-stale | --teardown-run | --leg <A1|A2|B1|B2> [--leg ...] --version <v> | --all --version <v>';
+  'Usage: run-gate.sh --smoke | --teardown-stale | --teardown-run | --leg <A1|A2|B1|B2> [--leg ...] --version <v> | --all --version <v> [--headed]';
 
 /**
  * @param {string[]} argv the arguments
@@ -278,9 +278,10 @@ function flagValues(argv, name) {
 /**
  * The gate's browser and teardown wiring for one process. The browser launches on first use.
  * @param {Record<string, string | undefined>} env the allowlisted environment
+ * @param {{ headed?: boolean }} [options] `headed` launches the browser with a window (headless otherwise)
  * @returns {{ getBrowser: () => Promise<import('./browser.mjs').Launched>, creds: import('./browser.mjs').Creds, teardownDeps: import('./teardown.mjs').TeardownDeps, close: () => Promise<void> }}
  */
-function makeSession(env) {
+export function makeSession(env, { headed = false } = {}) {
   const statePath = path.join(env.HOME ?? '', '.local', 'state', 'cairn-gate', 'github-session.json');
   /** @type {Promise<import('./browser.mjs').Launched> | undefined} */
   let launching;
@@ -291,7 +292,7 @@ function makeSession(env) {
     totp: () => totpFromEnv(env),
   };
   const getBrowser = () => {
-    launching ??= launchBrowser({ statePath }).then(async (launched) => {
+    launching ??= launchBrowser({ statePath, headless: !headed }).then(async (launched) => {
       await ensureGithubSession(launched.github, creds);
       return launched;
     });
@@ -363,7 +364,7 @@ export async function main(argv, env) {
   }
   if (argv.includes('--smoke')) return (await runSmoke({ env, runDir })) ? 0 : 1;
 
-  const session = makeSession(env);
+  const session = makeSession(env, { headed: argv.includes('--headed') });
   try {
     if (argv.includes('--teardown-run')) return (await teardownRun(runDir, session.teardownDeps)).length === 0 ? 0 : 1;
     if (argv.includes('--teardown-stale')) return (await teardownStale(runDir, session.teardownDeps)).length === 0 ? 0 : 1;
@@ -411,7 +412,6 @@ export async function main(argv, env) {
           launched,
           creds: session.creds,
           releaseNotesDir: path.join(runDir, 'notes'),
-          notify: notifyDesktop,
           log: (line) => console.log(line),
         });
         console.log(`${verdict.pass ? 'pass' : 'FAIL'}     leg ${leg}${verdict.pass ? '' : `: ${verdict.failures.join('; ')}`}`);

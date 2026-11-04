@@ -1,7 +1,8 @@
 // The gate's four legs. Each runs the real create-cairn-site CLI at one exact version, publishes an
 // edit through the install's admin, and passes only on what a script fetched from the live address.
 // A leg's verdict is `evaluateLeg`'s: a CLI exit code is never an input that can pass it.
-import { mkdir, readdir, readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { runDriver } from './driver.mjs';
 import { confirmSignIn, handleUrl, publishViaAdmin, requestSignInLink, tailUrlLog } from './browser.mjs';
@@ -105,8 +106,7 @@ export function evaluateLeg(leg, results) {
 }
 
 /**
- * Run work, and tear down only when it throws. A held page keeps `work` pending, so teardown never
- * runs on the hold itself, only after the hold times out or a later step fails.
+ * Run work, and tear down only when it throws.
  * @template T
  * @param {() => Promise<T>} work the leg
  * @param {() => Promise<unknown>} teardown the cleanup
@@ -302,7 +302,6 @@ export function ownerEmailFor(env) {
  * @property {import('./browser.mjs').Launched} launched the browser
  * @property {import('./browser.mjs').Creds} creds the machine account
  * @property {string} releaseNotesDir where the release notes file goes
- * @property {(title: string, body: string) => void} notify the desktop notification
  * @property {(line: string) => void} log one line per event
  */
 
@@ -359,6 +358,9 @@ export async function runLeg(ctx) {
     const abort = new AbortController();
     /** @type {unknown} */
     let handlerFailure;
+    // Start at the log's current end: the log is shared by every runCli of the run, and a URL an
+    // earlier call handled must not be handled again.
+    const from = existsSync(urlLog) ? (await stat(urlLog)).size : 0;
     const tail = tailUrlLog(urlLog, async (url) => {
       if (handlerFailure) return;
       try {
@@ -367,16 +369,16 @@ export async function runLeg(ctx) {
           admin: () => install.admin,
           creds,
           leg,
-          screenshotDir: path.join(runDir, 'holds'),
-          notify: ctx.notify,
+          evidenceDir: runDir,
           log,
         });
+        // handleUrl returns for a sign-in only once the admin has landed on /admin.
         if (kind === 'signin') install.signedIn = true;
       } catch (error) {
         handlerFailure = error;
         abort.abort(error instanceof Error ? error.message : String(error));
       }
-    });
+    }, { from });
     const result = await runDriver({
       command: 'npx',
       args: ['--yes', '--prefer-online', `create-cairn-site@${version}`, '--dir', install.dir, ...extra],

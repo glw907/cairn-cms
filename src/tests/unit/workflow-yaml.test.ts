@@ -45,6 +45,7 @@ interface Step {
   if?: string;
   shell?: string;
   uses?: string;
+  with?: Record<string, unknown>;
   'continue-on-error'?: unknown;
 }
 
@@ -227,7 +228,7 @@ describe('the test jobs keep their gates and report their retries', () => {
 });
 
 describe('publish.yml gates a candidate before it reaches next', () => {
-  type PublishStep = Step & { env?: Record<string, string>; with?: Record<string, unknown> };
+  type PublishStep = Step & { env?: Record<string, string> };
   type PublishJob = Job & {
     permissions?: Record<string, string>;
     environment?: string;

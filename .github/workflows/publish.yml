@@ -4,13 +4,16 @@ name: Publish to npm
 # npm mints a short-lived credential from the GitHub OIDC token, and (for public
 # repos) attaches build provenance automatically. Configure the trusted publisher
 # once at npmjs.com → @glw907/cairn-cms → Settings → Trusted Publisher
-# (repo: glw907/cairn-cms, workflow: publish.yml).
+# (repo: glw907/cairn-cms, workflow: publish.yml, environment: npm-publish).
 #
-# Release flow: bump "version" in package.json, then either publish a GitHub
-# Release or run this workflow manually. `prepublishOnly` (svelte-package) builds
-# dist as part of `npm publish`. A candidate publishes to `gate`, which no tester's install
-# command reads; a dispatch with `promote` set moves a candidate that passed the release gate to
-# `next` and, for create-cairn-site, `latest`.
+# Release flow: bump "version" in the three manifests, then publish a GitHub Release. Only a
+# published release publishes: `ci-green` waits for the tagged commit's `test` (and, for a stable,
+# `e2e`) check runs, `build` packs three tarballs with no publish credential in reach, and each
+# publish job uploads one tarball with `--ignore-scripts`, so no lifecycle script runs where the
+# OIDC token is. A candidate publishes to `gate`, which no tester's install command reads. A
+# candidate that passed the release gate moves to `next` (and, for create-cairn-site, `latest`)
+# through a dispatch on the candidate's tag ref: `gh workflow run publish.yml --ref v<V> -f promote=<V>`.
+# The `verdict` job reads the gate's record first, and `promote` needs it.
 
 on:
   release:
@@ -18,37 +21,92 @@ on:
   workflow_dispatch:
     inputs:
       promote:
-        description: A passed candidate's version (for example 0.99.0-rc.3) to move to the next dist-tag; leave empty to publish as a release does
+        description: A passed candidate's version (for example 0.99.0-rc.3) to move to the next dist-tag; dispatch on that version's tag ref
         type: string
-        required: false
+        required: true
 
 permissions:
   contents: read
-  id-token: write # required for OIDC trusted publishing
 
 jobs:
-  publish:
-    if: github.event_name == 'release' || inputs.promote == ''
+  # Polls the check runs on the released commit. `filter=latest` returns the most recent check run
+  # per name, so a rerun is judged by its newest run (see "List check runs for a Git reference":
+  # https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference, which asks
+  # for `checks: read` on the token). The script still takes the highest id per name.
+  ci-green:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 50
+    permissions:
+      contents: read
+      checks: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - name: Wait for the required check runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_GREEN_DEADLINE: 2700
+          CI_GREEN_POLL: 30
+        run: |
+          set -o pipefail
+          NAMES="test"
+          case "$GITHUB_REF_NAME" in
+            *-*) ;;
+            *) NAMES="test e2e" ;;
+          esac
+          while :; do
+            waiting=0
+            for n in $NAMES; do
+              state=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?check_name=$n&filter=latest&per_page=100" \
+                | jq -r '[.check_runs[]] | max_by(.id) | if . == null then "missing" elif .status != "completed" then "pending" else .conclusion end')
+              case "$state" in
+                success) ;;
+                missing|pending) waiting=1 ;;
+                *)
+                  echo "::error::check run '$n' concluded '$state' on $GITHUB_SHA"
+                  exit 1
+                  ;;
+              esac
+            done
+            if [ "$waiting" = 0 ]; then
+              echo "check runs green on $GITHUB_SHA: $NAMES"
+              exit 0
+            fi
+            if [ "$SECONDS" -ge "$CI_GREEN_DEADLINE" ]; then
+              echo "::error::check runs ($NAMES) were not green on $GITHUB_SHA within ${CI_GREEN_DEADLINE}s"
+              exit 1
+            fi
+            sleep "$CI_GREEN_POLL"
+          done
+
+  # Packs the three tarballs. It holds no id-token, so the install scripts it runs have no
+  # publish-capable credential in reach.
+  build:
+    needs: ci-green
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
-      # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version), and a
-      # dist-tag change over OIDC needs >= 11.21.0.
-      # WATCH: pinned to the 11.x line at that floor because npm 12.0.0 (2026-07-08) ships without
-      # its sigstore module and every publish fails on MODULE_NOT_FOUND in libnpmpublish; the 12
-      # line's 12.2.0 is the first to carry the dist-tag support, so move to npm@latest only once
-      # a 12.x publishes cleanly.
-      - run: npm install -g npm@^11.21.0
+      - name: The tag names the version in all three manifests
+        run: |
+          for m in package.json packages/cairn-cms-dev/package.json packages/create-cairn-site/package.json; do
+            v=$(node -p "require('./$m').version")
+            if [ "$GITHUB_REF_NAME" != "v$v" ]; then
+              echo "::error::$m is at $v but the release tag is $GITHUB_REF_NAME"
+              exit 1
+            fi
+          done
       # A committed, in-sync lockfile lets this job resolve the exact dependency tree every other
       # workflow in the repo already installs with (test.yml, e2e.yml, design.yml,
       # tsgo.yml, tool-conditions.yml), so the published build gets the same reproducibility
       # guarantee: an out-of-sync lockfile fails the install loudly instead of a floating resolve
-      # silently drifting the published tarball's dependency tree from what CI proved.
+      # silently drifting the published tarball's dependency tree from what CI proved. `npm ci`
+      # runs the root `prepare`, which builds both packages' dist/.
       - uses: ./.github/actions/bounded-install
         timeout-minutes: 22
         with:
@@ -56,26 +114,74 @@ jobs:
           clean: node_modules
       # Validate the published package shape before releasing.
       - run: npm run check:package
+      - name: Pack the three tarballs
+        run: |
+          mkdir tarballs
+          npm pack --ignore-scripts --silent --pack-destination tarballs
+          (cd packages/cairn-cms-dev && npm pack --ignore-scripts --silent --pack-destination ../../tarballs)
+          # The bake refuses a 0.0.0 version and a file: spec, so `prepack`'s default path cannot
+          # run; bake with the root's version for both specs and pack with --ignore-scripts, the
+          # same two commands create-site.yml proves on every pull request.
+          VERSION=$(node -p "require('./package.json').version")
+          (
+            cd packages/create-cairn-site
+            node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
+            npm pack --ignore-scripts --silent --pack-destination ../../tarballs
+          )
+          ls -l tarballs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: tarballs
+          path: tarballs
+          if-no-files-found: error
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics
+
+  # The publish jobs install nothing and run no lifecycle script: they upload a tarball `build`
+  # packed. The dist-tag is derived from the version rather than left to npm's default, which is
+  # `latest` whatever the version's shape. A prerelease published to `latest` would serve a
+  # candidate to every bare `npm install @glw907/cairn-cms`, while the caret ranges the
+  # consumer sites pin would not resolve it at all, so the one audience it reached would be
+  # the one that never asked for it. A candidate waits on `gate`, hidden from `next`, until the
+  # release gate passes and the promote job moves it; `latest` keeps pointing at the last
+  # stable until a stable supersedes it.
+  #
+  # The already-published guard exists because the packages publish in separate jobs that can
+  # fail apart, so re-running a release to recover the half that failed must not die on the half
+  # that already landed. 0.95.0 is the case that proved it, publishing the engine while the dev
+  # backend failed provenance validation.
+  publish:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write # required for OIDC trusted publishing
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: tarballs
+          path: tarballs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version), and a
+      # dist-tag change over OIDC needs >= 11.21.0.
+      # WATCH: pinned to exactly 11.21.1, the newest 11.x at the pin, because npm 12.0.0
+      # (2026-07-08) ships without its sigstore module and every publish fails on
+      # MODULE_NOT_FOUND in libnpmpublish; the 12 line's 12.2.0 is the first to carry the dist-tag
+      # support, so move to a 12.x only once one publishes cleanly.
+      - run: npm install -g npm@11.21.1
       # The repo is public, so OIDC trusted publishing attaches build provenance automatically.
       # `--provenance` is passed explicitly anyway: npm's OIDC helper can swallow an attestation
       # failure and publish without one rather than failing the command, so the flag is what turns
       # a silent gap into a loud one.
-      #
-      # The dist-tag is derived from the version rather than left to npm's default, which is
-      # `latest` whatever the version's shape. A prerelease published to `latest` would serve a
-      # candidate to every bare `npm install @glw907/cairn-cms`, while the caret ranges the
-      # consumer sites pin would not resolve it at all, so the one audience it reached would be
-      # the one that never asked for it. A candidate waits on `gate`, hidden from `next`, until the
-      # release gate passes and the promote job moves it; `latest` keeps pointing at the last
-      # stable until a stable supersedes it.
-      #
-      # The already-published guard mirrors publish-dev's, and for the same reason: the two
-      # packages publish in separate jobs that can fail apart, so re-running a release to recover
-      # the half that failed must not die on the half that already landed. 0.95.0 is the case that
-      # proved it, publishing the engine while the dev backend failed provenance validation.
       - name: Publish to npm
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION="${GITHUB_REF_NAME#v}"
           case "$VERSION" in
             *-*) TAG=gate ;;
             *)   TAG=latest ;;
@@ -84,10 +190,10 @@ jobs:
             echo "@glw907/cairn-cms@$VERSION is already on the registry; skipping"
             exit 0
           fi
+          TGZ="$PWD/tarballs/glw907-cairn-cms-$VERSION.tgz"
+          [ -f "$TGZ" ] || { echo "::error::no tarball at $TGZ"; exit 1; }
           echo "publishing $VERSION to the '$TAG' dist-tag"
-          npm publish --access public --tag "$TAG" --provenance
-      - if: failure() || cancelled()
-        uses: ./.github/actions/install-diagnostics
+          npm publish "$TGZ" --ignore-scripts --access public --tag "$TAG" --provenance
 
   # The dev backend publishes alongside the engine: a scaffolded site's devDependency needs
   # @glw907/cairn-cms-dev on the registry at the version the bake writes, which is also the spec
@@ -97,28 +203,28 @@ jobs:
   # version in lockstep but can publish apart (that first cut published the dev backend
   # manually); re-running a release must not fail on the half that already landed.
   publish-dev:
-    if: github.event_name == 'release' || inputs.promote == ''
+    needs: build
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: tarballs
+          path: tarballs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
       # Same npm pin as the engine job above; see its WATCH comment.
-      - run: npm install -g npm@^11.21.0
-      # The package ships dist/, which the root `package` script builds (after the engine's own
-      # dist/, whose types the dev declarations import). `npm ci` runs it through the root prepare.
-      - uses: ./.github/actions/bounded-install
-        timeout-minutes: 22
-        with:
-          command: npm ci --no-audit --no-fund
-          clean: node_modules
+      - run: npm install -g npm@11.21.1
       - name: Publish @glw907/cairn-cms-dev to npm
-        working-directory: packages/cairn-cms-dev
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION="${GITHUB_REF_NAME#v}"
           case "$VERSION" in
             *-*) TAG=gate ;;
             *)   TAG=latest ;;
@@ -127,8 +233,10 @@ jobs:
             echo "@glw907/cairn-cms-dev@$VERSION is already on the registry; skipping"
             exit 0
           fi
+          TGZ="$PWD/tarballs/glw907-cairn-cms-dev-$VERSION.tgz"
+          [ -f "$TGZ" ] || { echo "::error::no tarball at $TGZ"; exit 1; }
           echo "publishing @glw907/cairn-cms-dev@$VERSION to the '$TAG' dist-tag"
-          npm publish --access public --tag "$TAG" --provenance
+          npm publish "$TGZ" --ignore-scripts --access public --tag "$TAG" --provenance
 
   # create-cairn-site publishes after the engine and the dev backend, because the scaffold it bakes
   # pins both at the root's version and a site installed from it must resolve them. It is a sibling
@@ -139,7 +247,7 @@ jobs:
   # `npm trust`, the package probe finds E404 and the job ends green with a notice rather than
   # failing the whole release. The cairn-releasing skill carries those owner steps.
   #
-  # Three guards run before the bake, in this order. A missing package is a notice, and any other
+  # Three guards run before the publish, in this order. A missing package is a notice, and any other
   # probe failure fails the job. A package version that differs from the root's fails, because a
   # forgotten bump would publish 0.0.0 and move `latest`; the order lets a cut before the first
   # publish stay green while the package sits at 0.0.0. A version already on the registry skips,
@@ -148,30 +256,35 @@ jobs:
   # apart by which one ran. Each capture sits in an `if !` because the step runs under `bash -e`,
   # which would abort on a bare failed capture before the code could be read.
   #
-  # One `run:` block holds all of it, since a guard's `exit 0` ends only its own step.
+  # One `run:` block holds all of it, since a guard's `exit 0` ends only its own step. The checkout
+  # only reads the manifests; nothing is installed.
   publish-create-site:
-    needs: [publish, publish-dev]
-    if: github.event_name == 'release' || inputs.promote == ''
+    needs: [build, publish, publish-dev]
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: tarballs
+          path: tarballs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
       # Same npm pin as the engine job above; see its WATCH comment.
-      - run: npm install -g npm@^11.21.0
-      - uses: ./.github/actions/bounded-install
-        timeout-minutes: 22
-        with:
-          command: npm ci --no-audit --no-fund
-          clean: node_modules
+      - run: npm install -g npm@11.21.1
       - name: Publish create-cairn-site to npm
-        working-directory: packages/create-cairn-site
         run: |
-          VERSION=$(node -p "require('../../package.json').version")
-          PKG_VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(node -p "require('./package.json').version")
+          PKG_VERSION=$(node -p "require('./packages/create-cairn-site/package.json').version")
           case "$VERSION" in
             *-*) TAG=gate ;;
             *)   TAG=latest ;;
@@ -203,14 +316,39 @@ jobs:
             echo "::error::could not read create-cairn-site@$VERSION from the registry"
             exit 1
           fi
-          # The bake refuses a 0.0.0 version and a file: spec, so `prepack`'s default path cannot
-          # run; bake with the root's version for both specs and pack with --ignore-scripts, the
-          # same two commands create-site.yml proves on every pull request.
-          node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
-          TGZ="$PWD/$(npm pack --ignore-scripts --silent | tail -n1)"
-          [ -f "$TGZ" ] || { echo "::error::pack produced no tarball"; exit 1; }
+          TGZ="$PWD/tarballs/create-cairn-site-$VERSION.tgz"
+          [ -f "$TGZ" ] || { echo "::error::no tarball at $TGZ"; exit 1; }
           echo "publishing create-cairn-site@$VERSION to the '$TAG' dist-tag"
-          npm publish "$TGZ" --access public --tag "$TAG" --provenance
+          npm publish "$TGZ" --ignore-scripts --access public --tag "$TAG" --provenance
+
+  # Reads the release gate's record for the candidate. It holds no id-token and installs nothing:
+  # it checks out only the two gate scripts it runs. The version arrives through `env:`, so no
+  # expression expands inside the shell text.
+  verdict:
+    if: github.event_name == 'workflow_dispatch' && inputs.promote != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/gate/verdict.mjs
+            scripts/gate/record.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - name: Read the gate verdict
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROMOTE_VERSION: ${{ inputs.promote }}
+        run: |
+          if [ "$GITHUB_REF_NAME" != "v$PROMOTE_VERSION" ]; then
+            echo "::error::dispatch on the tag ref v$PROMOTE_VERSION, not '$GITHUB_REF_NAME'"
+            exit 1
+          fi
+          node scripts/gate/verdict.mjs "$PROMOTE_VERSION"
 
   # Moves a candidate that passed the release gate from `gate` to `next`. It installs no
   # dependencies and checks out nothing: it needs only npm and the OIDC token, and an install here
@@ -219,18 +357,20 @@ jobs:
   # create-cairn-site moves last because it is the testers' entry point; a split `next` is
   # recovered by dispatching the same version again, since `dist-tag add` is idempotent.
   promote:
+    needs: verdict
     if: github.event_name == 'workflow_dispatch' && inputs.promote != ''
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: npm-publish
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      - run: npm install -g npm@^11.21.0
+      - run: npm install -g npm@11.21.1
       - name: Move the candidate to next
         env:
           PROMOTE_VERSION: ${{ inputs.promote }}
@@ -248,6 +388,8 @@ jobs:
               exit 1
             fi
           done
+          echo "dist-tags before the move:"
+          for p in $PKGS; do npm dist-tag ls "$p"; done
           npm dist-tag add "@glw907/cairn-cms@$V" next
           npm dist-tag add "@glw907/cairn-cms-dev@$V" next
           npm dist-tag add "create-cairn-site@$V" next

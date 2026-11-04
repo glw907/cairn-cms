@@ -211,6 +211,18 @@ describe('runDriver', () => {
     expect(held.result.code).toBe(0);
   });
 
+  it('stops a run whose CLI keeps rejecting one prompt, naming the prompt', async () => {
+    const ask = { kind: 'text' as const, message: 'Sign-in email' };
+    const { result, stub } = await drive(
+      [ask, ask, ask, ask, ask, ask],
+      [{ match: 'Sign-in email', kind: 'text', value: 'nope' }],
+    );
+    expect(result.code).toBe(-1);
+    expect(result.failure).toContain('Sign-in email');
+    expect(result.failure).toContain('rejected the answer');
+    expect(stub).toBeNull();
+  });
+
   it('ends a hung run as a failure when its abort signal fires, naming the reason', async () => {
     const controller = new AbortController();
     setTimeout(() => controller.abort('the held page timed out'), 300);

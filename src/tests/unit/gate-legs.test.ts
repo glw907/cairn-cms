@@ -10,6 +10,8 @@ import {
   NOT_CONNECTED_SENTENCE,
   PUBLISHED_ALERT,
   cliFailureMessage,
+  DEFAULT_OWNER_EMAIL,
+  ownerEmailFor,
   evaluateLeg,
   findSignInMessage,
   guardedRun,
@@ -245,5 +247,13 @@ describe('cliFailureMessage', () => {
 
   it('reports the exit alone when there is no capture', () => {
     expect(cliFailureMessage({ code: 2 }, '')).toBe('the CLI run failed: exit code 2');
+  });
+});
+
+describe('ownerEmailFor', () => {
+  it('defaults to the gate mailbox and lets a non-empty GATE_OWNER_EMAIL override it', () => {
+    expect(ownerEmailFor({})).toBe(DEFAULT_OWNER_EMAIL);
+    expect(ownerEmailFor({ GATE_OWNER_EMAIL: '' })).toBe(DEFAULT_OWNER_EMAIL);
+    expect(ownerEmailFor({ GATE_OWNER_EMAIL: 'me@example.com' })).toBe('me@example.com');
   });
 });

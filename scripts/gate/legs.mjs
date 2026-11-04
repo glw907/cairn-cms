@@ -271,6 +271,18 @@ export function promptTable({ siteName, dir, ownerEmail, token, plan }) {
   ];
 }
 
+/** The gate mailbox, which owns every gate install and receives its sign-in links. */
+export const DEFAULT_OWNER_EMAIL = 'cairn-gate@probe.907.life';
+
+/**
+ * The owner's sign-in email for a gate run.
+ * @param {Record<string, string | undefined>} env the gate's environment
+ * @returns {string} `GATE_OWNER_EMAIL` when set and non-empty, else the gate mailbox
+ */
+export function ownerEmailFor(env) {
+  return env.GATE_OWNER_EMAIL || DEFAULT_OWNER_EMAIL;
+}
+
 /**
  * @typedef {object} Install
  * @property {string} name the install's name
@@ -370,7 +382,7 @@ export async function runLeg(ctx) {
       args: ['--yes', '--prefer-online', `create-cairn-site@${version}`, '--dir', install.dir, ...extra],
       env: cliEnv,
       cwd: path.dirname(install.dir),
-      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: env.GATE_OWNER_EMAIL ?? '', token, plan }),
+      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: ownerEmailFor(env), token, plan }),
       logPath: path.join(runDir, 'driver.log'),
       capturePath: path.join(runDir, 'capture.bin'),
       signal: abort.signal,
@@ -379,7 +391,7 @@ export async function runLeg(ctx) {
     return result;
   }
 
-  const ownerFlags = plan.first ? ['--name', install.name, '--owner-email', env.GATE_OWNER_EMAIL ?? '', '--ai-posture', 'none'] : [];
+  const ownerFlags = plan.first ? ['--name', install.name, '--owner-email', ownerEmailFor(env), '--ai-posture', 'none'] : [];
   const cli = await runCli([...ownerFlags, ...(plan.connect ? ['--connect'] : [])]);
   const capturePath = path.join(runDir, 'capture.bin');
   if (cli.failure) return { pass: false, failures: [cliFailureMessage(cli, await readFile(capturePath, 'utf8').catch(() => ''))] };
@@ -427,7 +439,7 @@ export async function runLeg(ctx) {
   if (leg === 'B2') {
     const fresh = await launched.newAdminContext();
     try {
-      const owner = env.GATE_OWNER_EMAIL ?? '';
+      const owner = ownerEmailFor(env);
       const requestedAt = await requestSignInLink(fresh, { origin: `https://${TEST_DOMAIN}`, email: owner });
       const found = await findSignInMessage({
         login: owner,

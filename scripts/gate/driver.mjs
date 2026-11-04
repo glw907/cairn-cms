@@ -21,6 +21,8 @@ const HOLD_MARKER = 'Watch progress at';
 const IDLE_MS = 10 * 60_000;
 /** The CLI's propagation budget (40 minutes, `hold-loop.mjs`) plus five minutes; a test pins the two together. */
 export const HOLD_IDLE_MS = 40 * 60_000 + 5 * 60_000;
+/** How many times in a row one prompt may be answered before the driver concludes the CLI rejects the answer. */
+const MAX_REPEATS = 3;
 const COLS = 100;
 const ROWS = 40;
 
@@ -140,6 +142,8 @@ export function runDriver(options) {
   let holding = false;
   /** @type {Set<number>} */
   const answered = new Set();
+  let lastMatch = '';
+  let streak = 0;
   /** @type {NodeJS.Timeout | undefined} */
   let settleTimer;
   /** @type {NodeJS.Timeout | undefined} */
@@ -177,6 +181,9 @@ export function runDriver(options) {
     if (!entry) return fail(`a prompt has no table entry: "${prompt.line}"`);
     const keys = keystrokesFor(entry, prompt);
     if ('error' in keys) return fail(keys.error);
+    streak = entry.match === lastMatch ? streak + 1 : 1;
+    lastMatch = entry.match;
+    if (streak > MAX_REPEATS) return fail(`the CLI rejected the answer to "${entry.match}": it asked again after ${MAX_REPEATS} answers`);
     answered.add(prompt.row);
     holding = false;
     log(`answered "${entry.match}" (${entry.kind})`);

@@ -425,13 +425,27 @@ export async function confirmSignIn(context, url, pauseMs = 500) {
  */
 export async function deleteGithubApp(context, slug, creds, { base = 'https://github.com', pauseMs = 500 } = {}) {
   const page = await context.newPage();
-  const response = await page.goto(`${base}/settings/apps/${slug}/advanced`, { waitUntil: 'load' });
+  const advanced = `${base}/settings/apps/${slug}/advanced`;
+  /** @type {import('playwright').Response | null} */
+  let response;
+  try {
+    response = await page.goto(advanced, { waitUntil: 'load' });
+  } catch {
+    // GitHub aborts the first navigation now and then (net::ERR_ABORTED); settle and try once more.
+    await sleep(Math.max(pauseMs, 1000));
+    await answerAccountPrompts(page, creds, pauseMs);
+    response = await page.goto(advanced, { waitUntil: 'load' });
+  }
   await settle(page, pauseMs);
   if (response?.status() === 404) {
     await page.close();
     return 'absent';
   }
   if (!(await clickControl(page, /^delete github app\b/i, creds, { pauseMs }))) throw new Error('The App settings page has no Delete GitHub App button.');
+  // GitHub keeps the confirm button disabled until the App's name is typed into `verify`.
+  const verify = page.locator('input[name="verify"]:visible').first();
+  await verify.waitFor({ state: 'visible', timeout: 30_000 }).catch(() => {});
+  if (await visible(verify)) await verify.fill(slug);
   if (!(await clickControl(page, /^i understand\b.*\bdelete\b.*github app/i, creds, { pauseMs }))) throw new Error('The delete confirmation did not appear.');
   await page.close();
   return 'deleted';

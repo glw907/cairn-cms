@@ -83,7 +83,11 @@ async function answer(route: Route) {
       ),
     );
   }
-  if (key === 'GET github.com/settings/apps/gate-app/advanced') return html(page(`<button id="d" onclick="document.body.insertAdjacentHTML('beforeend','<button>I understand, delete this GitHub App</button>')">Delete GitHub App</button>`));
+  if (key === 'GET github.com/settings/apps/gate-app/advanced') {
+    const dialog = `<dialog open><input name="verify" oninput="document.getElementById('c').disabled = this.value !== 'gate-app'"><button id="c" disabled onclick="fetch('/settings/apps/gate-app/delete', { method: 'POST' })">I understand the consequences, delete this GitHub App</button></dialog>`;
+    return html(page(`<button id="d" onclick="document.body.insertAdjacentHTML('beforeend', ${JSON.stringify(dialog).replace(/"/g, '&quot;')})">Delete GitHub App</button>`));
+  }
+  if (key === 'POST github.com/settings/apps/gate-app/delete') return html(page('deleted'));
   if (url.pathname.startsWith('/settings/apps/gone/')) return route.fulfill({ status: 404, contentType: 'text/html', body: page('Not Found') });
   return route.fulfill({ status: 404, body: `no fixture for ${key}` });
 }
@@ -260,6 +264,7 @@ describe('the admin half', () => {
 
   it('deletes an App through its Advanced settings, and treats a 404 page as done', async () => {
     expect(await deleteGithubApp(context, 'gate-app', creds, { pauseMs: 100 })).toBe('deleted');
+    expect(seen).toContain('POST github.com/settings/apps/gate-app/delete');
     expect(await deleteGithubApp(context, 'gone', creds, { pauseMs: 100 })).toBe('absent');
   });
 });

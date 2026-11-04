@@ -85,7 +85,7 @@ paste prompt, not from the environment, because `CAIRN_CF_API_TOKEN` is read onl
 
 The browser launches headed with the machine account's stored session (`~/.local/state/cairn-gate/github-session.json`, mode 0600). A page it does not recognise is held in that window for 10 minutes: a screenshot path is logged and `notify-send` names the page and the leg. Click through and the leg resumes; only the timeout fails it. Wait on it: teardown never runs on the hold itself.
 
-On B2 the gate also requests a real sign-in link for `GATE_OWNER_EMAIL`, reads it from the gate mailbox over JMAP (`STALWART_PASSWORD_CAIRN_GATE`), and publishes through that session.
+On B2 the gate also requests a real sign-in link for the owner email (`cairn-gate@probe.907.life` by default; `GATE_OWNER_EMAIL` overrides it), reads it from the gate mailbox over JMAP (`STALWART_PASSWORD_CAIRN_GATE`), and publishes through that session.
 
 ## Cleanup
 

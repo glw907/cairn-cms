@@ -442,7 +442,11 @@ describe('publish.yml gates a candidate before it reaches next', () => {
       cwd: REPO_ROOT
     });
     expect(result.error, 'go is not on PATH').toBeUndefined();
-    expect(`${result.stdout}${result.stderr}`).toBe('');
+    // A cold module cache prints "go: downloading" progress on stderr; only findings count.
+    const findings = `${result.stdout}${result.stderr}`
+      .split('\n')
+      .filter((line) => line !== '' && !line.startsWith('go: downloading '));
+    expect(findings).toEqual([]);
     expect(result.status).toBe(0);
   }, 120_000);
 

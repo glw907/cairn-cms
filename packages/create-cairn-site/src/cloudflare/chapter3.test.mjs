@@ -1036,6 +1036,47 @@ test('runChapter3: --yes with CAIRN_CF_BUILD_TOKEN registers that token as cairn
   await assertSecretSweptFromDisk(stateDir, siteId, 'env-build-token');
 });
 
+test('runChapter3: --yes with a CAIRN_CF_BUILD_TOKEN that verify rejects stops before registering it or creating a trigger', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-yes-badbuild-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+  // The body verify answers for a well-formed token Cloudflare does not know, captured live.
+  cloudflare.failNext('user_token_verify', 401, {
+    success: false,
+    errors: [{ code: 1000, message: 'Invalid API Token' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    async () =>
+      runChapter3({
+        siteId,
+        record: await loadSite(siteId),
+        dir,
+        args: { yes: true },
+        log: () => {},
+        dryRun: false,
+        openBrowser: mustNotBeCalled('openBrowser'),
+        confirm: mustNotBeCalled('confirm'),
+        promptSecretFn: mustNotBeCalled('promptSecretFn'),
+        env: { CAIRN_CF_API_TOKEN: 'env-token-value', CAIRN_CF_BUILD_TOKEN: 'env-bad-build-token' },
+        argv: ['--yes'],
+        ...fastSeams(cloudflare),
+      }),
+    (err) => {
+      assert.equal(err.cause?.catalogue?.code, 'token-invalid');
+      return true;
+    },
+  );
+  assert.equal(registrations(cloudflare).length, 0);
+  assert.equal(triggerCreate(cloudflare), undefined);
+});
+
 test('runChapter3: --yes with no cairn-build registration and no CAIRN_CF_BUILD_TOKEN stops on build-token-missing, registering nothing', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);

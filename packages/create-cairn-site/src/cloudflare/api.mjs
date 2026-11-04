@@ -249,7 +249,9 @@ function throwIfTokenInvalid(status, primary, dir, token, api) {
     const detail = primary.error_chain?.[0]?.message ?? primary.message;
     throwCatalogued('token-invalid', { dir, detail }, token, api);
   }
-  if (status === 401 && primary?.code === 10000) {
+  // `GET /user/tokens/verify` says the same thing as code 1000, captured live for a well-formed
+  // token Cloudflare does not know.
+  if (status === 401 && (primary?.code === 10000 || primary?.code === 1000)) {
     throwCatalogued('token-invalid', { dir, detail: primary.message }, token, api);
   }
 }

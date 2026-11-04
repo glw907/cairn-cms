@@ -592,6 +592,131 @@ test('ensureBuildToken under --yes with no CAIRN_CF_BUILD_TOKEN throws build-tok
   assert.equal(cloudflare.requests.length, 0);
 });
 
+/**
+ * What `GET /user/tokens/verify` answers for a well-formed token Cloudflare does not know,
+ * captured live on 2026-11-04 with a synthetic `cfut_` bearer.
+ */
+const VERIFY_UNKNOWN_TOKEN_BODY = {
+  success: false,
+  errors: [{ code: 1000, message: 'Invalid API Token' }],
+  messages: [],
+  result: null,
+};
+
+/**
+ * Run the interactive ensureBuildToken with a paste prompt that records each prompt and answers
+ * from `pastes` in order, arming one rejected verify before each of the first `rejectCount`
+ * answers (`failNext` is one-shot, so each rejection is armed just before its own verify).
+ * @param {(args: object) => Promise<{ token: string, id: string }>} ensureBuildToken
+ * @param {import('../../test/fake-cloudflare.mjs').FakeCloudflare} cloudflare
+ * @param {string[]} pastes the successive pasted values
+ * @param {number} rejectCount how many leading pastes verify rejects
+ * @returns {{ pending: Promise<{ token: string, id: string }>, prompts: string[] }}
+ */
+function interactiveBuildToken(ensureBuildToken, cloudflare, pastes, rejectCount) {
+  const prompts = [];
+  const pending = ensureBuildToken({
+    dir: '/tmp/site',
+    accountId: 'acct-1',
+    log: () => {},
+    openBrowser: async () => {},
+    promptSecretFn: async (message) => {
+      prompts.push(message);
+      if (prompts.length <= rejectCount) {
+        cloudflare.failNext('user_token_verify', 401, VERIFY_UNKNOWN_TOKEN_BODY);
+      }
+      return pastes[prompts.length - 1];
+    },
+    argv: [],
+  });
+  return { pending, prompts };
+}
+
+test('ensureBuildToken asks once more after a paste verify rejects, and returns the second paste', async (t) => {
+  const cloudflare = await startFakeCloudflare({ tokenVerifyIds: { 'second-paste': 'build-token-id-2' } });
+  t.after(() => cloudflare.close());
+  process.env.CAIRN_CLOUDFLARE_API_BASE = cloudflare.apiBase;
+  t.after(() => {
+    delete process.env.CAIRN_CLOUDFLARE_API_BASE;
+  });
+  const { ensureBuildToken } = await import('./prefill.mjs');
+
+  const { pending, prompts } = interactiveBuildToken(ensureBuildToken, cloudflare, ['first-paste', 'second-paste'], 1);
+  const result = await pending;
+
+  assert.deepEqual(result, { token: 'second-paste', id: 'build-token-id-2' });
+  assert.deepEqual(prompts, ['Paste your Workers Builds deploy token', 'Paste your Workers Builds deploy token']);
+});
+
+test('ensureBuildToken throws token-invalid when both pastes fail verify', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+
+  const { pending, prompts } = interactiveBuildToken(ensureBuildToken, cloudflare, ['first-paste', 'second-paste'], 2);
+
+  await assert.rejects(pending, (err) => {
+    assert.equal(err.catalogue.code, 'token-invalid');
+    assert.doesNotMatch(err.message, /second-paste/);
+    return true;
+  });
+  assert.equal(prompts.length, 2);
+  const verify = cloudflare.requests.filter((r) => r.path === '/client/v4/user/tokens/verify');
+  assert.equal(verify.length, 2);
+});
+
+test('ensureBuildToken under --yes throws token-invalid when CAIRN_CF_BUILD_TOKEN fails verify', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+  cloudflare.failNext('user_token_verify', 401, VERIFY_UNKNOWN_TOKEN_BODY);
+
+  await assert.rejects(
+    () =>
+      ensureBuildToken({
+        dir: '/tmp/site',
+        accountId: 'acct-1',
+        log: () => {},
+        yes: true,
+        promptSecretFn: async () => {
+          throw new Error('promptSecretFn must not be called under --yes');
+        },
+        env: { CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
+        argv: [],
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-invalid');
+      return true;
+    },
+  );
+});
+
+test('ensureBuildToken under --yes rejects a token verify reports as expired, though the envelope says success', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+  cloudflare.failNext('user_token_verify', 200, {
+    success: true,
+    errors: [],
+    messages: [],
+    result: { id: 'expired-token-id', status: 'expired' },
+  });
+
+  await assert.rejects(
+    () =>
+      ensureBuildToken({
+        dir: '/tmp/site',
+        accountId: 'acct-1',
+        log: () => {},
+        yes: true,
+        env: { CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
+        argv: [],
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-invalid');
+      assert.match(err.message, /expired/);
+      return true;
+    },
+  );
+});
+
 test('ensureBuildToken refuses a token-shaped argv entry before any call, naming CAIRN_CF_BUILD_TOKEN', async (t) => {
   const cloudflare = await setup(t);
   const { ensureBuildToken } = await import('./prefill.mjs');

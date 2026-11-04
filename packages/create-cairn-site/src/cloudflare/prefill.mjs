@@ -345,6 +345,12 @@ export async function ensureApiToken({
 async function verifyBuildToken(token, scope, makeApiFn) {
   try {
     const result = await makeApiFn({ token, ...scope }).verifyToken();
+    // Verify answers success for a token that exists, even one that is disabled or expired, so
+    // the envelope alone does not say Builds could deploy with it.
+    if (result.status !== 'active') {
+      const detail = `Cloudflare reports this token as ${result.status ?? 'not active'}.`;
+      return { ok: false, error: cloudflareError('token-invalid', { dir: scope.dir, detail }) };
+    }
     return { ok: true, id: result.id };
   } catch (error) {
     if (!error?.catalogue) throw error;

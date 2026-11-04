@@ -323,11 +323,24 @@ the first Builds deploy through to success. Cloudflare's free tier covers it: 3,
 a month and one build running at a time, as of 2026-08-12
 (https://developers.cloudflare.com/workers/platform/pricing/).
 
-### No second dashboard trip for a token
+### Two tokens, and the second is narrow
 
-Unlike a typical Workers Builds setup, this chapter does not send you to the dashboard to create a
-separate build token. It asks you to paste a fresh Cloudflare API token, the same paste flow the
-domain chapter already used, and registers that same token as your Workers Builds build token.
+This chapter asks for two Cloudflare tokens, and creates both from a prefilled create-token page,
+so you never build a permission list by hand. The first is the setup token: the same paste flow
+the domain chapter used, with six permissions, the five the domain chapter asked for plus Workers
+Builds. The tool works with it for the length of the chapter and deletes its copy at the end.
+
+The second is the token Workers Builds deploys with. It carries three permissions at edit: Workers
+Scripts, D1, and Workers R2 Storage. The tool opens its prefilled page, named `cairn-build`, and
+asks at the prompt `Paste your Workers Builds deploy token`. It verifies the token, registers it
+with Workers Builds, and does not save it. The registration is once per Cloudflare account: a later
+site on the same account finds the `cairn-build` registration and reuses it with no prompt.
+
+An unattended run reads the setup token from `CAIRN_CF_API_TOKEN` and, when the account has no
+`cairn-build` registration, the deploy token from `CAIRN_CF_BUILD_TOKEN`. With neither, the run
+stops with `build-token-missing` and registers nothing. A deploy token Cloudflare rejects or
+reports as not active stops it with `build-token-invalid`, and the saved setup token is kept.
+
 Two things still need a browser, and each is either one-time or skips cleanly on a re-run:
 
 1. **Authorizing Cloudflare's "Workers and Pages" GitHub App** on your account, if you have not
@@ -346,15 +359,16 @@ Two things still need a browser, and each is either one-time or skips cleanly on
    accepts, plainly: if you edit either file **in the repository** and change nothing locally, the
    command does not notice. Change either file on your machine, and the next run reconciles both.
 
-### The coupling to your pasted token
+### The coupling to the deploy token
 
-Cloudflare's build token wraps the Cloudflare API token you pasted for this chapter, registered
-under the name **cairn create-cairn-site build token**. Revoking or rolling that token later, at
-the Cloudflare dashboard, breaks your automatic deploys, silently: your next commit still builds,
-and the build fails with no warning beforehand. This is not a hypothetical risk. It is the exact
-state a production cairn site was found in while this chapter was being built. If you rotate your
-Cloudflare API tokens on a schedule, either exclude this one or update the build token to match
-whenever you do.
+Workers Builds keeps the `cairn-build` token and supplies it to every build. Revoking or rolling
+that token later, at the Cloudflare dashboard, breaks your automatic deploys, silently: your next
+commit still builds, and the build fails with no warning beforehand. This is not a hypothetical
+risk. It is the exact state a production cairn site was found in while this chapter was being
+built. If you rotate your Cloudflare API tokens on a schedule, either exclude this one or update
+it whenever you do. A build that fails on a missing permission is fixed the same way: edit the
+token registered as `cairn-build` in the dashboard, since running the command again does not
+prompt for it.
 
 ### Migrations still run through this CLI
 
@@ -423,7 +437,10 @@ and what it has read so far. When the wait clears, the run carries on in your te
 For DNS, the answer from your domain's nameservers sits beside the answer your machine's
 resolver gives. That distinguishes the two situations a single "still propagating" message used to
 blur together: a record that was never written, and a record that is live everywhere except in your
-resolver's cache. The second one clears on its own, and the page tells you so. Certificate
+resolver's cache. The second one clears on its own, and the page tells you so. When your resolver
+cannot see the domain but its authoritative nameservers can, and an HTTPS check pinned to the
+authoritative address finds the site, the run reports the site live and prints one line that this
+computer's DNS resolver may take up to 30 minutes to see the domain. Certificate
 issuance cannot be polled with the token this tool holds, so the page reports the HTTPS check it can
 actually make rather than inventing a status.
 
@@ -479,17 +496,16 @@ Scaffolding writes nothing outside the site directory except one record of the s
 private key lives in that record only until the Worker exists, and then only in the Worker; the
 record itself is not secret-free even after that move, since it still carries the App's client
 secret and webhook secret, which this tool never relocates anywhere else. Each Cloudflare API
-token, the domain chapter's and, later, the Builds chapter's fresh paste, lives in that same
+token, the domain chapter's and, later, the Builds chapter's setup token, lives in that same
 record for as long as its chapter still needs it, and this tool's copy is deleted once that
-chapter reaches a state with nothing left to do with it.
+chapter reaches a state with nothing left to do with it. The Builds deploy token is never saved
+there.
 
 One consequence of the Builds chapter deserves stating on its own, because deleting this tool's
-copy is not the same as the token being gone. Registering your pasted token as the build token
-means Cloudflare keeps its secret and supplies it to every build your repository runs, where
-`wrangler` reads it from the environment. The token the create-token page asks for is scoped
-across all your accounts and zones, and it can edit DNS, zones, SSL, Workers, D1, R2, and Email
-Sending, so anyone who can land a commit on your default branch, or any build-time dependency you
-install, can read a credential with that reach. That is the price of not sending you to the
-dashboard for a second token, and it is worth knowing before you accept it. If that trade is
-wrong for your site, mint the build token yourself at the Cloudflare dashboard, scope it to
-deploys alone, and point the trigger at it.
+copy is not the same as the token being gone. Registering the `cairn-build` token with Workers
+Builds means Cloudflare keeps its secret and supplies it to every build your repository runs,
+where `wrangler` reads it from the environment. Anyone who can land a commit on your default
+branch, or any build-time dependency you install, can read it. That is why it is narrow: it holds
+Workers Scripts, D1, and Workers R2 Storage at edit, so it can deploy your site and cannot edit
+DNS, zones, SSL, or Email Sending. The setup token is scoped across all your accounts and zones
+and never reaches a build.

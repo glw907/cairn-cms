@@ -4,7 +4,7 @@ A new site answers at a `workers.dev` address that Cloudflare assigns. This page
 
 The page is for the person who ran the setup command, `create-cairn-site`, and now wants a domain or a second writer. If you only want pushes to redeploy the site, skip to [Connect to Workers Builds](#connect-to-workers-builds). A part that stalls is covered by [Recover a setup that stopped](./setup-recovery.md).
 
-The first two parts share one Cloudflare API token. The Workers Builds part needs a second, wider token. Run the setup command from the computer that created the site, and run it again whenever you want the next part. Each run picks up where the last one stopped.
+The first two parts share one Cloudflare API token. The Workers Builds part asks for that token with one more permission, and then for a second, narrower token that Workers Builds deploys with. Run the setup command from the computer that created the site, and run it again whenever you want the next part. Each run picks up where the last one stopped.
 
 ```
 npx create-cairn-site --dir <your-site-directory>
@@ -74,6 +74,8 @@ If your domain's nameservers already point at Cloudflare, for example a domain y
 
 The command confirms that your domain answers over HTTPS, switches the site's address to the domain, and redeploys once. The site then answers at both `https://yourdomain` and its original `workers.dev` address. Sign in at `https://yourdomain/admin`.
 
+Sometimes your domain's own nameservers already serve the site, but the DNS resolver on your computer hasn't caught up. If the command can reach the site directly through those nameservers, it reports the site live and prints a line that this computer's DNS resolver may take up to 30 minutes to see the domain. Nothing needs fixing. The domain works for everyone whose resolver has caught up, and yours will follow.
+
 ## Turn on sign-in email
 
 Sign-in email is what lets anyone other than you sign in, because everyone else gets in through a link sent to their address. You keep signing in as the owner through [`--sign-in`](./create-your-site.md#sign-in-again) either way.
@@ -102,7 +104,11 @@ Workers Builds is Cloudflare's service for building and deploying from a reposit
 
 Until Builds is connected, a publish from the admin commits to GitHub and the live site doesn't change. To deploy, connect Builds or deploy by hand.
 
-Workers Builds needs a second token that reaches every Cloudflare account and zone you own. It has the same five permissions as the first token, plus three that Workers Builds needs. Cloudflare keeps it as the build token and hands it to every build, so anyone who can push to your default branch can read it. Revoking or rolling the token later can break your automatic deploys: the next push builds and then fails. If you rotate tokens on a schedule, update this one too.
+Workers Builds uses two tokens. The setup token is the one you paste for the domain parts, plus one more permission, Workers Builds, which lets the command connect your repository and watch builds. The command keeps it only while setup runs.
+
+The second token is the one Workers Builds deploys with. It carries three permissions, each at the edit level: Workers Scripts, D1, and Workers R2 Storage. Cloudflare keeps it, registered with Workers Builds under the name `cairn-build`, and hands it to every build, so anyone who can push to your default branch can read it. It is narrow on purpose: it can deploy your site and nothing else, and it cannot edit DNS, zones, or email.
+
+You create the `cairn-build` token once for each Cloudflare account. A later site on the same account finds the registration and reuses it without asking. Revoking or rolling the token later can break your automatic deploys: the next push builds and then fails. If you rotate tokens on a schedule, update this one too.
 
 1. Run the setup command with the connect flag:
 
@@ -110,10 +116,12 @@ Workers Builds needs a second token that reaches every Cloudflare account and zo
    npx create-cairn-site --dir <your-site-directory> --connect
    ```
 
-2. Create a fresh Cloudflare API token in the browser page the command opens.
-3. Paste the token into the terminal.
+2. Create the setup token in the browser page the command opens, and paste it into the terminal.
+3. If this Cloudflare account has no `cairn-build` token yet, create one in the second browser page the command opens. At the prompt `Paste your Workers Builds deploy token`, paste it. A later site on the account skips this step.
 4. If the command asks, authorize Cloudflare's Workers and Pages GitHub App on your account.
 5. Click the sign-in link the command opens later in the run.
+
+An unattended run, with `--yes`, can't open a browser or ask for a paste. Set `CAIRN_CF_API_TOKEN` to the setup token, and for the first site on an account set `CAIRN_CF_BUILD_TOKEN` to the deploy token. With neither a registered `cairn-build` token nor `CAIRN_CF_BUILD_TOKEN`, the run stops with `build-token-missing` and changes nothing. [Recover a setup that stopped](./setup-recovery.md#connect-to-workers-builds) covers it.
 
 If the Workers and Pages GitHub App isn't authorized yet, the run stops after the token paste and tells you where to authorize it. Run the command with `--connect` again afterward. It continues without asking for a fresh token.
 

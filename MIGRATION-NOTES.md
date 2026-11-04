@@ -78,6 +78,20 @@ version the error's import or field name last appeared in. For a runtime symptom
 up after deploy, read the site's structured logs; the `cairn-extending-a-site` skill's debug
 reference walks them.
 
+## Unreleased
+
+An existing site keeps deploying unchanged, so none of this is required. Before this change,
+`create-cairn-site` registered the token you pasted for the Builds step, which reaches every
+account and zone you own, as the Workers Builds build token, under the name
+`cairn create-cairn-site build token`. New runs register a narrow token named `cairn-build`
+instead. To move an existing site onto the narrow token:
+
+1. In Cloudflare's dashboard, create an API token with Workers Scripts, D1, and Workers R2 Storage
+   at edit, and no other permission. Name it `cairn-build`.
+2. Open the Worker, then **Settings**, **Builds**, and under **API token** select the new token.
+3. Delete the old `cairn create-cairn-site build token`, since it is the wide one.
+4. Push a commit and confirm the build deploys.
+
 ## Per-version notes
 
 Only the release in this file has notes here. The notes of earlier releases live in their git tags.

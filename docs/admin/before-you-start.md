@@ -45,7 +45,7 @@ Two things cost money, and a third is an admission requirement that costs nothin
 
 - Cloudflare's Workers Paid plan costs $5 a month. A cairn site needs it from its first deploy. Cloudflare bills it once per account, so a second site on the same account adds nothing ([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of 2026-08-11).
 - A domain name costs about $10 to $15 a year for the common endings, and only if you connect your own. You pay your registrar. Cloudflare sells domains at cost and shows the exact price before you pay ([Cloudflare Registrar](https://www.cloudflare.com/products/registrar/), as of 2026-08-11). A domain you already own costs nothing new.
-- A Cloudflare API token is free, and you create it yourself. A first run asks for one only if you answer yes to connecting a domain. [Own your domain](./own-your-domain.md) opens Cloudflare's "create token" page with the permissions already selected and asks you to paste the token back.
+- Cloudflare API tokens are free, and you create them yourself. A first run asks for one only if you answer yes to connecting a domain. Connecting Workers Builds asks for a second, narrower token that Builds deploys with, once for each Cloudflare account. [Own your domain](./own-your-domain.md) opens Cloudflare's "create token" page with the permissions already selected and asks you to paste each token back.
 
 The plan and a year of domain renewal come to about $6 a month for a small site on its own domain. The database, the storage bucket, and the GitHub repository cost nothing at this size.
 

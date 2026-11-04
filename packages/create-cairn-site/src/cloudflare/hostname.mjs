@@ -47,6 +47,13 @@
 // wait row is reported: the marker pair above stays the sole authority for `live`, and a DNS
 // presence never overrides a failing or mismatched marker probe.
 //
+// THE PINNED CHECK: the recursive half of that read is pinned to public resolvers, not the host
+// resolver `fetch` uses, so "lagging" can describe this machine alone while the site already
+// serves. When the authoritative AAAA is present, the apex A is read authoritatively too and the
+// marker probe reruns once through `node:https`, connecting to that address while SNI and `Host`
+// stay the domain. A match is `live`, with one line saying this machine's resolver is behind; the
+// marker is still the authority, only the address it is fetched from changes.
+//
 // THE HOLD SEAM (Task 4a): the propagation wait above is one of the two classes this tool holds
 // in process with a console up rather than parking on. The seam is one optional injected
 // `waitForClear`, threaded around the PRE-REDEPLOY confirm only; see cutOverHostname's doc
@@ -62,9 +69,13 @@ import { buildSite, deployWorker } from './deploy.mjs';
 import { writePublicOrigin } from './config.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import { readAuthoritativeAndRecursive } from './dns.mjs';
+import { request as httpsRequest } from 'node:https';
 
 /** The path the site-specific marker's `/admin` redirect must land on. */
 const ADMIN_LOGIN_PATH = '/admin/login';
+
+/** How long one pinned request may take before it counts as unreachable. */
+const PINNED_TIMEOUT_MS = 15_000;
 
 /**
  * Probe one origin for the site-specific marker pair: `/` answers 200, and `/admin` answers 303
@@ -102,6 +113,78 @@ async function probeOrigin(origin, fetchImpl) {
 }
 
 /**
+ * Send one GET over HTTPS to a pinned address. The `lookup` answers both forms Node calls it
+ * with: `autoSelectFamily` makes Node pass `all: true` and expect an array, and a single
+ * address there fails with `ERR_INVALID_IP_ADDRESS`.
+ * @param {object} args
+ * @param {string} args.domain the hostname kept as SNI and `Host`
+ * @param {string} args.address the IPv4 address to connect to
+ * @param {string} args.path the request path
+ * @param {{ ca?: string | Buffer, port?: number, request?: typeof httpsRequest }} args.options
+ *  test options; production passes none
+ * @returns {Promise<{ status: number | undefined, location: string | undefined }>} the answer
+ */
+function pinnedGet({ domain, address, path, options }) {
+  const { ca, port = 443, request = httpsRequest } = options;
+  const requestOptions = {
+    host: domain,
+    servername: domain,
+    port,
+    path,
+    method: 'GET',
+    headers: { host: domain },
+    agent: false,
+    autoSelectFamily: true,
+    timeout: PINNED_TIMEOUT_MS,
+    lookup: (_hostname, opts, cb) =>
+      opts?.all ? cb(null, [{ address, family: 4 }]) : cb(null, address, 4),
+  };
+  // Only a test's self-signed server needs a CA; production verifies against the system store.
+  if (ca) requestOptions.ca = ca;
+  return new Promise((resolve, reject) => {
+    const req = request(requestOptions, (res) => {
+      res.resume();
+      resolve({ status: res.statusCode, location: res.headers.location });
+    });
+    req.on('timeout', () => req.destroy(new Error('pinned probe timed out')));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+/**
+ * Probe the marker pair over HTTPS at a pinned address, with SNI and `Host` kept as the domain,
+ * so a site this machine's resolver cannot see yet is still checked against its real
+ * certificate. This is the default `DnsContext.pinnedProbe`.
+ * @param {{ domain: string, address: string }} target the domain and the address to reach it at
+ * @param {{ ca?: string | Buffer, port?: number, request?: typeof httpsRequest }} [options] test
+ *  options only: a CA for a local self-signed server, its port, and a request wrapper
+ * @returns {Promise<{ reachable: boolean, matches: boolean }>} the same shape `probeOrigin` reports
+ */
+export async function pinnedMarkerProbe({ domain, address }, options = {}) {
+  try {
+    const root = await pinnedGet({ domain, address, path: '/', options });
+    const admin = await pinnedGet({ domain, address, path: '/admin', options });
+    if (root.status !== 200 || admin.status !== 303 || !admin.location) {
+      return { reachable: true, matches: false };
+    }
+    const landing = new URL(admin.location, `https://${domain}`).pathname;
+    return { reachable: true, matches: landing === ADMIN_LOGIN_PATH };
+  } catch {
+    return { reachable: false, matches: false };
+  }
+}
+
+/**
+ * The line a pinned `live` prints: the site answers, but this machine may not see it for a while.
+ * @param {string} domain the domain that answered
+ * @returns {string} the line
+ */
+function resolverLagLine(domain) {
+  return `${domain} already serves your site, but this computer's DNS resolver may take up to 30 minutes to see it.`;
+}
+
+/**
  * @typedef {object} DnsContext
  * @property {(servers?: string[]) => object} [resolve] resolver factory forwarded to the shared
  *  DNS helper (`dns.mjs`'s `readAuthoritativeAndRecursive`); when omitted, the unreachable-case
@@ -110,6 +193,12 @@ async function probeOrigin(origin, fetchImpl) {
  * @property {string[]} [nameServers] the zone's nameserver hostnames, when already known
  *  (for example a saved `record.cloudflare.nameServers`); skips the NS discovery lookup the
  *  helper otherwise makes
+ * @property {(target: { domain: string, address: string }) =>
+ *  Promise<{ reachable: boolean, matches: boolean }>} [pinnedProbe] the marker probe pinned to
+ *  the authoritative A address; defaults to `pinnedMarkerProbe`, injected in tests since
+ *  `node:https` bypasses the `fetchImpl` seam
+ * @property {(line: string) => void} [log] receives the one line a pinned `live` prints; a
+ *  caller that passes none prints nothing
  */
 
 /**
@@ -139,12 +228,19 @@ const NO_DNS_READING = Object.freeze({ authoritative: null, recursive: null, low
  * propagation wait renders both answers in its console view, and the loop that polls is the one
  * process allowed to read DNS (the console never looks anything up at render time), so the read
  * this call already made is the one the view must be built from rather than a second one.
+ *
+ * When the AAAA is present, the apex A is read authoritatively and the marker probe reruns once
+ * pinned to it (this module's header, "the pinned check"). Only a matching marker there turns
+ * the wait into `live`; any other pinned answer leaves it `hostname-resolver-lagging`.
  * @param {string} domain the domain to probe, no scheme
  * @param {DnsContext} dns the DNS context; absent-safe (see `confirmHostname`)
- * @returns {Promise<{ outcome: 'hostname-resolver-lagging' | 'hostname-records-absent',
- *  reading: DnsReading }>} the split outcome and the answers it was concluded from
+ * @returns {Promise<{ outcome: 'live' | 'hostname-resolver-lagging' | 'hostname-records-absent',
+ *  reading: DnsReading }>} the split outcome and the AAAA answers it was concluded from
  */
-async function diagnoseUnreachable(domain, { resolve, nameServers } = {}) {
+async function diagnoseUnreachable(
+  domain,
+  { resolve, nameServers, pinnedProbe = pinnedMarkerProbe, log } = {},
+) {
   if (!resolve) return { outcome: 'hostname-records-absent', reading: NO_DNS_READING };
 
   const reading = await readAuthoritativeAndRecursive({
@@ -154,12 +250,31 @@ async function diagnoseUnreachable(domain, { resolve, nameServers } = {}) {
     nameServers,
     resolve,
   });
-  const authoritativePresent =
-    Array.isArray(reading.authoritative) && reading.authoritative.length > 0;
-  return {
-    outcome: authoritativePresent ? 'hostname-resolver-lagging' : 'hostname-records-absent',
-    reading,
-  };
+  if (!hasAnswer(reading.authoritative)) return { outcome: 'hostname-records-absent', reading };
+
+  const v4 = await readAuthoritativeAndRecursive({
+    domain,
+    name: domain,
+    method: 'resolve4',
+    nameServers,
+    resolve,
+  });
+  if (!hasAnswer(v4.authoritative)) return { outcome: 'hostname-resolver-lagging', reading };
+
+  const pinned = await pinnedProbe({ domain, address: v4.authoritative[0] });
+  if (!pinned.reachable || !pinned.matches) return { outcome: 'hostname-resolver-lagging', reading };
+
+  log?.(resolverLagLine(domain));
+  return { outcome: 'live', reading };
+}
+
+/**
+ * Whether a DNS answer carries at least one record.
+ * @param {unknown[] | null} answer the answer, `null` when no source was read
+ * @returns {answer is unknown[]} true for a non-empty array
+ */
+function hasAnswer(answer) {
+  return Array.isArray(answer) && answer.length > 0;
 }
 
 /**
@@ -372,13 +487,24 @@ export async function cutOverHostname({
   api,
   fetchImpl = fetch,
   log,
-  dns,
+  dns: givenDns,
   waitForClear,
   writePublicOriginFn = writePublicOrigin,
   deployThroughBuilds,
 }) {
   const { dir } = record;
   const { domain, zoneId, workerName, accountId, url: workersDevUrl } = record.cloudflare;
+  // The pre-redeploy and post-redeploy confirms can both go through the pinned check; the
+  // resolver line is said once per cutover.
+  let resolverLineSaid = false;
+  const dns = givenDns && {
+    ...givenDns,
+    log: (line) => {
+      if (resolverLineSaid) return;
+      resolverLineSaid = true;
+      log(line);
+    },
+  };
 
   await api.attachCustomDomain({ hostname: domain, zoneId, service: workerName });
   log(`Connected ${domain} to your site; checking that it answers there.`);

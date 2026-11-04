@@ -389,7 +389,7 @@ jobs:
             fi
           done
           echo "dist-tags before the move:"
-          for p in $PKGS; do npm dist-tag ls "$p"; done
+          for p in $PKGS; do echo "== $p"; npm dist-tag ls "$p"; done
           npm dist-tag add "@glw907/cairn-cms@$V" next
           npm dist-tag add "@glw907/cairn-cms-dev@$V" next
           npm dist-tag add "create-cairn-site@$V" next

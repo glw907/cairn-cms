@@ -20,8 +20,7 @@ const PRERELEASE = /^\d+\.\d+\.\d+-[0-9A-Za-z.-]+$/;
 
 /**
  * Read the tags the promote job listed before it moved anything. The job prints
- * `npm dist-tag ls` for each package in order with no package label, one `tag: version` line per
- * tag in sorted order, so a tag that does not sort after the one before it starts the next package.
+ * `npm dist-tag ls` for each package under an `== <package>` line, one `tag: version` line per tag.
  * @param {string} log - The text of `gh run view <id> --log`.
  * @returns {Record<string, string>[]} One tag map per package, in `PACKAGES` order; empty when the log cannot be read.
  */
@@ -29,17 +28,21 @@ export function parsePromoteLog(log) {
   const lines = log.split('\n').map((l) => l.replace(/^.*?\d{4}-\d\d-\d\dT[\d:.]+Z /, '').trimEnd());
   const start = lines.indexOf('dist-tags before the move:');
   if (start < 0) return [];
-  /** @type {Record<string, string>[]} */
-  const groups = [];
-  let last = '';
+  /** @type {Record<string, Record<string, string>>} */
+  const byPackage = {};
+  /** @type {Record<string, string> | undefined} */
+  let current;
   for (const line of lines.slice(start + 1)) {
+    const header = /^== (\S+)$/.exec(line);
+    if (header) {
+      current = byPackage[header[1]] = {};
+      continue;
+    }
     const m = /^([\w.-]+): (\S+)$/.exec(line);
     if (!m) break;
-    if (!groups.length || m[1] <= last) groups.push({});
-    groups[groups.length - 1][m[1]] = m[2];
-    last = m[1];
+    if (current) current[m[1]] = m[2];
   }
-  return groups.length === PACKAGES.length ? groups : [];
+  return PACKAGES.every((p) => byPackage[p]) ? PACKAGES.map((p) => byPackage[p]) : [];
 }
 
 /**

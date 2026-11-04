@@ -14,18 +14,25 @@
 // an anonymous `GET /repos/{owner}/{repo}` would answer 404 and connect nothing: do not reach for
 // one here.
 //
-// TOKEN LIFECYCLE. Chapter 3 asks for its token, prefilled with eight permission keys (the
-// five chapter 2 asks for plus the three Workers Builds needs). It never adopts a token it did not
-// save itself: chapter 2 writes the same `cloudflare.apiToken` key and only clears it at its
-// terminal steps, so a record parked at `domain-live` or `email-onboarded` still carries a
-// five-key chapter-2 token when `--connect` runs, and adopting that one skips the eight-key
-// prefill and 403s at the first Builds call. `cloudflare.buildsTokenSavedAt` is the chapter-3-owned
+// TOKEN LIFECYCLE. Chapter 3 works with two tokens. The setup token signs every call this chapter
+// makes, prefilled with six permission keys (the five chapter 2 asks for plus `workers_ci`). The
+// build token is the narrow one Workers Builds deploys with (Workers Scripts, D1, and R2 only):
+// the trigger hop reuses the account's newest `cairn-build` registration, and only when there is
+// none does it collect one, verify it, and register it. The build token is held in memory for that
+// hop alone and never written to state; Cloudflare keeps its secret, and this tool never deletes
+// a registration.
+//
+// The setup token is never adopted from a save this chapter did not make: chapter 2 writes the
+// same `cloudflare.apiToken` key and only clears it at its terminal steps, so a record parked at
+// `domain-live` or `email-onboarded` still carries a five-key chapter-2 token when `--connect`
+// runs, and adopting that one skips the six-key prefill and 403s at the first Builds call.
+// `cloudflare.buildsTokenSavedAt` is the chapter-3-owned
 // marker recording that this chapter's token hop saved the token now on the record; chapter 2
 // drops it whenever it saves a token of its own over this one. Its
 // presence is also what lets a re-run skip admission after a connect or trigger park (neither
 // advances `step`, so `step` alone cannot carry that signal the way it carries "connect and
 // trigger both finished", CHAPTER3_RESUMABLE_STEPS below), and it can only ever be written after
-// admission has been given. The token is deleted at every terminal outcome (builds-live,
+// admission has been given. The setup token is deleted at every terminal outcome (builds-live,
 // builds-connect-declined) and on the `--yes` reconcile park; the parks that keep it are the ones
 // whose re-run resumes with it, listed where they return.
 //
@@ -49,7 +56,7 @@ import { exitOnCancel, promptSecret } from '../prompts.mjs';
 import { defineAction, runActions } from '../runner.mjs';
 import { loadSite, updateSite } from '../state.mjs';
 import { ensureAccountId } from './account.mjs';
-import { ensureApiToken, CHAPTER3_PERMISSION_KEYS } from './prefill.mjs';
+import { ensureApiToken, ensureBuildToken, BUILD_TOKEN_NAME, CHAPTER3_PERMISSION_KEYS } from './prefill.mjs';
 import { makeApi } from './api.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
 import { deleteApiToken } from './chapter2.mjs';
@@ -92,9 +99,6 @@ const BUILD_COMMAND = 'npm run build';
 
 /** The deploy command every created trigger carries: wrangler's default deploy invocation. */
 const DEPLOY_COMMAND = 'npx wrangler deploy';
-
-/** The name registered against the admin's pasted token when it becomes the build token. */
-const BUILD_TOKEN_NAME = 'cairn create-cairn-site build token';
 
 /** Matches the top-level `"name": "..."` line in a scaffold's wrangler.jsonc. */
 const WORKER_NAME_PATTERN = /"name":\s*"([^"]+)"/;
@@ -943,22 +947,23 @@ export async function assertBuildsReachable(api, dir) {
 }
 
 /**
- * The admission copy: what this chapter needs (the App authorization, a fresh token paste, one
- * later sign-in click) and what it costs (nothing new). The free-tier figures carry the date they
- * were verified, per the standing cost-copy rule every other admission in this tool follows.
+ * The admission copy: what this chapter needs (the App authorization, a fresh token paste, a
+ * build token on an account without one, one later sign-in click), who can read the build token,
+ * and what it costs (nothing new). The free-tier figures carry the date they were verified, per
+ * the standing cost-copy rule every other admission in this tool follows.
  */
 const ADMISSION_DETAIL =
   "Connects this repository to Cloudflare Workers Builds, so every commit to your default " +
-  'branch deploys itself, no laptop required. This needs three things: a one-time authorization ' +
-  'of Cloudflare\'s "Workers and Pages" GitHub App on your account (if you have not already done ' +
+  'branch deploys itself, no laptop required. This needs a one-time authorization of ' +
+  'Cloudflare\'s "Workers and Pages" GitHub App on your account (if you have not already done ' +
   'this), a fresh Cloudflare API token pasted the same way chapter 2 asked for one, and one ' +
   'sign-in click later in this chapter, when it commits its config changes back to your ' +
-  'repository. That token becomes your Workers Builds build token, which saves you a second trip ' +
-  'to the dashboard and has a consequence worth knowing first: Cloudflare keeps its secret and ' +
-  'gives it to every build your repository runs, and the token is scoped across your accounts ' +
-  'and zones. Treat anyone who can commit to your default branch as able to read it. It costs no ' +
-  "money: Workers Builds' free tier includes 3,000 build minutes a month and one build running " +
-  'at a time, as of 2026-08-12 ' +
+  'repository. If your Cloudflare account has no Workers Builds build token yet, it also asks ' +
+  'for one: a second, narrow token named cairn-build that can only deploy Workers and edit D1 ' +
+  'and R2, which later sites on this account reuse. Cloudflare keeps its secret and gives it to ' +
+  'every build that deploys with it, so treat anyone who can commit to your default branch as ' +
+  "able to read it. It costs no money: Workers Builds' free tier includes 3,000 build minutes a " +
+  'month and one build running at a time, as of 2026-08-12 ' +
   '(https://developers.cloudflare.com/workers/platform/pricing/). Your site keeps working ' +
   'exactly as it does now the whole time.';
 
@@ -984,19 +989,20 @@ const WATCH_DETAIL =
  * @property {(line: string) => void} log receives one printed line per call
  * @property {boolean} dryRun when true, every hop's title and detail print and nothing executes
  * @property {(url: string, log: (line: string) => void) => Promise<void>} [openBrowser] opens the
- *  admin's browser to the create-token page; defaults to open.mjs's opener
+ *  admin's browser to either token's create-token page; defaults to open.mjs's opener
  * @property {typeof clackConfirm} [confirm] the yes/no prompt; a test seam, defaulting to
  *  @clack/prompts'
  * @property {typeof clackSelect} [select] the account picker prompt `ensureAccountId` uses; the
  *  same kind of test seam as `confirm`
  * @property {(message: string) => Promise<string>} [promptSecretFn] the token paste prompt,
- *  forwarded to `ensureApiToken`; a test seam defaulting to prompts.mjs's `promptSecret`
- * @property {typeof makeApi} [makeApiFn] builds the Cloudflare API client; a test seam defaulting
- *  to api.mjs's `makeApi`
- * @property {Record<string, string | undefined>} [env] the environment `ensureApiToken` reads
- *  `CAIRN_CF_API_TOKEN` from under `yes`; defaults to `process.env`, injected in tests
- * @property {string[]} [argv] the argument vector `ensureApiToken` scans for a mistakenly-passed
- *  token; defaults to `process.argv.slice(2)`, injected in tests
+ *  forwarded to `ensureApiToken` and `ensureBuildToken`; a test seam defaulting to prompts.mjs's
+ *  `promptSecret`
+ * @property {typeof makeApi} [makeApiFn] builds the Cloudflare API client, for the setup token and
+ *  for the build token's verify call; a test seam defaulting to api.mjs's `makeApi`
+ * @property {Record<string, string | undefined>} [env] the environment `CAIRN_CF_API_TOKEN` and
+ *  `CAIRN_CF_BUILD_TOKEN` are read from under `yes`; defaults to `process.env`, injected in tests
+ * @property {string[]} [argv] the argument vector scanned for a mistakenly-passed token; defaults
+ *  to `process.argv.slice(2)`, injected in tests
  * @property {(ms: number) => Promise<void>} [sleepFn] the build watch's pacing; a test seam
  *  defaulting to a real timer-based sleep
  * @property {typeof fetch} [fetchImpl] the fetch implementation the live-hostname confirm probes
@@ -1101,7 +1107,7 @@ export async function runChapter3({
   }
 
   /**
-   * Collect this chapter's eight-key token and record it under `cloudflare.apiToken`
+   * Collect this chapter's six-key setup token and record it under `cloudflare.apiToken`
    * alongside `buildsTokenSavedAt`, the chapter-3-owned marker saying this chapter is the one
    * that saved what is now on the record. Both of this chapter's token hops (the main flow's and
    * the builds-live re-entry's) run through here, so neither can drift from the other on which
@@ -1110,7 +1116,7 @@ export async function runChapter3({
    *  `ensureApiToken`. True only when `buildsTokenSavedAt` proves this chapter saved the token now
    *  on the record; anything else (a five-key chapter-2 token, or a builds-live record still
    *  carrying the marker after its token was deleted at that terminal step) is withheld, so the
-   *  eight-key prefill actually opens.
+   *  six-key prefill actually opens.
    * @returns {Promise<string>} the token now in hand
    */
   async function collectBuildsToken(offerSaved) {
@@ -1234,7 +1240,7 @@ export async function runChapter3({
   // itself wrote, never by a saved `cloudflare.apiToken`: chapter 2 writes that same key and clears
   // it only at its terminal steps, so a record at `domain-live` or `email-onboarded` reaches
   // here still carrying a five-key chapter-2 token. Reading that as "chapter 3 already ran" skipped
-  // this chapter's consent, its cost statement, and its eight-key prefill, and then 403'd on the
+  // this chapter's consent, its cost statement, and its six-key prefill, and then 403'd on the
   // first Builds call with the adopted token.
   const chapter3TokenSaved = Boolean(record?.cloudflare?.buildsTokenSavedAt);
   const alreadyAdmitted = chapter3TokenSaved || chapter3Reached;
@@ -1285,11 +1291,11 @@ export async function runChapter3({
       'Get a fresh Cloudflare API token',
       'Uses the token this chapter saved on an earlier run, if there is one. Otherwise it opens ' +
         "Cloudflare's create-token page with the permissions this chapter needs already " +
-        'filled in (the same five chapter 2 already asked for, plus the Workers Builds ones), ' +
-        'and asks you to paste the token back.',
+        'filled in (the same five chapter 2 already asked for, plus Workers Builds), and asks ' +
+        'you to paste the token back.',
       async () => {
         // A saved token is offered back to `ensureApiToken` only when this chapter is the one
-        // that saved it; anything else is withheld, so the eight-key prefill actually opens.
+        // that saved it; anything else is withheld, so the six-key prefill actually opens.
         token = await collectBuildsToken(chapter3TokenSaved);
       },
     );
@@ -1361,7 +1367,8 @@ export async function runChapter3({
         frame,
         'Create your Workers Builds trigger',
         'Binds your Worker to the connected repository, so every push to its default branch ' +
-          'builds and deploys automatically.',
+          "builds and deploys automatically. Reuses your account's cairn-build token, or asks " +
+          'you for one when there is none.',
         async () => {
           const tag = await resolveWorkerTag(api, dir, 'nothing to bind to');
 
@@ -1374,16 +1381,35 @@ export async function runChapter3({
             return;
           }
 
-          const verified = await api.verifyToken();
-          const existingTokens = await api.getBuildTokens();
-          let buildTokenUuid = existingTokens.find(
-            (candidate) => candidate.cloudflare_token_id === verified.id,
+          // Reuse matches by name alone. Builds accepts two registrations under one name and
+          // reports no creation time, so the newest is the last in list order. A registration
+          // whose token was deleted lists unchanged, so reuse cannot tell it is dead: that
+          // trigger's first build fails inside the watch below. Nothing here ever deletes a
+          // registration.
+          // WATCH: register an account-owned token instead once Workers Builds accepts one; its
+          // API reference says "Account-scoped tokens are not supported". The release gate reuses
+          // its account's cairn-build registration once one exists, so it meets the collect path
+          // below live only on a run against an account without one; the unit tests carry it.
+          const registrations = await api.getBuildTokens();
+          let buildTokenUuid = registrations.findLast(
+            (candidate) => candidate.build_token_name === BUILD_TOKEN_NAME,
           )?.build_token_uuid;
           if (!buildTokenUuid) {
+            const buildToken = await ensureBuildToken({
+              dir,
+              accountId,
+              log,
+              openBrowser,
+              yes: args.yes,
+              promptSecretFn,
+              env,
+              argv,
+              makeApiFn,
+            });
             const createdToken = await api.createBuildToken({
               name: BUILD_TOKEN_NAME,
-              secret: token,
-              cloudflareTokenId: verified.id,
+              secret: buildToken.token,
+              cloudflareTokenId: buildToken.id,
             });
             buildTokenUuid = createdToken.build_token_uuid;
           }

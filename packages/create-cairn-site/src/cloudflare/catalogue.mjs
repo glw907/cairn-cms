@@ -832,6 +832,22 @@ const ROWS = {
         'sign-in step can open a browser.'
       );
     }
+  },
+  // Fires on an unattended run whose account has no `cairn-build` registration to reuse. An act
+  // row, not a wait: nothing clears it but the admin supplying the token.
+  'build-token-missing': {
+    kind: 'act',
+    build(params) {
+      return (
+        'This run is unattended (--yes), and this Cloudflare account has no Workers Builds ' +
+        'deploy token registered yet. Workers Builds deploys with a narrow token of its own, ' +
+        'named cairn-build, which an unattended run cannot ask you to paste. Nothing was ' +
+        'registered, and your site is untouched and still working.\n' +
+        'Next: set CAIRN_CF_BUILD_TOKEN to a token with Workers Scripts, D1, and Workers R2 ' +
+        `Storage edit permissions and re-run npx create-cairn-site --dir ${params.dir} --connect ` +
+        '--yes, or re-run without --yes to be asked for one.'
+      );
+    }
   }
 };
 

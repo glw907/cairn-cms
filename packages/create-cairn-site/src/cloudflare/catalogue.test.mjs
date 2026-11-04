@@ -55,7 +55,8 @@ const EXPECTED_KIND = {
   'builds-deploy-failed': 'act',
   'builds-not-runnable': 'act',
   'builds-config-diverged': 'act',
-  'builds-reconcile-parked': 'wait'
+  'builds-reconcile-parked': 'wait',
+  'build-token-missing': 'act'
 };
 
 /** Plausible params for each code, enough to exercise every interpolation. */
@@ -130,7 +131,8 @@ const SAMPLE_PARAMS = {
     buildUrl: 'https://dash.cloudflare.com/acct/workers/services/view/alpine/production/builds/abc'
   },
   'builds-config-diverged': { dir: './alpine', files: ['src/theme/cairn.config.ts'] },
-  'builds-reconcile-parked': { dir: './alpine' }
+  'builds-reconcile-parked': { dir: './alpine' },
+  'build-token-missing': { dir: './alpine' }
 };
 
 test('the expected-kind table covers every code the module has rows for', () => {
@@ -184,7 +186,7 @@ test('every catalogue code message ends in exactly one Next: line', () => {
   }
 });
 
-test('the Builds rows add exactly nine codes, none colliding with build-failed or build-not-runnable', () => {
+test('the Builds rows add exactly ten codes, none colliding with build-failed or build-not-runnable', () => {
   // 37 pre-Builds codes, plus Task 2's split: hostname-propagating retired (-1), replaced by
   // hostname-records-absent and hostname-resolver-lagging (+2), plus deploy-plan-declined,
   // chapter 1's pre-deploy decline row, added alongside the pre-existing paid-plan-declined
@@ -199,7 +201,8 @@ test('the Builds rows add exactly nine codes, none colliding with build-failed o
     'builds-deploy-failed',
     'builds-not-runnable',
     'builds-config-diverged',
-    'builds-reconcile-parked'
+    'builds-reconcile-parked',
+    'build-token-missing'
   ];
   assert.equal(
     CATALOGUE_CODES.length,
@@ -597,6 +600,14 @@ test('builds-reconcile-parked names the interactive re-run without --yes', () =>
   assert.equal(err.catalogue.kind, 'wait');
   assert.match(err.message, /--yes/);
   assert.match(err.catalogue.next, /without --yes/);
+});
+
+test('build-token-missing names CAIRN_CF_BUILD_TOKEN and the interactive alternative', () => {
+  const err = cloudflareError('build-token-missing', SAMPLE_PARAMS['build-token-missing']);
+  assert.match(err.message, /CAIRN_CF_BUILD_TOKEN/);
+  assert.match(err.catalogue.next, /CAIRN_CF_BUILD_TOKEN/);
+  assert.match(err.catalogue.next, /without --yes/);
+  assert.match(err.message, /\.\/alpine/);
 });
 
 test('WAIT_KIND_CODES holds exactly the wait-kind rows, in catalogue order, and nothing else', () => {

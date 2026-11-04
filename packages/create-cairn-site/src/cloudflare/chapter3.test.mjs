@@ -58,9 +58,12 @@ async function fixtureScaffoldDir(t, { wrangler = WRANGLER_CONTENT, cairnConfig 
   return dir;
 }
 
-/** Start a fake Cloudflare, seeded with the deployed Worker's script/tag, and point the env at it. */
-async function setupCloudflare(t) {
-  const cloudflare = await startFakeCloudflare();
+/**
+ * Start a fake Cloudflare, seeded with the deployed Worker's script/tag, and point the env at it.
+ * `options` passes straight to `startFakeCloudflare`.
+ */
+async function setupCloudflare(t, options) {
+  const cloudflare = await startFakeCloudflare(options);
   cloudflare.state.workerScripts.push({ id: WORKER_NAME, tag: WORKER_TAG });
   t.after(() => cloudflare.close());
   process.env.CAIRN_CLOUDFLARE_API_BASE = cloudflare.apiBase;
@@ -553,7 +556,7 @@ test('runChapter3: --yes consents silently, never prompting, reads CAIRN_CF_API_
     openBrowser: mustNotBeCalled('openBrowser'),
     confirm: mustNotBeCalled('confirm'),
     promptSecretFn: mustNotBeCalled('promptSecretFn'),
-    env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+    env: { CAIRN_CF_API_TOKEN: 'env-token-value', CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
     ...fastSeams(cloudflare),
   });
 
@@ -564,7 +567,7 @@ test('runChapter3: --yes consents silently, never prompting, reads CAIRN_CF_API_
   assert.equal(putRequest.headers.authorization, 'Bearer env-token-value');
 });
 
-test('runChapter3: a record still carrying chapter 2\'s saved token gets the full admission and a fresh eight-key token, never chapter 2\'s', async (t) => {
+test('runChapter3: a record still carrying chapter 2\'s saved token gets the full admission and a fresh six-key token, never chapter 2\'s', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
@@ -574,7 +577,7 @@ test('runChapter3: a record still carrying chapter 2\'s saved token gets the ful
   // The state `--connect` actually meets at a chapter-2 resumable step: chapter 2 deletes its saved
   // token only at its TERMINAL steps, so a record parked at `domain-live` still carries the
   // five-key token it pasted. Reading that token as "chapter 3 already ran" is what skipped this
-  // chapter's consent, its cost copy, and its eight-key prefill.
+  // chapter's consent, its cost copy, and its six-key prefill.
   const alreadyReconciledCloudflare = (await alreadyReconciled(dir)).cloudflare;
   await seedSite(siteId, dir, repo, {
     step: 'domain-live',
@@ -625,6 +628,14 @@ test('runChapter3: an authorization refusal parks on its row, and a re-run after
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-park-site-abc123';
   await seedSite(siteId, dir, repo);
+  // An account that already holds its build token, so the re-run's only prompt would be the setup
+  // token's, which is what this test is about.
+  cloudflare.state.buildTokens.push({
+    build_token_uuid: 'existing-cairn-build',
+    owner_type: 'user',
+    build_token_name: 'cairn-build',
+    cloudflare_token_id: 'existing-build-id',
+  });
 
   cloudflare.failNext('builds_connection_put', 404, REPO_NOT_SELECTED_REFUSED_BODY);
 
@@ -774,6 +785,290 @@ test('runChapter3: connect and trigger are idempotent across two runs, the secon
     (r) => r.method === 'POST' && r.path.includes('/builds/triggers/') && r.path.endsWith('/builds'),
   );
   assert.equal(kicks.length, 1, 'the already-successful build from the first run must not be kicked again');
+});
+
+// --- the narrow build token --------------------------------------------------------------------
+
+/** The token id the fake verify route reports for any bearer it was not told about. */
+const SETUP_TOKEN_ID = 'd07b2a25f05151591830c45053186979';
+
+/** The setup token and the build token a run pastes, and the id the fake reports for the latter. */
+const SETUP_TOKEN = 'fresh-cf-token';
+const BUILD_TOKEN = 'pasted-build-token';
+const BUILD_TOKEN_ID = 'build-token-id-1';
+
+/** The two prompts a fresh chapter-3 run asks, by their exact text. */
+const SETUP_PROMPT = 'Paste your Cloudflare API token';
+const BUILD_PROMPT = 'Paste your Workers Builds deploy token';
+
+/**
+ * A promptSecretFn answering each prompt with its own token, recording every prompt it was asked.
+ * @param {string[]} asked receives each prompt's text, in order
+ */
+function answeringBothPrompts(asked) {
+  return async (message) => {
+    asked.push(message);
+    if (message === BUILD_PROMPT) return BUILD_TOKEN;
+    if (message === SETUP_PROMPT) return SETUP_TOKEN;
+    throw new Error(`unexpected prompt: ${message}`);
+  };
+}
+
+/** Every DELETE the fake received; the CLI never deletes a build-token registration. */
+function deletes(cloudflare) {
+  return cloudflare.requests.filter((r) => r.method === 'DELETE');
+}
+
+/** Every build-token registration POST the fake received. */
+function registrations(cloudflare) {
+  return cloudflare.requests.filter((r) => r.method === 'POST' && r.path.startsWith('/client/v4/accounts/acct-1/builds/tokens'));
+}
+
+/** The trigger create request, whose body names the build token the trigger deploys with. */
+function triggerCreate(cloudflare) {
+  return cloudflare.requests.find(
+    (r) => r.method === 'POST' && r.path.includes('/builds/triggers') && !r.path.includes('/builds/triggers/'),
+  );
+}
+
+/** Run chapter 3 interactively to its end over an already-reconciled site, with the given prompt. */
+async function runInteractively({ cloudflare, siteId, dir, promptSecretFn, opened = [] }) {
+  return runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    openBrowser: async (url) => {
+      opened.push(url);
+    },
+    confirm: confirmAnswering(true),
+    promptSecretFn,
+    argv: [],
+    ...fastSeams(cloudflare),
+  });
+}
+
+test('runChapter3: a cairn-build registration is reused with no build-token prompt and no registration call, whatever token id it carries', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-reuse-site-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+  // Two registrations under the name, each naming a token other than the setup token. Builds
+  // accepts a duplicate name and reports no creation time, so list order is the only age signal,
+  // and the last entry is the newest.
+  cloudflare.state.buildTokens.push(
+    { build_token_uuid: 'older-cairn-build', owner_type: 'user', build_token_name: 'cairn-build', cloudflare_token_id: 'older-id' },
+    { build_token_uuid: 'newest-cairn-build', owner_type: 'user', build_token_name: 'cairn-build', cloudflare_token_id: 'newer-id' },
+  );
+
+  const asked = [];
+  const result = await runInteractively({ cloudflare, siteId, dir, promptSecretFn: answeringBothPrompts(asked) });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.deepEqual(asked, [SETUP_PROMPT], 'only the setup token is asked for');
+  assert.equal(registrations(cloudflare).length, 0, 'an existing cairn-build registration is never re-registered');
+  assert.equal(triggerCreate(cloudflare).body.build_token_uuid, 'newest-cairn-build');
+  assert.deepEqual(deletes(cloudflare), []);
+});
+
+test('runChapter3: a wide registration of the setup token is not reused; the run collects and registers a narrow cairn-build token', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t, { tokenVerifyIds: { [BUILD_TOKEN]: BUILD_TOKEN_ID } });
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-wide-site-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+  // What an earlier version of this tool registered: the setup token itself, under the old name.
+  cloudflare.state.buildTokens.push({
+    build_token_uuid: 'wide-registration',
+    owner_type: 'user',
+    build_token_name: 'cairn create-cairn-site build token',
+    cloudflare_token_id: SETUP_TOKEN_ID,
+  });
+
+  const asked = [];
+  const opened = [];
+  const result = await runInteractively({ cloudflare, siteId, dir, promptSecretFn: answeringBothPrompts(asked), opened });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.deepEqual(asked, [SETUP_PROMPT, BUILD_PROMPT]);
+  const buildPage = new URL(opened.at(-1));
+  assert.equal(buildPage.searchParams.get('name'), 'cairn-build');
+
+  const posted = registrations(cloudflare);
+  assert.equal(posted.length, 1);
+  assert.deepEqual(posted[0].body, {
+    build_token_name: 'cairn-build',
+    build_token_secret: BUILD_TOKEN,
+    cloudflare_token_id: BUILD_TOKEN_ID,
+  });
+  assert.equal(posted[0].headers.authorization, `Bearer ${SETUP_TOKEN}`, 'the registration signs with the setup token');
+  const created = cloudflare.state.buildTokens.at(-1);
+  assert.equal(triggerCreate(cloudflare).body.build_token_uuid, created.build_token_uuid);
+
+  // The build token is checked through the verify route on its own bearer, never through a zone
+  // read, which a narrow token cannot make.
+  const verified = cloudflare.requests.filter((r) => r.path === '/client/v4/user/tokens/verify');
+  assert.deepEqual(verified.map((r) => r.headers.authorization), [`Bearer ${BUILD_TOKEN}`]);
+  assert.equal(
+    cloudflare.requests.some((r) => r.path.startsWith('/client/v4/zones') && r.headers.authorization === `Bearer ${BUILD_TOKEN}`),
+    false,
+  );
+  assert.deepEqual(deletes(cloudflare), []);
+  await assertSecretSweptFromDisk(stateDir, siteId, BUILD_TOKEN);
+});
+
+test('runChapter3: the build token never reaches the state file, even at a park that keeps the setup token', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-park-secret-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+
+  const asked = [];
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    openBrowser: neverOpensBrowser,
+    confirm: confirmAnswering(true),
+    promptSecretFn: answeringBothPrompts(asked),
+    argv: [],
+    sleepFn: async () => {},
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 2,
+  });
+
+  assert.equal(result.outcome, 'build-running');
+  assert.deepEqual(asked, [SETUP_PROMPT, BUILD_PROMPT]);
+  const saved = await readFile(path.join(stateDir, `${siteId}.json`), 'utf8');
+  assert.ok(saved.includes(SETUP_TOKEN), 'this park keeps the setup token for its re-run');
+  await assertSecretSweptFromDisk(stateDir, siteId, BUILD_TOKEN);
+});
+
+test("runChapter3: a second site on the account reuses the first site's cairn-build registration, and nothing is ever deleted", async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t, { tokenVerifyIds: { [BUILD_TOKEN]: BUILD_TOKEN_ID } });
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  await seedSite('builds-first-site-abc123', dir, repo, await alreadyReconciled(dir));
+
+  const firstAsked = [];
+  const first = await runInteractively({
+    cloudflare,
+    siteId: 'builds-first-site-abc123',
+    dir,
+    promptSecretFn: answeringBothPrompts(firstAsked),
+  });
+  assert.equal(first.outcome, 'builds-live');
+  assert.deepEqual(firstAsked, [SETUP_PROMPT, BUILD_PROMPT]);
+
+  // A second site on the same account: its Worker has no trigger yet, so the trigger hop runs.
+  const secondDir = await fixtureScaffoldDir(t, { wrangler: `${JSON.stringify({ name: 'second-site' }, null, 2)}\n` });
+  cloudflare.state.workerScripts.push({ id: 'second-site', tag: 'tag-second' });
+  const secondRepo = await seedGithubRepo(github, secondDir, 'second-club');
+  await seedSite('builds-second-site-abc123', secondDir, secondRepo, {
+    cloudflare: {
+      accountId: 'acct-1',
+      url: 'https://second-site.example.workers.dev',
+      workerName: 'second-site',
+      buildsReconciledHash: await reconciledConfigHash(secondDir),
+    },
+  });
+
+  const secondAsked = [];
+  const second = await runInteractively({
+    cloudflare,
+    siteId: 'builds-second-site-abc123',
+    dir: secondDir,
+    promptSecretFn: answeringBothPrompts(secondAsked),
+  });
+  assert.equal(second.outcome, 'builds-live');
+  assert.deepEqual(secondAsked, [SETUP_PROMPT], 'the second site asks for no build token');
+  assert.equal(registrations(cloudflare).length, 1, 'one registration serves the account');
+  assert.equal(cloudflare.state.buildTokens.length, 1);
+  assert.deepEqual(deletes(cloudflare), []);
+});
+
+test('runChapter3: --yes with CAIRN_CF_BUILD_TOKEN registers that token as cairn-build, prompting nothing', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t, { tokenVerifyIds: { 'env-build-token': 'env-build-id' } });
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-yes-build-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser: mustNotBeCalled('openBrowser'),
+    confirm: mustNotBeCalled('confirm'),
+    promptSecretFn: mustNotBeCalled('promptSecretFn'),
+    env: { CAIRN_CF_API_TOKEN: 'env-token-value', CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
+    argv: ['--yes'],
+    ...fastSeams(cloudflare),
+  });
+
+  assert.equal(result.outcome, 'builds-live');
+  const posted = registrations(cloudflare);
+  assert.equal(posted.length, 1);
+  assert.equal(posted[0].body.build_token_name, 'cairn-build');
+  assert.equal(posted[0].body.build_token_secret, 'env-build-token');
+  assert.equal(posted[0].body.cloudflare_token_id, 'env-build-id');
+  await assertSecretSweptFromDisk(stateDir, siteId, 'env-build-token');
+});
+
+test('runChapter3: --yes with no cairn-build registration and no CAIRN_CF_BUILD_TOKEN stops on build-token-missing, registering nothing', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-yes-missing-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+
+  await assert.rejects(
+    async () =>
+      runChapter3({
+        siteId,
+        record: await loadSite(siteId),
+        dir,
+        args: { yes: true },
+        log: () => {},
+        dryRun: false,
+        openBrowser: mustNotBeCalled('openBrowser'),
+        confirm: mustNotBeCalled('confirm'),
+        promptSecretFn: mustNotBeCalled('promptSecretFn'),
+        env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+        argv: ['--yes'],
+        ...fastSeams(cloudflare),
+      }),
+    (err) => {
+      assert.equal(err.cause?.catalogue?.code, 'build-token-missing');
+      assert.match(err.message, /CAIRN_CF_BUILD_TOKEN/);
+      return true;
+    },
+  );
+  assert.equal(registrations(cloudflare).length, 0);
+  assert.equal(triggerCreate(cloudflare), undefined);
 });
 
 test('runChapter3: a differing repo commits exactly once through exactly one reauthorize call, and a build the fake never surfaces parks on build-not-started with config-reconciled recorded', async (t) => {
@@ -1117,7 +1412,7 @@ test('a --yes run composes no hold at all: no console, no loop, and the seam nev
     openBrowser: mustNotBeCalled('openBrowser'),
     confirm: mustNotBeCalled('confirm'),
     promptSecretFn: mustNotBeCalled('promptSecretFn'),
-    env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+    env: { CAIRN_CF_API_TOKEN: 'env-token-value', CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
     // A run the policy refuses must never even call these, isTTY: true or not: --yes alone is
     // enough to refuse.
     isTTY: true,
@@ -1503,7 +1798,7 @@ test('runChapter3: --yes with a real config diff parks on builds-reconcile-parke
     openBrowser: mustNotBeCalled('openBrowser'),
     confirm: mustNotBeCalled('confirm'),
     promptSecretFn: mustNotBeCalled('promptSecretFn'),
-    env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+    env: { CAIRN_CF_API_TOKEN: 'env-token-value', CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
   });
 
   assert.equal(result.outcome, 'builds-reconcile-parked');

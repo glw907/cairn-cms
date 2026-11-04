@@ -10,9 +10,9 @@
 // fixes it; this test is what catches the next one.
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { parse } from 'yaml';
 
 const REPO_ROOT = resolve(__dirname, '../../..');
@@ -45,6 +45,7 @@ interface Step {
   if?: string;
   shell?: string;
   uses?: string;
+  with?: Record<string, unknown>;
   'continue-on-error'?: unknown;
 }
 
@@ -227,7 +228,13 @@ describe('the test jobs keep their gates and report their retries', () => {
 });
 
 describe('publish.yml gates a candidate before it reaches next', () => {
-  type PublishJob = Job & { permissions?: Record<string, string>; steps?: (Step & { env?: Record<string, string> })[] };
+  type PublishStep = Step & { env?: Record<string, string> };
+  type PublishJob = Job & {
+    permissions?: Record<string, string>;
+    environment?: string;
+    needs?: string | string[];
+    steps?: PublishStep[];
+  };
   const jobs = (loadWorkflow('publish.yml').jobs ?? {}) as Record<string, PublishJob>;
   const publishJobs = ['publish', 'publish-dev', 'publish-create-site'];
   const PACKAGES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev', 'create-cairn-site'];
@@ -241,10 +248,62 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     }
   });
 
-  it('skips each publish job on a promote dispatch and keeps a bare dispatch publishing', () => {
+  it('admits only a published release to each publish job', () => {
     for (const id of publishJobs) {
-      expect(jobs[id].if, id).toBe("github.event_name == 'release' || inputs.promote == ''");
+      expect(jobs[id].if, id).toBe("github.event_name == 'release'");
     }
+  });
+
+  it('grants id-token to the four publishing jobs only, each under the npm-publish environment', () => {
+    const workflow = loadWorkflow('publish.yml') as Workflow & { permissions?: Record<string, string> };
+    expect(workflow.permissions).toEqual({ contents: 'read' });
+    const holders = Object.entries(jobs)
+      .filter(([, job]) => job.permissions?.['id-token'] === 'write')
+      .map(([id]) => id);
+    expect(holders.sort()).toEqual([...publishJobs, 'promote'].sort());
+    for (const id of holders) expect(jobs[id].environment, id).toBe('npm-publish');
+    for (const id of ['ci-green', 'build', 'verdict']) expect(jobs[id].permissions?.['id-token'], id).toBeUndefined();
+    expect(jobs['ci-green'].permissions?.checks).toBe('read');
+  });
+
+  it('chains ci-green, build, the publish jobs, verdict, and promote; no id-token job installs', () => {
+    expect(jobs.build.needs).toBe('ci-green');
+    for (const id of publishJobs) expect([jobs[id].needs].flat(), id).toContain('build');
+    expect(jobs.promote.needs).toBe('verdict');
+    for (const [id, job] of Object.entries(jobs)) {
+      if (job.permissions?.['id-token'] !== 'write') continue;
+      const steps = job.steps ?? [];
+      expect(steps.some((s) => /npm ci|bounded-install/.test(`${s.run ?? ''}${s.uses ?? ''}`)), id).toBe(false);
+    }
+    for (const id of publishJobs) {
+      const publishes = (jobs[id].steps ?? []).map((s) => s.run ?? '').filter((run) => run.includes('npm publish'));
+      expect(publishes.length, id).toBe(1);
+      expect(publishes[0], id).toMatch(/npm publish "\$TGZ" --ignore-scripts /);
+    }
+  });
+
+  it('pins every third-party action by a 40-hex commit sha', () => {
+    const uses = Object.values(jobs)
+      .flatMap((job) => job.steps ?? [])
+      .map((s) => s.uses ?? '')
+      .filter((u) => u !== '' && !u.startsWith('./'));
+    expect(uses.length).toBeGreaterThan(0);
+    for (const u of uses) expect(u).toMatch(/@[0-9a-f]{40}$/);
+  });
+
+  it('checks out only the two gate scripts in verdict, with a sha-pinned setup-node and no expression in its script', () => {
+    const steps = jobs.verdict.steps ?? [];
+    const checkout = steps.find((s) => (s.uses ?? '').startsWith('actions/checkout'));
+    expect(String(checkout?.with?.['sparse-checkout']).split('\n').filter(Boolean)).toEqual([
+      'scripts/gate/verdict.mjs',
+      'scripts/gate/record.mjs'
+    ]);
+    expect(checkout?.with?.['sparse-checkout-cone-mode']).toBe(false);
+    expect(steps.some((s) => /^actions\/setup-node@[0-9a-f]{40}$/.test(s.uses ?? ''))).toBe(true);
+    const script = steps.map((s) => s.run ?? '').join('\n');
+    expect(script).toContain('node scripts/gate/verdict.mjs "$PROMOTE_VERSION"');
+    expect(script).not.toContain('${{');
+    expect(steps.some((s) => /npm ci|bounded-install/.test(`${s.run ?? ''}${s.uses ?? ''}`))).toBe(false);
   });
 
   it('declares the promote job with job-level OIDC, no install, and next for each package', () => {
@@ -259,13 +318,133 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     expect(adds).toEqual(PACKAGES);
   });
 
-  it('pins every npm install step to ^11.21.0', () => {
+  it('pins every npm install step to exactly 11.21.1', () => {
     const installs = Object.values(jobs)
       .flatMap((job) => job.steps ?? [])
       .filter((s) => (s.run ?? '').startsWith('npm install -g npm@'));
+    // One per job that publishes or promotes; build and verdict use the runner's npm.
     expect(installs.length).toBe(4);
-    for (const step of installs) expect(step.run).toBe('npm install -g npm@^11.21.0');
+    for (const step of installs) expect(step.run).toBe('npm install -g npm@11.21.1');
   });
+
+  describe('ci-green under bash with a stub gh', () => {
+    const script = (jobs['ci-green']?.steps ?? []).map((s) => s.run ?? '').join('\n');
+
+    // The stub answers each check name from CHECKS_DIR/<name>.<n>.json, n counting calls for that
+    // name and sticking at the last file; a name with no file answers an empty list.
+    function run(
+      ref: string,
+      checks: Record<string, object[][]>,
+      deadline = 3
+    ): { status: number | null; out: string } {
+      const dir = mkdtempSync(resolve(tmpdir(), 'ci-green-'));
+      for (const [name, sequence] of Object.entries(checks)) {
+        sequence.forEach((runs, at) => writeFileSync(resolve(dir, `${name}.${at}.json`), JSON.stringify({ check_runs: runs })));
+      }
+      const stub = resolve(dir, 'gh');
+      writeFileSync(
+        stub,
+        [
+          '#!/bin/bash',
+          'name=$(printf "%s" "$2" | sed -E "s/.*check_name=([^&]*).*/\\1/")',
+          'n=0; [ -f "$CHECKS_DIR/$name.count" ] && n=$(cat "$CHECKS_DIR/$name.count")',
+          'echo $((n + 1)) > "$CHECKS_DIR/$name.count"',
+          'f="$CHECKS_DIR/$name.$n.json"',
+          'while [ ! -f "$f" ] && [ "$n" -gt 0 ]; do n=$((n - 1)); f="$CHECKS_DIR/$name.$n.json"; done',
+          '[ -f "$f" ] && cat "$f" || echo \'{"check_runs":[]}\''
+        ].join('\n')
+      );
+      chmodSync(stub, 0o755);
+      const result = spawnSync('bash', ['-e', '-c', script], {
+        encoding: 'utf8',
+        env: {
+          PATH: `${dir}:${process.env.PATH}`,
+          CHECKS_DIR: dir,
+          GITHUB_REF_NAME: ref,
+          GITHUB_REPOSITORY: 'o/r',
+          GITHUB_SHA: 'abc',
+          CI_GREEN_DEADLINE: String(deadline),
+          CI_GREEN_POLL: '1'
+        }
+      });
+      return { status: result.status, out: `${result.stdout}${result.stderr}` };
+    }
+    const done = (id: number, conclusion: string) => ({ id, status: 'completed', conclusion });
+    const going = (id: number) => ({ id, status: 'in_progress', conclusion: null });
+
+    it('passes a candidate once test goes from in progress to success', () => {
+      const r = run('v1.0.0-rc.1', { test: [[going(1)], [done(1, 'success')]] });
+      expect(r.status, r.out).toBe(0);
+    });
+
+    it('fails when test concludes in failure', () => {
+      const r = run('v1.0.0-rc.1', { test: [[done(1, 'failure')]] });
+      expect(r.status).not.toBe(0);
+      expect(r.out).toContain("'test' concluded 'failure'");
+    });
+
+    it('requires e2e for a stable and passes when both are green', () => {
+      expect(run('v1.0.0', { test: [[done(1, 'success')]] }, 2).status).not.toBe(0);
+      const r = run('v1.0.0', { test: [[done(1, 'success')]], e2e: [[done(2, 'success')]] });
+      expect(r.status, r.out).toBe(0);
+    });
+
+    it('judges a rerun by its newest run, not the failed one before it', () => {
+      const r = run('v1.0.0-rc.1', { test: [[done(1, 'failure'), done(5, 'success')]] });
+      expect(r.status, r.out).toBe(0);
+      expect(run('v1.0.0-rc.1', { test: [[done(5, 'failure'), done(1, 'success')]] }).status).not.toBe(0);
+    });
+
+    it('fails at its deadline while a check is still running', () => {
+      const r = run('v1.0.0-rc.1', { test: [[going(1)]] }, 2);
+      expect(r.status).not.toBe(0);
+      expect(r.out).toContain('were not green');
+    });
+  });
+
+  describe('the build ref check under bash', () => {
+    const script = (jobs.build?.steps ?? []).find((s) => (s.name ?? '').startsWith('The tag names'))?.run ?? '';
+
+    function run(ref: string, versions: [string, string, string]): { status: number | null; out: string } {
+      const dir = mkdtempSync(resolve(tmpdir(), 'build-ref-'));
+      const paths = ['package.json', 'packages/cairn-cms-dev/package.json', 'packages/create-cairn-site/package.json'];
+      paths.forEach((path, at) => {
+        mkdirSync(dirname(resolve(dir, path)), { recursive: true });
+        writeFileSync(resolve(dir, path), JSON.stringify({ version: versions[at] }));
+      });
+      const result = spawnSync('bash', ['-e', '-c', script], {
+        encoding: 'utf8',
+        cwd: dir,
+        env: { PATH: process.env.PATH, GITHUB_REF_NAME: ref }
+      });
+      return { status: result.status, out: `${result.stdout}${result.stderr}` };
+    }
+
+    it('passes when the tag is v plus the version in all three manifests', () => {
+      expect(run('v0.99.0-rc.3', ['0.99.0-rc.3', '0.99.0-rc.3', '0.99.0-rc.3']).status).toBe(0);
+    });
+
+    it('fails when any one manifest disagrees with the tag', () => {
+      for (let at = 0; at < 3; at += 1) {
+        const versions: [string, string, string] = ['0.99.0-rc.3', '0.99.0-rc.3', '0.99.0-rc.3'];
+        versions[at] = '0.0.0';
+        const r = run('v0.99.0-rc.3', versions);
+        expect(r.status, `manifest ${at}`).not.toBe(0);
+        expect(r.out).toContain('0.0.0');
+      }
+    });
+  });
+
+  it('passes actionlint over every workflow', () => {
+    // go is required, not optional: a missing toolchain fails here rather than skipping.
+    const result = spawnSync('go', ['run', 'github.com/rhysd/actionlint/cmd/actionlint@v1.7.12'], {
+      encoding: 'utf8',
+      cwd: REPO_ROOT
+    });
+    expect(result.error, 'go is not on PATH').toBeUndefined();
+    expect(`${result.stdout}${result.stderr}`).toBe('');
+    expect(result.status).toBe(0);
+  }, 120_000);
 
   describe('the promote script under bash with a stub npm', () => {
     // The stub logs every call; `view` prints the version unless the package is in MISSING.
@@ -309,6 +488,13 @@ describe('publish.yml gates a candidate before it reaches next', () => {
       expect(r.status).not.toBe(0);
       expect(adds(r.calls)).toEqual([]);
       for (const pkg of PACKAGES) expect(r.out).toContain(`tags of ${pkg}`);
+    });
+
+    it('prints every package dist-tags before the first dist-tag add', () => {
+      const r = run('0.99.0-rc.3');
+      const firstAdd = r.calls.findIndex((c) => c.startsWith('dist-tag add'));
+      const lsBefore = r.calls.slice(0, firstAdd).filter((c) => c.startsWith('dist-tag ls'));
+      expect(lsBefore).toEqual(PACKAGES.map((p) => `dist-tag ls ${p}`));
     });
 
     it('moves the three packages to next with create-cairn-site last, then its latest', () => {

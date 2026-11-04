@@ -351,35 +351,59 @@ export function cliFailureMessage(result, capture, lines = 8) {
  * @property {typeof handleUrl} handleUrl handles one URL the CLI opens
  * @property {typeof tailUrlLog} tailUrlLog follows the URL log
  * @property {typeof publishViaAdmin} publishViaAdmin publishes the leg's edit
+ * @property {typeof recordLeg} recordLeg writes the leg's row
  */
 
 /** @type {LegDeps} */
-const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin };
+const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin, recordLeg };
+
+/** @typedef {{ path: string, url: string, commit: string, marker: string, fetched: string }} RowCells */
 
 /**
- * Run one leg end to end and record it. A leg that fails or throws leaves a `failed` marker in the
- * run directory, which keeps its captures through teardown.
+ * Run one leg end to end and record it. The row is written in a `finally`, so a leg that fails,
+ * returns early, or throws still leaves one, carrying every reason joined by `"; "`. A failed record
+ * write is logged and never replaces the leg's own verdict or error. A leg that fails or throws also
+ * leaves a `failed` marker in the run directory, which keeps its captures through teardown.
  * @param {LegContext} ctx
  * @param {Partial<LegDeps>} [deps] collaborators, defaulting to the real ones
  * @returns {Promise<{ pass: boolean, failures: string[] }>} the verdict
  */
 export async function runLeg(ctx, deps = {}) {
+  const all = { ...DEFAULT_DEPS, ...deps };
+  /** @type {RowCells} */
+  const cells = { path: '-', url: '-', commit: '-', marker: '-', fetched: '-' };
   /** @type {{ pass: boolean, failures: string[] } | undefined} */
   let verdict;
+  /** @type {string | undefined} */
+  let thrown;
   try {
-    verdict = await runLegSteps(ctx, { ...DEFAULT_DEPS, ...deps });
+    verdict = await runLegSteps(ctx, all, cells);
     return verdict;
+  } catch (error) {
+    thrown = error instanceof Error ? error.message : String(error);
+    throw error;
   } finally {
     if (!verdict?.pass) await writeFile(path.join(ctx.runDir, 'failed'), `${ctx.leg}\n`).catch(() => {});
+    const reasons = verdict ? verdict.failures : [thrown ?? 'the leg ended without a verdict'];
+    try {
+      await all.recordLeg({
+        version: ctx.version,
+        notesDir: ctx.releaseNotesDir,
+        row: { leg: ctx.leg, ...cells, verdict: verdict?.pass ? 'pass' : `fail: ${reasons.join('; ')}`, run: path.basename(ctx.runDir) },
+      });
+    } catch (error) {
+      ctx.log(`record: could not write the ${ctx.leg} row: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }
 
 /**
  * @param {LegContext} ctx
  * @param {LegDeps} deps
+ * @param {RowCells} cells the row's cells, filled as the leg learns them
  * @returns {Promise<{ pass: boolean, failures: string[] }>}
  */
-async function runLegSteps(ctx, deps) {
+async function runLegSteps(ctx, deps, cells) {
   const { accountName, leg, version, runDir, env, cliEnv, install, launched, creds, log } = ctx;
   const plan = LEG_PLANS[leg];
   const token = cliEnv.CLOUDFLARE_API_TOKEN;
@@ -452,12 +476,14 @@ async function runLegSteps(ctx, deps) {
 
   const epoch = Date.now();
   const marker = `gate-${version}-${leg}-${epoch}`;
+  cells.marker = marker;
   const published = await deps.publishViaAdmin(install.admin, { origin, marker });
   const liveUrl = `${leg === 'B1' ? origin : `https://${TEST_DOMAIN}`}${published.entryPath}`;
+  cells.path = published.entryPath;
+  cells.url = liveUrl;
 
   /** @type {LegResults} */
   const results = { closingText: cli.screen, alertText: published.alertText, fetch: null, absent: null, commitOnDefaultBranch: false, robotsHasSitemap: false, mail: null };
-  let commit = '-';
   if (leg === 'A1') {
     const sha = await markerCommit({
       token: env.GITHUB_TEST_TOKEN ?? '',
@@ -468,7 +494,7 @@ async function runLegSteps(ctx, deps) {
       marker,
     });
     results.commitOnDefaultBranch = sha !== null;
-    commit = sha ?? '-';
+    cells.commit = sha ?? '-';
     results.absent = await fetchCheckAbsent(liveUrl, marker, published.control, { budgetMs: 5 * 60_000 });
   } else {
     results.fetch = await fetchCheck(liveUrl, marker);
@@ -506,18 +532,6 @@ async function runLegSteps(ctx, deps) {
 
   const verdict = evaluateLeg(leg, results);
   lastFetch = lastFetch ?? results.fetch;
-  await recordLeg({
-    version,
-    notesDir: ctx.releaseNotesDir,
-    row: {
-      leg,
-      path: published.entryPath,
-      url: liveUrl,
-      commit,
-      marker,
-      fetched: lastFetch?.fetchedAt ?? '-',
-      verdict: verdict.pass ? 'pass' : `fail: ${verdict.failures[0]}`,
-    },
-  });
+  cells.fetched = lastFetch?.fetchedAt ?? '-';
   return verdict;
 }

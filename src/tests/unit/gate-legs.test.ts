@@ -1,6 +1,6 @@
 // The legs' verdicts and the real sign-in mail read. evaluateLeg fails each leg on each missing
 // input and passes with all of them right; the JMAP read runs against a stub server.
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -288,6 +288,15 @@ describe('runLeg', () => {
   /** Test doubles for the injected collaborators, which the real signatures over-constrain. */
   const fake = (deps: Record<string, unknown>) => deps as unknown as Parameters<typeof runLeg>[1];
 
+  /** Rows the injected recordLeg receives. */
+  function recorder() {
+    const rows: Array<Record<string, string>> = [];
+    const recordLeg = async ({ row }: { row: Record<string, string> }) => {
+      rows.push(row);
+    };
+    return { rows, recordLeg };
+  }
+
   function setup() {
     const runDir = mkdtempSync(path.join(tmpdir(), 'gate-run-'));
     const install = { name: 'n', dir: path.join(runDir, 'installs', 'n'), admin: {}, signedIn: false };
@@ -305,7 +314,9 @@ describe('runLeg', () => {
   it('fails with the CLI failure message on a non-zero exit, before any publish', async () => {
     const { ctx, writeRecord, runDir } = setup();
     let published = false;
+    const { rows, recordLeg } = recorder();
     const verdict = await runLeg(ctx, fake({
+      recordLeg,
       runDriver: (async (o: { capturePath: string }) => {
         writeRecord();
         writeFileSync(o.capturePath, 'npm error boom\n');
@@ -317,6 +328,91 @@ describe('runLeg', () => {
     expect(verdict.failures[0]).toContain('the CLI run failed: exit code 1');
     expect(published).toBe(false);
     expect(existsSync(path.join(runDir, 'failed'))).toBe(true);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ leg: 'A1', run: path.basename(runDir) });
+    expect(rows[0].verdict).toContain('fail: the CLI run failed: exit code 1');
+  });
+
+  it('writes a row for a state record with no address', async () => {
+    const { ctx, runDir } = setup();
+    const { rows, recordLeg } = recorder();
+    const verdict = await runLeg(ctx, fake({ recordLeg, runDriver: async () => ({ code: 0, screen: '' }) }));
+    expect(verdict.pass).toBe(false);
+    expect(rows).toEqual([expect.objectContaining({ leg: 'A1', verdict: 'fail: the state record holds no workers.dev address', run: path.basename(runDir) })]);
+  });
+
+  it('writes a row when no admin session came of the sign-in', async () => {
+    const { ctx, writeRecord } = setup();
+    const { rows, recordLeg } = recorder();
+    const verdict = await runLeg(ctx, fake({ recordLeg, runDriver: async () => { writeRecord(); return { code: 0, screen: '' }; } }));
+    expect(verdict.pass).toBe(false);
+    expect(rows[0].verdict).toMatch(/^fail: no admin session/);
+  });
+
+  it('writes a row naming the error when the publish throws, and rethrows it', async () => {
+    const { ctx, writeRecord } = setup();
+    const { rows, recordLeg } = recorder();
+    ctx.install.signedIn = true;
+    await expect(
+      runLeg(ctx, fake({
+        recordLeg,
+        runDriver: async () => { writeRecord(); return { code: 0, screen: '' }; },
+        publishViaAdmin: async () => { throw new Error('publish exploded'); },
+      })),
+    ).rejects.toThrow('publish exploded');
+    expect(rows).toEqual([expect.objectContaining({ leg: 'A1', verdict: 'fail: publish exploded' })]);
+  });
+
+  it('joins every failure in the row with "; "', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'Date'] });
+    try {
+      const { ctx, writeRecord } = setup();
+      const { rows, recordLeg } = recorder();
+      ctx.leg = 'B1';
+      ctx.install.signedIn = true;
+      vi.stubGlobal('fetch', async () => new Response('nope', { status: 404 }));
+      const running = runLeg(ctx, fake({
+        recordLeg,
+        tailUrlLog: () => ({ stop: async () => {} }),
+        runDriver: async () => { writeRecord(); return { code: 0, screen: '' }; },
+        publishViaAdmin: async () => ({ entryPath: '/about', alertText: 'wrong', control: null }),
+      }));
+      // The leg does real file I/O before it polls, so advance the fake clock until it settles.
+      let settled = false;
+      void running.then(() => { settled = true; }, () => { settled = true; });
+      while (!settled) {
+        await vi.advanceTimersByTimeAsync(20_000);
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+      const verdict = await running;
+      expect(verdict.failures.length).toBeGreaterThan(2);
+      expect(rows[0].verdict).toBe(`fail: ${verdict.failures.join('; ')}`);
+      expect(rows[0]).toMatchObject({ path: '/about', url: 'https://x.workers.dev/about' });
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
+  it('logs a record write that throws and leaves the verdict and the error as they were', async () => {
+    const { ctx, writeRecord } = setup();
+    const logged: string[] = [];
+    ctx.log = (line: string) => logged.push(line);
+    const failing = async () => {
+      throw new Error('gh is down');
+    };
+    const verdict = await runLeg(ctx, fake({ recordLeg: failing, runDriver: async () => ({ code: 1, screen: '' }) }));
+    expect(verdict.failures[0]).toContain('exit code 1');
+    expect(logged.join('\n')).toContain('gh is down');
+
+    ctx.install.signedIn = true;
+    await expect(
+      runLeg(ctx, fake({
+        recordLeg: failing,
+        runDriver: async () => { writeRecord(); return { code: 0, screen: '' }; },
+        publishViaAdmin: async () => { throw new Error('publish exploded'); },
+      })),
+    ).rejects.toThrow('publish exploded');
   });
 
   it('writes one capture per CLI run and hands each URL to handleUrl once', async () => {
@@ -325,6 +421,7 @@ describe('runLeg', () => {
     let n = 0;
     await expect(
       runLeg(ctx, fake({
+        recordLeg: recorder().recordLeg,
         runDriver: (async (o: { capturePath: string }) => {
           n += 1;
           writeRecord();

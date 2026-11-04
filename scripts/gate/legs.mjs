@@ -303,6 +303,8 @@ export function ownerEmailFor(env) {
  * @property {import('./browser.mjs').Launched} launched the browser
  * @property {import('./browser.mjs').Creds} creds the machine account
  * @property {string} releaseNotesDir where the release notes file goes
+ * @property {string} [cli] an absolute `.tgz` of the CLI to run in place of the published version
+ * @property {string} [recordFile] the rehearsal file the rows go to, never a release body
  * @property {(line: string) => void} log one line per event
  */
 
@@ -389,6 +391,7 @@ export async function runLeg(ctx, deps = {}) {
       await all.recordLeg({
         version: ctx.version,
         notesDir: ctx.releaseNotesDir,
+        ...(ctx.recordFile ? { recordFile: ctx.recordFile } : {}),
         row: { leg: ctx.leg, ...cells, verdict: verdict?.pass ? 'pass' : `fail: ${reasons.join('; ')}`, run: path.basename(ctx.runDir) },
       });
     } catch (error) {
@@ -447,7 +450,7 @@ async function runLegSteps(ctx, deps, cells) {
     }, { from });
     const result = await deps.runDriver({
       command: 'npx',
-      args: ['--yes', '--prefer-online', `create-cairn-site@${version}`, '--dir', install.dir, ...extra],
+      args: [...(ctx.cli ? ['--yes', `file:${ctx.cli}`] : ['--yes', '--prefer-online', `create-cairn-site@${version}`]), '--dir', install.dir, ...extra],
       env: cliEnv,
       cwd: path.dirname(install.dir),
       table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: ownerEmailFor(env), token, accountName, plan }),

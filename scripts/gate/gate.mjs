@@ -6,7 +6,7 @@
 // `fetch` (or the CLI's own `makeApi`, which does the same), so no token is ever in argv.
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { readdir } from 'node:fs/promises';
+import { readdir, stat } from 'node:fs/promises';
 import { hostname } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -263,7 +263,7 @@ export async function runSmoke({ env, runDir, deps = {} }) {
 }
 
 const USAGE =
-  'Usage: run-gate.sh --smoke | --teardown-stale | --teardown-run | --leg <A1|A2|B1|B2> [--leg ...] --version <v> | --all --version <v> [--headed]';
+  'Usage: run-gate.sh --smoke | --teardown-stale | --teardown-run | --leg <A1|A2|B1|B2> [--leg ...] --version <v> | --all --version <v> [--headed] [--cli <absolute .tgz> --record-file <absolute path>]';
 
 /**
  * @param {string[]} argv the arguments
@@ -418,12 +418,22 @@ export async function main(argv, env, overrides = {}) {
       console.error(USAGE);
       return 2;
     }
-    if (all) await deps.teardownStale(runDir, session.teardownDeps);
+    const cli = flagValues(argv, '--cli')[0];
+    const recordFile = flagValues(argv, '--record-file')[0];
+    if (argv.includes('--cli') ? !cli || !path.isAbsolute(cli) || !recordFile : recordFile !== undefined || argv.includes('--record-file')) {
+      console.error(USAGE);
+      return 2;
+    }
+    if (recordFile && !(await stat(path.dirname(recordFile)).then((s) => s.isDirectory(), () => false))) {
+      console.error(`The directory of --record-file ${recordFile} does not exist; the gate ran nothing.`);
+      return 2;
+    }
+    await deps.teardownStale(runDir, session.teardownDeps);
 
     const run = path.basename(runDir);
     const notesDir = path.join(runDir, 'notes');
     try {
-      await deps.recordPending({ version, legs, run, notesDir, fresh: all });
+      await deps.recordPending({ version, legs, run, notesDir, fresh: all, ...(recordFile ? { recordFile } : {}) });
     } catch (error) {
       console.error(`Could not mark the legs pending: ${error instanceof Error ? error.message : String(error)}`);
       return 1;
@@ -436,7 +446,7 @@ export async function main(argv, env, overrides = {}) {
      */
     const recordUnrun = async (leg, verdict) => {
       try {
-        await deps.recordLeg({ version, notesDir, row: { leg, path: '-', url: '-', commit: '-', marker: '-', fetched: '-', verdict, run } });
+        await deps.recordLeg({ version, notesDir, ...(recordFile ? { recordFile } : {}), row: { leg, path: '-', url: '-', commit: '-', marker: '-', fetched: '-', verdict, run } });
       } catch (error) {
         console.error(`could not write the ${leg} row: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -483,6 +493,7 @@ export async function main(argv, env, overrides = {}) {
               launched,
               creds: session.creds,
               releaseNotesDir: notesDir,
+              ...(cli ? { cli, recordFile } : {}),
               log: (line) => console.log(line),
             },
             { recordLeg: deps.recordLeg, ...deps.legDeps },

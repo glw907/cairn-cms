@@ -333,6 +333,40 @@ describe('runLeg', () => {
     expect(rows[0].verdict).toContain('fail: the CLI run failed: exit code 1');
   });
 
+  it('runs npx on file:<tgz> under --cli and hands the record file to recordLeg', async () => {
+    const { ctx } = setup();
+    const received: Array<{ args: string[] }> = [];
+    const recorded: Array<Record<string, unknown>> = [];
+    await runLeg(
+      { ...ctx, cli: '/abs/x.tgz', recordFile: '/abs/r.md' },
+      fake({
+        recordLeg: async (input: Record<string, unknown>) => void recorded.push(input),
+        runDriver: async (o: { args: string[] }) => {
+          received.push(o);
+          return { code: 0, screen: '' };
+        },
+      }),
+    );
+    expect(received[0].args.slice(0, 3)).toEqual(['--yes', 'file:/abs/x.tgz', '--dir']);
+    expect(recorded[0]).toMatchObject({ recordFile: '/abs/r.md' });
+  });
+
+  it('keeps the published package without --cli', async () => {
+    const { ctx } = setup();
+    const received: Array<{ args: string[] }> = [];
+    await runLeg(
+      ctx,
+      fake({
+        recordLeg: async () => {},
+        runDriver: async (o: { args: string[] }) => {
+          received.push(o);
+          return { code: 0, screen: '' };
+        },
+      }),
+    );
+    expect(received[0].args.slice(0, 3)).toEqual(['--yes', '--prefer-online', 'create-cairn-site@1.0.0']);
+  });
+
   it('writes a row for a state record with no address', async () => {
     const { ctx, runDir } = setup();
     const { rows, recordLeg } = recorder();

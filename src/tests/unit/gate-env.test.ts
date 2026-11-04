@@ -1,13 +1,15 @@
 // What each child process of the gate sees, and the credential smoke against a local server that
 // stands in for the Cloudflare and GitHub APIs. Nothing here reaches api.cloudflare.com.
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { buildCliEnv, runSmoke, GATE_ACCOUNT_ID } from '../../../scripts/gate/gate.mjs';
+import { buildCliEnv, main, runSmoke, GATE_ACCOUNT_ID, type makeSession } from '../../../scripts/gate/gate.mjs';
+import { runLeg } from '../../../scripts/gate/legs.mjs';
+import { parseGateRows, recordLeg, recordPending } from '../../../scripts/gate/record.mjs';
 import { runDriver } from '../../../scripts/gate/driver.mjs';
 
 const GATE_TOKEN = 'cfut_GateTokenValueNeverPrinted0123456789';
@@ -101,6 +103,203 @@ describe('run-gate.sh environment', () => {
   it('passes none of them when the parent sets none', () => {
     const dump = envSeen({});
     expect(dump).not.toMatch(/^(DISPLAY|WAYLAND_DISPLAY|XAUTHORITY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS)=/m);
+  });
+});
+
+describe('run-gate.sh lock and exit file', () => {
+  /** A copy of the script beside a stub gate.mjs that logs its argv and, given `hold`, sleeps with an orphan-able child. */
+  function rig() {
+    const home = mkdtempSync(join(tmpdir(), 'gate-lock-'));
+    dirs.push(home);
+    const bin = join(home, 'gate');
+    mkdirSync(bin);
+    copyFileSync(resolve('scripts/gate/run-gate.sh'), join(bin, 'run-gate.sh'));
+    const log = join(home, 'starts.log');
+    writeFileSync(
+      join(bin, 'gate.mjs'),
+      [
+        "import { appendFileSync } from 'node:fs';",
+        "import { spawn } from 'node:child_process';",
+        `const args = process.argv.slice(2);`,
+        `if (args.includes('--teardown-run')) { appendFileSync(${JSON.stringify(log)}, 'teardown\\n'); process.exit(0); }`,
+        `appendFileSync(${JSON.stringify(log)}, 'start ' + args.join(' ') + ' pid=' + process.pid + '\\n');`,
+        "if (args.includes('fail')) process.exit(3);",
+        "if (args.includes('hold')) {",
+        "  const orphan = spawn('sleep', ['60'], { detached: true, stdio: 'ignore' });",
+        `  appendFileSync(${JSON.stringify(log)}, 'orphan pid=' + orphan.pid + '\\n');`,
+        '  orphan.unref();',
+        '  setTimeout(() => {}, 60000);',
+        '}',
+      ].join('\n'),
+    );
+    const start = (...args: string[]) => spawn('bash', [join(bin, 'run-gate.sh'), ...args], { env: { PATH: process.env.PATH, HOME: home }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const run = (...args: string[]) => spawnSync('bash', [join(bin, 'run-gate.sh'), ...args], { env: { PATH: process.env.PATH, HOME: home }, encoding: 'utf8', timeout: 30_000 });
+    const starts = () => (existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter(Boolean) : []);
+    return { home, start, run, starts };
+  }
+
+  /** Wait until the stub has started and, with `hold`, spawned its child. */
+  async function until(check: () => boolean) {
+    for (let i = 0; i < 200 && !check(); i++) await new Promise((r) => setTimeout(r, 50));
+    expect(check()).toBe(true);
+  }
+
+  const stray: number[] = [];
+  afterEach(() => {
+    for (const pid of stray.splice(0)) {
+      try {
+        process.kill(pid, 'SIGKILL');
+      } catch {
+        // Already gone.
+      }
+    }
+  });
+
+  it('prints the run dir first and writes the exit status after teardown', () => {
+    const { run, home, starts } = rig();
+    const result = run('fail');
+    expect(result.status).toBe(3);
+    const first = result.stdout.split('\n')[0];
+    expect(first).toMatch(/^run dir: /);
+    expect(readFileSync(join(first.slice('run dir: '.length), 'exit'), 'utf8').trim()).toBe('3');
+    expect(first).toContain(home);
+    expect(starts().at(-1)).toBe('teardown');
+  });
+
+  it('refuses while another run holds the lock, naming its pid and run dir, and starts nothing', async () => {
+    const { start, run, starts, home } = rig();
+    const first = start('hold');
+    stray.push(first.pid!);
+    let out = '';
+    first.stdout.on('data', (chunk) => (out += chunk));
+    await until(() => starts().some((line) => line.startsWith('orphan')));
+    for (const line of starts()) if (line.includes('pid=')) stray.push(Number(line.split('pid=')[1]));
+    const second = run('quick');
+    expect(second.status).not.toBe(0);
+    expect(second.stderr).toContain(String(first.pid));
+    expect(second.stderr).toContain(out.split('\n')[0].slice('run dir: '.length));
+    expect(second.stderr).toContain('is alive');
+    expect(starts().filter((line) => line.startsWith('start'))).toHaveLength(1);
+    expect(home).toBeTruthy();
+  });
+
+  it('frees the lock at once when the run is killed while its child lives on', async () => {
+    const { start, run, starts } = rig();
+    const first = start('hold');
+    await until(() => starts().some((line) => line.startsWith('orphan')));
+    for (const line of starts()) if (line.includes('pid=')) stray.push(Number(line.split('pid=')[1]));
+    process.kill(first.pid!, 'SIGKILL');
+    await new Promise((resolveWait) => first.once('exit', resolveWait));
+    const third = run('quick');
+    expect(third.status).toBe(0);
+    expect(starts().filter((line) => line.startsWith('start'))).toHaveLength(2);
+  });
+});
+
+describe('main under --cli', () => {
+  const VERSION = '0.99.0-rc.3';
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const fakeSession = (() => ({
+    getBrowser: async () => ({ newAdminContext: async () => ({}) }),
+    creds: {},
+    teardownDeps: {},
+    close: async () => {},
+  })) as unknown as typeof makeSession;
+
+  function setup() {
+    const root = mkdtempSync(join(tmpdir(), 'gate-cli-'));
+    dirs.push(root);
+    const runDir = join(root, 'runs', 'run-7');
+    const env = { GATE_RUN_DIR: runDir, CF_WS_CAIRN_GATE_TOKEN: 'token' };
+    const ghCalls: string[][] = [];
+    const gh = async (args: string[]) => {
+      ghCalls.push(args);
+      return { code: 1, stdout: '' };
+    };
+    const events: string[] = [];
+    const deps: Partial<NonNullable<Parameters<typeof main>[2]>> = {
+      makeSession: fakeSession,
+      teardownRun: async () => [],
+      teardownStale: async () => {
+        events.push('stale');
+        return [];
+      },
+      recordPending: (input) => recordPending({ ...input, gh }),
+      recordLeg: (input) => recordLeg({ ...input, gh }),
+    };
+    return { root, runDir, env, ghCalls, events, deps };
+  }
+
+  it('hands npx file:<tgz> to the driver and writes every row to the record file with no gh call', async () => {
+    const { root, env, ghCalls, deps } = setup();
+    const file = join(root, 'record.md');
+    const tgz = join(root, 'x.tgz');
+    const argsSeen: string[][] = [];
+    let atA1: string[] = [];
+    const code = await main(['--all', '--cli', tgz, '--record-file', file, '--version', VERSION], env, {
+      ...deps,
+      runLeg: async (ctx, legDeps) => {
+        if (ctx.leg !== 'A1') return { pass: true, failures: [] };
+        atA1 = parseGateRows(readFileSync(file, 'utf8')).map((r) => `${r.leg}:${r.verdict}`);
+        return runLeg(ctx, legDeps);
+      },
+      legDeps: {
+        runDriver: (async (o: { args: string[] }) => {
+          argsSeen.push(o.args);
+          return { code: 1, screen: '' };
+        }) as unknown as NonNullable<NonNullable<Parameters<typeof main>[2]>['legDeps']>['runDriver'],
+      },
+    });
+    expect(code).toBe(1);
+    expect(atA1).toEqual(['A1:pending', 'A2:pending', 'B1:pending', 'B2:pending']);
+    expect(argsSeen[0].slice(0, 3)).toEqual(['--yes', `file:${tgz}`, '--dir']);
+    const rows = parseGateRows(readFileSync(file, 'utf8'));
+    expect(rows.find((r) => r.leg === 'A1')?.verdict).toMatch(/^fail: the CLI run failed/);
+    expect(rows.find((r) => r.leg === 'A2')?.verdict).toBe('skipped: needs A1');
+    expect(ghCalls).toEqual([]);
+  });
+
+  it.each([
+    ['a relative tgz', ['--cli', 'x.tgz', '--record-file', '/abs/r.md']],
+    ['no record file', ['--cli', '/abs/x.tgz']],
+    ['a record file without --cli', ['--record-file', '/abs/r.md']],
+  ])('returns 2 with the usage for %s', async (_name, extra) => {
+    const { env, deps, ghCalls } = setup();
+    expect(await main(['--leg', 'A1', '--version', VERSION, ...extra], env, deps)).toBe(2);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('Usage: run-gate.sh');
+    expect(ghCalls).toEqual([]);
+  });
+
+  it('returns 2 before any leg when the record file has no parent directory', async () => {
+    const { root, env, deps } = setup();
+    let ran = 0;
+    const code = await main(['--leg', 'A1', '--cli', '/abs/x.tgz', '--record-file', join(root, 'missing', 'r.md'), '--version', VERSION], env, {
+      ...deps,
+      runLeg: async () => {
+        ran += 1;
+        return { pass: true, failures: [] };
+      },
+    });
+    expect(code).toBe(2);
+    expect(ran).toBe(0);
+  });
+
+  it('tears down other runs before the first leg of a --leg run', async () => {
+    const { env, events, deps } = setup();
+    await main(['--leg', 'A1', '--version', VERSION], env, {
+      ...deps,
+      recordPending: async () => {},
+      runLeg: async () => {
+        events.push('leg');
+        return { pass: true, failures: [] };
+      },
+    });
+    expect(events).toEqual(['stale', 'leg']);
   });
 });
 

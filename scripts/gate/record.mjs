@@ -3,7 +3,7 @@
 // an earlier row for the same leg. A failed read, or an empty body, aborts with no write, and a URL
 // carrying `token=` is refused, since the release body is public.
 import { execFile } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
@@ -152,12 +152,31 @@ async function ghDefault(args) {
 }
 
 /**
- * Read the release body, transform its text, and write it back. A failed read, or an empty body,
- * aborts with no write.
- * @param {{ version: string, notesDir: string, gh: (args: string[]) => Promise<GhResult>, transform: (body: string) => string }} input
+ * Merge into a rehearsal record file: an absent or empty file is a body with no `## Gate` section,
+ * unlike a release body, which must never read back empty. No call to GitHub is made.
+ * @param {{ recordFile: string, transform: (body: string) => string }} input
  * @returns {Promise<void>}
  */
-async function editBody({ version, notesDir, gh, transform }) {
+async function editFile({ recordFile, transform }) {
+  /** @type {string} */
+  let body = '';
+  try {
+    body = await readFile(recordFile, 'utf8');
+  } catch (error) {
+    if (/** @type {{ code?: string }} */ (error).code !== 'ENOENT') throw error;
+  }
+  await writeFile(recordFile, transform(body.replace(/\n$/, '')), { mode: 0o600 });
+}
+
+/**
+ * Read the release body, transform its text, and write it back. A failed read, or an empty body,
+ * aborts with no write. With `recordFile` the rehearsal file is edited instead and the release
+ * is never read.
+ * @param {{ version: string, notesDir: string, gh: (args: string[]) => Promise<GhResult>, recordFile?: string, transform: (body: string) => string }} input
+ * @returns {Promise<void>}
+ */
+async function editBody({ version, notesDir, gh, recordFile, transform }) {
+  if (recordFile) return editFile({ recordFile, transform });
   const tag = `v${version}`;
   const read = await gh(['release', 'view', tag, '--json', 'body', '--jq', '.body']);
   if (read.code !== 0) throw new Error(`Could not read release ${tag}; the gate wrote nothing.`);
@@ -172,28 +191,30 @@ async function editBody({ version, notesDir, gh, transform }) {
 
 /**
  * Record one leg on release `v<version>`.
- * @param {{ version: string, row: GateRow, notesDir: string, gh?: (args: string[]) => Promise<GhResult> }} input
- *  `gh` runs the GitHub CLI as the maintainer (tests inject one); `notesDir` holds the notes file
+ * @param {{ version: string, row: GateRow, notesDir: string, gh?: (args: string[]) => Promise<GhResult>, recordFile?: string }} input
+ *  `gh` runs the GitHub CLI as the maintainer (tests inject one); `notesDir` holds the notes file;
+ *  `recordFile` sends the row to a rehearsal file and never to a release
  * @returns {Promise<void>}
  */
-export async function recordLeg({ version, row, notesDir, gh = ghDefault }) {
+export async function recordLeg({ version, row, notesDir, gh = ghDefault, recordFile }) {
   assertNoToken([row]);
-  await editBody({ version, notesDir, gh, transform: (body) => mergeGateSection(body, row) });
+  await editBody({ version, notesDir, gh, recordFile, transform: (body) => mergeGateSection(body, row) });
 }
 
 /**
  * Mark legs `pending` under a run id before any of them starts, so an earlier run's `pass` cannot
  * stand for a leg this run has not finished. With `fresh` the whole `## Gate` section is replaced
  * by exactly these rows; without it each row replaces only its own leg's earlier row.
- * @param {{ version: string, legs: string[], run: string, notesDir: string, fresh?: boolean, gh?: (args: string[]) => Promise<GhResult> }} input
+ * @param {{ version: string, legs: string[], run: string, notesDir: string, fresh?: boolean, gh?: (args: string[]) => Promise<GhResult>, recordFile?: string }} input
  * @returns {Promise<void>}
  */
-export async function recordPending({ version, legs, run, notesDir, fresh = false, gh = ghDefault }) {
+export async function recordPending({ version, legs, run, notesDir, fresh = false, gh = ghDefault, recordFile }) {
   const rows = legs.map((leg) => ({ leg, path: '-', url: '-', commit: '-', marker: '-', fetched: '-', verdict: 'pending', run }));
   await editBody({
     version,
     notesDir,
     gh,
+    recordFile,
     transform: (body) => (fresh ? replaceGateSection(body, rows) : rows.reduce((acc, row) => mergeGateSection(acc, row), body)),
   });
 }

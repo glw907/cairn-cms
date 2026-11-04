@@ -5,6 +5,7 @@
 // The smoke prints one verdict per check and never a value. Every HTTP call goes through Node
 // `fetch` (or the CLI's own `makeApi`, which does the same), so no token is ever in argv.
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { hostname } from 'node:os';
 import path from 'node:path';
@@ -23,6 +24,8 @@ const API_MODULE = new URL('../../packages/create-cairn-site/src/cloudflare/api.
 
 /** The Cloudflare account the gate token and its throwaway resources live on. */
 export const GATE_ACCOUNT_ID = '120c269ad6d3dfbe6d63a0bb53758ca0';
+/** That account's name, which the CLI's account select is answered with. */
+export const GATE_ACCOUNT_NAME = 'glw907';
 /** The test domain whose zone is active on that account. */
 const TEST_DOMAIN = 'carin-test.org';
 /** The wrangler the generated template pins (`templates/waymark/package.json`). */
@@ -322,11 +325,14 @@ export function makeSession(env, { headed = false } = {}) {
  * @param {import('./teardown.mjs').TeardownDeps} deps the teardown wiring
  * @returns {Promise<string[]>} the steps left
  */
-async function teardownRun(dir, deps) {
+export async function teardownRun(dir, deps) {
+  // A failed leg's captures are the evidence of why it failed, so they outlive the teardown.
+  const failed = existsSync(path.join(dir, 'failed'));
+  const captures = failed ? [] : (await readdir(dir).catch(() => /** @type {string[]} */ ([]))).filter((f) => /^capture-.*\.bin$/.test(f));
   const { left } = await teardownStateDir({
     stateDir: path.join(dir, 'state'),
     deps,
-    cleanup: [path.join(dir, 'capture.bin'), path.join(dir, 'urls.log')],
+    cleanup: [...captures.map((f) => path.join(dir, f)), ...(failed ? [] : [path.join(dir, 'urls.log')])],
   });
   for (const line of left) console.error(`teardown left: ${line}`);
   return left;
@@ -338,7 +344,7 @@ async function teardownRun(dir, deps) {
  * @param {import('./teardown.mjs').TeardownDeps} deps the teardown wiring
  * @returns {Promise<string[]>} the steps left
  */
-async function teardownStale(runDir, deps) {
+export async function teardownStale(runDir, deps) {
   const runs = path.dirname(runDir);
   /** @type {string[]} */
   const left = [];
@@ -403,6 +409,7 @@ export async function main(argv, env) {
         }
         console.log(`leg ${leg} on ${install.name}`);
         const verdict = await runLeg({
+          accountName: GATE_ACCOUNT_NAME,
           leg,
           version,
           runDir,

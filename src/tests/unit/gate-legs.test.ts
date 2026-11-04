@@ -2,6 +2,9 @@
 // input and passes with all of them right; the JMAP read runs against a stub server.
 import { describe, it, expect, afterEach } from 'vitest';
 import { createServer, type Server } from 'node:http';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import {
   CONNECTED_SENTENCE,
@@ -16,8 +19,13 @@ import {
   findSignInMessage,
   guardedRun,
   installName,
+  promptTable,
+  readRecord,
+  runLeg,
+  LEG_PLANS,
   type LegResults,
 } from '../../../scripts/gate/legs.mjs';
+import { teardownRun, teardownStale } from '../../../scripts/gate/gate.mjs';
 
 const found = { found: true, url: 'https://carin-test.org/about', status: 200, fetchedAt: '2026-11-03T10:00:00.000Z', attempts: 1 };
 const notFound = { ...found, found: false };
@@ -255,5 +263,108 @@ describe('ownerEmailFor', () => {
     expect(ownerEmailFor({})).toBe(DEFAULT_OWNER_EMAIL);
     expect(ownerEmailFor({ GATE_OWNER_EMAIL: '' })).toBe(DEFAULT_OWNER_EMAIL);
     expect(ownerEmailFor({ GATE_OWNER_EMAIL: 'me@example.com' })).toBe('me@example.com');
+  });
+});
+
+describe('readRecord', () => {
+  it('returns the record whose dir is the install\'s, skipping other installs and retired files', async () => {
+    const state = mkdtempSync(path.join(tmpdir(), 'gate-state-'));
+    writeFileSync(path.join(state, '.retired-x.json'), JSON.stringify({ dir: '/mine', n: 'retired' }));
+    writeFileSync(path.join(state, 'a.json'), JSON.stringify({ dir: '/other', n: 'other' }));
+    writeFileSync(path.join(state, 'b.json'), JSON.stringify({ dir: '/mine', n: 'mine' }));
+    expect((await readRecord(state, '/mine')).n).toBe('mine');
+    expect(await readRecord(state, '/none')).toBeNull();
+  });
+});
+
+describe('promptTable', () => {
+  it('answers the account select with the gate account name', () => {
+    const table = promptTable({ siteName: 's', dir: '/d', ownerEmail: 'o@x', token: 't', accountName: 'glw907', plan: LEG_PLANS.A1 });
+    expect(table.find((e) => e.match === 'Which Cloudflare account')).toMatchObject({ label: 'glw907' });
+  });
+});
+
+describe('runLeg', () => {
+  /** Test doubles for the injected collaborators, which the real signatures over-constrain. */
+  const fake = (deps: Record<string, unknown>) => deps as unknown as Parameters<typeof runLeg>[1];
+
+  function setup() {
+    const runDir = mkdtempSync(path.join(tmpdir(), 'gate-run-'));
+    const install = { name: 'n', dir: path.join(runDir, 'installs', 'n'), admin: {}, signedIn: false };
+    const ctx = {
+      accountName: 'glw907', leg: 'A1', version: '1.0.0', runDir, env: {}, cliEnv: { CLOUDFLARE_API_TOKEN: 't' },
+      install, launched: { github: {} }, creds: {}, releaseNotesDir: path.join(runDir, 'notes'), log: () => {},
+    } as unknown as Parameters<typeof runLeg>[0];
+    const writeRecord = () => {
+      mkdirSync(path.join(runDir, 'state'), { recursive: true });
+      writeFileSync(path.join(runDir, 'state', 'r.json'), JSON.stringify({ dir: install.dir, cloudflare: { url: 'https://x.workers.dev' } }));
+    };
+    return { runDir, install, ctx, writeRecord };
+  }
+
+  it('fails with the CLI failure message on a non-zero exit, before any publish', async () => {
+    const { ctx, writeRecord, runDir } = setup();
+    let published = false;
+    const verdict = await runLeg(ctx, fake({
+      runDriver: (async (o: { capturePath: string }) => {
+        writeRecord();
+        writeFileSync(o.capturePath, 'npm error boom\n');
+        return { code: 1, screen: '' };
+      }),
+      publishViaAdmin: async () => { published = true; },
+    }));
+    expect(verdict.pass).toBe(false);
+    expect(verdict.failures[0]).toContain('the CLI run failed: exit code 1');
+    expect(published).toBe(false);
+    expect(existsSync(path.join(runDir, 'failed'))).toBe(true);
+  });
+
+  it('writes one capture per CLI run and hands each URL to handleUrl once', async () => {
+    const { ctx, writeRecord, runDir } = setup();
+    const handled: string[] = [];
+    let n = 0;
+    await expect(
+      runLeg(ctx, fake({
+        runDriver: (async (o: { capturePath: string }) => {
+          n += 1;
+          writeRecord();
+          writeFileSync(o.capturePath, 'x');
+          appendFileSync(path.join(runDir, 'urls.log'), `https://example.com/${n}\n`);
+          await new Promise((r) => setTimeout(r, 600));
+          return { code: 0, screen: '' };
+        }),
+        handleUrl: async (url: string) => { handled.push(url); return handled.length === 2 ? 'signin' : 'github'; },
+        publishViaAdmin: async () => { throw new Error('stop'); },
+      })),
+    ).rejects.toThrow('stop');
+    expect(existsSync(path.join(runDir, 'capture-A1-1.bin'))).toBe(true);
+    expect(existsSync(path.join(runDir, 'capture-A1-2.bin'))).toBe(true);
+    expect(handled).toEqual(['https://example.com/1', 'https://example.com/2']);
+    expect(existsSync(path.join(runDir, 'failed'))).toBe(true);
+  });
+});
+
+describe('teardown of a failed run', () => {
+  const deps = {} as unknown as Parameters<typeof teardownRun>[1];
+  function runWith(failed: boolean) {
+    const base = mkdtempSync(path.join(tmpdir(), 'gate-runs-'));
+    const dir = path.join(base, 'run1');
+    mkdirSync(path.join(dir, 'state'), { recursive: true });
+    writeFileSync(path.join(dir, 'capture-A1-1.bin'), 'x');
+    if (failed) writeFileSync(path.join(dir, 'failed'), 'A1\n');
+    return { base, dir };
+  }
+
+  it('keeps the captures of a marked run, through teardownRun and teardownStale', async () => {
+    const { base, dir } = runWith(true);
+    await teardownRun(dir, deps);
+    await teardownStale(path.join(base, 'current'), deps);
+    expect(existsSync(path.join(dir, 'capture-A1-1.bin'))).toBe(true);
+  });
+
+  it('still deletes the captures of a clean run', async () => {
+    const { dir } = runWith(false);
+    await teardownRun(dir, deps);
+    expect(existsSync(path.join(dir, 'capture-A1-1.bin'))).toBe(false);
   });
 });

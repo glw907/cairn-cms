@@ -2,7 +2,7 @@
 // edit through the install's admin, and passes only on what a script fetched from the live address.
 // A leg's verdict is `evaluateLeg`'s: a CLI exit code is never an input that can pass it.
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, readFile, stat } from 'node:fs/promises';
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { runDriver } from './driver.mjs';
 import { confirmSignIn, handleUrl, publishViaAdmin, requestSignInLink, tailUrlLog } from './browser.mjs';
@@ -245,10 +245,10 @@ export async function markerCommit({ fetchImpl = fetch, githubBase = 'https://ap
 
 /**
  * The answers the CLI's prompts take on a leg, matched by prompt text.
- * @param {{ siteName: string, dir: string, ownerEmail: string, token: string, plan: (typeof LEG_PLANS)[string] }} input
+ * @param {{ siteName: string, dir: string, ownerEmail: string, token: string, accountName: string, plan: (typeof LEG_PLANS)[string] }} input
  * @returns {import('./driver.mjs').PromptEntry[]}
  */
-export function promptTable({ siteName, dir, ownerEmail, token, plan }) {
+export function promptTable({ siteName, dir, ownerEmail, token, accountName, plan }) {
   return [
     { match: 'Site name', kind: 'text', value: siteName },
     { match: 'Short description', kind: 'text' },
@@ -261,7 +261,7 @@ export function promptTable({ siteName, dir, ownerEmail, token, plan }) {
     { match: 'GitHub App name', kind: 'text' },
     { match: 'Install, build, and deploy your site now?', kind: 'confirm', answer: true },
     { match: 'Sign-in email', kind: 'text', value: ownerEmail },
-    { match: 'Which Cloudflare account', kind: 'select', label: '' },
+    { match: 'Which Cloudflare account', kind: 'select', label: accountName },
     { match: 'Paste your Cloudflare API token', kind: 'password', value: () => token },
     { match: 'Connect a domain you own to this site now?', kind: 'confirm', answer: plan.domain },
     { match: 'Which domain do you want to connect?', kind: 'text', value: TEST_DOMAIN },
@@ -293,6 +293,7 @@ export function ownerEmailFor(env) {
 
 /**
  * @typedef {object} LegContext
+ * @property {string} accountName the gate Cloudflare account's name, which the CLI's account select picks
  * @property {string} leg `A1`, `A2`, `B1`, or `B2`
  * @property {string} version the exact version
  * @property {string} runDir the run directory
@@ -305,12 +306,18 @@ export function ownerEmailFor(env) {
  * @property {(line: string) => void} log one line per event
  */
 
-/** @param {string} dir */
-async function readRecord(dir) {
-  for (const file of await readdir(dir).catch(() => [])) {
-    if (!file.endsWith('.json')) continue;
-    const record = JSON.parse(await readFile(path.join(dir, file), 'utf8'));
-    return /** @type {any} */ (record);
+/**
+ * The state record of one install: the shared state dir holds every install's, and a retired record
+ * keeps a `.retired-` name.
+ * @param {string} dir the state directory
+ * @param {string} installDir the install's directory, which its record names as `dir`
+ * @returns {Promise<any>} the record, or null
+ */
+export async function readRecord(dir, installDir) {
+  for (const file of await readdir(dir).catch(() => /** @type {string[]} */ ([]))) {
+    if (!file.endsWith('.json') || file.startsWith('.retired-')) continue;
+    const record = JSON.parse(await readFile(path.join(dir, file), 'utf8').catch(() => 'null'));
+    if (record?.dir === installDir) return record;
   }
   return null;
 }
@@ -338,17 +345,50 @@ export function cliFailureMessage(result, capture, lines = 8) {
 }
 
 /**
- * Run one leg end to end and record it.
+ * The collaborators a leg calls, injected so a test can stand in for the CLI driver and the browser.
+ * @typedef {object} LegDeps
+ * @property {typeof runDriver} runDriver runs the CLI
+ * @property {typeof handleUrl} handleUrl handles one URL the CLI opens
+ * @property {typeof tailUrlLog} tailUrlLog follows the URL log
+ * @property {typeof publishViaAdmin} publishViaAdmin publishes the leg's edit
+ */
+
+/** @type {LegDeps} */
+const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin };
+
+/**
+ * Run one leg end to end and record it. A leg that fails or throws leaves a `failed` marker in the
+ * run directory, which keeps its captures through teardown.
  * @param {LegContext} ctx
+ * @param {Partial<LegDeps>} [deps] collaborators, defaulting to the real ones
  * @returns {Promise<{ pass: boolean, failures: string[] }>} the verdict
  */
-export async function runLeg(ctx) {
-  const { leg, version, runDir, env, cliEnv, install, launched, creds, log } = ctx;
+export async function runLeg(ctx, deps = {}) {
+  /** @type {{ pass: boolean, failures: string[] } | undefined} */
+  let verdict;
+  try {
+    verdict = await runLegSteps(ctx, { ...DEFAULT_DEPS, ...deps });
+    return verdict;
+  } finally {
+    if (!verdict?.pass) await writeFile(path.join(ctx.runDir, 'failed'), `${ctx.leg}\n`).catch(() => {});
+  }
+}
+
+/**
+ * @param {LegContext} ctx
+ * @param {LegDeps} deps
+ * @returns {Promise<{ pass: boolean, failures: string[] }>}
+ */
+async function runLegSteps(ctx, deps) {
+  const { accountName, leg, version, runDir, env, cliEnv, install, launched, creds, log } = ctx;
   const plan = LEG_PLANS[leg];
   const token = cliEnv.CLOUDFLARE_API_TOKEN;
   const stateDir = path.join(runDir, 'state');
   const urlLog = path.join(runDir, 'urls.log');
   await mkdir(path.dirname(install.dir), { recursive: true });
+
+  let runCount = 0;
+  let capturePath = '';
 
   /**
    * Run the CLI at the exact version, handling every URL it opens.
@@ -360,11 +400,13 @@ export async function runLeg(ctx) {
     let handlerFailure;
     // Start at the log's current end: the log is shared by every runCli of the run, and a URL an
     // earlier call handled must not be handled again.
+    runCount += 1;
+    capturePath = path.join(runDir, `capture-${leg}-${runCount}.bin`);
     const from = existsSync(urlLog) ? (await stat(urlLog)).size : 0;
-    const tail = tailUrlLog(urlLog, async (url) => {
+    const tail = deps.tailUrlLog(urlLog, async (url) => {
       if (handlerFailure) return;
       try {
-        const kind = await handleUrl(url, {
+        const kind = await deps.handleUrl(url, {
           github: launched.github,
           admin: () => install.admin,
           creds,
@@ -379,14 +421,14 @@ export async function runLeg(ctx) {
         abort.abort(error instanceof Error ? error.message : String(error));
       }
     }, { from });
-    const result = await runDriver({
+    const result = await deps.runDriver({
       command: 'npx',
       args: ['--yes', '--prefer-online', `create-cairn-site@${version}`, '--dir', install.dir, ...extra],
       env: cliEnv,
       cwd: path.dirname(install.dir),
-      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: ownerEmailFor(env), token, plan }),
+      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: ownerEmailFor(env), token, accountName, plan }),
       logPath: path.join(runDir, 'driver.log'),
-      capturePath: path.join(runDir, 'capture.bin'),
+      capturePath,
       signal: abort.signal,
     });
     await tail.stop();
@@ -395,15 +437,12 @@ export async function runLeg(ctx) {
 
   const ownerFlags = plan.first ? ['--name', install.name, '--owner-email', ownerEmailFor(env), '--ai-posture', 'none'] : [];
   const cli = await runCli([...ownerFlags, ...(plan.connect ? ['--connect'] : [])]);
-  const capturePath = path.join(runDir, 'capture.bin');
-  if (cli.failure) return { pass: false, failures: [cliFailureMessage(cli, await readFile(capturePath, 'utf8').catch(() => ''))] };
+  if (cli.failure || cli.code !== 0) return { pass: false, failures: [cliFailureMessage(cli, await readFile(capturePath, 'utf8').catch(() => ''))] };
 
-  const record = await readRecord(stateDir);
+  const record = await readRecord(stateDir, install.dir);
   const origin = String(record?.cloudflare?.url ?? '');
   if (!origin) {
-    const exited = cli.code !== 0;
-    const capture = exited ? await readFile(capturePath, 'utf8').catch(() => '') : '';
-    return { pass: false, failures: [exited ? cliFailureMessage(cli, capture) : 'the state record holds no workers.dev address'] };
+    return { pass: false, failures: ['the state record holds no workers.dev address'] };
   }
 
   if (!install.signedIn) {
@@ -413,7 +452,7 @@ export async function runLeg(ctx) {
 
   const epoch = Date.now();
   const marker = `gate-${version}-${leg}-${epoch}`;
-  const published = await publishViaAdmin(install.admin, { origin, marker });
+  const published = await deps.publishViaAdmin(install.admin, { origin, marker });
   const liveUrl = `${leg === 'B1' ? origin : `https://${TEST_DOMAIN}`}${published.entryPath}`;
 
   /** @type {LegResults} */

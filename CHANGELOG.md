@@ -1,5 +1,7 @@
 ## Unreleased
 
+<!-- release-size: minor -->
+
 - **Workers Builds deploys with a narrow token of its own.** `create-cairn-site --connect` now asks for
   a second token with Workers Scripts, D1, and Workers R2 Storage at edit, registers it once per
   Cloudflare account as `cairn-build`, and reuses it for later sites. The setup token no longer

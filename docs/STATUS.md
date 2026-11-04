@@ -11,7 +11,9 @@ the Go tool is `tool/v1.1.0`. The `0.99.0` release is in its candidate phase:
   carries the setup fix (PR #193): a declined domain continues to Workers Builds, and a domain or email
   change after Builds is committed and deployed by Builds.
 - `next` still serves `0.99.0-rc.2` on all three, and `create-cairn-site@latest` serves `0.99.0-rc.1`.
-  Both candidates carry the workers.dev publish-never-deploys defect, and neither is deprecated.
+  Both candidates carry the workers.dev publish-never-deploys defect, and since 2026-11-04 both are
+  deprecated on all three packages. The stale `rc` dist-tag is gone. Each package's trusted publisher
+  is bound to the `npm-publish` GitHub environment, which takes only `v*` tags.
 - The release gate (`scripts/gate/`, run by `bash scripts/gate/run-gate.sh`) has run four times on
   `rc.3` and never passed. Each run found one harness gap, fixed in `fc91768c5` and `a8cdf5944`. Run 4
   went end to end, and its teardown removes everything. Its open findings are in the ledger
@@ -26,39 +28,23 @@ Geoff asked for: a documented release process and Claude infra tuned for it.
 
 ## Immediate next action
 
-Plan, in a fresh session. Geoff stopped the gate's live trial and error on 2026-11-03: no more live
-gate runs until a plan finds the remaining gaps from the source. Launch prompt:
-
-> You are the planner for the cairn-cms `0.99.0` release's next pass, in a fresh session (Opus,
-> high). Read `docs/STATUS.md`, the run sheet's steps 11 to 20, and the ledger's 2026-11-03 entries.
-> Design one pass for Geoff's approval, through the `pass-core` and `cairn-pass` skills:
-> 1. A desk walkthrough of the four gate legs (A1, A2, B1, B2 in `scripts/gate/legs.mjs`) against
->    the `create-cairn-site` source. For each leg: every prompt it meets given its flags, every URL it
->    opens and the page GitHub really shows, every wait against the driver's limits, the DNS
->    behavior, and each teardown step. Run 4's open findings come first: the harness clicks Save
->    instead of Publish; the closing block lacks the not-connected sentence on A1 (product or
->    expectation, unknown); an auto-approved OAuth authorize is held needlessly; the 600-second
->    no-output limit did not fire during a 30-minute domain hold; and this host's resolver
->    negative-caches `carin-test.org` for the zone's 1,800-second SOA minimum after a domain attach,
->    which a real owner could hit too.
-> 2. Headless by default, with a `--headed` switch. An unrecognised page fails the leg, saving a
->    screenshot and its control labels (Geoff, 2026-11-03).
-> 3. Backlog #341, and #345 to #349.
-> 4. The gaps in `~/.local/state/cairn-agent-first/release-process-research.md`. Bring the four it
->    marks contestable to Geoff as decisions.
-> 5. Run sheet step 20: the release process documented and moved into scripts where mechanical, and
->    Claude infra tuned for it through the `claude-infra` skill.
-> The pass ends at `rc.4`, gated once. Standing constraints: no stable without Geoff's "install
-> passed"; promotion only on a passed gate; Geoff's 2026-11-03 waiver of PR ceremony covered only the
-> two harness fixes already landed; vault and secrets work belongs to the security session
-> (`vault-key-setup-pass-cli`), and the gate reads only the age store.
+The release round runs under `conductor-cairn-cms` (launched 2026-11-04). Geoff approved the design
+and both plans in packet `20261103T221624-3306025`, with the ceiling at 2,210 path minutes, and ran the
+pre-flight sitting the same day. The conductor launches two passes in parallel: pass A (gate and
+product, `auth-data`, branch `release-gate-a`) and pass B (release process and infra, `runner`, branch
+`release-process-b`). It sends one packet when both reach PR-ready, then cuts `rc.4`, gates it once,
+and promotes it on four passes before Geoff's real install. Its prompt, the plans, the spec, and the fold
+records are under `~/Projects/initiatives/shared-standards/plans/` and `specs/` (2026-11-03). A session
+resuming the round reads the conductor prompt
+(`shared-standards/plans/2026-11-03-release-conductor-prompt.txt`) and the ledger.
 
 ## Open decisions and watches
 
 - `BACKLOG.md` lists open items, each with a `Placement` line, and `## Won't do` holds Geoff's
   rulings. The full backlog sweep ran at the close of pass 8 and wrote
   `~/.local/state/cairn-agent-first/2026-11-02-backlog-triage.json` for the sitting (four drop rows,
-  fifteen defer rows); it landed nothing.
+  fifteen defer rows). Geoff's release sitting landed its two drops (#284, #190) under `## Won't do`.
+  The 2026-11-03 full sweep (`2026-11-03-backlog-triage.json`) is not yet decided.
 - Docs: the human gate design is approved and unbuilt, outside this run. The 94 boundary-test
   verdicts and the capture runbook are at the `pre-agent-first` tag.
 - Routines: sveltejs/kit#17368 merged on 2026-10-14, so its routine (`trig_01KPzLTU7rzLMQUp2y6bjZtm`)

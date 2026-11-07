@@ -106,7 +106,7 @@ Until Builds is connected, a publish from the admin commits to GitHub and the li
 
 Workers Builds uses two tokens. The setup token is the one you paste for the domain parts, plus one more permission, Workers Builds, which lets the command connect your repository and watch builds. The command keeps it until Builds setup finishes, and deletes it then.
 
-The second token is the one Workers Builds deploys with. It carries three permissions, each at the edit level: Workers Scripts, D1, and Workers R2 Storage. Cloudflare keeps it, registered with Workers Builds under the name `cairn-build`, and hands it to every build, so anyone who can push to your default branch can read it. It is narrow on purpose. It can deploy Workers and edit D1 and R2 on your accounts, and it cannot edit DNS, zones, or email.
+The second token is the one Workers Builds deploys with. It carries three permissions, each at the edit level: Workers Scripts, D1, and Workers R2 Storage. Cloudflare keeps it, registered with Workers Builds under the name `cairn-build`, and hands it to every build, so anyone who can push to your default branch can read it. It is narrow on purpose. You limit it to this one Cloudflare account, where it can deploy every Worker and edit every D1 database and R2 bucket, and it can't edit DNS, zones, or email.
 
 You create the `cairn-build` token once for each Cloudflare account. A later site on the same account finds the registration and reuses it without asking. Revoking or rolling the token later can break your automatic deploys: the next push builds and then fails. If you rotate tokens on a schedule, update this one too.
 
@@ -117,7 +117,7 @@ You create the `cairn-build` token once for each Cloudflare account. A later sit
    ```
 
 2. Create the setup token in the browser page the command opens, and paste it into the terminal.
-3. If this Cloudflare account has no `cairn-build` token yet, create one in the second browser page the command opens. At the prompt `Paste your Workers Builds deploy token`, paste it. A later site on the account skips this step.
+3. If this Cloudflare account has no `cairn-build` token yet, create one in the second browser page the command opens. Under **Account Resources**, check that the token is limited to this one account, not all accounts. At the prompt `Paste your Workers Builds deploy token`, paste it. A later site on the account skips this step.
 4. If the command asks, authorize Cloudflare's Workers and Pages GitHub App on your account.
 5. Click the sign-in link the command opens later in the run.
 

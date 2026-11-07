@@ -878,6 +878,29 @@ test('getBuildTokens lists what createBuildToken registers, without echoing the 
   assert.equal(tokens[0].build_token_uuid, token.build_token_uuid);
 });
 
+test('a registration failure that echoes the build token secret redacts it from every thrown field', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const secret = 'plant-build-secret-7c41e9d2';
+  cloudflare.failNext('builds_token_create', 400, {
+    success: false,
+    errors: [{ code: 6003, message: `Invalid request headers for ${secret}`, error_chain: [{ message: `bad token ${secret}` }] }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.createBuildToken({ name: 'cairn-build', secret, cloudflareTokenId: 'an-id' }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-invalid');
+      assert.doesNotMatch(err.message, new RegExp(secret));
+      assert.match(err.message, /\[redacted\]/);
+      assert.doesNotMatch(err.catalogue.next ?? '', new RegExp(secret));
+      assert.doesNotMatch(JSON.stringify(err.api), new RegExp(secret));
+      return true;
+    },
+  );
+});
+
 test('findWorkerTag resolves the tag for a seeded script by its id, and undefined for an unknown name', async (t) => {
   const { cloudflare, api } = await setup(t);
   cloudflare.state.workerScripts.push({ id: 'cairn-t4c-spike', tag: 'ec60995bd99d4c28a8a3a4dc7ce64c10' });

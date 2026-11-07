@@ -856,9 +856,13 @@ const ROWS = {
     kind: 'act',
     build(params) {
       const source = params.yes ? 'The token in CAIRN_CF_BUILD_TOKEN' : 'The token you pasted';
-      const reported = params.detail
-        ? ` Cloudflare reported: ${params.detail}`
-        : ' It may be mistyped, expired, or revoked.';
+      // `setupToken` marks the setup token offered as the build token: it would work, but it is
+      // far wider than every build should be able to read.
+      const reported = params.setupToken
+        ? ' It is the setup token this tool works with, which is too wide to hand to every build.'
+        : params.detail
+          ? ` Cloudflare reported: ${params.detail}`
+          : ' It may be mistyped, expired, or revoked.';
       const next = params.yes
         ? 'Next: set CAIRN_CF_BUILD_TOKEN to an active token with Workers Scripts, D1, and ' +
           `Workers R2 Storage edit permissions and re-run npx create-cairn-site --dir ${params.dir} ` +

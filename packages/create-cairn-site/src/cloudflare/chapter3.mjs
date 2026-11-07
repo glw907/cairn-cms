@@ -961,7 +961,8 @@ const ADMISSION_DETAIL =
   'sign-in click later in this chapter, when it commits its config changes back to your ' +
   'repository. If your Cloudflare account has no Workers Builds build token yet, it also asks ' +
   'for one: a second, narrow token named cairn-build that can only deploy Workers and edit D1 ' +
-  'and R2, which later sites on this account reuse. Cloudflare keeps its secret and gives it to ' +
+  'and R2, which later sites on this account reuse. Limit it to this one Cloudflare account ' +
+  'under Account Resources, not all accounts. Cloudflare keeps its secret and gives it to ' +
   'every build that deploys with it, so treat anyone who can commit to your default branch as ' +
   "able to read it. It costs no money: Workers Builds' free tier includes 3,000 build minutes a " +
   'month and one build running at a time, as of 2026-08-12 ' +
@@ -1408,6 +1409,11 @@ export async function runChapter3({
               argv,
               makeApiFn,
             });
+            // The setup token verifies as active too, but registering it would hand every build
+            // its zone, DNS, and email reach, which the narrow token exists to keep out of builds.
+            if (buildToken.token === token) {
+              throw cloudflareError('build-token-invalid', { dir, yes: args.yes, setupToken: true });
+            }
             const createdToken = await api.createBuildToken({
               name: BUILD_TOKEN_NAME,
               secret: buildToken.token,

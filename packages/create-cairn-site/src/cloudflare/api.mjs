@@ -621,7 +621,17 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
         build_token_secret: secret,
         cloudflare_token_id: cloudflareTokenId,
       });
-      if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
+      if (!isSuccess(status, json)) {
+        // throwBuildsMapped scrubs the setup token only; the body may echo the build token too.
+        try {
+          throwBuildsMapped(status, json, dir, token);
+        } catch (error) {
+          error.message = redactToken(error.message, secret);
+          if (error.catalogue) error.catalogue.next = redactToken(error.catalogue.next, secret);
+          if (error.api) error.api.id = redactToken(error.api.id, secret);
+          throw error;
+        }
+      }
       return json.result;
     },
 

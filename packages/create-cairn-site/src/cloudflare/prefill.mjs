@@ -120,8 +120,22 @@ export function prefillUrl(keys = PREFILL_PERMISSION_KEYS, name = PREFILL_TOKEN_
   return `https://dash.cloudflare.com/profile/api-tokens?${params.toString()}`;
 }
 
-/** The build token's prefilled create-token page: the three build keys, named `cairn-build`. */
-export const BUILD_TOKEN_PREFILL_URL = prefillUrl(BUILD_TOKEN_PERMISSION_KEYS, BUILD_TOKEN_NAME);
+/**
+ * Build the build token's prefilled create-token page: the three build keys, named `cairn-build`,
+ * pre-selecting only the site's account. Every build reads this token, so it must not reach the
+ * other accounts the admin belongs to. It carries no zone permission, so no `zoneId` is sent.
+ * Cloudflare's template docs list a specific `accountId` as a pre-selected account, but that was
+ * not confirmed live, so ensureBuildToken also tells the admin to check the account scope.
+ * @param {string | undefined} accountId the site's Cloudflare account id; omitted from the URL
+ *  when absent, which leaves the account for the admin to pick, never `*`
+ * @returns {string} the full prefilled create-token URL
+ */
+export function buildTokenPrefillUrl(accountId) {
+  const params = new URLSearchParams({ permissionGroupKeys: JSON.stringify(BUILD_TOKEN_PERMISSION_KEYS) });
+  if (accountId) params.set('accountId', accountId);
+  params.set('name', BUILD_TOKEN_NAME);
+  return `https://dash.cloudflare.com/profile/api-tokens?${params.toString()}`;
+}
 
 /**
  * The chapter-2 prefilled create-token page, built from PREFILL_PERMISSION_KEYS. Byte-stable
@@ -161,18 +175,25 @@ const TOKEN_SHAPES = [/^cf[a-z]{2}_[A-Za-z0-9_-]{20,}$/, /^[A-Za-z0-9_-]{40}$/];
  * mistake, not a response to one specific flag, per the plan's "a secret never appears in argv"
  * constraint.
  * @param {string[]} argv the argument vector to scan
- * @returns {string | undefined} the offending argv entry, or undefined when none matches
+ * @returns {string | undefined} where the offending entry sits (`argument 2`, or `argument 1,
+ *  the value of --flag` for a combined entry), never the value itself, or undefined when none
+ *  matches
  */
 function findTokenShapedArg(argv) {
-  return argv.find((arg) => {
+  for (const [index, arg] of argv.entries()) {
     const equals = arg.indexOf('=');
     const value = equals === -1 ? arg : arg.slice(equals + 1);
-    return TOKEN_SHAPES.some((shape) => shape.test(value));
-  });
+    if (!TOKEN_SHAPES.some((shape) => shape.test(value))) continue;
+    const position = `argument ${index + 1}`;
+    return equals === -1 ? position : `${position}, the value of ${arg.slice(0, equals)}`;
+  }
+  return undefined;
 }
 
 /**
  * Throw, before any call is made, when argv carries something shaped like a Cloudflare token.
+ * The refusal names where the entry sits and never echoes it, since the message reaches the
+ * terminal and any log of it.
  * @param {string[]} argv the argument vector to scan
  * @param {string} envName the environment variable the refusal points the admin to instead
  * @returns {void}
@@ -181,7 +202,7 @@ function refuseTokenShapedArg(argv, envName) {
   const offender = findTokenShapedArg(argv);
   if (!offender) return;
   throw new Error(
-    `The command line carries what looks like a Cloudflare API token ("${offender}"). A ` +
+    `The command line carries what looks like a Cloudflare API token (${offender}). A ` +
       'token must never be passed as a flag or argument: argv is visible to every other ' +
       'process on the machine and often ends up in shell history.\n' +
       `Next: remove it from the command line and set ${envName} in the environment instead.`,
@@ -350,9 +371,13 @@ async function verifyBuildToken(token, scope, makeApiFn, yes) {
     const result = await makeApiFn({ token, ...scope }).verifyToken();
     // Verify answers success for a token that exists, even one that is disabled or expired, so
     // the envelope alone does not say Builds could deploy with it.
-    if (result.status !== 'active') {
-      const detail = `Cloudflare reports this token as ${result.status ?? 'not active'}.`;
+    if (result?.status !== 'active') {
+      const detail = `Cloudflare reports this token as ${result?.status ?? 'not active'}.`;
       return { ok: false, error: cloudflareError('build-token-invalid', { dir: scope.dir, detail, yes }) };
+    }
+    // The registration names this id, so an answer without one cannot be registered truthfully.
+    if (typeof result.id !== 'string' || result.id === '') {
+      return { ok: false, error: cloudflareError('build-token-invalid', { dir: scope.dir, yes }) };
     }
     return { ok: true, id: result.id };
   } catch (error) {
@@ -422,9 +447,10 @@ export async function ensureBuildToken({
     'Workers Builds deploys with a Cloudflare token of its own, narrower than the API token ' +
       'this tool works with. ' +
       `This account has none registered yet, so create one named ${BUILD_TOKEN_NAME}; later ` +
-      'sites on this account reuse it.',
+      'sites on this account reuse it. Before you create it, check under Account Resources ' +
+      'that it is limited to this one account, not all accounts: every build can read it.',
   );
-  await openBrowser(BUILD_TOKEN_PREFILL_URL, log);
+  await openBrowser(buildTokenPrefillUrl(accountId), log);
 
   const pasted = await promptSecretFn(BUILD_TOKEN_PROMPT);
   const firstTry = await verifyBuildToken(pasted, scope, makeApiFn, false);

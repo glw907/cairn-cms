@@ -626,6 +626,10 @@ test('build-token-invalid names the Workers Builds deploy token, keeps the API t
   assert.doesNotMatch(unattended.message, /paste/);
   assert.match(unattended.catalogue.next, /^set CAIRN_CF_BUILD_TOKEN/);
   assert.match(unattended.catalogue.next, /--yes/);
+
+  const setupToken = cloudflareError('build-token-invalid', { dir: './alpine', setupToken: true });
+  assert.match(setupToken.message, /is the setup token/);
+  assert.doesNotMatch(setupToken.message, /Cloudflare reported|mistyped/);
 });
 
 test('WAIT_KIND_CODES holds exactly the wait-kind rows, in catalogue order, and nothing else', () => {

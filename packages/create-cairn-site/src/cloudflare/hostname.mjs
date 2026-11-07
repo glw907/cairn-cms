@@ -93,7 +93,20 @@ async function matchesMarker(origin, fetchImpl) {
 
   const location = admin.headers.get('location');
   if (!location) return false;
-  return new URL(location, origin).pathname === ADMIN_LOGIN_PATH;
+  return landsOnLogin(location, new URL(origin).host);
+}
+
+/**
+ * Whether an `/admin` redirect's `Location` lands on this site's own `/admin/login`. A relative
+ * value resolves against the probed host; an absolute one must name that same host, so another
+ * host's login page never passes for this site.
+ * @param {string} location the redirect's `Location` header
+ * @param {string} host the probed host (`example.com`, or `example.com:8443` with a port)
+ * @returns {boolean} true when the redirect lands on `/admin/login` on `host`
+ */
+function landsOnLogin(location, host) {
+  const landing = new URL(location, `https://${host}`);
+  return landing.host === host && landing.pathname === ADMIN_LOGIN_PATH;
 }
 
 /**
@@ -168,8 +181,7 @@ export async function pinnedMarkerProbe({ domain, address }, options = {}) {
     if (root.status !== 200 || admin.status !== 303 || !admin.location) {
       return { reachable: true, matches: false };
     }
-    const landing = new URL(admin.location, `https://${domain}`).pathname;
-    return { reachable: true, matches: landing === ADMIN_LOGIN_PATH };
+    return { reachable: true, matches: landsOnLogin(admin.location, new URL(`https://${domain}`).host) };
   } catch {
     return { reachable: false, matches: false };
   }

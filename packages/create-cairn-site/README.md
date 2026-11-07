@@ -331,8 +331,9 @@ the domain chapter used, with six permissions, the five the domain chapter asked
 Builds. The tool works with it for the length of the chapter and deletes its copy at the end.
 
 The second is the token Workers Builds deploys with. It carries three permissions at edit: Workers
-Scripts, D1, and Workers R2 Storage. The tool opens its prefilled page, named `cairn-build`, and
-asks at the prompt `Paste your Workers Builds deploy token`. It verifies the token, registers it
+Scripts, D1, and Workers R2 Storage. The tool opens its prefilled page, named `cairn-build`. Before
+you create the token, check under Account Resources that it is limited to this one Cloudflare
+account, not all accounts. The tool asks at the prompt `Paste your Workers Builds deploy token`. It verifies the token, registers it
 with Workers Builds, and does not save it. The registration is once per Cloudflare account: a later
 site on the same account finds the `cairn-build` registration and reuses it with no prompt.
 

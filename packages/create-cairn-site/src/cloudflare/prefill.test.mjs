@@ -282,7 +282,8 @@ test('a token-shaped bare argv entry is rejected before anything else runs, nami
       }),
     (err) => {
       assert.match(err.message, /CAIRN_CF_API_TOKEN/);
-      assert.match(err.message, new RegExp(tokenShaped));
+      assert.doesNotMatch(err.message, new RegExp(tokenShaped.slice(8)), 'the refusal never prints the token it caught');
+      assert.match(err.message, /argument 2/);
       return true;
     },
   );
@@ -306,7 +307,8 @@ test('an argv entry shaped like a CURRENT Cloudflare token is rejected', async (
       }),
     (err) => {
       assert.match(err.message, /CAIRN_CF_API_TOKEN/);
-      assert.match(err.message, new RegExp(tokenShaped));
+      assert.doesNotMatch(err.message, new RegExp(tokenShaped.slice(8)), 'the refusal never prints the token it caught');
+      assert.match(err.message, /argument 2/);
       return true;
     },
   );
@@ -327,6 +329,8 @@ test('a token-shaped --flag=value argv entry is rejected the same way', async (t
       }),
     (err) => {
       assert.match(err.message, /CAIRN_CF_API_TOKEN/);
+      assert.doesNotMatch(err.message, new RegExp(tokenShaped.slice(8)));
+      assert.match(err.message, /argument 1, the value of --cloudflare-token/);
       return true;
     },
   );
@@ -496,12 +500,24 @@ test('the build-token key set is Workers Scripts, D1, and R2 at edit, and nothin
   ]);
 });
 
-test('the build-token prefill URL requests the three build keys under the token name cairn-build', async () => {
-  const { BUILD_TOKEN_PREFILL_URL, BUILD_TOKEN_PERMISSION_KEYS } = await import('./prefill.mjs');
-  const url = new URL(BUILD_TOKEN_PREFILL_URL);
+test('the build-token prefill URL requests the three build keys under the token name cairn-build, on the one account and no zone', async () => {
+  const { buildTokenPrefillUrl, BUILD_TOKEN_PERMISSION_KEYS } = await import('./prefill.mjs');
+  const url = new URL(buildTokenPrefillUrl('acct-1'));
   assert.equal(url.origin + url.pathname, 'https://dash.cloudflare.com/profile/api-tokens');
   assert.deepEqual(JSON.parse(url.searchParams.get('permissionGroupKeys')), BUILD_TOKEN_PERMISSION_KEYS);
   assert.equal(url.searchParams.get('name'), 'cairn-build');
+  // The build token is handed to every build, so it must not reach past the site's account.
+  assert.equal(url.searchParams.get('accountId'), 'acct-1');
+  assert.equal(url.searchParams.has('zoneId'), false);
+});
+
+test('the setup token prefill URL still asks for all accounts and all zones, byte for byte', async () => {
+  const { prefillUrl, PREFILL_URL } = await import('./prefill.mjs');
+  assert.equal(PREFILL_URL, prefillUrl());
+  const url = new URL(PREFILL_URL);
+  assert.equal(url.searchParams.get('accountId'), '*');
+  assert.equal(url.searchParams.get('zoneId'), 'all');
+  assert.equal(url.searchParams.get('name'), 'cairn create-cairn-site');
 });
 
 test('ensureBuildToken opens the build-token page, asks for the deploy token, and verifies it with its own bearer, never listZones', async (t) => {
@@ -511,14 +527,15 @@ test('ensureBuildToken opens the build-token page, asks for the deploy token, an
   t.after(() => {
     delete process.env.CAIRN_CLOUDFLARE_API_BASE;
   });
-  const { ensureBuildToken, BUILD_TOKEN_PREFILL_URL } = await import('./prefill.mjs');
+  const { ensureBuildToken, buildTokenPrefillUrl } = await import('./prefill.mjs');
 
   const opened = [];
   const prompts = [];
+  const lines = [];
   const result = await ensureBuildToken({
     dir: '/tmp/site',
     accountId: 'acct-1',
-    log: () => {},
+    log: (line) => lines.push(line),
     openBrowser: async (url) => {
       opened.push(url);
     },
@@ -530,7 +547,10 @@ test('ensureBuildToken opens the build-token page, asks for the deploy token, an
   });
 
   assert.deepEqual(result, { token: 'pasted-build-token', id: 'build-token-id-1' });
-  assert.deepEqual(opened, [BUILD_TOKEN_PREFILL_URL]);
+  assert.deepEqual(opened, [buildTokenPrefillUrl('acct-1')]);
+  // Whether the dashboard honors the pre-selected account is unconfirmed, so the admin is told
+  // to check the account scope themselves.
+  assert.ok(lines.some((line) => /Account Resources/.test(line) && /this one account/.test(line)));
   assert.deepEqual(prompts, ['Paste your Workers Builds deploy token']);
   // The gate's driver answers the first prompt-table entry a line includes, so the build prompt
   // must never carry the setup token's prompt inside it.
@@ -567,6 +587,30 @@ test('ensureBuildToken under --yes reads CAIRN_CF_BUILD_TOKEN, never prompting o
   assert.equal(result.token, 'env-build-token');
   const verify = cloudflare.requests.find((r) => r.path === '/client/v4/user/tokens/verify');
   assert.equal(verify.headers.authorization, 'Bearer env-build-token');
+});
+
+test('ensureBuildToken fails closed when an active verify answer carries no token id', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureBuildToken } = await import('./prefill.mjs');
+
+  for (const result of [{ status: 'active' }, { status: 'active', id: '' }, null]) {
+    cloudflare.failNext('user_token_verify', 200, { success: true, errors: [], messages: [], result });
+    await assert.rejects(
+      () =>
+        ensureBuildToken({
+          dir: '/tmp/site',
+          accountId: 'acct-1',
+          log: () => {},
+          yes: true,
+          env: { CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
+          argv: [],
+        }),
+      (err) => {
+        assert.equal(err.catalogue.code, 'build-token-invalid');
+        return true;
+      },
+    );
+  }
 });
 
 test('ensureBuildToken under --yes with no CAIRN_CF_BUILD_TOKEN throws build-token-missing, making no call', async (t) => {
@@ -737,7 +781,8 @@ test('ensureBuildToken refuses a token-shaped argv entry before any call, naming
       }),
     (err) => {
       assert.match(err.message, /CAIRN_CF_BUILD_TOKEN/);
-      assert.match(err.message, new RegExp(tokenShaped));
+      assert.doesNotMatch(err.message, new RegExp(tokenShaped.slice(8)), 'the refusal never prints the token it caught');
+      assert.match(err.message, /argument 2/);
       return true;
     },
   );

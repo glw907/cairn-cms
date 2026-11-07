@@ -387,7 +387,7 @@ test('runChapter3: an interactive consent connects, creates the trigger, reconci
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     ...fastSeams(cloudflare),
   });
 
@@ -601,7 +601,7 @@ test('runChapter3: a record still carrying chapter 2\'s saved token gets the ful
       confirmCalls += 1;
       return true;
     },
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     ...fastSeams(cloudflare),
   });
 
@@ -649,7 +649,7 @@ test('runChapter3: an authorization refusal parks on its row, and a re-run after
     dryRun: false,
     openBrowser: neverOpensBrowser,
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
   });
 
   assert.equal(first.outcome, 'builds-repo-not-selected');
@@ -703,7 +703,7 @@ test('runChapter3: the App-not-authorized refusal maps to its row without quotin
     dryRun: false,
     openBrowser: neverOpensBrowser,
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
   });
 
   assert.equal(result.outcome, 'builds-app-not-authorized');
@@ -729,7 +729,7 @@ test('runChapter3: connect and trigger are idempotent across two runs, the secon
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     ...fastSeams(cloudflare),
   });
   assert.equal(first.outcome, 'builds-live');
@@ -759,7 +759,7 @@ test('runChapter3: connect and trigger are idempotent across two runs, the secon
     // the authorize count below rather than hanging the suite.
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token-2',
+    promptSecretFn: answeringSetupWith('fresh-cf-token-2'),
     dryRun: false,
     ...fastSeams(cloudflare),
   });
@@ -812,6 +812,15 @@ function answeringBothPrompts(asked) {
     if (message === SETUP_PROMPT) return SETUP_TOKEN;
     throw new Error(`unexpected prompt: ${message}`);
   };
+}
+
+/**
+ * A promptSecretFn answering the setup prompt with `setupToken` and the build prompt with the
+ * distinct BUILD_TOKEN, so the setup token is never offered as the build token.
+ * @param {string} setupToken the setup token to paste
+ */
+function answeringSetupWith(setupToken) {
+  return async (message) => (message === BUILD_PROMPT ? BUILD_TOKEN : setupToken);
 }
 
 /** Every DELETE the fake received; the CLI never deletes a build-token registration. */
@@ -1108,6 +1117,34 @@ test('runChapter3: a build token rejected on both pastes stops on build-token-in
   assert.equal((await loadSite(siteId)).cloudflare.apiToken, SETUP_TOKEN);
 });
 
+test('runChapter3: the setup token pasted again as the build token is refused on build-token-invalid, registering nothing', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-setup-as-build-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+
+  const asked = [];
+  const promptSecretFn = async (message) => {
+    asked.push(message);
+    return SETUP_TOKEN;
+  };
+  await assert.rejects(
+    () => runInteractively({ cloudflare, siteId, dir, promptSecretFn }),
+    (err) => {
+      assert.equal(err.cause?.catalogue?.code, 'build-token-invalid');
+      assert.match(err.cause.message, /setup token/);
+      return true;
+    },
+  );
+  assert.deepEqual(asked, [SETUP_PROMPT, BUILD_PROMPT]);
+  assert.equal(registrations(cloudflare).length, 0);
+  assert.equal(triggerCreate(cloudflare), undefined);
+  assert.equal((await loadSite(siteId)).cloudflare.apiToken, SETUP_TOKEN);
+});
+
 test('runChapter3: --yes with no cairn-build registration and no CAIRN_CF_BUILD_TOKEN stops on build-token-missing, registering nothing', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -1165,7 +1202,7 @@ test('runChapter3: a differing repo commits exactly once through exactly one rea
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     ...fastSeams(cloudflare),
   });
 
@@ -1206,7 +1243,7 @@ test('runChapter3: a differing repo whose push build the fake surfaces is found 
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     sleepFn: autoResolveBuilds(cloudflare),
     fetchImpl: alwaysMatchingFetch(),
     pollIntervalMs: 0,
@@ -1245,7 +1282,7 @@ test('an interactive run threads waitForClear into watchAndComplete: the console
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     sleepFn: autoResolveBuilds(cloudflare),
     fetchImpl: alwaysMatchingFetch(),
     pollIntervalMs: 1,
@@ -1308,7 +1345,7 @@ test('an interactive run entering the hold with a buildUuid already known, from 
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     // No sleepFn call is expected: a manual kick's build stays 'queued' forever in the fake (no
     // seam ever advances it), so the hold runs out its small budget rather than clearing, and
     // chapter 3's sleepFn (pollBuildToStop's) is never reached on the held path.
@@ -1426,7 +1463,7 @@ test('an interactive run holds the console across the build itself, not only its
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     // The hold owns the pacing here, so chapter 3's sleep belongs to `pollBuildToStop` alone:
     // a call to it would mean a second loop is polling the build the hold already polled.
     sleepFn: mustNotBeCalled('sleepFn'),
@@ -1819,7 +1856,7 @@ test("runChapter3: a manual-kick build watched to success threads the run's reso
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     ...fastSeams(cloudflare),
     fetchImpl: alwaysUnreachableFetch(),
     resolve: disagreeingResolve(domain),
@@ -1867,7 +1904,7 @@ test("runChapter3: a builds-live re-entry whose push build is watched to success
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: mustNotBeCalled('confirm'),
-    promptSecretFn: async () => 'fresh-cf-token-3',
+    promptSecretFn: answeringSetupWith('fresh-cf-token-3'),
     sleepFn: autoResolveBuilds(cloudflare),
     fetchImpl: alwaysUnreachableFetch(),
     resolve: disagreeingResolve(domain),
@@ -1945,7 +1982,7 @@ test('runChapter3: the build watch polls through queued, initializing, and runni
     dryRun: false,
     openBrowser: neverOpensBrowser,
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     sleepFn: scriptedSleep,
     fetchImpl: alwaysMatchingFetch(),
     pollIntervalMs: 0,
@@ -1991,7 +2028,7 @@ test('runChapter3: fail surfaces builds-deploy-failed carrying the log tail', as
         dryRun: false,
         openBrowser: neverOpensBrowser,
         confirm: confirmAnswering(true),
-        promptSecretFn: async () => 'fresh-cf-token',
+        promptSecretFn: answeringSetupWith('fresh-cf-token'),
         sleepFn: failingSleep,
         fetchImpl: alwaysMatchingFetch(),
         pollIntervalMs: 0,
@@ -2044,7 +2081,7 @@ test('runChapter3: the failed build log tail reaches the terminal with no contro
     dryRun: false,
     openBrowser: neverOpensBrowser,
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     sleepFn: failingSleep,
     fetchImpl: alwaysMatchingFetch(),
     pollIntervalMs: 0,
@@ -2089,7 +2126,7 @@ test('runChapter3: skipped surfaces builds-not-runnable naming the outcome', asy
         dryRun: false,
         openBrowser: neverOpensBrowser,
         confirm: confirmAnswering(true),
-        promptSecretFn: async () => 'fresh-cf-token',
+        promptSecretFn: answeringSetupWith('fresh-cf-token'),
         sleepFn: skippingSleep,
         fetchImpl: alwaysMatchingFetch(),
         pollIntervalMs: 0,
@@ -2137,7 +2174,7 @@ test('runChapter3: a null build_outcome at a stopped status keeps polling rather
     dryRun: false,
     openBrowser: neverOpensBrowser,
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     sleepFn: scriptedSleep,
     fetchImpl: alwaysMatchingFetch(),
     pollIntervalMs: 0,
@@ -2174,7 +2211,7 @@ test('runChapter3: an unrecognized build_outcome maps to builds-not-runnable rat
         dryRun: false,
         openBrowser: neverOpensBrowser,
         confirm: confirmAnswering(true),
-        promptSecretFn: async () => 'fresh-cf-token',
+        promptSecretFn: answeringSetupWith('fresh-cf-token'),
         sleepFn: weirdOutcomeSleep,
         fetchImpl: alwaysMatchingFetch(),
         pollIntervalMs: 0,
@@ -2208,7 +2245,7 @@ test('runChapter3: a budget-exceeded poll parks as build-running, and a re-run r
     dryRun: false,
     openBrowser: neverOpensBrowser,
     confirm: confirmAnswering(true),
-    promptSecretFn: async () => 'fresh-cf-token',
+    promptSecretFn: answeringSetupWith('fresh-cf-token'),
     sleepFn: neverAdvances,
     fetchImpl: alwaysMatchingFetch(),
     pollIntervalMs: 0,
@@ -2324,7 +2361,7 @@ test('runChapter3: a builds-live re-entry with a real diff commits the change, r
     dryRun: false,
     openBrowser: smartOpenBrowser(),
     confirm: mustNotBeCalled('confirm'),
-    promptSecretFn: async () => 'fresh-cf-token-2',
+    promptSecretFn: answeringSetupWith('fresh-cf-token-2'),
   });
 
   // Nothing seeds a matching push build here, so the watch parks; what this test proves is the

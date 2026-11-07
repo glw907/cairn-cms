@@ -394,6 +394,43 @@ test('both fetch probes unreachable, authoritative AAAA and A present, the pinne
   assert.match(lines[0], /30 minutes/);
 });
 
+test('an /admin redirect to /admin/login on another host never matches the marker, over fetch or pinned', async () => {
+  const { confirmHostname, pinnedMarkerProbe } = await import('./hostname.mjs');
+  const domain = 'carin-test.org';
+  const elsewhere = 'https://evil.example/admin/login';
+
+  const crossOriginFetch = async (url) => {
+    const u = new URL(url);
+    if (u.pathname === '/admin') return new Response(null, { status: 303, headers: { location: elsewhere } });
+    return markerResponse(u.pathname, u.origin);
+  };
+  assert.equal(await confirmHostname(domain, crossOriginFetch, {}), 'hostname-not-serving');
+
+  // A stand-in for https.request answering `/` with 200 and `/admin` with the given Location.
+  const answering = (location) => (options, callback) => {
+    const req = new EventEmitter();
+    req.end = () => {
+      const headers = options.path === '/admin' ? { location } : {};
+      callback({ statusCode: options.path === '/admin' ? 303 : 200, headers, resume() {} });
+    };
+    req.destroy = () => {};
+    return req;
+  };
+  const target = { domain, address: '192.0.2.1' };
+  assert.deepEqual(
+    await pinnedMarkerProbe(target, { request: answering(elsewhere) }),
+    { reachable: true, matches: false },
+  );
+  assert.deepEqual(
+    await pinnedMarkerProbe(target, { request: answering(`https://${domain}/admin/login`) }),
+    { reachable: true, matches: true },
+  );
+  assert.deepEqual(
+    await pinnedMarkerProbe(target, { request: answering('/admin/login') }),
+    { reachable: true, matches: true },
+  );
+});
+
 test('a pinned probe that reaches something else is never live', async () => {
   const { confirmHostname } = await import('./hostname.mjs');
   const domain = 'carin-test.org';

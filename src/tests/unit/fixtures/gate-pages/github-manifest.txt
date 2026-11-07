@@ -1,0 +1,30 @@
+# github.com/settings/apps/manifest
+link	Skip to content
+button
+link
+link	Settings
+link	Developer Settings
+button	Open quick search dialog, type / to search
+link
+button	Open Copilot…
+button
+link
+link
+link
+link
+button
+link	Reload
+link	Reload
+link	Reload
+button
+link	GitHub Homepage
+link	Terms
+link	Privacy
+link	Security
+link	Status
+link	Community
+link	Docs
+link	Contact
+button	Manage cookies
+button	Do not share my personal information
+button	Dismiss error

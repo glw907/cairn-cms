@@ -1,4 +1,5 @@
-// The gate's browser half against hand-built page fixtures. Every address is answered by a route
+// The gate's browser half against page fixtures: GitHub's manifest and install pages are rebuilt from
+// captured, scrubbed control lists, and the rest are hand-built. Every address is answered by a route
 // handler in the browser itself, so nothing reaches GitHub, Cloudflare, or a real site. The setup
 // tool's loopback is a real server on 127.0.0.1, because Chromium sends a redirect that a route
 // fulfils to the network, not back through the route. The browser is headless, as it is in
@@ -6,7 +7,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { appendFile, mkdtemp, readdir, readFile, rm, stat, unlink, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
+import { appendFile,mkdtemp, readdir, readFile, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium, type BrowserContext, type Route } from 'playwright';
@@ -27,7 +29,7 @@ import { PUBLISHED_ALERT } from '../../../scripts/gate/legs.mjs';
 import { makeSession } from '../../../scripts/gate/gate.mjs';
 
 const SITE = 'https://gate-site.example.workers.dev';
-const creds = { login: 'glw907-test', password: 'fixture-password', totp: () => '246810' };
+const creds = { login: 'gate-login', password: 'fixture-password', totp: () => '246810' };
 
 /** The setup tool's own loopback success bodies (`oauth.mjs`, `install.mjs`, `manifest.mjs`), verbatim. */
 const OAUTH_DONE = '<!doctype html><html><body><p>Signed in again. Return to the terminal.</p></body></html>';
@@ -53,6 +55,26 @@ let publishMode: 'ok' | 'error';
 
 const page = (body: string, title = 'fixture') => `<!doctype html><html><head><title>${title}</title></head><body>${body}</body></html>`;
 const form = (action: string, button: string, extra = '') => `<form method="post" action="${action}">${extra}<button type="submit">${button}</button></form>`;
+
+/**
+ * A GitHub page rebuilt from a captured, scrubbed control list (`fixtures/gate-pages/`): each
+ * `button` line is a `<button>`, each `link` line an `<a href="#">`. The capture holds no form, so
+ * `submit` points the one named button at a hidden form, which is how the fixture web sees the click.
+ */
+function capturedPage(kind: 'manifest' | 'install', submit?: { name: string; action: string }, extra = '') {
+  const lines = readFileSync(new URL(`./fixtures/gate-pages/github-${kind}.txt`, import.meta.url), 'utf8').split('\n').slice(1);
+  const controls = lines
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const [role, name = ''] = line.split('\t');
+      const text = name.replace(/&/g, '&amp;');
+      if (role === 'link') return `<a href="#">${text}</a>`;
+      return name === submit?.name ? `<button type="submit" form="captured-submit">${text}</button>` : `<button type="button">${text}</button>`;
+    })
+    .join('\n');
+  const hidden = submit ? `<form id="captured-submit" method="post" action="${submit.action}"></form>` : '';
+  return page(`${controls}${hidden}${extra}`);
+}
 
 /** The entry editor: a dirty editor mirrors its text into `input[name="body"]`, as the real one does. */
 function editorPage(search: string) {
@@ -101,12 +123,15 @@ async function answer(route: Route) {
     return html(page(`<form method="post" action="/session"><input id="login_field" name="login"><input id="password" name="password" type="password"><button type="submit">Sign in</button></form>`));
   };
 
-  if (key === 'POST github.com/settings/apps/new' || key === 'GET github.com/settings/apps/new') return gated(page(form('/settings/apps/create', 'Create GitHub App for glw907-test')));
+  // The captured manifest page has no Create button (GitHub renders it after the sign-in the capture
+  // skipped), so the Create form stays hand-built beside the captured controls.
+  const createForm = form('/settings/apps/create', 'Create GitHub App for gate-login');
+  if (key === 'POST github.com/settings/apps/new' || key === 'GET github.com/settings/apps/new') return gated(capturedPage('manifest', undefined, createForm));
   if (key === 'POST github.com/session') return html(page(form('/sessions/two-factor', 'Verify', '<input id="app_totp" name="app_totp">')));
   if (key === 'POST github.com/sessions/two-factor') {
     totpReceived = new URLSearchParams(request.postData() ?? '').get('app_totp');
     signedIn = totpReceived === '246810';
-    return html(page(signedIn ? form('/settings/apps/create', 'Create GitHub App for glw907-test') : '<p>Two-factor failed</p>'));
+    return html(page(signedIn ? createForm :'<p>Two-factor failed</p>'));
   }
   if (key === 'POST github.com/settings/apps/create') {
     loopbackBody = MANIFEST_DONE;
@@ -116,9 +141,11 @@ async function answer(route: Route) {
     loopbackBody = INSTALL_DONE;
     return redirect(`${LOOPBACK}/callback?code=install-code&state=s`);
   }
-  if (url.host === 'github.com' && url.pathname === '/apps/gate-app/installations/new') return html(page(form(url.pathname, 'Install &amp; Authorize')));
+  if (url.host === 'github.com' && url.pathname === '/apps/gate-app/installations/new') return html(capturedPage('install', { name: 'Install & Authorize', action: url.pathname }));
   if (key === 'GET github.com/login/oauth/authorize' && authorizeMode === 'redirect') return redirect(`${LOOPBACK}/callback?code=oauth-code&state=s`);
   if (key === 'POST github.com/login/oauth/authorize') return redirect(`${LOOPBACK}/callback?code=oauth-code&state=s`);
+  // The consent page is hand-built: the captured authorize pages are the loopback callback, which
+  // GitHub redirected to without showing consent.
   if (url.host === 'github.com' && url.pathname === '/login/oauth/authorize') return html(page(form('/login/oauth/authorize', 'Authorize cairn-gate')));
   if (url.host === 'github.com' && url.pathname === '/passkey-experiment') return html(page(holdBody));
   if (key === 'GET gate-site.example.workers.dev/admin/auth/confirm') return html(page(form('/admin/auth/confirm', 'Confirm sign-in')));

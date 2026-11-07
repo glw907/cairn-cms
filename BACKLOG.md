@@ -6,6 +6,8 @@
 
 ## Medium
 
+- [ ] **#359** Move SECURITY.md's reporting contact to the public technical address `#improvement` `#cairn-cms` *(2026-11-07)*
+  `SECURITY.md:10` names the maintainer's login address as the vulnerability-report contact. Change it to `glw@907.life`, the public alias that delivers to the technical mailbox (Geoff, credential-hygiene design approved 2026-11-03, Approval Queue item 20261103T202632-2969677). Placement: `SECURITY.md` line 10; no other file names it. #initiative:credential-hygiene
 - [ ] **#358** Take pflag v1.1.0 once the man-page flag rendering is understood `#improvement` `#cairn-cms` *(2026-11-07)*
   pflag v1.1.0 changes how `tool/cmd/mangen` output renders flags: `TestGeneratedPageCarriesEachFlagsOwnType` (`main_test.go:107`) no longer finds `\fB--quiet\fP[=false]` (the same for `--json`, `--verbose`, `--version`). The pre-cut sweep held `github.com/spf13/pflag` at v1.0.10 rather than change a generated man page. Decide whether the new rendering is better, then update the test's expectation and take v1.1.0.
   Placement: After the release.

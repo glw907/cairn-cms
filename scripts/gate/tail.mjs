@@ -35,6 +35,8 @@ export function summarizeTailLine(line) {
   }
   /** @type {string[]} */
   const summaries = [];
+  /** @type {string[]} */
+  const otherEvents = [];
   for (const log of entry?.logs ?? []) {
     for (const message of log?.message ?? []) {
       let record = message;
@@ -45,12 +47,20 @@ export function summarizeTailLine(line) {
           continue;
         }
       }
+      if (record && typeof record.event === 'string' && !WANTED.test(record.event)) otherEvents.push(record.event);
       if (!record || typeof record.event !== 'string' || !WANTED.test(record.event)) continue;
       const parts = [record.event];
       if (record.level) parts.push(String(record.level));
       for (const key of ['code', 'conditionId', 'reason', 'error']) if (record[key]) parts.push(`${key}=${String(record[key])}`);
       summaries.push(`${parts.join(' ')}${where ? ` (${where.trim()})` : ''}`.slice(0, SUMMARY_LIMIT));
     }
+  }
+  // A request under /admin with no sign-in record still says something: it arrived, with this
+  // status and outcome, and logged this many lines. That separates "the send never ran" from "the
+  // tail missed it".
+  if (!summaries.length && where && /\/admin/.test(where) && entry?.outcome !== undefined) {
+    const names = [...new Set(otherEvents)].slice(0, 3).join(',');
+    summaries.push(`request${where} outcome=${entry.outcome} logs=${(entry?.logs ?? []).length}${names ? ` events=${names}` : ''}`.slice(0, SUMMARY_LIMIT));
   }
   return summaries;
 }
@@ -95,7 +105,14 @@ export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs =
       buffer += String(chunk);
       const lines = buffer.split('\n');
       buffer = lines.pop() ?? '';
-      for (const line of lines) summaries.push(...summarizeTailLine(line));
+      for (const line of lines) {
+        // In JSON mode wrangler prints no connection line; the first event is the proof.
+        if (line.trim().startsWith('{')) {
+          connected = true;
+          markConnected();
+        }
+        summaries.push(...summarizeTailLine(line));
+      }
     });
     child.stderr?.on('data', (/** @type {Buffer | string} */ chunk) => {
       watchForConnection(String(chunk));

@@ -21,8 +21,15 @@ describe('summarizeTailLine', () => {
 
   it('keeps only auth and guard events, and skips a line that is not JSON', () => {
     expect(summarizeTailLine('not json')).toEqual([]);
-    expect(summarizeTailLine(tailLine([record({ event: 'content.listed' })]))).toEqual([]);
+    expect(summarizeTailLine(tailLine([record({ event: 'content.listed' })], { method: 'GET', url: 'https://x.workers.dev/about' }))).toEqual([]);
     expect(summarizeTailLine(tailLine([record({ event: 'auth.link.requested', level: 'info', email: 'a@b.c' })]))).toHaveLength(1);
+  });
+
+  it('says a sign-in request arrived, with its status and outcome, when the Worker logged no sign-in record', () => {
+    const quiet = JSON.stringify({ outcome: 'ok', event: { request: { method: 'POST', url: 'https://x.workers.dev/admin/login?/request' }, response: { status: 200 } }, logs: [] });
+    expect(summarizeTailLine(quiet)).toEqual(['request POST /admin/login 200 outcome=ok logs=0']);
+    const other = tailLine([record({ event: 'content.listed' })]);
+    expect(summarizeTailLine(other)[0]).toContain('events=content.listed');
   });
 
   it('caps a summary at 200 characters', () => {

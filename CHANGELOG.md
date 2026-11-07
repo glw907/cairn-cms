@@ -1,4 +1,6 @@
-## 0.99.0-rc.3
+## 0.99.0-rc.4
+
+Released 2026-11-07.
 
 <!-- release-size: minor -->
 

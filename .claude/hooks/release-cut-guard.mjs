@@ -31,6 +31,8 @@ const VALUE_FLAGS = new Set([
   '--target', '--title', '-t', '--notes', '-n', '--notes-file', '-F', '--repo', '-R',
   '--discussion-category', '--notes-start-tag'
 ]);
+const BOOL_TRUE = new Set(['1', 't', 'T', 'true', 'TRUE', 'True']);
+const BOOL_FALSE = new Set(['0', 'f', 'F', 'false', 'FALSE', 'False']);
 const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash', 'ksh']);
 // Command wrappers and, for each, the flags that take a separate value word and the count of bare
 // positional words (`timeout`'s duration) that follow its flags before the wrapped command.
@@ -152,6 +154,10 @@ function tokenize(command) {
     } else if (c === "'" || c === '"') {
       quote = c;
       start().quoted = true;
+    } else if (c === '#' && cur === null) {
+      // A comment: the shell discards everything to the end of the line.
+      const nl = command.indexOf('\n', i);
+      i = nl === -1 ? command.length : nl - 1;
     } else if (c === '\\' && i + 1 < command.length) {
       start().quoted = true;
       cur.text += command[++i];
@@ -392,7 +398,14 @@ function checkRelease(args, input) {
   let prerelease = false;
   for (let i = 0; i < args.length; i++) {
     const { text } = args[i];
-    if (text === '--prerelease' || text === '-p' || text === '--prerelease=true') prerelease = true;
+    if (text === '--prerelease' || text === '-p') prerelease = true;
+    else if (/^(--prerelease|-p)=/.test(text)) {
+      // gh's bool flags take the last value given, so each occurrence overwrites the one before.
+      const value = text.slice(text.indexOf('=') + 1);
+      if (BOOL_TRUE.has(value)) prerelease = true;
+      else if (BOOL_FALSE.has(value)) prerelease = false;
+      else deny(`could not read the value of ${text.slice(0, text.indexOf('='))}: ${value}`);
+    }
     else if (text.startsWith('--target=')) target = text.slice('--target='.length);
     else if (text === '--target') target = args[++i]?.dynamic ? '$' : (args[i]?.text ?? null);
     else if (VALUE_FLAGS.has(text)) i++;

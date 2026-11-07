@@ -220,6 +220,32 @@ describe('release-cut-guard: non-literal tags and matching', () => {
     expect(denied(guard('function f { gh release create v1.0.0-rc.1 --prerelease; }'))).toBe(true);
     expect(denied(guard('echo $X release create v1.0.0'))).toBe(true);
   });
+  it('reads a repeated bool flag last-wins, as gh does', () => {
+    const rc = 'gh release create v1.0.0-rc.1';
+    expect(denied(guard(`${rc} --prerelease --prerelease=false --title x`))).toBe(true);
+    expect(denied(guard(`${rc} -p --prerelease=0`))).toBe(true);
+    expect(denied(guard(`${rc} -p -p=F`))).toBe(true);
+    expect(denied(guard(`${rc} --prerelease=maybe`))).toBe(true);
+    expect(denied(guard(`${rc} --prerelease=$X`))).toBe(true);
+    expect(guard(`${rc} --prerelease=false --prerelease`)).toBeNull();
+    expect(guard(`${rc} --prerelease=false --prerelease=T`)).toBeNull();
+    expect(guard(`${rc} -p=true`)).toBeNull();
+  });
+  it('reads a repeated --target last-wins', () => {
+    const stable = 'gh release create v1.0.0';
+    expect(denied(guard(`${stable} --target ${SHA} --target main`))).toBe(true);
+    expect(denied(guard(`${stable} --target=${SHA} --target ${OTHER}`))).toBe(true);
+    expect(guard(`${stable} --target main --target ${SHA}`)).toBeNull();
+  });
+  it('drops a comment the shell would throw away', () => {
+    expect(denied(guard('gh release create v1.0.0-rc.1 --title x # -p'))).toBe(true);
+    expect(denied(guard(`gh release create v1.0.0 --title x # --target ${SHA}`))).toBe(true);
+    expect(guard('git status # gh release create v1.0.0')).toBeNull();
+    expect(guard('# gh release create v1.0.0\ngit status')).toBeNull();
+    expect(denied(guard('git status # note\ngh release create v1.0.0-rc.1'))).toBe(true);
+    expect(guard('gh release create v1.0.0-rc.1 --prerelease --title "a # b"')).toBeNull();
+    expect(guard('gh release create v1.0.0-rc.1 --prerelease --title x#y')).toBeNull();
+  });
   it('keeps quoted words and heredoc bodies as data', () => {
     expect(guard('grep -rn "gh release create" docs/')).toBeNull();
     expect(guard('git commit -m "Close the gh release create gap in the hook"')).toBeNull();

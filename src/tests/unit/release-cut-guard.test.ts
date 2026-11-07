@@ -157,6 +157,78 @@ describe('release-cut-guard: non-literal tags and matching', () => {
     expect(denied(guard('$G release create v1.0.0'))).toBe(true);
     expect(denied(guard('"$GH" release new v1.0.0-rc.1'))).toBe(true);
   });
+  it('reads a process substitution like a command substitution', () => {
+    expect(denied(guard('cat <(gh release create v1.0.0-rc.1)'))).toBe(true);
+    expect(denied(guard('diff <(echo a) >(gh release create v1.0.0-rc.1)'))).toBe(true);
+    expect(guard('cat <(gh release create v1.0.0-rc.1 --prerelease)')).toBeNull();
+  });
+  it('reads past reserved words and braces before the command', () => {
+    for (const cmd of [
+      'if true; then gh release create v1.0.0-rc.1; fi',
+      '{ gh release create v1.0.0-rc.1; }',
+      'while true; do gh release create v1.0.0-rc.1; done',
+      'until false; do gh release create v1.0.0-rc.1; done',
+      'if true; then :; else gh release create v1.0.0-rc.1; fi',
+      'if false; then :; elif true; then gh release create v1.0.0-rc.1; fi',
+      '! gh release create v1.0.0-rc.1'
+    ]) {
+      expect(denied(guard(cmd)), cmd).toBe(true);
+    }
+    expect(guard('if true; then gh release create v1.0.0-rc.1 --prerelease; fi')).toBeNull();
+  });
+  it('reads past wrappers and their value words', () => {
+    for (const cmd of [
+      'sudo -u x gh release create v1.0.0-rc.1',
+      'nice -n 5 gh release create v1.0.0-rc.1',
+      'env -u FOO gh release create v1.0.0-rc.1',
+      'timeout 60 gh release create v1.0.0-rc.1',
+      'timeout -s KILL 60 gh release create v1.0.0-rc.1',
+      'nohup gh release create v1.0.0-rc.1',
+      'stdbuf -oL gh release create v1.0.0-rc.1',
+      'stdbuf -o L gh release create v1.0.0-rc.1',
+      'env -S "gh release create v1.0.0-rc.1"'
+    ]) {
+      expect(denied(guard(cmd)), cmd).toBe(true);
+    }
+    expect(guard('sudo -u x gh release create v1.0.0-rc.1 --prerelease')).toBeNull();
+    expect(guard('timeout 60 gh release create v1.0.0-rc.1 --prerelease')).toBeNull();
+  });
+  it('denies a release command piped or fed into a shell', () => {
+    expect(denied(guard('echo gh release create v1.0.0 | sh'))).toBe(true);
+    expect(denied(guard("printf 'gh release create v1.0.0-rc.1 --prerelease' | bash"))).toBe(true);
+    expect(denied(guard('cat <<EOF | sh\ngh release create v1.0.0-rc.1 --prerelease\nEOF'))).toBe(true);
+    expect(denied(guard("echo 'gh release create v1.0.0' |& zsh"))).toBe(true);
+    expect(denied(guard("bash <<< 'gh release create v1.0.0'"))).toBe(true);
+    expect(denied(guard('source <(echo gh release create v1.0.0-rc.1 --prerelease)'))).toBe(true);
+    expect(guard('echo hi | sh')).toBeNull();
+    expect(guard('cat <<< "gh release create v1.0.0"')).toBeNull();
+  });
+  it('reads a path, a quoted or substituted gh, and a global value flag', () => {
+    expect(denied(guard('/usr/bin/gh release create v1.0.0'))).toBe(true);
+    expect(denied(guard('`which gh` release create v1.0.0'))).toBe(true);
+    expect(denied(guard('g""h release create v1.0.0-rc.1'))).toBe(true);
+    expect(guard('g""h release create v1.0.0-rc.1 --prerelease')).toBeNull();
+    expect(denied(guard('gh --hostname github.com release create v1.0.0-rc.1'))).toBe(true);
+    expect(guard('gh --hostname github.com release create v1.0.0-rc.1 --prerelease')).toBeNull();
+  });
+  it('reads a backslash-newline between the words as whitespace', () => {
+    expect(denied(guard('gh release \\\n create v1.0.0-rc.1'))).toBe(true);
+    expect(denied(guard('gh \\\nrelease create v1.0.0-rc.1'))).toBe(true);
+  });
+  it('denies a release-create shape the parser cannot resolve', () => {
+    expect(denied(guard('chrt 10 gh release create v1.0.0-rc.1 --prerelease'))).toBe(true);
+    expect(denied(guard('function f { gh release create v1.0.0-rc.1 --prerelease; }'))).toBe(true);
+    expect(denied(guard('echo $X release create v1.0.0'))).toBe(true);
+  });
+  it('keeps quoted words and heredoc bodies as data', () => {
+    expect(guard('grep -rn "gh release create" docs/')).toBeNull();
+    expect(guard('git commit -m "Close the gh release create gap in the hook"')).toBeNull();
+    expect(guard('cat <<EOF\ngh release create v1.0.0\nEOF')).toBeNull();
+    expect(guard('gh pr create --title "release"')).toBeNull();
+    expect(
+      guard(`gh release create v1.0.0-rc.4 --prerelease --target ${SHA} --title x`)
+    ).toBeNull();
+  });
   it('gives no decision for another literal tag or another command', () => {
     expect(guard('gh release create nightly --title x')).toBeNull();
     expect(guard('gh release list')).toBeNull();

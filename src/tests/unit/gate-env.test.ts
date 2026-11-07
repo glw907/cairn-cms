@@ -13,11 +13,13 @@ import { parseGateRows, recordLeg, recordPending } from '../../../scripts/gate/r
 import { runDriver } from '../../../scripts/gate/driver.mjs';
 
 const GATE_TOKEN = 'cfut_GateTokenValueNeverPrinted0123456789';
+const BUILD_TOKEN = 'cfut_BuildTokenValueNeverPrinted9876543210';
 const GITHUB_TOKEN = 'ghp_MachineTokenNeverPrinted0123456789';
 const PARENT_ENV = {
   PATH: process.env.PATH,
   HOME: '/home/someone',
   CF_WS_CAIRN_GATE_TOKEN: GATE_TOKEN,
+  CF_CI_CAIRN_BUILD_TOKEN: BUILD_TOKEN,
   GITHUB_TEST_LOGIN: 'gate-machine',
   GITHUB_TEST_PASSWORD: 'pw-never-printed',
   GITHUB_TEST_TOTP_SECRET: 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
@@ -41,7 +43,7 @@ describe('buildCliEnv', () => {
     expect(env.CLOUDFLARE_ACCOUNT_ID).toBe(GATE_ACCOUNT_ID);
     expect(env.CAIRN_STATE_DIR).toBe('/run/x/state');
     expect(env.GATE_URL_LOG).toBe('/run/x/urls.log');
-    expect(Object.keys(env).filter((name) => /^GITHUB_TEST_|STALWART|CF_WS|UNRELATED/.test(name))).toEqual([]);
+    expect(Object.keys(env).filter((name) => /^GITHUB_TEST_|STALWART|CF_WS|CF_CI|UNRELATED/.test(name))).toEqual([]);
   });
 
   it('refuses to build without the gate token', () => {
@@ -88,6 +90,13 @@ describe('run-gate.sh environment', () => {
       expect(dump.split('\n')).toContain(line);
     }
     expect(dump).not.toContain('UNRELATED');
+  });
+
+  it('passes the build token through by name and no other new name', () => {
+    const dump = envSeen({ CF_CI_CAIRN_BUILD_TOKEN: 'build-value', CF_CI_OTHER: 'not-allowed', CF_WS_CAIRN_GATE_TOKEN: 'gate-value' });
+    expect(dump.split('\n')).toContain('CF_CI_CAIRN_BUILD_TOKEN=build-value');
+    expect(dump.split('\n')).toContain('CF_WS_CAIRN_GATE_TOKEN=gate-value');
+    expect(dump).not.toContain('CF_CI_OTHER');
   });
 
   it('hands --headed on to the gate', () => {
@@ -304,13 +313,21 @@ describe('main under --cli', () => {
 });
 
 /** A local stand-in for the two APIs; `refuse` lists routes (method path) that answer 403. */
-async function fakeApis(refuse: string[] = []) {
+async function fakeApis(refuse: string[] = [], buildTokens: object[] = []) {
   const requests: string[] = [];
+  const calls: Array<{ key: string; auth: string; body: string }> = [];
   const ok = (result: unknown, extra: object = {}) => JSON.stringify({ success: true, errors: [], result, ...extra });
   const server = createServer((request, response) => {
     const { pathname } = new URL(request.url ?? '/', 'http://x');
     const key = `${request.method} ${pathname}`;
     requests.push(key);
+    const chunks: Buffer[] = [];
+    request.on('data', (chunk) => chunks.push(chunk));
+    request.on('end', () => {
+      calls.push({ key, auth: String(request.headers.authorization ?? ''), body: Buffer.concat(chunks).toString('utf8') });
+      answer();
+    });
+    function answer() {
     const reply = (status: number, body: string, headers: Record<string, string> = {}) => {
       response.writeHead(status, { 'content-type': 'application/json', ...headers });
       response.end(body);
@@ -319,9 +336,10 @@ async function fakeApis(refuse: string[] = []) {
     const acct = `/v4/accounts/${GATE_ACCOUNT_ID}`;
     const page = { result_info: { total_pages: 1, total_count: 1 } };
     if (key === 'GET /gh/user') return reply(200, JSON.stringify({ login: 'gate-machine' }), { 'x-oauth-scopes': 'repo, delete_repo' });
-    if (key === 'GET /v4/user/tokens/verify' || key === `GET ${acct}/tokens/verify`) return reply(200, ok({ id: 'tid', status: 'active' }));
+    if (key === 'GET /v4/user/tokens/verify') return reply(200, ok({ id: request.headers.authorization === `Bearer ${BUILD_TOKEN}` ? 'build-tid' : 'tid', status: 'active' }));
+    if (key === `GET ${acct}/tokens/verify`) return reply(200, ok({ id: 'tid', status: 'active' }));
     if (key === 'GET /v4/zones') return reply(200, ok([{ id: 'zone1', status: 'active' }], page));
-    if (key === `GET ${acct}/builds/tokens`) return reply(200, ok([], { result_info: { total_pages: 1, total_count: 0 } }));
+    if (key === `GET ${acct}/builds/tokens`) return reply(200, ok(buildTokens, { result_info: { total_pages: 1, total_count: buildTokens.length } }));
     if (key === 'GET /v4/zones/zone1/email/sending/subdomains') return reply(200, ok([{ name: 'x' }], page));
     if (key === `POST ${acct}/d1/database`) return reply(200, ok({ uuid: 'd1-id' }));
     if (key === `DELETE ${acct}/d1/database/d1-id`) return reply(200, ok(null));
@@ -330,11 +348,12 @@ async function fakeApis(refuse: string[] = []) {
     if (key === `POST ${acct}/builds/tokens`) return reply(200, ok({ build_token_uuid: 'bt-id' }));
     if (key === `DELETE ${acct}/builds/tokens/bt-id`) return reply(200, ok(null));
     return reply(404, JSON.stringify({ success: false, errors: [{ code: 7003, message: 'no route' }] }));
+    }
   });
   servers.push(server);
   await new Promise<void>((resolveListen) => server.listen(0, '127.0.0.1', resolveListen));
   const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  return { requests, apiBase: `${origin}/v4`, githubBase: `${origin}/gh` };
+  return { requests, calls, apiBase: `${origin}/v4`, githubBase: `${origin}/gh` };
 }
 
 const WRANGLER_OUT = {
@@ -342,8 +361,8 @@ const WRANGLER_OUT = {
   json: JSON.stringify({ loggedIn: true, accounts: [{ id: GATE_ACCOUNT_ID, name: 'acct' }] }),
 };
 
-async function smoke(parentEnv: Record<string, string | undefined>, refuse: string[] = []) {
-  const apis = await fakeApis(refuse);
+async function smoke(parentEnv: Record<string, string | undefined>, refuse: string[] = [], buildTokens: object[] = []) {
+  const apis = await fakeApis(refuse, buildTokens);
   const lines: string[] = [];
   const dir = mkdtempSync(join(tmpdir(), 'gate-smoke-'));
   dirs.push(dir);
@@ -358,7 +377,7 @@ async function smoke(parentEnv: Record<string, string | undefined>, refuse: stri
       now: () => 1700000000000,
     },
   });
-  return { ok, lines, requests: apis.requests };
+  return { ok, lines, requests: apis.requests, calls: apis.calls };
 }
 
 describe('runSmoke', () => {
@@ -367,14 +386,60 @@ describe('runSmoke', () => {
     expect(lines.filter((line) => line.startsWith('FAIL'))).toEqual([]);
     expect(ok).toBe(true);
     expect(lines[0]).toMatch(/^host \S+/);
-    expect(lines.filter((line) => line.startsWith('ok'))).toHaveLength(11);
-    for (const secret of [GATE_TOKEN, GITHUB_TOKEN, 'pw-never-printed', PARENT_ENV.GITHUB_TEST_TOTP_SECRET]) {
+    expect(lines.filter((line) => line.startsWith('ok'))).toHaveLength(12);
+    for (const secret of [GATE_TOKEN, BUILD_TOKEN, GITHUB_TOKEN, 'pw-never-printed', PARENT_ENV.GITHUB_TEST_TOTP_SECRET]) {
       expect(lines.join('\n')).not.toContain(secret);
     }
     const acct = `/v4/accounts/${GATE_ACCOUNT_ID}`;
     expect(requests).toContain(`DELETE ${acct}/d1/database/d1-id`);
     expect(requests).toContain(`DELETE ${acct}/builds/tokens/bt-id`);
     expect(requests.filter((key) => key.startsWith(`DELETE ${acct}/r2/buckets/cairn-e2e-gate-probe-1700000000000`))).toHaveLength(1);
+  });
+
+  it('runs the D1, R2, and build token verify calls on the build token and the registration on the gate token', async () => {
+    const { calls } = await smoke(PARENT_ENV);
+    const acct = `/v4/accounts/${GATE_ACCOUNT_ID}`;
+    const bearer = (key: string | RegExp) => calls.filter((c) => (typeof key === 'string' ? c.key === key : key.test(c.key))).map((c) => c.auth);
+    expect(bearer(`POST ${acct}/d1/database`)).toEqual([`Bearer ${BUILD_TOKEN}`]);
+    expect(bearer(`DELETE ${acct}/d1/database/d1-id`)).toEqual([`Bearer ${BUILD_TOKEN}`]);
+    expect(bearer(`POST ${acct}/r2/buckets`)).toEqual([`Bearer ${BUILD_TOKEN}`]);
+    expect(bearer(/^DELETE .*\/r2\/buckets\//)).toEqual([`Bearer ${BUILD_TOKEN}`]);
+    expect(bearer('GET /v4/user/tokens/verify')).toEqual([`Bearer ${GATE_TOKEN}`, `Bearer ${BUILD_TOKEN}`]);
+    expect(bearer(`DELETE ${acct}/builds/tokens/bt-id`)).toEqual([`Bearer ${GATE_TOKEN}`]);
+    const post = calls.find((c) => c.key === `POST ${acct}/builds/tokens`)!;
+    expect(post.auth).toBe(`Bearer ${GATE_TOKEN}`);
+    const body = JSON.parse(post.body);
+    expect(body).toMatchObject({ build_token_secret: BUILD_TOKEN, cloudflare_token_id: 'build-tid' });
+    expect(body.build_token_name).toMatch(/^cairn-e2e-gate-probe-/);
+    expect(body.build_token_name).not.toBe('cairn-build');
+  });
+
+  it('fails when the build token is not in the environment', async () => {
+    const { CF_CI_CAIRN_BUILD_TOKEN: _omitted, ...without } = PARENT_ENV;
+    const { ok, lines } = await smoke(without);
+    expect(ok).toBe(false);
+    expect(lines.find((line) => line.startsWith('FAIL') && line.includes('build token at /user/tokens/verify'))).toContain('CF_CI_CAIRN_BUILD_TOKEN');
+  });
+
+  describe('the registrations info line', () => {
+    const line = (lines: string[]) => lines.find((l) => l.includes('cairn-build registrations')) ?? '';
+    it('counts one cairn-build entry, prints its uuid, and reports a match', async () => {
+      const { lines, ok } = await smoke(PARENT_ENV, [], [{ build_token_name: 'cairn-build', build_token_uuid: 'u-1', cloudflare_token_id: 'build-tid' }]);
+      expect(ok).toBe(true);
+      expect(line(lines)).toBe('info     cairn-build registrations: 1 uuid=u-1 token-id-match=yes; probe registrations: 0');
+    });
+    it('reports a mismatch when the id differs', async () => {
+      const { lines } = await smoke(PARENT_ENV, [], [{ build_token_name: 'cairn-build', build_token_uuid: 'u-1', cloudflare_token_id: 'other' }]);
+      expect(line(lines)).toContain('token-id-match=no');
+    });
+    it('counts none', async () => {
+      const { lines } = await smoke(PARENT_ENV);
+      expect(line(lines)).toBe('info     cairn-build registrations: 0; probe registrations: 0');
+    });
+    it('counts a leftover probe entry', async () => {
+      const { lines } = await smoke(PARENT_ENV, [], [{ build_token_name: 'cairn-e2e-gate-probe-x', build_token_uuid: 'u-9' }]);
+      expect(line(lines)).toBe('info     cairn-build registrations: 0; probe registrations: 1');
+    });
   });
 
   it('records a refused verify route as a FAIL, keeps going, and returns false', async () => {

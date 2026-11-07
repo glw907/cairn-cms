@@ -97,7 +97,8 @@ export async function runSmoke({ env, runDir, deps = {} }) {
   } = deps;
   const cliEnv = buildCliEnv({ runDir, parentEnv: env });
   const token = cliEnv.CLOUDFLARE_API_TOKEN;
-  const secrets = [token, env.GITHUB_TEST_TOKEN, env.GITHUB_TEST_PASSWORD, env.GITHUB_TEST_TOTP_SECRET];
+  const buildToken = env.CF_CI_CAIRN_BUILD_TOKEN;
+  const secrets = [token, buildToken, env.GITHUB_TEST_TOKEN, env.GITHUB_TEST_PASSWORD, env.GITHUB_TEST_TOTP_SECRET];
   /** @param {string} text */
   const scrub = (text) => {
     let clean = text;
@@ -137,12 +138,13 @@ export async function runSmoke({ env, runDir, deps = {} }) {
    * @param {string} method
    * @param {string} route a path under the Cloudflare API base
    * @param {unknown} [body]
+   * @param {string} [bearer] the token to send; the gate token when omitted
    * @returns {Promise<{ status: number, json: any }>}
    */
-  async function cf(method, route, body) {
+  async function cf(method, route, body, bearer = token) {
     const response = await fetchImpl(`${apiBase}${route}`, {
       method,
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await response.text();
@@ -177,6 +179,8 @@ export async function runSmoke({ env, runDir, deps = {} }) {
   let zoneId;
   /** @type {string | undefined} */
   let verifiedId;
+  /** @type {string | undefined} */
+  let buildVerifiedId;
 
   try {
     await check('gate token at /user/tokens/verify', async () => {
@@ -187,6 +191,13 @@ export async function runSmoke({ env, runDir, deps = {} }) {
     // Informational: a user-owned token cannot use the account verify route, and the setup tool never calls it.
     await info('gate token at /accounts/<id>/tokens/verify', async () => {
       const result = mustSucceed(await cf('GET', `/accounts/${GATE_ACCOUNT_ID}/tokens/verify`), 'the account verify route');
+      return `status ${result.status}`;
+    });
+    // Every Builds leg answers the CLI's build-token prompt with this second token, so its absence fails.
+    await check('build token at /user/tokens/verify', async () => {
+      if (!buildToken) throw new Error('CF_CI_CAIRN_BUILD_TOKEN is not in the environment; the age store holds the build token.');
+      const result = mustSucceed(await cf('GET', '/user/tokens/verify', undefined, buildToken), '/user/tokens/verify with the build token');
+      buildVerifiedId = result.id;
       return `status ${result.status}`;
     });
     await check(`makeApi.listZones for ${TEST_DOMAIN}`, async () => {
@@ -237,23 +248,36 @@ export async function runSmoke({ env, runDir, deps = {} }) {
 
     const probe = `cairn-e2e-gate-probe-${now()}`;
     await check(`D1 write probe ${probe}`, async () => {
-      const created = mustSucceed(await cf('POST', `/accounts/${GATE_ACCOUNT_ID}/d1/database`, { name: probe }), 'D1 create');
-      mustSucceed(await cf('DELETE', `/accounts/${GATE_ACCOUNT_ID}/d1/database/${created.uuid}`), `D1 delete (left behind: ${probe})`);
+      const created = mustSucceed(await cf('POST', `/accounts/${GATE_ACCOUNT_ID}/d1/database`, { name: probe }, buildToken), 'D1 create');
+      mustSucceed(await cf('DELETE', `/accounts/${GATE_ACCOUNT_ID}/d1/database/${created.uuid}`, undefined, buildToken), `D1 delete (left behind: ${probe})`);
       return 'created and deleted';
     });
     await check(`R2 write probe ${probe}`, async () => {
-      mustSucceed(await cf('POST', `/accounts/${GATE_ACCOUNT_ID}/r2/buckets`, { name: probe }), 'R2 create');
-      mustSucceed(await cf('DELETE', `/accounts/${GATE_ACCOUNT_ID}/r2/buckets/${probe}`), `R2 delete (left behind: ${probe})`);
+      mustSucceed(await cf('POST', `/accounts/${GATE_ACCOUNT_ID}/r2/buckets`, { name: probe }, buildToken), 'R2 create');
+      mustSucceed(await cf('DELETE', `/accounts/${GATE_ACCOUNT_ID}/r2/buckets/${probe}`, undefined, buildToken), `R2 delete (left behind: ${probe})`);
       return 'created and deleted';
     });
     await check(`build token registration probe ${probe}`, async () => {
-      if (!verifiedId) throw new Error('the user verify route gave no token id');
-      const created = await api.createBuildToken({ name: probe, secret: token, cloudflareTokenId: verifiedId });
+      if (!buildToken || !buildVerifiedId) throw new Error('the build token verify route gave no token id');
+      // Registering needs Workers CI, which only the gate token holds, so the gate token's api sends
+      // it; the registration carries the build token as its secret.
+      const created = await api.createBuildToken({ name: probe, secret: buildToken, cloudflareTokenId: buildVerifiedId });
       mustSucceed(
         await cf('DELETE', `/accounts/${GATE_ACCOUNT_ID}/builds/tokens/${created.build_token_uuid}`),
         `build token delete (left behind: ${probe})`,
       );
-      return 'Builds accepted the gate token; registered and deleted';
+      return 'Builds accepted the build token; registered and deleted';
+    });
+    // Integrity: the standing registration is named `cairn-build`; a probe leftover starts with the probe prefix.
+    await info('cairn-build registrations', async () => {
+      const tokens = await api.getBuildTokens();
+      const standing = tokens.filter((/** @type {{ build_token_name?: string }} */ entry) => entry.build_token_name === 'cairn-build');
+      const probes = tokens.filter((/** @type {{ build_token_name?: string }} */ entry) => entry.build_token_name?.startsWith('cairn-e2e-gate-probe-'));
+      const each = standing.map(
+        (/** @type {{ build_token_uuid?: string, cloudflare_token_id?: string }} */ entry) =>
+          `uuid=${entry.build_token_uuid} token-id-match=${buildVerifiedId && entry.cloudflare_token_id === buildVerifiedId ? 'yes' : 'no'}`,
+      );
+      return `${standing.length}${each.length ? ` ${each.join(', ')}` : ''}; probe registrations: ${probes.length}`;
     });
   } finally {
     if (previousBase === undefined) delete process.env.CAIRN_CLOUDFLARE_API_BASE;

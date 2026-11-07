@@ -44,7 +44,7 @@ echo "run dir: $run_dir"
 allowed=()
 while IFS= read -r name; do
   allowed+=("$name=${!name}")
-done < <(compgen -e | grep -E '^(CF_WS_CAIRN_GATE_TOKEN|STALWART_PASSWORD_CAIRN_GATE|GITHUB_TEST_[A-Z_]+|GATE_[A-Z_]+)$' || true)
+done < <(compgen -e | grep -E '^(CF_WS_CAIRN_GATE_TOKEN|CF_CI_CAIRN_BUILD_TOKEN|STALWART_PASSWORD_CAIRN_GATE|GITHUB_TEST_[A-Z_]+|GATE_[A-Z_]+)$' || true)
 
 # The display and session-bus names the headed browser and notify-send need. Each is passed only
 # when set, so a host without a display passes none.

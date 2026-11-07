@@ -245,10 +245,10 @@ export async function markerCommit({ fetchImpl = fetch, githubBase = 'https://ap
 
 /**
  * The answers the CLI's prompts take on a leg, matched by prompt text.
- * @param {{ siteName: string, dir: string, ownerEmail: string, token: string, accountName: string, plan: (typeof LEG_PLANS)[string] }} input
+ * @param {{ siteName: string, dir: string, ownerEmail: string, token: string, buildToken?: string, accountName: string, plan: (typeof LEG_PLANS)[string] }} input
  * @returns {import('./driver.mjs').PromptEntry[]}
  */
-export function promptTable({ siteName, dir, ownerEmail, token, accountName, plan }) {
+export function promptTable({ siteName, dir, ownerEmail, token, buildToken = '', accountName, plan }) {
   return [
     { match: 'Site name', kind: 'text', value: siteName },
     { match: 'Short description', kind: 'text' },
@@ -263,6 +263,7 @@ export function promptTable({ siteName, dir, ownerEmail, token, accountName, pla
     { match: 'Sign-in email', kind: 'text', value: ownerEmail },
     { match: 'Which Cloudflare account', kind: 'select', label: accountName },
     { match: 'Paste your Cloudflare API token', kind: 'password', value: () => token },
+    { match: 'Paste your Workers Builds deploy token', kind: 'password', value: () => buildToken },
     { match: 'Connect a domain you own to this site now?', kind: 'confirm', answer: plan.domain },
     { match: 'Which domain do you want to connect?', kind: 'text', value: TEST_DOMAIN },
     { match: 'Copy these records into the new zone?', kind: 'confirm', answer: true },
@@ -354,10 +355,74 @@ export function cliFailureMessage(result, capture, lines = 8) {
  * @property {typeof tailUrlLog} tailUrlLog follows the URL log
  * @property {typeof publishViaAdmin} publishViaAdmin publishes the leg's edit
  * @property {typeof recordLeg} recordLeg writes the leg's row
+ * @property {(options: { token: string, accountId: string }) => Promise<BuildsReader>} makeBuildsApi
+ *  the Cloudflare client a Builds leg reads its trigger and builds through
  */
 
+/**
+ * The reads a Builds leg logs.
+ * @typedef {object} BuildsReader
+ * @property {(workerName: string) => Promise<string | undefined>} findWorkerTag the tag for a Worker name
+ * @property {(tag: string) => Promise<any[]>} listBuildTriggers the Worker's triggers
+ * @property {(tag: string) => Promise<any[]>} listBuildsForWorker the Worker's builds
+ */
+
+// A computed specifier keeps the type check from pulling the package's untyped source into this graph.
+const API_MODULE = new URL('../../packages/create-cairn-site/src/cloudflare/api.mjs', import.meta.url).href;
+
+/** @type {LegDeps['makeBuildsApi']} */
+async function makeBuildsApiDefault(options) {
+  return (await import(API_MODULE)).makeApi(options);
+}
+
 /** @type {LegDeps} */
-const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin, recordLeg };
+const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin, recordLeg, makeBuildsApi: makeBuildsApiDefault };
+
+/**
+ * Log, before teardown, which build token the install's trigger uses and which keys the newest
+ * build's trigger metadata carries. A failed read is logged and never fails the leg. Neither line
+ * prints a secret: a uuid and key names only.
+ * @param {LegContext} ctx
+ * @param {LegDeps} deps
+ * @param {any} record the install's state record
+ */
+async function logBuildsFacts(ctx, deps, record) {
+  const { log, cliEnv } = ctx;
+  /** @param {unknown} error */
+  const why = (error) => (error instanceof Error ? error.message : String(error));
+  /** @type {BuildsReader} */
+  let api;
+  /** @type {string | undefined} */
+  let tag;
+  try {
+    api = await deps.makeBuildsApi({ token: cliEnv.CLOUDFLARE_API_TOKEN, accountId: cliEnv.CLOUDFLARE_ACCOUNT_ID });
+    const workerName = record?.cloudflare?.workerName;
+    if (!workerName) throw new Error('the state record names no Worker');
+    tag = await api.findWorkerTag(workerName);
+    if (!tag) throw new Error(`no Worker named ${workerName}`);
+  } catch (error) {
+    log(`trigger build token: read failed: ${why(error)}`);
+    log(`build trigger metadata keys: read failed: ${why(error)}`);
+    return;
+  }
+  try {
+    const triggers = await api.listBuildTriggers(tag);
+    const recorded = record?.cloudflare?.buildsTriggerUuid;
+    const trigger = triggers.find((/** @type {{ trigger_uuid?: string }} */ t) => t.trigger_uuid === recorded) ?? triggers[0];
+    if (!trigger?.build_token_uuid) throw new Error('no trigger holds a build token');
+    log(`trigger build token: ${trigger.build_token_uuid}`);
+  } catch (error) {
+    log(`trigger build token: read failed: ${why(error)}`);
+  }
+  try {
+    const builds = await api.listBuildsForWorker(tag);
+    const newest = [...builds].sort((a, b) => String(b.created_on ?? '').localeCompare(String(a.created_on ?? '')))[0];
+    if (!newest) throw new Error('no build is listed');
+    log(`build trigger metadata keys: ${Object.keys(newest.build_trigger_metadata ?? {}).sort().join(', ') || '(none)'}`);
+  } catch (error) {
+    log(`build trigger metadata keys: read failed: ${why(error)}`);
+  }
+}
 
 /** @typedef {{ path: string, url: string, commit: string, marker: string, fetched: string }} RowCells */
 
@@ -453,7 +518,7 @@ async function runLegSteps(ctx, deps, cells) {
       args: [...(ctx.cli ? ['--yes', `file:${ctx.cli}`] : ['--yes', '--prefer-online', `create-cairn-site@${version}`]), '--dir', install.dir, ...extra],
       env: cliEnv,
       cwd: path.dirname(install.dir),
-      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: ownerEmailFor(env), token, accountName, plan }),
+      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: ownerEmailFor(env), token, buildToken: env.CF_CI_CAIRN_BUILD_TOKEN ?? '', accountName, plan }),
       logPath: path.join(runDir, 'driver.log'),
       capturePath,
       signal: abort.signal,
@@ -471,6 +536,8 @@ async function runLegSteps(ctx, deps, cells) {
   if (!origin) {
     return { pass: false, failures: ['the state record holds no workers.dev address'] };
   }
+
+  if (plan.builds) await logBuildsFacts(ctx, deps, record);
 
   if (!install.signedIn) {
     const signIn = await runCli(['--sign-in']);

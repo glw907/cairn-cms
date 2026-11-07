@@ -284,6 +284,16 @@ describe('promptTable', () => {
   });
 });
 
+describe('promptTable build token', () => {
+  it('answers the Workers Builds deploy token prompt with the build token, apart from the gate token', () => {
+    const table = promptTable({ siteName: 's', dir: '/d', ownerEmail: 'o@x', token: 'gate-t', buildToken: 'build-t', accountName: 'glw907', plan: LEG_PLANS.A2 });
+    const entry = table.find((e) => 'Paste your Workers Builds deploy token'.includes(e.match));
+    expect(entry).toMatchObject({ match: 'Paste your Workers Builds deploy token', kind: 'password' });
+    expect((entry as { value: () => string }).value()).toBe('build-t');
+    expect((table.find((e) => e.match === 'Paste your Cloudflare API token') as { value: () => string }).value()).toBe('gate-t');
+  });
+});
+
 describe('runLeg', () => {
   /** Test doubles for the injected collaborators, which the real signatures over-constrain. */
   const fake = (deps: Record<string, unknown>) => deps as unknown as Parameters<typeof runLeg>[1];
@@ -408,6 +418,7 @@ describe('runLeg', () => {
       const running = runLeg(ctx, fake({
         recordLeg,
         tailUrlLog: () => ({ stop: async () => {} }),
+        makeBuildsApi: async () => { throw new Error('no api in this test'); },
         runDriver: async () => { writeRecord(); return { code: 0, screen: '' }; },
         publishViaAdmin: async () => ({ entryPath: '/about', alertText: 'wrong', control: null }),
       }));
@@ -426,6 +437,55 @@ describe('runLeg', () => {
       vi.unstubAllGlobals();
       vi.useRealTimers();
     }
+  });
+
+  describe('the Builds legs log the trigger build token before teardown', () => {
+    function buildsRig(reader: Record<string, unknown>) {
+      const { ctx, runDir, install } = setup();
+      ctx.leg = 'A2';
+      ctx.install.signedIn = true;
+      const logged: string[] = [];
+      ctx.log = (line: string) => logged.push(line);
+      const writeRecord = () => {
+        mkdirSync(path.join(runDir, 'state'), { recursive: true });
+        writeFileSync(path.join(runDir, 'state', 'r.json'), JSON.stringify({ dir: install.dir, cloudflare: { url: 'https://x.workers.dev', workerName: 'w', buildsTriggerUuid: 't2' } }));
+      };
+      const deps = fake({
+        recordLeg: recorder().recordLeg,
+        runDriver: async () => { writeRecord(); return { code: 0, screen: '' }; },
+        makeBuildsApi: async () => ({ findWorkerTag: async () => 'tag', listBuildTriggers: async () => [], listBuildsForWorker: async () => [], ...reader }),
+        publishViaAdmin: async () => { throw new Error('stop'); },
+      });
+      return { ctx, deps, logged };
+    }
+
+    it('logs the uuid of the recorded trigger once, and the newest build metadata key names', async () => {
+      const { ctx, deps, logged } = buildsRig({
+        listBuildTriggers: async () => [{ trigger_uuid: 't1', build_token_uuid: 'other' }, { trigger_uuid: 't2', build_token_uuid: 'bt-2' }],
+        listBuildsForWorker: async () => [
+          { created_on: '2026-01-01', build_trigger_metadata: { old: 1 } },
+          { created_on: '2026-02-01', build_trigger_metadata: { commit_hash: 'x', build_trigger_uuid: 'y' } },
+        ],
+      });
+      await expect(runLeg(ctx, deps)).rejects.toThrow('stop');
+      expect(logged.filter((l) => l.startsWith('trigger build token:'))).toEqual(['trigger build token: bt-2']);
+      expect(logged).toContain('build trigger metadata keys: build_trigger_uuid, commit_hash');
+    });
+
+    it('logs one read-failed line when the read fails, and the leg goes on', async () => {
+      const { ctx, deps, logged } = buildsRig({
+        listBuildTriggers: async () => { throw new Error('boom 9109'); },
+      });
+      await expect(runLeg(ctx, deps)).rejects.toThrow('stop');
+      expect(logged.filter((l) => l.startsWith('trigger build token:'))).toEqual(['trigger build token: read failed: boom 9109']);
+    });
+
+    it('logs nothing on a leg without Builds', async () => {
+      const { ctx, deps, logged } = buildsRig({});
+      ctx.leg = 'A1';
+      await expect(runLeg(ctx, deps)).rejects.toThrow('stop');
+      expect(logged.filter((l) => l.startsWith('trigger build token'))).toEqual([]);
+    });
   });
 
   it('logs a record write that throws and leaves the verdict and the error as they were', async () => {

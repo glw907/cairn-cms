@@ -241,6 +241,100 @@ describe('findSignInMessage', () => {
     expect(reason).not.toContain('settings/keys');
   });
 
+  /** A server that answers every request with `handler`, returning its origin. */
+  async function listen(handler: (request: import('node:http').IncomingMessage, response: import('node:http').ServerResponse, origin: string) => void) {
+    const server = createServer((request, response) => handler(request, response, `http://127.0.0.1:${(server.address() as AddressInfo).port}`));
+    servers.push(server);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  }
+
+  it('re-sends the credentials when the session URL redirects to another origin, which fetch would strip', async () => {
+    // The real session URL (907.life) answers 308 to ward.907.life; a fetch that follows it drops Authorization.
+    const wanted = signIn();
+    const target = await listen((request, response, origin) => {
+      if (!request.headers.authorization) {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ apiUrl: `${origin}/api`, primaryAccounts: {} }));
+        return;
+      }
+      if (request.url === '/.well-known/jmap') {
+        response.end(JSON.stringify({ apiUrl: `${origin}/api`, primaryAccounts: { 'urn:ietf:params:jmap:mail': 'acct' } }));
+        return;
+      }
+      let body = '';
+      request.on('data', (chunk) => (body += String(chunk)));
+      request.on('end', () => {
+        // Like ward, answer an unknown account with a method error, not an HTTP error.
+        if (!body.includes('"accountId":"acct"')) {
+          response.end(JSON.stringify({ methodResponses: [['error', { type: 'accountNotFound' }, 'q']] }));
+          return;
+        }
+        const list = [{ id: 'm0', receivedAt: wanted.receivedAt, from: [{ email: wanted.from }], to: [{ email: wanted.to }], subject: wanted.subject, textBody: [{ partId: '1' }], bodyValues: { '1': { value: wanted.text } }, mailboxIds: { inbox: true } }];
+        response.end(JSON.stringify({ methodResponses: [['Email/query', { ids: ['m0'] }, 'q'], ['Email/get', { list }, 'g']] }));
+      });
+    });
+    const front = await listen((_request, response) => {
+      response.statusCode = 308;
+      response.setHeader('location', `${target}/.well-known/jmap`);
+      response.end();
+    });
+    // A different hostname, as 907.life to ward.907.life is: that is what makes fetch drop Authorization.
+    const result = await findSignInMessage({ ...base, sessionUrl: `${front.replace('127.0.0.1', 'localhost')}/.well-known/jmap`, trustedHosts: ['127.0.0.1'], ...clock() });
+    expect(result).toMatchObject({ found: true, from: MAIL_SENDER });
+  });
+
+  it('does not take the credentials to a redirect target it does not trust', async () => {
+    const target = await listen((request, response) => {
+      response.end(JSON.stringify({ seen: request.headers.authorization ?? 'none' }));
+    });
+    const front = await listen((_request, response) => {
+      response.statusCode = 308;
+      response.setHeader('location', `${target}/.well-known/jmap`);
+      response.end();
+    });
+    const result = await findSignInMessage({ ...base, sessionUrl: `${front.replace('127.0.0.1', 'localhost')}/.well-known/jmap`, ...clock() });
+    expect(result.found).toBe(false);
+    expect((result as { reason: string }).reason).toContain('not a trusted host');
+  });
+
+  it('fails naming the error type when a JMAP method answers an error, never as an empty mailbox', async () => {
+    const origin = await listen((request, response, here) => {
+      if (request.url === '/.well-known/jmap') {
+        response.end(JSON.stringify({ apiUrl: `${here}/api`, primaryAccounts: { 'urn:ietf:params:jmap:mail': 'acct' } }));
+        return;
+      }
+      response.end(JSON.stringify({ methodResponses: [['error', { type: 'accountNotFound' }, 'q'], ['error', { type: 'accountNotFound' }, 'g']] }));
+    });
+    const result = await findSignInMessage({ ...base, sessionUrl: `${origin}/.well-known/jmap`, budgetMs: 30_000, ...clock() });
+    expect(result.found).toBe(false);
+    const reason = (result as { reason: string }).reason;
+    expect(reason).toContain('accountNotFound');
+    expect(reason).not.toContain('0 messages');
+  });
+
+  it('fails when the session holds no mail account, naming that and not an empty mailbox', async () => {
+    const origin = await listen((_request, response, here) => {
+      response.end(JSON.stringify({ apiUrl: `${here}/api`, primaryAccounts: {} }));
+    });
+    const result = await findSignInMessage({ ...base, sessionUrl: `${origin}/.well-known/jmap`, ...clock() });
+    expect(result).toEqual({ found: false, reason: 'the JMAP session holds no mail account for this login' });
+  });
+
+  it('fails naming the status when the API call itself is refused', async () => {
+    const origin = await listen((request, response, here) => {
+      if (request.url === '/.well-known/jmap') {
+        response.end(JSON.stringify({ apiUrl: `${here}/api`, primaryAccounts: { 'urn:ietf:params:jmap:mail': 'acct' } }));
+        return;
+      }
+      response.statusCode = 401;
+      response.end('no');
+    });
+    const result = await findSignInMessage({ ...base, sessionUrl: `${origin}/.well-known/jmap`, budgetMs: 30_000, ...clock() });
+    expect(result.found).toBe(false);
+    expect((result as { reason: string }).reason).toContain('401');
+  });
+
   it('refuses a sign-in link on another origin', async () => {
     const stub = await serve([signIn({ text: `Sign in: ${link('https://evil.example')}` })]);
     await expect(findSignInMessage({ ...base, sessionUrl: stub.sessionUrl, ...clock() })).rejects.toThrow(/refusing to open it/);

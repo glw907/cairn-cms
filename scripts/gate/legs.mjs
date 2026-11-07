@@ -131,13 +131,52 @@ export async function guardedRun(work, teardown) {
  * @property {string} owner the address the link was requested for
  * @property {number} sinceMs the time the request was made
  * @property {string} expectedOrigin the origin the link must carry
- * @property {string} [sessionUrl] the JMAP session (`https://907.life/.well-known/jmap`)
+ * @property {string} [sessionUrl] the JMAP session (`https://ward.907.life/.well-known/jmap`, the host that serves it; `907.life` answers 308 to it)
+ * @property {string[]} [trustedHosts] other hosts a redirect may take the credentials to; by default the session host's registrable domain
  * @property {typeof fetch} [fetchImpl] the fetch
  * @property {number} [budgetMs] how long to poll (10 minutes)
  * @property {number} [intervalMs] the gap between polls (15 seconds)
  * @property {(ms: number) => Promise<void>} [sleep] the wait
  * @property {() => number} [now] the clock
  */
+
+/**
+ * The registrable domain of the session host (its last two labels), so a redirect from `907.life`
+ * to `ward.907.life` keeps its credentials. An IP address or a bare host trusts nothing.
+ * @param {string} sessionUrl
+ * @returns {string[]} the trusted domains: a host equal to one, or ending in `.` plus one, is trusted
+ */
+function sameRegistrableDomain(sessionUrl) {
+  const host = new URL(sessionUrl).hostname;
+  const labels = host.split('.');
+  if (labels.length < 2 || /^\d+(\.\d+){3}$/.test(host) || host.includes(':')) return [];
+  return [labels.slice(-2).join('.')];
+}
+
+/**
+ * Fetch with credentials, following redirects by hand. `fetch` drops the Authorization header on a
+ * redirect to another host, so a session URL that redirects (`907.life` to `ward.907.life`) reaches
+ * the server anonymous and gets an empty session. A same-host redirect is followed as it comes; one
+ * to another host re-sends the credentials only when that host is trusted, and otherwise throws.
+ * @param {typeof fetch} fetchImpl
+ * @param {string} url
+ * @param {RequestInit} init
+ * @param {string[]} trusted hostnames, or registrable domains, a redirect may take the credentials to
+ * @returns {Promise<Response>}
+ */
+async function fetchWithAuth(fetchImpl, url, init, trusted) {
+  let target = new URL(url);
+  for (let hop = 0; hop < 5; hop++) {
+    const response = await fetchImpl(target, { ...init, redirect: 'manual' });
+    const location = response.headers.get('location');
+    if (response.status < 300 || response.status >= 400 || !location) return response;
+    const next = new URL(location, target);
+    const allowed = next.hostname === target.hostname || trusted.some((entry) => next.hostname === entry || next.hostname.endsWith(`.${entry}`));
+    if (!allowed) throw new Error(`the request was redirected to ${next.hostname}, which is not a trusted host`);
+    target = next;
+  }
+  throw new Error('too many redirects');
+}
 
 /**
  * Poll the gate mailbox over JMAP for the sign-in message the request caused: received after the
@@ -154,24 +193,38 @@ export async function findSignInMessage(query) {
     owner,
     sinceMs,
     expectedOrigin,
-    sessionUrl = 'https://907.life/.well-known/jmap',
+    sessionUrl = 'https://ward.907.life/.well-known/jmap',
     fetchImpl = fetch,
+    trustedHosts,
     budgetMs = 10 * 60_000,
     intervalMs = 15_000,
     sleep = (/** @type {number} */ ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     now = Date.now,
   } = query;
   const authorization = `Basic ${Buffer.from(`${login}:${password}`).toString('base64')}`;
-  const sessionResponse = await fetchImpl(sessionUrl, { headers: { authorization } });
+  const trusted = trustedHosts ?? sameRegistrableDomain(sessionUrl);
+  /** @type {Response} */
+  let sessionResponse;
+  try {
+    sessionResponse = await fetchWithAuth(fetchImpl, sessionUrl, { headers: { authorization } }, trusted);
+  } catch (error) {
+    return { found: false, reason: `the JMAP session read failed: ${/** @type {Error} */ (error).message}`.slice(0, 200) };
+  }
   if (sessionResponse.status !== 200) return { found: false, reason: `the JMAP session answered ${sessionResponse.status}` };
-  const session = /** @type {{ apiUrl: string, primaryAccounts: Record<string, string> }} */ (await sessionResponse.json());
-  const accountId = session.primaryAccounts['urn:ietf:params:jmap:mail'];
+  const session = /** @type {{ apiUrl: string, primaryAccounts?: Record<string, string> }} */ (await sessionResponse.json());
+  const accountId = session.primaryAccounts?.['urn:ietf:params:jmap:mail'];
+  // A login the server does not know can still get a 200 session with no accounts; reading it as an
+  // empty mailbox would hide the real cause.
+  if (!accountId) return { found: false, reason: 'the JMAP session holds no mail account for this login' };
   const subject = `Sign in to ${siteName}`;
   const deadline = now() + budgetMs;
   /** What the last poll saw since the request, named by sender and subject only, so a miss says what arrived instead. */
   let seen = 'the mailbox held 0 messages since the request';
   for (;;) {
-    const response = await fetchImpl(session.apiUrl, {
+    /** @type {Response} */
+    let response;
+    try {
+      response = await fetchWithAuth(fetchImpl, session.apiUrl, {
       method: 'POST',
       headers: { authorization, 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -190,9 +243,19 @@ export async function findSignInMessage(query) {
           ],
         ],
       }),
-    });
+      }, trusted);
+    } catch (error) {
+      return { found: false, reason: `the JMAP read failed: ${/** @type {Error} */ (error).message}`.slice(0, 200) };
+    }
+    if (response.status !== 200 && response.status >= 400 && response.status < 500) {
+      return { found: false, reason: `the JMAP API answered ${response.status}` };
+    }
     if (response.status === 200) {
-      const answer = /** @type {{ methodResponses: Array<[string, { list?: any[] }, string]> }} */ (await response.json());
+      const answer = /** @type {{ methodResponses: Array<[string, { list?: any[], type?: string }, string]> }} */ (await response.json());
+      // A JMAP method error is an answer, not an empty list: naming it keeps a bad account or a
+      // refused login from reading as "0 messages".
+      const failed = answer.methodResponses.find((call) => call[0] === 'error');
+      if (failed) return { found: false, reason: `the JMAP read failed: ${failed[1]?.type ?? 'unknown error'}` };
       const list = answer.methodResponses.find((call) => call[0] === 'Email/get')?.[1].list ?? [];
       const recent = list.filter((message) => Date.parse(message.receivedAt) >= sinceMs - 1000);
       seen =

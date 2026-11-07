@@ -5,8 +5,9 @@
 - **Workers Builds deploys with a narrow token of its own.** `create-cairn-site --connect` now asks for
   a second token with Workers Scripts, D1, and Workers R2 Storage at edit, registers it once per
   Cloudflare account as `cairn-build`, and reuses it for later sites. The setup token no longer
-  becomes the build token. An unattended run reads `CAIRN_CF_BUILD_TOKEN`, and `build-token-missing`
-  and `build-token-invalid` refuse a run with neither a usable registration nor a usable variable.
+  becomes the build token. An unattended run reads `CAIRN_CF_BUILD_TOKEN`. `build-token-missing` stops
+  it when neither a registration nor the variable exists, and `build-token-invalid` stops any run
+  whose deploy token Cloudflare refuses.
 - **Setup reports a site live when only this computer's resolver is behind.** When the authoritative
   nameservers serve the domain and a pinned HTTPS check finds the site, setup reports it live and
   prints one line that the resolver may take up to 30 minutes to see it.

@@ -104,9 +104,9 @@ Workers Builds is Cloudflare's service for building and deploying from a reposit
 
 Until Builds is connected, a publish from the admin commits to GitHub and the live site doesn't change. To deploy, connect Builds or deploy by hand.
 
-Workers Builds uses two tokens. The setup token is the one you paste for the domain parts, plus one more permission, Workers Builds, which lets the command connect your repository and watch builds. The command keeps it only while setup runs.
+Workers Builds uses two tokens. The setup token is the one you paste for the domain parts, plus one more permission, Workers Builds, which lets the command connect your repository and watch builds. The command keeps it until Builds setup finishes, and deletes it then.
 
-The second token is the one Workers Builds deploys with. It carries three permissions, each at the edit level: Workers Scripts, D1, and Workers R2 Storage. Cloudflare keeps it, registered with Workers Builds under the name `cairn-build`, and hands it to every build, so anyone who can push to your default branch can read it. It is narrow on purpose: it can deploy your site and nothing else, and it cannot edit DNS, zones, or email.
+The second token is the one Workers Builds deploys with. It carries three permissions, each at the edit level: Workers Scripts, D1, and Workers R2 Storage. Cloudflare keeps it, registered with Workers Builds under the name `cairn-build`, and hands it to every build, so anyone who can push to your default branch can read it. It is narrow on purpose. It can deploy Workers and edit D1 and R2 on your accounts, and it cannot edit DNS, zones, or email.
 
 You create the `cairn-build` token once for each Cloudflare account. A later site on the same account finds the registration and reuses it without asking. Revoking or rolling the token later can break your automatic deploys: the next push builds and then fails. If you rotate tokens on a schedule, update this one too.
 
@@ -121,7 +121,7 @@ You create the `cairn-build` token once for each Cloudflare account. A later sit
 4. If the command asks, authorize Cloudflare's Workers and Pages GitHub App on your account.
 5. Click the sign-in link the command opens later in the run.
 
-An unattended run, with `--yes`, can't open a browser or ask for a paste. Set `CAIRN_CF_API_TOKEN` to the setup token, and for the first site on an account set `CAIRN_CF_BUILD_TOKEN` to the deploy token. With neither a registered `cairn-build` token nor `CAIRN_CF_BUILD_TOKEN`, the run stops with `build-token-missing` and changes nothing. [Recover a setup that stopped](./setup-recovery.md#connect-to-workers-builds) covers it.
+An unattended run, with `--yes`, can't open a browser or ask for a paste. Set `CAIRN_CF_API_TOKEN` to the setup token, and for the first site on an account set `CAIRN_CF_BUILD_TOKEN` to the deploy token. With neither a registered `cairn-build` token nor `CAIRN_CF_BUILD_TOKEN`, the run stops with `build-token-missing` before it registers anything, and the site keeps working. [Recover a setup that stopped](./setup-recovery.md#connect-to-workers-builds) covers it.
 
 If the Workers and Pages GitHub App isn't authorized yet, the run stops after the token paste and tells you where to authorize it. Run the command with `--connect` again afterward. It continues without asking for a fresh token.
 

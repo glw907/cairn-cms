@@ -428,12 +428,14 @@ export function childEnv(parentEnv = process.env) {
 
 /**
  * Launch Chromium with the machine account's stored session. Tracing and video stay off.
- * @param {{ statePath: string, headless?: boolean }} options `headless` is true unless the run was
+ * @param {{ statePath: string, headless?: boolean, hostRules?: string[] }} options `hostRules` become
+ *  Chromium's `--host-resolver-rules` (for example `MAP example.org 203.0.113.7`); `headless` is true unless the run was
  *  started with `--headed`
  * @returns {Promise<Launched>}
  */
-export async function launchBrowser({ statePath, headless = true }) {
-  const browser = await chromium.launch({ headless, env: childEnv() });
+export async function launchBrowser({ statePath, headless = true, hostRules = [] }) {
+  const args = hostRules.length > 0 ? [`--host-resolver-rules=${hostRules.join(',')}`] : [];
+  const browser = await chromium.launch({ headless, env: childEnv(), ...(args.length > 0 ? { args } : {}) });
   await mkdir(path.dirname(statePath), { recursive: true, mode: 0o700 });
   const github = await browser.newContext(existsSync(statePath) ? { storageState: statePath } : {});
   return {

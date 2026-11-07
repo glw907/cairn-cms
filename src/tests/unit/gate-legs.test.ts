@@ -488,6 +488,61 @@ describe('runLeg', () => {
     });
   });
 
+  describe('B2 browses the test domain at its authoritative address', () => {
+    /** Run B2 up to the browser steps, which stop at the first page the fake context opens. */
+    async function runB2(address: string | null) {
+      const { ctx, runDir, install } = setup();
+      ctx.leg = 'B2';
+      ctx.install.signedIn = true;
+      const launches: Array<{ rules: string[]; runDir: string }> = [];
+      const events: string[] = [];
+      const pinnedContext = { close: async () => { events.push('context closed'); }, newPage: async () => { throw new Error('stop at the first page'); } };
+      const sharedContext = { close: async () => { events.push('shared closed'); }, newPage: async () => { throw new Error('stop at the first page'); } };
+      (ctx as unknown as { launched: unknown }).launched = { github: {}, newAdminContext: async () => { events.push('shared'); return sharedContext; } };
+      let marker = '';
+      vi.stubGlobal('fetch', async (url: string) =>
+        new Response(String(url).endsWith('/robots.txt') ? 'Sitemap: https://carin-test.org/sitemap.xml' : marker, { status: 200 }));
+      try {
+        await expect(
+          runLeg(ctx, fake({
+            recordLeg: recorder().recordLeg,
+            runDriver: async () => {
+              mkdirSync(path.join(runDir, 'state'), { recursive: true });
+              writeFileSync(path.join(runDir, 'state', 'r.json'), JSON.stringify({ dir: install.dir, cloudflare: { url: 'https://x.workers.dev' } }));
+              return { code: 0, screen: '' };
+            },
+            tailUrlLog: () => ({ stop: async () => {} }),
+            publishViaAdmin: async (_context: unknown, input: { marker: string }) => {
+              marker = input.marker;
+              return { entryPath: '/about', alertText: 'x', control: 'c' };
+            },
+            authoritativeAddress: async () => address,
+            launchPinned: async (rules: string[], dir: string) => {
+              launches.push({ rules, runDir: dir });
+              events.push('pinned');
+              return { newAdminContext: async () => pinnedContext, close: async () => { events.push('browser closed'); } };
+            },
+          })),
+        ).rejects.toThrow('stop at the first page');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+      return { launches, events, runDir };
+    }
+
+    it('launches a browser with a host rule and closes it after the steps', async () => {
+      const { launches, events, runDir } = await runB2('104.21.0.5');
+      expect(launches).toEqual([{ rules: ['MAP carin-test.org 104.21.0.5'], runDir }]);
+      expect(events).toEqual(['pinned', 'context closed', 'browser closed']);
+    });
+
+    it('uses the shared browser when no address is found', async () => {
+      const { launches, events } = await runB2(null);
+      expect(launches).toEqual([]);
+      expect(events).toEqual(['shared', 'shared closed']);
+    });
+  });
+
   it('logs a record write that throws and leaves the verdict and the error as they were', async () => {
     const { ctx, writeRecord } = setup();
     const logged: string[] = [];

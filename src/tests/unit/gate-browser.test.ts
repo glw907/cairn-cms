@@ -504,6 +504,25 @@ describe('the children of the gate', () => {
   }, 30_000);
 });
 
+describe('host rules', () => {
+  it('launchBrowser maps hostRules to --host-resolver-rules and adds no arg without them', async () => {
+    const spy = vi.spyOn(chromium, 'launch');
+    const dir = await mkdtemp(path.join(tmpdir(), 'gate-rules-'));
+    try {
+      const ruled = await launchBrowser({ statePath: path.join(dir, 'a.json'), hostRules: ['MAP carin-test.org 104.21.0.5'] });
+      await ruled.close();
+      const plain = await launchBrowser({ statePath: path.join(dir, 'b.json') });
+      await plain.close();
+      expect(spy.mock.calls[0][0]?.args).toEqual(['--host-resolver-rules=MAP carin-test.org 104.21.0.5']);
+      expect(spy.mock.calls[0][0]?.headless).toBe(true);
+      expect(spy.mock.calls[1][0]?.args).toBeUndefined();
+    } finally {
+      spy.mockRestore();
+      await rm(dir, { recursive: true, force: true });
+    }
+  }, 30_000);
+});
+
 describe('headless', () => {
   it('launchBrowser with no headless option launches headless', async () => {
     const spy = vi.spyOn(chromium, 'launch');

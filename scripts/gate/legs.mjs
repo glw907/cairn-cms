@@ -5,8 +5,9 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { runDriver } from './driver.mjs';
-import { confirmSignIn, handleUrl, publishViaAdmin, requestSignInLink, tailUrlLog } from './browser.mjs';
-import { fetchCheck, fetchCheckAbsent } from './fetch-check.mjs';
+import { confirmSignIn, handleUrl, launchBrowser, publishViaAdmin, requestSignInLink, tailUrlLog } from './browser.mjs';
+import { defaultFetch, fetchCheck, fetchCheckAbsent } from './fetch-check.mjs';
+import { authoritativeAddress } from './resolve.mjs';
 import { recordLeg } from './record.mjs';
 
 /** The test domain the gate's installs connect. */
@@ -218,7 +219,7 @@ export async function findSignInMessage(query) {
  * @param {string} [origin] the origin to ask
  * @returns {Promise<boolean>}
  */
-export async function robotsHasSitemap(fetchImpl = fetch, origin = `https://${TEST_DOMAIN}`) {
+export async function robotsHasSitemap(fetchImpl = defaultFetch, origin = `https://${TEST_DOMAIN}`) {
   try {
     const response = await fetchImpl(`${origin}/robots.txt`, { headers: { 'cache-control': 'no-cache' } });
     return response.status === 200 && (await response.text()).includes(`${origin}/sitemap.xml`);
@@ -355,6 +356,11 @@ export function cliFailureMessage(result, capture, lines = 8) {
  * @property {typeof tailUrlLog} tailUrlLog follows the URL log
  * @property {typeof publishViaAdmin} publishViaAdmin publishes the leg's edit
  * @property {typeof recordLeg} recordLeg writes the leg's row
+ * @property {(domain: string) => Promise<string | null>} authoritativeAddress the domain's address as
+ *  its zone's nameservers answer it
+ * @property {(hostRules: string[], runDir: string) => Promise<Pick<import('./browser.mjs').Launched, 'newAdminContext' | 'close'>>} launchPinned
+ *  a browser whose resolver is pinned by Chromium host rules, for a domain this machine's resolver
+ *  cannot see yet
  * @property {(options: { token: string, accountId: string }) => Promise<BuildsReader>} makeBuildsApi
  *  the Cloudflare client a Builds leg reads its trigger and builds through
  */
@@ -375,8 +381,16 @@ async function makeBuildsApiDefault(options) {
   return (await import(API_MODULE)).makeApi(options);
 }
 
+/**
+ * Launch a throwaway browser whose resolver maps names to fixed addresses.
+ * @type {LegDeps['launchPinned']}
+ */
+async function launchPinnedDefault(hostRules, runDir) {
+  return launchBrowser({ statePath: path.join(runDir, 'pinned-browser-session.json'), hostRules });
+}
+
 /** @type {LegDeps} */
-const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin, recordLeg, makeBuildsApi: makeBuildsApiDefault };
+const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin, recordLeg, makeBuildsApi: makeBuildsApiDefault, authoritativeAddress, launchPinned: launchPinnedDefault };
 
 /**
  * Log, before teardown, which build token the install's trigger uses and which keys the newest
@@ -574,7 +588,11 @@ async function runLegSteps(ctx, deps, cells) {
   /** @type {import('./fetch-check.mjs').FetchCheckResult | null} */
   let lastFetch = results.fetch ?? results.absent;
   if (leg === 'B2') {
-    const fresh = await launched.newAdminContext();
+    // This workstation's resolver may hold a negative answer for the test domain for 30 minutes, so
+    // the browser maps it to the authoritative address when one is found.
+    const address = await deps.authoritativeAddress(TEST_DOMAIN);
+    const pinned = address ? await deps.launchPinned([`MAP ${TEST_DOMAIN} ${address}`], runDir) : null;
+    const fresh = await (pinned ?? launched).newAdminContext();
     try {
       const owner = ownerEmailFor(env);
       const requestedAt = await requestSignInLink(fresh, { origin: `https://${TEST_DOMAIN}`, email: owner });
@@ -597,6 +615,7 @@ async function runLegSteps(ctx, deps, cells) {
       }
     } finally {
       await fresh.close();
+      await pinned?.close();
     }
   }
 

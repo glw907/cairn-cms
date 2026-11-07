@@ -126,6 +126,10 @@ Each Builds leg (A2 and B1) logs, before teardown, one line `trigger build token
 
 On B2 the gate also requests a real sign-in link for the owner email (`cairn-gate@probe.907.life` by default; `GATE_OWNER_EMAIL` overrides it), reads it from the gate mailbox over JMAP (`STALWART_PASSWORD_CAIRN_GATE`), and publishes through that session.
 
+## Resolving the test domain
+
+This workstation's resolver (a home router) caches a negative answer for `carin-test.org` for up to 30 minutes, because the name is queried before its record exists. The gate therefore pins its own traffic to the address the zone's authoritative nameservers give (`resolve.mjs`). Its fetches (`gateFetch`) try the global `fetch` first and, on a network error, retry over TLS pinned to that address with the certificate still verified. B2's browser steps run in a Chromium launched with a `--host-resolver-rules` mapping for the domain. When no authoritative address is found, both behave as before.
+
 ## Cleanup
 
 The URL log, the capture, and the state record live only in the run directory. A sign-in URL in

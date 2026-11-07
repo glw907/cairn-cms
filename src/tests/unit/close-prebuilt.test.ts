@@ -6,6 +6,7 @@ import {
   CLOSE_COMPONENTS,
   PACKAGE_PREFIX,
   closeSteps,
+  missingInstalls,
   runClose,
   selectSteps,
 } from '../../../scripts/checks/close-prebuilt.mjs';
@@ -172,6 +173,7 @@ describe('runClose', () => {
       })(),
       out: (line: string) => calls.out.push(line),
       err: (line: string) => calls.err.push(line),
+      exists: () => true,
     };
     return { calls, options };
   }
@@ -187,6 +189,24 @@ describe('runClose', () => {
     expect(runClose(steps, options)).toBe(0);
     expect(calls.build).toBe(1);
     expect(calls.ran).toEqual(['check:a', 'check:b', 'check:c']);
+  });
+
+  it('returns 1 before the build and prints both installs when svelte-package is absent', () => {
+    const { calls, options } = harness();
+    const exists = (path: string) => !path.endsWith('svelte-package') && !path.endsWith('showcase/node_modules');
+    expect(runClose(steps, { ...options, exists })).toBe(1);
+    expect(calls.build).toBe(0);
+    expect(calls.ran).toEqual([]);
+    const printed = calls.err.join('\n');
+    expect(printed).toContain('npm ci');
+    expect(printed).toContain('npm ci --prefix examples/showcase');
+  });
+
+  it('names only the install that is missing', () => {
+    expect(missingInstalls(() => true, '/r')).toEqual([]);
+    expect(missingInstalls((p) => !p.endsWith('showcase/node_modules'), '/r')).toEqual([
+      'npm ci --prefix examples/showcase',
+    ]);
   });
 
   it('runs only the named steps and still builds once', () => {
@@ -225,7 +245,7 @@ describe('runClose', () => {
           { label: 'fails', command: 'exit 3' },
           { label: 'after', command: `touch "${marker}"` },
         ],
-        { build: () => true, out: () => {}, err: () => {} },
+        { build: () => true, out: () => {}, err: () => {}, exists: () => true },
       );
       expect(exitCode).toBe(1);
       expect(existsSync(marker)).toBe(true);

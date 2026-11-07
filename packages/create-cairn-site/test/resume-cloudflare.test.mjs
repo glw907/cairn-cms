@@ -179,6 +179,31 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
   assert.equal(invocations.length, 1, '--sign-in must touch wrangler only for the reseed');
 });
 
+test('bin.mjs --sign-in seeds the saved Cloudflare account, never wrangler\'s default', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-resume-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('resume-sign-in-account');
+  t.after(() => fake.close());
+  await fake.respond('d1 execute', { code: 0, stdout: SEED_SUCCESS_STDOUT });
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+
+  await seedLiveSite('alpine-club-acctid', dir, {
+    cloudflare: {
+      url: 'https://alpine-club.glw907.workers.dev',
+      workerName: 'alpine-club',
+      accountId: 'saved-account-id',
+    },
+  });
+
+  const result = await runCli(['--dir', dir, '--sign-in'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
+  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+
+  const [seed] = (await fake.invocations()).filter((i) => i.argv.slice(0, 2).join(' ') === 'd1 execute');
+  assert.equal(seed.env.CLOUDFLARE_ACCOUNT_ID, 'saved-account-id');
+});
+
 test('bin.mjs --sign-in on a record with no saved Cloudflare URL fails loud before seeding', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-resume-scaffold-'));

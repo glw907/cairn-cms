@@ -301,7 +301,10 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
   assert.equal(state.cloudflare.workerName, 'alpine-club');
   assert.equal(state.cloudflare.accountId, 'test-account-id', 'a learned account id must be persisted');
   assert.equal(state.ownerEmail, 'T3@Example.com');
-  assert.equal(state.cloudflare.deployStartedAs, 'alpine-club', 'the deploy marker must name the worker');
+  const startedAs = state.cloudflare.deployStartedAs;
+  assert.equal(startedAs.name, 'alpine-club', 'the deploy marker must name the worker');
+  assert.equal(startedAs.accountId, 'test-account-id', 'the deploy marker must name the account');
+  assert.ok(Number.isFinite(Date.parse(startedAs.at)), 'the deploy marker must carry its start time');
   assert.equal('pem' in state.github, false, 'the pem must be gone once the key move succeeds');
   assert.equal(state.github.appId, 42, 'sibling github fields must survive the key move');
 
@@ -318,6 +321,7 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
     'd1 list',
     'r2 bucket',
     'run build',
+    'deployments list',
     'deploy',
     'd1 migrations',
     'run build',
@@ -335,28 +339,29 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
       ['d1', 'list', '--json'],
       ['r2', 'bucket', 'info', 'alpine-club-media', '--json'],
       ['run', 'build'],
+      ['deployments', 'list', '--name', 'alpine-club', '--json'],
       ['deploy'],
       ['d1', 'migrations', 'apply', 'AUTH_DB', '--remote'],
       ['run', 'build'],
       ['deploy'],
       ['secret', 'put', 'GITHUB_APP_PRIVATE_KEY_B64'],
-      invocations[12].argv,
+      invocations[13].argv,
     ],
   );
-  assert.deepEqual(invocations[12].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
-  assert.equal(invocations[12].argv[4], '--command');
-  assert.match(invocations[12].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
+  assert.deepEqual(invocations[13].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
+  assert.equal(invocations[13].argv[4], '--command');
+  assert.match(invocations[13].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
 
   // Every wrangler call made after the account was resolved must carry it as
-  // CLOUDFLARE_ACCOUNT_ID: the three name reads, both deploys, the migration, the secret put, and
-  // the seed. install
+  // CLOUDFLARE_ACCOUNT_ID: the three name reads, the Worker re-read before the deploy, both
+  // deploys, the migration, the secret put, and the seed. install
   // and run build are npm, not wrangler, and the two whoami calls resolve the account rather
   // than needing it, so all four are exempt.
   const ACCOUNT_EXEMPT_SHAPES = new Set(['install', 'run build', 'whoami', 'whoami --json']);
   const accountScoped = invocations.filter(
     (i) => !ACCOUNT_EXEMPT_SHAPES.has(i.argv.slice(0, 2).join(' ')),
   );
-  assert.equal(accountScoped.length, 8, 'expected eight account-scoped wrangler calls');
+  assert.equal(accountScoped.length, 9, 'expected nine account-scoped wrangler calls');
   assert.ok(
     accountScoped.every((i) => i.env.CLOUDFLARE_ACCOUNT_ID === 'test-account-id'),
     'expected every account-scoped wrangler call to carry the resolved account id',
@@ -749,11 +754,10 @@ test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-
 
   const stateAfterFailure = await loadSite('alpine-club-retry');
   assert.equal(stateAfterFailure.step, 'pushed');
-  assert.equal(
-    stateAfterFailure.cloudflare.deployStartedAs,
-    'alpine-club',
-    'the deploy marker must be saved before the first deploy, so a failed deploy still carries it',
-  );
+  const startedAs = stateAfterFailure.cloudflare.deployStartedAs;
+  assert.equal(startedAs?.name, 'alpine-club', 'the deploy marker must be saved before the first deploy');
+  assert.equal(startedAs.accountId, 'test-account-id');
+  assert.ok(Date.parse(startedAs.endedAt) >= Date.parse(startedAs.at), 'a failed deploy step records when it stopped');
   const readsBeforeRetry = (await fake.invocations()).filter((i) => i.argv[0] === 'deployments').length;
 
   // The failed run's install action already succeeded (only the deploy failed), so a real
@@ -763,6 +767,10 @@ test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-
   await fake.respond('deploy', {
     code: 0,
     stdout: 'Deployed thing triggers (0.1 sec)\n  https://alpine-club.glw907.workers.dev\n',
+  });
+  // The failed attempt left its Worker behind, created inside that attempt's deploy window.
+  await armNamesFree(fake, {
+    worker: { code: 0, stdout: JSON.stringify([{ id: 'd1', created_on: startedAs.at, versions: [] }]) },
   });
 
   const logs = [];
@@ -783,8 +791,13 @@ test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-
   assert.equal(invocations.filter((i) => i.argv[0] === 'install').length, 1, 'install must run exactly once total');
   assert.equal(
     invocations.filter((i) => i.argv[0] === 'deployments').length,
-    readsBeforeRetry,
-    'a resume of a run that already began deploying must not re-check its own names',
+    readsBeforeRetry + 2,
+    'a resume still reads the names, and excuses the Worker its own earlier attempt created',
+  );
+  assert.equal(
+    (await loadSite('alpine-club-retry')).cloudflare.deployStartedAs.at,
+    startedAs.at,
+    'a resumed deploy keeps the first attempt\'s start time, so its own resources stay excused',
   );
 });
 
@@ -795,13 +808,14 @@ test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-
  * @param {string} siteId the site id to seed
  * @param {object} chapterOverrides fields merged over the chapter input (flags, confirm)
  * @param {{ worker?: object, d1?: object, r2?: object }} readOverrides replies for the name reads
+ * @param {object} [cloudflare] the record's saved `cloudflare` fields, such as a resume marker
  * @returns {Promise<{ err: Error & { catalogue?: object }, invocations: object[], state: object }>}
  */
-async function runExpectingStop(t, siteId, chapterOverrides, readOverrides) {
+async function runExpectingStop(t, siteId, chapterOverrides, readOverrides, cloudflare) {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   await mkdir(path.join(dir, 'node_modules'));
-  await seedPushedSite(siteId, dir, { ownerEmail: 'owner@example.com' });
+  await seedPushedSite(siteId, dir, { ownerEmail: 'owner@example.com', ...(cloudflare ? { cloudflare } : {}) });
 
   const fake = await makeFakeBin(`cloudflare-tools-${siteId}`);
   t.after(() => fake.close());
@@ -895,13 +909,41 @@ test('runCloudflareChapter: a name read that fails stops setup rather than deplo
   assertNothingBuiltOrDeployed(invocations, state);
 });
 
-test('runCloudflareChapter: a run that already began deploying under the name skips the check', async (t) => {
+/**
+ * An earlier attempt's resume marker on the chapter suite's account, an hour-long window.
+ * @param {object} [overrides] fields replacing the defaults
+ * @returns {{ name: string, accountId: string, at: string, endedAt: string }} the marker
+ */
+function earlierMarker(overrides = {}) {
+  return {
+    name: 'alpine-club',
+    accountId: 'test-account-id',
+    at: '2026-11-01T12:00:00.000Z',
+    endedAt: '2026-11-01T13:00:00.000Z',
+    ...overrides,
+  };
+}
+
+/**
+ * Name-read replies reporting all three resources present, each created at `time`.
+ * @param {string} time the ISO creation time
+ * @returns {{ worker: object, d1: object, r2: object }} the replies
+ */
+function allPresentAt(time) {
+  return {
+    worker: { code: 0, stdout: JSON.stringify([{ id: 'd1', created_on: time, versions: [] }]) },
+    d1: { code: 0, stdout: JSON.stringify([{ uuid: 'x', name: 'alpine-club-auth', created_at: time }]) },
+    r2: { code: 0, stdout: JSON.stringify({ name: 'alpine-club-media', created: time }) },
+  };
+}
+
+test('runCloudflareChapter: a resume excuses the resources its own earlier attempt created', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   await mkdir(path.join(dir, 'node_modules'));
   await seedPushedSite('alpine-club-own-worker', dir, {
     ownerEmail: 'owner@example.com',
-    cloudflare: { accountId: 'test-account-id', deployStartedAs: 'alpine-club' },
+    cloudflare: { accountId: 'test-account-id', deployStartedAs: earlierMarker() },
   });
 
   const fake = await makeFakeBin('cloudflare-tools-own-worker');
@@ -912,12 +954,7 @@ test('runCloudflareChapter: a run that already began deploying under the name sk
     code: 0,
     stdout: 'Deployed thing triggers (0.1 sec)\n  https://alpine-club.glw907.workers.dev\n',
   });
-  // This run's own Worker, database, and bucket exist from the earlier attempt.
-  await armNamesFree(fake, {
-    worker: { code: 0, stdout: '[]' },
-    d1: { code: 0, stdout: JSON.stringify([{ uuid: 'x', name: 'alpine-club-auth' }]) },
-    r2: { code: 0, stdout: '{}' },
-  });
+  await armNamesFree(fake, allPresentAt('2026-11-01T12:04:00.000Z'));
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   process.env.CAIRN_NPM_BIN = fake.binPath;
   t.after(() => {
@@ -936,11 +973,130 @@ test('runCloudflareChapter: a run that already began deploying under the name sk
   });
 
   assert.equal(outcome, 'live');
-  const invocations = await fake.invocations();
-  const shapes = invocations.map((i) => i.argv.slice(0, 2).join(' '));
-  assert.equal(shapes.includes('deployments list'), false);
-  assert.equal(shapes.includes('d1 list'), false);
-  assert.equal(shapes.includes('r2 bucket'), false);
+  const shapes = (await fake.invocations()).map((i) => i.argv.slice(0, 2).join(' '));
+  assert.equal(shapes.filter((shape) => shape === 'deployments list').length, 2, 'a resume still reads the Worker');
+  assert.ok(shapes.includes('d1 list') && shapes.includes('r2 bucket'), 'a resume still reads every name');
+});
+
+for (const [label, marker, created] of [
+  [
+    'a Worker another run created after this one stopped',
+    earlierMarker(),
+    '2026-11-04T08:00:00.000Z',
+  ],
+  ['resources older than the earlier attempt', earlierMarker(), '2026-10-01T08:00:00.000Z'],
+  ['an old-shape string marker', 'alpine-club', '2026-11-01T12:04:00.000Z'],
+  ['a marker for another account', earlierMarker({ accountId: 'other-account' }), '2026-11-01T12:04:00.000Z'],
+]) {
+  test(`runCloudflareChapter: a resume refuses ${label}`, async (t) => {
+    const { err, invocations, state } = await runExpectingStop(
+      t,
+      'alpine-club-resume-refuses',
+      { flags: { yes: true, deploy: true } },
+      allPresentAt(created),
+      { accountId: 'test-account-id', deployStartedAs: marker },
+    );
+    assert.equal(err.cause?.catalogue?.code, 'resource-names-taken');
+    assert.match(err.message, /Worker named alpine-club\b/);
+    const shapes = invocations.map((i) => i.argv.slice(0, 2).join(' '));
+    assert.equal(shapes.includes('run build'), false, 'setup must stop before building');
+    assert.equal(invocations.some((i) => i.argv[0] === 'deploy'), false, 'setup must stop before deploying');
+    assert.deepEqual(state.cloudflare.deployStartedAs, marker, 'a refused resume leaves the marker as it was');
+  });
+}
+
+/**
+ * Build a wrangler stand-in whose Worker read reports "absent" the first time and "present" every
+ * time after, standing in for a second run that deploys the same name while this one builds.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @returns {Promise<{ binPath: string, calls: () => Promise<string[]> }>} the stand-in and its
+ *  call log, one joined argv per line
+ */
+async function makeLateWorkerWrangler(t) {
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-cf-chapter-late-worker-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const binPath = path.join(dir, 'wrangler.mjs');
+  const counterPath = path.join(dir, 'worker-reads');
+  const logPath = path.join(dir, 'calls.log');
+  await writeFile(counterPath, '0');
+  const script = `#!/usr/bin/env node
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+const argv = process.argv.slice(2);
+appendFileSync(${JSON.stringify(logPath)}, argv.join(' ') + '\\n');
+if (argv[0] === 'deployments') {
+  const n = parseInt(readFileSync(${JSON.stringify(counterPath)}, 'utf8'), 10);
+  writeFileSync(${JSON.stringify(counterPath)}, String(n + 1));
+  if (n === 0) {
+    process.stderr.write('This Worker does not exist on your account. [code: 10007]\\n');
+    process.exit(1);
+  }
+  process.stdout.write(JSON.stringify([{ id: 'other', created_on: new Date().toISOString(), versions: [] }]));
+  process.exit(0);
+}
+if (argv[0] === 'd1' && argv[1] === 'list') {
+  process.stdout.write('[]');
+  process.exit(0);
+}
+if (argv[0] === 'r2') {
+  process.stderr.write('The specified bucket does not exist. [code: 10006]\\n');
+  process.exit(1);
+}
+if (argv[0] === 'whoami' && argv[1] === '--json') {
+  process.stdout.write(JSON.stringify({ loggedIn: true, accounts: [{ id: 'test-account-id', name: 'Test' }] }));
+} else if (argv[0] === 'whoami') {
+  process.stdout.write('You are logged in with an API Token\\n');
+} else if (argv[0] === 'deploy') {
+  process.stdout.write('Deployed thing triggers (0.1 sec)\\n  https://alpine-club.glw907.workers.dev\\n');
+}
+`;
+  await writeFile(binPath, script, 'utf8');
+  await chmod(binPath, 0o755);
+  return {
+    binPath,
+    calls: async () => (await readFile(logPath, 'utf8')).split('\n').filter(Boolean),
+  };
+}
+
+test('runCloudflareChapter: a Worker that appears during the build stops setup before the deploy', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await mkdir(path.join(dir, 'node_modules'));
+  await seedPushedSite('alpine-club-late-worker', dir, { ownerEmail: 'owner@example.com' });
+
+  const wrangler = await makeLateWorkerWrangler(t);
+  const npmFake = await makeFakeBin('npm-late-worker');
+  t.after(() => npmFake.close());
+  process.env.CAIRN_WRANGLER_BIN = wrangler.binPath;
+  process.env.CAIRN_NPM_BIN = npmFake.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  await assert.rejects(
+    () =>
+      runCloudflareChapter({
+        siteId: 'alpine-club-late-worker',
+        siteName: 'Alpine Club',
+        dir,
+        flags: { yes: true, deploy: true },
+        log: () => {},
+        dryRun: false,
+        openBrowser: async () => {
+          throw new Error('openBrowser must never be called when the deploy is refused');
+        },
+      }),
+    (err) => {
+      assert.equal(err.cause?.catalogue?.code, 'resource-names-taken');
+      return true;
+    },
+  );
+
+  const calls = await wrangler.calls();
+  assert.equal(calls.filter((call) => call.startsWith('deployments')).length, 2, 'the Worker is read again before the deploy');
+  assert.equal(calls.some((call) => call === 'deploy'), false, 'nothing deploys over the Worker that appeared');
+  const state = await loadSite('alpine-club-late-worker');
+  assert.equal(state.cloudflare?.deployStartedAs, undefined, 'no marker is written for a refused deploy');
 });
 
 test('runCloudflareChapter: a record at deployed skips consent and the deploy group, running only install, login, the key move, and sign-in', async (t) => {

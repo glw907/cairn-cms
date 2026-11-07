@@ -379,10 +379,10 @@ Consumers must: rebuild the site from `create-cairn-site`; this release has no u
 
 - The engine takes every minor and patch through the 2026-11-07 sweep, and the peer ranges do not
   move. The scaffold takes `wrangler` `^4.158.0`, `@sveltejs/kit` `^3.1.1`, `svelte` `^5.57.3`, `vite`
-  `^8.3.6`, and `daisyui` `^5.7.50`. It pins `tailwindcss` and `@tailwindcss/vite` at exactly `4.3.3`,
-  because tailwindcss 4.3.4 and 4.3.5 compile daisyUI's `.join` rule to a selector that lightningcss
-  rejects, and the build fails. Wrangler 4.148 gains ambient `*.txt`, `*.html`, `*.sql`, `*.bin`, and `*.wasm` module
-  declarations in a regenerated `worker-configuration.d.ts`. `gray-matter` and `js-yaml` leave the
+  `^8.3.6`, and `daisyui` `^5.7.50`. It pins `tailwindcss` and every `@tailwindcss/*` package at
+  exactly `4.3.3`, because tailwindcss 4.3.4 and 4.3.5 compile daisyUI's `.join` rule to a selector
+  that lightningcss rejects, and the build fails. Wrangler 4.148 gains ambient `*.txt`, `*.html`,
+  `*.sql`, `*.bin`, and `*.wasm` module declarations in a regenerated `worker-configuration.d.ts`. `gray-matter` and `js-yaml` leave the
   engine's dependencies.
 
 ## 0.98.0

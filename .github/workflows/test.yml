@@ -25,6 +25,11 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             examples/showcase/package-lock.json
+      # workflow-yaml.test.ts runs actionlint through `go run`, and the runner image lists Go only
+      # under its cached tools, not on PATH.
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.26.x'
       # Installs run bounded and retried once: rare runner stalls hung jobs for 6 hours on
       # 2026-10-08 and 2026-10-09 (see .github/actions/bounded-install).
       - uses: ./.github/actions/bounded-install

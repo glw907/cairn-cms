@@ -44,6 +44,17 @@ other's log. A red lane is never green, whatever caused it.
 5. Commit only the files the task lists, in imperative mood.
 6. Self-review (completeness, naming, tests that verify behavior, not mocks), then report.
 
+## Command forms in a worktree
+
+Claude Code's built-in worktree isolation refuses a Bash line whose git use it cannot verify stays
+inside your worktree. Run git as plain, separate calls from your worktree path, one command per
+call. Two forms were seen refused: `git` inside a command substitution (`echo "$(git rev-parse HEAD)"`),
+and `git -C <another checkout> ...`, which redirects git outside the worktree. Instead, run
+`git rev-parse HEAD` alone and read its output, and run git from the worktree without `-C`. Plain
+`cd <worktree> && git status`, `git status && git log -1 --oneline`, and a quoted heredoc whose body
+only mentions git words all ran. A refusal is not a hook or a permission problem; split the line
+and rerun it.
+
 ## cairn-cms conventions (conform exactly)
 
 - **NodeNext modules:** intra-package imports carry a `.js` extension on the `.ts` or component

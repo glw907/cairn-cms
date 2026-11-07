@@ -17,6 +17,22 @@ describe('checkVersion', () => {
     expect(result).toEqual({ ok: true, bump: 'patch' });
   });
 
+  it('fails a patch whose entry carries an actionable Consumers must line', () => {
+    const result = checkVersion('0.99.1', changelog('0.99.1', '0.99.0', 'a change.\n\nConsumers must: run x.\n'));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/Consumers must/);
+  });
+
+  it('fails a prerelease patch row with an actionable Consumers must line', () => {
+    const result = checkVersion('0.99.1-rc.1', changelog('0.99.1-rc.1', '0.99.0', 'a change.\n\nConsumers must: run x.\n'));
+    expect(result.ok).toBe(false);
+  });
+
+  it('passes a patch whose Consumers must line is nothing', () => {
+    const result = checkVersion('0.99.1', changelog('0.99.1', '0.99.0', 'a change.\n\nConsumers must: nothing.\n'));
+    expect(result).toEqual({ ok: true, bump: 'patch' });
+  });
+
   it('fails a patch carrying a minor marker', () => {
     const result = checkVersion('0.56.2', changelog('0.56.2', '0.56.1', MINOR_MARK));
     expect(result.ok).toBe(false);

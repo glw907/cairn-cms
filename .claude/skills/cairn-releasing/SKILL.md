@@ -13,11 +13,20 @@ disable-model-invocation: true
 A cairn-cms release is a deliberate, occasional act. A finished pass finalizes its `CHANGELOG.md` entry
 under `## Unreleased`, leaves `package.json` alone, and holds. `main` stays releasable, so completed work
 accumulates unpublished until a release is warranted, and this skill is that separate publish step. The
-governing rule lives in `CLAUDE.md` ("Working here"); this skill is the executable procedure.
+governing rule lives in `CLAUDE.md` ("Working here").
 
-Run it from inside the cairn-cms repo.
+Every mechanical step is a command under `scripts/release/`. Each takes the version, exits 0 or 1, and
+ends with one `Next:` line naming what to run after it. This skill keeps four judgment calls (whether a
+release is warranted, its size, the notes prose, and what to do when something fails) and the order the
+commands run in. Run it from inside the cairn-cms repo.
 
-## 1. Gate: is a release warranted?
+**Every `--target` is a literal sha.** A cut prints the sha it was made at (`git rev-parse HEAD` after the
+push; for a stable, the `sha:` line of `check-stable-source.mjs`). Paste that literal sha into
+`gh release create --target`, never a branch name and never a `$( )` or `$SHA` substitution: the session
+keeps no shell variable between calls, and the guard hook on `gh release create` expands nothing, so it
+denies a target that is not a 40-hex sha.
+
+## 1. Judgment call: is a release warranted?
 
 Stop here unless one of two triggers holds:
 
@@ -34,40 +43,30 @@ change just burns numbers. When in doubt, hold.
 ## 2. Confirm the window is on `main` and the gate is green
 
 The release publishes from `main`. Each pass in the window reaches `main` through its own PR
-(`standards:running-passes` "Close"), so confirm each is merged; a pass branch is never pushed to `main` to stage a cut.
-The release commit's branch must be a clean fast-forward of `origin/main` (`git merge-base --is-ancestor
-origin/main HEAD`).
+(`standards:running-passes` "Close"), so confirm each is merged; a pass branch is never pushed to `main` to
+stage a cut.
 
 Dependencies are current before the gate runs. A release starts from the newest production version of
-everything, so the last merge before the cut is the `standards:dependency-upgrade` skill's sweep on `main` with no
-worktree live (its lockfiles collide with a live branch): every minor and patch taken, every major held
-with its unblock trigger recorded, the survey and the refactor decision on record. Skip this only when the
-window already contains such a sweep and `npm outdated` at every manifest returns only the held majors.
+everything, so the last merge before the cut is the `standards:dependency-upgrade` skill's sweep on `main`
+with no worktree live (its lockfiles collide with a live branch): every minor and patch taken, every major
+held with its unblock trigger recorded, the survey and the refactor decision on record. Skip this only when
+the window already contains such a sweep and `npm outdated` at every manifest returns only the held majors.
 
-The full gate must be green at the release commit. Run it sequentially (`npm test` and `check:close`
-both repackage `dist`, so never run them concurrently):
+Then run the preflight:
 
-- `npm run check:close` (the repo's own close gate: it carries the type check, the doc gates, the
-  comment gate, the custom-surface check, the package and dev-package checks, and `check:version`, so
-  this list never needs re-copying when a check is added)
-- `npm test` (exit 0, not just a passing count)
-- `node scripts/build/build-guidance-hashes.mjs`, committed, before the release commit: it rebuilds
-  `guidance-hashes.json` from every earlier release tag, so `cairn-guidance install` can delete a
-  file the last release shipped and this one does not
-- after `npm version`, also bump `packages/cairn-cms-dev` and `packages/create-cairn-site` to the same
-  number (`npm version <x.y.z> --no-git-tag-version` in each directory), then run `npm run check:close`
-  again: CI's `test` job fails the release commit when the dev-package version differs, and the
-  `publish-create-site` job fails when the scaffold's differs
-- the consumer-build proof: a CI `e2e` run, or a from-scratch showcase build (`rm -rf
-  examples/showcase/{node_modules,package-lock.json}` then a fresh install and `npm run build`). Local
-  Playwright reuses a stale preview off CI, so do not trust a local "all green" alone.
+```bash
+node scripts/release/preflight.mjs <x.y.z>            # add --stable for a stable
+```
+
+It checks a clean tree, `HEAD` equal to `origin/main` (and prints that sha), a version absent from the
+registry on all three packages, both installs present, and a non-empty `## Unreleased` (a stable skips that
+last check). Fix what it names and rerun.
 
 ## 3. Release sweep (capability releases only)
 
-Run this step only for a cut under trigger 2 (a coherent capability or initiative landed). An urgent
-trigger 1 cut skips it, keeps its fast path, and rolls its window into the next sweep. The sweep never
-blocks the cut: a run that finds nothing, finds only gaps it cannot place, or stops at its cap still
-proceeds to step 4.
+Run this step only for a cut under trigger 2. An urgent trigger 1 cut skips it, keeps its fast path, and
+rolls its window into the next sweep. The sweep never blocks the cut: a run that finds nothing, finds only
+gaps it cannot place, or stops at its cap still proceeds to step 4.
 
 The sweep catches the docs-code drift that option coverage (`check:options`) cannot see: scaffold
 behavior and changelog-described behavior outside option-bearing types. It finds new gaps; it does not
@@ -98,20 +97,17 @@ re-check existing pages whose code changed.
   last sweep. A steady nonzero yield says option coverage misses a class; name the next mechanism to
   consider in the entry.
 
-## 4. Pick the version (immutable; verify free)
+## 4. Judgment call: the size
 
-Published numbers are global and immutable. The pre-rebuild releases already burned `0.1`–`0.68`, so never
-assume the next number is free. List the full set and pick the first free one:
+Published numbers are global and immutable, and `preflight` refuses one the registry already holds, so
+never assume the next number is free. Size the bump under SemVer, which in `0.x` is cairn's own scale:
 
-```bash
-npm view @glw907/cairn-cms versions --json   # the full list, not the `latest` tag
-```
-
-Size the bump under SemVer. In `0.x` a minor (`0.X.0`) is reserved for a new subsystem or public surface
-that did not exist before; everything else (refinement, fix, DX, internal, even new optional exports on an
-existing surface) is a patch. The number signals scale, not compatibility: the changelog carries
-compatibility via `Consumers must:` lines. A minor must carry a `<!-- release-size: minor -->` marker in
-its CHANGELOG section (the `check:version` gate requires it). When unsure, it is a patch.
+- A **minor** (`0.X.0`) is a new subsystem or public surface that did not exist before, or a breaking
+  change. A breaking change is any entry carrying a `Consumers must:` line other than `nothing.`.
+- A **patch** is everything else: refinement, fix, DX, internal, even new optional exports on an existing
+  surface. A patch never carries a breaking line, and `check:version` fails one that does.
+- Every minor or major carries a `<!-- release-size: minor -->` marker in its CHANGELOG section, which
+  `check:version` requires. When unsure whether a change is breaking, it is.
 
 **Derive the size here, at the cut, against this rule and the actual `## Unreleased` window, never
 from the conversation.** A number or size named earlier (in the launch prompt, a plan, or by
@@ -121,23 +117,33 @@ final content anyway. When the derived size disagrees with what was said earlier
 the derived number, and confirm the mismatch in one sentence.
 
 Set the version only now, at the cut. Never pre-number a held pass, since a later pass can roll
-into the same release and leave that number unpublished:
+into the same release and leave that number unpublished.
+
+## 5. Judgment call: the notes
+
+Fold the window first. When an earlier candidate of the same version exists, `## Unreleased` is folded
+into that candidate's section (the way the `0.99.0-rc.3` cut did) and committed on its own, because `bump`
+refuses while `## Unreleased` sits above a heading on the same numeric core. `bump` renames the heading. Scrub any stale "stays unpublished
+until then" or "set at release time" phrasing from the section, and add the matching entry to
+`MIGRATION-NOTES.md` if the pass did not. A stable's diff from its final candidate may change only
+version fields, pins, and headings, so the scrub belongs at the candidate cut, and a stable that would
+need one cuts another candidate.
+
+Group the changelog entries by topic. That is a house departure from Keep a Changelog, which sorts
+entries into six types (Added, Changed, Deprecated, Removed, Fixed, Security;
+<https://keepachangelog.com/en/1.1.0/>). A reader upgrading cairn asks "what happened to the editor?"
+more often than "what was added?", so a section reads by surface, with `Consumers must:` lines carrying
+the compatibility signal the types would. Geoff's ruling, 2026-11-03.
+
+Then write the notes file:
 
 ```bash
-npm version <x.y.z> --no-git-tag-version   # bumps package.json + the lockfile, no git tag
+node scripts/release/notes.mjs <x.y.z>                 # --out <file> to choose the path
 ```
 
-## 5. Finalize the CHANGELOG and compose the notes
-
-Rename the held heading `## Unreleased` to `## <x.y.z>` (no date; match the repo's finalized-section
-format, which is the heading then a blank line then the `<!-- release-size: ... -->` marker). Scrub any
-stale "stays unpublished until then" or "set at release time" phrasing from the finalized section.
-
-The release body is the changelog window since the last published tag. When several held minors roll into
-one publish (the common case, because passes hold and batch), the body summarizes each
-held section in the window and carries every `Consumers must:` line from the breaking ones. Compose it into
-a notes file rather than by hand at the `gh` prompt. Add the matching per-version entry to
-`MIGRATION-NOTES.md` if the pass did not already.
+It writes the version's CHANGELOG section plus every `Consumers must:` line other than `nothing.`, and
+leaves a marker where the summary paragraph goes. The summary is the call: say what the release is for in
+a short paragraph, in plain prose. Several held minors that roll into one publish each get a sentence.
 
 A window touching an admin surface (`src/lib/admin/**`, `cairn-admin.css`) also earns a
 re-read of the reproduction stories and docs pages the change reaches: check every affected story's
@@ -151,125 +157,180 @@ non-value placeholder inside the brackets (an ASCII `...`, a `*`, or a `|`) comp
 breaks `npm run package`. Write the concrete token. A quick check:
 `grep -rnE '[a-z-]+-\[[^]]*(\||\*|\.\.\.)[^]]*\]' docs/ CHANGELOG.md ROADMAP.md`.
 
-## 6. Commit, land on `main`, cut the release
+## 6. Cut the candidate
 
-Commit the version bump plus the finalized CHANGELOG. A stable cut commit carries only the version
-fields and the headings, and STATUS lands after the release. Land it on `main` (fast-forward push,
-never force). A stable runs `scripts/checks/check-stable-source.mjs` first (below); a candidate
-does not. Then, for a candidate:
+A stable is cut only from the final gated candidate's tree, so every release starts as a candidate
+(`<x.y.z>-rc.N`). The transcript recapture and every quoted docs block it updates land before the final
+candidate is cut; a recapture merged after it fails the stable check by design and means one more
+candidate. The order, each step waiting on the one before:
 
-```bash
-gh release create v<x.y.z-rc.N> --target main --prerelease \
-  --title "v<x.y.z-rc.N>: <one-line summary of the window>" \
-  --notes-file <notes-file>
-```
+1. `node scripts/release/preflight.mjs <x.y.z-rc.N>`, then fold the window (step 5) and commit the fold.
+2. `node scripts/release/bump.mjs <x.y.z-rc.N>` writes the eight files a cut touches: the three manifest
+   versions, the lockfile version lines, the template pins and `VERSION`, the CHANGELOG heading with its
+   `Released` line, and the MIGRATION-NOTES heading and anchors. It refuses a dirty tree and does nothing
+   on a tree already at the version. `--date YYYY-MM-DD` sets the date. It replaces
+   the hand edits to each package.
+3. `node scripts/build/build-guidance-hashes.mjs`, so `cairn-guidance install` can delete a file the last
+   release shipped and this one does not. Then `npm run check:close`, the repo's own close gate. Run it
+   sequentially with `npm test`, since both repackage `dist`. Local Playwright reuses a stale preview off
+   CI, so the consumer-build proof is a CI `e2e` run, not a local "all green".
+4. Commit the cut and push `main` by fast-forward, never force. Print `git rev-parse HEAD`: that is the
+   literal sha for every later `--target`.
+5. Wait for `test` on the cut commit, because the tag ruleset makes a tag on a red commit permanent.
+   List the run until an id prints, then watch it:
 
-For a stable, run the stable-source check first. It refuses unless `HEAD` is `origin/main` and the diff
-from the tag `next` names is only the cut's version fields, pins, and headings, and it prints the sha it
-read. Do not cut on a failure. Pass that sha literally, never a `$( )` substitution:
+   ```bash
+   gh run list --workflow test.yml --commit <sha> --json databaseId --jq '.[0].databaseId'
+   gh run watch <run-id> --exit-status
+   ```
 
-```bash
-node scripts/checks/check-stable-source.mjs
-gh release create v<x.y.z> --target <sha> \
-  --title "v<x.y.z>: <one-line summary of the window>" \
-  --notes-file <notes-file>
-```
+   A red `test` is rerun once. A real red is fixed on `main` before any tag exists.
+6. Write the notes (step 5), then create the release. A candidate takes `--prerelease`, and the hook
+   refuses an `-rc` tag without it:
 
-Either fires `publish.yml` (OIDC trusted publishing, `npm publish --access public`). The workflow derives
-the dist-tag from the version: a stable number goes to `latest`, and any version carrying a prerelease
-suffix goes to `gate`, which no install command reads, so a candidate never reaches a bare
-`npm install` and never reaches `next` until it passes the gate below.
+   ```bash
+   gh release create v<x.y.z-rc.N> --prerelease --target <sha> \
+     --title "v<x.y.z-rc.N>: <one-line summary of the window>" \
+     --notes-file <notes-file>
+   ```
 
-**A stable is cut only from the final gated candidate's tree.** The transcript recapture and every
-quoted docs block it updates land before the final candidate is cut. The order is: recapture, then
-`rc.N`, then the gate, promotion, and Geoff's own install, then the stable. A recapture merged after the
-final candidate fails the stable check by design and means one more candidate. A changed CHANGELOG or
-MIGRATION-NOTES body line fails it too, so step 5's scrub runs at the candidate cut, and a stable whose
-diff would need a scrub cuts a new candidate. A prerelease also has to clear `check:version`, which sizes an entry against the nearest
-earlier heading whose numeric core differs, so `0.94.0-rc.1` and the `0.94.0` it promotes into declare
-their shared `<!-- release-size: minor -->` marker once, on whichever heading is current.
+   Creating the release fires `publish.yml`. Publishing runs only from a GitHub release, under OIDC
+   trusted publishing in the `npm-publish` environment. The workflow derives the dist-tag from the
+   version: a stable goes to `latest`, and any prerelease goes to `gate`, which no install command reads,
+   so a candidate never reaches a bare `npm install` and never reaches `next` until it passes the gate.
+7. Watch the publish run (list it with `gh run list --workflow publish.yml --event release --commit <sha>
+   --json databaseId --jq '.[0].databaseId'`, then `gh run watch <run-id> --exit-status`), then:
 
-**A consumer cannot reach a prerelease through its caret range.** A `^0.93.0` dependency does not resolve
-`0.94.0-rc.1`, by SemVer's own rule, so a site testing against a candidate pins the exact version
-(`"@glw907/cairn-cms": "0.94.0-rc.1"`) and moves back to a caret when the stable lands. The workflow runs `npm install -g npm@^11.21.0` first because trusted publishing needs npm >= 11.5.1, a dist-tag change over OIDC needs 11.21.0, and npm 12 is broken for publishing (see the `WATCH` comment in `publish.yml`).
-Under trusted publishing the `--provenance` flag is unnecessary: provenance is automatic for this public repo.
+   ```bash
+   node scripts/release/wait.mjs <x.y.z-rc.N> gate
+   node scripts/release/verify.mjs <x.y.z-rc.N>
+   ```
 
-### Gate the candidate
+   `wait` polls the registry with no cache until the tag holds the version on all three packages.
+   `verify` checks the tag and a provenance attestation on each.
 
-A candidate on `gate` is judged before anyone installs it. Before the first leg, check that the
-account's Email Sending product is live and that the account is on Workers Paid (the estate
-inventory records both), and that the harness's credentials work. `carin-test.org` itself needs no
-setup: the CLI onboards its apex sending subdomain on the first email-on leg, and teardown leaves it:
+A consumer cannot reach a prerelease through its caret range: `^0.93.0` does not resolve
+`0.94.0-rc.1`, by SemVer's own rule. A site testing a candidate pins the exact version and moves back to
+a caret when the stable lands.
+
+## 7. Gate the candidate
+
+A candidate on `gate` is judged before anyone installs it. The gate installs real sites with the
+published setup tool, publishes an edit through each site's admin, and passes a leg only when the edit
+shows at the live address. Before the first leg, check that the account's Email Sending product is live
+and that the account is on Workers Paid (the estate inventory records both). Then:
 
 ```bash
 bash scripts/gate/run-gate.sh --smoke
 bash scripts/gate/run-gate.sh --all --version <x.y.z-rc.N>
 ```
 
-A leg passes only when its fetch, its page read, its origin read, and the sign-in email's From all
-hold. After each leg, record the result under a `## Gate` heading in the candidate's release body. The
-standing answers:
+The run is headless and never waits for a person; `--headed` shows the browser and is the rerun for a
+headless GitHub challenge. An unknown page fails its leg, saves a screenshot, and writes a controls file
+of the page's button and link names, so the fix is a change to the harness's page handling, not a hold.
+A lock refuses a second run and names the holder's pid, so wait for the first to exit and never start
+another. A four-leg run takes an hour or more: start it with `run_in_background`.
 
-- A failed leg fixes forward to the next candidate, and the rerun covers only the legs the fix's path
-  touches.
+A leg passes only when its fetch, its page read, its origin read, and the sign-in email's From all hold,
+as `evaluateLeg` judges them. The run writes a `## Gate` table into the candidate's release body with
+four rows (A1, A2, B1, B2), each carrying the run id. `scripts/gate/verdict.mjs <x.y.z-rc.N>` reads that
+table and exits 0 only when each of the four reads `pass` and all four share one run id.
+
+The standing answers when a leg fails:
+
+- **A candidate's gate failure reruns `--all`, never one group.** `verdict.mjs` without `--file` needs one
+  run id across all four rows, and a group rerun writes a second id. (A rehearsal against a local record
+  uses `--file` and reruns by group; a candidate does not.)
+- A failure fixes forward to the next candidate.
+- A harness-only fix, one that changes only paths that ship in no package, does not force a new
+  candidate (see the ruling 10 carve-out in `cairn-running-passes`), and the gate reruns on the candidate
+  already out.
 - A Workers Builds outage gets one rerun after 15 minutes.
 - A GitHub page the harness cannot pass asks Geoff once, and the fix is filed.
+
+**Standing rule (#349).** A pass that changes `scripts/gate/` ends with one run against the current
+`gate` candidate, through `--cli <tarball>` when it also changes the setup tool, so the harness and the
+new product code are proven together before anything publishes. Any unexpected failure is a harness gap,
+fixed before the next cut.
 
 Geoff runs install B's first leg on the final candidate in his own browser, with his own accounts,
 before the stable cut.
 
-### Promote a passed candidate
+## 8. Promote a passed candidate
+
+Promotion is dispatched on the candidate's own tag, after `verdict.mjs` exits 0:
 
 ```bash
-gh workflow run publish.yml -f promote=<x.y.z-rc.N>
+gh workflow run publish.yml --ref v<x.y.z-rc.N> -f promote=<x.y.z-rc.N>
 ```
 
-The `promote` job moves `next` to the version on all three packages, `create-cairn-site` last, and then
-moves `create-cairn-site@latest` too. The engine packages' `latest` never moves to a candidate. Check:
+Note the newest publish `workflow_dispatch` run id first (`gh run list --workflow publish.yml --event
+workflow_dispatch --json databaseId,headBranch`), since the dispatch may not print its run URL. The
+`promote` job refuses unless the gate table shows four passes from one run, then moves `next` to the
+version on all three packages, `create-cairn-site` last, and moves `create-cairn-site@latest` too. The
+engine packages' `latest` never moves to a candidate. Then:
 
 ```bash
-npm view @glw907/cairn-cms dist-tags.next        # each of the three prints the version
-npm view @glw907/cairn-cms-dev dist-tags.next
-npm view create-cairn-site dist-tags.next
-npm view create-cairn-site dist-tags.latest
+gh run watch <run-id> --exit-status
+node scripts/release/wait.mjs <x.y.z-rc.N> next
+node scripts/release/status.mjs <x.y.z-rc.N>
 ```
 
-A split `next` recovers by dispatching the same version again, since `dist-tag add` is idempotent. If
-the run reports that the trusted publisher cannot manage dist-tags, Geoff runs
-`npm dist-tag add <pkg>@<x.y.z-rc.N> next` three times by hand. The first real promotion is the
-permission's probe.
+`status` prints a JSON checklist (tag, release and its prerelease flag, dist-tags, provenance, CHANGELOG
+heading, and the gate verdict) and exits non-zero until all of it holds. A split `next` recovers by
+dispatching the same version again, since `dist-tag add` is idempotent. If the run reports that the
+trusted publisher cannot manage dist-tags, `verdict.mjs` must still exit 0 first, then Geoff runs
+`npm dist-tag add <pkg>@<x.y.z-rc.N> next` for each package by hand, and the packet records the fallback.
 
-### The first `create-cairn-site` release (owner steps)
+## 9. Cut the stable
 
-`publish-create-site` skips with a notice while the package is absent from the registry, because npm
-cannot bind a trusted publisher to a package that does not exist. Publish no placeholder: npm's terms bar
-content that exists only to reserve a name. The owner does these once, in one terminal sitting on release
-day, since no session holds npm credentials or the account's 2FA:
+The stable waits on Geoff's word that his own install passed. Then:
 
-1. `npm login`, then `npm publish <tarball> --access public --tag gate` on the release candidate's
-   real build, which the session bakes and packs.
-2. `npm trust github create-cairn-site --file publish.yml --repo glw907/cairn-cms --allow-publish`.
-   `--allow-publish` is needed because `publish.yml` runs `npm publish` directly.
-3. The session cuts the next candidate inside 2 days, since a new binding expires unless its first
-   publish completes in that time. That first OIDC publish proves the job, and the real install runs
-   from it.
+1. `node scripts/release/preflight.mjs <x.y.z> --stable`, then `node scripts/release/bump.mjs <x.y.z>`,
+   then `node scripts/build/build-guidance-hashes.mjs --check`. The bump on a tree at the final candidate
+   changes version fields, pins, and headings only.
+2. Commit, push `main` by fast-forward, and wait for `test` and `e2e` on the commit.
+3. `node scripts/checks/check-stable-source.mjs`. It refuses unless `HEAD` is `origin/main` and the diff
+   from the final candidate's tree is only the cut's own edits, ignoring paths that ship in no package. It
+   prints a `sha:` line. Do not cut on a failure.
+4. Create the release at that literal sha, with no `--prerelease`. The hook runs the same check and denies
+   a `--target` that differs from the sha it prints:
 
-The package version must equal the root's at every cut: `publish-create-site` fails a mismatch rather
-than move `latest` to `0.0.0`.
+   ```bash
+   gh release create v<x.y.z> --target <sha> \
+     --title "v<x.y.z>: <one-line summary of the window>" \
+     --notes-file <notes-file>
+   ```
 
-## 7. Verify the publish
+5. Watch the publish run, then `node scripts/release/wait.mjs <x.y.z> latest` and
+   `node scripts/release/verify.mjs <x.y.z> --from <final-candidate>`. For a stable, `verify` fetches both
+   versions' tarballs and fails on any differing line outside the cut's own edits. Then
+   `node scripts/release/status.mjs <x.y.z>` must exit 0.
 
-```bash
-gh run watch <run-id> --exit-status     # publish.yml must finish green
-npm view @glw907/cairn-cms version      # a stable serves the new number on `latest`
-npm view create-cairn-site version      # a stable serves the same number on `latest`
-npm view <pkg> dist-tags                # a candidate shows gate: <version> and next unchanged, on all three
-```
+If the publish job fails on authorization (an OIDC error rather than a code failure), the trusted-publisher
+config on npmjs.org is the suspect, not the code: the org/user, repository, workflow filename
+(`publish.yml`), and environment (`npm-publish`) must match the running workflow exactly. A new
+trusted-publisher configuration defaults to `npm stage publish`, so it needs publish chosen as its
+allowed action. Do not bump the version again to retry; fix the config and rerun the same release's
+workflow with `gh run rerun <run-id> --failed`.
 
-A candidate is verified on `gate`; its `next` check runs after promotion, when `next` reads the
-promoted version.
+## 10. Judgment call: when something fails
 
-Then run the audit's public scope over each consuming site you maintain and record the counts. In each
+Triage by where it failed, and fix forward unless the version is poisoned.
+
+- **Before the tag exists:** nothing is permanent. Fix on `main` and recut.
+- **A published candidate that fails the gate or `verify`:** it stays on `gate`. Fix forward to the next
+  candidate. `node scripts/release/withdraw.mjs <x.y.z-rc.N>` prints the `npm deprecate` and `npm dist-tag`
+  commands for the dead one (and, with `--promote-run <id>`, the moves that put `next` back). It runs
+  none of them: Geoff runs the printed lines with his own npm login, since trusted publishing does not
+  cover `deprecate`.
+- **A half-published candidate** (one package out, others not): `withdraw` deprecates only the half that
+  landed.
+- **A failed stable:** one more candidate, never a retry of the number.
+
+## 11. After the publish
+
+Run the audit's public scope over each consuming site you maintain and record the counts. In each
 site's checkout:
 
 ```bash
@@ -284,30 +345,23 @@ at the first minor cut after every site reports zero).
 
 Then update `docs/STATUS.md` to the shipped state.
 
-If the publish job fails on authorization (an OIDC error rather than a code failure), the trusted-publisher
-config on npmjs.org is the suspect, not the code: the org/user, repository, workflow filename
-(`publish.yml`), and environment must match the running workflow exactly. A new trusted-publisher
-configuration defaults to `npm stage publish`, so it needs publish chosen as its allowed action
-(`npm trust ... --allow-publish`); an older one defaults to publish-allowed and needs no change. Do not
-bump the version again to retry; fix the config and re-run the same release's workflow.
-
-## 8. Hand-off
-
 The sites pin `@glw907/cairn-cms` by range and run `npm ci`, so the publish must precede any site code that
 imports new exports. Order: publish, verify on the registry, repoint each site and regenerate its
 standalone lockfile (in an isolated temp dir so it resolves from the registry, not the workspace symlink),
 then push the sites. Flag any deferred live admin smoke tied to a site cutover.
 
-Each release leaves the next one smoother (Geoff, 2026-11-03). File every friction point met during
-the cut, the gate, or the publish to `BACKLOG.md` as it happens, with its mechanism, and prefer a
-script, check, or gate over a prose step. The release's hand-over carries a short retrospective: the
-friction list, what was fixed before the stable, and the backlog numbers of the rest, scheduled ahead
-of the next candidate.
+### The retrospective
+
+Each release leaves the next one smoother (Geoff, 2026-11-03). File every friction point met during the
+cut, the gate, or the publish to `BACKLOG.md` as it happens, with its mechanism, and prefer a script,
+check, or gate over a prose step. The stable's release commit body ends with a fixed paragraph headed
+"Release retrospective", in this order: how many candidates the version took, how many friction items
+were filed, how many of those were fixed before the stable, and the backlog numbers of the rest.
 
 ## References
 
 - The release rule: `CLAUDE.md`, "Working here".
-- npm auth and Trusted Publishing: `.github/workflows/publish.yml` and step 6 above.
+- The commands: `scripts/release/` (each file's header states its interface), and `.github/workflows/publish.yml`.
+- The gate harness: `scripts/gate/README.md`.
 - The path to 1.0 and its readiness checklist: `ROADMAP.md` ("Toward 1.0").
-- The pass that produces the held window: `cairn-running-passes` (which holds unpublished by default and
-  points here when a cut is warranted).
+- The pass that produces the held window, and the carve-out for harness-only fixes: `cairn-running-passes`.

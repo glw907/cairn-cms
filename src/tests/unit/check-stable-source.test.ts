@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { checkStableSource } from '../../../scripts/checks/check-stable-source.mjs';
+import { execFileSync } from 'node:child_process';
+import {
+  IGNORED,
+  RULES,
+  checkStableSource,
+  isIgnored
+} from '../../../scripts/checks/check-stable-source.mjs';
+
+const REPO = resolve(__dirname, '../../../');
 
 // The fixture is a candidate cut's diff (rc.1 to rc.2, the shape of a real cut) rewritten into the
 // stable's rc.2 to 0.99.0: versions, template pins, VERSION, headings, and the CHANGELOG anchor.
@@ -120,12 +128,57 @@ describe('check-stable-source', () => {
     expect(r.errors.join('\n')).toContain('mode');
   });
 
-  it('fails a docs/STATUS.md change', () => {
+  it('accepts a Released line under the CHANGELOG heading, not a prose date', () => {
     const w = world();
-    w.raw.push(entry('docs/STATUS.md'));
+    const head = '@@ -1,3 +1,4 @@\n-## 0.99.0-rc.2\n+## 0.99.0\n+';
+    w.diffs['CHANGELOG.md'] = `${head}Released 2026-11-04.\n`;
+    expect(check(w).errors).toEqual([]);
+    w.diffs['CHANGELOG.md'] = `${head}Released Nov 4.\n`;
     const r = check(w);
     expect(r.ok).toBe(false);
-    expect(r.errors.join('\n')).toContain('docs/STATUS.md');
+    expect(r.errors.join('\n')).toContain('Released Nov 4.');
+  });
+
+  it('ignores harness, test, and inert paths whatever their status', () => {
+    const w = world();
+    w.raw.push(
+      entry('scripts/gate/legs.mjs'),
+      entry('src/tests/unit/gate-x.test.ts', 'A'),
+      entry('examples/showcase/e2e/golden-path.spec.ts'),
+      entry('packages/create-cairn-site/test/x.test.mjs', 'D'),
+      entry('docs/STATUS.md'),
+      entry('BACKLOG.md'),
+      entry('ROADMAP.md'),
+      entry('docs/internal/x.md', 'A', '100644 100755')
+    );
+    const r = check(w);
+    expect(r.errors).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
+  it.each([
+    '.github/workflows/publish.yml',
+    'scripts/build/build-guidance-hashes.mjs',
+    'src/lib/index.ts'
+  ])('still fails a change to %s', (path) => {
+    const w = world();
+    w.raw.push(entry(path));
+    const r = check(w);
+    expect(r.ok).toBe(false);
+    expect(r.errors.join('\n')).toContain(path);
+  });
+
+  it('does not let a rename out of an ignored path hide', () => {
+    const w = world();
+    w.raw.push(`:100644 100644 aaaaaaa aaaaaaa R100\tsrc/tests/a.ts\tsrc/lib/a.ts`);
+    expect(check(w).ok).toBe(false);
+  });
+
+  it('anchors a glob: docs/STATUS.md does not ignore a lookalike', () => {
+    expect(isIgnored('docs/STATUS.md')).toBe(true);
+    expect(isIgnored('docs/STATUS.md.bak')).toBe(false);
+    expect(isIgnored('xsrc/tests/a.ts')).toBe(false);
+    expect(isIgnored('packages/a/b/test/x.ts')).toBe(false);
   });
 
   it('fails when the hashes check exits 1', () => {
@@ -154,5 +207,66 @@ describe('check-stable-source', () => {
     const r = check(w);
     expect(r.ok).toBe(false);
     expect(r.errors.join('\n')).toContain('v0.99.0-rc.2');
+  });
+});
+
+describe('the ignore set against what ships', () => {
+  const tracked = execFileSync('git', ['ls-files'], { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28 })
+    .split('\n')
+    .filter(Boolean);
+  const under = (dir: string) => tracked.filter((p) => p === dir || p.startsWith(`${dir}/`));
+  const manifest = (rel: string) => JSON.parse(readFileSync(resolve(REPO, rel), 'utf8')) as { files: string[] };
+
+  /** Every tracked path some package, or the template bake, puts into a published tarball. */
+  function shippedInputs(): string[] {
+    const inputs = new Set<string>();
+    for (const [dir, rel] of [
+      ['', 'package.json'],
+      ['packages/cairn-cms-dev', 'packages/cairn-cms-dev/package.json'],
+      ['packages/create-cairn-site', 'packages/create-cairn-site/package.json']
+    ]) {
+      for (const entry of manifest(rel).files) {
+        if (entry.startsWith('!')) continue;
+        for (const p of under(dir ? `${dir}/${entry}` : entry)) {
+          if (!/\/src\/.*\.test\.mjs$/.test(p)) inputs.add(p);
+        }
+      }
+    }
+    for (const p of [...under('src/lib'), ...under('packages/cairn-cms-dev/src')]) inputs.add(p);
+    const exclude = (
+      JSON.parse(readFileSync(resolve(REPO, 'examples/showcase/.cairn-template.json'), 'utf8')) as {
+        exclude: string[];
+      }
+    ).exclude;
+    for (const p of under('examples/showcase')) {
+      const rel = p.slice('examples/showcase/'.length);
+      if (!exclude.some((e) => rel === e || rel.startsWith(`${e}/`))) inputs.add(p);
+    }
+    for (const p of [...under('skills'), ...under('claude')]) inputs.add(p);
+    return [...inputs];
+  }
+
+  const collisions = (globs: readonly string[]) => shippedInputs().filter((p) => isIgnored(p, globs));
+
+  it('finds inputs to compare', () => {
+    const inputs = shippedInputs();
+    expect(inputs).toContain('src/lib/index.ts');
+    expect(inputs).toContain('CHANGELOG.md');
+    expect(inputs).toContain('claude/CLAUDE.md');
+  });
+
+  it('collides with no ignored glob', () => {
+    expect(collisions(IGNORED)).toEqual([]);
+  });
+
+  it('reports a collision when the set also ignores showcase source', () => {
+    const hits = collisions([...IGNORED, 'examples/showcase/src/**']);
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0]).toMatch(/^examples\/showcase\/src\//);
+  });
+
+  it('exports a rule for each file the cut may change', () => {
+    expect(Object.keys(RULES)).toContain('CHANGELOG.md');
+    expect(Object.keys(RULES)).toContain('package.json');
   });
 });

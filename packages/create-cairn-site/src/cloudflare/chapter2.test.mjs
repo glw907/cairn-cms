@@ -1371,7 +1371,10 @@ test('completion: re-entry at domain-live re-runs ensureApiToken', async (t) => 
 
   const zoneListCalls = cloudflare.requests
     .slice(requestsBefore)
-    .filter((r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones'));
+    // The DMARC read before the email admission lists the zone's records; it validates nothing.
+    .filter(
+      (r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones') && !r.path.includes('/dns_records'),
+    );
   assert.equal(zoneListCalls.length, 1, 'ensureApiToken must have validated the saved token again');
 });
 

@@ -297,16 +297,112 @@ const ALREADY_ACTIVE_DETAIL =
   'stay untouched.';
 
 /**
+ * What the email half knows about the domain's DMARC record before onboarding: `found: false`
+ * when the zone has none, `found: true` with its `p=` value (null when the record sets none),
+ * `unread: true` when the read failed, or undefined when nothing was read (a dry run, or the
+ * re-offer prompt, which runs before the token exists).
+ * @typedef {{ found: false } | { found: true, policy: string | null } | { unread: true } | undefined} DmarcReading
+ */
+
+/**
+ * The admission's DMARC sentences. Cloudflare adds a `p=reject` record to the sending domain only
+ * when none exists, and keeps an existing one unchanged
+ * (https://developers.cloudflare.com/email-service/reference/troubleshooting/).
+ * @param {DmarcReading} dmarc the domain's record before onboarding
+ * @returns {string} the sentences
+ */
+function dmarcAdmission(dmarc) {
+  const conditional =
+    'Onboarding adds a p=reject DMARC policy for your whole domain only when it has none, and ' +
+    'leaves an existing record unchanged. A p=reject policy governs every sender that mails as ' +
+    'your domain, not only cairn.';
+  if (dmarc?.found === false) {
+    return (
+      'Your domain has no DMARC record yet, so onboarding also adds a p=reject DMARC policy for ' +
+      'your whole domain. That policy governs every sender that mails as your domain, not only ' +
+      'cairn.'
+    );
+  }
+  if (dmarc?.found === true) {
+    const policy = dmarc.policy ? `p=${dmarc.policy}` : 'with no p= policy';
+    return `Your domain already has a DMARC record (${policy}), and onboarding leaves it unchanged.`;
+  }
+  if (dmarc?.unread) return `Setup couldn't read your domain's current DMARC record. ${conditional}`;
+  return conditional;
+}
+
+/**
  * The email half's admission. Workers Paid was already confirmed before chapter 1's first
  * deploy, so this no longer restates its price as an open decision; it says what turning on
  * email sign-in itself does, since Paid being on is not the same as this domain sending mail yet.
+ * @param {DmarcReading} dmarc the domain's record before onboarding
+ * @returns {string} the admission detail
  */
-const EMAIL_ADMISSION_DETAIL =
-  "Cloudflare's Workers Paid plan, already on for this account since your first deploy, is what " +
-  "sends this site's sign-in email. Turning this on onboards your domain for Cloudflare Email " +
-  'Sending, then sends a real test message to your sign-in address to prove it works before ' +
-  'it hands the feature to anyone else. Onboarding also writes a p=reject DMARC policy for your ' +
-  'whole domain. That policy governs every sender that mails as your domain, not only cairn.';
+function emailAdmissionDetail(dmarc) {
+  return (
+    "Cloudflare's Workers Paid plan, already on for this account since your first deploy, is " +
+    "what sends this site's sign-in email. Turning this on onboards your domain for Cloudflare " +
+    'Email Sending, then sends a real test message to your sign-in address to prove it works ' +
+    `before it hands the feature to anyone else. ${dmarcAdmission(dmarc)}`
+  );
+}
+
+/**
+ * The closing message's DMARC paragraph, true for what onboarding did on this domain.
+ * @param {DmarcReading} dmarc the domain's record before onboarding
+ * @param {string} domain the sending domain
+ * @returns {string} the paragraph, ending in a newline
+ */
+function dmarcClosing(dmarc, domain) {
+  const authenticate =
+    'authenticate each new service you add later, such as a newsletter tool or mailing list, ' +
+    "against the domain's mail records, or its mail will be rejected.\n";
+  if (dmarc?.found === false) {
+    return (
+      `Onboarding also wrote a p=reject DMARC policy at _dmarc.${domain}, which asks receivers ` +
+      'to reject mail that claims to come from your domain without authenticating. That record ' +
+      `covers every sender on the domain, so ${authenticate}`
+    );
+  }
+  if (dmarc?.found === true) {
+    const policy = dmarc.policy ? `p=${dmarc.policy}` : 'it sets no p= policy';
+    return `Onboarding left your existing DMARC record at _dmarc.${domain} unchanged (${policy}).\n`;
+  }
+  return (
+    `Setup couldn't read the DMARC record at _dmarc.${domain} from before onboarding. Cloudflare ` +
+    'adds a p=reject policy there only when the domain has none, and leaves an existing record ' +
+    `unchanged, so check that record. Under p=reject, ${authenticate}`
+  );
+}
+
+/**
+ * Read the domain's DMARC record from its zone, through the chapter's API client. A failed
+ * read is reported as unread rather than thrown: this only shapes copy, never a gate.
+ * @param {{ listDnsRecords: (zoneId: string) => Promise<object[]> }} api the chapter's API client
+ * @param {string} zoneId the domain's zone
+ * @param {string} domain the sending domain
+ * @returns {Promise<DmarcReading>} the reading
+ */
+async function readDmarc(api, zoneId, domain) {
+  let records;
+  try {
+    records = await api.listDnsRecords(zoneId);
+  } catch {
+    return { unread: true };
+  }
+  const name = `_dmarc.${domain}`.toLowerCase();
+  // A TXT value can arrive wrapped in quotes, or split into quoted strings.
+  const text = (record) => String(record?.content ?? '').replace(/"\s*"|"/g, '');
+  const dmarc = records.find(
+    (record) =>
+      record?.type === 'TXT' &&
+      String(record?.name ?? '').toLowerCase() === name &&
+      /^\s*v\s*=\s*DMARC1/i.test(text(record)),
+  );
+  if (!dmarc) return { found: false };
+  const policy = /(?:^|;)\s*p\s*=\s*([a-z]+)/i.exec(text(dmarc));
+  return { found: true, policy: policy ? policy[1].toLowerCase() : null };
+}
 
 /**
  * @typedef {object} RunChapter2Input
@@ -468,10 +564,11 @@ export async function runChapter2({
    * for itself (yes only with `--email`); anything else asks through `confirm`.
    * @returns {Promise<boolean>}
    */
-  async function askEmailAdmission() {
+  async function askEmailAdmission(dmarc) {
+    const detail = emailAdmissionDetail(dmarc);
     let consented = false;
-    await runStep(frame, 'Turn on email sign-in', EMAIL_ADMISSION_DETAIL, async () => {
-      log(EMAIL_ADMISSION_DETAIL);
+    await runStep(frame, 'Turn on email sign-in', detail, async () => {
+      log(detail);
       if (args.yes && !args.email) {
         log(
           'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
@@ -929,9 +1026,17 @@ export async function runChapter2({
     // succeeded, this is never re-asked. A decline writes the terminal step directly and deletes the
     // token at the point it happens, per the terminal-state token rule. A later re-entry at that
     // step is handled at the top of this function by the open-decline re-offer.
+    // The DMARC record is read before onboarding can add one, so the prompt and the closing
+    // message say what onboarding does on this domain. A resumed run past onboarding uses the
+    // reading it saved.
+    let dmarc = record?.cloudflare?.dmarcBeforeOnboarding;
+    if (!dryRun && !hasReached(step, 'email-onboarded')) {
+      dmarc = await readDmarc(api, zoneId, domain);
+    }
+
     if (!hasReached(step, 'email-onboarded') && !emailAdmitted) {
       const reoffered = Boolean(record?.cloudflare?.emailDeclinedAt);
-      const emailConsented = await askEmailAdmission();
+      const emailConsented = await askEmailAdmission(dmarc);
       if (!dryRun && !emailConsented) {
         const declineErr = cloudflareError('paid-plan-declined', { dir, reoffered });
         log(declineErr.message);
@@ -968,7 +1073,10 @@ export async function runChapter2({
         return { outcome: 'email-not-ready', domain };
       }
       if (!dryRun) {
-        await writeStep({ step: 'email-onboarded', cloudflare: { emailOnboardedAt: onboardedAt } });
+        await writeStep({
+          step: 'email-onboarded',
+          cloudflare: { emailOnboardedAt: onboardedAt, dmarcBeforeOnboarding: dmarc },
+        });
       }
     }
 
@@ -1061,12 +1169,7 @@ export async function runChapter2({
             'providers can take a while to trust it enough to deliver its first messages. That ' +
             'trust builds on its own as the domain keeps sending. If a sign-in link does not ' +
             'arrive yet, this warm-up period is the usual reason.\n' +
-            `Onboarding also wrote a p=reject DMARC policy at _dmarc.${domain}, which asks ` +
-            'receivers to reject mail that claims to come from your domain without ' +
-            'authenticating. That record covers every sender on the domain and stays in place ' +
-            'even if you turn Email Sending off again, so authenticate each new service you add ' +
-            "later, such as a newsletter tool or mailing list, against the domain's mail " +
-            'records, or its mail will be rejected.\n' +
+            dmarcClosing(dmarc, domain) +
             'Run `cairn doctor` any time to check what is set up and what is still missing; ' +
             'install it with `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest` or ' +
             'from the release page at https://github.com/glw907/cairn-cms/releases. Run ' +

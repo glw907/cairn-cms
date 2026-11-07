@@ -396,6 +396,17 @@ describe('the admin half', () => {
     await admin.close();
   }, 30_000);
 
+  it('names the page and its text when the editor never appears', async () => {
+    const admin = await launched.newAdminContext();
+    await admin.route(/.*/, answer);
+    const failure = await publishViaAdmin(admin, { origin: SITE, marker: 'gate-x', adminPath: '/admin/login', pauseMs: 100, editorWaitMs: 1500 }).catch((error: Error) => error);
+    await admin.close();
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).toContain('gate-site.example.workers.dev/admin/login');
+    expect((failure as Error).message).toContain('Send sign-in link');
+    expect((failure as Error).message).not.toContain('?');
+  }, 30_000);
+
   it('requests a sign-in link and confirms a mailed one in a fresh context', async () => {
     const fresh = await launched.newAdminContext();
     await fresh.route(/.*/, answer);

@@ -477,16 +477,20 @@ export async function ensureGithubSession(context, creds, { base = 'https://gith
 /**
  * Open one existing entry, read a pre-edit body line, insert the marker, and publish.
  * @param {import('playwright').BrowserContext} context a context signed in to the install's admin
- * @param {{ origin: string, marker: string, adminPath?: string, pauseMs?: number, alertWaitMs?: number }} options
+ * @param {{ origin: string, marker: string, adminPath?: string, pauseMs?: number, alertWaitMs?: number, editorWaitMs?: number }} options
  *  `adminPath` is the entry's admin address (the Waymark template's About page)
  * @returns {Promise<PublishResult>}
  */
-export async function publishViaAdmin(context, { origin, marker, adminPath = '/admin/pages/about', pauseMs = 500, alertWaitMs = 60_000 }) {
+export async function publishViaAdmin(context, { origin, marker, adminPath = '/admin/pages/about', pauseMs = 500, alertWaitMs = 60_000, editorWaitMs = 60_000 }) {
   const page = await context.newPage();
   await page.goto(`${origin}${adminPath}`, { waitUntil: 'load' });
   await settle(page, pauseMs);
   const editor = page.locator('.cm-content');
-  await editor.waitFor({ state: 'visible', timeout: 60_000 });
+  try {
+    await editor.waitFor({ state: 'visible', timeout: editorWaitMs });
+  } catch {
+    throw new Error(`The editor never appeared: ${where(page.url())} shows ${JSON.stringify((await pageText(page)).slice(0, 200))}.`);
+  }
   const lines = await page.locator('.cm-line').allInnerTexts();
   const control = lines.map((line) => line.trim()).find((line) => line.length >= 12);
   if (!control) throw new Error(`The entry at ${adminPath} has no body line to use as a control.`);

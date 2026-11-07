@@ -861,9 +861,9 @@ test('runCloudflareChapter: an existing Worker of the same name stops --yes setu
     { flags: { yes: true, deploy: true } },
     { worker: { code: 0, stdout: '[]' } },
   );
-  assert.equal(err.catalogue?.code, 'resource-names-taken');
+  assert.equal(err.cause?.catalogue?.code, 'resource-names-taken');
   assert.match(err.message, /Worker named alpine-club\b/);
-  assert.match(err.catalogue.next, /--name/);
+  assert.match(err.cause.catalogue.next, /--name/);
   assertNothingBuiltOrDeployed(invocations, state);
 });
 
@@ -877,7 +877,7 @@ test('runCloudflareChapter: an existing database or bucket stops an interactive 
       r2: { code: 0, stdout: '{}' },
     },
   );
-  assert.equal(err.catalogue?.code, 'resource-names-taken');
+  assert.equal(err.cause?.catalogue?.code, 'resource-names-taken');
   assert.match(err.message, /database named alpine-club-auth/);
   assert.match(err.message, /bucket named alpine-club-media/);
   assert.doesNotMatch(err.message, /Worker named/);
@@ -891,7 +891,7 @@ test('runCloudflareChapter: a name read that fails stops setup rather than deplo
     { flags: { yes: true, deploy: true } },
     { worker: { code: 1, stderr: 'Authentication error [code: 10000]' } },
   );
-  assert.equal(err.catalogue?.code, 'resource-names-check-failed');
+  assert.equal(err.cause?.catalogue?.code, 'resource-names-check-failed');
   assertNothingBuiltOrDeployed(invocations, state);
 });
 

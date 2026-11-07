@@ -203,8 +203,8 @@ test('the Builds rows add exactly eleven codes, none colliding with build-failed
   // 37 pre-Builds codes, plus Task 2's split: hostname-propagating retired (-1), replaced by
   // hostname-records-absent and hostname-resolver-lagging (+2), plus deploy-plan-declined,
   // chapter 1's pre-deploy decline row, added alongside the pre-existing paid-plan-declined
-  // (chapter 2's, unrenamed) (+1).
-  const BASELINE_CODE_COUNT = 39;
+  // (chapter 2's, unrenamed) (+1), plus chapter 1's two pre-deploy name-check rows (+2).
+  const BASELINE_CODE_COUNT = 41;
   const NEW_BUILDS_CODES = [
     'builds-app-not-authorized',
     'builds-repo-not-selected',

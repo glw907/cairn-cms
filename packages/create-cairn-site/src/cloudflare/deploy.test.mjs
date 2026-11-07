@@ -438,7 +438,7 @@ for (const [label, overrides, named] of [
     await armNameReads(t, overrides);
     const { ensureNamesFree } = await import('./deploy.mjs');
     await assert.rejects(
-      () => ensureNamesFree({ dir: './alpine', log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
+      () => ensureNamesFree({ dir: tmpdir(), log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
       (err) => {
         assert.equal(err.catalogue.code, 'resource-names-taken');
         assert.equal(err.catalogue.kind, 'act');
@@ -458,7 +458,7 @@ test('ensureNamesFree names every clashing resource in one error', async (t) => 
   });
   const { ensureNamesFree } = await import('./deploy.mjs');
   await assert.rejects(
-    () => ensureNamesFree({ dir: './alpine', log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
+    () => ensureNamesFree({ dir: tmpdir(), log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
     (err) => {
       assert.match(err.message, /Worker named alpine-club\b/);
       assert.match(err.message, /database named alpine-club-auth/);
@@ -478,7 +478,7 @@ for (const [label, overrides] of [
     await armNameReads(t, overrides);
     const { ensureNamesFree } = await import('./deploy.mjs');
     await assert.rejects(
-      () => ensureNamesFree({ dir: './alpine', log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
+      () => ensureNamesFree({ dir: tmpdir(), log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
       (err) => {
         assert.equal(err.catalogue.code, 'resource-names-check-failed');
         assert.equal(err.catalogue.kind, 'act');

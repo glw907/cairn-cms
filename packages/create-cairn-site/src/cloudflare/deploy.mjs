@@ -176,6 +176,111 @@ export async function deployWorker({ dir, log, accountId }) {
 }
 
 /**
+ * The API codes wrangler 4.158 renders as `[code: N]` in a failed read's stderr (its
+ * `renderError` in `wrangler-dist/cli.js`). 10007 is the Worker-not-found code wrangler's own
+ * deploy treats as "no Worker yet" (`isWorkerNotFoundError` in deploy-helpers'
+ * `worker-not-found-error.ts`, read by `confirm-latest-deployment-overwrite.ts` around the same
+ * `/workers/scripts/<name>/deployments` request `deployments list` makes). 10006 is the
+ * missing-bucket code wrangler's R2 provisioning checks after the same single-bucket read that
+ * `r2 bucket info` makes (`getR2Bucket`).
+ */
+const WORKER_ABSENT_CODE = '[code: 10007]';
+const BUCKET_ABSENT_CODE = '[code: 10006]';
+
+/**
+ * Run one name read, returning true when the resource exists and false when wrangler reports the
+ * absent code. Any other failure throws, because reading a failure as "absent" would let setup
+ * deploy over a resource already in use.
+ * @param {string[]} args the wrangler read
+ * @param {string} absentCode the `[code: N]` that means "no such resource"
+ * @param {string} resource names the resource in the error, such as `the Worker alpine`
+ * @param {{ dir: string, accountId?: string }} target the scaffold root and the chosen account
+ * @returns {Promise<boolean>} whether the resource exists
+ */
+async function resourceExists(args, absentCode, resource, { dir, accountId }) {
+  const result = await runWrangler(args, { cwd: dir, log: () => {}, ...accountEnv(accountId) });
+  if (result.code === 0) return true;
+  if (result.stderr.includes(absentCode)) return false;
+  throw cloudflareError('resource-names-check-failed', {
+    dir,
+    resource,
+    detail: trailingStderr(result.stderr) || `wrangler exited with code ${result.code}.`,
+  });
+}
+
+/**
+ * Stop setup when the chosen account already has a Worker, D1 database, or R2 bucket of the
+ * names this site deploys under, so a first deploy never replaces a live Worker or migrates and
+ * seeds a database that belongs to another site.
+ *
+ * Each read uses wrangler's signed-in session. The Worker read is `deployments list --name
+ * <name> --json`, which exits 0 for any existing Worker. The database read is `d1 list --json`,
+ * whose handler pages through every database and prints the array as JSON. The bucket read is
+ * `r2 bucket info <name> --json` rather than `r2 bucket list`, whose handler sends one request
+ * with no pagination cursor and so cannot prove a bucket absent on an account with many.
+ * @param {object} args
+ * @param {string} args.dir the scaffold root
+ * @param {(line: string) => void} args.log receives progress lines
+ * @param {string} [args.accountId] the Cloudflare account to read, from `ensureAccountId`
+ * @param {string} args.workerName the base name; the database is `<name>-auth` and the bucket
+ *  `<name>-media`, as `nameWranglerResources` writes them
+ * @returns {Promise<void>} resolves when all three names are free; rejects with
+ *  `resource-names-taken` naming every clash, or `resource-names-check-failed` when a read fails
+ */
+export async function ensureNamesFree({ dir, log, accountId, workerName }) {
+  const databaseName = `${workerName}-auth`;
+  const bucketName = `${workerName}-media`;
+  log(`Checking that your Cloudflare account has nothing named ${workerName} yet.`);
+  const target = { dir, accountId };
+  const taken = [];
+
+  const workerExists = await resourceExists(
+    ['deployments', 'list', '--name', workerName, '--json'],
+    WORKER_ABSENT_CODE,
+    `the Worker ${workerName}`,
+    target,
+  );
+  if (workerExists) taken.push(`a Worker named ${workerName}`);
+
+  const list = await runWrangler(['d1', 'list', '--json'], {
+    cwd: dir,
+    log: () => {},
+    ...accountEnv(accountId),
+  });
+  let databases;
+  try {
+    databases = list.code === 0 ? JSON.parse(list.stdout) : null;
+  } catch {
+    databases = null;
+  }
+  if (!Array.isArray(databases)) {
+    throw cloudflareError('resource-names-check-failed', {
+      dir,
+      resource: 'the list of D1 databases',
+      detail:
+        list.code === 0
+          ? 'wrangler d1 list --json printed output that is not a JSON list.'
+          : trailingStderr(list.stderr) || `wrangler exited with code ${list.code}.`,
+    });
+  }
+  if (databases.some((database) => database?.name === databaseName)) {
+    taken.push(`a database named ${databaseName}`);
+  }
+
+  const bucketExists = await resourceExists(
+    ['r2', 'bucket', 'info', bucketName, '--json'],
+    BUCKET_ABSENT_CODE,
+    `the bucket ${bucketName}`,
+    target,
+  );
+  if (bucketExists) taken.push(`a storage bucket named ${bucketName}`);
+
+  if (taken.length > 0) {
+    throw cloudflareError('resource-names-taken', { dir, taken });
+  }
+}
+
+/**
  * The bindings, in the order migrations run, matching wrangler.jsonc's binding names. A site
  * scaffolded with a second D1 binding and resumed here gets that database provisioned but never
  * migrated; the window is accepted rather than derived from the site's wrangler.jsonc.

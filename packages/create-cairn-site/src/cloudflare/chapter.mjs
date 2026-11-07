@@ -13,7 +13,14 @@ import { exitOnCancel } from '../prompts.mjs';
 import { defineAction, runActions } from '../runner.mjs';
 import { updateSite, loadSite } from '../state.mjs';
 import { workerNameFor, writePublicOrigin } from './config.mjs';
-import { ensureInstalled, ensureLogin, buildSite, deployWorker, applyMigrations } from './deploy.mjs';
+import {
+  ensureInstalled,
+  ensureLogin,
+  ensureNamesFree,
+  buildSite,
+  deployWorker,
+  applyMigrations,
+} from './deploy.mjs';
 import { ensureAccountId } from './account.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import { movePemToWorkerSecret } from './secret.mjs';
@@ -115,10 +122,11 @@ export async function runCloudflareChapter({
       '(https://developers.cloudflare.com/workers/platform/pricing/), billed once per Cloudflare ' +
       "account rather than once per site: a cairn site runs on it from its first deploy. Turn it " +
       "on first if it is not already, then the tool installs your site's dependencies, builds " +
-      `it, and deploys it to your account: one Worker named ${workerName} (this replaces any ` +
-      'Worker of that name already in your account; deploying again later updates it), one ' +
+      `it, and deploys it to your account: one Worker named ${workerName}, one ` +
       `database (${workerName}-auth), and one ` +
-      `storage bucket (${workerName}-media). One browser trip to sign in to Cloudflare if you ` +
+      `storage bucket (${workerName}-media). It first checks that your account has no Worker, ` +
+      'database, or bucket by those names, and stops without deploying if it finds one. ' +
+      'One browser trip to sign in to Cloudflare if you ' +
       'are not already, then one click to sign in to your site.';
 
     let consented = false;
@@ -229,6 +237,23 @@ export async function runCloudflareChapter({
   );
 
   if (!resumingAtDeployed) {
+    // A run that already began deploying under this name, and stopped before reaching
+    // `deployed`, may itself have created the Worker, database, and bucket under it, so only a
+    // run that never started its first deploy reads the account. The marker is saved just
+    // before that deploy, below.
+    const beganDeploying = record?.cloudflare?.deployStartedAs === workerName;
+    await runStep(
+      frame,
+      'Check that the names are free',
+      `Checks that your Cloudflare account has no Worker named ${workerName}, no database named ` +
+        `${workerName}-auth, and no storage bucket named ${workerName}-media, and stops before ` +
+        'building if it finds one.',
+      async () => {
+        if (beganDeploying) return;
+        await ensureNamesFree({ dir, log, accountId, workerName });
+      },
+    );
+
     await runStep(frame, 'Build your site', `Runs npm run build in ${dir}.`, () =>
       buildSite({ dir, log }),
     );
@@ -239,6 +264,7 @@ export async function runCloudflareChapter({
       "Deploys the Worker, writes its URL as the site's origin, applies the database's " +
         'migrations, rebuilds so the pages carry that origin, then deploys again.',
       async () => {
+        await updateSite(siteId, { cloudflare: { deployStartedAs: workerName } });
         const first = await deployWorker({ dir, log, accountId });
         await writePublicOrigin(dir, first.url);
         await applyMigrations({ dir, log, accountId });

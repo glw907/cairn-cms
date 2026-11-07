@@ -209,7 +209,7 @@ describe('CairnAdmin', () => {
 
   it('renders the editors view bare', async () => {
     const screen = await render(CairnAdmin, { data: editorsData() });
-    await expect.element(screen.getByText('Owner One')).toBeInTheDocument();
+    await expect.element(screen.getByText('Owner One', { exact: false })).toBeInTheDocument();
   });
 
   it('renders the nav view bare', async () => {

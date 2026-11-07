@@ -850,7 +850,8 @@ describe('media/library', () => {
     await expect.element(screen.getByRole('button', { name: 'Grid view' })).toBeInTheDocument();
     await expect.element(screen.getByRole('button', { name: 'List view' })).toBeInTheDocument();
     for (const label of ['All', 'Needs alt', 'No references found']) {
-      await expect.element(screen.getByRole('radio', { name: label })).toBeInTheDocument();
+      // exact: false because each filter's accessible name carries its count after the label.
+      await expect.element(screen.getByRole('radio', { name: label, exact: false })).toBeInTheDocument();
     }
   });
 });
@@ -915,7 +916,8 @@ describe('tags/screen', () => {
   it('renders the resting screen: the add field, the tag list, an unused delete, and the unlisted seed', async () => {
     const screen = await mountPosed(getStory('tags/screen'));
 
-    await expect.element(screen.getByRole('heading', { name: 'Your tags' })).toBeInTheDocument();
+    // exact: false because the heading's accessible name carries more than the title.
+    await expect.element(screen.getByRole('heading', { name: 'Your tags', exact: false })).toBeInTheDocument();
     // The stored-form line under the Add field is the one contracted detail the audit says is not
     // in the resting render (it appears as the author types), so this row asserts no pose for it.
     expect(screen.container.textContent).toContain('Editors see the name; entries keep a short stored form.');

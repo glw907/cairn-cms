@@ -67,10 +67,10 @@ export default defineConfig({
     maxWorkers: 4,
     forceRerunTriggers: FORCE_RERUN_TRIGGERS,
     // vi.restoreAllMocks (widely used in this suite's afterEach hooks) does not restore a
-    // vi.stubGlobal call; only vi.unstubAllGlobals or this flag do. Every project below repeats
-    // it explicitly, since a `projects` entry is its own Vite config and does not inherit this
-    // root `test` block (internals-C, Task 5): without it, a global a test stubs (commonly
-    // `fetch`) can leak into the next test file sharing a worker.
+    // vi.stubGlobal call; only vi.unstubAllGlobals or this flag do. Without it, a global a test
+    // stubs (commonly `fetch`) can leak into the next test file sharing a worker. Vitest 5 makes an
+    // inline project extend this root `test` block, so the flag reaches every project below; each
+    // still repeats it so a project reads the same if it moves to its own config file.
     unstubGlobals: true,
     projects: [
       {

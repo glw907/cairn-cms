@@ -171,7 +171,7 @@ describe('ComponentInsertDialog search', () => {
     const rows = document.querySelectorAll('[data-testid="cairn-pk-row"]');
     expect(rows.length).toBe(1);
     expect(rows[0].querySelector('[data-testid="cairn-pk-row-label"]')?.textContent?.trim()).toBe('Comp 3');
-    await expect.element(screen.getByRole('status')).toHaveTextContent(/1 block/i);
+    await expect.element(screen.getByRole('status')).toMatchTextContent(/1 block/i);
   });
 
   it('announces the match count only for a non-empty query with matches', async () => {

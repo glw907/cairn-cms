@@ -21,8 +21,8 @@ describe('CairnHistory', () => {
   it('renders each publish under the "Recent versions" heading', async () => {
     await render(CairnHistory, { data: data({ entries: [entry(1), entry(2)] }) });
     await expect.element(page.getByRole('heading', { name: 'Recent versions' })).toBeInTheDocument();
-    await expect.element(page.getByText('Editor 1')).toBeInTheDocument();
-    await expect.element(page.getByText('Editor 2')).toBeInTheDocument();
+    await expect.element(page.getByText('Editor 1', { exact: false })).toBeInTheDocument();
+    await expect.element(page.getByText('Editor 2', { exact: false })).toBeInTheDocument();
   });
 
   it('pins the synthetic draft row on top when data.draft is non-null', async () => {
@@ -32,7 +32,7 @@ describe('CairnHistory', () => {
         draft: { editor: 'Drafting Editor', lastSavedAt: '2026-02-01T00:00:00Z' },
       }),
     });
-    await expect.element(page.getByText('Drafting Editor')).toBeInTheDocument();
+    await expect.element(page.getByText('Drafting Editor', { exact: false })).toBeInTheDocument();
     const rows = screen.container.querySelectorAll('tbody tr');
     expect(rows).toHaveLength(2);
     expect(rows[0].textContent).toContain('Drafting Editor');
@@ -78,7 +78,7 @@ describe('CairnHistory', () => {
     const screen = await render(CairnHistory, {
       data: data({ entries: [], draft: { editor: 'Ed Editor', lastSavedAt: '2026-02-01T00:00:00Z' } }),
     });
-    await expect.element(page.getByText('Ed Editor')).toBeInTheDocument();
+    await expect.element(page.getByText('Ed Editor', { exact: false })).toBeInTheDocument();
     expect(screen.container.textContent).not.toContain('No versions yet');
   });
 

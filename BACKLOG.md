@@ -183,9 +183,6 @@
 - [ ] **#211** Measure tidy's latency on real entries against the deadline and the cap `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   `DEFAULT_TIDY_TIMEOUT_MS` is 30s (`src/lib/sveltekit/content-routes-context.ts`) and `MAX_TIDY_CHARS` is 24,000 (`src/lib/sveltekit/content-routes-tidy.ts`). The only record is one run per model with a stand-in prompt: at 12,935 characters, `claude-sonnet-5-5` took 20.6s and `claude-sonnet-5` took 40.1s. If a real proofread near the cap passes the deadline, an editor gets a timeout on text the cap allowed, and the retryable 502's "try again" copy will fail the same way. Measure real entries, then keep or change either number and correct both doc comments. Found by PR #177, whose planned proofread was set aside.
   Placement: After the release.
-- [ ] **#331** Take the held major vitest 5 `#improvement` `#deps` *(2026-11-02)* *(swept 2026-11-02)*
-  Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: the browser plugin peers vitest 5; a dedicated pass runs `test.yml` green on 5.1.0.
-  Placement: After the release.
 - [ ] **#332** Take the held major typescript 7 `#improvement` `#deps` *(2026-11-02)* *(swept 2026-11-02)*
   Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: `tsgo.yml` runs green on 7, SvelteKit's peer admits `^7`, and a tsdoc lint path admits `^7`.
   Placement: After the release.
@@ -258,6 +255,8 @@
 - **Accepted residual (#247):** the frame-ancestors-only CSP. Clickjacking is the threat these headers close; a full CSP would have to allow SvelteKit's inline hydration and every site's own admin screens and theme, which is site-owned policy outside the engine's scope. (Geoff, 2026-11-02, release sitting)
 
 ## Done
+- [x] **#331** Take the held major vitest 5 `#improvement` `#deps` *(2026-11-02 → 2026-11-07)*
+  Done: vitest, `@vitest/browser`, and `@vitest/browser-playwright` at `^5.1.0` in the engine, the showcase, and the scaffold, with no compatibility option kept. Four test fixes (browser `locators.exact`, strict `toHaveTextContent`, a workerd `AsyncLocalStorage.disable()` gap under `vi.doMock`, the `.vitest/` ignore); see `docs/internal/record/2026-11-07-dependency-sweep.md`.
 - [x] **#330** Check the consolidated `## Unreleased` changelog for entries whose option is absent from source `#bug` `#docs` *(2026-11-02 → 2026-11-07)*
   The release sweep's finders found two entries describing code that `src/lib` does not contain: `editor.siteConfigPath` and `editor.nav.configPath` (`compose.ts:59` hard-codes the default; `CHANGELOG.md:143` says both were removed), and `sanitizeSchema` with `unsafeDisableSanitize` (only `buildSanitizeSchema(registry)` exists in `src/lib/render/sanitize-schema.ts`). One finder reported each; no verifier read them. Grep each against `main` and prune or correct the entry before the cut.
   Done: the rc.4 notes fix. Only `editor.siteConfigPath` was wrong: it arrived after 0.98.0 (56a208229) and left again (68376385e), so the entry drops it. `editor.nav.configPath`, `sanitizeSchema`, and `unsafeDisableSanitize` were real 0.98.0 options, and their removal entries stand.

@@ -448,10 +448,10 @@ describe('ConceptList', () => {
     // 5 entries: 2 published, 1 edited, 1 new, 1 hidden draft (also published-status).
     // Published is every live entry, so the edited row counts in BOTH Unpublished changes and
     // Published. Hidden is orthogonal: the hidden-but-published row counts in BOTH Published and Hidden.
-    await expect.element(screen.getByRole('radio', { name: /^all\d/i })).toHaveTextContent('5');
-    await expect.element(screen.getByRole('radio', { name: /^unpublished changes/i })).toHaveTextContent('2');
-    await expect.element(screen.getByRole('radio', { name: /^published/i })).toHaveTextContent('4');
-    await expect.element(screen.getByRole('radio', { name: /^hidden/i })).toHaveTextContent('1');
+    await expect.element(screen.getByRole('radio', { name: /^all\d/i })).toMatchTextContent('5');
+    await expect.element(screen.getByRole('radio', { name: /^unpublished changes/i })).toMatchTextContent('2');
+    await expect.element(screen.getByRole('radio', { name: /^published/i })).toMatchTextContent('4');
+    await expect.element(screen.getByRole('radio', { name: /^hidden/i })).toMatchTextContent('1');
   });
 
   it('Unpublished changes filters to new and edited rows', async () => {

@@ -44,8 +44,9 @@ describe('ManageEditors', () => {
 
   it('lists editors with their roles', async () => {
     const screen = await render(ManageEditors, { data: data(), form: null });
-    await expect.element(screen.getByText('Owner One')).toBeInTheDocument();
-    await expect.element(screen.getByText('Ed Two')).toBeInTheDocument();
+    // exact: false because vitest 5 matches whole text, and a name shares its element with more.
+    await expect.element(screen.getByText('Owner One', { exact: false })).toBeInTheDocument();
+    await expect.element(screen.getByText('Ed Two', { exact: false })).toBeInTheDocument();
   });
 
   // S3 Q2: the outline register's 55% edge is the audit's own border-contrast floor, darker than

@@ -538,7 +538,7 @@ describe('CairnAdminShell', () => {
   it('keeps the search trigger\'s accessible name once its label is visually hidden below sm', async () => {
     const screen = await render(CairnAdminShellDeskHarness, { data: data(true) });
     await expect
-      .element(screen.getByRole('button', { name: 'Search or jump to…' }))
+      .element(screen.getByRole('button', { name: 'Search or jump to…', exact: false }))
       .toBeInTheDocument();
   });
 
@@ -1468,7 +1468,7 @@ describe('CairnAdminShell', () => {
         children: child,
       });
       const sidebar = screen.getByRole('navigation', { name: 'Site content' });
-      const postsLink = sidebar.getByRole('link', { name: 'Posts' }).element() as HTMLElement;
+      const postsLink = sidebar.getByRole('link', { name: 'Posts', exact: false }).element() as HTMLElement;
       const pill = postsLink.querySelector('[aria-hidden="true"].badge')!;
       expect(pill.textContent?.trim()).toBe('99+');
     });

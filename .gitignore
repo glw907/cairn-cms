@@ -12,7 +12,7 @@ dist/
 .superpowers/
 
 # vitest browser-mode artifacts
-.vitest-attachments/
+.vitest/
 **/__screenshots__/
 
 # temp Vite projects scaffolded by the vite-integration tests, rooted in the worktree so their

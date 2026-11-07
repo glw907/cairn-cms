@@ -4,7 +4,8 @@
 // network call ever happens and no real key is needed. The injection seam is ContentRoutesConfig.tidy.client:
 // a factory the action calls with the resolved key, returning the narrow engine-owned TidyClient
 // whose `tidy` method the test stubs. The default factory (unset here) builds the real SDK client.
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createGithubApp } from '../../lib/index.js';
 import { createContentRoutes, type TidyClient } from '../../lib/sveltekit/content-routes.js';
 import { keyKnownUnhealthy, markKeyUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
@@ -425,7 +426,16 @@ describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3
 });
 
 describe('tidy action: a reply cut off at the output cap', () => {
+  // Vitest 5 runs a mock factory inside an AsyncLocalStorage and calls disable() on it afterwards.
+  // workerd's AsyncLocalStorage does not implement disable(), so a factory mock that returns a
+  // module (as opposed to throwing) fails here without this no-op stand-in.
+  const realDisable = AsyncLocalStorage.prototype.disable;
+  beforeEach(() => {
+    AsyncLocalStorage.prototype.disable = () => {};
+  });
   afterEach(() => {
+    if (realDisable === undefined) delete (AsyncLocalStorage.prototype as { disable?: unknown }).disable;
+    else AsyncLocalStorage.prototype.disable = realDisable;
     vi.doUnmock('@anthropic-ai/sdk');
     vi.resetModules();
   });

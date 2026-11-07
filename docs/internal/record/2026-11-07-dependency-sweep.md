@@ -49,9 +49,8 @@ Among the caret-satisfied transitive moves in the root lockfile, `hast-util-raw`
 
 | Package | Current | Latest | Unblock trigger |
 |---|---|---|---|
-| vitest, @vitest/browser, @vitest/browser-playwright | 4.1.12 | 5.1.0 | Plugin side met (`@cloudflare/vitest-plugin` peers `^4.1.0 \|\| ^5.0.0`). A dedicated pass runs `test.yml` green on vitest 5.1.0. Breaks listed in #189: mock clearing, strict `toHaveTextContent`, browser `locators.exact`, inline `projects` inheritance, `.vitest/` artifact dirs. Unchanged. |
 | typescript | 6.0.3 | 7.0.2 | `tsgo.yml` green, `@sveltejs/kit` peer admits `^7`, typescript-eslint (or a tsdoc replacement) admits `^7`. Unchanged. |
-| @types/node | 24.19.2 | 26.6.6 | Geoff raises the Node floor (`docs/STATUS.md`); bump with CI. Unchanged. |
+| @types/node | 24.19.2 | 26.6.6 | Workers Builds makes Node 26 its default; then the Node floor, the CI pins, and the template's `check.yml` move with it (BACKLOG #333; Geoff held the floor on 2026-11-07). |
 | devalue | 5.9.4 | 6.0.3 | `@sveltejs/kit` and `svelte` admit `^6`. Unchanged. |
 | @anthropic-ai/sdk | 0.132.1 | 1.6.0 | Migration notes confirm the fields at `content-routes-context.ts` (messages.create call), the peer widens to `<2`, a test passes on 1.x. Latest moved 1.4.0 to 1.6.0; trigger unchanged. |
 | tailwindcss family (pin, not a major) | 4.3.3 | 4.3.5 | A release whose `npm run package` and showcase build pass, or a daisyUI change to the `.join` rule (#324). 4.3.5 fails. |
@@ -65,3 +64,19 @@ Among the caret-satisfied transitive moves in the root lockfile, `hast-util-raw`
 - `npm update --save --ignore-scripts` again rewrote `packages/cairn-cms-dev` peers (`"*"` to `file:../..`, `^3` to `^3.1.1`); restored by checkout (#327).
 - The worktree guard refused compound git commands; commits go one command at a time.
 - playwright 1.65.0 wants a new browser build: five browser-launching unit tests failed with "Executable doesn't exist" until `npx playwright install chromium` ran. CI installs its own; a local checkout needs the install after the bump.
+
+## vitest 5
+
+Taken as #331 (Geoff approved the major, 2026-11-07): `vitest`, `@vitest/browser`, and `@vitest/browser-playwright` at `^5.1.0` in the root, the showcase, and `templates/waymark`. vitest 5's own migration notes were not readable (no web fetch; the installed package ships no guide), so each break below was found by running the suites and reading the matcher source in `node_modules/@vitest/browser`.
+
+`npm install` with only the three ranges edited fails ERESOLVE against the lockfile (the old exact `@vitest/browser` peer pins). The fix was to drop the `vitest` and `@vitest/*` entries from `package-lock.json` and rerun `npm install --ignore-scripts`. `packages/cairn-cms-dev` peers did not move. The reinstall pruned the showcase's generated `node_modules/$app`; `npx svelte-kit sync` restores it.
+
+| What broke | Fix |
+|---|---|
+| Browser `locators.exact` now defaults to true: ten `getByText` and `getByRole` calls whose name is a prefix or part of the accessible name failed (`CairnAdmin`, `CairnAdminShell`, `CairnHistory`, `ManageEditors`, `reproductions-stories`). | Per-call `{ exact: false }`, with a one-line why where the reason is not evident. No config switch. |
+| `toHaveTextContent` now matches the whole text and takes no regex: `ComponentInsertDialog` (`/1 block/i` against "1 block matches") and `ConceptList` (`'5'` against "All5") failed. | `toMatchTextContent`, the partial and regex matcher vitest 5 names for this. The other eleven uses are whole-text and stay. |
+| Mock factories run in an `AsyncLocalStorage` that vitest calls `disable()` on; workerd does not implement `disable()`. The `content-routes-tidy` truncation test, whose `vi.doMock('@anthropic-ai/sdk')` factory returns a module in the integration project, fell through to the real SDK and answered `sdk_missing`. The sibling tests passed because their factory throws. | A `beforeEach` no-op for `AsyncLocalStorage.prototype.disable` in that one describe, restored in `afterEach`. Test-local; upstream vitest or the Cloudflare plugin should make it unnecessary. |
+| Inline `projects` now extend the root config, which made the comment at `vitest.config.ts:71` false. | Comment corrected. The per-project `unstubGlobals` lines are redundant now and kept. |
+| Report and attachment directories moved to `.vitest/`. | `.gitignore` entry `.vitest-attachments/` becomes `.vitest/`. No workflow uploads vitest reports or attachments (`.github/workflows` checked), so no runner path changed. |
+
+No mock-clearing failure and no un-awaited-assertion failure appeared. No compatibility option is kept.

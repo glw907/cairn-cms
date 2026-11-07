@@ -19,7 +19,7 @@ No web fetch was available, and none of the installed packages ships a `CHANGELO
 | vite | 8.3.5 | 8.3.6 | root, showcase, waymark range |
 | wrangler | 4.156.2 | 4.158.0 | root, showcase, waymark range |
 | tailwindcss, @tailwindcss/* | 4.3.3 | 4.3.3 (held) | root, showcase, waymark |
-| pflag (Go) | v1.0.10 | v1.1.0 | `tool/` |
+| pflag (Go) | v1.0.10 | v1.0.10 (held, #358) | `tool/` |
 | xo/terminfo (Go) | v1.3.0 | v1.3.1 | `tool/` |
 | bits-and-blooms/bitset (Go) | v1.24.6 | v1.29.0 | `tool/` |
 
@@ -35,7 +35,7 @@ No web fetch was available, and none of the installed packages ships a `CHANGELO
 | wrangler 4.156.2 to 4.158.0, @cloudflare/vitest-plugin 1.5.0 to 1.6.0 | Notes not readable. | None known. | The vitest pool tests in the lane cover the plugin; the plugin still peers on vitest 4.1 or 5. |
 | playwright 1.64.1 to 1.65.0 | Notes not readable. | A browser build bump can move a rendered pixel; CI baselines are the judge. | No baseline is declared as an intended move; any move CI reports is undeclared and a stop. |
 | eslint-plugin-jsdoc 65.4.5, svelte-eslint-parser 1.10.1, workers-types | Notes not readable. | None known. | `check:comments` and `svelte-check` in the lane. |
-| pflag v1.1.0, terminfo v1.3.1, bitset v1.29.0 | None the repo hand-rolls. | None. | `make -C tool check`. |
+| pflag v1.1.0 (not taken), terminfo v1.3.1, bitset v1.29.0 | None the repo hand-rolls. | pflag v1.1.0 changes man-page flag rendering (bools no longer print `[=false]`). | `TestGeneratedPageCarriesEachFlagsOwnType` failed on v1.1.0, so pflag is held at v1.0.10 and filed as #358. |
 
 ## Refactor decisions
 
@@ -63,3 +63,4 @@ No web fetch was available, and none of the installed packages ships a `CHANGELO
 
 - `npm update --save --ignore-scripts` again rewrote `packages/cairn-cms-dev` peers (`"*"` to `file:../..`, `^3` to `^3.1.1`); restored by checkout (#327).
 - The worktree guard refused compound git commands; commits go one command at a time.
+- playwright 1.65.0 wants a new browser build: five browser-launching unit tests failed with "Executable doesn't exist" until `npx playwright install chromium` ran. CI installs its own; a local checkout needs the install after the bump.

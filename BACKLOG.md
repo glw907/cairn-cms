@@ -6,6 +6,9 @@
 
 ## Medium
 
+- [ ] **#358** Take pflag v1.1.0 once the man-page flag rendering is understood `#improvement` `#cairn-cms` *(2026-11-07)*
+  pflag v1.1.0 changes how `tool/cmd/mangen` output renders flags: `TestGeneratedPageCarriesEachFlagsOwnType` (`main_test.go:107`) no longer finds `\fB--quiet\fP[=false]` (the same for `--json`, `--verbose`, `--version`). The pre-cut sweep held `github.com/spf13/pflag` at v1.0.10 rather than change a generated man page. Decide whether the new rendering is better, then update the test's expectation and take v1.1.0.
+  Placement: After the release.
 - [ ] **#350** Detect a dead `cairn-build` registration before reusing it `#improvement` `#cairn-cms` *(2026-11-07)*
   The probe in release-gate-a (S12) showed a deleted token leaves its Workers Builds registration unchanged for five minutes, so setup reuses a dead `cairn-build` and the first build fails inside the watch. Find a signal that tells a live registration from a dead one, or print the re-point step on a build failure. Found by the release-gate-a close reviews (#195).
   Placement: `packages/create-cairn-site/src/cloudflare/chapter3.mjs` (the hop). After the release.

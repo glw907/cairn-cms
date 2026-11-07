@@ -1,10 +1,10 @@
 // The gate's record: the `## Gate` section is replaced in the release body, never stacked, and a
 // failed read or a token-bearing URL stops the write before gh edits anything.
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { GATE_COLUMNS, recordLeg, mergeGateSection } from '../../../scripts/gate/record.mjs';
+import { GATE_COLUMNS, recordLeg, recordPending, mergeGateSection, parseGateRows, renderGateSection } from '../../../scripts/gate/record.mjs';
 
 const dirs: string[] = [];
 afterEach(async () => {
@@ -19,6 +19,7 @@ const row = (overrides: Record<string, string> = {}) => ({
   marker: 'gate-0.99.0-rc.3-A1-1',
   fetched: '2026-11-03T10:00:00.000Z',
   verdict: 'pass',
+  run: 'run-1',
   ...overrides,
 });
 
@@ -83,5 +84,82 @@ describe('recordLeg', () => {
       recordLeg({ version: '0.99.0-rc.3', row: row({ url: 'https://x.workers.dev/admin/auth/confirm?token=abc' }), notesDir: await notesDir(), gh: stub.gh }),
     ).rejects.toThrow(/token=/);
     expect(stub.calls).toEqual([]);
+  });
+});
+
+describe('the rehearsal record file', () => {
+  const never = async () => {
+    throw new Error('gh must not be called under a record file');
+  };
+
+  it('creates an absent file mode 0600 holding the Gate section, with no gh call', async () => {
+    const dir = await notesDir();
+    const file = path.join(dir, 'r.md');
+    await recordLeg({ version: '0.99.0-rc.3', row: row(), notesDir: dir, gh: never, recordFile: file });
+    expect(parseGateRows(await readFile(file, 'utf8')).map((r) => r.leg)).toEqual(['A1']);
+    expect((await stat(file)).mode & 0o777).toBe(0o600);
+  });
+
+  it('gives an empty file the section instead of refusing an empty body', async () => {
+    const dir = await notesDir();
+    const file = path.join(dir, 'r.md');
+    await writeFile(file, '');
+    await recordLeg({ version: '0.99.0-rc.3', row: row(), notesDir: dir, gh: never, recordFile: file });
+    expect(await readFile(file, 'utf8')).toContain('## Gate');
+  });
+
+  it('replaces only its own legs on a second run over the same file', async () => {
+    const dir = await notesDir();
+    const file = path.join(dir, 'r.md');
+    await recordPending({ version: '0.99.0-rc.3', legs: ['A1', 'A2', 'B1', 'B2'], run: 'run-1', notesDir: dir, fresh: true, gh: never, recordFile: file });
+    await recordPending({ version: '0.99.0-rc.3', legs: ['A1', 'A2'], run: 'run-2', notesDir: dir, gh: never, recordFile: file });
+    await recordLeg({ version: '0.99.0-rc.3', row: row({ leg: 'A1', run: 'run-2' }), notesDir: dir, gh: never, recordFile: file });
+    expect(parseGateRows(await readFile(file, 'utf8')).map((r) => [r.leg, r.verdict, r.run])).toEqual([
+      ['A1', 'pass', 'run-2'],
+      ['A2', 'pending', 'run-2'],
+      ['B1', 'pending', 'run-1'],
+      ['B2', 'pending', 'run-1'],
+    ]);
+  });
+});
+
+describe('the Run column', () => {
+  it('round-trips eight columns through the renderer and the parser', () => {
+    expect(GATE_COLUMNS).toHaveLength(8);
+    expect(GATE_COLUMNS.at(-1)).toBe('Run');
+    const rows = [row({ leg: 'A1', run: 'run-9' }), row({ leg: 'B2', verdict: 'fail: a; b', run: 'run-9' })];
+    expect(parseGateRows(renderGateSection(rows))).toEqual(rows);
+  });
+});
+
+describe('recordPending', () => {
+  const legs = ['A1', 'A2', 'B1', 'B2'];
+
+  it('replaces the whole section with pending rows for the run, keeping the rest of the body', async () => {
+    const earlier = mergeGateSection('## Added\n\n- a thing', row({ leg: 'A1', run: 'old' }));
+    const stub = fakeGh({ code: 0, stdout: earlier });
+    await recordPending({ version: '0.99.0-rc.3', legs, run: 'run-2', notesDir: await notesDir(), fresh: true, gh: stub.gh });
+    const rows = parseGateRows(stub.written[0]);
+    expect(rows.map((r) => [r.leg, r.verdict, r.run])).toEqual(legs.map((leg) => [leg, 'pending', 'run-2']));
+    expect(stub.written[0]).toContain('- a thing');
+  });
+
+  it('replaces only the named legs, so an earlier pass for one of them cannot stand', async () => {
+    let body = mergeGateSection('## Added', row({ leg: 'A1', run: 'old' }));
+    body = mergeGateSection(body, row({ leg: 'B1', run: 'old' }));
+    const stub = fakeGh({ code: 0, stdout: body });
+    await recordPending({ version: '0.99.0-rc.3', legs: ['A1', 'A2'], run: 'run-3', notesDir: await notesDir(), gh: stub.gh });
+    const rows = parseGateRows(stub.written[0]);
+    expect(rows.map((r) => [r.leg, r.verdict, r.run])).toEqual([
+      ['A1', 'pending', 'run-3'],
+      ['A2', 'pending', 'run-3'],
+      ['B1', 'pass', 'old'],
+    ]);
+  });
+
+  it('writes nothing when the read fails', async () => {
+    const stub = fakeGh({ code: 1, stdout: '' });
+    await expect(recordPending({ version: '0.99.0-rc.3', legs, run: 'r', notesDir: await notesDir(), gh: stub.gh })).rejects.toThrow(/wrote nothing/);
+    expect(stub.calls.some((args) => args[1] === 'edit')).toBe(false);
   });
 });

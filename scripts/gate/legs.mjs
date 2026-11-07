@@ -1,12 +1,15 @@
 // The gate's four legs. Each runs the real create-cairn-site CLI at one exact version, publishes an
 // edit through the install's admin, and passes only on what a script fetched from the live address.
 // A leg's verdict is `evaluateLeg`'s: a CLI exit code is never an input that can pass it.
-import { mkdir, readdir, readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { runDriver } from './driver.mjs';
-import { confirmSignIn, handleUrl, publishViaAdmin, requestSignInLink, tailUrlLog } from './browser.mjs';
-import { fetchCheck, fetchCheckAbsent } from './fetch-check.mjs';
+import { confirmSignIn, handleUrl, launchBrowser, publishViaAdmin, requestSignInLink, tailUrlLog } from './browser.mjs';
+import { defaultFetch, fetchCheck, fetchCheckAbsent } from './fetch-check.mjs';
+import { authoritativeAddress } from './resolve.mjs';
 import { recordLeg } from './record.mjs';
+import { startWorkerTail } from './tail.mjs';
 
 /** The test domain the gate's installs connect. */
 export const TEST_DOMAIN = 'carin-test.org';
@@ -105,8 +108,7 @@ export function evaluateLeg(leg, results) {
 }
 
 /**
- * Run work, and tear down only when it throws. A held page keeps `work` pending, so teardown never
- * runs on the hold itself, only after the hold times out or a later step fails.
+ * Run work, and tear down only when it throws.
  * @template T
  * @param {() => Promise<T>} work the leg
  * @param {() => Promise<unknown>} teardown the cleanup
@@ -129,13 +131,67 @@ export async function guardedRun(work, teardown) {
  * @property {string} owner the address the link was requested for
  * @property {number} sinceMs the time the request was made
  * @property {string} expectedOrigin the origin the link must carry
- * @property {string} [sessionUrl] the JMAP session (`https://907.life/.well-known/jmap`)
+ * @property {string} [sessionUrl] the JMAP session (`https://ward.907.life/.well-known/jmap`, the host that serves it; `907.life` answers 308 to it)
+ * @property {string[]} [trustedHosts] other hosts a redirect may take the credentials to; by default the session host's registrable domain
  * @property {typeof fetch} [fetchImpl] the fetch
  * @property {number} [budgetMs] how long to poll (10 minutes)
  * @property {number} [intervalMs] the gap between polls (15 seconds)
  * @property {(ms: number) => Promise<void>} [sleep] the wait
  * @property {() => number} [now] the clock
  */
+
+/**
+ * The registrable domain of the session host (its last two labels), so a redirect from `907.life`
+ * to `ward.907.life` keeps its credentials. An IP address or a bare host trusts nothing.
+ * @param {string} sessionUrl
+ * @returns {string[]} the trusted domains: a host equal to one, or ending in `.` plus one, is trusted
+ */
+function sameRegistrableDomain(sessionUrl) {
+  const host = new URL(sessionUrl).hostname;
+  const labels = host.split('.');
+  if (labels.length < 2 || /^\d+(\.\d+){3}$/.test(host) || host.includes(':')) return [];
+  return [labels.slice(-2).join('.')];
+}
+
+/**
+ * Fetch with credentials, following redirects by hand. `fetch` drops the Authorization header on a
+ * redirect to another host, so a session URL that redirects (`907.life` to `ward.907.life`) reaches
+ * the server anonymous and gets an empty session. A same-host redirect is followed as it comes; one
+ * to another host re-sends the credentials only when that host is trusted, and otherwise throws.
+ * @param {typeof fetch} fetchImpl
+ * @param {string} url
+ * @param {RequestInit} init
+ * @param {string[]} trusted hostnames, or registrable domains, a redirect may take the credentials to
+ * @returns {Promise<Response>}
+ */
+async function fetchWithAuth(fetchImpl, url, init, trusted) {
+  let target = new URL(url);
+  for (let hop = 0; hop < 5; hop++) {
+    const response = await fetchImpl(target, { ...init, redirect: 'manual' });
+    const location = response.headers.get('location');
+    if (response.status < 300 || response.status >= 400 || !location) return response;
+    const next = new URL(location, target);
+    if (!isTrustedRedirect(target, next, trusted)) throw new Error(`the request was redirected to ${next.hostname}, which is not a trusted host`);
+    target = next;
+  }
+  throw new Error('too many redirects');
+}
+
+/**
+ * Whether credentials sent to `from` may go on to `to`: never to a URL that carries userinfo, never
+ * from https to anything else (a downgrade would put them on the wire in the clear), and only to the
+ * same hostname or a trusted domain or one of its subdomains. The match is on whole labels, so
+ * `evil907.life` and `907.life.evil.com` are not `907.life`.
+ * @param {URL} from the URL the credentials were sent to
+ * @param {URL} to the URL a redirect or the session document points at next
+ * @param {string[]} trusted the trusted domains
+ * @returns {boolean}
+ */
+export function isTrustedRedirect(from, to, trusted) {
+  if (to.username || to.password) return false;
+  if (from.protocol === 'https:' && to.protocol !== 'https:') return false;
+  return to.hostname === from.hostname || trusted.some((entry) => to.hostname === entry || to.hostname.endsWith(`.${entry}`));
+}
 
 /**
  * Poll the gate mailbox over JMAP for the sign-in message the request caused: received after the
@@ -152,22 +208,48 @@ export async function findSignInMessage(query) {
     owner,
     sinceMs,
     expectedOrigin,
-    sessionUrl = 'https://907.life/.well-known/jmap',
+    sessionUrl = 'https://ward.907.life/.well-known/jmap',
     fetchImpl = fetch,
+    trustedHosts,
     budgetMs = 10 * 60_000,
     intervalMs = 15_000,
     sleep = (/** @type {number} */ ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     now = Date.now,
   } = query;
   const authorization = `Basic ${Buffer.from(`${login}:${password}`).toString('base64')}`;
-  const sessionResponse = await fetchImpl(sessionUrl, { headers: { authorization } });
+  const trusted = trustedHosts ?? sameRegistrableDomain(sessionUrl);
+  /** @type {Response} */
+  let sessionResponse;
+  try {
+    sessionResponse = await fetchWithAuth(fetchImpl, sessionUrl, { headers: { authorization } }, trusted);
+  } catch (error) {
+    return { found: false, reason: `the JMAP session read failed: ${/** @type {Error} */ (error).message}`.slice(0, 200) };
+  }
   if (sessionResponse.status !== 200) return { found: false, reason: `the JMAP session answered ${sessionResponse.status}` };
-  const session = /** @type {{ apiUrl: string, primaryAccounts: Record<string, string> }} */ (await sessionResponse.json());
-  const accountId = session.primaryAccounts['urn:ietf:params:jmap:mail'];
+  const session = /** @type {{ apiUrl: string, primaryAccounts?: Record<string, string> }} */ (await sessionResponse.json());
+  const accountId = session.primaryAccounts?.['urn:ietf:params:jmap:mail'];
+  // A login the server does not know can still get a 200 session with no accounts; reading it as an
+  // empty mailbox would hide the real cause.
+  if (!accountId) return { found: false, reason: 'the JMAP session holds no mail account for this login' };
+  // The session document names the API URL the credentials go to next; hold it to the same rule as a redirect.
+  let apiUrl;
+  try {
+    apiUrl = new URL(session.apiUrl);
+  } catch {
+    return { found: false, reason: 'the JMAP session names no usable API URL' };
+  }
+  if (!isTrustedRedirect(new URL(sessionUrl), apiUrl, trusted)) {
+    return { found: false, reason: `the JMAP session names an API on ${apiUrl.hostname}, which is not a trusted host` };
+  }
   const subject = `Sign in to ${siteName}`;
   const deadline = now() + budgetMs;
+  /** What the last poll saw since the request, named by sender and subject only, so a miss says what arrived instead. */
+  let seen = 'the mailbox held 0 messages since the request';
   for (;;) {
-    const response = await fetchImpl(session.apiUrl, {
+    /** @type {Response} */
+    let response;
+    try {
+      response = await fetchWithAuth(fetchImpl, session.apiUrl, {
       method: 'POST',
       headers: { authorization, 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -186,10 +268,27 @@ export async function findSignInMessage(query) {
           ],
         ],
       }),
-    });
+      }, trusted);
+    } catch (error) {
+      return { found: false, reason: `the JMAP read failed: ${/** @type {Error} */ (error).message}`.slice(0, 200) };
+    }
+    if (response.status !== 200 && response.status >= 400 && response.status < 500) {
+      return { found: false, reason: `the JMAP API answered ${response.status}` };
+    }
     if (response.status === 200) {
-      const answer = /** @type {{ methodResponses: Array<[string, { list?: any[] }, string]> }} */ (await response.json());
+      const answer = /** @type {{ methodResponses: Array<[string, { list?: any[], type?: string }, string]> }} */ (await response.json());
+      // A JMAP method error is an answer, not an empty list: naming it keeps a bad account or a
+      // refused login from reading as "0 messages".
+      const failed = answer.methodResponses.find((call) => call[0] === 'error');
+      if (failed) return { found: false, reason: `the JMAP read failed: ${failed[1]?.type ?? 'unknown error'}` };
       const list = answer.methodResponses.find((call) => call[0] === 'Email/get')?.[1].list ?? [];
+      const recent = list.filter((message) => Date.parse(message.receivedAt) >= sinceMs - 1000);
+      seen =
+        `the mailbox held ${recent.length} message${recent.length === 1 ? '' : 's'} since the request` +
+        recent
+          .slice(0, 5)
+          .map((message) => `; ${message.receivedAt} from ${message.from?.[0]?.email ?? 'unknown'} "${String(message.subject ?? '').slice(0, 80)}"`)
+          .join('');
       const match = list
         .filter(
           (message) =>
@@ -207,7 +306,7 @@ export async function findSignInMessage(query) {
         return { found: true, from: match.from?.[0]?.email ?? '', url: link };
       }
     }
-    if (now() + intervalMs > deadline) return { found: false, reason: 'no matching sign-in message arrived within the budget' };
+    if (now() + intervalMs > deadline) return { found: false, reason: `no matching sign-in message arrived within the budget; ${seen.slice(0, 200)}` };
     await sleep(intervalMs);
   }
 }
@@ -218,7 +317,7 @@ export async function findSignInMessage(query) {
  * @param {string} [origin] the origin to ask
  * @returns {Promise<boolean>}
  */
-export async function robotsHasSitemap(fetchImpl = fetch, origin = `https://${TEST_DOMAIN}`) {
+export async function robotsHasSitemap(fetchImpl = defaultFetch, origin = `https://${TEST_DOMAIN}`) {
   try {
     const response = await fetchImpl(`${origin}/robots.txt`, { headers: { 'cache-control': 'no-cache' } });
     return response.status === 200 && (await response.text()).includes(`${origin}/sitemap.xml`);
@@ -245,10 +344,10 @@ export async function markerCommit({ fetchImpl = fetch, githubBase = 'https://ap
 
 /**
  * The answers the CLI's prompts take on a leg, matched by prompt text.
- * @param {{ siteName: string, dir: string, ownerEmail: string, token: string, plan: (typeof LEG_PLANS)[string] }} input
+ * @param {{ siteName: string, dir: string, ownerEmail: string, token: string, buildToken?: string, accountName: string, plan: (typeof LEG_PLANS)[string] }} input
  * @returns {import('./driver.mjs').PromptEntry[]}
  */
-export function promptTable({ siteName, dir, ownerEmail, token, plan }) {
+export function promptTable({ siteName, dir, ownerEmail, token, buildToken = '', accountName, plan }) {
   return [
     { match: 'Site name', kind: 'text', value: siteName },
     { match: 'Short description', kind: 'text' },
@@ -261,8 +360,9 @@ export function promptTable({ siteName, dir, ownerEmail, token, plan }) {
     { match: 'GitHub App name', kind: 'text' },
     { match: 'Install, build, and deploy your site now?', kind: 'confirm', answer: true },
     { match: 'Sign-in email', kind: 'text', value: ownerEmail },
-    { match: 'Which Cloudflare account', kind: 'select', label: '' },
+    { match: 'Which Cloudflare account', kind: 'select', label: accountName },
     { match: 'Paste your Cloudflare API token', kind: 'password', value: () => token },
+    { match: 'Paste your Workers Builds deploy token', kind: 'password', value: () => buildToken },
     { match: 'Connect a domain you own to this site now?', kind: 'confirm', answer: plan.domain },
     { match: 'Which domain do you want to connect?', kind: 'text', value: TEST_DOMAIN },
     { match: 'Copy these records into the new zone?', kind: 'confirm', answer: true },
@@ -293,6 +393,7 @@ export function ownerEmailFor(env) {
 
 /**
  * @typedef {object} LegContext
+ * @property {string} accountName the gate Cloudflare account's name, which the CLI's account select picks
  * @property {string} leg `A1`, `A2`, `B1`, or `B2`
  * @property {string} version the exact version
  * @property {string} runDir the run directory
@@ -302,16 +403,23 @@ export function ownerEmailFor(env) {
  * @property {import('./browser.mjs').Launched} launched the browser
  * @property {import('./browser.mjs').Creds} creds the machine account
  * @property {string} releaseNotesDir where the release notes file goes
- * @property {(title: string, body: string) => void} notify the desktop notification
+ * @property {string} [cli] an absolute `.tgz` of the CLI to run in place of the published version
+ * @property {string} [recordFile] the rehearsal file the rows go to, never a release body
  * @property {(line: string) => void} log one line per event
  */
 
-/** @param {string} dir */
-async function readRecord(dir) {
-  for (const file of await readdir(dir).catch(() => [])) {
-    if (!file.endsWith('.json')) continue;
-    const record = JSON.parse(await readFile(path.join(dir, file), 'utf8'));
-    return /** @type {any} */ (record);
+/**
+ * The state record of one install: the shared state dir holds every install's, and a retired record
+ * keeps a `.retired-` name.
+ * @param {string} dir the state directory
+ * @param {string} installDir the install's directory, which its record names as `dir`
+ * @returns {Promise<any>} the record, or null
+ */
+export async function readRecord(dir, installDir) {
+  for (const file of await readdir(dir).catch(() => /** @type {string[]} */ ([]))) {
+    if (!file.endsWith('.json') || file.startsWith('.retired-')) continue;
+    const record = JSON.parse(await readFile(path.join(dir, file), 'utf8').catch(() => 'null'));
+    if (record?.dir === installDir) return record;
   }
   return null;
 }
@@ -339,17 +447,154 @@ export function cliFailureMessage(result, capture, lines = 8) {
 }
 
 /**
- * Run one leg end to end and record it.
+ * The collaborators a leg calls, injected so a test can stand in for the CLI driver and the browser.
+ * @typedef {object} LegDeps
+ * @property {typeof runDriver} runDriver runs the CLI
+ * @property {typeof handleUrl} handleUrl handles one URL the CLI opens
+ * @property {typeof tailUrlLog} tailUrlLog follows the URL log
+ * @property {typeof publishViaAdmin} publishViaAdmin publishes the leg's edit
+ * @property {typeof recordLeg} recordLeg writes the leg's row
+ * @property {(domain: string) => Promise<string | null>} authoritativeAddress the domain's address as
+ *  its zone's nameservers answer it
+ * @property {(hostRules: string[], runDir: string) => Promise<Pick<import('./browser.mjs').Launched, 'newAdminContext' | 'close'>>} launchPinned
+ *  a browser whose resolver is pinned by Chromium host rules, for a domain this machine's resolver
+ *  cannot see yet
+ * @property {(options: { token: string, accountId: string }) => Promise<BuildsReader>} makeBuildsApi
+ *  the Cloudflare client a Builds leg reads its trigger and builds through
+ * @property {typeof startWorkerTail} startTail starts the short `wrangler tail` B2 reads the
+ *  engine's sign-in verdict from
+ */
+
+/**
+ * The reads a Builds leg logs.
+ * @typedef {object} BuildsReader
+ * @property {(workerName: string) => Promise<string | undefined>} findWorkerTag the tag for a Worker name
+ * @property {(tag: string) => Promise<any[]>} listBuildTriggers the Worker's triggers
+ * @property {(tag: string) => Promise<any[]>} listBuildsForWorker the Worker's builds
+ */
+
+// A computed specifier keeps the type check from pulling the package's untyped source into this graph.
+const API_MODULE = new URL('../../packages/create-cairn-site/src/cloudflare/api.mjs', import.meta.url).href;
+
+/** @type {LegDeps['makeBuildsApi']} */
+async function makeBuildsApiDefault(options) {
+  return (await import(API_MODULE)).makeApi(options);
+}
+
+/**
+ * Launch a throwaway browser whose resolver maps names to fixed addresses.
+ * @type {LegDeps['launchPinned']}
+ */
+async function launchPinnedDefault(hostRules, runDir) {
+  return launchBrowser({ statePath: path.join(runDir, 'pinned-browser-session.json'), hostRules });
+}
+
+/** @type {LegDeps} */
+const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin, recordLeg, makeBuildsApi: makeBuildsApiDefault, authoritativeAddress, launchPinned: launchPinnedDefault, startTail: startWorkerTail };
+
+/**
+ * Log, before teardown, which build token the install's trigger uses and which keys the newest
+ * build's trigger metadata carries. A failed read is logged and never fails the leg. Neither line
+ * prints a secret: a uuid and key names only.
  * @param {LegContext} ctx
+ * @param {LegDeps} deps
+ * @param {any} record the install's state record
+ */
+async function logBuildsFacts(ctx, deps, record) {
+  const { log, cliEnv } = ctx;
+  /** @param {unknown} error */
+  const why = (error) => (error instanceof Error ? error.message : String(error));
+  /** @type {BuildsReader} */
+  let api;
+  /** @type {string | undefined} */
+  let tag;
+  try {
+    api = await deps.makeBuildsApi({ token: cliEnv.CLOUDFLARE_API_TOKEN, accountId: cliEnv.CLOUDFLARE_ACCOUNT_ID });
+    const workerName = record?.cloudflare?.workerName;
+    if (!workerName) throw new Error('the state record names no Worker');
+    tag = await api.findWorkerTag(workerName);
+    if (!tag) throw new Error(`no Worker named ${workerName}`);
+  } catch (error) {
+    log(`trigger build token: read failed: ${why(error)}`);
+    log(`build trigger metadata keys: read failed: ${why(error)}`);
+    return;
+  }
+  try {
+    const triggers = await api.listBuildTriggers(tag);
+    const recorded = record?.cloudflare?.buildsTriggerUuid;
+    const trigger = triggers.find((/** @type {{ trigger_uuid?: string }} */ t) => t.trigger_uuid === recorded) ?? triggers[0];
+    if (!trigger?.build_token_uuid) throw new Error('no trigger holds a build token');
+    log(`trigger build token: ${trigger.build_token_uuid}`);
+  } catch (error) {
+    log(`trigger build token: read failed: ${why(error)}`);
+  }
+  try {
+    const builds = await api.listBuildsForWorker(tag);
+    const newest = [...builds].sort((a, b) => String(b.created_on ?? '').localeCompare(String(a.created_on ?? '')))[0];
+    if (!newest) throw new Error('no build is listed');
+    log(`build trigger metadata keys: ${Object.keys(newest.build_trigger_metadata ?? {}).sort().join(', ') || '(none)'}`);
+  } catch (error) {
+    log(`build trigger metadata keys: read failed: ${why(error)}`);
+  }
+}
+
+/** @typedef {{ path: string, url: string, commit: string, marker: string, fetched: string }} RowCells */
+
+/**
+ * Run one leg end to end and record it. The row is written in a `finally`, so a leg that fails,
+ * returns early, or throws still leaves one, carrying every reason joined by `"; "`. A failed record
+ * write is logged and never replaces the leg's own verdict or error. A leg that fails or throws also
+ * leaves a `failed` marker in the run directory, which keeps its captures through teardown.
+ * @param {LegContext} ctx
+ * @param {Partial<LegDeps>} [deps] collaborators, defaulting to the real ones
  * @returns {Promise<{ pass: boolean, failures: string[] }>} the verdict
  */
-export async function runLeg(ctx) {
-  const { leg, version, runDir, env, cliEnv, install, launched, creds, log } = ctx;
+export async function runLeg(ctx, deps = {}) {
+  const all = { ...DEFAULT_DEPS, ...deps };
+  /** @type {RowCells} */
+  const cells = { path: '-', url: '-', commit: '-', marker: '-', fetched: '-' };
+  /** @type {{ pass: boolean, failures: string[] } | undefined} */
+  let verdict;
+  /** @type {string | undefined} */
+  let thrown;
+  try {
+    verdict = await runLegSteps(ctx, all, cells);
+    return verdict;
+  } catch (error) {
+    thrown = error instanceof Error ? error.message : String(error);
+    throw error;
+  } finally {
+    if (!verdict?.pass) await writeFile(path.join(ctx.runDir, 'failed'), `${ctx.leg}\n`).catch(() => {});
+    const reasons = verdict ? verdict.failures : [thrown ?? 'the leg ended without a verdict'];
+    try {
+      await all.recordLeg({
+        version: ctx.version,
+        notesDir: ctx.releaseNotesDir,
+        ...(ctx.recordFile ? { recordFile: ctx.recordFile } : {}),
+        row: { leg: ctx.leg, ...cells, verdict: verdict?.pass ? 'pass' : `fail: ${reasons.join('; ')}`, run: path.basename(ctx.runDir) },
+      });
+    } catch (error) {
+      ctx.log(`record: could not write the ${ctx.leg} row: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+}
+
+/**
+ * @param {LegContext} ctx
+ * @param {LegDeps} deps
+ * @param {RowCells} cells the row's cells, filled as the leg learns them
+ * @returns {Promise<{ pass: boolean, failures: string[] }>}
+ */
+async function runLegSteps(ctx, deps, cells) {
+  const { accountName, leg, version, runDir, env, cliEnv, install, launched, creds, log } = ctx;
   const plan = LEG_PLANS[leg];
   const token = cliEnv.CLOUDFLARE_API_TOKEN;
   const stateDir = path.join(runDir, 'state');
   const urlLog = path.join(runDir, 'urls.log');
   await mkdir(path.dirname(install.dir), { recursive: true });
+
+  let runCount = 0;
+  let capturePath = '';
 
   /**
    * Run the CLI at the exact version, handling every URL it opens.
@@ -359,32 +604,37 @@ export async function runLeg(ctx) {
     const abort = new AbortController();
     /** @type {unknown} */
     let handlerFailure;
-    const tail = tailUrlLog(urlLog, async (url) => {
+    // Start at the log's current end: the log is shared by every runCli of the run, and a URL an
+    // earlier call handled must not be handled again.
+    runCount += 1;
+    capturePath = path.join(runDir, `capture-${leg}-${runCount}.bin`);
+    const from = existsSync(urlLog) ? (await stat(urlLog)).size : 0;
+    const tail = deps.tailUrlLog(urlLog, async (url) => {
       if (handlerFailure) return;
       try {
-        const kind = await handleUrl(url, {
+        const kind = await deps.handleUrl(url, {
           github: launched.github,
           admin: () => install.admin,
           creds,
           leg,
-          screenshotDir: path.join(runDir, 'holds'),
-          notify: ctx.notify,
+          evidenceDir: runDir,
           log,
         });
+        // handleUrl returns for a sign-in only once the admin has landed on /admin.
         if (kind === 'signin') install.signedIn = true;
       } catch (error) {
         handlerFailure = error;
         abort.abort(error instanceof Error ? error.message : String(error));
       }
-    });
-    const result = await runDriver({
+    }, { from });
+    const result = await deps.runDriver({
       command: 'npx',
-      args: ['--yes', '--prefer-online', `create-cairn-site@${version}`, '--dir', install.dir, ...extra],
+      args: [...(ctx.cli ? ['--yes', `file:${ctx.cli}`] : ['--yes', '--prefer-online', `create-cairn-site@${version}`]), '--dir', install.dir, ...extra],
       env: cliEnv,
       cwd: path.dirname(install.dir),
-      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: ownerEmailFor(env), token, plan }),
+      table: promptTable({ siteName: install.name, dir: install.dir, ownerEmail: ownerEmailFor(env), token, buildToken: env.CF_CI_CAIRN_BUILD_TOKEN ?? '', accountName, plan }),
       logPath: path.join(runDir, 'driver.log'),
-      capturePath: path.join(runDir, 'capture.bin'),
+      capturePath,
       signal: abort.signal,
     });
     await tail.stop();
@@ -393,16 +643,15 @@ export async function runLeg(ctx) {
 
   const ownerFlags = plan.first ? ['--name', install.name, '--owner-email', ownerEmailFor(env), '--ai-posture', 'none'] : [];
   const cli = await runCli([...ownerFlags, ...(plan.connect ? ['--connect'] : [])]);
-  const capturePath = path.join(runDir, 'capture.bin');
-  if (cli.failure) return { pass: false, failures: [cliFailureMessage(cli, await readFile(capturePath, 'utf8').catch(() => ''))] };
+  if (cli.failure || cli.code !== 0) return { pass: false, failures: [cliFailureMessage(cli, await readFile(capturePath, 'utf8').catch(() => ''))] };
 
-  const record = await readRecord(stateDir);
+  const record = await readRecord(stateDir, install.dir);
   const origin = String(record?.cloudflare?.url ?? '');
   if (!origin) {
-    const exited = cli.code !== 0;
-    const capture = exited ? await readFile(capturePath, 'utf8').catch(() => '') : '';
-    return { pass: false, failures: [exited ? cliFailureMessage(cli, capture) : 'the state record holds no workers.dev address'] };
+    return { pass: false, failures: ['the state record holds no workers.dev address'] };
   }
+
+  if (plan.builds) await logBuildsFacts(ctx, deps, record);
 
   if (!install.signedIn) {
     const signIn = await runCli(['--sign-in']);
@@ -411,12 +660,14 @@ export async function runLeg(ctx) {
 
   const epoch = Date.now();
   const marker = `gate-${version}-${leg}-${epoch}`;
-  const published = await publishViaAdmin(install.admin, { origin, marker });
+  cells.marker = marker;
+  const published = await deps.publishViaAdmin(install.admin, { origin, marker });
   const liveUrl = `${leg === 'B1' ? origin : `https://${TEST_DOMAIN}`}${published.entryPath}`;
+  cells.path = published.entryPath;
+  cells.url = liveUrl;
 
   /** @type {LegResults} */
   const results = { closingText: cli.screen, alertText: published.alertText, fetch: null, absent: null, commitOnDefaultBranch: false, robotsHasSitemap: false, mail: null };
-  let commit = '-';
   if (leg === 'A1') {
     const sha = await markerCommit({
       token: env.GITHUB_TEST_TOKEN ?? '',
@@ -427,7 +678,7 @@ export async function runLeg(ctx) {
       marker,
     });
     results.commitOnDefaultBranch = sha !== null;
-    commit = sha ?? '-';
+    cells.commit = sha ?? '-';
     results.absent = await fetchCheckAbsent(liveUrl, marker, published.control, { budgetMs: 5 * 60_000 });
   } else {
     results.fetch = await fetchCheck(liveUrl, marker);
@@ -437,9 +688,20 @@ export async function runLeg(ctx) {
   /** @type {import('./fetch-check.mjs').FetchCheckResult | null} */
   let lastFetch = results.fetch ?? results.absent;
   if (leg === 'B2') {
-    const fresh = await launched.newAdminContext();
+    // This workstation's resolver may hold a negative answer for the test domain for 30 minutes, so
+    // the browser maps it to the authoritative address when one is found.
+    const address = await deps.authoritativeAddress(TEST_DOMAIN);
+    const pinned = address ? await deps.launchPinned([`MAP ${TEST_DOMAIN} ${address}`], runDir) : null;
+    const fresh = await (pinned ?? launched).newAdminContext();
+    /** @type {ReturnType<typeof startWorkerTail> | null} */
+    let tail = null;
     try {
       const owner = ownerEmailFor(env);
+      // The engine logs its own verdict on a sign-in send (`auth.link.send_failed` and its code). A
+      // short tail of the leg's Worker, started before the request, turns a mail miss into a cause.
+      const workerName = String(record?.cloudflare?.workerName ?? '');
+      tail = workerName ? deps.startTail({ workerName, env: cliEnv }) : null;
+      await tail?.ready;
       const requestedAt = await requestSignInLink(fresh, { origin: `https://${TEST_DOMAIN}`, email: owner });
       const found = await findSignInMessage({
         login: owner,
@@ -449,9 +711,11 @@ export async function runLeg(ctx) {
         sinceMs: requestedAt,
         expectedOrigin: `https://${TEST_DOMAIN}`,
       });
+      const engineSaid = (await tail?.stop()) ?? [];
       if (!found.found) {
         results.mail = { from: '', fetch: null };
         log(`mail: ${found.reason}`);
+        log(`engine: ${engineSaid.length ? engineSaid.join(' | ') : 'the Worker logged no sign-in event in the window'}`.slice(0, 600));
       } else {
         await confirmSignIn(fresh, found.url);
         const second = `gate-${version}-B2mail-${Date.now()}`;
@@ -459,24 +723,14 @@ export async function runLeg(ctx) {
         results.mail = { from: found.from, fetch: await fetchCheck(`https://${TEST_DOMAIN}${published.entryPath}`, second) };
       }
     } finally {
+      await tail?.stop().catch(() => []);
       await fresh.close();
+      await pinned?.close();
     }
   }
 
   const verdict = evaluateLeg(leg, results);
   lastFetch = lastFetch ?? results.fetch;
-  await recordLeg({
-    version,
-    notesDir: ctx.releaseNotesDir,
-    row: {
-      leg,
-      path: published.entryPath,
-      url: liveUrl,
-      commit,
-      marker,
-      fetched: lastFetch?.fetchedAt ?? '-',
-      verdict: verdict.pass ? 'pass' : `fail: ${verdict.failures[0]}`,
-    },
-  });
+  cells.fetched = lastFetch?.fetchedAt ?? '-';
   return verdict;
 }

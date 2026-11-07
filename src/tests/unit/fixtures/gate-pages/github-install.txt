@@ -1,0 +1,31 @@
+# github.com/apps/cairn-e2e-gate-fixture/installations/new/permissions
+link	Skip to content
+button
+link
+button	Open quick search dialog, type / to search
+link
+button	Open Copilot…
+button
+link
+link
+link
+link
+button
+link	Reload
+link	Reload
+link	Reload
+button
+link	cairn-e2e-gate-fixture
+button	Install & Authorize
+link	Cancel
+link	GitHub Homepage
+link	Terms
+link	Privacy
+link	Security
+link	Status
+link	Community
+link	Docs
+link	Contact
+button	Manage cookies
+button	Do not share my personal information
+button	Dismiss error

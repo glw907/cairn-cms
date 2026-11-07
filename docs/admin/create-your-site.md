@@ -114,7 +114,7 @@ A sign-in page just opened; click Sign in there. The link works for ten minutes;
 
 The link works for ten minutes. If you miss it, [sign in again](#sign-in-again).
 
-The command then asks whether to connect a domain you own. Answering no changes nothing about the site, and the command goes on to offer Workers Builds, Cloudflare's service for deploying from your repository. [Own your domain](./own-your-domain.md) covers connecting a domain now or later, and connecting Builds.
+The command then asks whether to connect a domain you own. Answering no changes nothing about the site, and the command goes on to offer Workers Builds, Cloudflare's service for deploying from your repository. [Own your domain](./own-your-domain.md) covers connecting a domain now or later, and connecting Builds. Builds asks for a second, narrow token at the prompt `Paste your Workers Builds deploy token`, once for each Cloudflare account.
 
 Until Workers Builds is connected, a publish from the admin commits to GitHub and the live site doesn't change. Once it's connected, Builds deploys each publish by itself. Each closing block of the command says which case your site is in, and the command prints `This site is set up end to end.` only once Builds is connected.
 

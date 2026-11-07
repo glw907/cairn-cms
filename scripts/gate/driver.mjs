@@ -19,6 +19,8 @@ const BAR_END = '└';
 /** The line the CLI prints while it holds a progress page open for a long propagation wait. */
 const HOLD_MARKER = 'Watch progress at';
 const IDLE_MS = 10 * 60_000;
+/** One run's wall clock; a run that is still going at this age is failed. */
+const WALL_MS = 90 * 60_000;
 /** The CLI's propagation budget (40 minutes, `hold-loop.mjs`) plus five minutes; a test pins the two together. */
 export const HOLD_IDLE_MS = 40 * 60_000 + 5 * 60_000;
 /** How many times in a row one prompt may be answered before the driver concludes the CLI rejects the answer. */
@@ -46,8 +48,10 @@ const ROWS = 40;
  * @property {{ write(chunk: string): unknown }} [out] receives the CLI's raw output as it arrives
  * @property {string} [logPath] a file for the driver's own event lines, which never carry a value
  * @property {string} [capturePath] a file for the raw pty bytes
- * @property {number} [idleMs] how long without output before the run fails (10 minutes)
- * @property {number} [holdIdleMs] the limit while a progress page is held
+ * @property {number} [idleMs] how long the screen may go without a change, spinner glyphs and counters aside, before the run fails (10 minutes)
+ * @property {number} [holdIdleMs] the limit while the last screen line is the progress-page marker
+ * @property {number} [wallMs] the run's total budget (90 minutes)
+ * @property {number} [progressMs] how often the screen is compared for progress (1000, or a quarter of `idleMs` when smaller)
  * @property {number} [settleMs] how long output must be quiet before a screen is read (150)
  * @property {AbortSignal} [signal] ends the run as a failure when it aborts, with the signal's reason
  */
@@ -58,6 +62,34 @@ const ROWS = 40;
  * @property {string} [failure] why the driver ended the run, naming the last screen
  * @property {string} screen the final rendered screen
  */
+
+/**
+ * A screen with what moves on its own removed: spinner glyphs, elapsed counters, and the
+ * trailing dots an animated message cycles through. Two screens that differ only there are the
+ * same screen for the idle limit.
+ * @param {string} screen the rendered screen
+ * @returns {string} the screen without volatile text
+ */
+export function stripVolatile(screen) {
+  return screen
+    .replace(/[\u2800-\u28ff\u25d0-\u25d3\u25d2]/g, '')
+    .replace(/\(?\d+(?:h|m|s)(?:\s*\d+(?:m|s))*\)?/g, '')
+    .split('\n')
+    .map((line) => line.replace(/\.{1,3}\s*$/, '').trimEnd())
+    .join('\n');
+}
+
+/**
+ * Whether the last non-blank line of a screen is the held progress page's marker.
+ * @param {string} screen the rendered screen
+ * @returns {boolean} true while the marker is the last thing printed
+ */
+function endsOnHold(screen) {
+  const lines = screen.split('\n');
+  let end = lines.length - 1;
+  while (end >= 0 && lines[end].trim() === '') end--;
+  return end >= 0 && lines[end].includes(HOLD_MARKER);
+}
 
 /** @param {string} word */
 const shellQuote = (word) => `'${word.replace(/'/g, `'\\''`)}'`;
@@ -123,6 +155,8 @@ export function runDriver(options) {
   const idleMs = options.idleMs ?? IDLE_MS;
   const holdIdleMs = options.holdIdleMs ?? HOLD_IDLE_MS;
   const settleMs = options.settleMs ?? 150;
+  const wallMs = options.wallMs ?? WALL_MS;
+  const progressMs = options.progressMs ?? Math.min(1000, Math.max(20, Math.floor(idleMs / 4)));
   const logStream = logPath ? createWriteStream(logPath, { flags: 'a', mode: 0o600 }) : null;
   const captureStream = capturePath ? createWriteStream(capturePath, { flags: 'a', mode: 0o600 }) : null;
   /** @param {string} event */
@@ -139,7 +173,6 @@ export function runDriver(options) {
   let raw = '';
   /** @type {string | undefined} */
   let failure;
-  let holding = false;
   /** @type {Set<number>} */
   const answered = new Set();
   let lastMatch = '';
@@ -148,6 +181,11 @@ export function runDriver(options) {
   let settleTimer;
   /** @type {NodeJS.Timeout | undefined} */
   let idleTimer;
+  /** @type {NodeJS.Timeout | undefined} */
+  let progressTimer;
+  /** @type {NodeJS.Timeout | undefined} */
+  let wallTimer;
+  let lastSeen = '';
 
   const screen = () => renderTranscript(raw);
 
@@ -169,8 +207,17 @@ export function runDriver(options) {
 
   function armIdle() {
     clearTimeout(idleTimer);
-    const limit = holding ? holdIdleMs : idleMs;
-    idleTimer = setTimeout(() => fail(`no output for ${Math.round(limit / 1000)} seconds`), limit);
+    const limit = endsOnHold(screen()) ? holdIdleMs : idleMs;
+    idleTimer = setTimeout(() => fail(`no progress for ${Math.round(limit / 1000)} seconds`), limit);
+  }
+
+  // Output alone is not progress: a spinner writes forever. The idle limit re-arms only when the
+  // screen, stripped of what moves on its own, differs from the last one seen.
+  function checkProgress() {
+    const now = stripVolatile(screen());
+    if (now === lastSeen) return;
+    lastSeen = now;
+    armIdle();
   }
 
   function readScreen() {
@@ -185,7 +232,6 @@ export function runDriver(options) {
     lastMatch = entry.match;
     if (streak > MAX_REPEATS) return fail(`the CLI rejected the answer to "${entry.match}": it asked again after ${MAX_REPEATS} answers`);
     answered.add(prompt.row);
-    holding = false;
     log(`answered "${entry.match}" (${entry.kind})`);
     for (const key of keys) child.stdin.write(key);
   }
@@ -195,13 +241,13 @@ export function runDriver(options) {
       raw += chunk;
       out?.write(chunk);
       captureStream?.write(chunk);
-      if (chunk.includes(HOLD_MARKER)) holding = true;
-      armIdle();
       clearTimeout(settleTimer);
       settleTimer = setTimeout(readScreen, settleMs);
     });
     child.stderr.on('data', (/** @type {Buffer} */ chunk) => out?.write(String(chunk)));
     armIdle();
+    progressTimer = setInterval(checkProgress, progressMs);
+    wallTimer = setTimeout(() => fail(`the run exceeded its budget of ${Math.round(wallMs / 1000)} seconds`), wallMs);
     const onAbort = () => fail(`aborted: ${String(options.signal?.reason ?? 'the gate stopped the run')}`);
     if (options.signal?.aborted) onAbort();
     else options.signal?.addEventListener('abort', onAbort, { once: true });
@@ -209,6 +255,8 @@ export function runDriver(options) {
       options.signal?.removeEventListener('abort', onAbort);
       clearTimeout(settleTimer);
       clearTimeout(idleTimer);
+      clearInterval(progressTimer);
+      clearTimeout(wallTimer);
       log(`exit ${code}`);
       logStream?.end();
       captureStream?.end();

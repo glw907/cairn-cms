@@ -86,15 +86,17 @@ const TOKEN_VERIFY_MESSAGES = loadFixture('cloudflare', 'user_token_verify.succe
 
 /**
  * Start the fake Cloudflare server.
- * @param {{ zoneStatus?: string, tokenVerifyId?: string }} [options] `zoneStatus` sets the
- *  `status` a newly created zone carries; defaults to `'pending'`, Cloudflare's documented value
- *  for a fresh zone (this pass's spike could not create a real zone to confirm it, so the default
- *  is documented rather than observed). `tokenVerifyId` sets the `result.id` `GET
- *  /user/tokens/verify` returns, the value the Builds chapter reuses as `cloudflare_token_id`;
- *  defaults to an id captured live from that route on 2026-08-12.
+ * @param {{ zoneStatus?: string, tokenVerifyId?: string, tokenVerifyIds?: Record<string, string> }}
+ *  [options] `zoneStatus` sets the `status` a newly created zone carries; defaults to
+ *  `'pending'`, Cloudflare's documented value for a fresh zone (this pass's spike could not create
+ *  a real zone to confirm it, so the default is documented rather than observed). `tokenVerifyId`
+ *  sets the `result.id` `GET /user/tokens/verify` returns, the value the Builds chapter registers
+ *  as `cloudflare_token_id`; defaults to an id captured live from that route on 2026-08-12.
+ *  `tokenVerifyIds` maps a bearer token to its own `result.id`, so a test holding two tokens can
+ *  tell which one a registration names; a bearer it does not list gets `tokenVerifyId`.
  * @returns {Promise<FakeCloudflare>} the running fake, ready for requests
  */
-export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyId = 'd07b2a25f05151591830c45053186979' } = {}) {
+export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyId = 'd07b2a25f05151591830c45053186979', tokenVerifyIds = {} } = {}) {
   const requests = [];
   const failNextMap = new Map();
   const state = {
@@ -113,7 +115,7 @@ export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyI
 
   const server = await startLoopbackServer('fake-cloudflare: not ready yet');
   const apiBase = `${server.base}/client/v4`;
-  const ctx = { state, zoneStatus, tokenVerifyId, assignedNameServerPairs };
+  const ctx = { state, zoneStatus, tokenVerifyId, tokenVerifyIds, assignedNameServerPairs };
 
   server.setDispatcher(makeHandler(
     [
@@ -820,13 +822,15 @@ function createBuildTokenCreateHandler(ctx) {
 
 /**
  * Build the `GET /user/tokens/verify` handler: the captured success envelope, with `result.id`
- * fixed at startup (`tokenVerifyId`), the value the chapter reuses as `cloudflare_token_id` when
- * it registers the admin's pasted token as the build token.
- * @param {{ tokenVerifyId: string }} ctx
+ * fixed at startup per bearer (`tokenVerifyIds`, falling back to `tokenVerifyId`), the value the
+ * chapter registers as `cloudflare_token_id` when it registers the build token.
+ * @param {{ tokenVerifyId: string, tokenVerifyIds: Record<string, string> }} ctx
  */
 function createUserTokenVerifyHandler(ctx) {
-  return async (_req, res) => {
-    sendSuccess(res, 200, { id: ctx.tokenVerifyId, status: 'active' }, { messages: TOKEN_VERIFY_MESSAGES });
+  return async (req, res) => {
+    const bearer = (req.headers.authorization ?? '').replace(/^Bearer /, '');
+    const id = Object.hasOwn(ctx.tokenVerifyIds, bearer) ? ctx.tokenVerifyIds[bearer] : ctx.tokenVerifyId;
+    sendSuccess(res, 200, { id, status: 'active' }, { messages: TOKEN_VERIFY_MESSAGES });
   };
 }
 

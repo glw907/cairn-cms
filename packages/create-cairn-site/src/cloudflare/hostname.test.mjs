@@ -1,5 +1,7 @@
-import test from 'node:test';
+import test, { describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createServer as createHttpsServer, request as httpsRequest } from 'node:https';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -346,6 +348,215 @@ test('an authoritative answer present but the marker probe failing must not repo
   const outcome = await confirmHostname(domain, wrongSiteFetch(), disagreeingDns(domain));
   assert.notEqual(outcome, 'live');
   assert.equal(outcome, 'hostname-not-serving');
+});
+
+// --- the pinned live check: fetch unreachable, authoritative AAAA and A present -----------------
+
+const PINNED_ADDRESS = '198.51.100.7';
+
+/**
+ * The disagreement fixture plus an authoritative apex A record, the shape a domain hold takes on
+ * a zone whose nameservers already serve the site while this machine's resolver still does not.
+ * @param {string} domain the domain queried
+ * @param {string} address the authoritative A answer
+ * @returns {{ resolve: (servers?: string[]) => object }}
+ */
+function pinnableDns(domain, address = PINNED_ADDRESS) {
+  const recursive = stubResolver({
+    resolveNs: async () => [NS_HOST],
+    resolve6: only(NS_HOST, ['203.0.113.9']),
+  });
+  const authoritative = stubResolver({
+    resolve6: only(domain, ['2001:db8::100']),
+    resolve4: only(domain, [address]),
+  });
+  return { resolve: (servers) => (servers ? authoritative : recursive) };
+}
+
+test('both fetch probes unreachable, authoritative AAAA and A present, the pinned probe matching: live', async () => {
+  const { confirmHostname } = await import('./hostname.mjs');
+  const domain = 'carin-test.org';
+  const targets = [];
+  const lines = [];
+
+  const outcome = await confirmHostname(domain, alwaysUnreachableFetch(), {
+    ...pinnableDns(domain),
+    log: (line) => lines.push(line),
+    pinnedProbe: async (target) => {
+      targets.push(target);
+      return { reachable: true, matches: true };
+    },
+  });
+
+  assert.equal(outcome, 'live');
+  assert.deepEqual(targets, [{ domain, address: PINNED_ADDRESS }]);
+  assert.equal(lines.length, 1);
+  assert.match(lines[0], /30 minutes/);
+});
+
+test('an /admin redirect to /admin/login on another host never matches the marker, over fetch or pinned', async () => {
+  const { confirmHostname, pinnedMarkerProbe } = await import('./hostname.mjs');
+  const domain = 'carin-test.org';
+  const elsewhere = 'https://evil.example/admin/login';
+
+  const crossOriginFetch = async (url) => {
+    const u = new URL(url);
+    if (u.pathname === '/admin') return new Response(null, { status: 303, headers: { location: elsewhere } });
+    return markerResponse(u.pathname, u.origin);
+  };
+  assert.equal(await confirmHostname(domain, crossOriginFetch, {}), 'hostname-not-serving');
+
+  // A stand-in for https.request answering `/` with 200 and `/admin` with the given Location.
+  const answering = (location) => (options, callback) => {
+    const req = new EventEmitter();
+    req.end = () => {
+      const headers = options.path === '/admin' ? { location } : {};
+      callback({ statusCode: options.path === '/admin' ? 303 : 200, headers, resume() {} });
+    };
+    req.destroy = () => {};
+    return req;
+  };
+  const target = { domain, address: '192.0.2.1' };
+  assert.deepEqual(
+    await pinnedMarkerProbe(target, { request: answering(elsewhere) }),
+    { reachable: true, matches: false },
+  );
+  assert.deepEqual(
+    await pinnedMarkerProbe(target, { request: answering(`https://${domain}/admin/login`) }),
+    { reachable: true, matches: true },
+  );
+  assert.deepEqual(
+    await pinnedMarkerProbe(target, { request: answering('/admin/login') }),
+    { reachable: true, matches: true },
+  );
+});
+
+test('a pinned probe that reaches something else is never live', async () => {
+  const { confirmHostname } = await import('./hostname.mjs');
+  const domain = 'carin-test.org';
+  const lines = [];
+
+  for (const answer of [
+    { reachable: true, matches: false },
+    { reachable: false, matches: false },
+  ]) {
+    const outcome = await confirmHostname(domain, alwaysUnreachableFetch(), {
+      ...pinnableDns(domain),
+      log: (line) => lines.push(line),
+      pinnedProbe: async () => answer,
+    });
+    assert.notEqual(outcome, 'live');
+    assert.equal(outcome, 'hostname-resolver-lagging');
+  }
+  assert.deepEqual(lines, []);
+});
+
+test('the cutover prints the resolver line once when the pinned check finds the site live', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  await setupWrangler(t);
+  const domain = 'carin-test.org';
+  const record = await buildRecord({ api, dir, domain });
+  const lines = [];
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  const result = await cutOverHostname({
+    record,
+    api,
+    fetchImpl: alwaysUnreachableFetch(),
+    log: (line) => lines.push(line),
+    dns: { ...pinnableDns(domain), pinnedProbe: async () => ({ reachable: true, matches: true }) },
+  });
+
+  assert.deepEqual(result, { outcome: 'live' });
+  assert.equal(lines.filter((line) => line.includes('30 minutes')).length, 1);
+});
+
+describe('the real pinned request, against a local HTTPS server under a made-up hostname', () => {
+  const domain = 'pinned.cairn.test';
+  let certDir;
+  let ca;
+  let server;
+  let port;
+  const seen = [];
+
+  before(async () => {
+    certDir = await mkdtemp(join(tmpdir(), 'cairn-pinned-cert-'));
+    const keyPath = join(certDir, 'key.pem');
+    const certPath = join(certDir, 'cert.pem');
+    execFileSync('openssl', [
+      'req', '-x509', '-newkey', 'ec', '-pkeyopt', 'ec_paramgen_curve:prime256v1', '-nodes',
+      '-keyout', keyPath, '-out', certPath, '-days', '1',
+      '-subj', `/CN=${domain}`, '-addext', `subjectAltName=DNS:${domain}`,
+    ], { stdio: 'ignore' });
+    ca = await readFile(certPath);
+    server = createHttpsServer({ key: await readFile(keyPath), cert: ca }, (req, res) => {
+      seen.push({ host: req.headers.host, servername: req.socket.servername, localAddress: req.socket.localAddress });
+      if (req.url === '/admin') {
+        res.writeHead(303, { location: '/admin/login' }).end();
+        return;
+      }
+      res.writeHead(200, { 'content-type': 'text/html' }).end('<html>cairn</html>');
+    });
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    port = server.address().port;
+  });
+
+  after(async () => {
+    await new Promise((resolve) => server.close(resolve));
+    await rm(certDir, { recursive: true, force: true });
+  });
+
+  /** Wrap the real `https.request`, recording the options each call was given. */
+  function recordingRequest(calls) {
+    return (options, callback) => {
+      calls.push(options);
+      return httpsRequest(options, callback);
+    };
+  }
+
+  test('carries the domain as servername and Host, and connects to the pinned address with autoSelectFamily on', async () => {
+    const { confirmHostname, pinnedMarkerProbe } = await import('./hostname.mjs');
+    seen.length = 0;
+    const calls = [];
+
+    const outcome = await confirmHostname(domain, alwaysUnreachableFetch(), {
+      ...pinnableDns(domain, '127.0.0.1'),
+      pinnedProbe: (target) => pinnedMarkerProbe(target, { ca, port, request: recordingRequest(calls) }),
+    });
+
+    assert.equal(outcome, 'live');
+    assert.equal(seen.length, 2);
+    for (const request of seen) {
+      assert.equal(request.host, domain);
+      assert.equal(request.servername, domain);
+      assert.equal(request.localAddress, '127.0.0.1');
+    }
+    assert.equal(calls.length, 2);
+    for (const options of calls) {
+      assert.equal(options.autoSelectFamily, true);
+      assert.equal(options.servername, domain);
+    }
+  });
+
+  test('the production call sets no ca and never disables verification, so a self-signed answer is unreachable', async () => {
+    const { pinnedMarkerProbe } = await import('./hostname.mjs');
+    seen.length = 0;
+    const calls = [];
+
+    const result = await pinnedMarkerProbe(
+      { domain, address: '127.0.0.1' },
+      { port, request: recordingRequest(calls) },
+    );
+
+    assert.deepEqual(result, { reachable: false, matches: false });
+    assert.equal(seen.length, 0);
+    assert.ok(calls.length >= 1);
+    for (const options of calls) {
+      assert.equal('ca' in options, false);
+      assert.notEqual(options.rejectUnauthorized, false);
+    }
+  });
 });
 
 test('a TLS transport failure with the site reachable over HTTP maps to certificate-pending, not a broken-site row', async (t) => {

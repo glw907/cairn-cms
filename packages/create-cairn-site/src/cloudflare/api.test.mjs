@@ -215,6 +215,25 @@ test('a 400 with code 6003 maps to token-invalid and surfaces the nested error_c
   );
 });
 
+test('a 401 with code 1000 from token verify maps to token-invalid', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('user_token_verify', 401, {
+    success: false,
+    errors: [{ code: 1000, message: 'Invalid API Token' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.verifyToken(),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-invalid');
+      assert.match(err.message, /Invalid API Token/);
+      return true;
+    },
+  );
+});
+
 test('a 401 with code 10000 maps to token-invalid', async (t) => {
   const { cloudflare, api } = await setup(t);
   cloudflare.failNext('zone_get', 401, {
@@ -857,6 +876,29 @@ test('getBuildTokens lists what createBuildToken registers, without echoing the 
   const tokens = await api.getBuildTokens();
   assert.equal(tokens.length, 1);
   assert.equal(tokens[0].build_token_uuid, token.build_token_uuid);
+});
+
+test('a registration failure that echoes the build token secret redacts it from every thrown field', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const secret = 'plant-build-secret-7c41e9d2';
+  cloudflare.failNext('builds_token_create', 400, {
+    success: false,
+    errors: [{ code: 6003, message: `Invalid request headers for ${secret}`, error_chain: [{ message: `bad token ${secret}` }] }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.createBuildToken({ name: 'cairn-build', secret, cloudflareTokenId: 'an-id' }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-invalid');
+      assert.doesNotMatch(err.message, new RegExp(secret));
+      assert.match(err.message, /\[redacted\]/);
+      assert.doesNotMatch(err.catalogue.next ?? '', new RegExp(secret));
+      assert.doesNotMatch(JSON.stringify(err.api), new RegExp(secret));
+      return true;
+    },
+  );
 });
 
 test('findWorkerTag resolves the tag for a seeded script by its id, and undefined for an unknown name', async (t) => {

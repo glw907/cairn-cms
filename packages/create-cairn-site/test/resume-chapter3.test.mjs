@@ -658,7 +658,7 @@ test('bin.mjs at live with --yes, no --domain, and a token connects Workers Buil
     apiBase: cloudflare.apiBase,
     githubApiBase: github.apiBase,
     fakeOpenerDir,
-    extraEnv: { CAIRN_CF_API_TOKEN: 'env-token' },
+    extraEnv: { CAIRN_CF_API_TOKEN: 'env-token', CAIRN_CF_BUILD_TOKEN: 'env-build-token' },
   });
 
   assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stdout: ${result.stdout} stderr: ${result.stderr}`);

@@ -19,6 +19,7 @@ import {
   CHAPTER3_RESUMABLE_STEPS,
 } from './src/cloudflare/chapter3.mjs';
 import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './src/cloudflare/bootstrap.mjs';
+import { cloudflareError } from './src/cloudflare/catalogue.mjs';
 import { printCostPreamble } from './src/money.mjs';
 import { loadSite, updateSite, findSiteByDir, retireSite } from './src/state.mjs';
 import { webBase } from './src/github/api.mjs';
@@ -360,6 +361,11 @@ async function reseedAndOpen({ siteId, state, ownerEmailOverride, log }) {
       'This site has no saved Cloudflare URL, so --sign-in has nowhere to open the sign-in link.\n' +
         `Next step: re-run npx create-cairn-site --dir ${state.dir} to finish deploying first.`,
     );
+  }
+  if (!state.cloudflare?.accountId) {
+    // Without it, wrangler would seed whatever account it defaults to, which on a multi-account
+    // login need not be the one this site runs on.
+    throw cloudflareError('sign-in-account-unknown', { dir: state.dir });
   }
   if (ownerEmail !== state.ownerEmail) {
     await updateSite(siteId, { ownerEmail });

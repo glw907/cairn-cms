@@ -113,7 +113,11 @@ async function seedLiveSite(siteId, dir, overrides = {}) {
       repo: { owner: 'alpine-club-owner', repo: 'alpine-club' },
       installationId: 77,
     },
-    cloudflare: { url: 'https://alpine-club.glw907.workers.dev', workerName: 'alpine-club' },
+    cloudflare: {
+      url: 'https://alpine-club.glw907.workers.dev',
+      workerName: 'alpine-club',
+      accountId: 'acct-1',
+    },
     ...overrides,
   });
 }

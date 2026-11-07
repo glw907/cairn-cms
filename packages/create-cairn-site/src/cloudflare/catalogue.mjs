@@ -158,7 +158,7 @@ const ROWS = {
       return (
         `Your Cloudflare account already has ${joinList(params.taken)}. This site deploys under ` +
         'those names, so deploying would replace or reuse what is already there. Nothing was ' +
-        'built or deployed, and your Cloudflare account is unchanged. Re-running with a new ' +
+        'deployed, and your Cloudflare account is unchanged. Re-running with a new ' +
         'name and folder leaves the GitHub repository and App for this site in place, for you ' +
         'to delete or reuse.\n' +
         'Next: run npx create-cairn-site again with --name <a different site name> and a new ' +
@@ -170,13 +170,15 @@ const ROWS = {
     kind: 'act',
     build(params) {
       return (
-        `This site's wrangler.jsonc names ${joinList(params.found)}, but setup expects the ` +
+        `This site's wrangler.jsonc has ${joinList(params.found)}. Setup expects only the ` +
         `Worker ${params.workerName}, the database ${params.workerName}-auth, and the bucket ` +
-        `${params.workerName}-media from the site's saved name, so it cannot be sure which ` +
-        'names the deploy would use. Nothing was built or deployed.\n' +
+        `${params.workerName}-media from the site's saved name, with no database_id, ` +
+        'jurisdiction, preview_* key, or env block, so it cannot be sure which resources the ' +
+        'deploy would use. Nothing was deployed.\n' +
         `Next: set wrangler.jsonc's name to ${params.workerName}, its database_name to ` +
-        `${params.workerName}-auth, and its bucket_name to ${params.workerName}-media, then ` +
-        `re-run npx create-cairn-site --dir ${params.dir}.`
+        `${params.workerName}-auth, and its bucket_name to ${params.workerName}-media, remove ` +
+        'any database_id, jurisdiction, preview_* key, or env block, then re-run npx ' +
+        `create-cairn-site --dir ${params.dir}.`
       );
     }
   },
@@ -187,10 +189,22 @@ const ROWS = {
         'The tool could not confirm that the names this site deploys under are free on your ' +
         `Cloudflare account: reading ${params.resource} failed. wrangler reported:\n` +
         `${params.detail}\n` +
-        'Nothing was built or deployed, because deploying without that check could replace a ' +
+        'Nothing was deployed, because deploying without that check could replace a ' +
         'Worker, database, or bucket already in use.\n' +
         'Next: fix what wrangler reported above, then re-run npx create-cairn-site --dir ' +
         `${params.dir}.`
+      );
+    }
+  },
+  'sign-in-account-unknown': {
+    kind: 'act',
+    build(params) {
+      return (
+        "This site's progress record has no saved Cloudflare account, so --sign-in cannot tell " +
+        "which account's database to write your sign-in to, and it wrote nothing.\n" +
+        `Next: run npx create-cairn-site --dir ${params.dir} without --sign-in and continue ` +
+        'until it prints "Find your Cloudflare account", which saves the account, then run ' +
+        'the --sign-in command again.'
       );
     }
   },

@@ -391,13 +391,13 @@ async function readDmarc(api, zoneId, domain) {
     return { unread: true };
   }
   const name = `_dmarc.${domain}`.toLowerCase();
+  const atName = records.filter((record) => String(record?.name ?? '').toLowerCase() === name);
+  // A CNAME there delegates the record to a DMARC vendor, whose policy this read cannot see.
+  if (atName.some((record) => record?.type === 'CNAME')) return { unread: true };
   // A TXT value can arrive wrapped in quotes, or split into quoted strings.
   const text = (record) => String(record?.content ?? '').replace(/"\s*"|"/g, '');
-  const dmarc = records.find(
-    (record) =>
-      record?.type === 'TXT' &&
-      String(record?.name ?? '').toLowerCase() === name &&
-      /^\s*v\s*=\s*DMARC1/i.test(text(record)),
+  const dmarc = atName.find(
+    (record) => record?.type === 'TXT' && /^\s*v\s*=\s*DMARC1/i.test(text(record)),
   );
   if (!dmarc) return { found: false };
   const policy = /(?:^|;)\s*p\s*=\s*([a-z]+)/i.exec(text(dmarc));

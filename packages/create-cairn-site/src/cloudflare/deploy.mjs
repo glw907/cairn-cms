@@ -191,6 +191,21 @@ const BUCKET_ABSENT_CODE = '[code: 10006]';
 const SKEW_MS = 5 * 60 * 1000;
 
 /**
+ * An ISO 8601 date-time with a zone, the only shape a creation or marker time is read in.
+ * `Date.parse` also accepts looser forms, read in whatever zone the machine is in.
+ */
+const ISO_TIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(Z|[+-]\d{2}:\d{2})$/;
+
+/**
+ * Read an ISO 8601 date-time, refusing every other shape.
+ * @param {unknown} value the time as stored or as wrangler reported it
+ * @returns {number} epoch milliseconds, or NaN when `value` is not an ISO 8601 date-time
+ */
+export function parseIsoTime(value) {
+  return typeof value === 'string' && ISO_TIME_PATTERN.test(value) ? Date.parse(value) : NaN;
+}
+
+/**
  * How many deployments `deployments list` returns at most (its description: "the 10 most recent
  * deployments"). A reply this long may hide the Worker's first deployment, so its creation time
  * is unknown.
@@ -220,9 +235,9 @@ const DEPLOYMENTS_LIST_LIMIT = 10;
 function excusedByMarker(marker, { workerName, accountId }, createdAt) {
   if (!marker || typeof marker !== 'object') return false;
   if (marker.name !== workerName || !accountId || marker.accountId !== accountId) return false;
-  const at = Date.parse(marker.at);
-  const endedAt = Date.parse(marker.endedAt);
-  const created = typeof createdAt === 'string' ? Date.parse(createdAt) : NaN;
+  const at = parseIsoTime(marker.at);
+  const endedAt = parseIsoTime(marker.endedAt);
+  const created = parseIsoTime(createdAt);
   if (![at, endedAt, created].every(Number.isFinite)) return false;
   return created >= at - SKEW_MS && created <= endedAt + SKEW_MS;
 }
@@ -248,9 +263,14 @@ function parseJsonReply(stdout, open) {
 /**
  * Read the names the deploy will use out of the scaffold's wrangler.jsonc. The file carries
  * whole-line `//` comments only (the template's shape), so dropping those lines leaves JSON.
+ * Also lists every key that would point the deploy at a resource other than the named ones,
+ * which the scaffold never writes: a D1 `database_id` (the scaffold drops the template's
+ * placeholder), an R2 `jurisdiction`, a `preview_*` key on any D1 or R2 binding, or an `env`
+ * block.
  * @param {string} dir the scaffold root
- * @returns {Promise<{ name: unknown, databases: unknown[], buckets: unknown[] }>} the Worker
- *  name and every D1 `database_name` and R2 `bucket_name`
+ * @returns {Promise<{ name: unknown, databases: unknown[], buckets: unknown[], unsupported: string[] }>}
+ *  the Worker name, every D1 `database_name` and R2 `bucket_name`, and a phrase per
+ *  unsupported key
  */
 async function readDeployNames(dir) {
   let parsed;
@@ -270,10 +290,26 @@ async function readDeployNames(dir) {
     });
   }
   const list = (value) => (Array.isArray(value) ? value : []);
+  const d1 = list(parsed?.d1_databases);
+  const r2 = list(parsed?.r2_buckets);
+  const unsupported = [];
+  for (const [entry, noun, nameKey] of [
+    ...d1.map((entry) => [entry, 'database', 'database_name']),
+    ...r2.map((entry) => [entry, 'bucket', 'bucket_name']),
+  ]) {
+    const label = `the ${noun} ${String(entry?.[nameKey])}`;
+    if (noun === 'database' && entry && 'database_id' in entry) unsupported.push(`a database_id on ${label}`);
+    if (noun === 'bucket' && entry && 'jurisdiction' in entry) unsupported.push(`a jurisdiction on ${label}`);
+    for (const key of Object.keys(entry ?? {}).filter((key) => key.startsWith('preview_'))) {
+      unsupported.push(`a ${key} key on ${label}`);
+    }
+  }
+  if (parsed && typeof parsed === 'object' && 'env' in parsed) unsupported.push('an env block');
   return {
     name: parsed?.name,
-    databases: list(parsed?.d1_databases).map((entry) => entry?.database_name),
-    buckets: list(parsed?.r2_buckets).map((entry) => entry?.bucket_name),
+    databases: d1.map((entry) => entry?.database_name),
+    buckets: r2.map((entry) => entry?.bucket_name),
+    unsupported,
   };
 }
 
@@ -303,7 +339,7 @@ async function readResource(args, absentCode, resource, { dir, accountId }) {
  * The handler prints the raw deployments, sorted by `created_on`
  * (`versionsDeploymentsListHandler`, `src/versions/deployments/list.ts` in wrangler 4.158). A
  * live read on 2026-11-07 returned exactly 10 entries for a long-lived Worker, with `created_on`
- * such as `2026-07-14T19:32:06.622072Z`, which `Date.parse` accepts.
+ * such as `2026-07-14T19:32:06.622072Z`, which `parseIsoTime` accepts.
  * @param {string} stdout the reply
  * @returns {string | undefined} the earliest deployment's `created_on`, or undefined when the
  *  reply is unreadable, empty, or long enough to hide the first deployment
@@ -312,7 +348,7 @@ function workerCreatedAt(stdout) {
   const deployments = parseJsonReply(stdout, '[');
   if (!Array.isArray(deployments) || deployments.length === 0) return undefined;
   if (deployments.length >= DEPLOYMENTS_LIST_LIMIT) return undefined;
-  const times = deployments.map((deployment) => Date.parse(deployment?.created_on));
+  const times = deployments.map((deployment) => parseIsoTime(deployment?.created_on));
   if (!times.every(Number.isFinite)) return undefined;
   return new Date(Math.min(...times)).toISOString();
 }
@@ -343,12 +379,12 @@ function workerCreatedAt(stdout) {
  * @param {string} args.workerName the base name; the database is `<name>-auth` and the bucket
  *  `<name>-media`, as `nameWranglerResources` writes them
  * @param {unknown} [args.marker] the record's saved `cloudflare.deployStartedAs`, if any
- * @param {boolean} [args.workerOnly] read the Worker alone, for the re-read just before a deploy
  * @returns {Promise<void>} resolves when every name is free or excused; rejects with
- *  `resource-names-mismatch` when wrangler.jsonc names something else, `resource-names-taken`
- *  naming every clash, or `resource-names-check-failed` when a read fails
+ *  `resource-names-mismatch` when wrangler.jsonc names something else or carries an
+ *  unsupported key, `resource-names-taken` naming every clash, or
+ *  `resource-names-check-failed` when a read fails
  */
-export async function ensureNamesFree({ dir, log, accountId, workerName, marker, workerOnly = false }) {
+export async function ensureNamesFree({ dir, log, accountId, workerName, marker }) {
   const databaseName = `${workerName}-auth`;
   const bucketName = `${workerName}-media`;
 
@@ -361,6 +397,7 @@ export async function ensureNamesFree({ dir, log, accountId, workerName, marker,
   for (const name of configured.buckets) {
     if (name !== bucketName) mismatched.push(`the bucket name ${String(name)}`);
   }
+  mismatched.push(...configured.unsupported);
   if (mismatched.length > 0) {
     throw cloudflareError('resource-names-mismatch', { dir, workerName, found: mismatched });
   }
@@ -370,7 +407,9 @@ export async function ensureNamesFree({ dir, log, accountId, workerName, marker,
   const target = { dir, accountId };
   const taken = [];
   /**
-   * Record one found resource as taken unless the marker excuses it.
+   * Record one found resource as taken unless the marker excuses it. A taken resource carries
+   * its creation time when wrangler gave a readable one, so the admin can match it to their
+   * earlier run before deleting anything.
    * @param {string} phrase the resource, as the error names it
    * @param {unknown} createdAt its creation time, as wrangler reported it
    */
@@ -379,7 +418,7 @@ export async function ensureNamesFree({ dir, log, accountId, workerName, marker,
       log(`Found ${phrase} from this site's earlier deploy; continuing.`);
       return;
     }
-    taken.push(phrase);
+    taken.push(Number.isFinite(parseIsoTime(createdAt)) ? `${phrase} (created ${createdAt})` : phrase);
   };
 
   const worker = await readResource(
@@ -390,39 +429,37 @@ export async function ensureNamesFree({ dir, log, accountId, workerName, marker,
   );
   if (worker !== null) noteFound(`a Worker named ${workerName}`, workerCreatedAt(worker));
 
-  if (!workerOnly) {
-    const list = await runWrangler(['d1', 'list', '--json'], {
-      cwd: dir,
-      log: () => {},
-      ...accountEnv(accountId),
+  const list = await runWrangler(['d1', 'list', '--json'], {
+    cwd: dir,
+    log: () => {},
+    ...accountEnv(accountId),
+  });
+  const databases = list.code === 0 ? parseJsonReply(list.stdout, '[') : undefined;
+  if (!Array.isArray(databases)) {
+    throw cloudflareError('resource-names-check-failed', {
+      dir,
+      resource: 'the list of D1 databases',
+      detail:
+        list.code === 0
+          ? 'wrangler d1 list --json printed output that is not a JSON list.'
+          : trailingStderr(list.stderr) || `wrangler exited with code ${list.code}.`,
     });
-    const databases = list.code === 0 ? parseJsonReply(list.stdout, '[') : undefined;
-    if (!Array.isArray(databases)) {
-      throw cloudflareError('resource-names-check-failed', {
-        dir,
-        resource: 'the list of D1 databases',
-        detail:
-          list.code === 0
-            ? 'wrangler d1 list --json printed output that is not a JSON list.'
-            : trailingStderr(list.stderr) || `wrangler exited with code ${list.code}.`,
-      });
-    }
-    for (const name of new Set([databaseName, ...configured.databases])) {
-      const database = databases.find((entry) => entry?.name === name);
-      if (database) noteFound(`a database named ${name}`, database.created_at);
-    }
+  }
+  for (const name of new Set([databaseName, ...configured.databases])) {
+    const database = databases.find((entry) => entry?.name === name);
+    if (database) noteFound(`a database named ${name}`, database.created_at);
+  }
 
-    for (const name of new Set([bucketName, ...configured.buckets])) {
-      const bucket = await readResource(
-        ['r2', 'bucket', 'info', name, '--json'],
-        BUCKET_ABSENT_CODE,
-        `the bucket ${name}`,
-        target,
-      );
-      if (bucket !== null) {
-        const info = parseJsonReply(bucket, '{');
-        noteFound(`a storage bucket named ${name}`, info?.created);
-      }
+  for (const name of new Set([bucketName, ...configured.buckets])) {
+    const bucket = await readResource(
+      ['r2', 'bucket', 'info', name, '--json'],
+      BUCKET_ABSENT_CODE,
+      `the bucket ${name}`,
+      target,
+    );
+    if (bucket !== null) {
+      const info = parseJsonReply(bucket, '{');
+      noteFound(`a storage bucket named ${name}`, info?.created);
     }
   }
 

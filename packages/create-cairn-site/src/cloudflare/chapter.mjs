@@ -17,6 +17,7 @@ import {
   ensureInstalled,
   ensureLogin,
   ensureNamesFree,
+  parseIsoTime,
   buildSite,
   deployWorker,
   applyMigrations,
@@ -261,15 +262,15 @@ export async function runCloudflareChapter({
       "Deploys the Worker, writes its URL as the site's origin, applies the database's " +
         'migrations, rebuilds so the pages carry that origin, then deploys again.',
       async () => {
-        // The build can take minutes, long enough for another run to deploy the same name, so
-        // the Worker is read again right before this one deploys.
-        await ensureNamesFree({ dir, log, accountId, workerName, marker: priorMarker, workerOnly: true });
+        // The build can take minutes, long enough for another run to deploy the same names, so
+        // every name is read again right before this one deploys.
+        await ensureNamesFree({ dir, log, accountId, workerName, marker: priorMarker });
         // A resume of this site's own attempt keeps that attempt's start, so the resources it
         // created stay inside the window a later resume excuses.
         const continuing =
           priorMarker?.name === workerName &&
           priorMarker?.accountId === accountId &&
-          Number.isFinite(Date.parse(priorMarker?.at));
+          Number.isFinite(parseIsoTime(priorMarker?.at));
         const marker = {
           name: workerName,
           accountId,

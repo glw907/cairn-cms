@@ -1,9 +1,10 @@
 // A short `wrangler tail` of one leg Worker, so a failed sign-in mail names the engine's own verdict
 // (`auth.link.send_failed` and its code) instead of only "no message arrived". The engine emits one
 // structured record per operational event; the table is the cairn-extending-a-site skill's
-// references/log-events.md. Summaries name the event, its code and condition, and the request's
-// path and status. They never carry a query string, an address, or a token, and each is capped at
-// 200 characters, since a row's reason can land in a public release body.
+// references/log-events.md. A summary names the event and its level, the code, condition, reason,
+// and error fields the record carries (the engine scrubs its send error), and the request's method,
+// path, and status. It never copies the record's email field, a query string, or a token, and each
+// summary is capped at 200 characters, since a row's reason can land in a public release body.
 import { spawn as nodeSpawn } from 'node:child_process';
 
 /** The wrangler the generated template pins (`gate.mjs` `WRANGLER`). */

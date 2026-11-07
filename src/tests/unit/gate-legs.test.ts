@@ -19,6 +19,7 @@ import {
   findSignInMessage,
   guardedRun,
   installName,
+  isTrustedRedirect,
   promptTable,
   readRecord,
   runLeg,
@@ -333,6 +334,69 @@ describe('findSignInMessage', () => {
     const result = await findSignInMessage({ ...base, sessionUrl: `${origin}/.well-known/jmap`, budgetMs: 30_000, ...clock() });
     expect(result.found).toBe(false);
     expect((result as { reason: string }).reason).toContain('401');
+  });
+
+  describe('isTrustedRedirect, the rule that decides where credentials may go', () => {
+    const from = new URL('https://907.life/.well-known/jmap');
+    const trusted = ['907.life'];
+    const allows = (to: string, start: URL = from) => isTrustedRedirect(start, new URL(to), trusted);
+
+    it('trusts the same host and the session host\'s own subdomains over https', () => {
+      expect(allows('https://907.life/other')).toBe(true);
+      expect(allows('https://ward.907.life/.well-known/jmap')).toBe(true);
+    });
+
+    it('refuses a look-alike host, a longer host that ends in the domain, and userinfo that names the real one', () => {
+      expect(allows('https://evil907.life/')).toBe(false);
+      expect(allows('https://907.life.evil.com/')).toBe(false);
+      expect(allows('https://907.life@evil.com/')).toBe(false);
+      expect(allows('https://user:pw@ward.907.life/')).toBe(false);
+    });
+
+    it('refuses a downgrade from https to http, even on the same host', () => {
+      expect(allows('http://907.life/.well-known/jmap')).toBe(false);
+      expect(allows('http://ward.907.life/.well-known/jmap')).toBe(false);
+    });
+
+    it('lets a plain-http local server redirect within itself, which only the tests use', () => {
+      const local = new URL('http://127.0.0.1:8080/a');
+      expect(isTrustedRedirect(local, new URL('http://127.0.0.1:9090/b'), [])).toBe(true);
+    });
+  });
+
+  it('refuses a redirect from https to http on the same host, and never re-sends the credentials in the clear', async () => {
+    const calls: string[] = [];
+    const fetchImpl = (async (input: string | URL | Request) => {
+      calls.push(String(input));
+      return new Response(null, { status: 308, headers: { location: 'http://ward.907.life/.well-known/jmap' } });
+    }) as typeof fetch;
+    const result = await findSignInMessage({ ...base, sessionUrl: 'https://ward.907.life/.well-known/jmap', fetchImpl, ...clock() });
+    expect(result.found).toBe(false);
+    expect((result as { reason: string }).reason).toContain('not a trusted host');
+    expect(calls).toEqual(['https://ward.907.life/.well-known/jmap']);
+  });
+
+  it('refuses an API URL on a host the session does not trust, before any credentialed request reaches it', async () => {
+    const calls: string[] = [];
+    const fetchImpl = (async (input: string | URL | Request) => {
+      calls.push(String(input));
+      return Response.json({ apiUrl: 'https://evil.example/jmap/api', primaryAccounts: { 'urn:ietf:params:jmap:mail': 'acct' } });
+    }) as typeof fetch;
+    const result = await findSignInMessage({ ...base, sessionUrl: 'https://ward.907.life/.well-known/jmap', fetchImpl, ...clock() });
+    expect(result.found).toBe(false);
+    expect((result as { reason: string }).reason).toContain('not a trusted host');
+    expect(calls).toEqual(['https://ward.907.life/.well-known/jmap']);
+  });
+
+  it('refuses an API URL that downgrades the session\'s https to http', async () => {
+    const calls: string[] = [];
+    const fetchImpl = (async (input: string | URL | Request) => {
+      calls.push(String(input));
+      return Response.json({ apiUrl: 'http://ward.907.life/jmap/api', primaryAccounts: { 'urn:ietf:params:jmap:mail': 'acct' } });
+    }) as typeof fetch;
+    const result = await findSignInMessage({ ...base, sessionUrl: 'https://ward.907.life/.well-known/jmap', fetchImpl, ...clock() });
+    expect(result.found).toBe(false);
+    expect(calls).toHaveLength(1);
   });
 
   it('refuses a sign-in link on another origin', async () => {

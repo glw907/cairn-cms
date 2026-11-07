@@ -171,11 +171,26 @@ async function fetchWithAuth(fetchImpl, url, init, trusted) {
     const location = response.headers.get('location');
     if (response.status < 300 || response.status >= 400 || !location) return response;
     const next = new URL(location, target);
-    const allowed = next.hostname === target.hostname || trusted.some((entry) => next.hostname === entry || next.hostname.endsWith(`.${entry}`));
-    if (!allowed) throw new Error(`the request was redirected to ${next.hostname}, which is not a trusted host`);
+    if (!isTrustedRedirect(target, next, trusted)) throw new Error(`the request was redirected to ${next.hostname}, which is not a trusted host`);
     target = next;
   }
   throw new Error('too many redirects');
+}
+
+/**
+ * Whether credentials sent to `from` may go on to `to`: never to a URL that carries userinfo, never
+ * from https to anything else (a downgrade would put them on the wire in the clear), and only to the
+ * same hostname or a trusted domain or one of its subdomains. The match is on whole labels, so
+ * `evil907.life` and `907.life.evil.com` are not `907.life`.
+ * @param {URL} from the URL the credentials were sent to
+ * @param {URL} to the URL a redirect or the session document points at next
+ * @param {string[]} trusted the trusted domains
+ * @returns {boolean}
+ */
+export function isTrustedRedirect(from, to, trusted) {
+  if (to.username || to.password) return false;
+  if (from.protocol === 'https:' && to.protocol !== 'https:') return false;
+  return to.hostname === from.hostname || trusted.some((entry) => to.hostname === entry || to.hostname.endsWith(`.${entry}`));
 }
 
 /**
@@ -216,6 +231,16 @@ export async function findSignInMessage(query) {
   // A login the server does not know can still get a 200 session with no accounts; reading it as an
   // empty mailbox would hide the real cause.
   if (!accountId) return { found: false, reason: 'the JMAP session holds no mail account for this login' };
+  // The session document names the API URL the credentials go to next; hold it to the same rule as a redirect.
+  let apiUrl;
+  try {
+    apiUrl = new URL(session.apiUrl);
+  } catch {
+    return { found: false, reason: 'the JMAP session names no usable API URL' };
+  }
+  if (!isTrustedRedirect(new URL(sessionUrl), apiUrl, trusted)) {
+    return { found: false, reason: `the JMAP session names an API on ${apiUrl.hostname}, which is not a trusted host` };
+  }
   const subject = `Sign in to ${siteName}`;
   const deadline = now() + budgetMs;
   /** What the last poll saw since the request, named by sender and subject only, so a miss says what arrived instead. */

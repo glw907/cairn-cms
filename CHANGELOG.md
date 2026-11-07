@@ -1,19 +1,3 @@
-## Unreleased
-
-<!-- release-size: minor -->
-
-- **Workers Builds deploys with a narrow token of its own.** `create-cairn-site --connect` now asks for
-  a second token with Workers Scripts, D1, and Workers R2 Storage at edit, registers it once per
-  Cloudflare account as `cairn-build`, and reuses it for later sites. The setup token no longer
-  becomes the build token. An unattended run reads `CAIRN_CF_BUILD_TOKEN`. `build-token-missing` stops
-  it when neither a registration nor the variable exists, and `build-token-invalid` stops any run
-  whose deploy token Cloudflare refuses.
-- **Setup reports a site live when only this computer's resolver is behind.** When the authoritative
-  nameservers serve the domain and a pinned HTTPS check finds the site, setup reports it live and
-  prints one line that the resolver may take up to 30 minutes to see it.
-
-Consumers must: nothing.
-
 ## 0.99.0-rc.3
 
 <!-- release-size: minor -->
@@ -382,7 +366,11 @@ Consumers must: rebuild the site from `create-cairn-site`; this release has no u
   - **`--yes` no longer skips Workers Builds after an email decline.** An unattended run connects Builds whether or not it declined email.
   - **The setup tool refuses to commit over repository edits to its two config files.** Before a domain or email commit on a Builds site, it compares the repository's `wrangler.jsonc` and `src/theme/cairn.config.ts` with the checkout's, ignoring the values the tool writes, and stops with a `git pull` step when anything else differs.
   - **The Builds commit path checks first and waits for the deploy to start.** Before it commits a domain or email change, the setup tool reads the Builds API with your token, so a token without the Workers Builds permission stops at the token step instead of after the commit. It then waits up to two minutes for the push build to appear, reuses that build on a re-run instead of starting a second, drops its saved token when it parks for a sign-in, and strips control characters from a failed build's log tail before printing it. A read that fails mid-reconcile now stops the commit.
+  - **Workers Builds deploys with a narrow token of its own.** `create-cairn-site --connect` now asks for a second token with Workers Scripts, D1, and Workers R2 Storage at edit, registers it once per Cloudflare account as `cairn-build`, and reuses it for later sites. The setup token no longer becomes the build token. An unattended run reads `CAIRN_CF_BUILD_TOKEN`. `build-token-missing` stops it when neither a registration nor the variable exists, and `build-token-invalid` stops any run whose deploy token Cloudflare refuses.
+- **Setup reports a site live when only this computer's resolver is behind.** When the authoritative nameservers serve the domain and a pinned HTTPS check finds the site, setup reports it live and prints one line that the resolver may take up to 30 minutes to see it.
 - **A release candidate now publishes to the hidden `gate` dist-tag and reaches `next` only after it passes the release gate.** A candidate no longer moves `next` on its own: the gate run promotes it, and promotion also moves `create-cairn-site@latest` to the passed candidate until a stable supersedes it.
+- **Publishing now runs only from a published GitHub release, with npm provenance.** The maintainers verify each publish with `scripts/release/verify.mjs`.
+- **Breaking changes now require a minor version from these candidates on.** `check:version` refuses a patch that carries an actionable `Consumers must:` line.
 - **`@glw907/cairn-cms-dev` publishes built output.** `scripts/checks/api-surface.md` ships in the package.
 
 ### Dependencies

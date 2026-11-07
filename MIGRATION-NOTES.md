@@ -78,20 +78,6 @@ version the error's import or field name last appeared in. For a runtime symptom
 up after deploy, read the site's structured logs; the `cairn-extending-a-site` skill's debug
 reference walks them.
 
-## Unreleased
-
-An existing site keeps deploying unchanged, so none of this is required. Before this change,
-`create-cairn-site` registered the token you pasted for the Builds step, which reaches every
-account and zone you own, as the Workers Builds build token, under the name
-`cairn create-cairn-site build token`. New runs register a narrow token named `cairn-build`
-instead. To move an existing site onto the narrow token:
-
-1. In Cloudflare's dashboard, create an API token with Workers Scripts, D1, and Workers R2 Storage
-   at edit, and no other permission. Name it `cairn-build`.
-2. Open the Worker, then **Settings**, **Builds**, and under **API token** select the new token.
-3. Delete the old `cairn create-cairn-site build token`, since it is the wide one.
-4. Push a commit and confirm the build deploys.
-
 ## Per-version notes
 
 Only the release in this file has notes here. The notes of earlier releases live in their git tags.
@@ -138,6 +124,16 @@ and behavior that changed. The steps below are the ones that fall on whoever dep
   Re-run `npx create-cairn-site --dir <dir>` and answer no to the domain to reach the Builds offer, or
   run `npx create-cairn-site --dir <dir> --connect` directly. A domain or email sign-in turned on
   afterward is committed to the repository and deployed by Builds.
+- **Move a site connected to Workers Builds by an earlier candidate onto the narrow build token if
+  you want.** The site keeps deploying unchanged without this. An earlier `create-cairn-site`
+  registered the token you pasted for the Builds step, which reaches every account and zone you own,
+  as the Workers Builds build token, under the name `cairn create-cairn-site build token`. New runs
+  register a narrow token named `cairn-build` instead. To move the site:
+  1. In Cloudflare's dashboard, create an API token with Workers Scripts, D1, and Workers R2
+     Storage at edit, and no other permission. Name it `cairn-build`.
+  2. Open the Worker, then **Settings**, **Builds**, and under **API token** select the new token.
+  3. Delete the old `cairn create-cairn-site build token`, since it is the wide one.
+  4. Push a commit and confirm the build deploys.
 
 ## 0.98.0
 

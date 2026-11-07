@@ -474,7 +474,7 @@ async function armNameReads(t, overrides = {}, wranglerJsonc = ALPINE_WRANGLER_J
 /**
  * Run `ensureNamesFree` for `alpine-club` on account `a` and return the error it throws.
  * @param {string} dir the scaffold directory
- * @param {object} [extra] fields merged over the call's arguments (marker, workerOnly)
+ * @param {object} [extra] fields merged over the call's arguments, such as the marker
  * @returns {Promise<Error & { catalogue?: object }>} the thrown error
  */
 async function namesError(dir, extra = {}) {
@@ -504,13 +504,6 @@ test('ensureNamesFree passes when the Worker, the database, and the bucket are a
   );
 });
 
-test('ensureNamesFree with workerOnly reads the Worker alone', async (t) => {
-  const { fake, dir } = await armNameReads(t);
-  const { ensureNamesFree } = await import('./deploy.mjs');
-  await ensureNamesFree({ dir, log: () => {}, accountId: 'a', workerName: 'alpine-club', workerOnly: true });
-  assert.deepEqual((await fake.invocations()).map((i) => i.argv[0]), ['deployments']);
-});
-
 const PRESENT_NOW = presentAt({ worker: IN_WINDOW, d1: IN_WINDOW, r2: IN_WINDOW });
 
 for (const [label, overrides, named] of [
@@ -530,12 +523,21 @@ for (const [label, overrides, named] of [
   });
 }
 
-test('ensureNamesFree names every clashing resource in one error', async (t) => {
+test('ensureNamesFree names every clashing resource in one error, with its creation time', async (t) => {
   const { dir } = await armNameReads(t, PRESENT_NOW);
   const err = await namesError(dir);
-  assert.match(err.message, /Worker named alpine-club\b/);
-  assert.match(err.message, /database named alpine-club-auth/);
-  assert.match(err.message, /bucket named alpine-club-media/);
+  assert.match(err.message, /Worker named alpine-club \(created 2026-11-01T12:03:00\.000Z\)/);
+  assert.match(err.message, /database named alpine-club-auth \(created 2026-11-01T12:03:00\.000Z\)/);
+  assert.match(err.message, /bucket named alpine-club-media \(created 2026-11-01T12:03:00\.000Z\)/);
+  assert.match(err.message, /Nothing was deployed/);
+  assert.doesNotMatch(err.message, /built or deployed/, 'the check before the deploy runs after the build');
+});
+
+test('ensureNamesFree names a clash without a creation time when wrangler gives none', async (t) => {
+  const { dir } = await armNameReads(t, { r2: { code: 0, stdout: '{"name":"alpine-club-media"}' } });
+  const err = await namesError(dir);
+  assert.match(err.message, /bucket named alpine-club-media\./);
+  assert.doesNotMatch(err.message, /created/);
 });
 
 for (const [label, overrides] of [
@@ -633,6 +635,24 @@ for (const [label, overrides, extra, named] of [
     { marker: marker() },
     /bucket named alpine-club-media/,
   ],
+  [
+    'a creation time Date.parse accepts but that is not ISO 8601',
+    presentAt({ worker: 'Nov 1, 2026 12:03:00 GMT', d1: '2026-11-01 12:03:00', r2: 'Sun, 01 Nov 2026 12:03:00 GMT' }),
+    { marker: marker() },
+    /Worker named alpine-club.*database named alpine-club-auth.*bucket named alpine-club-media/s,
+  ],
+  [
+    'a marker whose start is not ISO 8601',
+    PRESENT_NOW,
+    { marker: marker({ at: 'Sun, 01 Nov 2026 12:00:00 GMT' }) },
+    /Worker named/,
+  ],
+  [
+    'a marker whose stop is not ISO 8601',
+    PRESENT_NOW,
+    { marker: marker({ endedAt: '2026-11-01 12:10' }) },
+    /Worker named/,
+  ],
 ]) {
   test(`ensureNamesFree refuses ${label}`, async (t) => {
     const { dir } = await armNameReads(t, overrides);
@@ -660,6 +680,38 @@ for (const [label, jsonc] of [
     assert.equal(err.catalogue.kind, 'act');
     assert.match(err.message, /production-/);
     assert.deepEqual(await fake.invocations(), [], 'a mismatch stops before any read');
+  });
+}
+
+for (const [label, jsonc, named] of [
+  [
+    'a database_id',
+    ALPINE_WRANGLER_JSONC.replace('"database_name": "alpine-club-auth",', '"database_name": "alpine-club-auth",\n      "database_id": "4c1d2e3f-0000-0000-0000-000000000001",'),
+    /database_id/,
+  ],
+  [
+    'an R2 jurisdiction',
+    ALPINE_WRANGLER_JSONC.replace('"bucket_name": "alpine-club-media" }', '"bucket_name": "alpine-club-media", "jurisdiction": "eu" }'),
+    /jurisdiction/,
+  ],
+  [
+    'a preview binding key',
+    ALPINE_WRANGLER_JSONC.replace('"bucket_name": "alpine-club-media" }', '"bucket_name": "alpine-club-media", "preview_bucket_name": "other-media" }'),
+    /preview_bucket_name/,
+  ],
+  [
+    'an env block',
+    ALPINE_WRANGLER_JSONC.replace('"name": "alpine-club",', '"name": "alpine-club",\n  "env": { "staging": { "name": "alpine-club-staging" } },'),
+    /env block/,
+  ],
+]) {
+  test(`ensureNamesFree refuses a wrangler.jsonc that carries ${label}`, async (t) => {
+    const { fake, dir } = await armNameReads(t, {}, jsonc);
+    const err = await namesError(dir);
+    assert.equal(err.catalogue?.code, 'resource-names-mismatch');
+    assert.match(err.message, named);
+    assert.doesNotMatch(err.message, /built or deployed/);
+    assert.deepEqual(await fake.invocations(), [], 'a refused config stops before any read');
   });
 }
 

@@ -2116,6 +2116,18 @@ test('email DMARC copy: a failed record read says so and states when p=reject is
   assert.doesNotMatch(closing, /wrote a p=reject/, 'a failed read proves nothing about what onboarding wrote');
 });
 
+test('email DMARC copy: a _dmarc CNAME to a DMARC vendor counts as unread, never as no record', async (t) => {
+  const { admission, closing } = await emailCopyFor(t, 'site-email-dmarc-cname', async ({ zoneId, domain, dir }) => {
+    const api = makeApi({ token: 'fake-token', accountId: 'acct-1', dir });
+    await api.createDnsRecord(zoneId, { type: 'CNAME', name: `_dmarc.${domain}`, content: 'dmarc.vendor.example' });
+  });
+
+  assert.match(admission, /couldn't read/);
+  assert.doesNotMatch(admission, /no DMARC record yet/, 'a delegated record is not an absent one');
+  assert.match(closing, /couldn't read/);
+  assert.doesNotMatch(closing, /wrote a p=reject/);
+});
+
 // --- T4b.1 defect harvest: the tool never promises delivery, anywhere (live e2e finding) -------
 
 test('email closing copy: proves acceptance, not delivery, and promises no arrival timeline', async (t) => {

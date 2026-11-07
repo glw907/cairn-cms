@@ -204,6 +204,27 @@ test('bin.mjs --sign-in seeds the saved Cloudflare account, never wrangler\'s de
   assert.equal(seed.env.CLOUDFLARE_ACCOUNT_ID, 'saved-account-id');
 });
 
+test('bin.mjs --sign-in on a record with no saved Cloudflare account stops before seeding', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-resume-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('resume-sign-in-no-account');
+  t.after(() => fake.close());
+  await fake.respond('d1 execute', { code: 0, stdout: SEED_SUCCESS_STDOUT });
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+
+  await seedLiveSite('alpine-club-noacct', dir, {
+    cloudflare: { url: 'https://alpine-club.glw907.workers.dev', workerName: 'alpine-club' },
+  });
+
+  const result = await runCli(['--dir', dir, '--sign-in'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
+  assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
+  assert.match(result.stderr, /no saved Cloudflare account/);
+  assert.match(result.stderr, /Next:/);
+  assert.deepEqual(await fake.invocations(), [], 'a seed with no account would write to wrangler\'s default account');
+});
+
 test('bin.mjs --sign-in on a record with no saved Cloudflare URL fails loud before seeding', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-resume-scaffold-'));

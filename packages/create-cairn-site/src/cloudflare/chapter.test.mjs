@@ -322,6 +322,8 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
     'r2 bucket',
     'run build',
     'deployments list',
+    'd1 list',
+    'r2 bucket',
     'deploy',
     'd1 migrations',
     'run build',
@@ -340,20 +342,22 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
       ['r2', 'bucket', 'info', 'alpine-club-media', '--json'],
       ['run', 'build'],
       ['deployments', 'list', '--name', 'alpine-club', '--json'],
+      ['d1', 'list', '--json'],
+      ['r2', 'bucket', 'info', 'alpine-club-media', '--json'],
       ['deploy'],
       ['d1', 'migrations', 'apply', 'AUTH_DB', '--remote'],
       ['run', 'build'],
       ['deploy'],
       ['secret', 'put', 'GITHUB_APP_PRIVATE_KEY_B64'],
-      invocations[13].argv,
+      invocations[15].argv,
     ],
   );
-  assert.deepEqual(invocations[13].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
-  assert.equal(invocations[13].argv[4], '--command');
-  assert.match(invocations[13].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
+  assert.deepEqual(invocations[15].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
+  assert.equal(invocations[15].argv[4], '--command');
+  assert.match(invocations[15].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
 
   // Every wrangler call made after the account was resolved must carry it as
-  // CLOUDFLARE_ACCOUNT_ID: the three name reads, the Worker re-read before the deploy, both
+  // CLOUDFLARE_ACCOUNT_ID: the three name reads, all three again before the deploy, both
   // deploys, the migration, the secret put, and the seed. install
   // and run build are npm, not wrangler, and the two whoami calls resolve the account rather
   // than needing it, so all four are exempt.
@@ -361,7 +365,7 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
   const accountScoped = invocations.filter(
     (i) => !ACCOUNT_EXEMPT_SHAPES.has(i.argv.slice(0, 2).join(' ')),
   );
-  assert.equal(accountScoped.length, 9, 'expected nine account-scoped wrangler calls');
+  assert.equal(accountScoped.length, 11, 'expected eleven account-scoped wrangler calls');
   assert.ok(
     accountScoped.every((i) => i.env.CLOUDFLARE_ACCOUNT_ID === 'test-account-id'),
     'expected every account-scoped wrangler call to carry the resolved account id',

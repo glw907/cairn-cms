@@ -320,7 +320,8 @@ describe('the bottom-aligned field row recipe', () => {
 
       const style = getComputedStyle(row);
       expect(style.display).toBe('flex');
-      expect(style.alignItems).toBe('flex-end');
+      // Chromium 158 serializes the computed flex-end keyword as flow-end.
+      expect(style.alignItems).toMatch(/^(flex|flow)-end$/);
       expect(parseFloat(style.columnGap)).toBeGreaterThan(0);
     } finally {
       document.documentElement.setAttribute('data-theme', 'cairn-admin');

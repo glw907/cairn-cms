@@ -101,7 +101,8 @@ describe('PageHeader', () => {
       const header = screen.container.querySelector('header')!;
       const button = screen.container.querySelector('button')!;
       const wrapper = button.parentElement as HTMLElement;
-      expect(getComputedStyle(wrapper).alignSelf).toBe('flex-start');
+      // Chromium 158 serializes the computed flex-start keyword as flow-start.
+      expect(getComputedStyle(wrapper).alignSelf).toMatch(/^(flex|flow)-start$/);
       expect(wrapper.getBoundingClientRect().width).toBeLessThan(header.getBoundingClientRect().width);
     });
 

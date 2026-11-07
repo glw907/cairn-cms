@@ -71,6 +71,18 @@ describe('preflight', () => {
     expect(r.errors).toEqual([expect.stringContaining('create-cairn-site already has 0.99.0')]);
   });
 
+  it('refuses when npm view fails, instead of reading nothing as unpublished', () => {
+    const run = (cmd: string, args: string[]) => {
+      if (cmd === 'npm') return { status: 1, stdout: '' };
+      if (args[0] === 'rev-parse') return { status: 0, stdout: SHA };
+      if (args[0] === 'ls-remote') return { status: 0, stdout: `${SHA}\trefs/heads/main` };
+      return { status: 0, stdout: '' };
+    };
+    const r = preflight(run, { version: '0.99.0', stable: true, root: '/repo', exists: () => true, changelog: CHANGELOG });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join('\n')).toContain('npm view failed');
+  });
+
   it('refuses a missing install, naming the command', () => {
     const r = check(world({ installed: false }));
     expect(r.errors.join('\n')).toContain('npm ci');

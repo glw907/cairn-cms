@@ -108,6 +108,31 @@ describe('release-cut-guard: non-literal tags and matching', () => {
   it('matches doubled spaces', () => {
     expect(denied(guard('gh  release  create v1.0.0-rc.1'))).toBe(true);
   });
+  it('checks every release in a compound command', () => {
+    const cmd = `gh release create v0.1.0-rc.1 --prerelease -t x -n x && gh release create v1.0.0 -t x -n x`;
+    expect(denied(guard(cmd))).toBe(true);
+    expect(denied(guard(`cd x && gh release create v1.0.0 --title y`))).toBe(true);
+  });
+  it('reads a redirection as a boundary, not part of the tag', () => {
+    expect(denied(guard('gh release create v1.0.0>/dev/null'))).toBe(true);
+    expect(denied(guard('gh release create v1.0.0 2>&1 --title x'))).toBe(true);
+    expect(guard(`gh release create v1.0.0 --target ${SHA} > /tmp/out 2>&1`)).toBeNull();
+  });
+  it('catches the new alias, a global flag, and a quoted subcommand', () => {
+    expect(denied(guard('gh release new v1.0.0 --title x'))).toBe(true);
+    expect(denied(guard('gh -R o/r release create v1.0.0 --title x'))).toBe(true);
+    expect(denied(guard('gh --repo glw907/cairn-cms release create v1.0.0'))).toBe(true);
+    expect(denied(guard('gh "release" create v1.0.0'))).toBe(true);
+  });
+  it('reads a backslash-newline continuation as whitespace', () => {
+    expect(guard('gh release create v1.0.0-rc.1 --prerelease\\\n  --title x')).toBeNull();
+  });
+  it('denies a gh release create it cannot parse', () => {
+    expect(denied(guard('$(echo gh) release create v1.0.0'))).toBe(true);
+    expect(denied(guard('gh $X release create v1.0.0'))).toBe(true);
+    expect(guard('gh pr create --title x --body "notes for the release, a new page"')).toBeNull();
+    expect(guard('gh release view v1.0.0 --json isPrerelease')).toBeNull();
+  });
   it('gives no decision for another literal tag or another command', () => {
     expect(guard('gh release create nightly --title x')).toBeNull();
     expect(guard('gh release list')).toBeNull();
@@ -143,7 +168,9 @@ describe('.claude/settings.json', () => {
     const hook = entries[0].hooks[0];
     expect(hook.command).toContain('.claude/hooks/release-cut-guard.mjs');
     expect(hook.onFailure).toBe('block');
-    expect(hook.if).toBe('Bash(gh release create *)');
+    // No `if` filter: its permission-rule syntax cannot match the `release new` alias, a global
+    // flag before the subcommand, or a compound command, so the hook reads every Bash call.
+    expect(hook.if).toBeUndefined();
   });
 
   it('allows the release scripts and the promote workflow', () => {

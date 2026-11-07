@@ -30,7 +30,6 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/release-cut-guard.mjs\"",
-            "if": "Bash(gh release create *)",
             "onFailure": "block"
           }
         ]

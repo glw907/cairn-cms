@@ -14,7 +14,13 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-const MATCH = /gh\s+release\s+create/;
+// The trigger is wider than the literal `gh release create`: gh's alias `release new`, a global flag
+// before the subcommand, and a quoted word all create a release. Every command naming `release` is
+// parsed, and one where the parser finds no invocation but the text still reads `gh ... release
+// create` (or `new`) is denied rather than let through.
+const MATCH = /\brelease\b/;
+const LOOKS_LIKE_RELEASE = /\bgh\b[^\n;&|]*\brelease["']?\s+["']?(?:create|new)\b/;
+const GLOBAL_VALUE_FLAGS = new Set(['-R', '--repo', '--hostname']);
 const VALUE_FLAGS = new Set([
   '--target', '--title', '-t', '--notes', '-n', '--notes-file', '-F', '--repo', '-R',
   '--discussion-category', '--notes-start-tag'
@@ -45,13 +51,17 @@ function tokenize(command) {
   let cur = null;
   const start = () => (cur ??= { text: '', dynamic: false, op: false });
   const flush = () => {
-    if (cur) tokens.push(cur);
+    if (cur && skipNext) skipNext = false;
+    else if (cur) tokens.push(cur);
     cur = null;
   };
   let quote = null;
+  let skipNext = false;
   for (let i = 0; i < command.length; i++) {
     const c = command[i];
-    if (quote === "'") {
+    if (quote === null && c === '\\' && command[i + 1] === '\n') {
+      i++;
+    } else if (quote === "'") {
       if (c === "'") quote = null;
       else start().text += c;
     } else if (quote === '"') {
@@ -68,6 +78,16 @@ function tokenize(command) {
       start().text += command[++i];
     } else if (/\s/.test(c) && c !== '\n') {
       flush();
+    } else if (c === '<' || c === '>') {
+      // A redirection: a leading file-descriptor digit and the target word are not arguments.
+      if (cur && /^\d+$/.test(cur.text) && !quote) cur = null;
+      flush();
+      while (command[i + 1] === '<' || command[i + 1] === '>') i++;
+      if (command[i + 1] === '&') i++;
+      skipNext = true;
+    } else if (c === '(' || c === ')') {
+      flush();
+      tokens.push({ text: c, dynamic: false, op: true });
     } else if (c === '\n' || c === ';' || c === '|' || c === '&') {
       flush();
       const two = command.slice(i, i + 2);
@@ -83,26 +103,43 @@ function tokenize(command) {
   return tokens;
 }
 
-/** The arguments after `gh release create`, up to the next operator. */
-function releaseArgs(command) {
+/**
+ * The arguments of every `gh release create` (or its alias `gh release new`) in the command, each up
+ * to the next operator. A global flag such as `-R owner/repo` may sit between `gh` and `release`.
+ * @returns {{ text: string, dynamic: boolean, op: boolean }[][]}
+ */
+function releaseInvocations(command) {
   const tokens = tokenize(command);
-  for (let i = 0; i + 2 < tokens.length; i++) {
-    const [a, b, c] = [tokens[i], tokens[i + 1], tokens[i + 2]];
-    if (!a.op && a.text === 'gh' && b.text === 'release' && c.text === 'create') {
+  const found = [];
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].op || tokens[i].text !== 'gh') continue;
+    let j = i + 1;
+    while (j < tokens.length && !tokens[j].op && tokens[j].text.startsWith('-')) {
+      j += GLOBAL_VALUE_FLAGS.has(tokens[j].text) ? 2 : 1;
+    }
+    const [release, verb] = [tokens[j], tokens[j + 1]];
+    if (release && verb && !release.op && !verb.op && release.text === 'release' && (verb.text === 'create' || verb.text === 'new')) {
       const args = [];
-      for (let j = i + 3; j < tokens.length && !tokens[j].op; j++) args.push(tokens[j]);
-      return args;
+      for (let k = j + 2; k < tokens.length && !tokens[k].op; k++) args.push(tokens[k]);
+      found.push(args);
     }
   }
-  return null;
+  return found;
 }
 
 function run(input) {
   const command = input?.tool_input?.command;
   if (typeof command !== 'string' || !MATCH.test(command)) return;
-  const args = releaseArgs(command);
-  if (!args) deny('could not read the gh release create arguments');
+  const invocations = releaseInvocations(command);
+  if (invocations.length === 0) {
+    if (LOOKS_LIKE_RELEASE.test(command)) deny('could not read the gh release create arguments');
+    return;
+  }
+  for (const args of invocations) checkRelease(args, input);
+}
 
+/** Apply the four rules to one invocation's arguments; returns when it passes, denies otherwise. */
+function checkRelease(args, input) {
   let tag = null;
   let target = null;
   let prerelease = false;

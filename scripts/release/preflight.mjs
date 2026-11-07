@@ -39,6 +39,10 @@ export function preflight(run, { version, stable, root, exists, changelog }) {
 
   for (const pkg of PACKAGES) {
     const r = run('npm', ['view', pkg, 'versions', '--json']);
+    if (r.status !== 0 && !/E404/.test(r.stdout)) {
+      errors.push(`${pkg}: npm view failed (status ${r.status}), so the published versions are unknown`);
+      continue;
+    }
     /** @type {unknown} */
     let published = [];
     try {

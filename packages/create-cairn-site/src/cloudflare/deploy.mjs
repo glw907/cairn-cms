@@ -301,7 +301,9 @@ async function readResource(args, absentCode, resource, { dir, accountId }) {
 /**
  * The Worker's creation time from a `deployments list --json` reply: the earliest `created_on`.
  * The handler prints the raw deployments, sorted by `created_on`
- * (`versionsDeploymentsListHandler`, `src/versions/deployments/list.ts` in wrangler 4.158).
+ * (`versionsDeploymentsListHandler`, `src/versions/deployments/list.ts` in wrangler 4.158). A
+ * live read on 2026-11-07 returned exactly 10 entries for a long-lived Worker, with `created_on`
+ * such as `2026-07-14T19:32:06.622072Z`, which `Date.parse` accepts.
  * @param {string} stdout the reply
  * @returns {string | undefined} the earliest deployment's `created_on`, or undefined when the
  *  reply is unreadable, empty, or long enough to hide the first deployment
@@ -324,9 +326,11 @@ function workerCreatedAt(stdout) {
  * the names derived from the site's saved name. Each read uses wrangler's signed-in session. The
  * Worker read is `deployments list --name <name> --json`, which exits 0 for any existing Worker.
  * The database read is `d1 list --json`, whose handler pages through every database and prints
- * the API's records unchanged, each with the D1 API's `created_at`. The bucket read is `r2
- * bucket info <name> --json`, whose handler prints the bucket's `creation_date` as `created`
- * (`r2BucketInfoCommand` in wrangler 4.158), rather than `r2 bucket list`, whose handler sends
+ * the API's records unchanged. Wrangler's source never names their fields; each entry carries
+ * `created_at` as an ISO time (live read, 2026-11-07: `2026-11-03T06:11:10.309Z`). The bucket
+ * read is `r2 bucket info <name> --json`, whose handler prints the bucket's `creation_date` as
+ * `created` (`r2BucketInfoCommand` in wrangler 4.158; live read, 2026-11-07: an ISO time such as
+ * `2026-06-18T03:13:34.094Z`), rather than `r2 bucket list`, whose handler sends
  * one request with no pagination cursor and so cannot prove a bucket absent on an account with
  * many.
  *

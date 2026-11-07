@@ -66,6 +66,43 @@ export function summarizeTailLine(line) {
 }
 
 /**
+ * Split a stream of top-level JSON objects, which wrangler prints pretty-printed over many lines.
+ * @param {string} buffer text so far; a trailing partial object stays in `rest`
+ * @returns {{ objects: string[], rest: string }} each complete object's text, and the unread remainder
+ */
+export function splitJsonObjects(buffer) {
+  /** @type {string[]} */
+  const objects = [];
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let start = -1;
+  let consumed = 0;
+  for (let i = 0; i < buffer.length; i++) {
+    const char = buffer[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') {
+      inString = depth > 0;
+    } else if (char === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (char === '}' && depth > 0) {
+      depth--;
+      if (depth === 0) {
+        objects.push(buffer.slice(start, i + 1));
+        consumed = i + 1;
+      }
+    }
+  }
+  return { objects, rest: depth > 0 ? buffer.slice(start) : buffer.slice(consumed).replace(/^[^{]*$/, '') };
+}
+
+/**
  * Start tailing a Worker. Never throws: a tail that cannot start answers a one-line reason when stopped.
  * @param {object} input
  * @param {string} input.workerName the Worker to tail
@@ -102,16 +139,13 @@ export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs =
     child.stdout?.on('data', (/** @type {Buffer | string} */ chunk) => {
       watchForConnection(String(chunk));
       if (stdoutText.length < SUMMARY_LIMIT) stdoutText += String(chunk);
-      buffer += String(chunk);
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
-      for (const line of lines) {
+      const split = splitJsonObjects(buffer + String(chunk));
+      buffer = split.rest;
+      for (const object of split.objects) {
         // In JSON mode wrangler prints no connection line; the first event is the proof.
-        if (line.trim().startsWith('{')) {
-          connected = true;
-          markConnected();
-        }
-        summaries.push(...summarizeTailLine(line));
+        connected = true;
+        markConnected();
+        summaries.push(...summarizeTailLine(object));
       }
     });
     child.stderr?.on('data', (/** @type {Buffer | string} */ chunk) => {

@@ -82,6 +82,20 @@ describe('startWorkerTail', () => {
     expect(summaries[0]).toContain('Authentication error');
   });
 
+  it('reads events that wrangler prints as multi-line JSON, one object after another', async () => {
+    const { child, spawn } = fakeSpawn();
+    const tail = startWorkerTail({ workerName: 'site-b', env: {}, spawn, settleMs: 0, readyMs: 5000 });
+    const event = (status: number) => ({ wallTime: 15, outcome: 'ok', event: { request: { method: 'POST', url: 'https://x.workers.dev/admin/login?/request' }, response: { status } }, logs: [{ level: 'log', message: [record({ event: 'auth.link.requested', level: 'info' })] }, { level: 'log', message: ['a } brace inside a string { is not structure'] }] });
+    const text = `${JSON.stringify(event(200), null, 2)}\n${JSON.stringify(event(303), null, 2)}\n`;
+    child.stdout.write(text.slice(0, 40));
+    child.stdout.write(text.slice(40));
+    await tail.ready;
+    const summaries = await tail.stop();
+    expect(summaries).toHaveLength(2);
+    expect(summaries[0]).toContain('auth.link.requested');
+    expect(summaries[1]).toContain('POST /admin/login 303');
+  });
+
   it('says whether the tail ever connected when nothing was logged, so a quiet Worker is told from a tail that never opened', async () => {
     const never = fakeSpawn();
     const unconnected = startWorkerTail({ workerName: 'site-b', env: {}, spawn: never.spawn, settleMs: 0, readyMs: 0 });

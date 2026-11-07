@@ -187,7 +187,7 @@
   Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: `tsgo.yml` runs green on 7, SvelteKit's peer admits `^7`, and a tsdoc lint path admits `^7`.
   Placement: After the release.
 - [ ] **#333** Take the held major @types/node 26 `#improvement` `#deps` *(2026-11-02)* *(swept 2026-11-02)*
-  Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: Geoff raises the Node floor.
+  Held at the release sitting (Geoff, 2026-11-02), and again on 2026-11-07: Workers Builds defaults to Node 24.22.1 and preinstalls only 22 and 24, so a Node 26 floor would install Node at every site build (Geoff: "Hold Node 24 for now"). Unblock trigger: Workers Builds makes Node 26 its default (`developers.cloudflare.com/workers/ci-cd/builds/build-image/`). Then the floor moves with `@types/node`, the CI pins, and the template's `check.yml` together.
   Placement: After the release.
 - [ ] **#334** Take the held major devalue 6 `#improvement` `#deps` *(2026-11-02)* *(swept 2026-11-02)*
   Held at the release sitting (Geoff, 2026-11-02). Unblock trigger: SvelteKit and Svelte admit `^6`.

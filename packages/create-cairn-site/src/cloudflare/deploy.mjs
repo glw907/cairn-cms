@@ -8,7 +8,7 @@
 // deploy or any later one, so this module parses no ids and writes none. Migrations resolve by
 // binding name against the same id-less config, so applyMigrations takes no database-name
 // fallback either.
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runWrangler, runNpm, accountEnv } from './exec.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
@@ -187,20 +187,110 @@ export async function deployWorker({ dir, log, accountId }) {
 const WORKER_ABSENT_CODE = '[code: 10007]';
 const BUCKET_ABSENT_CODE = '[code: 10006]';
 
+/** The clock skew allowed between this machine and Cloudflare when comparing creation times. */
+const SKEW_MS = 5 * 60 * 1000;
+
 /**
- * Run one name read, returning true when the resource exists and false when wrangler reports the
- * absent code. Any other failure throws, because reading a failure as "absent" would let setup
- * deploy over a resource already in use.
+ * How many deployments `deployments list` returns at most (its description: "the 10 most recent
+ * deployments"). A reply this long may hide the Worker's first deployment, so its creation time
+ * is unknown.
+ */
+const DEPLOYMENTS_LIST_LIMIT = 10;
+
+/**
+ * An earlier attempt's resume marker, as the chapter saves it just before its first deploy.
+ * @typedef {object} DeployMarker
+ * @property {string} name the base name that attempt deployed under
+ * @property {string} accountId the account it deployed to
+ * @property {string} at ISO time the attempt's deploy step began
+ * @property {string} [endedAt] ISO time that deploy step stopped; absent while it runs or when
+ *  the process died inside it
+ */
+
+/**
+ * Whether a resource found under this site's name may be one the marker's own attempt created.
+ * The marker must name this site and account, and the resource's creation time must fall
+ * inside that attempt's deploy window, widened by the allowed skew. Anything else, including a
+ * missing or unparseable time, an old string marker, or a marker with no stop time, is foreign.
+ * @param {unknown} marker the record's saved `cloudflare.deployStartedAs`
+ * @param {{ workerName: string, accountId?: string }} site this run's name and account
+ * @param {unknown} createdAt the resource's creation time as wrangler reported it
+ * @returns {boolean} true only when the resource is provably inside the marker's window
+ */
+function excusedByMarker(marker, { workerName, accountId }, createdAt) {
+  if (!marker || typeof marker !== 'object') return false;
+  if (marker.name !== workerName || !accountId || marker.accountId !== accountId) return false;
+  const at = Date.parse(marker.at);
+  const endedAt = Date.parse(marker.endedAt);
+  const created = typeof createdAt === 'string' ? Date.parse(createdAt) : NaN;
+  if (![at, endedAt, created].every(Number.isFinite)) return false;
+  return created >= at - SKEW_MS && created <= endedAt + SKEW_MS;
+}
+
+/**
+ * Parse a wrangler `--json` reply, slicing from the first `open` character the way
+ * account.mjs's `parseWhoamiJson` slices from the first `{`, so a banner line ahead of the JSON
+ * does not fail the read.
+ * @param {string} stdout the reply
+ * @param {'[' | '{'} open the character the JSON value starts with
+ * @returns {unknown} the parsed value, or undefined when none parses
+ */
+function parseJsonReply(stdout, open) {
+  const start = stdout.indexOf(open);
+  if (start === -1) return undefined;
+  try {
+    return JSON.parse(stdout.slice(start));
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Read the names the deploy will use out of the scaffold's wrangler.jsonc. The file carries
+ * whole-line `//` comments only (the template's shape), so dropping those lines leaves JSON.
+ * @param {string} dir the scaffold root
+ * @returns {Promise<{ name: unknown, databases: unknown[], buckets: unknown[] }>} the Worker
+ *  name and every D1 `database_name` and R2 `bucket_name`
+ */
+async function readDeployNames(dir) {
+  let parsed;
+  try {
+    const content = await readFile(join(dir, 'wrangler.jsonc'), 'utf8');
+    parsed = JSON.parse(
+      content
+        .split('\n')
+        .filter((line) => !line.trim().startsWith('//'))
+        .join('\n'),
+    );
+  } catch (cause) {
+    throw cloudflareError('resource-names-check-failed', {
+      dir,
+      resource: `${join(dir, 'wrangler.jsonc')}`,
+      detail: cause.message,
+    });
+  }
+  const list = (value) => (Array.isArray(value) ? value : []);
+  return {
+    name: parsed?.name,
+    databases: list(parsed?.d1_databases).map((entry) => entry?.database_name),
+    buckets: list(parsed?.r2_buckets).map((entry) => entry?.bucket_name),
+  };
+}
+
+/**
+ * Run one single-resource read. Absent resolves to `null`; present resolves to the reply's
+ * stdout. Any other failure throws, because reading a failure as "absent" would let setup deploy
+ * over a resource already in use.
  * @param {string[]} args the wrangler read
  * @param {string} absentCode the `[code: N]` that means "no such resource"
  * @param {string} resource names the resource in the error, such as `the Worker alpine`
  * @param {{ dir: string, accountId?: string }} target the scaffold root and the chosen account
- * @returns {Promise<boolean>} whether the resource exists
+ * @returns {Promise<string | null>} the reply's stdout when the resource exists, else null
  */
-async function resourceExists(args, absentCode, resource, { dir, accountId }) {
+async function readResource(args, absentCode, resource, { dir, accountId }) {
   const result = await runWrangler(args, { cwd: dir, log: () => {}, ...accountEnv(accountId) });
-  if (result.code === 0) return true;
-  if (result.stderr.includes(absentCode)) return false;
+  if (result.code === 0) return result.stdout;
+  if (result.stderr.includes(absentCode)) return null;
   throw cloudflareError('resource-names-check-failed', {
     dir,
     resource,
@@ -209,71 +299,128 @@ async function resourceExists(args, absentCode, resource, { dir, accountId }) {
 }
 
 /**
+ * The Worker's creation time from a `deployments list --json` reply: the earliest `created_on`.
+ * The handler prints the raw deployments, sorted by `created_on`
+ * (`versionsDeploymentsListHandler`, `src/versions/deployments/list.ts` in wrangler 4.158).
+ * @param {string} stdout the reply
+ * @returns {string | undefined} the earliest deployment's `created_on`, or undefined when the
+ *  reply is unreadable, empty, or long enough to hide the first deployment
+ */
+function workerCreatedAt(stdout) {
+  const deployments = parseJsonReply(stdout, '[');
+  if (!Array.isArray(deployments) || deployments.length === 0) return undefined;
+  if (deployments.length >= DEPLOYMENTS_LIST_LIMIT) return undefined;
+  const times = deployments.map((deployment) => Date.parse(deployment?.created_on));
+  if (!times.every(Number.isFinite)) return undefined;
+  return new Date(Math.min(...times)).toISOString();
+}
+
+/**
  * Stop setup when the chosen account already has a Worker, D1 database, or R2 bucket of the
  * names this site deploys under, so a first deploy never replaces a live Worker or migrates and
  * seeds a database that belongs to another site.
  *
- * Each read uses wrangler's signed-in session. The Worker read is `deployments list --name
- * <name> --json`, which exits 0 for any existing Worker. The database read is `d1 list --json`,
- * whose handler pages through every database and prints the array as JSON. The bucket read is
- * `r2 bucket info <name> --json` rather than `r2 bucket list`, whose handler sends one request
- * with no pagination cursor and so cannot prove a bucket absent on an account with many.
+ * The names come from the scaffold's wrangler.jsonc, the file the deploy reads, and must match
+ * the names derived from the site's saved name. Each read uses wrangler's signed-in session. The
+ * Worker read is `deployments list --name <name> --json`, which exits 0 for any existing Worker.
+ * The database read is `d1 list --json`, whose handler pages through every database and prints
+ * the API's records unchanged, each with the D1 API's `created_at`. The bucket read is `r2
+ * bucket info <name> --json`, whose handler prints the bucket's `creation_date` as `created`
+ * (`r2BucketInfoCommand` in wrangler 4.158), rather than `r2 bucket list`, whose handler sends
+ * one request with no pagination cursor and so cannot prove a bucket absent on an account with
+ * many.
+ *
+ * A found resource is excused only when `marker` is this site's and account's resume marker and
+ * the resource was created inside that attempt's deploy window.
  * @param {object} args
  * @param {string} args.dir the scaffold root
  * @param {(line: string) => void} args.log receives progress lines
  * @param {string} [args.accountId] the Cloudflare account to read, from `ensureAccountId`
  * @param {string} args.workerName the base name; the database is `<name>-auth` and the bucket
  *  `<name>-media`, as `nameWranglerResources` writes them
- * @returns {Promise<void>} resolves when all three names are free; rejects with
- *  `resource-names-taken` naming every clash, or `resource-names-check-failed` when a read fails
+ * @param {unknown} [args.marker] the record's saved `cloudflare.deployStartedAs`, if any
+ * @param {boolean} [args.workerOnly] read the Worker alone, for the re-read just before a deploy
+ * @returns {Promise<void>} resolves when every name is free or excused; rejects with
+ *  `resource-names-mismatch` when wrangler.jsonc names something else, `resource-names-taken`
+ *  naming every clash, or `resource-names-check-failed` when a read fails
  */
-export async function ensureNamesFree({ dir, log, accountId, workerName }) {
+export async function ensureNamesFree({ dir, log, accountId, workerName, marker, workerOnly = false }) {
   const databaseName = `${workerName}-auth`;
   const bucketName = `${workerName}-media`;
+
+  const configured = await readDeployNames(dir);
+  const mismatched = [];
+  if (configured.name !== workerName) mismatched.push(`the Worker name ${String(configured.name)}`);
+  for (const name of configured.databases) {
+    if (name !== databaseName) mismatched.push(`the database name ${String(name)}`);
+  }
+  for (const name of configured.buckets) {
+    if (name !== bucketName) mismatched.push(`the bucket name ${String(name)}`);
+  }
+  if (mismatched.length > 0) {
+    throw cloudflareError('resource-names-mismatch', { dir, workerName, found: mismatched });
+  }
+
   log(`Checking that your Cloudflare account has nothing named ${workerName} yet.`);
+  const site = { workerName, accountId };
   const target = { dir, accountId };
   const taken = [];
+  /**
+   * Record one found resource as taken unless the marker excuses it.
+   * @param {string} phrase the resource, as the error names it
+   * @param {unknown} createdAt its creation time, as wrangler reported it
+   */
+  const noteFound = (phrase, createdAt) => {
+    if (excusedByMarker(marker, site, createdAt)) {
+      log(`Found ${phrase} from this site's earlier deploy; continuing.`);
+      return;
+    }
+    taken.push(phrase);
+  };
 
-  const workerExists = await resourceExists(
+  const worker = await readResource(
     ['deployments', 'list', '--name', workerName, '--json'],
     WORKER_ABSENT_CODE,
     `the Worker ${workerName}`,
     target,
   );
-  if (workerExists) taken.push(`a Worker named ${workerName}`);
+  if (worker !== null) noteFound(`a Worker named ${workerName}`, workerCreatedAt(worker));
 
-  const list = await runWrangler(['d1', 'list', '--json'], {
-    cwd: dir,
-    log: () => {},
-    ...accountEnv(accountId),
-  });
-  let databases;
-  try {
-    databases = list.code === 0 ? JSON.parse(list.stdout) : null;
-  } catch {
-    databases = null;
-  }
-  if (!Array.isArray(databases)) {
-    throw cloudflareError('resource-names-check-failed', {
-      dir,
-      resource: 'the list of D1 databases',
-      detail:
-        list.code === 0
-          ? 'wrangler d1 list --json printed output that is not a JSON list.'
-          : trailingStderr(list.stderr) || `wrangler exited with code ${list.code}.`,
+  if (!workerOnly) {
+    const list = await runWrangler(['d1', 'list', '--json'], {
+      cwd: dir,
+      log: () => {},
+      ...accountEnv(accountId),
     });
-  }
-  if (databases.some((database) => database?.name === databaseName)) {
-    taken.push(`a database named ${databaseName}`);
-  }
+    const databases = list.code === 0 ? parseJsonReply(list.stdout, '[') : undefined;
+    if (!Array.isArray(databases)) {
+      throw cloudflareError('resource-names-check-failed', {
+        dir,
+        resource: 'the list of D1 databases',
+        detail:
+          list.code === 0
+            ? 'wrangler d1 list --json printed output that is not a JSON list.'
+            : trailingStderr(list.stderr) || `wrangler exited with code ${list.code}.`,
+      });
+    }
+    for (const name of new Set([databaseName, ...configured.databases])) {
+      const database = databases.find((entry) => entry?.name === name);
+      if (database) noteFound(`a database named ${name}`, database.created_at);
+    }
 
-  const bucketExists = await resourceExists(
-    ['r2', 'bucket', 'info', bucketName, '--json'],
-    BUCKET_ABSENT_CODE,
-    `the bucket ${bucketName}`,
-    target,
-  );
-  if (bucketExists) taken.push(`a storage bucket named ${bucketName}`);
+    for (const name of new Set([bucketName, ...configured.buckets])) {
+      const bucket = await readResource(
+        ['r2', 'bucket', 'info', name, '--json'],
+        BUCKET_ABSENT_CODE,
+        `the bucket ${name}`,
+        target,
+      );
+      if (bucket !== null) {
+        const info = parseJsonReply(bucket, '{');
+        noteFound(`a storage bucket named ${name}`, info?.created);
+      }
+    }
+  }
 
   if (taken.length > 0) {
     throw cloudflareError('resource-names-taken', { dir, taken });

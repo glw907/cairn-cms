@@ -342,7 +342,8 @@ async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
  * that names no next step. The same guard covers a record with no saved `cloudflare.url`: without
  * it, the seed would already have written a live token to the database before a bare dereference
  * of `state.cloudflare.url` threw, leaving no way to reach the link it minted.
- * @param {{ siteId: string, state: { dir: string, ownerEmail?: string, cloudflare?: { url?: string } },
+ * @param {{ siteId: string, state: { dir: string, ownerEmail?: string,
+ *  cloudflare?: { url?: string, accountId?: string } },
  *  ownerEmailOverride?: string, log: (line: string) => void }} args
  * @returns {Promise<void>}
  */
@@ -363,7 +364,12 @@ async function reseedAndOpen({ siteId, state, ownerEmailOverride, log }) {
   if (ownerEmail !== state.ownerEmail) {
     await updateSite(siteId, { ownerEmail });
   }
-  const { confirmPath } = await seedOwnerAndToken({ dir: state.dir, email: ownerEmail, log });
+  const { confirmPath } = await seedOwnerAndToken({
+    dir: state.dir,
+    email: ownerEmail,
+    log,
+    accountId: state.cloudflare?.accountId,
+  });
   await openBrowser(`${state.cloudflare.url}${confirmPath}`, log, { secret: true });
   console.log(SIGN_IN_OPENED_NOTICE);
 }

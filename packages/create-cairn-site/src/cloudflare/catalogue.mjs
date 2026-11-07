@@ -158,10 +158,25 @@ const ROWS = {
       return (
         `Your Cloudflare account already has ${joinList(params.taken)}. This site deploys under ` +
         'those names, so deploying would replace or reuse what is already there. Nothing was ' +
-        'built or deployed, and your Cloudflare account is unchanged. The GitHub repository and ' +
-        'App this run created are left as they are.\n' +
+        'built or deployed, and your Cloudflare account is unchanged. Re-running with a new ' +
+        'name and folder leaves the GitHub repository and App for this site in place, for you ' +
+        'to delete or reuse.\n' +
         'Next: run npx create-cairn-site again with --name <a different site name> and a new ' +
         '--dir <a new folder>, so the new site gets a Worker, database, and bucket of its own.'
+      );
+    }
+  },
+  'resource-names-mismatch': {
+    kind: 'act',
+    build(params) {
+      return (
+        `This site's wrangler.jsonc names ${joinList(params.found)}, but setup expects the ` +
+        `Worker ${params.workerName}, the database ${params.workerName}-auth, and the bucket ` +
+        `${params.workerName}-media from the site's saved name, so it cannot be sure which ` +
+        'names the deploy would use. Nothing was built or deployed.\n' +
+        `Next: set wrangler.jsonc's name to ${params.workerName}, its database_name to ` +
+        `${params.workerName}-auth, and its bucket_name to ${params.workerName}-media, then ` +
+        `re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
   },
@@ -942,7 +957,8 @@ export const WAIT_KIND_CODES = CATALOGUE_CODES.filter((code) => ROWS[code].kind 
  *  the row's message; which keys are required depends on `code` (for example `dir` on every row,
  *  `detail` on the rows that carry child or API output, `database` on migrations-failed, `taken`,
  *  a string array of phrases such as `a Worker named alpine`, on resource-names-taken,
- *  `resource` on resource-names-check-failed, `reason`
+ *  `resource` on resource-names-check-failed, `workerName` and `found` (a string array) on
+ *  resource-names-mismatch, `reason`
  *  and `email` on seed-failed's not-allowlisted case, `permission` on token-scope-missing,
  *  `domain` on the domain and hostname rows and the email-sender rows, `nameServers`/`actual`,
  *  both string arrays, on the delegation rows, `reoffered`, a boolean, on paid-plan-declined to

@@ -504,7 +504,7 @@ describe('runLeg', () => {
 
   describe('B2 browses the test domain at its authoritative address', () => {
     /** Run B2 up to the browser steps, which stop at the first page the fake context opens. */
-    async function runB2(address: string | null) {
+    async function runB2(address: string | null, extra: Record<string, unknown> = {}, workerName?: string) {
       const { ctx, runDir, install } = setup();
       ctx.leg = 'B2';
       ctx.install.signedIn = true;
@@ -522,10 +522,11 @@ describe('runLeg', () => {
             recordLeg: recorder().recordLeg,
             runDriver: async () => {
               mkdirSync(path.join(runDir, 'state'), { recursive: true });
-              writeFileSync(path.join(runDir, 'state', 'r.json'), JSON.stringify({ dir: install.dir, cloudflare: { url: 'https://x.workers.dev' } }));
+              writeFileSync(path.join(runDir, 'state', 'r.json'), JSON.stringify({ dir: install.dir, cloudflare: { url: 'https://x.workers.dev', ...(workerName ? { workerName } : {}) } }));
               return { code: 0, screen: '' };
             },
             tailUrlLog: () => ({ stop: async () => {} }),
+            ...extra,
             publishViaAdmin: async (_context: unknown, input: { marker: string }) => {
               marker = input.marker;
               return { entryPath: '/about', alertText: 'x', control: 'c' };
@@ -548,6 +549,22 @@ describe('runLeg', () => {
       const { launches, events, runDir } = await runB2('104.21.0.5');
       expect(launches).toEqual([{ rules: ['MAP carin-test.org 104.21.0.5'], runDir }]);
       expect(events).toEqual(['pinned', 'context closed', 'browser closed']);
+    });
+
+    it('tails the leg Worker before the sign-in request and stops the tail even when the browser step throws', async () => {
+      const calls: string[] = [];
+      const startTail = (input: { workerName: string }) => {
+        calls.push(`start ${input.workerName}`);
+        return { ready: Promise.resolve(), stop: async () => { calls.push('stop'); return []; } };
+      };
+      await runB2('104.21.0.5', { startTail }, 'cairn-e2e-gate-b');
+      expect(calls).toEqual(['start cairn-e2e-gate-b', 'stop']);
+    });
+
+    it('starts no tail when the state record names no Worker', async () => {
+      const calls: string[] = [];
+      await runB2('104.21.0.5', { startTail: () => { calls.push('start'); return { ready: Promise.resolve(), stop: async () => [] }; } });
+      expect(calls).toEqual([]);
     });
 
     it('uses the shared browser when no address is found', async () => {

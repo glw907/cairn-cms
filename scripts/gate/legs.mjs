@@ -9,6 +9,7 @@ import { confirmSignIn, handleUrl, launchBrowser, publishViaAdmin, requestSignIn
 import { defaultFetch, fetchCheck, fetchCheckAbsent } from './fetch-check.mjs';
 import { authoritativeAddress } from './resolve.mjs';
 import { recordLeg } from './record.mjs';
+import { startWorkerTail } from './tail.mjs';
 
 /** The test domain the gate's installs connect. */
 export const TEST_DOMAIN = 'carin-test.org';
@@ -372,6 +373,8 @@ export function cliFailureMessage(result, capture, lines = 8) {
  *  cannot see yet
  * @property {(options: { token: string, accountId: string }) => Promise<BuildsReader>} makeBuildsApi
  *  the Cloudflare client a Builds leg reads its trigger and builds through
+ * @property {typeof startWorkerTail} startTail starts the short `wrangler tail` B2 reads the
+ *  engine's sign-in verdict from
  */
 
 /**
@@ -399,7 +402,7 @@ async function launchPinnedDefault(hostRules, runDir) {
 }
 
 /** @type {LegDeps} */
-const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin, recordLeg, makeBuildsApi: makeBuildsApiDefault, authoritativeAddress, launchPinned: launchPinnedDefault };
+const DEFAULT_DEPS = { runDriver, handleUrl, tailUrlLog, publishViaAdmin, recordLeg, makeBuildsApi: makeBuildsApiDefault, authoritativeAddress, launchPinned: launchPinnedDefault, startTail: startWorkerTail };
 
 /**
  * Log, before teardown, which build token the install's trigger uses and which keys the newest
@@ -602,8 +605,15 @@ async function runLegSteps(ctx, deps, cells) {
     const address = await deps.authoritativeAddress(TEST_DOMAIN);
     const pinned = address ? await deps.launchPinned([`MAP ${TEST_DOMAIN} ${address}`], runDir) : null;
     const fresh = await (pinned ?? launched).newAdminContext();
+    /** @type {ReturnType<typeof startWorkerTail> | null} */
+    let tail = null;
     try {
       const owner = ownerEmailFor(env);
+      // The engine logs its own verdict on a sign-in send (`auth.link.send_failed` and its code). A
+      // short tail of the leg's Worker, started before the request, turns a mail miss into a cause.
+      const workerName = String(record?.cloudflare?.workerName ?? '');
+      tail = workerName ? deps.startTail({ workerName, env: cliEnv }) : null;
+      await tail?.ready;
       const requestedAt = await requestSignInLink(fresh, { origin: `https://${TEST_DOMAIN}`, email: owner });
       const found = await findSignInMessage({
         login: owner,
@@ -613,9 +623,11 @@ async function runLegSteps(ctx, deps, cells) {
         sinceMs: requestedAt,
         expectedOrigin: `https://${TEST_DOMAIN}`,
       });
+      const engineSaid = (await tail?.stop()) ?? [];
       if (!found.found) {
         results.mail = { from: '', fetch: null };
         log(`mail: ${found.reason}`);
+        log(`engine: ${engineSaid.length ? engineSaid.join(' | ') : 'the Worker logged no sign-in event in the window'}`.slice(0, 600));
       } else {
         await confirmSignIn(fresh, found.url);
         const second = `gate-${version}-B2mail-${Date.now()}`;
@@ -623,6 +635,7 @@ async function runLegSteps(ctx, deps, cells) {
         results.mail = { from: found.from, fetch: await fetchCheck(`https://${TEST_DOMAIN}${published.entryPath}`, second) };
       }
     } finally {
+      await tail?.stop().catch(() => []);
       await fresh.close();
       await pinned?.close();
     }

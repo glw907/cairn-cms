@@ -224,7 +224,21 @@ describe('findSignInMessage', () => {
   it('fails when none arrives within the budget', async () => {
     const stub = await serve([]);
     const result = await findSignInMessage({ ...base, sessionUrl: stub.sessionUrl, budgetMs: 60_000, ...clock() });
-    expect(result).toEqual({ found: false, reason: 'no matching sign-in message arrived within the budget' });
+    expect(result).toEqual({ found: false, reason: 'no matching sign-in message arrived within the budget; the mailbox held 0 messages since the request' });
+  });
+
+  it('names the sender and subject of what the mailbox held when nothing matches, never a body or a link', async () => {
+    const github: Mail = { ...signIn(), receivedAt: '2026-11-03T10:05:00Z', from: 'noreply@github.com', subject: '[GitHub] A new SSH key was added', text: `https://github.com/settings/keys ${link('https://carin-test.org', 'SECRET')}` };
+    const earlier: Mail = signIn({ receivedAt: '2026-11-03T09:00:00Z' });
+    const stub = await serve([github, earlier]);
+    const result = await findSignInMessage({ ...base, sessionUrl: stub.sessionUrl, budgetMs: 30_000, ...clock() });
+    expect(result.found).toBe(false);
+    const reason = (result as { reason: string }).reason;
+    expect(reason).toContain('the mailbox held 1 message since the request');
+    expect(reason).toContain('noreply@github.com');
+    expect(reason).toContain('A new SSH key was added');
+    expect(reason).not.toContain('SECRET');
+    expect(reason).not.toContain('settings/keys');
   });
 
   it('refuses a sign-in link on another origin', async () => {

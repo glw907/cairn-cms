@@ -167,6 +167,8 @@ export async function findSignInMessage(query) {
   const accountId = session.primaryAccounts['urn:ietf:params:jmap:mail'];
   const subject = `Sign in to ${siteName}`;
   const deadline = now() + budgetMs;
+  /** What the last poll saw since the request, named by sender and subject only, so a miss says what arrived instead. */
+  let seen = 'the mailbox held 0 messages since the request';
   for (;;) {
     const response = await fetchImpl(session.apiUrl, {
       method: 'POST',
@@ -191,6 +193,13 @@ export async function findSignInMessage(query) {
     if (response.status === 200) {
       const answer = /** @type {{ methodResponses: Array<[string, { list?: any[] }, string]> }} */ (await response.json());
       const list = answer.methodResponses.find((call) => call[0] === 'Email/get')?.[1].list ?? [];
+      const recent = list.filter((message) => Date.parse(message.receivedAt) >= sinceMs - 1000);
+      seen =
+        `the mailbox held ${recent.length} message${recent.length === 1 ? '' : 's'} since the request` +
+        recent
+          .slice(0, 5)
+          .map((message) => `; ${message.receivedAt} from ${message.from?.[0]?.email ?? 'unknown'} "${String(message.subject ?? '').slice(0, 80)}"`)
+          .join('');
       const match = list
         .filter(
           (message) =>
@@ -208,7 +217,7 @@ export async function findSignInMessage(query) {
         return { found: true, from: match.from?.[0]?.email ?? '', url: link };
       }
     }
-    if (now() + intervalMs > deadline) return { found: false, reason: 'no matching sign-in message arrived within the budget' };
+    if (now() + intervalMs > deadline) return { found: false, reason: `no matching sign-in message arrived within the budget; ${seen.slice(0, 200)}` };
     await sleep(intervalMs);
   }
 }

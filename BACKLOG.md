@@ -6,13 +6,33 @@
 
 ## Medium
 
+- [ ] **#350** Detect a dead `cairn-build` registration before reusing it `#improvement` `#cairn-cms` *(2026-11-07)*
+  The probe in release-gate-a (S12) showed a deleted token leaves its Workers Builds registration unchanged for five minutes, so setup reuses a dead `cairn-build` and the first build fails inside the watch. Find a signal that tells a live registration from a dead one, or print the re-point step on a build failure. Found by the release-gate-a close reviews (#195).
+  Placement: `packages/create-cairn-site/src/cloudflare/chapter3.mjs` (the hop). After the release.
+- [ ] **#351** Stop a refused build token from deleting the saved setup token `#bug` `#cairn-cms` *(2026-11-07)*
+  `createBuildToken` still maps a refusal through the setup token's rows, so a 400 or 401 about the build secret can delete the saved setup token (`api.mjs` `createBuildToken`, the cleanup catch in `chapter3.mjs`). Give the build secret its own refusal path. Found by the release-gate-a close reviews (#195).
+  Placement: `packages/create-cairn-site/src/cloudflare/api.mjs`. After the release.
+- [ ] **#352** Strip `CAIRN_CF_*` from the setup tool's child processes `#improvement` `#security` `#cairn-cms` *(2026-11-07)*
+  The `CAIRN_CF_*` variables stay in the process environment, and every child inherits them, including `npm run build` in the hostname cutover (`exec.mjs` `runCommand`). Pass children an environment without them. Found by the release-gate-a close reviews (#195).
+  Placement: After the release.
+- [ ] **#353** Print the reused `cairn-build` registration's uuid and token id `#improvement` `#security` `#cairn-cms` *(2026-11-07)*
+  Reuse matches a registration by its name alone, so any account member with Workers CI edit can plant one named `cairn-build`. Print the reused registration's uuid and token id on reuse so the admin can tell. Found by the release-gate-a close reviews (#195).
+  Placement: After the release.
+- [ ] **#354** Tell the admin to revoke the setup token at Cloudflare when setup ends `#improvement` `#security` `#cairn-cms` *(2026-11-07)*
+  `deleteApiToken` removes the setup token from local state only, and the six-key token stays live at Cloudflare. Say at the terminal outcome that the admin should revoke it, with the page to do it. Found by the release-gate-a close reviews (#195).
+  Placement: After the release.
+- [ ] **#355** Set a retention rule for failed gate run directories `#improvement` `#cairn-cms` *(2026-11-07)*
+  The gate keeps every `failed` run directory indefinitely, with its `urls.log` and captures (T3). Prune them past an age or a count. Found by the release-gate-a close reviews (#195).
+  Placement: After the release.
+- [ ] **#356** Let `--headed` reach the gate's pinned browser `#bug` `#cairn-cms` *(2026-11-07)*
+  The harness's `makeSession` pinned browser always runs headless, so `--headed` does not reach it. Found by the release-gate-a close reviews (#195).
+  Placement: After the release.
+- [ ] **#357** Decide whether leg A1 should read the gate mailbox `#improvement` `#cairn-cms` *(2026-11-07)*
+  A1 passes without reading the mailbox, so only B2 shows that sign-in mail is delivered, and B2 needs the test domain to deliver. Decide whether A1 reads it too. Found by the release-gate-a close reviews (#195).
+  Placement: After the release.
 - [ ] **#349** Run the release gate once on a throwaway candidate before release day `#improvement` `#cairn-cms` *(2026-11-03)*
   Each of the first three live gate runs on `0.99.0-rc.3` met one new harness surprise (a stale npx cache, then a GitHub button label), each costing a fix and a rerun while the release waited. A dry run against the current `gate` candidate, scheduled when a pass changes `scripts/gate/**` or GitHub's pages, would surface them off the release's critical path. Found at the `rc.3` gate.
-- [ ] **#348** Build the gate harness's GitHub page fixtures from captured real pages `#improvement` `#cairn-cms` *(2026-11-03)*
-  `src/tests/unit/gate-browser.test.ts` served an invented "Create GitHub App" button, so the harness's exact-match regex passed every test and failed the first live leg, where GitHub reads "Create GitHub App for glw907-test". Capture each GitHub page the harness drives (labels and roles only, no secrets) from a live run and serve those in the fixtures, refreshed when a live leg holds a page. Found at the `rc.3` gate.
-- [ ] **#341** Register a build token scoped to what a Workers Builds deploy needs, not the owner's whole setup token `#improvement` `#cairn-cms` `#security` *(2026-11-03)*
-  Chapter 3 registers the owner's eight-permission setup token as the Builds build token (`createBuildToken({ secret: token })`, `chapter3.mjs`), so any code a repository committer lands can read zone, DNS, SSL, email, D1, and R2 edit rights in a build. The setup-fix pass widens which `--yes` runs reach it (a declined domain now continues to Builds). Mint or ask for a narrower build token (Workers scripts, D1, R2) and record the choice in MIGRATION-NOTES. Found by the setup-fix close security read (web-auth reviewer M2); a design call.
-  Placement: before the stable, its own pass and `rc.4` (Geoff, 2026-11-03, packet `20261103T125334-2611564`).
+  The `rc.3` rehearsal ran in release-gate-a (#195); what remains is the standing trigger for later harness changes.
 - [ ] **#340** Pass the repository-edit guard to chapter 3's reconciles `#bug` `#cairn-cms` *(2026-11-03)*
   Chapter 2's Builds hop refuses to commit over repository edits to `wrangler.jsonc` and `src/theme/cairn.config.ts` (`refuseRepositoryEdits`), but chapter 3's own `--connect` and builds-live reconciles (`chapter3.mjs` `performReconcile`) pass no guard, so they still upload both local files whole. The setup-fix pass made `reconcileRepo` refuse a failed read, which closes the worst case; the guard itself is a scope change from that plan. Found by the setup-fix close security read.
   Placement: After the release.
@@ -25,8 +45,8 @@
 - [ ] **#337** Remove the stale `rc: 0.6.0-rc.1` dist-tag from `@glw907/cairn-cms` `#improvement` `#cairn-cms` *(2026-11-03)*
   Found while planning the setup-fix pass. A one-time `npm dist-tag rm` by the publisher.
   Placement: The release.
-- [ ] **#336** Test the gate's leg orchestration and run its first live leg against a fake account `#improvement` `#cairn-cms` *(2026-11-03)*
-  `scripts/gate/legs.mjs` `runLeg` and `gate.mjs` `main` tie the harness together and are typechecked but untested; GitHub's real control names, the admin publish selectors, the CLI prompt table on a pty, Cloudflare's delete routes, and Stalwart's JMAP details have never run live. The first gate run is their test, under the design's standing answers; a failed leg here becomes a fix on this item. Teardown treats a 404 with code 7000 or 7003 as a failure (left), but Cloudflare also answers 7003 for some deleted object ids, so the first live run's logged 404 body decides an allowlist per route; `findOrKickBuild` matches a build to its trigger on `build_trigger_metadata.build_trigger_uuid`, a field name nobody has read from a live build record (the fake does not emit it), so the check fails open until the first live run confirms or corrects it; an install whose directory is gone stays `left` until cleaned by hand (a fallback could list D1 and R2 by the gate prefix). Found by the setup-fix close reviews.
+- [ ] **#336** Settle the gate's three live-run residues: the trigger field, a gone install directory, and the 7003 allowlist `#improvement` `#cairn-cms` *(2026-11-03)*
+  The release-gate-a rehearsal (#195) ran every leg live, so what remains is three residues. `findOrKickBuild` matches a build to its trigger on `build_trigger_metadata.build_trigger_uuid`, which no live build record carries (the trigger's field is `build_token_uuid`), so the check still fails open. An install whose directory is gone stays `left` until cleaned by hand (a fallback could list D1 and R2 by the gate prefix). Teardown's 7003 allowlist stays empty because no 7003 appeared in three full runs; a logged one decides its route. Found by the setup-fix close reviews; narrowed by release-gate-a.
   Placement: The release.
 - [ ] **#330** Check the consolidated `## Unreleased` changelog for entries whose option is absent from source `#bug` `#docs` *(2026-11-02)*
   The release sweep's finders found two entries describing code that `src/lib` does not contain: `editor.siteConfigPath` and `editor.nav.configPath` (`compose.ts:59` hard-codes the default; `CHANGELOG.md:143` says both were removed), and `sanitizeSchema` with `unsafeDisableSanitize` (only `buildSanitizeSchema(registry)` exists in `src/lib/render/sanitize-schema.ts`). One finder reported each; no verifier read them. Grep each against `main` and prune or correct the entry before the cut.
@@ -236,6 +256,12 @@
 - **Accepted residual (#247):** the frame-ancestors-only CSP. Clickjacking is the threat these headers close; a full CSP would have to allow SvelteKit's inline hydration and every site's own admin screens and theme, which is site-owned policy outside the engine's scope. (Geoff, 2026-11-02, release sitting)
 
 ## Done
+- [x] **#341** Register a build token scoped to what a Workers Builds deploy needs, not the owner's whole setup token `#improvement` `#cairn-cms` `#security` *(2026-11-03 → 2026-11-07)*
+  Chapter 3 registers the owner's eight-permission setup token as the Builds build token (`createBuildToken({ secret: token })`, `chapter3.mjs`), so any code a repository committer lands can read zone, DNS, SSL, email, D1, and R2 edit rights in a build. The setup-fix pass widens which `--yes` runs reach it (a declined domain now continues to Builds). Mint or ask for a narrower build token (Workers scripts, D1, R2) and record the choice in MIGRATION-NOTES. Found by the setup-fix close security read (web-auth reviewer M2); a design call.
+  Done: release-gate-a (#195).
+- [x] **#348** Build the gate harness's GitHub page fixtures from captured real pages `#improvement` `#cairn-cms` *(2026-11-03 → 2026-11-07)*
+  `src/tests/unit/gate-browser.test.ts` served an invented "Create GitHub App" button, so the harness's exact-match regex passed every test and failed the first live leg, where GitHub reads "Create GitHub App for glw907-test". Capture each GitHub page the harness drives (labels and roles only, no secrets) from a live run and serve those in the fixtures, refreshed when a live leg holds a page. Found at the `rc.3` gate.
+  Done: release-gate-a (#195).
 - [x] **#347** Have the release's verify step wait for the registry, not read it once `#improvement` `#cairn-cms` *(2026-11-03 → 2026-11-07)*
   After `publish.yml` succeeds, npm answers "being processed and may take a few minutes", and `npm view` (`cairn-releasing` step 7 and "Gate the candidate") reported `rc.3` missing on two of three packages for about three minutes. A one-shot read looks like a failed publish, and a cached miss then poisons the gate's `npx` (#342). Poll `https://registry.npmjs.org/<pkg>` for the expected dist-tag, up to ten minutes, before verifying or gating. Found at the `rc.3` cut.
   Done: release-process-b (#194).

@@ -5,8 +5,8 @@
 // beside the script to make `run build` exit 1.
 //
 // It answers just enough for the Cloudflare chapter's happy path: a signed-in `whoami`, one
-// account, a deploy URL, and a successful seed. `makeFakeBin` cannot read the scaffold, which is
-// why this exists beside it.
+// account, name reads that find nothing of the site's name, a deploy URL, and a successful seed.
+// `makeFakeBin` cannot read the scaffold, which is why this exists beside it.
 import { mkdtemp, writeFile, readFile, chmod, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -30,6 +30,12 @@ if (joined === 'whoami --json') {
   process.stdout.write(JSON.stringify({ loggedIn: true, accounts: [{ id: 'acct-1', name: 'Test' }] }));
 } else if (argv[0] === 'whoami') {
   process.stdout.write('You are logged in with an API Token\\n');
+} else if (argv[0] === 'deployments' || argv[0] === 'r2') {
+  // The name reads before the first deploy: this account has no Worker or bucket of the name.
+  process.stderr.write(argv[0] === 'r2' ? 'The specified bucket does not exist. [code: 10006]\\n' : 'This Worker does not exist on your account. [code: 10007]\\n');
+  process.exitCode = 1;
+} else if (joined === 'd1 list --json') {
+  process.stdout.write('[]');
 } else if (argv[0] === 'deploy') {
   process.stdout.write('Deployed thing triggers (0.1 sec)\\n  https://alpine-club.glw907.workers.dev\\n');
 } else if (joined.startsWith('d1 execute')) {

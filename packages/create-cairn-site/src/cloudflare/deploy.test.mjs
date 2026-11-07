@@ -369,3 +369,121 @@ test('applyMigrations names the failing database in migrations-failed', async (t
   const invocations = await fake.invocations();
   assert.deepEqual(invocations.map((i) => i.argv[3]), ['AUTH_DB']);
 });
+
+/**
+ * The stderr wrangler 4.158 prints when a read names a Worker the account does not have: its
+ * fetch error renders the API's code as `[code: 10007]`, the code wrangler's own deploy treats as
+ * "no Worker by that name".
+ */
+const WORKER_ABSENT_STDERR =
+  '✘ [ERROR] A request to the Cloudflare API (/accounts/test-account-id/workers/scripts/alpine-club/deployments) failed.\n\n' +
+  '  This Worker does not exist on your account. [code: 10007]\n';
+
+/** The stderr for a bucket the account does not have, R2's `[code: 10006]`. */
+const BUCKET_ABSENT_STDERR =
+  '✘ [ERROR] A request to the Cloudflare API (/accounts/test-account-id/r2/buckets/alpine-club-media) failed.\n\n' +
+  '  The specified bucket does not exist. [code: 10006]\n';
+
+/** A `d1 list --json` reply naming one database that belongs to some other site. */
+const D1_LIST_OTHER_SITE = JSON.stringify([
+  { uuid: '0f3c1d2e-aaaa-bbbb-cccc-000000000001', name: 'other-site-auth', version: 'production' },
+]);
+
+/**
+ * Arm a fake wrangler whose three name reads all report "absent", then override any of them.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @param {{ worker?: object, d1?: object, r2?: object }} [overrides] replies replacing the
+ *  absent defaults for one read each
+ * @returns {Promise<import('../../test/fake-bin.mjs').FakeBin>} the armed fake, already on
+ *  `CAIRN_WRANGLER_BIN`
+ */
+async function armNameReads(t, overrides = {}) {
+  const fake = await makeFakeBin('wrangler-names');
+  t.after(() => fake.close());
+  await fake.respond('deployments list', overrides.worker ?? { code: 1, stderr: WORKER_ABSENT_STDERR });
+  await fake.respond('d1 list', overrides.d1 ?? { code: 0, stdout: D1_LIST_OTHER_SITE });
+  await fake.respond('r2 bucket info', overrides.r2 ?? { code: 1, stderr: BUCKET_ABSENT_STDERR });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+  return fake;
+}
+
+test('ensureNamesFree passes when the Worker, the database, and the bucket are all absent', async (t) => {
+  const fake = await armNameReads(t);
+  const { ensureNamesFree } = await import('./deploy.mjs');
+  await ensureNamesFree({ dir: tmpdir(), log: () => {}, accountId: 'planted-account-id', workerName: 'alpine-club' });
+
+  const invocations = await fake.invocations();
+  assert.deepEqual(invocations.map((i) => i.argv), [
+    ['deployments', 'list', '--name', 'alpine-club', '--json'],
+    ['d1', 'list', '--json'],
+    ['r2', 'bucket', 'info', 'alpine-club-media', '--json'],
+  ]);
+  assert.ok(
+    invocations.every((i) => i.env.CLOUDFLARE_ACCOUNT_ID === 'planted-account-id'),
+    'every read must target the chosen account',
+  );
+});
+
+for (const [label, overrides, named] of [
+  ['the Worker', { worker: { code: 0, stdout: '[]' } }, /Worker named alpine-club\b/],
+  [
+    'the database',
+    { d1: { code: 0, stdout: JSON.stringify([{ uuid: 'x', name: 'alpine-club-auth' }]) } },
+    /database named alpine-club-auth/,
+  ],
+  ['the bucket', { r2: { code: 0, stdout: '{"name":"alpine-club-media"}' } }, /bucket named alpine-club-media/],
+]) {
+  test(`ensureNamesFree stops with resource-names-taken when ${label} already exists`, async (t) => {
+    await armNameReads(t, overrides);
+    const { ensureNamesFree } = await import('./deploy.mjs');
+    await assert.rejects(
+      () => ensureNamesFree({ dir: './alpine', log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
+      (err) => {
+        assert.equal(err.catalogue.code, 'resource-names-taken');
+        assert.equal(err.catalogue.kind, 'act');
+        assert.match(err.message, named);
+        assert.match(err.catalogue.next, /--name/);
+        return true;
+      },
+    );
+  });
+}
+
+test('ensureNamesFree names every clashing resource in one error', async (t) => {
+  await armNameReads(t, {
+    worker: { code: 0, stdout: '[]' },
+    d1: { code: 0, stdout: JSON.stringify([{ uuid: 'x', name: 'alpine-club-auth' }]) },
+    r2: { code: 0, stdout: '{}' },
+  });
+  const { ensureNamesFree } = await import('./deploy.mjs');
+  await assert.rejects(
+    () => ensureNamesFree({ dir: './alpine', log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
+    (err) => {
+      assert.match(err.message, /Worker named alpine-club\b/);
+      assert.match(err.message, /database named alpine-club-auth/);
+      assert.match(err.message, /bucket named alpine-club-media/);
+      return true;
+    },
+  );
+});
+
+for (const [label, overrides] of [
+  ['the Worker read fails for a reason other than absence', { worker: { code: 1, stderr: 'Authentication error [code: 10000]' } }],
+  ['the database list fails', { d1: { code: 1, stderr: 'A network request to the Cloudflare API failed.' } }],
+  ['the database list prints output that is not a JSON array', { d1: { code: 0, stdout: 'Listing databases...' } }],
+  ['the bucket read fails for a reason other than absence', { r2: { code: 1, stderr: 'Authentication error [code: 10000]' } }],
+]) {
+  test(`ensureNamesFree never reads a failure as absent: ${label}`, async (t) => {
+    await armNameReads(t, overrides);
+    const { ensureNamesFree } = await import('./deploy.mjs');
+    await assert.rejects(
+      () => ensureNamesFree({ dir: './alpine', log: () => {}, accountId: 'a', workerName: 'alpine-club' }),
+      (err) => {
+        assert.equal(err.catalogue.code, 'resource-names-check-failed');
+        assert.equal(err.catalogue.kind, 'act');
+        return true;
+      },
+    );
+  });
+}

@@ -14,6 +14,8 @@ const EXPECTED_KIND = {
   'build-failed': 'act',
   'deploy-failed': 'act',
   'subdomain-unregistered': 'act',
+  'resource-names-taken': 'act',
+  'resource-names-check-failed': 'act',
   'migrations-failed': 'act',
   'secret-put-failed': 'act',
   'seed-failed': 'act',
@@ -68,6 +70,15 @@ const SAMPLE_PARAMS = {
   'build-failed': { dir: './alpine', detail: 'Error: Cannot find module vite' },
   'deploy-failed': { dir: './alpine', detail: 'ERROR: script size limit exceeded' },
   'subdomain-unregistered': { dir: './alpine' },
+  'resource-names-taken': {
+    dir: './alpine',
+    taken: ['a Worker named alpine', 'a database named alpine-auth']
+  },
+  'resource-names-check-failed': {
+    dir: './alpine',
+    resource: 'the Worker alpine',
+    detail: 'Authentication error [code: 10000]'
+  },
   'migrations-failed': { dir: './alpine', database: 'AUTH_DB', detail: 'D1_ERROR: no such table' },
   'secret-put-failed': { dir: './alpine', detail: 'ERROR: could not put secret' },
   'seed-failed': { dir: './alpine', detail: 'D1_ERROR: UNIQUE constraint failed' },

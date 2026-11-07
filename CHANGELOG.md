@@ -144,7 +144,7 @@ Consumers must: rebuild the site from `create-cairn-site`; this release has no u
   the type level: correct a `summaryFields` key that is not a field of its concept and a `navLayout`
   `screen` that is neither an engine screen id nor a `content` key. `spellcheck:` is gone from
   `site.config.yaml` and now fails with "unrecognized key". `TidyConventions` drops `fixes` (a `fixes:` key in
-  `site.config.yaml` is ignored), and tidy defaults to `claude-sonnet-5-5`. `editor.nav.configPath` and `editor.siteConfigPath` are gone, and the site config is always
+  `site.config.yaml` is ignored), and tidy defaults to `claude-sonnet-5-5`. `editor.nav.configPath` is gone, and the site config is always
   `src/theme/site.config.yaml`. A concept id may not be `login`,
   `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings`, and each `publishActions`
   entry takes a distinct `label`.
@@ -377,10 +377,12 @@ Consumers must: rebuild the site from `create-cairn-site`; this release has no u
 
 ### Dependencies
 
-- The engine takes every minor and patch of the October sweep, and the peer ranges do not move. The
-  scaffold takes `wrangler` `^4.148.0`, `@sveltejs/kit` `^3.0.1`, `svelte` `^5.57.2`, and `vite`
-  `^8.3.3`. Wrangler 4.148 gains ambient `*.txt`, `*.html`, `*.sql`, `*.bin`, and `*.wasm` module
-  declarations in a regenerated `worker-configuration.d.ts`. `gray-matter` and `js-yaml` leave the
+- The engine takes every minor and patch through the 2026-11-07 sweep, and the peer ranges do not
+  move. The scaffold takes `wrangler` `^4.158.0`, `@sveltejs/kit` `^3.1.1`, `svelte` `^5.57.3`, `vite`
+  `^8.3.6`, and `daisyui` `^5.7.50`. It pins `tailwindcss` and every `@tailwindcss/*` package at
+  exactly `4.3.3`, because tailwindcss 4.3.4 and 4.3.5 compile daisyUI's `.join` rule to a selector
+  that lightningcss rejects, and the build fails. Wrangler 4.148 gains ambient `*.txt`, `*.html`,
+  `*.sql`, `*.bin`, and `*.wasm` module declarations in a regenerated `worker-configuration.d.ts`. `gray-matter` and `js-yaml` leave the
   engine's dependencies.
 
 ## 0.98.0

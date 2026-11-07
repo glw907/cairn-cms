@@ -53,9 +53,6 @@
 - [ ] **#336** Settle the gate's three live-run residues: the trigger field, a gone install directory, and the 7003 allowlist `#improvement` `#cairn-cms` *(2026-11-03)*
   The release-gate-a rehearsal (#195) ran every leg live, so what remains is three residues. `findOrKickBuild` matches a build to its trigger on `build_trigger_metadata.build_trigger_uuid`, which no live build record carries (the trigger's field is `build_token_uuid`), so the check still fails open. An install whose directory is gone stays `left` until cleaned by hand (a fallback could list D1 and R2 by the gate prefix). Teardown's 7003 allowlist stays empty because no 7003 appeared in three full runs; a logged one decides its route. Found by the setup-fix close reviews; narrowed by release-gate-a.
   Placement: The release.
-- [ ] **#330** Check the consolidated `## Unreleased` changelog for entries whose option is absent from source `#bug` `#docs` *(2026-11-02)*
-  The release sweep's finders found two entries describing code that `src/lib` does not contain: `editor.siteConfigPath` and `editor.nav.configPath` (`compose.ts:59` hard-codes the default; `CHANGELOG.md:143` says both were removed), and `sanitizeSchema` with `unsafeDisableSanitize` (only `buildSanitizeSchema(registry)` exists in `src/lib/render/sanitize-schema.ts`). One finder reported each; no verifier read them. Grep each against `main` and prune or correct the entry before the cut.
-  Placement: Before the release.
 - [ ] **#329** Say which skill owns an edit to the packaged skills under `skills/` `#improvement` `#docs-process` *(2026-11-02)*
   `cairn-writing-docs` excludes "the packaged skills", and `.claude/rules/docs.md` loads it only for `docs/`. The release sweep's gaps landed mostly in `skills/`, with no skill to route the edit through, and `docs-fact-checker` takes only `docs/editors` and `docs/admin` pages. Name the owner (extend `cairn-writing-docs` or add a skill) and say how a skill edit is fact-checked.
   Placement: After the release.
@@ -73,7 +70,7 @@
   Placement: After the release.
 - [ ] **#324** Release the tailwindcss pin when a tailwindcss release stops emitting `@scope (:is(.join))` `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   tailwindcss 4.3.4 flattens daisyUI 5.7.50's `.join{@scope(&){...}}` to `@scope (:is(.join))`, and lightningcss rejects the result with "Invalid empty selector" in the admin stylesheet build and in a Vite build of the showcase. The root, the showcase, and `templates/waymark` pin `tailwindcss` and `@tailwindcss/*` at exactly 4.3.3. Unblock: a tailwindcss release past 4.3.4 whose `npm run package` and showcase build pass, or a daisyUI release that changes the `.join` rule. The root peer `tailwindcss: ^4` still admits 4.3.4, so a consumer with daisyUI 5.7.50 can hit it. Rechecked 2026-11-07 at tailwindcss and `@tailwindcss/postcss` 4.3.5: `npm run package` fails the same way (lightningcss EmptySelector), so the pin stays and 4.3.5 is not the unblock.
-  Placement: Before the release (decide whether to narrow the peer range).
+  Placement: After the release. Ruled 2026-11-07 (Geoff, with the conductor's recommendation): the `tailwindcss: ^4` peer stays, and the 0.99.0 MIGRATION-NOTES tell a site to hold 4.3.3.
 - [ ] **#323** Rename the `entry.prior_read_failed` log event `#improvement` `#cairn-cms` *(2026-11-02)*
   The name reads as a read failure on an existing entry; it logs a save that could not read the prior file. Decide whether `entry.save_prior_read_failed` says it better before the vocabulary freezes.
   Placement: After the release.
@@ -261,6 +258,9 @@
 - **Accepted residual (#247):** the frame-ancestors-only CSP. Clickjacking is the threat these headers close; a full CSP would have to allow SvelteKit's inline hydration and every site's own admin screens and theme, which is site-owned policy outside the engine's scope. (Geoff, 2026-11-02, release sitting)
 
 ## Done
+- [x] **#330** Check the consolidated `## Unreleased` changelog for entries whose option is absent from source `#bug` `#docs` *(2026-11-02 → 2026-11-07)*
+  The release sweep's finders found two entries describing code that `src/lib` does not contain: `editor.siteConfigPath` and `editor.nav.configPath` (`compose.ts:59` hard-codes the default; `CHANGELOG.md:143` says both were removed), and `sanitizeSchema` with `unsafeDisableSanitize` (only `buildSanitizeSchema(registry)` exists in `src/lib/render/sanitize-schema.ts`). One finder reported each; no verifier read them. Grep each against `main` and prune or correct the entry before the cut.
+  Done: the rc.4 notes fix. Only `editor.siteConfigPath` was wrong: it arrived after 0.98.0 (56a208229) and left again (68376385e), so the entry drops it. `editor.nav.configPath`, `sanitizeSchema`, and `unsafeDisableSanitize` were real 0.98.0 options, and their removal entries stand.
 - [x] **#341** Register a build token scoped to what a Workers Builds deploy needs, not the owner's whole setup token `#improvement` `#cairn-cms` `#security` *(2026-11-03 → 2026-11-07)*
   Chapter 3 registers the owner's eight-permission setup token as the Builds build token (`createBuildToken({ secret: token })`, `chapter3.mjs`), so any code a repository committer lands can read zone, DNS, SSL, email, D1, and R2 edit rights in a build. The setup-fix pass widens which `--yes` runs reach it (a declined domain now continues to Builds). Mint or ask for a narrower build token (Workers scripts, D1, R2) and record the choice in MIGRATION-NOTES. Found by the setup-fix close security read (web-auth reviewer M2); a design call.
   Done: release-gate-a (#195).

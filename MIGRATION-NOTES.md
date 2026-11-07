@@ -115,6 +115,10 @@ and behavior that changed. The steps below are the ones that fall on whoever dep
   build fails with `content manifest is stale`. A site that calls `verifyManifest` directly passes its
   adapter as the third argument.
 - **Run the `cairn` tool at `v2`.** Its Go module path is `github.com/glw907/cairn-cms/tool/v2`.
+- **Keep `tailwindcss` and every `@tailwindcss/*` package at exactly `4.3.3`.** tailwindcss 4.3.4 and
+  4.3.5 compile daisyUI 5.7.50's `.join` rule to `@scope (:is(.join))`, which lightningcss rejects with
+  "Invalid empty selector", so the site's build fails. A site from `create-cairn-site` already pins
+  4.3.3. Hold that pin, and don't let a dependency update move it, until a cairn release lifts it.
 - **A `--yes` run with no `--domain` now goes on to Workers Builds.** `create-cairn-site --yes` used to stop
   at the live site when it skipped the domain. It now continues into Workers Builds and, with no saved
   token, exits 1 at the token step where it exited 0 before. A script that passes no token should set

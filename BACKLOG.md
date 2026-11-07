@@ -6,6 +6,9 @@
 
 ## Medium
 
+- [ ] **#358** Take pflag v1.1.0 once the man-page flag rendering is understood `#improvement` `#cairn-cms` *(2026-11-07)*
+  pflag v1.1.0 changes how `tool/cmd/mangen` output renders flags: `TestGeneratedPageCarriesEachFlagsOwnType` (`main_test.go:107`) no longer finds `\fB--quiet\fP[=false]` (the same for `--json`, `--verbose`, `--version`). The pre-cut sweep held `github.com/spf13/pflag` at v1.0.10 rather than change a generated man page. Decide whether the new rendering is better, then update the test's expectation and take v1.1.0.
+  Placement: After the release.
 - [ ] **#350** Detect a dead `cairn-build` registration before reusing it `#improvement` `#cairn-cms` *(2026-11-07)*
   The probe in release-gate-a (S12) showed a deleted token leaves its Workers Builds registration unchanged for five minutes, so setup reuses a dead `cairn-build` and the first build fails inside the watch. Find a signal that tells a live registration from a dead one, or print the re-point step on a build failure. Found by the release-gate-a close reviews (#195).
   Placement: `packages/create-cairn-site/src/cloudflare/chapter3.mjs` (the hop). After the release.
@@ -67,7 +70,7 @@
   0.4.0 loads the Chromium read sequence (41127 bytes, then 1068251) that trapped 0.3.3 with `unreachable`, in Node. If the browser spellcheck component tests agree, drop the guard in `src/lib/admin/spellcheck-worker.ts` and its test.
   Placement: After the release.
 - [ ] **#324** Release the tailwindcss pin when a tailwindcss release stops emitting `@scope (:is(.join))` `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
-  tailwindcss 4.3.4 flattens daisyUI 5.7.50's `.join{@scope(&){...}}` to `@scope (:is(.join))`, and lightningcss rejects the result with "Invalid empty selector" in the admin stylesheet build and in a Vite build of the showcase. The root, the showcase, and `templates/waymark` pin `tailwindcss` and `@tailwindcss/*` at exactly 4.3.3. Unblock: a tailwindcss release past 4.3.4 whose `npm run package` and showcase build pass, or a daisyUI release that changes the `.join` rule. The root peer `tailwindcss: ^4` still admits 4.3.4, so a consumer with daisyUI 5.7.50 can hit it.
+  tailwindcss 4.3.4 flattens daisyUI 5.7.50's `.join{@scope(&){...}}` to `@scope (:is(.join))`, and lightningcss rejects the result with "Invalid empty selector" in the admin stylesheet build and in a Vite build of the showcase. The root, the showcase, and `templates/waymark` pin `tailwindcss` and `@tailwindcss/*` at exactly 4.3.3. Unblock: a tailwindcss release past 4.3.4 whose `npm run package` and showcase build pass, or a daisyUI release that changes the `.join` rule. The root peer `tailwindcss: ^4` still admits 4.3.4, so a consumer with daisyUI 5.7.50 can hit it. Rechecked 2026-11-07 at tailwindcss and `@tailwindcss/postcss` 4.3.5: `npm run package` fails the same way (lightningcss EmptySelector), so the pin stays and 4.3.5 is not the unblock.
   Placement: Before the release (decide whether to narrow the peer range).
 - [ ] **#323** Rename the `entry.prior_read_failed` log event `#improvement` `#cairn-cms` *(2026-11-02)*
   The name reads as a read failure on an existing entry; it logs a save that could not read the prior file. Decide whether `entry.save_prior_read_failed` says it better before the vocabulary freezes.

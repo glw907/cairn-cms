@@ -72,6 +72,7 @@ export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs =
   let child = null;
   let startError = '';
   let stderrText = '';
+  let stdoutText = '';
   let connected = false;
   /** @type {() => void} */
   let markConnected = () => {};
@@ -90,6 +91,7 @@ export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs =
     let buffer = '';
     child.stdout?.on('data', (/** @type {Buffer | string} */ chunk) => {
       watchForConnection(String(chunk));
+      if (stdoutText.length < SUMMARY_LIMIT) stdoutText += String(chunk);
       buffer += String(chunk);
       const lines = buffer.split('\n');
       buffer = lines.pop() ?? '';
@@ -116,7 +118,12 @@ export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs =
       if (!summaries.length && /error|unauthori[sz]ed|forbidden|permission/i.test(stderrText)) {
         return [`wrangler tail said: ${stderrText.replace(/\s+/g, ' ').trim().slice(0, 150)}`];
       }
-      if (!summaries.length) return [connected ? 'wrangler tail was connected and saw no sign-in event' : 'wrangler tail never connected; no sign-in event was seen'];
+      if (!summaries.length) {
+        if (connected) return ['wrangler tail was connected and saw no sign-in event'];
+        // eslint-disable-next-line no-control-regex -- strips the color codes wrangler prints
+        const said = `${stderrText} ${stdoutText}`.replace(/\u001b\[[0-9;]*m/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
+        return [`wrangler tail never connected; no sign-in event was seen${said ? `; it printed: ${said}` : '; it printed nothing'}`];
+      }
       return summaries;
     },
   };

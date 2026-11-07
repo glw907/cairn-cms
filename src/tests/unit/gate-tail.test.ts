@@ -79,7 +79,12 @@ describe('startWorkerTail', () => {
     const never = fakeSpawn();
     const unconnected = startWorkerTail({ workerName: 'site-b', env: {}, spawn: never.spawn, settleMs: 0, readyMs: 0 });
     await unconnected.ready;
-    expect(await unconnected.stop()).toEqual(['wrangler tail never connected; no sign-in event was seen']);
+    expect(await unconnected.stop()).toEqual(['wrangler tail never connected; no sign-in event was seen; it printed nothing']);
+    const chatty = fakeSpawn();
+    const stuck = startWorkerTail({ workerName: 'site-b', env: {}, spawn: chatty.spawn, settleMs: 0, readyMs: 0 });
+    chatty.child.stdout.write('\u001b[1mResolving the account\u001b[0m\n');
+    await stuck.ready;
+    expect(await stuck.stop()).toEqual(['wrangler tail never connected; no sign-in event was seen; it printed: Resolving the account']);
     const connected = fakeSpawn();
     const opened = startWorkerTail({ workerName: 'site-b', env: {}, spawn: connected.spawn, settleMs: 0, readyMs: 5000 });
     connected.child.stdout.write('Successfully created tail, expires at 2026-11-07T20:00:00Z\n');

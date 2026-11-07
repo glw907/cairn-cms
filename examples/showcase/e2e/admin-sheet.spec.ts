@@ -111,10 +111,13 @@ async function pageComputedStyle(page: Page, path: string): Promise<ComputedStyl
     .first()
     .evaluate((el) => {
       const style = getComputedStyle(el);
+      // Chromium 158 serializes a computed `flex-start` or `flex-end` as `flow-start` or
+      // `flow-end`. The fixture was captured on an earlier build, so read both as the flex form.
+      const flexForm = (value: string) => value.replace(/^flow-(start|end)$/, 'flex-$1');
       return {
         flexDirection: style.flexDirection,
-        alignItems: style.alignItems,
-        justifyContent: style.justifyContent,
+        alignItems: flexForm(style.alignItems),
+        justifyContent: flexForm(style.justifyContent),
       };
     });
   const snapshot: ComputedStyleSnapshot = { mastheadDisplay, pageHeaderFlex };

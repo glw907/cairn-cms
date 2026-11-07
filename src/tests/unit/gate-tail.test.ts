@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-// @ts-expect-error untyped gate module
 import { startWorkerTail, summarizeTailLine } from '../../../scripts/gate/tail.mjs';
 
 const record = (fields: Record<string, unknown>) => JSON.stringify({ level: 'error', timestamp: '2026-11-07T16:50:00Z', ...fields });
@@ -34,13 +33,24 @@ describe('summarizeTailLine', () => {
 });
 
 describe('startWorkerTail', () => {
+  type FakeChild = EventEmitter & { stdout: PassThrough; stderr: PassThrough; killed: boolean; kill: () => boolean };
+  type Spawn = typeof import('node:child_process').spawn;
+
   function fakeSpawn() {
-    const child = Object.assign(new EventEmitter(), { stdout: new PassThrough(), stderr: new PassThrough(), killed: false, kill() { this.killed = true; this.emit('close', null); return true; } });
+    const child = new EventEmitter() as FakeChild;
+    child.stdout = new PassThrough();
+    child.stderr = new PassThrough();
+    child.killed = false;
+    child.kill = () => {
+      child.killed = true;
+      child.emit('close', null);
+      return true;
+    };
     const calls: Array<{ command: string; args: string[] }> = [];
-    const spawn = (command: string, args: string[]) => {
+    const spawn = ((command: string, args: string[]) => {
       calls.push({ command, args });
       return child;
-    };
+    }) as unknown as Spawn;
     return { child, calls, spawn };
   }
 
@@ -69,7 +79,10 @@ describe('startWorkerTail', () => {
     const { spawn } = fakeSpawn();
     const quiet = startWorkerTail({ workerName: 'site-b', env: {}, spawn, settleMs: 0 });
     expect(await quiet.stop()).toEqual([]);
-    const broken = startWorkerTail({ workerName: 'site-b', env: {}, spawn: () => { throw new Error('spawn failed'); }, settleMs: 0 });
+    const failing = (() => {
+      throw new Error('spawn failed');
+    }) as unknown as Spawn;
+    const broken = startWorkerTail({ workerName: 'site-b', env: {}, spawn: failing, settleMs: 0 });
     expect(await broken.stop()).toEqual(['wrangler tail did not start: spawn failed']);
   });
 });

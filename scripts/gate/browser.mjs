@@ -285,14 +285,27 @@ async function reachLoopback(page, { consent }, creds, pageOptions, evidence) {
 }
 
 /**
- * After a sign-in confirm, the admin must land on `/admin`.
+ * Whether a path is a signed-in admin screen: `/admin` itself or any screen under it, such as the
+ * `/admin/posts` the admin redirects a signed-in editor to. The login and auth pages mean the
+ * sign-in did not take.
+ * @param {string} pathname
+ * @returns {boolean}
+ */
+function isSignedInAdminPath(pathname) {
+  const path = pathname.replace(/\/$/, '');
+  if (path !== '/admin' && !path.startsWith('/admin/')) return false;
+  return path !== '/admin/login' && !path.startsWith('/admin/auth');
+}
+
+/**
+ * After a sign-in confirm, the admin must land on a signed-in `/admin` screen.
  * @param {import('playwright').Page} page
  * @param {Evidence} evidence
  * @param {number} [waitMs]
  * @returns {Promise<void>}
  */
 async function requireAdmin(page, evidence, waitMs = 30_000) {
-  const atAdmin = () => new URL(page.url()).pathname.replace(/\/$/, '') === '/admin';
+  const atAdmin = () => isSignedInAdminPath(new URL(page.url()).pathname);
   await page.waitForURL(atAdmin, { timeout: waitMs }).catch(() => {});
   if (!atAdmin()) await failPage(page, evidence, 'the sign-in did not land on /admin');
 }
@@ -537,7 +550,7 @@ export async function confirmSignIn(context, url, pauseMs = 500) {
   await settle(page, pauseMs);
   await page.getByRole('button', { name: /^(sign in|confirm sign-in)$/i }).click();
   await settle(page, pauseMs);
-  const atAdmin = () => new URL(page.url()).pathname.replace(/\/$/, '') === '/admin';
+  const atAdmin = () => isSignedInAdminPath(new URL(page.url()).pathname);
   await page.waitForURL(atAdmin, { timeout: 15_000 }).catch(() => {});
   if (!atAdmin()) throw new Error(`The sign-in did not land on /admin: ${where(page.url())} shows ${JSON.stringify((await pageText(page)).slice(0, 200))}.`);
   await page.close();

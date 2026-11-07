@@ -47,7 +47,7 @@ let holdBody: string;
 /** What the setup tool's loopback answers. */
 let loopbackBody: string;
 let authorizeMode: 'redirect' | 'consent';
-let confirmMode: 'ok' | 'login';
+let confirmMode: 'ok' | 'login' | 'posts';
 let sendMode: 'ok' | 'error';
 let publishMode: 'ok' | 'error';
 
@@ -122,8 +122,9 @@ async function answer(route: Route) {
   if (url.host === 'github.com' && url.pathname === '/login/oauth/authorize') return html(page(form('/login/oauth/authorize', 'Authorize cairn-gate')));
   if (url.host === 'github.com' && url.pathname === '/passkey-experiment') return html(page(holdBody));
   if (key === 'GET gate-site.example.workers.dev/admin/auth/confirm') return html(page(form('/admin/auth/confirm', 'Confirm sign-in')));
-  if (key === 'POST gate-site.example.workers.dev/admin/auth/confirm') return navigate(confirmMode === 'ok' ? '/admin' : '/admin/login');
+  if (key === 'POST gate-site.example.workers.dev/admin/auth/confirm') return navigate(confirmMode === 'ok' ? '/admin' : confirmMode === 'posts' ? '/admin/posts' : '/admin/login');
   if (key === 'GET gate-site.example.workers.dev/admin') return html(page('<h1>Dashboard</h1>'));
+  if (key === 'GET gate-site.example.workers.dev/admin/posts') return html(page('<h1>Posts</h1>'));
   if (key === 'GET gate-site.example.workers.dev/admin/login') return html(page(form('/admin/login', 'Send sign-in link', '<input type="email" name="email">')));
   if (key === 'POST gate-site.example.workers.dev/admin/login') {
     seen.push(`email=${new URLSearchParams(request.postData() ?? '').get('email')}`);
@@ -275,6 +276,24 @@ describe('handleUrl', () => {
     expect(seen).toContain('POST gate-site.example.workers.dev/admin/auth/confirm');
     expect(seen).toContain('GET gate-site.example.workers.dev/admin');
     await admin.close();
+  });
+
+  it('accepts a confirm that the admin redirects to its first screen under /admin', async () => {
+    confirmMode = 'posts';
+    const admin = await launched.newAdminContext();
+    await admin.route(/.*/, answer);
+    await handleUrl(`${SITE}/admin/auth/confirm?token=secret-token`, options({ admin: () => admin }));
+    await admin.close();
+    expect(seen).toContain('GET gate-site.example.workers.dev/admin/posts');
+  });
+
+  it('accepts a mailed link that lands on a screen under /admin', async () => {
+    confirmMode = 'posts';
+    const fresh = await launched.newAdminContext();
+    await fresh.route(/.*/, answer);
+    await confirmSignIn(fresh, `${SITE}/admin/auth/confirm?token=from-mail`, 100);
+    await fresh.close();
+    expect(seen).toContain('GET gate-site.example.workers.dev/admin/posts');
   });
 
   it('fails a confirm that lands on /admin/login with the page text, no screenshot, and no query in the message', async () => {

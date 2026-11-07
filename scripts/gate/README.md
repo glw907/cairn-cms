@@ -86,7 +86,7 @@ delete failed names the resource it left behind.
 A prompt is a rendered screen line, with ANSI stripped, that carries clack's active-prompt symbol
 `◆` followed by a table key, on a screen that ends in clack's bare `└` line. Any other line is
 never answered, so a log line that repeats a prompt's wording does nothing. A table entry never
-shown is simply never used. A prompt with no entry, or no output for 10 minutes, fails the run and
+shown is simply never used. A prompt with no entry, or no screen change for 10 minutes (spinner frames and counters do not count as change), fails the run, as does a run past its 90-minute wall clock, and
 names the last screen. Output alone is not progress, since a spinner writes forever: the idle
 limit re-arms only when the screen, with spinner glyphs, elapsed counters, and trailing dots
 removed, differs from the last one. While the CLI holds a `Watch progress at` page, the idle limit
@@ -118,7 +118,7 @@ answered with the gate token, and `Paste your Workers Builds deploy token` with 
 
 ## The legs
 
-`--leg` takes A1, A2, B1, or B2 (repeat it for several, earlier leg first: A2 and B2 need the install A1 and B1 make in the same run) and needs `--version`, the exact version the CLI is installed at. `--all` runs teardown of any earlier run first, then A1 and A2, teardown A, B1 and B2, teardown B. A leg passes only on what `evaluateLeg` reads: the closing text, the admin alert, and the fetch results; a CLI exit code never passes a leg. After each leg `record.mjs` writes its row to release `v<version>`.
+`--leg` takes A1, A2, B1, or B2 (repeat it for several, earlier leg first: A2 and B2 need the install A1 and B1 make in the same run) and needs `--version`, the exact version the CLI is installed at. Every run, `--leg` or `--all`, first tears down any earlier run's resources, then writes `pending` rows for the legs it will run. `--all` runs A1 and A2, teardown A, B1 and B2, teardown B. A leg passes only on what `evaluateLeg` reads: the closing text, the admin alert, and the fetch results; a CLI exit code never passes a leg. After each leg `record.mjs` writes its row to release `v<version>`, or, under `--cli` with `--record-file`, to that file and never to a release.
 
 The browser uses the machine account's stored session (`~/.local/state/cairn-gate/github-session.json`, mode 0600). A page it does not recognise is never held for a click. `failPage` fails the leg at once: it writes a screenshot (never of a sign-in page or an address carrying `token=` or `code=`) and a controls file to the run directory, and throws a message naming the page by host and path with at most 200 characters of its text. The `failed` marker keeps those captures through teardown, and the row records the reason.
 
@@ -132,7 +132,7 @@ This workstation's resolver (a home router) caches a negative answer for `carin-
 
 ## Cleanup
 
-The URL log, the capture, and the state record live only in the run directory. A sign-in URL in
+The URL log, the per-run captures (`capture-<leg>-<n>.bin`), and the state record live only in the run directory. A failed leg's `failed` marker keeps its captures and URL log through teardown. A sign-in URL in
 them carries a token, so nothing there is committed or pasted.
 
 `run-gate.sh` traps exit and runs `--teardown-run`, which removes every install this run recorded and did not already remove. Teardown deletes only the uuids and names the state record and the install's `wrangler.jsonc` hold, each checked against the `cairn-e2e-gate-` prefix first, and never a build token registration, whether `cairn-build` or a probe's. It leaves the `carin-test.org` zone and its Email Sending. `--teardown-stale` does the same for every earlier run directory.

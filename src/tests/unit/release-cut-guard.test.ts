@@ -133,6 +133,30 @@ describe('release-cut-guard: non-literal tags and matching', () => {
     expect(guard('gh pr create --title x --body "notes for the release, a new page"')).toBeNull();
     expect(guard('gh release view v1.0.0 --json isPrerelease')).toBeNull();
   });
+  it('treats the words as data when a command only names them', () => {
+    expect(guard('grep -rn "gh release create" docs/')).toBeNull();
+    expect(guard('git commit -m "Deny gh release create with a variable tag"')).toBeNull();
+    expect(guard('git commit -m "$(cat <<\'EOF\'\nDeny gh release create v1.0.0\n\nbody\nEOF\n)"')).toBeNull();
+    expect(guard('gh pr create --title x --body "run gh release create v1.0.0 after the merge"')).toBeNull();
+    expect(guard('cat <<EOF\ngh release create v1.0.0\nEOF')).toBeNull();
+    expect(guard('cat <<\'EOF\' | tee notes.md\ngh release create v1.0.0\nEOF')).toBeNull();
+  });
+  it('reads the command a shell, eval, ssh, xargs, or source would run', () => {
+    expect(denied(guard('(gh release create v1.0.0)'))).toBe(true);
+    expect(denied(guard("bash -c 'gh release create v1.0.0'"))).toBe(true);
+    expect(denied(guard('eval "gh release create v1.0.0"'))).toBe(true);
+    expect(denied(guard('echo v1.0.0 | xargs gh release create'))).toBe(true);
+    expect(denied(guard('env GH_X=1 gh release create v1.0.0'))).toBe(true);
+    expect(denied(guard('ssh host gh release create v1.0.0'))).toBe(true);
+    expect(denied(guard('echo "$(gh release create v1.0.0)"'))).toBe(true);
+    expect(denied(guard('bash <<EOF\ngh release create v1.0.0\nEOF'))).toBe(true);
+    expect(denied(guard('sh -s <<\'EOF\'\ngh release create v1.0.0\nEOF'))).toBe(true);
+  });
+  it('denies a variable in command position before release create', () => {
+    expect(denied(guard('G=gh; $G release create v1.0.0'))).toBe(true);
+    expect(denied(guard('$G release create v1.0.0'))).toBe(true);
+    expect(denied(guard('"$GH" release new v1.0.0-rc.1'))).toBe(true);
+  });
   it('gives no decision for another literal tag or another command', () => {
     expect(guard('gh release create nightly --title x')).toBeNull();
     expect(guard('gh release list')).toBeNull();

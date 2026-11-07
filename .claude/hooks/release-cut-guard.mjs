@@ -11,20 +11,28 @@
 // `onFailure: "block"` for a crash before this code runs. A deny is
 // `hookSpecificOutput.permissionDecision: "deny"` with a reason; a pass prints nothing.
 // Reference: https://code.claude.com/docs/en/hooks
+//
+// What counts as a release command. The hook has no `if` filter, so it reads every Bash call that
+// names `release`. It tokenizes the command and looks for an invocation where the shell would run
+// one: in command position (after `env`-style wrappers and assignments), in `$(...)` or backticks,
+// in the string of `bash -c`, `eval`, `ssh`, or `source`, in the body of a heredoc that feeds a shell,
+// and behind `xargs`. The same words as data (a `grep` pattern, a commit message, a `cat` heredoc)
+// are skipped. A variable in command position followed by `release create` is denied as unreadable.
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-// The trigger is wider than the literal `gh release create`: gh's alias `release new`, a global flag
-// before the subcommand, and a quoted word all create a release. Every command naming `release` is
-// parsed, and one where the parser finds no invocation but the text still reads `gh ... release
-// create` (or `new`) is denied rather than let through.
 const MATCH = /\brelease\b/;
-const LOOKS_LIKE_RELEASE = /\bgh\b[^\n;&|]*\brelease["']?\s+["']?(?:create|new)\b/;
+const VERBS = new Set(['create', 'new']);
 const GLOBAL_VALUE_FLAGS = new Set(['-R', '--repo', '--hostname']);
 const VALUE_FLAGS = new Set([
   '--target', '--title', '-t', '--notes', '-n', '--notes-file', '-F', '--repo', '-R',
   '--discussion-category', '--notes-start-tag'
 ]);
+const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash', 'ksh']);
+const WRAPPERS = new Set(['env', 'command', 'exec', 'sudo', 'time', 'nohup', 'nice', 'builtin']);
+const SSH_VALUE_FLAGS = new Set(['-p', '-i', '-l', '-o', '-F', '-J', '-b', '-c', '-D', '-E', '-e', '-I', '-L', '-m', '-O', '-Q', '-R', '-S', '-W', '-w']);
+const XARGS_VALUE_FLAGS = new Set(['-I', '-n', '-P', '-d', '-L', '-E', '-s', '-a']);
+const MAX_DEPTH = 6;
 
 /** Print a deny decision and stop. */
 function deny(reason) {
@@ -40,23 +48,67 @@ function deny(reason) {
   process.exit(0);
 }
 
+/** @typedef {{ text: string, dynamic: boolean, op: boolean }} Token */
+
 /**
- * Split a command into shell-like tokens. Quotes group, a `$` or backtick outside single quotes marks
- * a token dynamic, and an unquoted `&&`, `||`, `;`, `|` or newline becomes an operator token.
+ * The text inside a `$(...)` whose `(` sits at `open`, and the index of its closing `)`.
+ * @param {string} s
+ * @param {number} open
+ */
+function captureParen(s, open) {
+  let depth = 0;
+  let q = null;
+  for (let i = open; i < s.length; i++) {
+    const c = s[i];
+    if (q) {
+      if (c === '\\' && q === '"') i++;
+      else if (c === q) q = null;
+    } else if (c === "'" || c === '"') q = c;
+    else if (c === '\\') i++;
+    else if (c === '(') depth++;
+    else if (c === ')' && --depth === 0) return { content: s.slice(open + 1, i), end: i };
+  }
+  return { content: s.slice(open + 1), end: s.length - 1 };
+}
+
+/**
+ * Split a command into shell-like tokens. Quotes group; a `$` or backtick outside single quotes marks
+ * a token dynamic, and its `$(...)` or backtick body is returned in `subs` to be read as a command. An
+ * unquoted `&&`, `||`, `;`, `|`, `(`, `)`, or newline becomes an operator token, a redirection and its
+ * target word are dropped, and a heredoc body is captured with the index of the token that follows
+ * its operator.
  * @param {string} command
- * @returns {{ text: string, dynamic: boolean, op: boolean }[]}
+ * @returns {{ tokens: Token[], heredocs: { at: number, body: string }[], subs: string[] }}
  */
 function tokenize(command) {
+  /** @type {Token[]} */
   const tokens = [];
+  const heredocs = [];
+  const subs = [];
+  const pending = [];
   let cur = null;
   const start = () => (cur ??= { text: '', dynamic: false, op: false });
+  let skipNext = false;
   const flush = () => {
     if (cur && skipNext) skipNext = false;
     else if (cur) tokens.push(cur);
     cur = null;
   };
+  /** Read `$(...)` or a backtick body at `i`; returns the index to resume after. */
+  const capture = (i) => {
+    start().dynamic = true;
+    cur.text += '$';
+    if (command[i] === '`') {
+      let j = i + 1;
+      while (j < command.length && command[j] !== '`') j += command[j] === '\\' ? 2 : 1;
+      subs.push(command.slice(i + 1, j));
+      return j;
+    }
+    const { content, end } = captureParen(command, i + 1);
+    subs.push(content);
+    return end;
+  };
   let quote = null;
-  let skipNext = false;
   for (let i = 0; i < command.length; i++) {
     const c = command[i];
     if (quote === null && c === '\\' && command[i + 1] === '\n') {
@@ -67,8 +119,9 @@ function tokenize(command) {
     } else if (quote === '"') {
       if (c === '"') quote = null;
       else if (c === '\\' && i + 1 < command.length) start().text += command[++i];
+      else if ((c === '$' && command[i + 1] === '(' && command[i + 2] !== '(') || c === '`') i = capture(i);
       else {
-        if (c === '$' || c === '`') start().dynamic = true;
+        if (c === '$') start().dynamic = true;
         start().text += c;
       }
     } else if (c === "'" || c === '"') {
@@ -76,11 +129,23 @@ function tokenize(command) {
       start();
     } else if (c === '\\' && i + 1 < command.length) {
       start().text += command[++i];
+    } else if ((c === '$' && command[i + 1] === '(' && command[i + 2] !== '(') || c === '`') {
+      i = capture(i);
     } else if (/\s/.test(c) && c !== '\n') {
       flush();
+    } else if (c === '<' && command[i + 1] === '<' && command[i + 2] !== '<') {
+      flush();
+      let j = i + 2;
+      const strip = command[j] === '-';
+      if (strip) j++;
+      while (command[j] === ' ' || command[j] === '\t') j++;
+      let word = '';
+      while (j < command.length && !/[\s;&|<>()]/.test(command[j])) word += command[j++];
+      pending.push({ delim: word.replace(/["'\\]/g, ''), strip, at: tokens.length });
+      i = j - 1;
     } else if (c === '<' || c === '>') {
       // A redirection: a leading file-descriptor digit and the target word are not arguments.
-      if (cur && /^\d+$/.test(cur.text) && !quote) cur = null;
+      if (cur && /^\d+$/.test(cur.text)) cur = null;
       flush();
       while (command[i + 1] === '<' || command[i + 1] === '>') i++;
       if (command[i + 1] === '&') i++;
@@ -94,47 +159,119 @@ function tokenize(command) {
       const text = two === '&&' || two === '||' ? two : c;
       if (text.length === 2) i++;
       tokens.push({ text, dynamic: false, op: true });
+      if (c === '\n' && pending.length > 0) {
+        for (const h of pending.splice(0)) {
+          const lines = [];
+          let j = i + 1;
+          while (j < command.length) {
+            let end = command.indexOf('\n', j);
+            if (end === -1) end = command.length;
+            const line = command.slice(j, end);
+            j = end + 1;
+            if ((h.strip ? line.replace(/^\t+/, '') : line) === h.delim) break;
+            lines.push(line);
+          }
+          heredocs.push({ at: h.at, body: lines.join('\n') });
+          i = j - 1;
+        }
+      }
     } else {
-      if (c === '$' || c === '`') start().dynamic = true;
+      if (c === '$') start().dynamic = true;
       start().text += c;
     }
   }
   flush();
-  return tokens;
+  return { tokens, heredocs, subs };
 }
 
 /**
- * The arguments of every `gh release create` (or its alias `gh release new`) in the command, each up
- * to the next operator. A global flag such as `-R owner/repo` may sit between `gh` and `release`.
- * @returns {{ text: string, dynamic: boolean, op: boolean }[][]}
+ * Where `release create` (or `release new`) sits in a gh argument list, past any global flags.
+ * @param {Token[]} words
+ * @returns {number | null}
  */
-function releaseInvocations(command) {
-  const tokens = tokenize(command);
-  const found = [];
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].op || tokens[i].text !== 'gh') continue;
-    let j = i + 1;
-    while (j < tokens.length && !tokens[j].op && tokens[j].text.startsWith('-')) {
-      j += GLOBAL_VALUE_FLAGS.has(tokens[j].text) ? 2 : 1;
-    }
-    const [release, verb] = [tokens[j], tokens[j + 1]];
-    if (release && verb && !release.op && !verb.op && release.text === 'release' && (verb.text === 'create' || verb.text === 'new')) {
-      const args = [];
-      for (let k = j + 2; k < tokens.length && !tokens[k].op; k++) args.push(tokens[k]);
-      found.push(args);
-    }
+function releaseVerb(words) {
+  let j = 0;
+  while (j < words.length && !words[j].dynamic && words[j].text.startsWith('-')) {
+    j += GLOBAL_VALUE_FLAGS.has(words[j].text) ? 2 : 1;
   }
-  return found;
+  return words[j]?.text === 'release' && VERBS.has(words[j + 1]?.text) ? j : null;
+}
+
+/**
+ * Read one simple command's words, adding every `gh release create` it would run to `out`.
+ * @param {Token[]} words
+ * @param {string[]} heredocBodies - Bodies of the heredocs that feed this command.
+ * @param {number} depth
+ * @param {Token[][]} out
+ */
+function analyzeWords(words, heredocBodies, depth, out) {
+  let i = 0;
+  while (i < words.length) {
+    const w = words[i];
+    if (!w.dynamic && /^[A-Za-z_][A-Za-z0-9_]*=/.test(w.text)) i++;
+    else if (!w.dynamic && WRAPPERS.has(w.text)) {
+      i++;
+      while (i < words.length && !words[i].dynamic && words[i].text.startsWith('-')) i++;
+    } else break;
+  }
+  if (i >= words.length) return;
+  const head = words[i];
+  const rest = words.slice(i + 1);
+  const unreadable = () => deny('could not read the gh release create arguments');
+
+  if (head.dynamic) {
+    if (releaseVerb(rest) !== null) unreadable();
+    return;
+  }
+  const name = head.text.split('/').pop();
+  if (name === 'gh') {
+    const at = releaseVerb(rest);
+    if (at !== null) out.push(rest.slice(at + 2));
+    else {
+      const k = rest.findIndex((t, n) => t.text === 'release' && VERBS.has(rest[n + 1]?.text));
+      if (k > 0 && rest.slice(0, k).some((t) => t.dynamic)) unreadable();
+    }
+  } else if (SHELLS.has(name)) {
+    const c = rest.findIndex((t) => /^-[a-z]*c[a-z]*$/.test(t.text));
+    if (c !== -1 && rest[c + 1]) analyzeText(rest[c + 1].text, depth + 1, out);
+    else for (const body of heredocBodies) analyzeText(body, depth + 1, out);
+  } else if (name === 'eval' || name === 'source' || name === '.') {
+    analyzeText(rest.map((t) => t.text).join(' '), depth + 1, out);
+  } else if (name === 'ssh') {
+    let n = 0;
+    while (n < rest.length && rest[n].text.startsWith('-')) n += SSH_VALUE_FLAGS.has(rest[n].text) ? 2 : 1;
+    analyzeText(rest.slice(n + 1).map((t) => t.text).join(' '), depth + 1, out);
+  } else if (name === 'xargs') {
+    let n = 0;
+    while (n < rest.length && rest[n].text.startsWith('-')) n += XARGS_VALUE_FLAGS.has(rest[n].text) ? 2 : 1;
+    analyzeWords(rest.slice(n), [], depth + 1, out);
+  }
+}
+
+/**
+ * Read a command string, adding every `gh release create` it would run to `out`.
+ * @param {string} text
+ * @param {number} depth
+ * @param {Token[][]} out
+ */
+function analyzeText(text, depth, out) {
+  if (depth > MAX_DEPTH) deny('the command nests shells too deeply to read');
+  const { tokens, heredocs, subs } = tokenize(text);
+  for (const sub of subs) analyzeText(sub, depth + 1, out);
+  let start = 0;
+  for (let end = 0; end <= tokens.length; end++) {
+    if (end < tokens.length && !tokens[end].op) continue;
+    const bodies = heredocs.filter((h) => h.at >= start && h.at <= end).map((h) => h.body);
+    analyzeWords(tokens.slice(start, end), bodies, depth, out);
+    start = end + 1;
+  }
 }
 
 function run(input) {
   const command = input?.tool_input?.command;
   if (typeof command !== 'string' || !MATCH.test(command)) return;
-  const invocations = releaseInvocations(command);
-  if (invocations.length === 0) {
-    if (LOOKS_LIKE_RELEASE.test(command)) deny('could not read the gh release create arguments');
-    return;
-  }
+  const invocations = [];
+  analyzeText(command, 0, invocations);
   for (const args of invocations) checkRelease(args, input);
 }
 

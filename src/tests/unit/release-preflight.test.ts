@@ -83,6 +83,18 @@ describe('preflight', () => {
     expect(r.errors.join('\n')).toContain('npm view failed');
   });
 
+  it('reads a failed npm view that reports E404 as unpublished', () => {
+    const run = (cmd: string, args: string[]) => {
+      if (cmd === 'npm') return { status: 1, stdout: '{"error":{"code":"E404"}}' };
+      if (args[0] === 'rev-parse') return { status: 0, stdout: SHA };
+      if (args[0] === 'ls-remote') return { status: 0, stdout: `${SHA}\trefs/heads/main` };
+      return { status: 0, stdout: '' };
+    };
+    const r = preflight(run, { version: '0.99.0', stable: true, root: '/repo', exists: () => true, changelog: CHANGELOG });
+    expect(r.errors).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
   it('refuses a missing install, naming the command', () => {
     const r = check(world({ installed: false }));
     expect(r.errors.join('\n')).toContain('npm ci');

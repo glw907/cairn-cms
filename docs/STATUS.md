@@ -40,12 +40,6 @@ resuming the round reads the conductor prompt
 
 ## Open decisions and watches
 
-- STOP (pass A, `release-gate-a`, 2026-11-07): rehearsal leg B2 fails in every run because the gate
-  mailbox (`cairn-gate@probe.907.life`) holds 0 messages after the sign-in request (run
-  `20261107T074847`; S7, environment B-13). A1, A2, and B1 pass. Evidence: apex SPF
-  `include:_spf.example.com`, DMARC `p=reject`, `cf-bounce` SPF and MX present, no key at
-  `cf2024-1._domainkey`. Needs ward's mail log (Stalwart's DMARC verdict) or Cloudflare Email
-  Sending's delivery log; the executor can read neither. Remove this entry when B2 passes.
 - `BACKLOG.md` lists open items, each with a `Placement` line, and `## Won't do` holds Geoff's
   rulings. The full backlog sweep ran at the close of pass 8 and wrote
   `~/.local/state/cairn-agent-first/2026-11-02-backlog-triage.json` for the sitting (four drop rows,

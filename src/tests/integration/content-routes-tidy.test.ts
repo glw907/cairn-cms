@@ -434,7 +434,8 @@ describe('tidy action: a reply cut off at the output cap', () => {
     AsyncLocalStorage.prototype.disable = () => {};
   });
   afterEach(() => {
-    AsyncLocalStorage.prototype.disable = realDisable;
+    if (realDisable === undefined) delete (AsyncLocalStorage.prototype as { disable?: unknown }).disable;
+    else AsyncLocalStorage.prototype.disable = realDisable;
     vi.doUnmock('@anthropic-ai/sdk');
     vi.resetModules();
   });

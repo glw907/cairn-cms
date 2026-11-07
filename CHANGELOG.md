@@ -386,8 +386,8 @@ Consumers must: rebuild the site from `create-cairn-site`; this release has no u
   engine's dependencies.
 - The engine and the scaffold take vitest 5. The engine's test tooling moves `vitest`,
   `@vitest/browser`, and `@vitest/browser-playwright` to `^5.1.0`, and the scaffold's `vitest` range
-  is `^5.1.0`. `@vitest/browser` and `@vitest/browser-playwright` are pinned by vitest to its exact
-  version, so a site that adds them takes the same `^5.1.0`.
+  is `^5.1.0`. `@vitest/browser` and `@vitest/browser-playwright` each peer on one exact `vitest`
+  version, so a site that adds them installs the same version of all three.
 
 ## 0.98.0
 

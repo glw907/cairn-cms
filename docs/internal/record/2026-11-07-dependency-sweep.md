@@ -50,7 +50,7 @@ Among the caret-satisfied transitive moves in the root lockfile, `hast-util-raw`
 | Package | Current | Latest | Unblock trigger |
 |---|---|---|---|
 | typescript | 6.0.3 | 7.0.2 | `tsgo.yml` green, `@sveltejs/kit` peer admits `^7`, typescript-eslint (or a tsdoc replacement) admits `^7`. Unchanged. |
-| @types/node | 24.19.2 | 26.6.6 | Geoff raises the Node floor (`docs/STATUS.md`); bump with CI. Unchanged. |
+| @types/node | 24.19.2 | 26.6.6 | Workers Builds makes Node 26 its default; then the Node floor, the CI pins, and the template's `check.yml` move with it (BACKLOG #333; Geoff held the floor on 2026-11-07). |
 | devalue | 5.9.4 | 6.0.3 | `@sveltejs/kit` and `svelte` admit `^6`. Unchanged. |
 | @anthropic-ai/sdk | 0.132.1 | 1.6.0 | Migration notes confirm the fields at `content-routes-context.ts` (messages.create call), the peer widens to `<2`, a test passes on 1.x. Latest moved 1.4.0 to 1.6.0; trigger unchanged. |
 | tailwindcss family (pin, not a major) | 4.3.3 | 4.3.5 | A release whose `npm run package` and showcase build pass, or a daisyUI change to the `.join` rule (#324). 4.3.5 fails. |

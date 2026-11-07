@@ -61,26 +61,42 @@ export function summarizeTailLine(line) {
  * @param {string} input.workerName the Worker to tail
  * @param {Record<string, string | undefined>} input.env the environment wrangler runs in (the gate token and account id)
  * @param {typeof nodeSpawn} [input.spawn] the process starter; tests inject one
- * @param {number} [input.settleMs] how long `ready` and `stop` wait for wrangler to connect and for late lines
- * @returns {{ ready: Promise<void>, stop: () => Promise<string[]> }} `ready` resolves once the tail has had time to connect
+ * @param {number} [input.settleMs] how long `ready` waits after the connection line and `stop` waits for late lines
+ * @param {number} [input.readyMs] the longest `ready` waits for wrangler's connection line; `npx` may download wrangler first
+ * @returns {{ ready: Promise<void>, stop: () => Promise<string[]> }} `ready` resolves once wrangler says the tail is open, or after `readyMs`
  */
-export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs = 5000 }) {
+export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs = 1500, readyMs = 90_000 }) {
   /** @type {string[]} */
   const summaries = [];
   /** @type {import('node:child_process').ChildProcess | null} */
   let child = null;
   let startError = '';
   let stderrText = '';
+  let connected = false;
+  /** @type {() => void} */
+  let markConnected = () => {};
+  const opened = new Promise((resolve) => {
+    markConnected = () => resolve(undefined);
+  });
+  /** @param {string} text */
+  const watchForConnection = (text) => {
+    if (/successfully created tail|connected to/i.test(text)) {
+      connected = true;
+      markConnected();
+    }
+  };
   try {
     child = spawn('npx', ['--yes', '--prefer-online', WRANGLER, 'tail', workerName, '--format', 'json'], { env: /** @type {NodeJS.ProcessEnv} */ (env), stdio: ['ignore', 'pipe', 'pipe'] });
     let buffer = '';
     child.stdout?.on('data', (/** @type {Buffer | string} */ chunk) => {
+      watchForConnection(String(chunk));
       buffer += String(chunk);
       const lines = buffer.split('\n');
       buffer = lines.pop() ?? '';
       for (const line of lines) summaries.push(...summarizeTailLine(line));
     });
     child.stderr?.on('data', (/** @type {Buffer | string} */ chunk) => {
+      watchForConnection(String(chunk));
       if (stderrText.length < SUMMARY_LIMIT) stderrText += String(chunk);
     });
     child.on('error', (error) => {
@@ -91,7 +107,7 @@ export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs =
   }
   const wait = () => new Promise((resolve) => setTimeout(resolve, settleMs));
   return {
-    ready: wait().then(() => undefined),
+    ready: Promise.race([opened, new Promise((resolve) => setTimeout(resolve, readyMs))]).then(wait).then(() => undefined),
     async stop() {
       await wait();
       child?.kill();
@@ -100,6 +116,7 @@ export function startWorkerTail({ workerName, env, spawn = nodeSpawn, settleMs =
       if (!summaries.length && /error|unauthori[sz]ed|forbidden|permission/i.test(stderrText)) {
         return [`wrangler tail said: ${stderrText.replace(/\s+/g, ' ').trim().slice(0, 150)}`];
       }
+      if (!summaries.length) return [connected ? 'wrangler tail was connected and saw no sign-in event' : 'wrangler tail never connected; no sign-in event was seen'];
       return summaries;
     },
   };

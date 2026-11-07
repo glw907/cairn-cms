@@ -75,10 +75,21 @@ describe('startWorkerTail', () => {
     expect(summaries[0]).toContain('Authentication error');
   });
 
-  it('answers an empty list when nothing was logged, and never throws when wrangler cannot start', async () => {
+  it('says whether the tail ever connected when nothing was logged, so a quiet Worker is told from a tail that never opened', async () => {
+    const never = fakeSpawn();
+    const unconnected = startWorkerTail({ workerName: 'site-b', env: {}, spawn: never.spawn, settleMs: 0, readyMs: 0 });
+    await unconnected.ready;
+    expect(await unconnected.stop()).toEqual(['wrangler tail never connected; no sign-in event was seen']);
+    const connected = fakeSpawn();
+    const opened = startWorkerTail({ workerName: 'site-b', env: {}, spawn: connected.spawn, settleMs: 0, readyMs: 5000 });
+    connected.child.stdout.write('Successfully created tail, expires at 2026-11-07T20:00:00Z\n');
+    await opened.ready;
+    expect(await opened.stop()).toEqual(['wrangler tail was connected and saw no sign-in event']);
+  });
+
+  it('never throws when wrangler cannot start', async () => {
     const { spawn } = fakeSpawn();
-    const quiet = startWorkerTail({ workerName: 'site-b', env: {}, spawn, settleMs: 0 });
-    expect(await quiet.stop()).toEqual([]);
+    expect(spawn).toBeDefined();
     const failing = (() => {
       throw new Error('spawn failed');
     }) as unknown as Spawn;

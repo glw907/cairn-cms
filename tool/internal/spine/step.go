@@ -53,6 +53,18 @@ var allSteps = map[Step]bool{
 	StepConfigReconciled:      true,
 }
 
+// The setup-only step constants: positions `cairn new` records that the Node wizard never
+// writes. They stay out of allSteps, which step_test.go holds equal to the wizard's set. A setup
+// record reuses the wizard constants where the meaning is the same (app-created, repo-created,
+// pushed, deployed, live).
+const (
+	StepSetupStarted     Step = "setup-started"
+	StepResourcesCreated Step = "resources-created"
+)
+
+// setupSteps backs step_test.go's check that no setup-only step collides with a wizard step.
+var setupSteps = []Step{StepSetupStarted, StepResourcesCreated}
+
 // parseStep reports the Step matching s and whether s is one of the known record-step constants.
 func parseStep(s string) (Step, bool) {
 	step := Step(s)

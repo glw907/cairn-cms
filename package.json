@@ -34,7 +34,7 @@
   ],
   "scripts": {
     "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/audit/bin.js dist/guidance/bin.js && tsc -p packages/cairn-cms-dev/tsconfig.build.json && chmod +x packages/cairn-cms-dev/dist/media-seed/bin.js",
-    "check:package": "rm -rf template && npm run package && publint --strict && T=$(mktemp -d) && trap 'rm -rf \"$T\"' EXIT && node scripts/build/pack-engine-template.mjs && npm pack --ignore-scripts --silent --pack-destination \"$T\" && attw \"$T\"/*.tgz --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error && node scripts/checks/check-package-files.mjs && node scripts/checks/check-skill-budget.mjs",
+    "check:package": "npm run package && rm -rf template && publint --strict && T=$(mktemp -d) && trap 'rm -rf \"$T\"' EXIT && node scripts/build/pack-engine-template.mjs && npm pack --ignore-scripts --silent --pack-destination \"$T\" && attw \"$T\"/*.tgz --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error && node scripts/checks/check-package-files.mjs && node scripts/checks/check-skill-budget.mjs",
     "check:audit-pack": "npm run package && node scripts/checks/check-audit-pack.mjs",
     "check:options": "npm run package && node scripts/checks/check-options.mjs",
     "check:tiers": "npm run package && node scripts/checks/check-tiers.mjs",

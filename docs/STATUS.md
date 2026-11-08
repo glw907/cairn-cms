@@ -32,6 +32,7 @@ site-build issues. The inputs are the `## High` items in `BACKLOG.md`, all tagge
   everything up front.
 - **#366**: a fast setup test suite that would have caught these.
 - **#361**: theme choice at setup, the 907.life rerun's first need.
+- **#367**: a site can lock itself out of its own deploy after repeated failed attempts.
 
 #360 (agent-ready setup planning) and the builders' friction files
 (`~/Projects/initiatives/907-rebuild/plans/2026-11-08-friction-builder-{A,B}.md`) sit beside them.

@@ -117,6 +117,7 @@ jobs:
       - name: Pack the three tarballs
         run: |
           mkdir tarballs
+          node scripts/build/pack-engine-template.mjs
           npm pack --ignore-scripts --silent --pack-destination tarballs
           (cd packages/cairn-cms-dev && npm pack --ignore-scripts --silent --pack-destination ../../tarballs)
           # The bake refuses a 0.0.0 version and a file: spec, so `prepack`'s default path cannot

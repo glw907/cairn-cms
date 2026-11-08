@@ -43,6 +43,16 @@ export function trailingStderr(stderr) {
 }
 
 /**
+ * Join phrases into one English list: `a`, `a and b`, or `a, b, and c`.
+ * @param {string[]} items the phrases, in order
+ * @returns {string} the joined list
+ */
+function joinList(items) {
+  if (items.length <= 2) return items.join(' and ');
+  return `${items.slice(0, -1).join(', ')}, and ${items.at(-1)}`;
+}
+
+/**
  * Pull the text of a message's "Next:" line, with the label stripped, for `catalogue.next`.
  * @param {string} message the full printed text built by a row's `build`
  * @returns {string} the trimmed text following "Next:"
@@ -139,6 +149,62 @@ const ROWS = {
         'Next: open https://dash.cloudflare.com/?to=/:account/workers-and-pages and accept the ' +
         'suggested workers.dev subdomain (one click, no charge), then re-run npx create-cairn-site ' +
         `--dir ${params.dir}.`
+      );
+    }
+  },
+  'resource-names-taken': {
+    kind: 'act',
+    build(params) {
+      return (
+        `Your Cloudflare account already has ${joinList(params.taken)}. This site deploys under ` +
+        'those names, so deploying would replace or reuse what is already there. Nothing was ' +
+        'deployed, and your Cloudflare account is unchanged. Re-running with a new ' +
+        'name and folder leaves the GitHub repository and App for this site in place, for you ' +
+        'to delete or reuse.\n' +
+        'Next: run npx create-cairn-site again with --name <a different site name> and a new ' +
+        '--dir <a new folder>, so the new site gets a Worker, database, and bucket of its own.'
+      );
+    }
+  },
+  'resource-names-mismatch': {
+    kind: 'act',
+    build(params) {
+      return (
+        `This site's wrangler.jsonc has ${joinList(params.found)}. Setup expects only the ` +
+        `Worker ${params.workerName}, the database ${params.workerName}-auth, and the bucket ` +
+        `${params.workerName}-media from the site's saved name, with no database_id, ` +
+        'jurisdiction, preview_* key, or env block, so it cannot be sure which resources the ' +
+        'deploy would use. Nothing was deployed.\n' +
+        `Next: set wrangler.jsonc's name to ${params.workerName}, its database_name to ` +
+        `${params.workerName}-auth, and its bucket_name to ${params.workerName}-media, remove ` +
+        'any database_id, jurisdiction, preview_* key, or env block, then re-run npx ' +
+        `create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'resource-names-check-failed': {
+    kind: 'act',
+    build(params) {
+      return (
+        'The tool could not confirm that the names this site deploys under are free on your ' +
+        `Cloudflare account: reading ${params.resource} failed. wrangler reported:\n` +
+        `${params.detail}\n` +
+        'Nothing was deployed, because deploying without that check could replace a ' +
+        'Worker, database, or bucket already in use.\n' +
+        'Next: fix what wrangler reported above, then re-run npx create-cairn-site --dir ' +
+        `${params.dir}.`
+      );
+    }
+  },
+  'sign-in-account-unknown': {
+    kind: 'act',
+    build(params) {
+      return (
+        "This site's progress record has no saved Cloudflare account, so --sign-in cannot tell " +
+        "which account's database to write your sign-in to, and it wrote nothing.\n" +
+        `Next: run npx create-cairn-site --dir ${params.dir} without --sign-in and continue ` +
+        'until it prints "Find your Cloudflare account", which saves the account, then run ' +
+        'the --sign-in command again.'
       );
     }
   },
@@ -903,7 +969,10 @@ export const WAIT_KIND_CODES = CATALOGUE_CODES.filter((code) => ROWS[code].kind 
  *  exported `CATALOGUE_CODES`; anything else throws
  * @param {Record<string, string | string[] | boolean>} [params] the values to interpolate into
  *  the row's message; which keys are required depends on `code` (for example `dir` on every row,
- *  `detail` on the rows that carry child or API output, `database` on migrations-failed, `reason`
+ *  `detail` on the rows that carry child or API output, `database` on migrations-failed, `taken`,
+ *  a string array of phrases such as `a Worker named alpine`, on resource-names-taken,
+ *  `resource` on resource-names-check-failed, `workerName` and `found` (a string array) on
+ *  resource-names-mismatch, `reason`
  *  and `email` on seed-failed's not-allowlisted case, `permission` on token-scope-missing,
  *  `domain` on the domain and hostname rows and the email-sender rows, `nameServers`/`actual`,
  *  both string arrays, on the delegation rows, `reoffered`, a boolean, on paid-plan-declined to

@@ -59,7 +59,7 @@ flowchart LR
   added -->|sends| signin["no-reply@yourdomain<br/>sign-in mail"]
 ```
 
-*After the switch, one zone holds both groups of records, and the existing mail records carry over unchanged. The DMARC policy that sign-in email adds applies to the whole domain, so it also governs mail your organization sends.*
+*After the switch, one zone holds both groups of records, and the existing mail records carry over unchanged. When the domain has no DMARC policy yet, turning on sign-in email adds one for the whole domain, so it also governs mail your organization sends.*
 
 Two different things share this one domain, and they are easy to conflate:
 
@@ -81,7 +81,7 @@ Sometimes your domain's own nameservers already serve the site, but the DNS reso
 Sign-in email is what lets anyone other than you sign in, because everyone else gets in through a link sent to their address. You keep signing in as the owner through [`--sign-in`](./create-your-site.md#sign-in-again) either way.
 
 1. Finish [Connect your domain](#connect-your-domain), so the domain is live.
-2. Answer **Yes** to `Turn on email sign-in for your domain now?`. The prompt first states that onboarding writes a `p=reject` DMARC policy for the whole domain. The DMARC paragraph below explains what that means.
+2. Answer **Yes** to `Turn on email sign-in for your domain now?`. The prompt first states what onboarding does to your domain's DMARC record: it adds a `p=reject` policy for the whole domain when the domain has none, and keeps an existing record unchanged. The DMARC paragraph below explains what that means.
 3. Wait while the command onboards the domain for sending and sends a test message to your sign-in address.
 
 The command asks in the same run once the domain is live. If the run stopped to wait for the nameserver switch, run it again.
@@ -90,7 +90,7 @@ Your Workers Paid plan was confirmed at the deploy step, so this step doesn't as
 
 A new domain has no sending history, so mail providers can take a while to trust it. If someone's first sign-in link doesn't arrive at once, this delay is the usual reason. It isn't a sign that anything is broken.
 
-Onboarding also writes a DMARC record, a mail-policy entry, at `_dmarc.yourdomain` with the policy `p=reject`. The policy asks receivers to reject mail that claims to come from your domain without authenticating. The record covers every sender on the domain, not only cairn, and it stays even if you turn sending off later. Before you turn on sign-in email, list the services that already send as your domain, such as a newsletter tool, a ticketing system, or a mailing list. Follow each one's instructions for authenticating against your domain's mail records, and do the same for any you add afterward. Otherwise a receiver rejects its mail.
+A DMARC record is a mail-policy entry at `_dmarc.yourdomain`. When your domain has none, onboarding adds one with the policy `p=reject`, and when it already has one, onboarding keeps it unchanged. The command reads the record first and says which case applies, or says it couldn't read the record. A `p=reject` policy asks receivers to reject mail that claims to come from your domain without authenticating, and it covers every sender on the domain, not only cairn. When onboarding adds the record, list the services that already send as your domain before you turn on sign-in email, such as a newsletter tool, a ticketing system, or a mailing list. Follow each one's instructions for authenticating against your domain's mail records, and do the same for any you add afterward. Otherwise a receiver rejects its mail.
 
 The running site reads none of your SPF, DKIM, or DMARC records, so a broken record never shows up as a site error. Only `cairn doctor` looks at them. It checks that a DMARC record with a real policy exists, that an SPF record names Cloudflare's mail servers, and that a DKIM record answers under one of a short list of common selector names. A DKIM record under any other name goes unseen, so a missing result there doesn't prove the record is absent.
 

@@ -13,7 +13,15 @@ import { exitOnCancel } from '../prompts.mjs';
 import { defineAction, runActions } from '../runner.mjs';
 import { updateSite, loadSite } from '../state.mjs';
 import { workerNameFor, writePublicOrigin } from './config.mjs';
-import { ensureInstalled, ensureLogin, buildSite, deployWorker, applyMigrations } from './deploy.mjs';
+import {
+  ensureInstalled,
+  ensureLogin,
+  ensureNamesFree,
+  parseIsoTime,
+  buildSite,
+  deployWorker,
+  applyMigrations,
+} from './deploy.mjs';
 import { ensureAccountId } from './account.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import { movePemToWorkerSecret } from './secret.mjs';
@@ -115,10 +123,11 @@ export async function runCloudflareChapter({
       '(https://developers.cloudflare.com/workers/platform/pricing/), billed once per Cloudflare ' +
       "account rather than once per site: a cairn site runs on it from its first deploy. Turn it " +
       "on first if it is not already, then the tool installs your site's dependencies, builds " +
-      `it, and deploys it to your account: one Worker named ${workerName} (this replaces any ` +
-      'Worker of that name already in your account; deploying again later updates it), one ' +
+      `it, and deploys it to your account: one Worker named ${workerName}, one ` +
       `database (${workerName}-auth), and one ` +
-      `storage bucket (${workerName}-media). One browser trip to sign in to Cloudflare if you ` +
+      `storage bucket (${workerName}-media). It first checks that your account has no Worker, ` +
+      'database, or bucket by those names, and stops without deploying if it finds one. ' +
+      'One browser trip to sign in to Cloudflare if you ' +
       'are not already, then one click to sign in to your site.';
 
     let consented = false;
@@ -229,6 +238,20 @@ export async function runCloudflareChapter({
   );
 
   if (!resumingAtDeployed) {
+    // A run that began deploying under this name and stopped before `deployed` saved a marker
+    // with its name, account, and deploy window. The check still runs on that resume and
+    // excuses only resources created inside the window, so a Worker another run deployed under
+    // the same name afterwards is still refused.
+    const priorMarker = record?.cloudflare?.deployStartedAs;
+    await runStep(
+      frame,
+      'Check that the names are free',
+      `Checks that your Cloudflare account has no Worker named ${workerName}, no database named ` +
+        `${workerName}-auth, and no storage bucket named ${workerName}-media, and stops before ` +
+        'building if it finds one.',
+      () => ensureNamesFree({ dir, log, accountId, workerName, marker: priorMarker }),
+    );
+
     await runStep(frame, 'Build your site', `Runs npm run build in ${dir}.`, () =>
       buildSite({ dir, log }),
     );
@@ -239,21 +262,45 @@ export async function runCloudflareChapter({
       "Deploys the Worker, writes its URL as the site's origin, applies the database's " +
         'migrations, rebuilds so the pages carry that origin, then deploys again.',
       async () => {
-        const first = await deployWorker({ dir, log, accountId });
-        await writePublicOrigin(dir, first.url);
-        await applyMigrations({ dir, log, accountId });
-        // The origin in cairn.config.ts is baked into the prerendered pages, so only a rebuild
-        // carries it into the second deploy.
-        await buildSite({ dir, log });
-        const second = await deployWorker({ dir, log, accountId });
-        if (second.url !== first.url) {
-          throw new Error(
-            `The redeploy came back with a different URL (${second.url}) than the first deploy ` +
-              `(${first.url}); the worker name may have changed between the two deploys.\n` +
-              `Next step: re-run npx create-cairn-site --dir ${dir}.`,
-          );
+        // The build can take minutes, long enough for another run to deploy the same names, so
+        // every name is read again right before this one deploys.
+        await ensureNamesFree({ dir, log, accountId, workerName, marker: priorMarker });
+        // A resume of this site's own attempt keeps that attempt's start, so the resources it
+        // created stay inside the window a later resume excuses.
+        const continuing =
+          priorMarker?.name === workerName &&
+          priorMarker?.accountId === accountId &&
+          Number.isFinite(parseIsoTime(priorMarker?.at));
+        const marker = {
+          name: workerName,
+          accountId,
+          at: continuing ? priorMarker.at : new Date().toISOString(),
+        };
+        await updateSite(siteId, { cloudflare: { deployStartedAs: marker } });
+        try {
+          const first = await deployWorker({ dir, log, accountId });
+          await writePublicOrigin(dir, first.url);
+          await applyMigrations({ dir, log, accountId });
+          // The origin in cairn.config.ts is baked into the prerendered pages, so only a rebuild
+          // carries it into the second deploy.
+          await buildSite({ dir, log });
+          const second = await deployWorker({ dir, log, accountId });
+          if (second.url !== first.url) {
+            throw new Error(
+              `The redeploy came back with a different URL (${second.url}) than the first deploy ` +
+                `(${first.url}); the worker name may have changed between the two deploys.\n` +
+                `Next step: re-run npx create-cairn-site --dir ${dir}.`,
+            );
+          }
+          deployUrl = second.url;
+        } catch (err) {
+          // The stop time closes the window a resume excuses. A failed save leaves the marker
+          // without one, which excuses nothing, so the resume refuses rather than guessing.
+          await updateSite(siteId, {
+            cloudflare: { deployStartedAs: { ...marker, endedAt: new Date().toISOString() } },
+          }).catch(() => {});
+          throw err;
         }
-        deployUrl = second.url;
         await updateSite(siteId, { step: 'deployed', cloudflare: { url: deployUrl, workerName } });
       },
     );

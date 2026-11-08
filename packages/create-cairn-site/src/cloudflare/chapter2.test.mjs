@@ -1371,7 +1371,10 @@ test('completion: re-entry at domain-live re-runs ensureApiToken', async (t) => 
 
   const zoneListCalls = cloudflare.requests
     .slice(requestsBefore)
-    .filter((r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones'));
+    // The DMARC read before the email admission lists the zone's records; it validates nothing.
+    .filter(
+      (r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones') && !r.path.includes('/dns_records'),
+    );
   assert.equal(zoneListCalls.length, 1, 'ensureApiToken must have validated the saved token again');
 });
 
@@ -2012,25 +2015,39 @@ test('email closing copy: names the from-address, its override, the DMARC conseq
   assert.match(closing, /_dmarc\./, 'must name the DMARC record');
   assert.match(closing, /reject/i, 'must name the record\'s policy');
   assert.match(closing, /newsletter/, 'must name the consequence for a later newsletter tool');
-  assert.match(closing, /turn Email Sending off again/, 'must say the record outlives turning Email Sending back off (amendment 9)');
+  assert.doesNotMatch(
+    closing,
+    /turn Email Sending off again/,
+    'removing a domain from Email Sending deletes the records it created, so the close never says the record outlives it',
+  );
   assert.match(closing, /cairn adopt.*cairn health/, 'must name adopt then health as the live https/email re-proof step');  assert.ok(
     closing.includes('go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest'),
     'must print the go install path of the tool/v2 module',
   );
 });
 
-test('email admission and closing copy: the prompt warns of the domain-wide p=reject policy, and the close names no sender list', async (t) => {
+/**
+ * Run the email half from `domain-live` with the owner saying yes, after `arrange` shapes the
+ * zone's DMARC record, and return the printed admission detail and closing message.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @param {string} siteId the site id to seed
+ * @param {(ctx: { cloudflare: object, zoneId: string, domain: string, dir: string }) => Promise<void>} arrange
+ *  seeds or breaks the DMARC read before the run
+ * @returns {Promise<{ admission: string, closing: string, domain: string }>}
+ */
+async function emailCopyFor(t, siteId, arrange) {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
-  await seedDomainLiveSite(t, 'site-email-dmarc-copy', dir);
+  const seeded = await seedDomainLiveSite(t, siteId, dir);
+  await arrange({ ...seeded, dir });
   await setupWrangler(t);
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const logs = [];
   const outcome = await runChapter2({
     openBrowser: neverOpensBrowser,
-    siteId: 'site-email-dmarc-copy',
-    record: await loadSite('site-email-dmarc-copy'),
+    siteId,
+    record: await loadSite(siteId),
     dir,
     args: { yes: false },
     log: (line) => logs.push(line),
@@ -2040,18 +2057,75 @@ test('email admission and closing copy: the prompt warns of the domain-wide p=re
     fetchImpl: alwaysMatchingFetch(),
   });
   assert.equal(outcome.outcome, 'email-live');
-
   const admission = logs.find((line) => line.includes('Turning this on onboards'));
   assert.ok(admission, 'expected the admission detail to print');
+  const closing = logs.find((line) => line.includes('cairn adopt'));
+  assert.ok(closing, 'expected the closing message');
+  return { admission, closing, domain: seeded.domain };
+}
+
+test('email DMARC copy: a domain with no DMARC record is told onboarding adds a domain-wide p=reject', async (t) => {
+  const { admission, closing, domain } = await emailCopyFor(t, 'site-email-dmarc-none', async () => {});
+
+  assert.match(admission, /no DMARC record/);
   assert.match(admission, /p=reject/);
   assert.match(admission, /whole domain/);
   assert.match(admission, /every sender/);
-  assert.doesNotMatch(admission, /replace|overwrit|existing/i, 'must not claim what happens to an existing record');
+  assert.doesNotMatch(admission, /replace|overwrit|unchanged/i, 'must not describe an existing record');
 
-  const closing = logs.find((line) => line.includes('cairn adopt'));
-  assert.ok(closing, 'expected the closing message');
+  assert.match(closing, new RegExp(`wrote a p=reject DMARC policy at _dmarc\\.${domain.replace(/\./g, '\\.')}`));
   assert.doesNotMatch(closing, /add it to that record/, 'a p=reject record has no sender list to add to');
   assert.match(closing, /authenticat/, 'must tell the owner to authenticate each new service against the domain');
+});
+
+test('email DMARC copy: an existing p=none record is named and left unchanged', async (t) => {
+  const { admission, closing } = await emailCopyFor(t, 'site-email-dmarc-pnone', async ({ zoneId, domain, dir }) => {
+    const api = makeApi({ token: 'fake-token', accountId: 'acct-1', dir });
+    await api.createDnsRecord(zoneId, {
+      type: 'TXT',
+      name: `_dmarc.${domain}`,
+      content: '"v=DMARC1; p=none; rua=mailto:dmarc@example.org"',
+    });
+  });
+
+  assert.match(admission, /already has a DMARC record/);
+  assert.match(admission, /p=none/);
+  assert.match(admission, /unchanged/);
+  assert.doesNotMatch(admission, /adds a p=reject/, 'must not promise a p=reject record the domain will not get');
+
+  assert.match(closing, /p=none/);
+  assert.match(closing, /unchanged/);
+  assert.doesNotMatch(closing, /wrote a p=reject/, 'onboarding wrote no DMARC record here');
+});
+
+test('email DMARC copy: a failed record read says so and states when p=reject is added', async (t) => {
+  const { admission, closing } = await emailCopyFor(t, 'site-email-dmarc-unread', async ({ cloudflare }) => {
+    cloudflare.failNext('dns_record_list', 500, {
+      success: false,
+      errors: [{ code: 10000, message: 'Internal error' }],
+      messages: [],
+      result: null,
+    });
+  });
+
+  assert.match(admission, /couldn't read/);
+  assert.match(admission, /p=reject/);
+  assert.match(admission, /only when (?:it|the domain) has (?:none|no DMARC record)/);
+  assert.match(closing, /couldn't read/);
+  assert.match(closing, /only when (?:it|the domain) has (?:none|no DMARC record)/);
+  assert.doesNotMatch(closing, /wrote a p=reject/, 'a failed read proves nothing about what onboarding wrote');
+});
+
+test('email DMARC copy: a _dmarc CNAME to a DMARC vendor counts as unread, never as no record', async (t) => {
+  const { admission, closing } = await emailCopyFor(t, 'site-email-dmarc-cname', async ({ zoneId, domain, dir }) => {
+    const api = makeApi({ token: 'fake-token', accountId: 'acct-1', dir });
+    await api.createDnsRecord(zoneId, { type: 'CNAME', name: `_dmarc.${domain}`, content: 'dmarc.vendor.example' });
+  });
+
+  assert.match(admission, /couldn't read/);
+  assert.doesNotMatch(admission, /no DMARC record yet/, 'a delegated record is not an absent one');
+  assert.match(closing, /couldn't read/);
+  assert.doesNotMatch(closing, /wrote a p=reject/);
 });
 
 // --- T4b.1 defect harvest: the tool never promises delivery, anywhere (live e2e finding) -------

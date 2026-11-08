@@ -14,6 +14,10 @@ const EXPECTED_KIND = {
   'build-failed': 'act',
   'deploy-failed': 'act',
   'subdomain-unregistered': 'act',
+  'resource-names-taken': 'act',
+  'resource-names-check-failed': 'act',
+  'resource-names-mismatch': 'act',
+  'sign-in-account-unknown': 'act',
   'migrations-failed': 'act',
   'secret-put-failed': 'act',
   'seed-failed': 'act',
@@ -68,6 +72,21 @@ const SAMPLE_PARAMS = {
   'build-failed': { dir: './alpine', detail: 'Error: Cannot find module vite' },
   'deploy-failed': { dir: './alpine', detail: 'ERROR: script size limit exceeded' },
   'subdomain-unregistered': { dir: './alpine' },
+  'resource-names-taken': {
+    dir: './alpine',
+    taken: ['a Worker named alpine', 'a database named alpine-auth']
+  },
+  'resource-names-check-failed': {
+    dir: './alpine',
+    resource: 'the Worker alpine',
+    detail: 'Authentication error [code: 10000]'
+  },
+  'resource-names-mismatch': {
+    dir: './alpine',
+    workerName: 'alpine',
+    found: ['the Worker name production-site']
+  },
+  'sign-in-account-unknown': { dir: './alpine' },
   'migrations-failed': { dir: './alpine', database: 'AUTH_DB', detail: 'D1_ERROR: no such table' },
   'secret-put-failed': { dir: './alpine', detail: 'ERROR: could not put secret' },
   'seed-failed': { dir: './alpine', detail: 'D1_ERROR: UNIQUE constraint failed' },
@@ -192,8 +211,9 @@ test('the Builds rows add exactly eleven codes, none colliding with build-failed
   // 37 pre-Builds codes, plus Task 2's split: hostname-propagating retired (-1), replaced by
   // hostname-records-absent and hostname-resolver-lagging (+2), plus deploy-plan-declined,
   // chapter 1's pre-deploy decline row, added alongside the pre-existing paid-plan-declined
-  // (chapter 2's, unrenamed) (+1).
-  const BASELINE_CODE_COUNT = 39;
+  // (chapter 2's, unrenamed) (+1), plus chapter 1's three pre-deploy name-check rows (+3), plus --sign-in's missing-account
+  // row (+1).
+  const BASELINE_CODE_COUNT = 43;
   const NEW_BUILDS_CODES = [
     'builds-app-not-authorized',
     'builds-repo-not-selected',

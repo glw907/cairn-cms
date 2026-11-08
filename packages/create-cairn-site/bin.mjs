@@ -19,6 +19,7 @@ import {
   CHAPTER3_RESUMABLE_STEPS,
 } from './src/cloudflare/chapter3.mjs';
 import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './src/cloudflare/bootstrap.mjs';
+import { cloudflareError } from './src/cloudflare/catalogue.mjs';
 import { printCostPreamble } from './src/money.mjs';
 import { loadSite, updateSite, findSiteByDir, retireSite } from './src/state.mjs';
 import { webBase } from './src/github/api.mjs';
@@ -342,7 +343,8 @@ async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
  * that names no next step. The same guard covers a record with no saved `cloudflare.url`: without
  * it, the seed would already have written a live token to the database before a bare dereference
  * of `state.cloudflare.url` threw, leaving no way to reach the link it minted.
- * @param {{ siteId: string, state: { dir: string, ownerEmail?: string, cloudflare?: { url?: string } },
+ * @param {{ siteId: string, state: { dir: string, ownerEmail?: string,
+ *  cloudflare?: { url?: string, accountId?: string } },
  *  ownerEmailOverride?: string, log: (line: string) => void }} args
  * @returns {Promise<void>}
  */
@@ -360,10 +362,20 @@ async function reseedAndOpen({ siteId, state, ownerEmailOverride, log }) {
         `Next step: re-run npx create-cairn-site --dir ${state.dir} to finish deploying first.`,
     );
   }
+  if (!state.cloudflare?.accountId) {
+    // Without it, wrangler would seed whatever account it defaults to, which on a multi-account
+    // login need not be the one this site runs on.
+    throw cloudflareError('sign-in-account-unknown', { dir: state.dir });
+  }
   if (ownerEmail !== state.ownerEmail) {
     await updateSite(siteId, { ownerEmail });
   }
-  const { confirmPath } = await seedOwnerAndToken({ dir: state.dir, email: ownerEmail, log });
+  const { confirmPath } = await seedOwnerAndToken({
+    dir: state.dir,
+    email: ownerEmail,
+    log,
+    accountId: state.cloudflare?.accountId,
+  });
   await openBrowser(`${state.cloudflare.url}${confirmPath}`, log, { secret: true });
   console.log(SIGN_IN_OPENED_NOTICE);
 }

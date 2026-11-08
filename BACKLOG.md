@@ -4,6 +4,9 @@
 
 ## High
 
+- [ ] **#364** Make the GitHub App's two browser steps lead an owner through without outside help `#bug` `#cairn-cms` `#initiative:907-rebuild` *(2026-11-07)*
+  Geoff's live rc.4 setup of 907.life, in a clean shell where no browser opens, so each printed link went into Chromium by hand. Geoff: "So this process is obviously fairly broken. That should go on the backlog." What happened, in order. (a) The manifest callback page said "Step 1 of 2 is done ... Return to the terminal"; it read as finished, and the install link sat only in the terminal scrollback. (b) The install link printed in the same breath as step 1; opened in a tab that never redirected, it did nothing, and nothing said so. (c) Setup then repeated "Still waiting for GitHub to report the installation" with no hint of what was missing. The poll (`packages/create-cairn-site/src/github/install.mjs:68-79`) matches only an installation on the App's owner account (`json.owner.login`, `manifest.mjs:219`), and waits up to 600000 ms (`install.mjs:223`) before `browser-step-abandoned`. (d) Geoff reached the "Install & Authorize ... you'll be redirected to http://127.0.0.1:33069/callback" page and ended up pasting the callback by hand. Explaining the stall took a live operator, an observer, and the conductor reading the code, and it sits on every new site's first browser step. Proposed: the step 1 callback page links straight to the install page; the install link prints only once step 1 is done; the waiting line names the account it polls and the link to open, and says when a stale tab is the likely cause; one cairn.pub page walks both steps with screenshots. Pairs with #363 and #362. Filed for Geoff by 907-life-rebuild.
+
 ## Medium
 
 - [ ] **#363** Say plainly when setup can't open a browser, and put the link where an owner looks first `#improvement` `#cairn-cms` `#initiative:907-rebuild` *(2026-11-07)*

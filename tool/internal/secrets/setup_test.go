@@ -92,11 +92,10 @@ func (m *memKeyring) names() []string {
 	return out
 }
 
-func (m *memKeyring) value(name string) (string, bool) {
+func (m *memKeyring) value(name string) string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	v, ok := m.entries[service+"|"+name]
-	return v, ok
+	return m.entries[service+"|"+name]
 }
 
 func newStore(t *testing.T, runID string) SetupStore {
@@ -149,10 +148,10 @@ func TestRefreshStoresTheNewPairBeforeReturningIt(t *testing.T) {
 	if handed != old {
 		t.Errorf("refresh was handed %+v, want the stored pair %+v", handed, old)
 	}
-	if v, _ := m.value("setup/run-1/cloudflare-access"); v != "new-access" {
+	if v := m.value("setup/run-1/cloudflare-access"); v != "new-access" {
 		t.Errorf("stored access = %q, want new-access", v)
 	}
-	if v, _ := m.value("setup/run-1/cloudflare-refresh"); v != "new-refresh" {
+	if v := m.value("setup/run-1/cloudflare-refresh"); v != "new-refresh" {
 		t.Errorf("stored refresh = %q, want new-refresh", v)
 	}
 }
@@ -297,12 +296,12 @@ func TestSetupEntriesFitTheWindowsLimit(t *testing.T) {
 	}
 
 	for _, name := range m.names() {
-		v, _ := m.value(name)
+		v := m.value(name)
 		if len(v) > MaxEntryBytes {
 			t.Errorf("%s holds %d bytes, over the %d-byte limit", name, len(v), MaxEntryBytes)
 		}
 	}
-	if v, _ := m.value("setup/run-1/app-key"); v != key {
+	if v := m.value("setup/run-1/app-key"); v != key {
 		t.Error("the stored PEM differs from the one written; it must be stored as-is")
 	}
 
@@ -389,6 +388,9 @@ func TestFileStoreCompilesOnlyUnderTheTag(t *testing.T) {
 // binary twice: the first process writes an entry, and the second reads it back and deletes it.
 func TestFileStoreRoundTripsAcrossProcesses(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "secrets.test")
+	if runtime.GOOS == "windows" {
+		bin += ".exe"
+	}
 	compile := exec.Command("go", "test", "-c", "-tags", e2eTag, "-o", bin, ".")
 	if out, err := compile.CombinedOutput(); err != nil {
 		t.Fatalf("build the %s test binary: %v\n%s", e2eTag, err, out)

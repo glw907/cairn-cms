@@ -1,0 +1,12 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://docs.github.com/en/rest/actions/secrets#get-a-repository-public-key",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "key_id": "568250167242549743",
+    "key": "SRCfuFD2WQmtShMA+B+XUoG5NH3k1fcXOo2pxqxkhn4="
+  }
+}

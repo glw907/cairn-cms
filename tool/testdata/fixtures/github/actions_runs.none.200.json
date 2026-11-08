@@ -1,0 +1,12 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-repository",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "total_count": 0,
+    "workflow_runs": []
+  }
+}

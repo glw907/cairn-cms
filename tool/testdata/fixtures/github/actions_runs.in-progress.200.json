@@ -1,0 +1,21 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-repository",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "total_count": 1,
+    "workflow_runs": [
+      {
+        "id": 9001,
+        "name": "deploy",
+        "head_sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+        "status": "in_progress",
+        "conclusion": null,
+        "html_url": "https://github.com/example-owner/example-site/actions/runs/9001"
+      }
+    ]
+  }
+}

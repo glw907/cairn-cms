@@ -1,0 +1,15 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#response",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "access_token": "PLACEHOLDER-user-token",
+    "token_type": "bearer",
+    "expires_in": 28800,
+    "refresh_token": "PLACEHOLDER-refresh-token",
+    "refresh_token_expires_in": 15811200
+  }
+}

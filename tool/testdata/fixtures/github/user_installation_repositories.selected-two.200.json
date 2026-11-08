@@ -1,0 +1,26 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://docs.github.com/en/rest/apps/installations#list-repositories-accessible-to-the-user-access-token",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "total_count": 2,
+    "repository_selection": "selected",
+    "repositories": [
+      {
+        "id": 998877,
+        "name": "example-site",
+        "full_name": "example-owner/example-site",
+        "private": true
+      },
+      {
+        "id": 998878,
+        "name": "other-site",
+        "full_name": "example-owner/other-site",
+        "private": true
+      }
+    ]
+  }
+}

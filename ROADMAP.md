@@ -2250,6 +2250,18 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   Worker CPU per request, and stays; the binding would trade that for CPU time cairn does not need
   to spend. Trigger: a transform a consumer needs that the URL API cannot express.
 
+- **Migrate content from another site or CMS into a new cairn site (cairn-setup design,
+  2026-11-08).** A possible feature with its own design, not part of `cairn new`: the cairn-setup
+  design lists it under non-goals. What exists today: an owner moves content in by hand or with a
+  site's own script. Trigger: an owner or evaluator asks for it, or a site rebuild needs an
+  importer more than once.
+
+- **Setup for a GitHub organization (the manifest's org path and an owner's approval)
+  (cairn-setup design, 2026-11-08).** `cairn new` sets up a site under a personal account. An
+  organization needs the App manifest's org path and an organization owner's approval of the
+  install, which the cairn-setup design lists under non-goals. Trigger: the first site that
+  belongs to an organization.
+
 ## Considering
 
 - **Whether `expectTypeOf` assertions should run where they appear to run (found on the cleanup

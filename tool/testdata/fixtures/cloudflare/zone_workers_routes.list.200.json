@@ -1,0 +1,20 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/workers/subresources/routes/methods/list/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      {
+        "id": "0000000000000000000000000000er01",
+        "pattern": "www.example.test/*",
+        "script": "other-site"
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/user/subresources/tokens/methods/delete/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": {
+      "id": "00000000000000000000000000000t01"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/dns/subresources/records/methods/list/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      {
+        "id": "0000000000000000000000000000ed01",
+        "name": "www.example.test",
+        "type": "CNAME",
+        "content": "example.test",
+        "proxied": true
+      }
+    ],
+    "result_info": {
+      "page": 1,
+      "per_page": 100,
+      "count": 1,
+      "total_count": 1,
+      "total_pages": 1
+    }
+  }
+}

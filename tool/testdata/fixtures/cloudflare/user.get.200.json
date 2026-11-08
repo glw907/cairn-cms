@@ -1,0 +1,19 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/user/methods/get/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": {
+      "id": "0000000000000000000000000000eu01",
+      "email": "owner-scrubbed",
+      "first_name": null,
+      "last_name": null
+    }
+  }
+}

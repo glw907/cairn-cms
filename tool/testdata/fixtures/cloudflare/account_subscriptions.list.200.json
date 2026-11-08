@@ -1,0 +1,28 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/accounts/subresources/subscriptions/methods/get/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      {
+        "id": "0000000000000000000000000000es01",
+        "state": "Paid",
+        "price": 5,
+        "currency": "USD",
+        "frequency": "monthly",
+        "rate_plan": {
+          "id": "workers_paid",
+          "public_name": "Workers Paid",
+          "currency": "USD",
+          "is_contract": false
+        }
+      }
+    ]
+  }
+}

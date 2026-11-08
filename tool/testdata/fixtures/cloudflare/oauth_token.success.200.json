@@ -1,0 +1,15 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/fundamentals/api/oauth/ (token endpoint; spike-cloudflare-oauth.md \"Confirmed\" lists the answered keys)",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "access_token": "ACCESS_TOKEN_PLACEHOLDER",
+    "expires_in": 3600,
+    "refresh_token": "REFRESH_TOKEN_PLACEHOLDER",
+    "scope": "user-details.read account-settings.read zone.read dns.write workers-scripts.edit workers-routes.write d1.write workers-r2.write email-sending.write user-api-tokens.write offline_access",
+    "token_type": "bearer"
+  }
+}

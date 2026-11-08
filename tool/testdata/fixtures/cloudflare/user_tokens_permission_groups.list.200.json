@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/user/subresources/tokens/subresources/permission_groups/methods/list/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      {
+        "id": "00000000000000000000000000000g01",
+        "name": "Workers Scripts Write",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000g02",
+        "name": "Workers Scripts Read",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000g03",
+        "name": "D1 Write",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000g04",
+        "name": "Workers R2 Storage Write",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000g05",
+        "name": "Workers R2 Storage Bucket Item Write",
+        "scopes": [
+          "com.cloudflare.edge.r2.bucket"
+        ]
+      }
+    ]
+  }
+}

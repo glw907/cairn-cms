@@ -1,0 +1,19 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "cloudflare-estate-inventory.md: code 10000 to every token so far; body shape from the standard v4 error envelope",
+    "status": 403,
+    "note": "pending live recording; the error code and message are the documented or remembered shape, not a capture"
+  },
+  "body": {
+    "success": false,
+    "errors": [
+      {
+        "code": 10000,
+        "message": "Authentication error"
+      }
+    ],
+    "messages": [],
+    "result": null
+  }
+}

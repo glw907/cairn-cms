@@ -1,4 +1,4 @@
-// Walks every file under fixtures/ and fails if one carries a real identifier: an email address
+// Walks every file under tool/testdata/fixtures/ and fails if one carries a real identifier: an email address
 // or the estate account id. The corpus is meant to travel with the Go tool (fixtures/README.md
 // names the trigger), so nothing in it may be a credential or an operator's identity, even
 // though every fixture is a real captured API response.
@@ -14,7 +14,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
-const FIXTURES_DIR = fileURLToPath(new URL('../fixtures', import.meta.url));
+const FIXTURES_DIR = fileURLToPath(new URL('./fixtures', import.meta.url));
 const EMAIL_PATTERN = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 const BANNED_ACCOUNT_ID = '120c269ad6d3dfbe6d63a0bb53758ca0';
 const EMAIL_EXEMPT_KEYS = new Set(['message_id']);

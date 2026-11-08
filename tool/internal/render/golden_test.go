@@ -264,7 +264,7 @@ func goldenLogEntries() []logs.Entry {
 // goldenMixedLogEntries is the window a query against a public site actually returns: the
 // Worker's console lines, which a 404 logger writes by the hundred, and one engine record
 // among them. The shapes are the ones
-// packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.mixed-lines.200.json
+// tool/testdata/fixtures/cloudflare/observability-telemetry-query.mixed-lines.200.json
 // recorded live, the escape-and-newline opening of a 404 line included, since that opening is
 // what puts a space after the `message=` a naive render prints.
 func goldenMixedLogEntries() []logs.Entry {

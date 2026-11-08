@@ -9,9 +9,9 @@ import (
 )
 
 // corpusExtractionTrigger names the fixture corpus's retirement condition
-// (packages/create-cairn-site/fixtures/README.md, "When this corpus moves"), quoted in a
+// (tool/testdata/fixtures/README.md, "When this corpus moves"), quoted in a
 // RepoRoot error so a reader sees why the walk failed rather than a bare "file not found".
-const corpusExtractionTrigger = "the fixture corpus moves with the Go tool on the day it leaves this repository (packages/create-cairn-site/fixtures/README.md)"
+const corpusExtractionTrigger = "the fixture corpus moves with the Go tool on the day it leaves this repository (tool/testdata/fixtures/README.md)"
 
 // RepoRoot returns the repository root: the directory holding a package.json whose "name" is
 // "@glw907/cairn-cms". It walks up from its caller's source file directory (the test file
@@ -61,7 +61,7 @@ func packageJSONName(path string) (string, error) {
 }
 
 // Corpus reads one fixture from the extraction corpus at
-// packages/create-cairn-site/fixtures/<provider>/<name>, resolved through RepoRoot, and returns
+// tool/testdata/fixtures/<provider>/<name>, resolved through RepoRoot, and returns
 // the captured HTTP status alongside the raw "body" bytes, stripped of the
 // {"provenance": ..., "body": ...} wrapper every fixture file carries, so a caller's
 // json.Unmarshal target never needs to know about provenance.
@@ -70,7 +70,7 @@ func Corpus(provider, name string) (status int, body []byte, err error) {
 	if err != nil {
 		return 0, nil, err
 	}
-	path := filepath.Join(root, "packages", "create-cairn-site", "fixtures", provider, name)
+	path := filepath.Join(root, "tool", "testdata", "fixtures", provider, name)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return 0, nil, fmt.Errorf("providers: read fixture %s: %w", path, err)

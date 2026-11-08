@@ -260,20 +260,9 @@ func (w *GitHubWeb) ExchangeCode(ctx context.Context, clientID string, clientSec
 
 // Installation is one App installation as GitHub lists it.
 type Installation struct {
-	ID                  int64
-	AppID               int64
-	RepositorySelection string
-}
-
-// installationWire is Installation's wire shape, shared by the App and user listings.
-type installationWire struct {
 	ID                  int64  `json:"id"`
 	AppID               int64  `json:"app_id"`
 	RepositorySelection string `json:"repository_selection"`
-}
-
-func (w installationWire) installation() Installation {
-	return Installation{ID: w.ID, AppID: w.AppID, RepositorySelection: w.RepositorySelection}
 }
 
 // AppInstallations lists every installation of the calling App through GET /app/installations,
@@ -281,13 +270,11 @@ func (w installationWire) installation() Installation {
 func (gh *GitHub) AppInstallations(ctx context.Context) ([]Installation, error) {
 	var all []Installation
 	for page := 1; page <= maxPages; page++ {
-		var wire []installationWire
+		var wire []Installation
 		if err := gh.getJSON(ctx, fmt.Sprintf("/app/installations?per_page=%d&page=%d", pageSize, page), &wire); err != nil {
 			return nil, err
 		}
-		for _, w := range wire {
-			all = append(all, w.installation())
-		}
+		all = append(all, wire...)
 		if len(wire) < pageSize {
 			break
 		}
@@ -382,14 +369,14 @@ func (gh *GitHub) ReadBackInstallation(ctx context.Context, appID, repoID int64)
 func (gh *GitHub) findUserInstallation(ctx context.Context, appID int64) (Installation, error) {
 	for page := 1; page <= maxPages; page++ {
 		var out struct {
-			Installations []installationWire `json:"installations"`
+			Installations []Installation `json:"installations"`
 		}
 		if err := gh.getJSON(ctx, fmt.Sprintf("/user/installations?per_page=%d&page=%d", pageSize, page), &out); err != nil {
 			return Installation{}, err
 		}
 		for _, w := range out.Installations {
 			if w.AppID == appID {
-				return w.installation(), nil
+				return w, nil
 			}
 		}
 		if len(out.Installations) < pageSize {

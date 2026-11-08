@@ -5,38 +5,39 @@ Present tense only; history lives in git and PR bodies, orientation in `CLAUDE.m
 ## Current state
 
 Published stable: **`0.98.0`** on npm `latest` for `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`;
-the Go tool is `tool/v1.1.0`. The `0.99.0` release is in its candidate phase:
+the Go tool is `tool/v1.1.0`. The newest candidate is **`0.99.0-rc.4`** (cut commit `275892869`):
 
-- `0.99.0-rc.3` (cut commit `4644cd35b`) is on the hidden `gate` dist-tag for all three packages. It
-  carries the setup fix (PR #193): a declined domain continues to Workers Builds, and a domain or email
-  change after Builds is committed and deployed by Builds.
-- `next` still serves `0.99.0-rc.2` on all three, and `create-cairn-site@latest` serves `0.99.0-rc.1`.
-  Both candidates carry the workers.dev publish-never-deploys defect, and since 2026-11-04 both are
-  deprecated on all three packages. The stale `rc` dist-tag is gone. Each package's trusted publisher
-  is bound to the `npm-publish` GitHub environment, which takes only `v*` tags.
-- The release gate (`scripts/gate/`, run by `bash scripts/gate/run-gate.sh`) has run four times on
-  `rc.3` and never passed. Each run found one harness gap, fixed in `fc91768c5` and `a8cdf5944`. Run 4
-  went end to end, and its teardown removes everything. Its open findings are in the ledger
-  (`~/.local/state/cairn-agent-first/ledger.md`, the entries dated 2026-11-03).
-- Geoff ruled on 2026-11-03 that #341 (a narrow Workers Builds build token) lands before the stable,
-  as its own pass and `rc.4`. Run sheet step 11a records it.
-
-**The sequence (Geoff, 2026-11-01).** One conductor runs the approved run sheet
-(`~/.local/state/cairn-agent-first/design-audit/run-sheet.md`, rulings in `ledger.md` beside it).
-Steps 11 to 15 were rewritten on 2026-11-03 for the gated release, and step 20 adds the close-out
-Geoff asked for: a documented release process and Claude infra tuned for it.
+- It passed the release gate (run `20261107T151545`, four legs, one run id) and was promoted by the
+  `publish.yml` dispatch run 42430858765. `next` and `gate` serve it on all three packages, and
+  `create-cairn-site@latest` serves it.
+- It carries the narrow Workers Builds token (#341), the name-clash guard and true DMARC copy (PR
+  #200), every minor and patch through the 2026-11-07 sweep, and vitest 5. Node stays 24 (#333).
+- Geoff ran the real install on it, a clean-room setup of 907.life, and it went badly: five setup
+  defects the gate never exercised, and a wizard he called "way too manual, user-hostile, and
+  apparently quite fragile". He ruled on 2026-11-07 that `0.99.0` takes **no stable from rc.4**.
+  The lessons form the next release, and nothing ships in the meantime.
+- The 907.life site from that run is torn down; its rerun waits on the setup fixes.
 
 ## Immediate next action
 
-The release round runs under `conductor-cairn-cms` (launched 2026-11-04). Geoff approved the design
-and both plans in packet `20261103T221624-3306025`, with the ceiling at 2,210 path minutes, and ran the
-pre-flight sitting the same day. The conductor launches two passes in parallel: pass A (gate and
-product, `auth-data`, branch `release-gate-a`) and pass B (release process and infra, `runner`, branch
-`release-process-b`). It sends one packet when both reach PR-ready, then cuts `rc.4`, gates it once,
-and promotes it on four passes before Geoff's real install. Its prompt, the plans, the spec, and the fold
-records are under `~/Projects/initiatives/shared-standards/plans/` and `specs/` (2026-11-03). A session
-resuming the round reads the conductor prompt
-(`shared-standards/plans/2026-11-03-release-conductor-prompt.txt`) and the ledger.
+Geoff starts a fresh session with a brainstorm (`standards:brainstorming`) on how to work the new
+site-build issues. The inputs are the `## High` items in `BACKLOG.md`, all tagged
+`#initiative:907-rebuild`:
+
+- **#365**: a stated AI posture leaves `site-facts.json` stale, so the first deploy fails.
+- **#364**: the GitHub App's two browser steps.
+- **#363**: the no-browser path. Geoff's rule: "any copy and paste of urls required during the
+  setup process is a failure."
+- **#362**: the wizard as its own design session, held to the web admin's UI bar, collecting
+  everything up front.
+- **#366**: a fast setup test suite that would have caught these.
+- **#361**: theme choice at setup, the 907.life rerun's first need.
+
+#360 (agent-ready setup planning) and the builders' friction files
+(`~/Projects/initiatives/907-rebuild/plans/2026-11-08-friction-builder-{A,B}.md`) sit beside them.
+The 907.life rerun's prerequisites, per Geoff, are #361, #362, #364, #365, and #366. The
+rc.4 round's record is the ledger (`~/.local/state/cairn-agent-first/ledger.md`, entries dated
+2026-11-07).
 
 ## Open decisions and watches
 

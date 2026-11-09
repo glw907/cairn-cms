@@ -59,14 +59,14 @@ interface Tree {
   entries?: string[];
 }
 
-/** Run the rule over an in-memory tree: the chain from the entries, the scope from the files. */
-function run(tree: Tree, peers: PeerAccess = REAL_PEERS) {
+/** The rule's context over an in-memory tree: the chain from the entries, the scope from the files. */
+function contextOf(tree: Tree): StaticRuleContext {
   const files: Record<string, string> = { 'src/theme/theme.css': tree.theme, ...(tree.files ?? {}) };
   const memory: Record<string, string> = { ...(tree.engine === false ? {} : ENGINE), ...(tree.packages ?? {}) };
   for (const [path, source] of Object.entries(files)) memory[`${ROOT}/${path}`] = source;
   const fs: ChainFs = { readText: (path) => memory[path] };
   const config = resolveConfig(ROOT, null, () => true);
-  const ctx: StaticRuleContext = {
+  return {
     files: Object.entries(files)
       .filter(([path]) => path.endsWith('.svelte'))
       .map(([path, source]) => parseComponent(path, source)),
@@ -77,7 +77,11 @@ function run(tree: Tree, peers: PeerAccess = REAL_PEERS) {
       .map(([file, source]) => ({ file, source })),
     chain: loadImportChain(ROOT, tree.entries ?? ['src/theme/theme.css'], fs),
   };
-  return createThemeConformance(peers).check(ctx);
+}
+
+/** Run the rule over an in-memory tree. */
+function run(tree: Tree, peers: PeerAccess = REAL_PEERS) {
+  return createThemeConformance(peers).check(contextOf(tree));
 }
 
 /**
@@ -109,6 +113,17 @@ describe('theme-conformance: registration', () => {
 
   it('passes a complete two-block theme that imports the engine sheet', () => {
     expect(run({ theme: CLEAN })).toEqual([]);
+  });
+});
+
+describe('theme-conformance: what it measured', () => {
+  it('lists each block name with the file that holds it', () => {
+    const measured = themeConformance.measured?.(contextOf({ theme: CLEAN }));
+    expect(measured).toEqual([{ ruleId: 'theme-conformance', file: 'src/theme/theme.css', themes: ['acme', 'acme-night'] }]);
+  });
+
+  it('lists nothing for a sheet with no theme block', () => {
+    expect(themeConformance.measured?.(contextOf({ theme: IMPORTS }))).toEqual([]);
   });
 });
 

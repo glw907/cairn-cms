@@ -105,7 +105,7 @@ describe('applySuppressions', () => {
     const split = applySuppressions([findingAt(file, 'text-[30px]')], [file]);
     expect(split.findings).toEqual([]);
     expect(split.suppressed.map((f) => f.ruleId)).toEqual(['type-scale']);
-    expect(exitCodeFor({ ...split, filesScanned: 1, ruleIds: ['type-scale'] })).toBe(0);
+    expect(exitCodeFor({ ...split, filesScanned: 1, ruleIds: ['type-scale'], measured: [] })).toBe(0);
   });
 
   it('leaves a finding the directive does not cover alone', () => {

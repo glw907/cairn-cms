@@ -395,6 +395,14 @@ export function createThemeContrast(peers: PeerAccess = nodePeers): StaticRule {
       const { themes } = loadDaisyThemeKeys(ctx.config.root, peers, 'read its built-in theme values to measure a block named after one');
       return measureThemeContrast(ctx.chain?.files ?? [], themes, ctx.config.publicStylesheets[0]).findings;
     },
+    measured(ctx) {
+      const { themes } = loadDaisyThemeKeys(ctx.config.root, peers, 'read its built-in theme values to measure a block named after one');
+      const byFile = new Map<string, string[]>();
+      for (const block of readThemeCascade(ctx.chain?.files ?? [], themes).blocks) {
+        byFile.set(block.file.file, [...(byFile.get(block.file.file) ?? []), block.name]);
+      }
+      return [...byFile].map(([file, names]) => ({ ruleId: RULE_ID, file, themes: names }));
+    },
   };
 }
 

@@ -71,6 +71,16 @@ export interface StaticRuleContext {
   chain?: ImportChain;
 }
 
+/** What a theme rule measured in one file: the daisyUI theme blocks it read there. */
+export interface Measured {
+  /** The id of the rule that read the blocks. */
+  ruleId: string;
+  /** Path as the report prints it, relative to the audited root. */
+  file: string;
+  /** The `name:` of each daisyUI theme block in the file, in source order. */
+  themes: string[];
+}
+
 /** A static rule: an id, a tier, and a pure check over the run's context. */
 export interface StaticRule {
   /** Stable id, the name a suppression directive and the report both use. */
@@ -99,6 +109,12 @@ export interface StaticRule {
    */
   importChain?: boolean;
   check(ctx: StaticRuleContext): Finding[];
+  /**
+   * The theme blocks the rule read, for a rule that measures a theme. The report lists them, so a
+   * run that read nothing says so instead of passing silently. Absent for a rule that measures
+   * no theme.
+   */
+  measured?(ctx: StaticRuleContext): Measured[];
 }
 
 /** One run's result: what gates, what was silenced, and how much ground was covered. */
@@ -115,4 +131,6 @@ export interface AuditReport {
    * the chain ran. Reported, never a finding: an uninstalled font package is not a conformance error.
    */
   unreadImports?: UnreadImport[];
+  /** What the theme rules measured, one entry per rule and file. Empty when no theme sheet was read. */
+  measured: Measured[];
 }

@@ -132,24 +132,28 @@ export function createThemeConformance(peers: PeerAccess = nodePeers): StaticRul
       const tailwindVariables = loadTailwindVariables(ctx.config.root, peers);
       return conformanceFindings(ctx, keys, builtInThemes, tailwindVariables);
     },
+    measured(ctx) {
+      const byFile = new Map<string, string[]>();
+      for (const site of sitesOf(ctx)) {
+        if (!DAISY_THEME_BLOCK.test(site.rule.selector)) continue;
+        const name = unquote(site.rule.declarations.find((d) => d.property === 'name')?.value ?? '');
+        byFile.set(site.file, [...(byFile.get(site.file) ?? []), name]);
+      }
+      return [...byFile].map(([file, names]) => ({ ruleId: RULE_ID, file, themes: names }));
+    },
   };
 }
 
 /** The registered rule: `theme-conformance` over the peers installed beside the audited site. */
 export const themeConformance: StaticRule = createThemeConformance();
 
-function conformanceFindings(
-  ctx: StaticRuleContext,
-  keys: string[],
-  builtInThemes: Set<string>,
-  tailwindVariables: Set<string>
-): Finding[] {
-  const findings: Finding[] = [];
+/**
+ * Every CSS rule the run considers: the scope's own, then any chain file the scope does not hold.
+ */
+function sitesOf(ctx: StaticRuleContext): Site[] {
   const chain = ctx.chain ?? { files: [], imports: [], unread: [] };
   const root = ctx.config.root;
   const chainByAbs = new Map(chain.files.map((file) => [file.abs, file]));
-
-  // Every rule the run considers: the scope's own, then any chain file the scope does not hold.
   const scopeRules = [...cssScopeRules(ctx)];
   const scopeAbs = new Set(scopeRules.map((scope) => resolve(root, scope.file)));
   const sites: Site[] = scopeRules.map((scope) => ({
@@ -163,6 +167,20 @@ function conformanceFindings(
       sites.push({ file: file.file, source: file.source, rule, inScope: false, chainFile: file });
     }
   }
+  return sites;
+}
+
+function conformanceFindings(
+  ctx: StaticRuleContext,
+  keys: string[],
+  builtInThemes: Set<string>,
+  tailwindVariables: Set<string>
+): Finding[] {
+  const findings: Finding[] = [];
+  const sites = sitesOf(ctx);
+  const chain = ctx.chain ?? { files: [], imports: [], unread: [] };
+  const root = ctx.config.root;
+  const chainByAbs = new Map(chain.files.map((file) => [file.abs, file]));
 
   const at = (site: CssScopeRule, message: string): Finding => ({
     ruleId: RULE_ID,

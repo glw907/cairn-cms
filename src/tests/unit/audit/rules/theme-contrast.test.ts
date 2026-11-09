@@ -182,6 +182,19 @@ describe('theme-contrast: registration', () => {
     expect(themeContrast.adminOnly).toBeUndefined();
   });
 
+  it('lists each block it read with the file that holds it', () => {
+    const ctx: StaticRuleContext = {
+      files: [],
+      sheet: parseSheet(''),
+      config: resolveConfig(ROOT, null, () => true),
+      cssFiles: [],
+      chain: chainOf({ theme: acme() }),
+    };
+    expect(createThemeContrast(REAL_PEERS).measured?.(ctx)).toEqual([
+      { ruleId: 'theme-contrast', file: 'src/theme/theme.css', themes: ['acme', 'acme-night'] },
+    ]);
+  });
+
   it('measures at 4.5:1', () => {
     expect(CONTRAST_FLOOR).toBe(4.5);
   });

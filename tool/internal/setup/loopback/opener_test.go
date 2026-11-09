@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 )
@@ -55,6 +56,10 @@ func TestLauncher(t *testing.T) {
 		{"BROWSER with arguments", "linux", map[string]string{"BROWSER": "firefox --new-tab"}, []string{"firefox", "--new-tab", url}},
 		{"BROWSER with a placeholder", "linux", map[string]string{"BROWSER": "firefox --url=%s"}, []string{"firefox", "--url=" + url}},
 		{"blank BROWSER is ignored", "linux", map[string]string{"BROWSER": " "}, []string{"xdg-open", url}},
+		// A placeholder in the command's own place would run the URL as a program.
+		{"BROWSER of a placeholder alone", "linux", map[string]string{"BROWSER": "%s"}, nil},
+		{"BROWSER with a placeholder for the command", "linux", map[string]string{"BROWSER": "%s --new-tab"}, nil},
+		{"BROWSER with a placeholder inside the command", "darwin", map[string]string{"BROWSER": "/opt/%s/walker"}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -103,6 +108,8 @@ func helperArgv() []string {
 }
 
 func TestOpen(t *testing.T) {
+	const secret = "https://127.0.0.1:49152/?k=0123456789abcdef0123456789abcdef"
+	missing := filepath.Join(t.TempDir(), "no-such-launcher")
 	tests := []struct {
 		name    string
 		helper  string
@@ -110,17 +117,45 @@ func TestOpen(t *testing.T) {
 		wantErr bool
 	}{
 		{"a launcher that succeeds", "exit0", helperArgv(), false},
-		{"a launcher that exits 1", "exit1", helperArgv(), true},
+		{"a launcher that exits 1", "exit1", append(helperArgv(), secret), true},
 		{"a launcher still running at the timeout", "linger", helperArgv(), false},
-		{"a missing launcher", "", []string{filepath.Join(t.TempDir(), "no-such-launcher")}, true},
+		{"a missing launcher", "", []string{missing, secret}, true},
+		{"no launcher", "", nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("LOOPBACK_HELPER", tt.helper)
 			err := Open(tt.argv, 500*time.Millisecond)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Open: %v, want error %v", err, tt.wantErr)
+				t.Fatalf("Open: %v, want error %v", err, tt.wantErr)
+			}
+			if err == nil || len(tt.argv) == 0 {
+				return
+			}
+			// The error names the launcher by its base name and quotes nothing else from argv.
+			msg := err.Error()
+			if !strings.Contains(msg, filepath.Base(tt.argv[0])) {
+				t.Errorf("error %q does not name the launcher %s", msg, filepath.Base(tt.argv[0]))
+			}
+			if dir := filepath.Dir(tt.argv[0]); strings.Contains(msg, dir) {
+				t.Errorf("error %q quotes the launcher's directory %s", msg, dir)
+			}
+			for _, arg := range tt.argv[1:] {
+				if strings.Contains(msg, arg) {
+					t.Errorf("error %q quotes the argument %q", msg, arg)
+				}
 			}
 		})
+	}
+}
+
+func TestOpenRefusesAPlaceholderBROWSER(t *testing.T) {
+	argv := Launcher("linux", map[string]string{"BROWSER": "%s"}, "https://127.0.0.1:49152/?k=secret")
+	err := Open(argv, 500*time.Millisecond)
+	if err == nil {
+		t.Fatal("Open ran a BROWSER of a placeholder alone")
+	}
+	if strings.Contains(err.Error(), "secret") {
+		t.Errorf("error %q quotes the URL", err)
 	}
 }

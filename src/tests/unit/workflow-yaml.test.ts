@@ -236,8 +236,8 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     steps?: PublishStep[];
   };
   const jobs = (loadWorkflow('publish.yml').jobs ?? {}) as Record<string, PublishJob>;
-  const publishJobs = ['publish', 'publish-dev', 'publish-create-site'];
-  const PACKAGES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev', 'create-cairn-site'];
+  const publishJobs = ['publish', 'publish-dev'];
+  const PACKAGES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
   const promoteScript = (jobs.promote?.steps ?? []).map((s) => s.run ?? '').find((run) => run.includes('dist-tag add')) ?? '';
 
   it('maps a prerelease to gate in each publish job and none to next', () => {
@@ -254,7 +254,7 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     }
   });
 
-  it('grants id-token to the four publishing jobs only, each under the npm-publish environment', () => {
+  it('grants id-token to the publishing jobs and promote only, each under the npm-publish environment', () => {
     const workflow = loadWorkflow('publish.yml') as Workflow & { permissions?: Record<string, string> };
     expect(workflow.permissions).toEqual({ contents: 'read' });
     const holders = Object.entries(jobs)
@@ -323,7 +323,7 @@ describe('publish.yml gates a candidate before it reaches next', () => {
       .flatMap((job) => job.steps ?? [])
       .filter((s) => (s.run ?? '').startsWith('npm install -g npm@'));
     // One per job that publishes or promotes; build and verdict use the runner's npm.
-    expect(installs.length).toBe(4);
+    expect(installs.length).toBe(3);
     for (const step of installs) expect(step.run).toBe('npm install -g npm@11.21.1');
   });
 
@@ -405,9 +405,9 @@ describe('publish.yml gates a candidate before it reaches next', () => {
   describe('the build ref check under bash', () => {
     const script = (jobs.build?.steps ?? []).find((s) => (s.name ?? '').startsWith('The tag names'))?.run ?? '';
 
-    function run(ref: string, versions: [string, string, string]): { status: number | null; out: string } {
+    function run(ref: string, versions: [string, string]): { status: number | null; out: string } {
       const dir = mkdtempSync(resolve(tmpdir(), 'build-ref-'));
-      const paths = ['package.json', 'packages/cairn-cms-dev/package.json', 'packages/create-cairn-site/package.json'];
+      const paths = ['package.json', 'packages/cairn-cms-dev/package.json'];
       paths.forEach((path, at) => {
         mkdirSync(dirname(resolve(dir, path)), { recursive: true });
         writeFileSync(resolve(dir, path), JSON.stringify({ version: versions[at] }));
@@ -420,13 +420,13 @@ describe('publish.yml gates a candidate before it reaches next', () => {
       return { status: result.status, out: `${result.stdout}${result.stderr}` };
     }
 
-    it('passes when the tag is v plus the version in all three manifests', () => {
-      expect(run('v0.99.0-rc.3', ['0.99.0-rc.3', '0.99.0-rc.3', '0.99.0-rc.3']).status).toBe(0);
+    it('passes when the tag is v plus the version in both manifests', () => {
+      expect(run('v0.99.0-rc.3', ['0.99.0-rc.3', '0.99.0-rc.3']).status).toBe(0);
     });
 
     it('fails when any one manifest disagrees with the tag', () => {
-      for (let at = 0; at < 3; at += 1) {
-        const versions: [string, string, string] = ['0.99.0-rc.3', '0.99.0-rc.3', '0.99.0-rc.3'];
+      for (let at = 0; at < 2; at += 1) {
+        const versions: [string, string] = ['0.99.0-rc.3', '0.99.0-rc.3'];
         versions[at] = '0.0.0';
         const r = run('v0.99.0-rc.3', versions);
         expect(r.status, `manifest ${at}`).not.toBe(0);
@@ -488,7 +488,7 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     });
 
     it('refuses when one package lacks the version, moves nothing, and prints every tag state', () => {
-      const r = run('0.99.0-rc.3', 'create-cairn-site');
+      const r = run('0.99.0-rc.3', '@glw907/cairn-cms-dev');
       expect(r.status).not.toBe(0);
       expect(adds(r.calls)).toEqual([]);
       for (const pkg of PACKAGES) expect(r.out).toContain(`tags of ${pkg}`);
@@ -501,14 +501,12 @@ describe('publish.yml gates a candidate before it reaches next', () => {
       expect(lsBefore).toEqual(PACKAGES.map((p) => `dist-tag ls ${p}`));
     });
 
-    it('moves the three packages to next with create-cairn-site last, then its latest', () => {
+    it('moves both packages to next and touches no latest', () => {
       const r = run('0.99.0-rc.3');
       expect(r.status).toBe(0);
       expect(adds(r.calls)).toEqual([
         'dist-tag add @glw907/cairn-cms@0.99.0-rc.3 next',
-        'dist-tag add @glw907/cairn-cms-dev@0.99.0-rc.3 next',
-        'dist-tag add create-cairn-site@0.99.0-rc.3 next',
-        'dist-tag add create-cairn-site@0.99.0-rc.3 latest'
+        'dist-tag add @glw907/cairn-cms-dev@0.99.0-rc.3 next'
       ]);
     });
   });

@@ -6,13 +6,15 @@ name: Publish to npm
 # once at npmjs.com → @glw907/cairn-cms → Settings → Trusted Publisher
 # (repo: glw907/cairn-cms, workflow: publish.yml, environment: npm-publish).
 #
-# Release flow: bump "version" in the three manifests, then publish a GitHub Release. Only a
+# Release flow: bump "version" in the two manifests, then publish a GitHub Release. Only a
 # published release publishes: `ci-green` waits for the tagged commit's `test` (and, for a stable,
-# `e2e`) check runs, `build` packs three tarballs with no publish credential in reach, and each
+# `e2e`) check runs, `build` packs two tarballs with no publish credential in reach, and each
 # publish job uploads one tarball with `--ignore-scripts`, so no lifecycle script runs where the
 # OIDC token is. A candidate publishes to `gate`, which no tester's install command reads. A
-# candidate that passed the release gate moves to `next` (and, for create-cairn-site, `latest`)
-# through a dispatch on the candidate's tag ref: `gh workflow run publish.yml --ref v<V> -f promote=<V>`.
+# candidate that passed the release gate moves to `next` through a dispatch on the candidate's
+# tag ref: `gh workflow run publish.yml --ref v<V> -f promote=<V>`. The `create-cairn-site`
+# launcher and its platform packages are not in this file: they version with the Go tool and
+# publish from tool.yml.
 # The `verdict` job reads the gate's record first, and `promote` needs it.
 
 on:
@@ -78,7 +80,7 @@ jobs:
             sleep "$CI_GREEN_POLL"
           done
 
-  # Packs the three tarballs. It holds no id-token, so the install scripts it runs have no
+  # Packs the two tarballs. It holds no id-token, so the install scripts it runs have no
   # publish-capable credential in reach.
   build:
     needs: ci-green
@@ -92,9 +94,9 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
-      - name: The tag names the version in all three manifests
+      - name: The tag names the version in both manifests
         run: |
-          for m in package.json packages/cairn-cms-dev/package.json packages/create-cairn-site/package.json; do
+          for m in package.json packages/cairn-cms-dev/package.json; do
             v=$(node -p "require('./$m').version")
             if [ "$GITHUB_REF_NAME" != "v$v" ]; then
               echo "::error::$m is at $v but the release tag is $GITHUB_REF_NAME"
@@ -114,21 +116,12 @@ jobs:
           clean: node_modules
       # Validate the published package shape before releasing.
       - run: npm run check:package
-      - name: Pack the three tarballs
+      - name: Pack the two tarballs
         run: |
           mkdir tarballs
           node scripts/build/pack-engine-template.mjs
           npm pack --ignore-scripts --silent --pack-destination tarballs
           (cd packages/cairn-cms-dev && npm pack --ignore-scripts --silent --pack-destination ../../tarballs)
-          # The bake refuses a 0.0.0 version and a file: spec, so `prepack`'s default path cannot
-          # run; bake with the root's version for both specs and pack with --ignore-scripts, the
-          # same two commands create-site.yml proves on every pull request.
-          VERSION=$(node -p "require('./package.json').version")
-          (
-            cd packages/create-cairn-site
-            node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
-            npm pack --ignore-scripts --silent --pack-destination ../../tarballs
-          )
           ls -l tarballs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
@@ -197,7 +190,7 @@ jobs:
           npm publish "$TGZ" --ignore-scripts --access public --tag "$TAG" --provenance
 
   # The dev backend publishes alongside the engine: a scaffolded site's devDependency needs
-  # @glw907/cairn-cms-dev on the registry at the version the bake writes, which is also the spec
+  # @glw907/cairn-cms-dev on the registry at the version the scaffold pins, which is also the spec
   # templates/waymark carries. Its trusted publisher was configured at the
   # first publish (2026-08-16, done by hand because npm cannot bind a trusted publisher to a
   # package that does not exist). The already-published guard exists because the two packages
@@ -239,89 +232,6 @@ jobs:
           echo "publishing @glw907/cairn-cms-dev@$VERSION to the '$TAG' dist-tag"
           npm publish "$TGZ" --ignore-scripts --access public --tag "$TAG" --provenance
 
-  # create-cairn-site publishes after the engine and the dev backend, because the scaffold it bakes
-  # pins both at the root's version and a site installed from it must resolve them. It is a sibling
-  # job in this file, not its own workflow, so the trusted publisher's `publish.yml` name covers it.
-  #
-  # The first publish is done by hand, like the dev backend's was: npm cannot bind a trusted
-  # publisher to a package that does not exist, so until the owner has published it and run
-  # `npm trust`, the package probe finds E404 and the job ends green with a notice rather than
-  # failing the whole release. The cairn-releasing skill carries those owner steps.
-  #
-  # Three guards run before the publish, in this order. A missing package is a notice, and any other
-  # probe failure fails the job. A package version that differs from the root's fails, because a
-  # forgotten bump would publish 0.0.0 and move `latest`; the order lets a cut before the first
-  # publish stay green while the package sits at 0.0.0. A version already on the registry skips,
-  # as the siblings do, so re-running a release recovers the half that failed. `npm view` exits 1
-  # with `code E404` for both a missing package and a missing version, so the two probes are told
-  # apart by which one ran. Each capture sits in an `if !` because the step runs under `bash -e`,
-  # which would abort on a bare failed capture before the code could be read.
-  #
-  # One `run:` block holds all of it, since a guard's `exit 0` ends only its own step. The checkout
-  # only reads the manifests; nothing is installed.
-  publish-create-site:
-    needs: [build, publish, publish-dev]
-    if: github.event_name == 'release'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment: npm-publish
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
-        with:
-          name: tarballs
-          path: tarballs
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-      # Same npm pin as the engine job above; see its WATCH comment.
-      - run: npm install -g npm@11.21.1
-      - name: Publish create-cairn-site to npm
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          PKG_VERSION=$(node -p "require('./packages/create-cairn-site/package.json').version")
-          case "$VERSION" in
-            *-*) TAG=gate ;;
-            *)   TAG=latest ;;
-          esac
-          if ! out=$(npm view create-cairn-site version 2>&1); then
-            if printf '%s\n' "$out" | grep -q 'code E404'; then
-              echo "::notice::create-cairn-site is not on the registry yet; publish it by hand first (see the cairn-releasing skill). Skipping."
-              exit 0
-            fi
-            printf '%s\n' "$out"
-            echo "::error::could not read create-cairn-site from the registry"
-            exit 1
-          fi
-          if [ "$PKG_VERSION" != "$VERSION" ]; then
-            echo "::error::packages/create-cairn-site is at $PKG_VERSION but the root package is at $VERSION; bump it before the cut"
-            exit 1
-          fi
-          if out=$(npm view "create-cairn-site@$VERSION" version 2>&1); then
-            if [ "$out" = "$VERSION" ]; then
-              echo "create-cairn-site@$VERSION is already on the registry; skipping"
-              exit 0
-            elif [ -n "$out" ]; then
-              printf '%s\n' "$out"
-              echo "::error::npm view create-cairn-site@$VERSION printed something other than $VERSION"
-              exit 1
-            fi
-          elif ! printf '%s\n' "$out" | grep -q 'code E404'; then
-            printf '%s\n' "$out"
-            echo "::error::could not read create-cairn-site@$VERSION from the registry"
-            exit 1
-          fi
-          TGZ="$PWD/tarballs/create-cairn-site-$VERSION.tgz"
-          [ -f "$TGZ" ] || { echo "::error::no tarball at $TGZ"; exit 1; }
-          echo "publishing create-cairn-site@$VERSION to the '$TAG' dist-tag"
-          npm publish "$TGZ" --ignore-scripts --access public --tag "$TAG" --provenance
-
   # Reads the release gate's record for the candidate. It holds no id-token and installs nothing:
   # it checks out only the two gate scripts it runs. The version arrives through `env:`, so no
   # expression expands inside the shell text.
@@ -355,8 +265,9 @@ jobs:
   # dependencies and checks out nothing: it needs only npm and the OIDC token, and an install here
   # would run a lockfile's scripts with a publish-capable token in reach. The version arrives
   # through `env:` and the script validates it, so no expression expands inside the shell text.
-  # create-cairn-site moves last because it is the testers' entry point; a split `next` is
-  # recovered by dispatching the same version again, since `dist-tag add` is idempotent.
+  # The launcher is not here: it versions with the tool and takes `latest` from the tool release.
+  # A split `next` is recovered by dispatching the same version again, since `dist-tag add` is
+  # idempotent.
   promote:
     needs: verdict
     if: github.event_name == 'workflow_dispatch' && inputs.promote != ''
@@ -376,7 +287,7 @@ jobs:
         env:
           PROMOTE_VERSION: ${{ inputs.promote }}
         run: |
-          PKGS="@glw907/cairn-cms @glw907/cairn-cms-dev create-cairn-site"
+          PKGS="@glw907/cairn-cms @glw907/cairn-cms-dev"
           trap 'for p in $PKGS; do npm dist-tag ls "$p"; done' EXIT
           V="$PROMOTE_VERSION"
           if ! printf '%s\n' "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.-]+$'; then
@@ -393,5 +304,3 @@ jobs:
           for p in $PKGS; do echo "== $p"; npm dist-tag ls "$p"; done
           npm dist-tag add "@glw907/cairn-cms@$V" next
           npm dist-tag add "@glw907/cairn-cms-dev@$V" next
-          npm dist-tag add "create-cairn-site@$V" next
-          npm dist-tag add "create-cairn-site@$V" latest

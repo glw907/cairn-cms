@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// cairn-cms: the post-publish verify. It checks that a dist-tag holds the version on all three
+// cairn-cms: the post-publish verify. It checks that a dist-tag holds the version on both
 // packages and that each carries a provenance attestation. For a stable it also proves the
 // published stable is the final candidate's tarball plus only the cut's own edits: each package's
 // two tarballs are fetched, every file is diffed line by line, and `check-stable-source.mjs`'s
@@ -27,12 +27,7 @@ const HASHES_FILE = 'guidance-hashes.json';
  * @type {Record<string, Record<string, string>>}
  */
 const REPO_PATHS = {
-  '@glw907/cairn-cms-dev': { 'package.json': 'packages/cairn-cms-dev/package.json' },
-  'create-cairn-site': {
-    'package.json': 'packages/create-cairn-site/package.json',
-    'template/package.json': 'templates/waymark/package.json',
-    'template/.claude/cairn/VERSION': 'templates/waymark/.claude/cairn/VERSION'
-  }
+  '@glw907/cairn-cms-dev': { 'package.json': 'packages/cairn-cms-dev/package.json' }
 };
 
 /**

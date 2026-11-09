@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-export const PACKAGES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev', 'create-cairn-site'];
+export const PACKAGES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
 
 const SEMVER = '\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?';
 const VERSION_LINE = /^\s*"version": "[^"]+",?$/;

@@ -116,6 +116,45 @@ func deployClients(routes ...deployRoute) Clients {
 	return Clients{CF: cfClient(rt), GH: ghClient(rt), HaveCF: true, HaveGH: true}
 }
 
+// deployDeploymentsRoute answers the Worker deployments read with n deployments. It must precede
+// deployWorkerRoute in a route list, whose path is a prefix of this one.
+func deployDeploymentsRoute(n int) deployRoute {
+	list := ""
+	if n > 0 {
+		list = `{"id":"dep-1","created_on":"2026-09-01T00:00:00Z"}`
+	}
+	return deployRoute{path: "/workers/scripts/my-worker/deployments", status: http.StatusOK,
+		body: `{"success":true,"result":{"deployments":[` + list + `]}}`}
+}
+
+func actionsRecord() record.Record {
+	r := deployRecord()
+	r.Setup = record.Setup{RunID: "run", Deploys: record.SetupDeploys}
+	return r
+}
+
+// TestDeployCheckActionsSiteReadsItsDeployment asserts an Actions-deployed site reads OK from a
+// Worker deployment with no Builds trigger or GitHub read, and Failing without one.
+func TestDeployCheckActionsSiteReadsItsDeployment(t *testing.T) {
+	got := (deployCheck{}).Run(context.Background(), actionsRecord(), deployClients(deployDeploymentsRoute(1), deployWorkerRoute), Options{})
+	if got.State != spine.OK {
+		t.Errorf("with a deployment: Outcome = %+v, want OK", got)
+	}
+	got = (deployCheck{}).Run(context.Background(), actionsRecord(), deployClients(deployDeploymentsRoute(0), deployWorkerRoute), Options{})
+	if got.State != spine.Failing || got.Code != spine.CodeDeployBuildFailed || got.Detail != "the Worker has no deployment" {
+		t.Errorf("without a deployment: Outcome = %+v, want Failing", got)
+	}
+}
+
+// TestDeployCheckBuildsSiteIgnoresDeployments asserts a record without the actions note keeps the
+// Builds read even when the Worker has a deployment.
+func TestDeployCheckBuildsSiteIgnoresDeployments(t *testing.T) {
+	got := (deployCheck{}).Run(context.Background(), deployRecord(), deployClients(deployDeploymentsRoute(1), deployWorkerRoute, deployNoTriggersRoute), Options{})
+	if got.State != spine.Unknown {
+		t.Errorf("Outcome = %+v, want Unknown", got)
+	}
+}
+
 func TestDeployCheckDeclaresIDAndTierBoth(t *testing.T) {
 	c := deployCheck{}
 	if got := c.ID(); got != "deploy" {

@@ -461,8 +461,8 @@ describe('the registry parsers', () => {
   it('cliFlagNames unions both CLIs and carries neither an invented flag', () => {
     const flags = cliFlagNames();
     expect(createCairnSiteFlags().has('expect-sites')).toBe(false);
-    expect(cairnToolFlags().has('dry-run')).toBe(false);
-    expect(flags.has('dry-run')).toBe(true);
+    expect(cairnToolFlags().has('start-over')).toBe(false);
+    expect(flags.has('start-over')).toBe(true);
     expect(flags.has('expect-sites')).toBe(true);
     expect(flags.has('no-such-flag')).toBe(false);
   });

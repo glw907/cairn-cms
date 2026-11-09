@@ -57,6 +57,20 @@ describe('navLoad', () => {
     expect(data.tree).toEqual([]);
   });
 
+  it('logs config.missing, naming the scope and the path, when the config is absent', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
+      return new Response('Not Found', { status: 404 });
+    }));
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const routes = createNavRoutes({ runtime: runtime(NAV) });
+    await routes.navLoad(loadEvent());
+    const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; scope?: string; path?: string });
+    const missing = records.filter((r) => r.event === 'config.missing');
+    expect(missing).toHaveLength(1);
+    expect(missing[0]).toMatchObject({ scope: 'nav', path: 'src/lib/site.config.yaml' });
+  });
+
   it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });

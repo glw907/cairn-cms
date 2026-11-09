@@ -16,7 +16,7 @@ func showcaseSiteConfig(t *testing.T) []byte {
 	if err != nil {
 		t.Fatalf("providers.RepoRoot: %v", err)
 	}
-	body, err := os.ReadFile(filepath.Join(root, "examples", "showcase", "src", "theme", "site.config.yaml"))
+	body, err := os.ReadFile(filepath.Join(root, "examples", "showcase", "src", "site", "site.config.yaml"))
 	if err != nil {
 		t.Fatalf("read showcase site.config.yaml: %v", err)
 	}
@@ -24,8 +24,8 @@ func showcaseSiteConfig(t *testing.T) []byte {
 }
 
 // TestSiteConfigFindsAtEveryCandidatePath proves the five found cases: the showcase's
-// committed config at the canonical path, and a minimal valid config at each of the three legacy
-// paths.
+// committed config at the canonical path, and a minimal valid config at each of the four legacy
+// paths, including the pre-src/site location under src/theme.
 func TestSiteConfigFindsAtEveryCandidatePath(t *testing.T) {
 	showcase := showcaseSiteConfig(t)
 	tests := []struct {
@@ -37,6 +37,7 @@ func TestSiteConfigFindsAtEveryCandidatePath(t *testing.T) {
 		{name: "legacy path: site.config.yaml", path: "site.config.yaml", body: []byte("siteName: Legacy Root\n")},
 		{name: "legacy path: src/lib/site.config.yaml", path: "src/lib/site.config.yaml", body: []byte("siteName: Legacy Lib\n")},
 		{name: "legacy path: src/site.config.yaml", path: "src/site.config.yaml", body: []byte("siteName: Legacy Src\n")},
+		{name: "legacy path: src/theme/site.config.yaml", path: "src/theme/site.config.yaml", body: []byte("siteName: Legacy Theme\n")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

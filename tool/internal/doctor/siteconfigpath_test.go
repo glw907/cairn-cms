@@ -5,7 +5,7 @@ import "testing"
 // TestSiteConfigPath asserts the accessor returns the committed mirror's value.
 func TestSiteConfigPath(t *testing.T) {
 	got := siteConfigPath()
-	want := "src/theme/site.config.yaml"
+	want := "src/site/site.config.yaml"
 	if got != want {
 		t.Errorf("siteConfigPath() = %q, want %q", got, want)
 	}
@@ -20,10 +20,10 @@ func TestValidateSiteConfigPathShape(t *testing.T) {
 		path    string
 		wantErr bool
 	}{
-		{name: "the committed value", path: "src/theme/site.config.yaml"},
+		{name: "the committed value", path: "src/site/site.config.yaml"},
 		{name: "empty string", path: "", wantErr: true},
-		{name: "leading slash", path: "/src/theme/site.config.yaml", wantErr: true},
-		{name: "NUL byte", path: "src/theme/site.config\x00.yaml", wantErr: true},
+		{name: "leading slash", path: "/src/site/site.config.yaml", wantErr: true},
+		{name: "NUL byte", path: "src/site/site.config\x00.yaml", wantErr: true},
 		{name: "dot-dot segment", path: "src/../etc/passwd", wantErr: true},
 	}
 	for _, tt := range tests {

@@ -10,7 +10,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const key = `${process.platform}-${process.arch}`;
-const pkg = `@glw907/cairn-${key}`;
+const scope = '@glw907';
+const pkg = `${scope}/cairn-${key}`;
 const exe = process.platform === 'win32' ? 'cairn.exe' : 'cairn';
 
 const require = createRequire(import.meta.url);

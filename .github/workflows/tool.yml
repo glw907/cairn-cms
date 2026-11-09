@@ -13,7 +13,8 @@ on:
     paths:
       - 'tool/**'
       - '.github/workflows/tool.yml'
-      - 'packages/create-cairn-site/src/**'
+      - 'packages/create-cairn-site/**'
+      - 'scripts/release/pack-platforms.mjs'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
       # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
@@ -32,7 +33,8 @@ on:
     paths:
       - 'tool/**'
       - '.github/workflows/tool.yml'
-      - 'packages/create-cairn-site/src/**'
+      - 'packages/create-cairn-site/**'
+      - 'scripts/release/pack-platforms.mjs'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
       # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it

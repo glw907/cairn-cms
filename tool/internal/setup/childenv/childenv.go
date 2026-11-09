@@ -78,11 +78,14 @@ type Pair struct {
 // core.hooksPath set to hooks, which must be an empty folder only setup can write, so no hook a
 // repository carries runs.
 //
-// Its pairs also outrank the plain keys a repository's .git/config sets for a token-bearing push:
-// http.sslVerify on, core.sshCommand empty, and http.proxy set to the proxy git reads from env
-// for an https remote, or empty when env names none. An empty http.proxy turns off env's proxy
-// too, so the value carries env's. A URL-scoped key such as http.<url>.sslVerify in the
-// repository's config still outranks these plain pairs.
+// It also sets http.sslVerify on, core.sshCommand empty, http.proxy to HTTPSProxy(env), and
+// credential.helper and core.askPass empty. Each beats the same plain key in a repository's
+// .git/config. An empty http.proxy turns off env's proxy too, so the value carries env's. An
+// empty credential.helper clears every helper the repository names, plain or URL-scoped. With
+// core.askPass empty as well, a 401 runs nothing the repository chose. These pairs do not beat
+// remote.<name>.proxy, which git reads over http.proxy; the caller sets that one. Nor do they
+// beat a plain http.sslCAInfo or http.sslCAPath, a URL-scoped http.<url>.* key,
+// url.<base>.insteadOf, remote.<name>.pushurl, or http.curloptResolve.
 //
 // pairs follow setup's own through git-config(1)'s GIT_CONFIG_COUNT, so a caller's pair outranks
 // setup's, and no pair env carries survives.
@@ -100,7 +103,8 @@ func Git(env map[string]string, hooks string, pairs ...Pair) []string {
 	out = append(out, "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0", "GIT_TRACE_REDACT=1")
 	own := []Pair{
 		{"core.hooksPath", hooks}, {"core.fsmonitor", "false"},
-		{"http.sslVerify", "true"}, {"http.proxy", httpsProxy(env)}, {"core.sshCommand", ""},
+		{"http.sslVerify", "true"}, {"http.proxy", HTTPSProxy(env)}, {"core.sshCommand", ""},
+		{"credential.helper", ""}, {"core.askPass", ""},
 	}
 	pairs = append(own, pairs...)
 	for i, p := range pairs {
@@ -110,9 +114,10 @@ func Git(env map[string]string, hooks string, pairs ...Pair) []string {
 	return append(out, "GIT_CONFIG_COUNT="+strconv.Itoa(len(pairs)))
 }
 
-// httpsProxy returns the proxy git reads from env for an https remote: https_proxy, then
-// HTTPS_PROXY, and only when neither is set, all_proxy, then ALL_PROXY.
-func httpsProxy(env map[string]string) string {
+// HTTPSProxy returns the proxy git reads from env for an https remote: https_proxy, then
+// HTTPS_PROXY, and only when neither is set, all_proxy, then ALL_PROXY. It returns "" when env
+// names none, which, as a git proxy setting, turns proxying off.
+func HTTPSProxy(env map[string]string) string {
 	for _, name := range []string{"https_proxy", "HTTPS_PROXY", "all_proxy", "ALL_PROXY"} {
 		if v, ok := env[name]; ok {
 			return v

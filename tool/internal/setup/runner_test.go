@@ -11,14 +11,17 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1034,9 +1037,10 @@ func TestARepositoryWithNoOwnerIDKeepsTheRecordedOne(t *testing.T) {
 }
 
 // TestTheFolderGitConfigCannotLoosenThePush pins that setup's config pairs on the push outrank
-// what a resumed site folder's .git/config says: the push reads certificate checks on, the proxy
-// the environment names, and no ssh command. A Config pair still lands after setup's, so the
-// harness can point github.com at a local remote.
+// the plain keys a resumed site folder's .git/config sets: the push reads certificate checks on
+// and no ssh command. A Config pair still lands after setup's, so the harness can point
+// github.com at a local remote. TestTheFolderProxyNeverCarriesThePush covers the proxy, which
+// git config --get cannot show, since git reads remote.origin.proxy over http.proxy.
 func TestTheFolderGitConfigCannotLoosenThePush(t *testing.T) {
 	marker := filepath.Join(t.TempDir(), "ssh-ran")
 	harness := childenv.Pair{Key: "url./harness/.insteadOf", Value: "https://github.com/"}
@@ -1059,12 +1063,10 @@ func TestTheFolderGitConfigCannotLoosenThePush(t *testing.T) {
 	}
 	gitIn(r.gitEnv(), "init", "--quiet")
 	gitIn(r.gitEnv(), "config", "http.sslVerify", "false")
-	gitIn(r.gitEnv(), "config", "http.proxy", "http://folder.example.test:1")
 	gitIn(r.gitEnv(), "config", "core.sshCommand", "touch "+marker)
 	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
 	for _, tt := range []struct{ key, want string }{
 		{"http.sslVerify", "true"},
-		{"http.proxy", "http://proxy.example.test:3128"},
 		{"core.sshCommand", ""},
 		{harness.Key, harness.Value},
 	} {
@@ -1072,6 +1074,117 @@ func TestTheFolderGitConfigCannotLoosenThePush(t *testing.T) {
 			t.Errorf("the push reads %s = %q, want %q", tt.key, got, tt.want)
 		}
 	}
+}
+
+// TestTheFolderProxyNeverCarriesThePush pins that the push reaches GitHub through the proxy the
+// environment names, and never through one a resumed site folder's .git/config names, as
+// http.proxy or as remote.origin.proxy, which git reads over http.proxy. A folder proxy that
+// also carries a planted certificate authority could otherwise read the push's token header.
+func TestTheFolderProxyNeverCarriesThePush(t *testing.T) {
+	envProxy, folderProxy := newConnectRecorder(t), newConnectRecorder(t)
+	r := &run{
+		cfg:   Config{Env: map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir(), "HTTPS_PROXY": envProxy.url}},
+		hooks: t.TempDir(),
+	}
+	folder := siteFolder(t, r, "https://github.com/owner/site.git",
+		childenv.Pair{Key: "http.proxy", Value: folderProxy.url}, childenv.Pair{Key: "remote.origin.proxy", Value: folderProxy.url})
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	if _, err := runChild(context.Background(), folder, env, "git", "push", "--quiet", "--no-verify", "origin", "HEAD:refs/heads/main"); err == nil {
+		t.Fatal("the push succeeded through proxies that refuse every tunnel")
+	}
+	if got := folderProxy.seen(); len(got) != 0 {
+		t.Errorf("the folder's proxy saw %q, want no request", got)
+	}
+	if got := envProxy.seen(); !slices.Contains(got, "CONNECT github.com:443") {
+		t.Errorf("the environment's proxy saw %q, want the push's tunnel to github.com", got)
+	}
+}
+
+// TestAFolderCredentialHelperNeverRunsOnThePush pins that a push GitHub answers with a 401 runs
+// no credential helper and no askpass program a resumed site folder's .git/config names, plain or
+// scoped to the remote's URL, since either would run as the owner while the push is in flight.
+func TestAFolderCredentialHelperNeverRunsOnThePush(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the helper markers are shell scripts; the config order under test is git's own and is the same on every platform")
+	}
+	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("WWW-Authenticate", `Basic realm="GitHub"`)
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	t.Cleanup(remote.Close)
+	r := &run{cfg: Config{Env: map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir()}}, hooks: t.TempDir()}
+	marks := t.TempDir()
+	script := func(name string) string {
+		t.Helper()
+		path := filepath.Join(marks, name+".sh")
+		body := "#!/bin/sh\necho ran >> '" + filepath.Join(marks, name+".ran") + "'\n"
+		if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	folder := siteFolder(t, r, remote.URL+"/owner/site.git",
+		childenv.Pair{Key: "credential.helper", Value: script("helper")},
+		childenv.Pair{Key: "credential." + remote.URL + ".helper", Value: script("scoped-helper")},
+		childenv.Pair{Key: "core.askPass", Value: script("askpass")})
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	if _, err := runChild(context.Background(), folder, env, "git", "push", "--quiet", "--no-verify", "origin", "HEAD:refs/heads/main"); err == nil {
+		t.Fatal("the push succeeded against a remote that answers every request with a 401")
+	}
+	for _, name := range []string{"helper", "scoped-helper", "askpass"} {
+		if _, err := os.Stat(filepath.Join(marks, name+".ran")); err == nil {
+			t.Errorf("the folder's %s ran on the push", name)
+		}
+	}
+}
+
+// siteFolder makes a git repository with one commit and origin at remote, with config set in its
+// own .git/config, the way a resumed site folder could carry it.
+func siteFolder(t *testing.T, r *run, remote string, config ...childenv.Pair) string {
+	t.Helper()
+	folder := t.TempDir()
+	steps := [][]string{
+		{"init", "--quiet"},
+		{"-c", "user.name=Site Owner", "-c", "user.email=owner@example.test", "commit", "--quiet", "--allow-empty", "-m", "site"},
+		{"remote", "add", "origin", remote},
+	}
+	for _, p := range config {
+		steps = append(steps, []string{"config", "--add", p.Key, p.Value})
+	}
+	for _, args := range steps {
+		if _, err := runChild(context.Background(), folder, r.gitEnv(), "git", args...); err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+	}
+	return folder
+}
+
+// connectRecorder is a proxy that refuses every request and records each one's method and
+// target, so a test sees which proxy git reached and for what.
+type connectRecorder struct {
+	url  string
+	mu   sync.Mutex
+	reqs []string
+}
+
+func newConnectRecorder(t *testing.T) *connectRecorder {
+	t.Helper()
+	c := &connectRecorder{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		c.mu.Lock()
+		c.reqs = append(c.reqs, req.Method+" "+req.RequestURI)
+		c.mu.Unlock()
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	t.Cleanup(srv.Close)
+	c.url = srv.URL
+	return c
+}
+
+func (c *connectRecorder) seen() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.Clone(c.reqs)
 }
 
 // TestInheritedGitConfigPairsNeverReachGit pins that the config pairs a git child reads come from

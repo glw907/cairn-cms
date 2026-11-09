@@ -1339,6 +1339,189 @@ func TestAResumeReinstallsAnOverGrantedInstallation(t *testing.T) {
 	}
 }
 
+// newInstallID is the installation a resume's approval 4 makes after the sweep removed the
+// recorded one.
+const newInstallID = 5550004
+
+// installMessage is the message of the commit that writes a new installation into the site's
+// settings.
+const installMessage = "Update the GitHub App installation"
+
+// reinstallAfter runs w until step is done, widens the recorded installation to all
+// repositories, and sets w up to resume with approval 4 run again as newInstallID. It returns
+// the commit the record held at the stop. Each deploy run the fake is asked about is appended
+// to asked, and GitHub has no run for a commit the remote never received.
+func reinstallAfter(t *testing.T, w *world, step string, asked *[]string) string {
+	t.Helper()
+	w.gh.runFor = func(sha string) (providers.WorkflowRun, bool) {
+		*asked = append(*asked, sha)
+		if head, _ := w.gh.remoteHead("example-owner", "example-site", "main"); head != sha {
+			return providers.WorkflowRun{}, false
+		}
+		return providers.WorkflowRun{Status: "completed", Conclusion: "success"}, true
+	}
+	if _, err := w.run(killAfter(w, step)); err == nil {
+		t.Fatal("the first run was not stopped")
+	}
+	for i := range w.gh.installs {
+		if w.gh.installs[i].ID == repoInstallID {
+			w.gh.installs[i].Selection = "all"
+		}
+	}
+	w.resumeFrom()
+	w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+		w.gh.installs = append(w.gh.installs, install{ID: newInstallID, AppID: w.gh.app.ID, Selection: "selected", Repos: []int64{w.gh.repo.ID}})
+		return loopback.Callback{Code: w.code("approve"), InstallationID: strconv.Itoa(newInstallID), SetupAction: "install"}, nil
+	})
+	w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+	return w.cfg.Resume.Record.Setup.Commit
+}
+
+// configAt reads the site's settings file at rev in the git repository at dir.
+func configAt(t *testing.T, dir, rev string) string {
+	t.Helper()
+	return gitRun(t, dir, "show", rev+":"+siteConfig)
+}
+
+// namesInstall reports whether a settings file's App identity names installation id.
+func namesInstall(config string, id int64) bool {
+	return strings.Contains(config, "installationId: '"+strconv.FormatInt(id, 10)+"' })")
+}
+
+// assertSettingsFollowTheReinstall checks a run that ended live after a reinstall past the commit
+// step: one settings commit on the commit the record held at the stop, the remote at the
+// recorded commit with the new installation in its settings, and that commit's deploy run read.
+func assertSettingsFollowTheReinstall(t *testing.T, w *world, res Result, before string, asked []string) {
+	t.Helper()
+	rec := res.Record
+	if rec.Step != string(spine.StepLive) || rec.GitHub.InstallationID != newInstallID {
+		t.Fatalf("record at %q, installation %d; want live on %d", rec.Step, rec.GitHub.InstallationID, newInstallID)
+	}
+	remote := filepath.Join(w.gh.remotes, "example-owner", "example-site.git")
+	if got := remoteHead(t, w); got != rec.Setup.Commit {
+		t.Errorf("remote main = %s, want the recorded commit %s", got, rec.Setup.Commit)
+	}
+	if cfg := configAt(t, remote, "main"); !namesInstall(cfg, newInstallID) || namesInstall(cfg, repoInstallID) {
+		t.Errorf("the remote's settings = %q, want the new installation %d", cfg, newInstallID)
+	}
+	var n int
+	for line := range strings.SplitSeq(gitRun(t, remote, "log", "--format=%s", "main"), "\n") {
+		if line == installMessage {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Errorf("the remote holds %d settings commits, want one", n)
+	}
+	if got := gitRun(t, remote, "rev-parse", "main^"); got != before {
+		t.Errorf("the settings commit's parent = %s, want the commit recorded at the stop %s", got, before)
+	}
+	if got := gitRun(t, remote, "log", "-1", "--format=%s", "main"); got != installMessage {
+		t.Errorf("the remote's last commit is %q, want %q", got, installMessage)
+	}
+	if !slices.Contains(asked, rec.Setup.Commit) {
+		t.Errorf("setup never read the deploy run of the settings commit %s", rec.Setup.Commit)
+	}
+	if ours := w.gh.ours(); len(ours) != 1 || ours[0].ID != newInstallID {
+		t.Errorf("our installations = %+v, want only the new one", ours)
+	}
+}
+
+func TestAReinstallPastTheCommitWritesTheNewInstallation(t *testing.T) {
+	t.Run("before the push", func(t *testing.T) {
+		w := newWorld(t)
+		var asked []string
+		before := reinstallAfter(t, w, StepCommit, &asked)
+		var atPush string
+		w.cfg.Emit = func(e Event) {
+			w.events = append(w.events, e)
+			if e.Kind == StepStarted && e.Step == StepPush {
+				atPush = configAt(t, w.cfg.Resume.Record.Setup.Folder, "HEAD")
+			}
+		}
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		if !namesInstall(atPush, newInstallID) {
+			t.Errorf("the settings the push sent = %q, want the new installation %d", atPush, newInstallID)
+		}
+		assertSettingsFollowTheReinstall(t, w, res, before, asked)
+	})
+	for _, step := range []string{StepPush, StepFirstDeploy} {
+		t.Run("after "+step, func(t *testing.T) {
+			w := newWorld(t)
+			var asked []string
+			before := reinstallAfter(t, w, step, &asked)
+			res, err := w.run(context.Background())
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			assertSettingsFollowTheReinstall(t, w, res, before, asked)
+		})
+	}
+}
+
+func TestAReinstallCommitStoppedMidwayResumes(t *testing.T) {
+	cases := []struct {
+		name string
+		step string
+		// stop arms the stop on the resumed run's saves; before is the commit the record held.
+		stop func(w *world, before string, cancel context.CancelFunc)
+		want Reason
+	}{
+		{"between the commit and its record, before the push", StepCommit, killAtRecord, ReasonRecord},
+		{"between the commit and its record, after the push", StepPush, killAtRecord, ReasonRecord},
+		{"between the commit and its record, after the deploy", StepFirstDeploy, killAtRecord, ReasonRecord},
+		{"between the record and the push, after the deploy", StepFirstDeploy, func(w *world, before string, cancel context.CancelFunc) {
+			w.saver.onSave = func(r record.Record) error {
+				if r.Setup.Commit != before {
+					w.saver.onSave = nil
+					cancel()
+				}
+				return nil
+			}
+		}, ReasonStopped},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			var asked []string
+			before := reinstallAfter(t, w, tc.step, &asked)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			tc.stop(w, before, cancel)
+			_, err := w.run(ctx)
+			if f := failureOf(t, err); f.Reason != tc.want {
+				t.Fatalf("stopped resume reason = %s, want %s", f.Reason, tc.want)
+			}
+
+			w.saver.onSave = nil
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			assertSettingsFollowTheReinstall(t, w, res, before, asked)
+			if got := gitRun(t, res.Record.Setup.Folder, "rev-parse", "HEAD^"); got != before {
+				t.Errorf("the folder's settings commit sits on %s, want %s: one commit, not two", got, before)
+			}
+		})
+	}
+}
+
+// killAtRecord fails the first save of a commit other than before, and every save after it, the
+// way a kill lands after a commit and before the record holds it.
+func killAtRecord(w *world, before string, _ context.CancelFunc) {
+	killed := false
+	w.saver.onSave = func(r record.Record) error {
+		if killed || r.Setup.Commit != before {
+			killed = true
+			return errors.New("test: the run was killed")
+		}
+		return nil
+	}
+}
+
 // TestTheGrantStaysFreshThroughTheFirstDeploy starts the first deploy 44 minutes after the
 // grant, under the step-start refresh, and lets the deploy run 20 minutes, past the access
 // token's hour.

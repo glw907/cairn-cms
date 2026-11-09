@@ -1240,8 +1240,17 @@ func (w *world) writeSite(ctx context.Context, cfg scaffold.Config) (scaffold.Re
 	return scaffold.Result{Dir: cfg.Dir, CommitSHA: gitRun(w.t, cfg.Dir, "rev-parse", "HEAD"), EngineVersion: w.template.Version}, nil
 }
 
-// finalizeSite is the second pass in miniature: the database id written and committed on the
-// first commit.
+// siteConfig is the site file that carries the GitHub App identity.
+const siteConfig = "src/theme/cairn.config.ts"
+
+// appLiteral is the createGithubApp call the scaffold's second pass writes for s.
+func appLiteral(s scaffold.Site) string {
+	return "createGithubApp({ owner: '" + s.Owner + "', repo: '" + s.Repo + "', branch: '" + s.DefaultBranch +
+		"', appId: '" + s.AppID + "', installationId: '" + s.InstallationID + "' })"
+}
+
+// finalizeSite is the second pass in miniature: the database id and the App identity written
+// and committed on the first commit.
 func (w *world) finalizeSite(ctx context.Context, cfg scaffold.FinalizeConfig) (string, error) {
 	w.log = append(w.log, "scaffold:finalize")
 	if err := ctx.Err(); err != nil {
@@ -1254,6 +1263,14 @@ func (w *world) finalizeSite(ctx context.Context, cfg scaffold.FinalizeConfig) (
 		return "", errors.New("test: no database id")
 	}
 	if err := os.WriteFile(filepath.Join(cfg.Dir, "wrangler.jsonc"), []byte(cfg.Site.DatabaseID+"\n"), 0o644); err != nil {
+		return "", err
+	}
+	config := filepath.Join(cfg.Dir, filepath.FromSlash(siteConfig))
+	if err := os.MkdirAll(filepath.Dir(config), 0o755); err != nil {
+		return "", err
+	}
+	src := "export const github = " + appLiteral(cfg.Site) + ";\n"
+	if err := os.WriteFile(config, []byte(src), 0o644); err != nil {
 		return "", err
 	}
 	gitRun(w.t, cfg.Dir, "add", "--all")

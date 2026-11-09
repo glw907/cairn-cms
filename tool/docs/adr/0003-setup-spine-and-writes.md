@@ -78,7 +78,8 @@ binary has the file store.
 ### The end-to-end harness
 
 The harness runs on the Linux CI leg only, and its cases run serially because the
-sign-in callback listens on port 49152.
+loopback server, which serves the approval pages and every callback, holds port 49152
+for the whole run.
 
 - `HTTPS_PROXY` points at a test proxy. The proxy terminates TLS for the pinned
   hosts and the test address with a test CA the tool reads through `SSL_CERT_FILE`.
@@ -87,7 +88,8 @@ sign-in callback listens on port 49152.
   (the `crypto/x509` documentation). The proxy refuses CONNECT to any host it does
   not fake.
 - `BROWSER` names a helper that walks the redirect chain instead of opening a
-  window.
+  window. The helper keeps the session cookie and sends the Fetch Metadata headers
+  a browser sends, since the callbacks and `/next` refuse a request without them.
 - `GIT_CONFIG_COUNT` carries a `url.<local bare repo>.insteadOf https://github.com/`
   pair, so a push to GitHub lands in a local bare repository. The git-config(1)
   manual says: "If GIT_CONFIG_COUNT is set to a positive number, all environment
@@ -116,6 +118,29 @@ its `otherDirectRequires` gains the entry in the task that adds the require.
   that step, so the bound is the implementer's.
 - The watch stores the deploy key before it pushes: a workflow job gets the
   repository's secrets when it starts, so the push must find the key already stored.
+- Step 8 finishes on a session, not on the token row. Before it issues the sign-in
+  link, setup reads the newest `created_at` in D1's `session` table for the owner,
+  and the link counts as used once a session newer than that appears. The engine
+  deletes a token row both when the link is used and when the owner asks the sign-in
+  page for a new one, so a gone row proves nothing alone. A row gone with no new
+  session on two reads in a row was swept, not used; the second read covers the
+  moment between the engine's consume and its session write.
+- The loopback server's boundary is the owner's browser. The session cookie, traded
+  once for the one-time key, gates every callback, `/cloudflare/go`, and `/next`, and
+  the last two also require the browser's Fetch Metadata headers. A cookie is not
+  scoped to a port, so a process on the same machine that can observe the browser's
+  localhost traffic, or collect the cookie on another port and forge a browser's
+  headers, is out of scope. A tool that replays the cookie without Fetch Metadata is
+  refused.
+- Setup runs `npm install --ignore-scripts`, and every git call it makes points
+  `core.hooksPath` at an empty folder and pushes with `--no-verify`. Those run while
+  the keyring holds the Cloudflare grant and the GitHub App key, and a dependency's
+  install script or a planted hook would run with the owner's account. The install
+  scripts the showcase's lockfile marks (esbuild, workerd, and `@parcel/watcher`, with
+  `fsevents` on macOS) check or build a platform binary that npm already installs
+  through optional dependencies. A later dependency that needs its script gets it
+  from the owner's `npm rebuild`, since a second `npm install` skips packages
+  already installed.
 
 ## Consequences
 

@@ -48,7 +48,7 @@ var waitSentences = map[WaitState]string{
 	WaitCreateApp:           "Select Create to add a GitHub App for <name>. The admin saves changes to your site through the App.",
 	WaitInstallAll:          "Select Install & Authorize to let setup create the <repo> repository. This access covers all your repositories. Setup removes it within seconds.",
 	WaitInstallRepo:         "Select Approve to give the App access to <repo> only. Setup uses this access to push your site and store the deploy key.",
-	WaitCloudflareReconsent: "On the Cloudflare page, select API Tokens: Write, and then select Allow. Select Allow to approve setup on Cloudflare again. The earlier approval no longer works.",
+	WaitCloudflareReconsent: "On the Cloudflare page, select API Tokens: Write, and then select Allow. The earlier approval no longer works, so setup asks again.",
 }
 
 // WaitSentence returns the sentence a view shows while setup waits in state s.

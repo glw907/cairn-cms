@@ -11,7 +11,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"html"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -80,32 +79,6 @@ func NewManifest(base string, port int) Manifest {
 		},
 		DefaultEvents: []string{},
 	}
-}
-
-// ManifestTarget is the URL the manifest form posts to; state is the run's nonce, which GitHub
-// echoes back on the redirect.
-func ManifestTarget(state string) string {
-	return githubWebBase + "/settings/apps/new?state=" + url.QueryEscape(state)
-}
-
-// ManifestFormHTML renders the page that auto-submits m to target, with a visible button as the
-// fallback for a browser that blocks the script.
-func ManifestFormHTML(m Manifest, target string) (string, error) {
-	encoded, err := json.Marshal(m)
-	if err != nil {
-		return "", fmt.Errorf("providers: encode manifest: %w", err)
-	}
-	return "<!doctype html>\n" +
-		"<html>\n" +
-		"<head><meta charset=\"utf-8\"><title>Creating your GitHub App</title></head>\n" +
-		"<body>\n" +
-		"<form id=\"manifest-form\" action=\"" + html.EscapeString(target) + "\" method=\"post\">\n" +
-		"<input type=\"hidden\" name=\"manifest\" value=\"" + html.EscapeString(string(encoded)) + "\">\n" +
-		"<button type=\"submit\">Create the GitHub App</button>\n" +
-		"</form>\n" +
-		"<script>document.getElementById('manifest-form').submit();</script>\n" +
-		"</body>\n" +
-		"</html>\n", nil
 }
 
 // InstallURL is the page where the admin installs the App, built from the slug the conversion

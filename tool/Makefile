@@ -32,8 +32,10 @@ build:
 test:
 	go test -count=1 ./...
 
+# The second vet covers the cairne2e build's file store, which the default build never compiles.
 vet:
 	go vet ./...
+	go vet -tags cairne2e ./internal/secrets/
 
 # man writes every man page to man/, fresh from a build it runs itself: cmd/mangen harvests the
 # tree from the real binary's --help text rather than importing cmd/cairn (a package main,

@@ -4,10 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 )
 
 // OpenTimeout is how long Open waits for a launcher to exit before it counts the launch as made.
@@ -66,7 +69,13 @@ func Launcher(goos string, env map[string]string, url string) []string {
 
 // Open runs argv, a command line from Launcher, with its standard streams on the null device. A
 // text-mode browser then can neither read nor draw on the owner's terminal. The launcher runs in a
-// process group of its own, so Ctrl+C in setup's terminal never reaches a browser it started.
+// process group of its own, so Ctrl+C in setup's terminal never reaches a browser it started. Its
+// environment is setup's without any variable whose name ends in _TOKEN, _SECRET, or _PASSWORD,
+// so a browser it starts inherits no credential the owner's shell holds.
+//
+// The URL, and the one-time key it carries, is an argument to the launcher, so another process
+// of the owner's can read it in the process list while the launcher runs. That exposure is
+// residual: the key opens the session once, and the owner's browser spends it first.
 //
 // An empty argv, a missing launcher, or one that exits non-zero returns an error that names the
 // launcher by its base name and quotes nothing else from argv, so never the URL; the view shows it
@@ -78,6 +87,7 @@ func Open(argv []string, timeout time.Duration) error {
 	}
 	name := filepath.Base(argv[0])
 	cmd := exec.Command(argv[0], argv[1:]...)
+	cmd.Env = childenv.ScrubSecrets(childenv.Map(os.Environ()))
 	detach(cmd)
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start browser launcher %s: %w", name, startCause(err))

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
 )
 
@@ -69,6 +70,7 @@ func TestHarnessScaffold(t *testing.T) {
 	_, err = scaffold.Scaffold(t.Context(), scaffold.Config{
 		Template: tpl,
 		Dir:      out,
+		Env:      childenv.Map(os.Environ()),
 		Commit:   scaffold.Commit{AuthorName: "Cairn Setup", AuthorEmail: "setup@cairn.invalid", Message: "Create the site"},
 		Site: scaffold.Site{
 			Name: os.Getenv("CAIRN_SCAFFOLD_NAME"), Repository: n.Repository, Worker: n.Worker,

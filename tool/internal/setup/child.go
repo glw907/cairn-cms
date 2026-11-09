@@ -4,33 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
-	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 )
-
-// scrubbedEnv returns env as a child's environment, without any variable that holds a
-// credential: CLOUDFLARE_API_TOKEN, GH_TOKEN, GITHUB_TOKEN, and every CAIRN_*_TOKEN. It is
-// sorted, so a child's environment does not depend on map order.
-func scrubbedEnv(env map[string]string) []string {
-	out := make([]string, 0, len(env))
-	for name, value := range env {
-		upper := strings.ToUpper(name)
-		switch {
-		case upper == "CLOUDFLARE_API_TOKEN", upper == "GH_TOKEN", upper == "GITHUB_TOKEN":
-			continue
-		case strings.HasPrefix(upper, "CAIRN_") && strings.HasSuffix(upper, "_TOKEN"):
-			continue
-		}
-		out = append(out, name+"="+value)
-	}
-	slices.Sort(out)
-	return out
-}
 
 // runChild runs name in dir with env and returns what it wrote. Both streams are captured, so
 // nothing a child prints reaches the terminal; a failure carries the end of its stderr.
@@ -56,30 +35,17 @@ func tail(s string) string {
 	return s
 }
 
-// gitEnv is the child environment for git: the scrubbed parent environment, with the owner's
-// user and system git config and every prompt kept out. GIT_CONFIG_COUNT and its pairs pass
-// through, so a test harness can point github.com at a local repository.
-func gitEnv(env map[string]string) []string {
-	return append(scrubbedEnv(env), "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0")
+// gitEnv is the child environment for git: the scrubbed parent environment with the owner's git
+// config and prompts kept out and the run's empty hooks folder as core.hooksPath, so no hook in
+// the site folder runs while the keyring holds the run's credentials.
+func (r *run) gitEnv() []string {
+	return childenv.Git(r.cfg.Env, r.hooks)
 }
 
-// pushEnv adds the installation token to a git environment as an http.extraheader for
-// github.com, through git-config(1)'s GIT_CONFIG_COUNT pairs, so it never reaches argv or
-// .git/config. The pair goes after any inherited pairs, which keeps those pairs working. The
-// caller registers header and its base64 credential, encoded, with the output scrub before git
-// runs.
-func pushEnv(env map[string]string, token providers.Credential) (out []string, header, encoded string) {
-	n, err := strconv.Atoi(env["GIT_CONFIG_COUNT"])
-	if err != nil || n < 0 {
-		n = 0
-	}
+// pushEnv is gitEnv with the installation token as an http.extraheader for github.com, so it
+// never reaches argv or .git/config. The caller registers header and its base64 credential,
+// encoded, with the output scrub before git runs.
+func (r *run) pushEnv(token providers.Credential) (env []string, header, encoded string) {
 	header, encoded = gitAuthHeader(token)
-	out = slices.DeleteFunc(gitEnv(env), func(kv string) bool { return strings.HasPrefix(kv, "GIT_CONFIG_COUNT=") })
-	key := strconv.Itoa(n)
-	out = append(out,
-		"GIT_CONFIG_COUNT="+strconv.Itoa(n+1),
-		"GIT_CONFIG_KEY_"+key+"=http.https://github.com/.extraheader",
-		"GIT_CONFIG_VALUE_"+key+"="+header,
-	)
-	return out, header, encoded
+	return childenv.Git(r.cfg.Env, r.hooks, "http.https://github.com/.extraheader", header), header, encoded
 }

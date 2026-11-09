@@ -148,6 +148,12 @@ func (h *harness) send(client *http.Client, method, target string, edit func(*ht
 	return resp, string(body)
 }
 
+// poll sends the request done.html's poll makes: a same-origin fetch that carries the cookie.
+func (h *harness) poll() (*http.Response, string) {
+	h.t.Helper()
+	return h.do(http.MethodGet, "/next", browserHeaders("same-origin", "cors"))
+}
+
 func (h *harness) get(target string) (*http.Response, string) {
 	h.t.Helper()
 	return h.do(http.MethodGet, target, nil)
@@ -316,6 +322,7 @@ func TestEveryResponseCarriesTheNoStoreHeaders(t *testing.T) {
 
 func TestCloudflareCallback(t *testing.T) {
 	h := newHarness(t)
+	h.open()
 	stale := h.arm(CloudflareCallback)
 	nonce := h.arm(CloudflareCallback)
 	if nonce == stale {
@@ -379,6 +386,7 @@ func TestCloudflareCallback(t *testing.T) {
 
 func TestCloudflareDenialReachesTheRunner(t *testing.T) {
 	h := newHarness(t)
+	h.open()
 	nonce := h.arm(CloudflareCallback)
 	resp, _ := h.get("/cloudflare/callback?error=access_denied&state=" + nonce)
 	if resp.StatusCode != http.StatusSeeOther {
@@ -395,6 +403,7 @@ func TestCloudflareDenialReachesTheRunner(t *testing.T) {
 
 func TestGitHubManifestCallback(t *testing.T) {
 	h := newHarness(t)
+	h.open()
 	nonce := h.arm(GitHubManifest)
 	for _, query := range []string{
 		"code=abc",
@@ -428,6 +437,7 @@ func TestGitHubManifestCallback(t *testing.T) {
 
 func TestGitHubInstallCallback(t *testing.T) {
 	h := newHarness(t)
+	h.open()
 	h.arm(GitHubCallback)
 	for _, query := range []string{
 		"code=abc&installation_id=12a&setup_action=install",
@@ -484,12 +494,68 @@ func TestWaitOnARouteNeverArmed(t *testing.T) {
 
 func TestCallbackBeforeWaitIsKept(t *testing.T) {
 	h := newHarness(t)
+	h.open()
 	nonce := h.arm(CloudflareCallback)
 	if resp, _ := h.get("/cloudflare/callback?code=abc&state=" + nonce); resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("status %d, want 303", resp.StatusCode)
 	}
 	if cb, ok := h.delivered(CloudflareCallback); !ok || cb.Code != "abc" {
 		t.Fatalf("a callback that landed before Wait was lost: %+v %v", cb, ok)
+	}
+}
+
+// TestCallbacksNeedTheSession pins that a callback answers only the browser holding the session
+// cookie: a request without it, whether another process or another site's top-level navigation,
+// is refused, leaves the route armed, and delivers nothing, and a replay after the real callback
+// finds the route closed.
+func TestCallbacksNeedTheSession(t *testing.T) {
+	routes := []struct {
+		route Route
+		query func(nonce string) string
+	}{
+		{CloudflareCallback, func(n string) string { return "code=ory_ac_abc.def&state=" + n }},
+		{GitHubManifest, func(n string) string { return "code=a1b2c3&state=" + n }},
+		{GitHubCallback, func(string) string { return "code=c0de&installation_id=179774962&setup_action=install" }},
+	}
+	for _, rt := range routes {
+		t.Run(string(rt.route), func(t *testing.T) {
+			h := newHarness(t)
+			h.open()
+			nonce := h.arm(rt.route)
+			target := string(rt.route) + "?" + rt.query(nonce)
+
+			for _, c := range []struct {
+				name string
+				edit func(*http.Request)
+			}{
+				{"no Sec-Fetch headers", nil},
+				{"a cross-site navigation", browserHeaders("cross-site", "navigate")},
+			} {
+				resp, _ := h.bare(http.MethodGet, target, c.edit)
+				if resp.StatusCode != http.StatusForbidden {
+					t.Errorf("without the cookie from %s: status %d, want 403", c.name, resp.StatusCode)
+				}
+				if cb, ok := h.delivered(rt.route); ok {
+					t.Fatalf("a callback without the cookie reached the runner: %+v", cb)
+				}
+			}
+
+			// The refusal left the route armed: the owner's redirect still lands.
+			resp, _ := h.do(http.MethodGet, target, browserHeaders("cross-site", "navigate"))
+			if resp.StatusCode != http.StatusSeeOther {
+				t.Fatalf("with the cookie: status %d, want 303", resp.StatusCode)
+			}
+			if _, ok := h.delivered(rt.route); !ok {
+				t.Fatal("the callback with the cookie did not reach the runner")
+			}
+			for name, send := range map[string]func(string, string, func(*http.Request)) (*http.Response, string){
+				"with the cookie": h.do, "without it": h.bare,
+			} {
+				if resp, _ := send(http.MethodGet, target, nil); resp.StatusCode != http.StatusNotFound {
+					t.Errorf("replay %s: status %d, want 404", name, resp.StatusCode)
+				}
+			}
+		})
 	}
 }
 
@@ -613,7 +679,7 @@ func TestConsentPage(t *testing.T) {
 		edit func(*http.Request)
 	}{
 		{"from the button", browserHeaders("same-origin", "navigate")},
-		{"with no Sec-Fetch headers", nil},
+		{"typed or opened directly", browserHeaders("none", "navigate")},
 	} {
 		resp, body := h.do(http.MethodGet, "/cloudflare/go", c.edit)
 		if resp.StatusCode != http.StatusFound || resp.Header.Get("Location") != consentAuthorize {
@@ -674,7 +740,10 @@ func TestTheGoRouteAnswersOnlyTheOwnerWhileArmed(t *testing.T) {
 		{"without the cookie", shown, true, nil, http.StatusNotFound},
 		{"from a cross-site link", shown, false, browserHeaders("cross-site", "navigate"), http.StatusNotFound},
 		{"from a same-site page", shown, false, browserHeaders("same-site", "navigate"), http.StatusNotFound},
-		{"typed or opened directly", shown, false, browserHeaders("none", "navigate"), http.StatusNotFound},
+		// A tool replaying the cookie sends no Fetch Metadata, so the headers must be present.
+		{"with no Sec-Fetch headers", shown, false, nil, http.StatusNotFound},
+		{"with no Sec-Fetch-Mode", shown, false, func(r *http.Request) { r.Header.Set("Sec-Fetch-Site", "same-origin") }, http.StatusNotFound},
+		{"with no Sec-Fetch-Site", shown, false, func(r *http.Request) { r.Header.Set("Sec-Fetch-Mode", "navigate") }, http.StatusNotFound},
 		{"fetched by a same-origin script", shown, false, browserHeaders("same-origin", "cors"), http.StatusNotFound},
 		{"as a cross-site image", shown, false, browserHeaders("cross-site", "no-cors"), http.StatusNotFound},
 		{"under a rebound Host", shown, false, func(r *http.Request) { r.Host = "evil.example:" + r.URL.Port() }, http.StatusForbidden},
@@ -887,7 +956,7 @@ func TestOnlyTheKeyOpensTheSession(t *testing.T) {
 
 			// The key is still the owner's to use.
 			h.open()
-			if resp, _ := h.get("/next"); resp.StatusCode != http.StatusOK {
+			if resp, _ := h.poll(); resp.StatusCode != http.StatusOK {
 				t.Errorf("next for the owner: status %d, want 200", resp.StatusCode)
 			}
 		})
@@ -924,7 +993,7 @@ func TestTheKeyOpensTheSessionOnce(t *testing.T) {
 	if resp, _ := h.get("/"); resp.StatusCode != http.StatusOK {
 		t.Errorf("root for the owner: status %d, want 200", resp.StatusCode)
 	}
-	if resp, _ := h.get("/next"); resp.StatusCode != http.StatusOK {
+	if resp, _ := h.poll(); resp.StatusCode != http.StatusOK {
 		t.Errorf("next for the owner: status %d, want 200", resp.StatusCode)
 	}
 }
@@ -945,6 +1014,9 @@ func TestNext(t *testing.T) {
 	}
 	if len(cookie.Value) < 32 {
 		t.Errorf("cookie value %q is too short to be random", cookie.Value)
+	}
+	if cookie.MaxAge != 7200 {
+		t.Errorf("cookie Max-Age %d, want two hours", cookie.MaxAge)
 	}
 
 	withCookie := func(value string) func(*http.Request) {
@@ -976,9 +1048,34 @@ func TestNext(t *testing.T) {
 			t.Errorf("next with the cookie from Sec-Fetch-Site %s: status %d, want 404", site, resp.StatusCode)
 		}
 	}
+	// Another process that read the cookie and replays it sends no Fetch Metadata, and a
+	// navigation to /next is not the poll, so each is refused.
+	for _, c := range []struct {
+		name string
+		edit func(*http.Request)
+	}{
+		{"no Sec-Fetch headers", withCookie(cookie.Value)},
+		{"no Sec-Fetch-Mode", func(r *http.Request) {
+			withCookie(cookie.Value)(r)
+			r.Header.Set("Sec-Fetch-Site", "same-origin")
+		}},
+		{"no Sec-Fetch-Site", func(r *http.Request) {
+			withCookie(cookie.Value)(r)
+			r.Header.Set("Sec-Fetch-Mode", "cors")
+		}},
+		{"a same-origin navigation", browserHeaders("same-origin", "navigate", withCookie(cookie.Value))},
+	} {
+		if resp, _ := h.bare(http.MethodGet, "/next", c.edit); resp.StatusCode != http.StatusNotFound {
+			t.Errorf("next with the cookie and %s: status %d, want 404", c.name, resp.StatusCode)
+		}
+	}
 	resp, body := h.bare(http.MethodGet, "/next", poll)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("next once ready: status %d, want 200", resp.StatusCode)
+	}
+	// The answer is the session's last use, so it clears the cookie.
+	if c := resp.Cookies(); len(c) != 1 || c[0].Name != cookie.Name || c[0].MaxAge >= 0 || c[0].Value != "" {
+		t.Errorf("the answer set cookies %v, want the session cookie cleared", c)
 	}
 	var got struct {
 		URL string `json:"url"`
@@ -1119,5 +1216,13 @@ func TestDoneStopsTheClock(t *testing.T) {
 	}
 	if resp, _ := h.get("/done.html"); resp.StatusCode != http.StatusOK {
 		t.Errorf("done.html after the limit: status %d, want 200", resp.StatusCode)
+	}
+	// A watch that runs 40 minutes past the tab's opening still hands done.html its link.
+	h.clock.advance(9 * time.Minute)
+	if err := h.s.SetNext(signIn); err != nil {
+		t.Fatalf("SetNext: %v", err)
+	}
+	if resp, _ := h.poll(); resp.StatusCode != http.StatusOK {
+		t.Errorf("next 40 minutes in: status %d, want 200", resp.StatusCode)
 	}
 }

@@ -2,9 +2,11 @@ package providers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -51,13 +53,18 @@ func newClient(host string, cred Credential, rt http.RoundTripper) *client {
 
 // Do refuses req before dialing when its URL host does not match the client's pinned host,
 // applies the client's credential, and sends it through doWithRetry. A redirect response is
-// returned unfollowed, per the CheckRedirect set in newClient.
+// returned unfollowed, per the CheckRedirect set in newClient. A failed request's error keeps
+// the method and the cause and drops the URL, whose path or query can carry a one-time code.
 func (c *client) Do(req *http.Request) (*http.Response, error) {
 	if req.URL.Host != c.host {
 		return nil, fmt.Errorf("providers: refusing request to host %q, client is pinned to %q", req.URL.Host, c.host)
 	}
 	c.cred.apply(req)
-	return doWithRetry(c.httpClient, req)
+	resp, err := doWithRetry(c.httpClient, req)
+	if ue, ok := errors.AsType[*url.Error](err); ok {
+		return nil, fmt.Errorf("%s request to %s: %w", ue.Op, c.host, ue.Err)
+	}
+	return resp, err
 }
 
 // getWith performs a GET against base+path through c, sending accept as the request's Accept

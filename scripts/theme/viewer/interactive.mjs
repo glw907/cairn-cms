@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, rmSync, watch } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import { checkTheme } from '../check.mjs';
 import { layIn } from '../lay-in.mjs';
 import { renderControl } from './control.mjs';
 import { answers, catalogThemes, chooseOptions, composeSite, freePort, listRoutes, readManifest, resolveTheme, startSite, writeOptions } from './site.mjs';
@@ -115,7 +116,13 @@ export async function startInteractive({ root, theme, endpoints = {} }) {
   };
 
   /** @type {EndpointRegistry} */
-  const registry = { 'GET /api/state': () => state(), ...endpoints };
+  const registry = {
+    'GET /api/state': () => state(),
+    // The theme check on the loaded theme. A `rules` field limits the run; the answer is the check's
+    // `--json` document.
+    'POST /api/check': (ctx, body) => checkTheme(ctx.theme.dir, { rules: body.rules ? body.rules.split(',') : undefined }),
+    ...endpoints,
+  };
 
   /** The form actions: each changes the loaded theme's choices, then the page reloads. */
   const actions = {

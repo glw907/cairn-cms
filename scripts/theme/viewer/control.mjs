@@ -75,6 +75,7 @@ export function renderControl(state, view) {
   <div id="options">${options}</div>
   <fieldset id="modes"><legend>Color mode</legend>${modes}</fieldset>
   <fieldset id="widths"><legend>Width</legend><nav>${widths}</nav></fieldset>
+  <form id="check" method="post" action="/api/check" target="_blank"><button>Run the check</button></form>
   <h2>Pages</h2>
   <ul id="pages">${pages}</ul>
 </aside>

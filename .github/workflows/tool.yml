@@ -442,8 +442,10 @@ jobs:
         with:
           node-version: 24
       - name: Dry-run publish each tarball
+        # The ./ is load-bearing: npm reads a bare `npm-tarballs/<name>.tgz` as a GitHub
+        # `owner/repo` shorthand and tries an ssh clone (dispatch run 42704754075).
         run: |
           set -euo pipefail
-          for tgz in npm-tarballs/*.tgz; do
+          for tgz in ./npm-tarballs/*.tgz; do
             npm publish "$tgz" --dry-run --ignore-scripts --access public --tag gate
           done

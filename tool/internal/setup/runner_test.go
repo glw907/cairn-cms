@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
@@ -11,8 +12,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
@@ -64,9 +67,14 @@ func TestAFullRunReachesDone(t *testing.T) {
 		}
 	}
 	wantDone := []string{StepOpeningChecks, StepApproveCloudflare, StepCloudflareChecks, StepApproveCreateApp, StepApproveInstall, StepApproveRepo,
-		StepScaffold, StepProvision, StepCommit, StepPush, StepDeployKey, StepFirstDeploy, StepDomains, StepSignIn}
+		StepScaffold, StepProvision, StepCommit, StepDeployKey, StepPush, StepFirstDeploy, StepDomains, StepSignIn}
 	if !slices.Equal(done, wantDone) {
 		t.Errorf("steps done = %v, want %v", done, wantDone)
+	}
+	// GitHub hands a job its secrets when the job starts, so the push that starts the first
+	// deploy must find the deploy key already stored.
+	if !slices.Equal(w.gh.secretOnEmpty, []bool{true}) {
+		t.Errorf("secret stored on an empty repository: %v, want once, before the push", w.gh.secretOnEmpty)
 	}
 	if !slices.ContainsFunc(w.events, func(e Event) bool { return e.Kind == SummaryKind && e.Summary != nil }) {
 		t.Error("no summary event")
@@ -160,6 +168,17 @@ func assertCreatedOnce(t *testing.T, w *world) {
 	}
 }
 
+// pushAuth is the base64 credential a push's basic auth header carries for an installation token.
+func pushAuth(c providers.Credential) string {
+	return base64.StdEncoding.EncodeToString([]byte("x-access-token:" + c.Reveal()))
+}
+
+// pushed reports whether the site's remote holds a branch.
+func (w *world) pushed() bool {
+	_, ok := w.gh.remoteHead("example-owner", "example-site", "main")
+	return ok
+}
+
 func remoteHead(t *testing.T, w *world) string {
 	t.Helper()
 	return gitRun(t, filepath.Join(w.gh.remotes, "example-owner", "example-site.git"), "rev-parse", "refs/heads/main")
@@ -193,6 +212,9 @@ func assertRegisteredAndUnseen(t *testing.T, w *world) {
 	if !slices.ContainsFunc(w.registered, isJWT) {
 		t.Error("no App JWT reached the scrub")
 	}
+	if w.pushed() && !slices.ContainsFunc(w.gh.instTokens, func(c providers.Credential) bool { return slices.Contains(registered, pushAuth(c)) }) {
+		t.Error("the push's base64 credential never reached the scrub on its own")
+	}
 
 	var needles []string
 	for _, v := range append(issued, registered...) {
@@ -201,6 +223,9 @@ func assertRegisteredAndUnseen(t *testing.T, w *world) {
 				needles = append(needles, line)
 			}
 		}
+	}
+	for _, c := range w.gh.instTokens {
+		needles = append(needles, pushAuth(c))
 	}
 	needles = append(needles, w.codes...)
 	needles = append(needles, w.cfAuth.verifiers...)
@@ -556,6 +581,8 @@ func TestAResumeSweepsAnOverGrantFirst(t *testing.T) {
 			[]install{{ID: repoInstallID, Selection: "selected", Repos: []int64{998877}}}, []int64{repoInstallID}, nil},
 		{"a confirmed install that reaches more is deleted", spine.StepPushed,
 			[]install{{ID: repoInstallID, Selection: "selected", Repos: []int64{998877, 4}}}, nil, errOverGrant},
+		{"a confirmed install changed to all repositories is deleted", spine.StepPushed,
+			[]install{{ID: repoInstallID, Selection: "all", Repos: []int64{998877}}}, nil, errOverGrant},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -756,7 +783,7 @@ func (w *world) resume() (Result, error) {
 
 func TestAKillAfterEachStepResumesWithoutRepeating(t *testing.T) {
 	steps := []string{StepApproveCloudflare, StepCloudflareChecks, StepApproveCreateApp, StepApproveInstall, StepApproveRepo,
-		StepScaffold, StepProvision, StepCommit, StepPush, StepDeployKey, StepFirstDeploy, StepDomains}
+		StepScaffold, StepProvision, StepCommit, StepDeployKey, StepPush, StepFirstDeploy, StepDomains}
 	for _, step := range steps {
 		t.Run(step, func(t *testing.T) {
 			w := newWorld(t)
@@ -880,8 +907,8 @@ func TestAResumeAtTheDeployKeyReplacesTheKey(t *testing.T) {
 		t.Fatalf("failure = %+v, want the four-part GitHub failure", f)
 	}
 	last, _ := w.saver.last()
-	if last.Setup.IDs.DeployKeyID != "tok1" || last.Step != string(spine.StepPushed) {
-		t.Fatalf("record key %q at %q", last.Setup.IDs.DeployKeyID, last.Step)
+	if last.Setup.IDs.DeployKeyID != "tok1" || last.Step != string(spine.StepCommitted) || w.pushed() {
+		t.Fatalf("record key %q at %q, pushed %v; want the stop before the push", last.Setup.IDs.DeployKeyID, last.Step, w.pushed())
 	}
 
 	res, err := w.resume()
@@ -1108,6 +1135,17 @@ func TestTheSignInLink(t *testing.T) {
 			t.Error("the run sent the email before the tab's link expired")
 		}
 	})
+	t.Run("a link a new request swept is not a sign-in", func(t *testing.T) {
+		w := newWorld(t)
+		w.tab.onNext = w.ownerRequestsALink
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if res.Done.SignedIn || !res.Done.Emailed || len(w.cf.sent) != 1 {
+			t.Errorf("done %+v, emails %d; want no sign-in claimed and one email", res.Done, len(w.cf.sent))
+		}
+	})
 	t.Run("apply sends one email at once", func(t *testing.T) {
 		w := newWorld(t)
 		w.cfg.Apply = true
@@ -1169,6 +1207,259 @@ func TestAFailedFirstDeployIsPushedAgainOnResume(t *testing.T) {
 	}
 	if res.Record.Setup.Commit == failed || remoteHead(t, w) != res.Record.Setup.Commit {
 		t.Errorf("record commit %s, remote %s; want a new commit pushed", res.Record.Setup.Commit, remoteHead(t, w))
+	}
+}
+
+// failFirstDeploy makes the deploy of the first commit it is asked about fail and a later
+// commit's succeed. GitHub has no run for a commit the remote never received, so neither has
+// the fake. It returns the failed commit.
+func failFirstDeploy(w *world) *string {
+	failed := new(string)
+	w.gh.runFor = func(sha string) (providers.WorkflowRun, bool) {
+		if *failed == "" || sha == *failed {
+			*failed = sha
+			return providers.WorkflowRun{Status: "completed", Conclusion: "failure", URL: "https://example.test/actions/runs/1"}, true
+		}
+		if head, _ := w.gh.remoteHead("example-owner", "example-site", "main"); head != sha {
+			return providers.WorkflowRun{}, false
+		}
+		return providers.WorkflowRun{Status: "completed", Conclusion: "success"}, true
+	}
+	return failed
+}
+
+func TestARedeployStoppedMidwayResumes(t *testing.T) {
+	cases := []struct {
+		name string
+		stop func(w *world, failed string, cancel context.CancelFunc)
+		want Reason
+	}{
+		{"between the empty commit and its record", func(w *world, failed string, _ context.CancelFunc) {
+			killed := false
+			w.saver.onSave = func(r record.Record) error {
+				if killed || r.Setup.Commit != failed {
+					killed = true
+					return errors.New("test: the run was killed")
+				}
+				return nil
+			}
+		}, ReasonRecord},
+		{"between the record and the push", func(w *world, failed string, cancel context.CancelFunc) {
+			w.saver.onSave = func(r record.Record) error {
+				if r.Setup.Commit != failed {
+					w.saver.onSave = nil
+					cancel()
+				}
+				return nil
+			}
+		}, ReasonStopped},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			failed := failFirstDeploy(w)
+			_, err := w.run(context.Background())
+			if f := failureOf(t, err); f.Reason != ReasonDeployFailed {
+				t.Fatalf("first run reason = %s, want %s", f.Reason, ReasonDeployFailed)
+			}
+
+			w.resumeFrom()
+			w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			tc.stop(w, *failed, cancel)
+			_, err = w.run(ctx)
+			if f := failureOf(t, err); f.Reason != tc.want {
+				t.Fatalf("stopped resume reason = %s, want %s", f.Reason, tc.want)
+			}
+
+			w.saver.onSave = nil
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			if res.Record.Step != string(spine.StepLive) || remoteHead(t, w) != res.Record.Setup.Commit {
+				t.Errorf("record at %q, commit %s, remote %s; want the redeploy pushed and live", res.Record.Step, res.Record.Setup.Commit, remoteHead(t, w))
+			}
+			if parent := gitRun(t, res.Record.Setup.Folder, "rev-parse", "HEAD^"); parent != *failed {
+				t.Errorf("the redeploy's parent is %s, want the failed commit %s: one empty commit, not two", parent, *failed)
+			}
+		})
+	}
+}
+
+func TestAResumeReinstallsAnOverGrantedInstallation(t *testing.T) {
+	const reinstallID = 5550003
+	cases := []struct {
+		name   string
+		change func(in *install)
+	}{
+		{"the selection changed to all repositories", func(in *install) { in.Selection = "all" }},
+		{"an extra repository was added", func(in *install) { in.Repos = append(in.Repos, 4) }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			if _, err := w.run(killAfter(w, StepPush)); err == nil {
+				t.Fatal("the first run was not stopped")
+			}
+			for i := range w.gh.installs {
+				if w.gh.installs[i].ID == repoInstallID {
+					tc.change(&w.gh.installs[i])
+				}
+			}
+			w.resumeFrom()
+			w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+				w.gh.installs = append(w.gh.installs, install{ID: reinstallID, AppID: w.gh.app.ID, Selection: "selected", Repos: []int64{w.gh.repo.ID}})
+				return loopback.Callback{Code: w.code("approve"), InstallationID: strconv.Itoa(reinstallID), SetupAction: "install"}, nil
+			})
+			w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+			before := len(w.saver.saves)
+			res, err := w.run(context.Background())
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			ours := w.gh.ours()
+			if len(ours) != 1 || ours[0].ID != reinstallID || ours[0].Selection != "selected" || !slices.Equal(ours[0].Repos, []int64{w.gh.repo.ID}) {
+				t.Errorf("our installations = %+v, want only the new one on the site's repository", ours)
+			}
+			if res.Record.Step != string(spine.StepLive) || res.Record.GitHub.InstallationID != reinstallID {
+				t.Errorf("record at %q, installation %d", res.Record.Step, res.Record.GitHub.InstallationID)
+			}
+			for _, r := range w.saver.saves[before:] {
+				if !reached(r.Step, spine.StepPushed) {
+					t.Fatalf("a save moved the record back to %q", r.Step)
+				}
+			}
+			if w.cf.creates["d1"] != 1 || w.gh.creates["repo"] != 1 || len(w.view.opened) != 1 {
+				t.Errorf("databases %d, repositories %d, browser opened %d; want the reinstall alone", w.cf.creates["d1"], w.gh.creates["repo"], len(w.view.opened))
+			}
+			assertRegisteredAndUnseen(t, w)
+		})
+	}
+}
+
+// TestTheGrantStaysFreshThroughTheFirstDeploy starts the first deploy 44 minutes after the
+// grant, under the step-start refresh, and lets the deploy run 20 minutes, past the access
+// token's hour.
+func TestTheGrantStaysFreshThroughTheFirstDeploy(t *testing.T) {
+	w := newWorld(t)
+	var started time.Time
+	w.cfg.Emit = func(e Event) {
+		w.events = append(w.events, e)
+		if e.Kind == StepStarted && e.Step == StepFirstDeploy {
+			<-w.clock.After(44 * time.Minute)
+			started = w.clock.Now()
+		}
+	}
+	w.gh.runFor = func(string) (providers.WorkflowRun, bool) {
+		if w.clock.Now().Sub(started) < 20*time.Minute {
+			return providers.WorkflowRun{Status: "in_progress"}, true
+		}
+		return providers.WorkflowRun{Status: "completed", Conclusion: "success"}, true
+	}
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if w.cf.secrets["example-site/"+workerKeySecret] == "" || res.Record.Step != string(spine.StepLive) {
+		t.Errorf("the Worker secret is unset, record at %q", res.Record.Step)
+	}
+}
+
+func TestAResumePastTheFirstDeployInstallsTheDependencies(t *testing.T) {
+	for _, step := range []string{StepFirstDeploy, StepDomains} {
+		t.Run(step, func(t *testing.T) {
+			w := newWorld(t)
+			failNPM(t, w)
+			if _, err := w.run(killAfter(w, step)); err == nil {
+				t.Fatal("the first run was not stopped")
+			}
+			if err := os.Remove(w.npmEnv); err != nil && !os.IsNotExist(err) {
+				t.Fatal(err)
+			}
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			if _, err := os.Stat(w.npmEnv); err != nil || !res.Done.InstallFailed {
+				t.Errorf("npm ran on the resume: %v; done %+v; want the install run and its failure reported", err == nil, res.Done)
+			}
+		})
+	}
+}
+
+func TestAKillAfterTheRepositoryCreate(t *testing.T) {
+	// killInCreate stops the run once GitHub has made the repository and before the record holds
+	// its id, which leaves the name as an intent.
+	killInCreate := func(w *world) {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Cleanup(cancel)
+		w.gh.afterCreate = func() {
+			w.gh.afterCreate = nil
+			cancel()
+		}
+		_, err := w.run(ctx)
+		if f := failureOf(t, err); f.Reason != ReasonStopped {
+			t.Fatalf("reason = %s, want %s", f.Reason, ReasonStopped)
+		}
+		last, _ := w.saver.last()
+		if last.Setup.Intents.Repo != "example-site" || last.GitHub.Repo.ID != 0 {
+			t.Fatalf("record intent %q, id %d; want the intent and no id", last.Setup.Intents.Repo, last.GitHub.Repo.ID)
+		}
+	}
+	t.Run("an empty repository is adopted", func(t *testing.T) {
+		w := newWorld(t)
+		killInCreate(w)
+		res, err := w.resume()
+		if err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		if res.Record.GitHub.Repo.Repo != "example-site" || res.Record.GitHub.Repo.ID != w.gh.repo.ID || res.Summary.SuffixReason != "" {
+			t.Errorf("record repository %+v, suffix reason %q; want the adopted one", res.Record.GitHub.Repo, res.Summary.SuffixReason)
+		}
+		if !slices.Contains(w.log, "gh:repo:example-owner/example-site") {
+			t.Errorf("log %v never read the repository by name", w.log)
+		}
+		if w.gh.creates["repo"] != 1 || w.gh.creates["app"] != 1 || w.cf.creates["d1"] != 1 {
+			t.Errorf("repositories %d, Apps %d, databases %d; want one each", w.gh.creates["repo"], w.gh.creates["app"], w.cf.creates["d1"])
+		}
+	})
+	refused := []struct {
+		name  string
+		setup func(w *world)
+	}{
+		{"a repository with commits is refused", func(w *world) {
+			dir := t.TempDir()
+			gitRun(t, dir, "init", "--quiet", "-b", "main")
+			gitRun(t, dir, "commit", "--quiet", "--allow-empty", "-m", "someone else's work")
+			gitRun(t, dir, "push", "--quiet", filepath.Join(w.gh.remotes, "example-owner", "example-site.git"), "HEAD:refs/heads/main")
+		}},
+		{"a repository another account owns is refused", func(w *world) { w.gh.ownerOf["example-site"] = "someone-else" }},
+	}
+	for _, tc := range refused {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			killInCreate(w)
+			tc.setup(w)
+			_, err := w.resume()
+			f := failureOf(t, err)
+			if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "example-site") || f.Do == "" {
+				t.Errorf("failure = %+v, want the not-ours stop naming the repository", f)
+			}
+			if w.gh.creates["repo"] != 1 {
+				t.Errorf("repositories created %d, want the one, with no suffixed repository left behind", w.gh.creates["repo"])
+			}
+		})
+	}
+}
+
+// TestTheTableReadMatchesNoNameByWildcard holds the empty-database read to exact prefixes: in a
+// LIKE pattern "_" matches any one character, so 'sqlite_%' or '_cf_%' would also hide a table
+// the site made and report a database empty.
+func TestTheTableReadMatchesNoNameByWildcard(t *testing.T) {
+	if regexp.MustCompile(`(?i)LIKE\s+'[^']*_`).MatchString(sqlTables) {
+		t.Errorf("sqlTables = %q, want no LIKE pattern holding a \"_\"", sqlTables)
 	}
 }
 

@@ -268,7 +268,8 @@ export async function startFake({
       const { name } = /** @type {{ name: string }} */ (manifest);
       state.ledgerAtCreate.push(ledgerHas(name));
       state.apps.push(name);
-      return { code: 'mcode' };
+      // A live code is hex, so it can open on digits the way this one does.
+      return { code: '7f3a9c0de2b14e58' };
     },
     async installFlow(_slug, installState, repo) {
       state.installRepos.push(repo);

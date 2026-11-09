@@ -158,6 +158,165 @@ test('the build writes the values with the same text as the source CSS', async (
   ]);
 });
 
+const WAYMARK = path.join(ROOT, 'themes/waymark');
+
+// Waymark's theme.css as it stood before its values moved into tokens (commit 9a193ca, the last
+// with the blocks inline), kept as a snapshot so the comparison survives a shallow clone and a
+// later main.
+const BEFORE = path.join(ROOT, 'scripts/theme/fixtures/waymark-theme-9a193ca.css');
+const BEFORE_COMMIT = '9a193ca13269d529aa4c2975d1e66a896deba745';
+const BEFORE_PATH = 'examples/showcase/src/theme/theme.css';
+
+const ROOT_SELECTOR = ':root';
+const DARK_OS = '@media (prefers-color-scheme: dark) :root:not([data-theme])';
+const DARK_EXPLICIT = ':root[data-theme="cairn-dark"]';
+
+/**
+ * The declarations that sat in hand-written rules after the `@theme` block and moved into the
+ * tokens, by the selector they sat under.
+ */
+const MOVED = {
+  [ROOT_SELECTOR]: [
+    '--cairn-shadow',
+    '--cairn-cta-bg',
+    '--cairn-cta-content',
+    '--cairn-cta-border',
+    '--cairn-cta-btn-bg',
+    '--cairn-cta-btn-content',
+    '--cairn-caption-tracking',
+  ],
+  [DARK_OS]: [
+    '--color-card-border',
+    '--cairn-shadow',
+    '--cairn-cta-bg',
+    '--cairn-cta-content',
+    '--cairn-cta-border',
+    '--cairn-cta-btn-bg',
+    '--cairn-cta-btn-content',
+  ],
+  [DARK_EXPLICIT]: [
+    '--color-card-border',
+    '--cairn-shadow',
+    '--cairn-cta-bg',
+    '--cairn-cta-content',
+    '--cairn-cta-border',
+    '--cairn-cta-btn-bg',
+    '--cairn-cta-btn-content',
+  ],
+};
+
+/** The two roles the chassis defaults, which Waymark's tokens declare at those defaults. */
+const NEW_ROLES = ['--cairn-eyebrow-case', '--cairn-scroll-cue'];
+
+const normalize = (value) =>
+  value.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
+
+/**
+ * Every top-level declaration in a sheet as `context | property | value`, the context being the
+ * daisyUI block's name, `@theme`, a rule's selector, or a media query and its rule's selector.
+ */
+function declarationsOf(css) {
+  const out = [];
+  const take = (context, container) =>
+    container.each((node) => {
+      if (node.type === 'decl') out.push({ context, prop: node.prop, value: normalize(node.value) });
+    });
+  postcss.parse(css).each((node) => {
+    if (node.type === 'atrule' && node.name === 'plugin' && node.params === '"daisyui/theme"') {
+      let name = '';
+      node.each((d) => {
+        if (d.type === 'decl' && d.prop === 'name') name = d.value;
+      });
+      take(`daisyui/theme ${name}`, node);
+    } else if (node.type === 'atrule' && node.name === 'theme') {
+      take('@theme', node);
+    } else if (node.type === 'rule') {
+      take(node.selector.replace(/,\s+/g, ','), node);
+    } else if (node.type === 'atrule' && node.name === 'media') {
+      node.each((rule) => {
+        if (rule.type === 'rule') take(`@media ${node.params} ${rule.selector.replace(/,\s+/g, ',')}`, rule);
+      });
+    }
+  });
+  return out;
+}
+
+const keyOf = ({ context, prop, value }) => `${context} | ${prop} | ${value}`;
+
+test('the before snapshot is the theme.css of the commit it names, when that commit is reachable', async (t) => {
+  const shown = spawnSync('git', ['show', `${BEFORE_COMMIT}:${BEFORE_PATH}`], { cwd: ROOT, encoding: 'utf8' });
+  if (shown.status !== 0) {
+    t.skip(`commit ${BEFORE_COMMIT} is not in this clone`);
+    return;
+  }
+  assert.equal(await readFile(BEFORE, 'utf8'), shown.stdout);
+});
+
+test("Waymark's built tokens.css declares exactly the old blocks, the moved rules, and the two new roles", async () => {
+  const before = await readFile(BEFORE, 'utf8');
+  const lines = before.split('\n');
+  assert.equal(lines[103], '@plugin "daisyui/theme" {', 'line 104 opens the light block');
+  assert.equal(lines[272], '}', 'line 273 closes the @theme block');
+  const blocks = declarationsOf(lines.slice(103, 273).join('\n'));
+
+  // Every declaration of the hand-written token rules is in the moved list, and only those.
+  const handWritten = declarationsOf(lines.slice(273).join('\n')).filter((d) => d.context in MOVED);
+  assert.deepEqual(
+    handWritten.map((d) => `${d.context} | ${d.prop}`).sort(),
+    Object.entries(MOVED)
+      .flatMap(([context, props]) => props.map((p) => `${context} | ${p}`))
+      .sort(),
+  );
+
+  // The new roles at the chassis defaults, under the root selector.
+  const roles = [];
+  postcss.parse(await readFile(path.join(ROOT, 'examples/showcase/src/chassis/tokens.css'), 'utf8')).walkDecls((d) => {
+    if (NEW_ROLES.includes(d.prop)) roles.push({ context: ROOT_SELECTOR, prop: d.prop, value: normalize(d.value) });
+  });
+  assert.equal(roles.length, NEW_ROLES.length, 'the chassis declares each new role once');
+
+  const want = [...blocks, ...handWritten, ...roles].map(keyOf).sort();
+  const built = declarationsOf(await readFile(path.join(WAYMARK, 'tokens/tokens.css'), 'utf8'));
+  const got = built.map(keyOf).sort();
+  assert.deepEqual(
+    got.filter((k) => !want.includes(k)),
+    [],
+    'no declaration is added or changed',
+  );
+  assert.deepEqual(
+    want.filter((k) => !got.includes(k)),
+    [],
+    'no declaration is missing',
+  );
+  assert.deepEqual(got, want);
+
+  const names = built.filter((d) => d.prop === 'name' && d.context.startsWith('daisyui/theme ')).map((d) => d.value);
+  assert.deepEqual(names, ['"cairn"', '"cairn-dark"']);
+});
+
+test("Waymark's theme.css imports the built tokens after the chassis and fonts, and keeps no moved declaration", async () => {
+  const css = await readFile(path.join(WAYMARK, 'theme.css'), 'utf8');
+  const imports = [];
+  const props = new Set();
+  postcss.parse(css).walk((node) => {
+    if (node.type === 'atrule' && node.name === 'import') imports.push(node.params);
+    if (node.type === 'decl') props.add(node.prop);
+    if (node.type === 'atrule' && node.name === 'plugin' && node.params === '"daisyui/theme"') {
+      assert.fail('theme.css declares a daisyUI theme block');
+    }
+    if (node.type === 'atrule' && node.name === 'theme') assert.fail('theme.css declares an @theme block');
+  });
+  assert.deepEqual(imports, ['"../chassis/tokens.css"', '"./fonts/fonts.css"', '"./tokens/tokens.css"']);
+  for (const prop of [...new Set(Object.values(MOVED).flat()), ...NEW_ROLES]) {
+    assert.ok(!props.has(prop), `theme.css still declares ${prop}`);
+  }
+});
+
+test('the committed Waymark build is current', () => {
+  const result = build(WAYMARK, '--check');
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('renaming the dark colorModes entry renames the built dark block', async () => {
   const dir = await copyFixture('rename');
   const manifestFile = path.join(dir, 'cairn-theme.json');

@@ -9,7 +9,7 @@ Two other pages cover problems at other moments:
 
 ## Resume a run
 
-Setup writes a record of each run to your computer, in the `cairn/sites` folder of your user configuration folder. The record never lives in your site's folder, so a push can't publish it. To resume, run `cairn new`. The tables below call that the setup command. To continue a stopped run:
+Setup writes a record of each run to your computer, in cairn's registry folder, which [Credentials](./credentials.md#remove-what-an-unfinished-run-holds) locates. The record never lives in your site's folder, so a push can't publish it. To resume, run `cairn new`. The tables below call that the setup command. To continue a stopped run:
 
 1. Open a terminal on the computer where you ran setup.
 2. Run `cairn new`, or run `npm create cairn-site`, which starts it.
@@ -66,7 +66,7 @@ The following table lists the stops that setup finds by checking your Cloudflare
 | The address you chose already has DNS records in Cloudflare, so it points at another site. | Nothing was created. | **Act:** remove the DNS records for that address in Cloudflare, or choose another address. Then run the setup command again. |
 | A Worker already serves the address you chose. | Nothing was created. | **Act, or ask whoever runs that Worker:** remove the Worker's custom domain or route for that address in Cloudflare, or choose another address. Then run the setup command again. |
 | Every name from your site's name to the same name followed by `-9` is already in use. | Nothing was created. | **Act:** choose another site name, then run the setup command again. |
-| Cloudflare didn't approve setup's request. | Nothing was created. | **Act:** run the setup command again, and select **Allow** on the Cloudflare page. |
+| Cloudflare didn't approve setup's request. | Nothing was created. | **Act:** run the setup command again. On the Cloudflare page, select `API Tokens: Write`, and then select **Allow**. |
 
 ## Fix a stop during the browser approvals
 

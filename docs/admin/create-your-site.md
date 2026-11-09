@@ -1,6 +1,6 @@
 # Create your site
 
-A cairn site runs on accounts you own: a GitHub account holds its content, and a Cloudflare account runs it. The setup command, `npm create cairn-site`, creates the site, connects it to both, deploys it, and signs you in as its owner. It installs the `cairn` CLI and runs its `cairn new` command. You answer two questions in the terminal, approve four requests in one browser tab, press Enter once, and then wait while setup runs. This page walks one run from an empty terminal to a signed-in admin.
+A cairn site runs on accounts you own: a GitHub account holds its content, and a Cloudflare account runs it. The setup command, `npm create cairn-site`, creates the site, connects it to both, deploys it, and signs you in as its owner. It installs the `cairn` CLI and runs its `cairn new` command. You answer two questions in the terminal, approve four requests in one browser tab, confirm the summary, and then wait while setup runs. This page walks one run from an empty terminal to a signed-in admin.
 
 The page is for someone who is comfortable pasting a command into a terminal and clicking through a dashboard, and who writes no code. [Before you start](./before-you-start.md) covers what setup creates and what it costs. [Own your domain](./own-your-domain.md) covers a domain and the email that comes with it, and [Recover a setup that stopped](./setup-recovery.md) covers a run that stops partway.
 

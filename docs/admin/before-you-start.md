@@ -76,7 +76,7 @@ One item is unconfirmed. Connecting your domain issues a certificate for it, and
 
 ## What a second writer needs
 
-Everyone other than you signs in through a link sent to their email address, and setup turns on the sending for you. It onboards your domain for Cloudflare's email sending and sends your own first sign-in link by email as well as through your browser, so you can see that the mail arrives.
+Everyone other than you signs in through a link sent to their email address, and setup turns on the sending for you. It onboards your site's address for Cloudflare's email sending and sends your own first sign-in link by email as well as through your browser, so you can see that the mail arrives.
 
 Workers Paid includes 3,000 outbound emails a month, and Cloudflare charges $0.35 per 1,000 beyond that ([Email Service pricing](https://developers.cloudflare.com/email-service/platform/pricing/), as of 2026-10-31).
 

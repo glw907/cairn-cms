@@ -73,7 +73,7 @@ The **Publish all** button appears only when something is waiting to publish. It
 
 **What it means:** publishing commits to your GitHub repository, and a GitHub Actions job deploys each push. The commit worked, and the deploy didn't run or didn't finish. The site's logs don't record deploys, so this symptom has no log event. Work through these in order:
 
-1. Open the **Actions** tab of your repository on GitHub and look at the newest run. A failed run shows its failing step in the log. GitHub's notification settings decide who is emailed about a failed run, and the admin doesn't show deploy status.
+1. Open the **Actions** tab of your repository on GitHub and look at the newest run. A failed run shows its failing step in the log. The admin doesn't show deploy status.
 2. If the newest run is missing, check whether the repository has used up its free Actions minutes. [Deploys](./deploys.md#know-the-free-deploy-allowance) gives the allowance.
 3. If you've installed the `cairn` CLI and stored its tokens ([Give cairn its credentials](./credentials.md)), run `cairn health <site>`. For a site made by `cairn new`, the deploy check reads the latest deployment of your Worker. It fails when the Worker has never deployed, and otherwise it reports when the latest deployment was made. It doesn't compare that deployment with your newest commit, so a recent time doesn't prove that the latest publish went live.
 

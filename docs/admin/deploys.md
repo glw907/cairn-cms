@@ -42,7 +42,7 @@ Setup resumes at the first deploy. When the earlier run ended in a failure, setu
 
 Setup waits up to 30 minutes for the first deploy. When the run hasn't finished by then, setup stops and points you to the repository's Actions page.
 
-Every cairn site needs the Workers Paid plan, which costs $5 a month. A site on an account without it can't deploy. Setup can't read your plan, so a missing plan shows only as a failed first deploy that names no cause. The run's log in GitHub Actions carries the Cloudflare error.
+Every cairn site needs the Workers Paid plan, which costs $5 a month. A site on an account without it can't deploy. Setup can't read your plan, so a missing plan shows only as a failed first deploy that names no cause. The run's page in GitHub Actions shows which step failed.
 
 ## Know the free deploy allowance
 

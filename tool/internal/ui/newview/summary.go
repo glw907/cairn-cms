@@ -207,7 +207,8 @@ func (m *summary) layout(width int, s setup.Summary) (string, int) {
 		address.reason = reasonAddress
 	}
 	email := row{label: labelEmail, value: m.email}
-	if reasons && m.email == m.fromCloudflare {
+	// A token run's email is the one the owner typed, never the Cloudflare sign-in's.
+	if reasons && m.email == m.fromCloudflare && s.Credential != setup.CredentialToken {
 		email.reason = reasonEmail
 	}
 	switch m.editing {

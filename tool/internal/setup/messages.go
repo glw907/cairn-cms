@@ -211,6 +211,11 @@ var entries = map[Reason]Entry{
 		Did:      kept,
 		Do:       "Wait a few minutes, and then run cairn new again. Setup resumes at the Connect <domain> step.",
 	},
+	ReasonTokenMissing: {
+		Happened: lineTokenMissing,
+		Did:      kept,
+		Do:       lineTokenAgain,
+	},
 	// ReasonRefused is the agent lane's stop: its caller words each Happened and Do, so this entry
 	// is the fixed fallback for a view that cannot.
 	ReasonRefused: {
@@ -238,6 +243,10 @@ const (
 	// lineAppNameTaken joins the Create waiting sentence for a GitHub App name another owner
 	// holds.
 	lineAppNameTaken = "If GitHub says the name is taken, change it on that page. Setup uses the name you choose."
+	// lineTokenMissing and lineTokenAgain are the stop of a resume whose run began with a
+	// Cloudflare token when the token's variable is no longer set.
+	lineTokenMissing = "This setup began with a Cloudflare API token from " + TokenVariable + ", and that variable isn't set."
+	lineTokenAgain   = "Set " + TokenVariable + " to the same token, and then run cairn new again."
 )
 
 // Catalogue returns every string this table carries, for the copy golden.

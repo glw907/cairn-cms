@@ -39,6 +39,7 @@ const (
 	ReasonDeployFailed   Reason = "deploy-failed"
 	ReasonDeployTimeout  Reason = "deploy-timeout"
 	ReasonHTTPSTimeout   Reason = "https-timeout"
+	ReasonTokenMissing   Reason = "setup-token-missing"
 	// ReasonRefused is a stop a View caused: an answer it could not give, or one setup refused.
 	ReasonRefused Reason = "refused"
 )

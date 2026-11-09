@@ -19,6 +19,7 @@
       "enum": ["approve-cloudflare", "approve-create-app", "approve-install-all", "approve-install-repo", "reconsent-cloudflare"]
     },
     "sentence": { "type": "string" },
+    "credential": { "type": "string", "enum": ["token", "approval"] },
     "failure": {
       "type": "object",
       "required": ["step", "reason", "happened", "did", "do"],
@@ -34,7 +35,7 @@
     },
     "summary": {
       "type": "object",
-      "required": ["siteName", "repository", "worker", "database", "bucket", "app", "folder", "zone", "addresses", "ownerEmail", "posture", "theme", "themeDescription", "zoneChosen"],
+      "required": ["siteName", "repository", "worker", "database", "bucket", "app", "folder", "zone", "addresses", "ownerEmail", "posture", "theme", "themeDescription", "zoneChosen", "credential"],
       "additionalProperties": false,
       "properties": {
         "siteName": { "type": "string" },
@@ -51,7 +52,8 @@
         "theme": { "type": "string" },
         "themeDescription": { "type": "string" },
         "suffixReason": { "type": "string" },
-        "zoneChosen": { "type": "boolean" }
+        "zoneChosen": { "type": "boolean" },
+        "credential": { "type": "string", "enum": ["token", "approval"] }
       }
     }
   },

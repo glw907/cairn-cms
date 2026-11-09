@@ -340,8 +340,12 @@ func (r *run) ownFolder(ctx context.Context) error {
 // repository's secrets when the job starts, so the deploy the push starts must find the key
 // already stored. A run that stopped inside this step may have minted a key it never stored, so
 // every earlier key of the run is deleted, by its recorded id and by its run-named name, before
-// a new one is minted.
+// a new one is minted. A token run mints nothing: the supplied token is the deploy key, since a
+// token that could mint one could mint any token on the account.
 func (r *run) deployKey(ctx context.Context) error {
+	if r.tokenRun {
+		return r.storeDeployKey(ctx, r.cfg.CloudflareToken)
+	}
 	s := &r.rec.Setup
 	name := providers.DeployKeyName(r.cfg.RunID)
 	if s.IDs.DeployKeyID != "" || s.Intents.DeployKey != "" {
@@ -368,12 +372,17 @@ func (r *run) deployKey(ctx context.Context) error {
 	if err := r.save(); err != nil {
 		return err
 	}
+	return r.storeDeployKey(ctx, key.Value)
+}
+
+// storeDeployKey stores key as the repository's deploy-key Actions secret.
+func (r *run) storeDeployKey(ctx context.Context, key providers.Credential) error {
 	tok, err := r.installationToken(ctx)
 	if err != nil {
 		return err
 	}
 	g := r.rec.GitHub.Repo
-	if err := r.cfg.GitHub(tok).SetActionsSecret(ctx, g.Owner, g.Repo, providers.DeploySecretName, secretText(key.Value)); err != nil {
+	if err := r.cfg.GitHub(tok).SetActionsSecret(ctx, g.Owner, g.Repo, providers.DeploySecretName, secretText(key)); err != nil {
 		return r.fail(ctx, err, "GitHub")
 	}
 	return nil

@@ -6,6 +6,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
 )
 
 // osEnviron reads the process environment. Every command that needs a
@@ -37,6 +38,18 @@ const (
 	varCFReadToken = "CAIRN_CF_READ_TOKEN" // secret-guard-allow: a variable name, not a value
 	varGHReadToken = "CAIRN_GH_READ_TOKEN" // secret-guard-allow: a variable name, not a value
 )
+
+// varCFSetupToken names the variable cairn new takes a Cloudflare API token from. It is read
+// only from the environment, never a flag, so the token never reaches argv, and never through
+// loadEnv's provider chain, since cairn auth does not manage it. setup spells it for the copy
+// that names it.
+const varCFSetupToken = setup.TokenVariable
+
+// setupToken returns the token in varCFSetupToken, wrapped so it never prints by accident. A
+// CLOUDFLARE_API_TOKEN in the environment is never read here: it selects nothing.
+func setupToken(envFn func(string) string) providers.Credential {
+	return providers.NewCredential(envFn(varCFSetupToken))
+}
 
 // varNoColor and varTerm are the two variables loadEnv reads for render.DetectProfile. Neither
 // is a credential: they carry no Missing entry and are read directly from envFn rather than

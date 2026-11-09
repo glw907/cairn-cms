@@ -85,6 +85,8 @@ func runTerminal(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 		Remote: remote,
 		GOOS:   runtime.GOOS,
 		Env:    env,
+		// A token cannot read the Cloudflare sign-in's email, so the owner types it.
+		AskEmail: setupToken(d.env) != providers.Credential{},
 	})
 	p := newProgram(m, d.stdout)
 	l.send = p.Send

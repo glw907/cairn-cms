@@ -38,6 +38,11 @@ const (
 	descCrawlers  = "Choose whether AI companies can use your content to train their models. This setting doesn't affect search engines."
 	optionBlock   = "Block AI training"
 	optionAllow   = "Allow AI training"
+
+	// labelOwnerEmail and descOwnerEmail ask for the owner's address on a run with a Cloudflare
+	// token, which can't read it. A refused address shows setup.ProblemEmail.
+	labelOwnerEmail = "Your email"
+	descOwnerEmail  = "Setup can't read your email from a Cloudflare token. The admin sends your sign-in links to this address."
 )
 
 // The browser screens.
@@ -200,7 +205,7 @@ func Catalogue() []string {
 		titleWelcome, welcomeCreates, welcomeApprove, welcomeNeed, welcomeRead,
 		titleSSH, sshBody, nothingCreated,
 		titleQuestions, labelTheme, descTheme, labelDesign, labelSiteName, descSiteName, labelRepo,
-		errSlug, labelCrawlers, descCrawlers, optionBlock, optionAllow,
+		errSlug, labelCrawlers, descCrawlers, optionBlock, optionAllow, labelOwnerEmail, descOwnerEmail,
 		titleBrowser, browserBefore, browserDuring, browserNoTab, browserNoOpen, browserResume,
 		countdownLeft, countdownLate,
 		approvalAllow, approvalCreate, approvalInstall, approvalApprove,

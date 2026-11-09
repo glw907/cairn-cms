@@ -35,6 +35,8 @@ type Answers struct {
 	AccountID string
 	// Suffix is the taken-name counter: 0 for none, 2 for "-2", 3 for "-3".
 	Suffix int
+	// Credential is what the run's Cloudflare calls use; empty means CredentialApproval.
+	Credential CloudflareCredential
 }
 
 var (
@@ -44,4 +46,7 @@ var (
 	errHost    = errors.New("address is not the zone or a subdomain of it")
 	errSuffix  = errors.New("suffix must be 0 or at least 2")
 	errNoEnv   = errors.New("no environment for git and npm (set Config.Env to the process's environment by name)")
+	// errTokenNoEmail refuses a token run with no owner email: the token cannot read the
+	// Cloudflare sign-in's address, so nothing else can supply one.
+	errTokenNoEmail = errors.New("a run with a Cloudflare token needs the owner email (set Answers.OwnerEmail)")
 )

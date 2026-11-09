@@ -42,7 +42,7 @@ func notifyContext(parent context.Context) (context.Context, context.CancelFunc)
 // scrubbedWriters wraps the two process streams in the credential scrubber, returning them with
 // the number of registered values too short to match and the flush every exit path runs.
 //
-// Both bearer tokens are registered, the ones the operator never configured included: an absent
+// Every bearer token is registered, the ones the operator never configured included: an absent
 // value is empty, which the scrubber ignores, so registering it costs nothing and removes the
 // branch that would otherwise decide per run which values are worth protecting.
 //
@@ -66,10 +66,10 @@ func scrubbedWriters(d deps) (out, errOut *logx.Writer, skipped int, flush func(
 }
 
 // scrubTargets returns the values the process streams are scrubbed of, the two bearer tokens and
-// nothing else, for the reasons scrubbedWriters states.
+// cairn new's setup token, for the reasons scrubbedWriters states.
 func scrubTargets(d deps) []providers.Credential {
 	resolved, _ := loadEnv(d.env, d.secretProviders()...)
-	return []providers.Credential{resolved.cfToken(), resolved.ghToken()}
+	return []providers.Credential{resolved.cfToken(), resolved.ghToken(), setupToken(d.env)}
 }
 
 func main() {

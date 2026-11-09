@@ -18,6 +18,8 @@ type Outline struct {
 	Theme string
 	// AccountID is the chosen Cloudflare account id, if any.
 	AccountID string
+	// Credential is what the run's Cloudflare calls use.
+	Credential CloudflareCredential
 }
 
 // Plan validates the answers and returns the outline. It does no I/O, so the same answers
@@ -37,7 +39,12 @@ func Plan(a Answers) (Outline, error) {
 	if err != nil {
 		return Outline{}, err
 	}
+	credential := a.Credential
+	if credential == "" {
+		credential = CredentialApproval
+	}
 	return Outline{
+		Credential: credential,
 		Names:      n,
 		Addresses:  addrs,
 		Steps:      steps(),

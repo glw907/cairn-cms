@@ -107,5 +107,6 @@
   "OwnerEmail": "owner@example.com",
   "Posture": "decline",
   "Theme": "",
-  "AccountID": ""
+  "AccountID": "",
+  "Credential": "approval"
 }

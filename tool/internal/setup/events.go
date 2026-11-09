@@ -56,6 +56,21 @@ func WaitSentence(s WaitState, siteName, repo string) string {
 	return strings.NewReplacer("<name>", siteName, "<repo>", repo).Replace(waitSentences[s])
 }
 
+// TokenVariable names the environment variable an owner supplies a Cloudflare API token in. A run
+// given that token uses it for every Cloudflare call in place of approval 1.
+const TokenVariable = "CAIRN_CF_SETUP_TOKEN" // secret-guard-allow: a variable name, not a value
+
+// CloudflareCredential names what a run's Cloudflare calls use.
+type CloudflareCredential string
+
+// The two credentials.
+const (
+	// CredentialApproval is the grant the owner approves on Cloudflare's consent page.
+	CredentialApproval CloudflareCredential = "approval"
+	// CredentialToken is the API token the owner supplies in TokenVariable.
+	CredentialToken CloudflareCredential = "token"
+)
+
 // Event is one typed report from the runner. Every field is setup's own copy or a value derived
 // from the owner's answers; no event carries a token, a code, a key, or a nonce.
 type Event struct {
@@ -68,6 +83,9 @@ type Event struct {
 	Waiting WaitState `json:"waiting,omitempty"`
 	// Sentence is the copy for the waiting state.
 	Sentence string `json:"sentence,omitempty"`
+	// Credential is set only on approve-cloudflare's step_done: what the run's Cloudflare calls
+	// use from then on.
+	Credential CloudflareCredential `json:"credential,omitempty"`
 	// Failure is set only on step_failed.
 	Failure *Failure `json:"failure,omitempty"`
 	// Summary is set only on summary.
@@ -94,4 +112,7 @@ type Summary struct {
 	SuffixReason string `json:"suffixReason,omitempty"`
 	// ZoneChosen reports that the owner picked the zone from several.
 	ZoneChosen bool `json:"zoneChosen"`
+	// Credential is what the run's Cloudflare calls use. With CredentialToken the owner's email
+	// is the one the owner gave, since the token cannot read the Cloudflare sign-in's.
+	Credential CloudflareCredential `json:"credential"`
 }

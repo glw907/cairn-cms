@@ -1,7 +1,7 @@
 {"schemaVersion":1,"kind":"resumed","timestamp":"<timestamp>","step":"installed"}
 {"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"opening-checks"}
 {"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"opening-checks"}
-{"schemaVersion":1,"kind":"summary","timestamp":"<timestamp>","step":"summary","summary":{"siteName":"Example Site","repository":"example-site","worker":"example-site","database":"example-site-auth","bucket":"example-site-media","app":"cairn-example-site","folder":"./example-site","zone":"carin-test.org","addresses":["carin-test.org","www.carin-test.org"],"ownerEmail":"owner@example.com","posture":"decline","theme":"waymark","themeDescription":"An intentionally neutral look that's easy to edit.","zoneChosen":true}}
+{"schemaVersion":1,"kind":"summary","timestamp":"<timestamp>","step":"summary","summary":{"siteName":"Example Site","repository":"example-site","worker":"example-site","database":"example-site-auth","bucket":"example-site-media","app":"cairn-example-site","folder":"./example-site","zone":"carin-test.org","addresses":["carin-test.org","www.carin-test.org"],"ownerEmail":"owner@example.com","posture":"decline","theme":"waymark","themeDescription":"An intentionally neutral look that's easy to edit.","zoneChosen":true,"credential":"approval"}}
 {"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"scaffold"}
 {"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"scaffold"}
 {"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"provision"}
@@ -18,4 +18,4 @@
 {"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"domains"}
 {"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"sign-in"}
 {"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"sign-in"}
-{"schemaVersion":1,"kind":"summary","timestamp":"<timestamp>","step":"sign-in","summary":{"siteName":"Example Site","repository":"example-site","worker":"example-site","database":"example-site-auth","bucket":"example-site-media","app":"cairn-example-site","folder":"./example-site","zone":"carin-test.org","addresses":["blog.carin-test.org"],"ownerEmail":"new@example.com","posture":"decline","theme":"waymark","themeDescription":"An intentionally neutral look that's easy to edit.","zoneChosen":true}}
+{"schemaVersion":1,"kind":"summary","timestamp":"<timestamp>","step":"sign-in","summary":{"siteName":"Example Site","repository":"example-site","worker":"example-site","database":"example-site-auth","bucket":"example-site-media","app":"cairn-example-site","folder":"./example-site","zone":"carin-test.org","addresses":["blog.carin-test.org"],"ownerEmail":"new@example.com","posture":"decline","theme":"waymark","themeDescription":"An intentionally neutral look that's easy to edit.","zoneChosen":true,"credential":"approval"}}

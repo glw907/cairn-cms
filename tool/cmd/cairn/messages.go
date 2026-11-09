@@ -761,6 +761,7 @@ const agentsSetupEvents = `Events from cairn new --plan, --apply, and --resume, 
   waiting                  setup waits on the owner in a browser; waiting names the approval
   resumed                  the run picked up an unfinished record
   summary                  every derived value, for the owner to review
+The approve-cloudflare step_done and the summary carry credential: token or approval.
 Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
 approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.`
 
@@ -871,6 +872,11 @@ fields, the account, the domain, the email, and the address, may be edited first
 refuses a plan that leaves the account or the domain open, before anything runs:
   cairn new --apply plan.json
 An apply still runs the approvals in the owner's browser, so it waits on the owner.
+
+Token. Put a Cloudflare API token in CAIRN_CF_SETUP_TOKEN, never a flag, and setup skips the
+Cloudflare approval: it uses the token for every Cloudflare call and stores it as the site's
+deploy key, minting none. The token can't read the owner's address, so --email is the owner's
+email. A resume needs the same variable. CLOUDFLARE_API_TOKEN is never read.
 
 Required with --plan and --dry-run:
   --name         the site's name

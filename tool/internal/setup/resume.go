@@ -42,7 +42,7 @@ func (r *run) refreshGrant(ctx context.Context) error {
 // freshGrant refreshes the Cloudflare grant once its access token nears the end of its hour,
 // so no watch step starts on a token about to lapse.
 func (r *run) freshGrant(ctx context.Context) error {
-	if r.cfg.Now().Sub(r.grantAt) < grantRefresh {
+	if r.tokenRun || r.cfg.Now().Sub(r.grantAt) < grantRefresh {
 		return nil
 	}
 	err := r.refreshGrant(ctx)
@@ -55,10 +55,18 @@ func (r *run) freshGrant(ctx context.Context) error {
 
 // cloudflare runs approval 1 and the account checks, or restores them on a resume. A resume
 // that stopped after approval 1 and before the checks recorded the account refreshes the stored
-// grant and runs the checks, so the owner is not asked again.
+// grant and runs the checks, so the owner is not asked again. A token run takes the supplied
+// token in place of approval 1 on a new run, and needs nothing restored on a resume.
 func (r *run) cloudflare(ctx context.Context) error {
+	if r.tokenRun {
+		r.access = r.cfg.CloudflareToken
+	}
 	if r.rec.Cloudflare.AccountID != "" && r.rec.Cloudflare.ZoneID != "" {
 		return r.resumeCloudflare(ctx)
+	}
+	if r.tokenRun {
+		r.useToken()
+		return r.cloudflareChecks(ctx)
 	}
 	err := errGrantSpent
 	if r.resumed && slices.Contains(r.rec.Setup.KeyringEntries, r.cfg.Vault.Entry(secrets.EntryCloudflareRefresh)) {
@@ -80,15 +88,18 @@ func (r *run) cloudflare(ctx context.Context) error {
 
 // resumeCloudflare restores approval 1 and the account checks for a resumed run. The stored
 // grant is refreshed; one Cloudflare calls spent reruns approval 1 alone, under its own waiting
-// state. Either way the grant must still reach the recorded account and zone.
+// state. A token run refreshes nothing. Either way the credential must still reach the recorded
+// account and zone.
 func (r *run) resumeCloudflare(ctx context.Context) error {
-	err := r.refreshGrant(ctx)
-	if errors.Is(err, errGrantSpent) {
-		r.pair = secrets.OAuthPair{}
-		err = r.approveCloudflare(ctx, WaitCloudflareReconsent)
-	}
-	if err != nil {
-		return err
+	if !r.tokenRun {
+		err := r.refreshGrant(ctx)
+		if errors.Is(err, errGrantSpent) {
+			r.pair = secrets.OAuthPair{}
+			err = r.approveCloudflare(ctx, WaitCloudflareReconsent)
+		}
+		if err != nil {
+			return err
+		}
 	}
 	r.step = StepCloudflareChecks
 	rec := r.rec

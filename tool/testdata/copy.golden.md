@@ -171,6 +171,7 @@ auth check's whole output is identifiers (permission labels, credential variable
   waiting                  setup waits on the owner in a browser; waiting names the approval
   resumed                  the run picked up an unfinished record
   summary                  every derived value, for the owner to review
+The approve-cloudflare step_done and the summary carry credential: token or approval.
 Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
 approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.
 - Exit codes for cairn new:
@@ -302,6 +303,11 @@ fields, the account, the domain, the email, and the address, may be edited first
 refuses a plan that leaves the account or the domain open, before anything runs:
   cairn new --apply plan.json
 An apply still runs the approvals in the owner's browser, so it waits on the owner.
+
+Token. Put a Cloudflare API token in CAIRN_CF_SETUP_TOKEN, never a flag, and setup skips the
+Cloudflare approval: it uses the token for every Cloudflare call and stores it as the site's
+deploy key, minting none. The token can't read the owner's address, so --email is the owner's
+email. A resume needs the same variable. CLOUDFLARE_API_TOKEN is never read.
 
 Required with --plan and --dry-run:
   --name         the site's name
@@ -574,6 +580,7 @@ Run `cairn new status` to list them, or run --plan again
 - Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.
 - Run cairn new again. On the Cloudflare page, select the same account as before, select API Tokens: Write, and then select Allow.
 - Run cairn new in a terminal on the computer where you use your browser.
+- Set CAIRN_CF_SETUP_TOKEN to the same token, and then run cairn new again.
 - Setup can't find Git on this computer.
 - Setup can't find Node.js on this computer.
 - Setup can't find a Cloudflare account for your sign-in.
@@ -603,6 +610,7 @@ Run `cairn new status` to list them, or run --plan again
 - The folder <folder> changed after setup wrote the site there.
 - The repository <repo> already holds commits setup didn't make.
 - The site didn't answer over HTTPS at <host> within 15 minutes.
+- This setup began with a Cloudflare API token from CAIRN_CF_SETUP_TOKEN, and that variable isn't set.
 - To resume, run cairn new again.
 - Undo your changes in that folder, and then run cairn new again.
 - Unlock or set up the keyring, and then run cairn new again.
@@ -670,6 +678,7 @@ Run `cairn new status` to list them, or run --plan again
 - Setup adds your site's settings and makes the site's first Git commit.
 - Setup also emailed a sign-in link to <email>.
 - Setup can't continue
+- Setup can't read your email from a Cloudflare token. The admin sends your sign-in links to this address.
 - Setup can't run over SSH
 - Setup couldn't open your browser. Go to <url>
 - Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, go to Access Management > Connected Applications, and then revoke cairn.
@@ -706,6 +715,7 @@ Run `cairn new status` to list them, or run --plan again
 - You need a domain on Cloudflare and the Workers Paid plan.
 - You're signed in to the admin in your browser.
 - Your Cloudflare sign-in can use <n> accounts. Setup creates your site in the one you choose.
+- Your email
 - Your site's code and content are stored in <repo>.
 - approve in your browser (<n> of <total>)
 - back

@@ -74,6 +74,9 @@ type Config struct {
 	Env  map[string]string
 	// Start runs once the questions are answered, with the owner's answers; nil starts nothing.
 	Start func(setup.Answers) tea.Cmd
+	// AskEmail adds a last question for the owner's email, for a run whose Cloudflare token
+	// cannot read it from the sign-in.
+	AskEmail bool
 }
 
 // OpenBrowserMsg asks the owner's go-ahead to open the setup tab at URL. The view answers on
@@ -181,7 +184,7 @@ func New(cfg Config) *Model {
 	m := &Model{
 		cfg:       cfg,
 		keys:      k,
-		questions: newQuestions(cfg.Styles, cfg.Glyphs, k, cfg.Themes),
+		questions: newQuestions(cfg.Styles, cfg.Glyphs, k, cfg.Themes, cfg.AskEmail),
 		browser:   newBrowser(cfg.Styles, cfg.Glyphs, k, ascii),
 		summary:   newSummary(cfg.Styles, cfg.Glyphs, k, cfg.Themes),
 		watch:     newWatch(cfg.Styles, cfg.Glyphs, k, ascii),

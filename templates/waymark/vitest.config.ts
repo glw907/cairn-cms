@@ -11,12 +11,12 @@ import { defineConfig } from 'vitest/config';
 // The engine is inlined so vitest transforms it and a test's `vi.mock('cloudflare:workers')` applies
 // to the engine's import of that specifier. Left external, which an engine installed from the
 // registry into node_modules is, Node's loader meets the `cloudflare:` scheme directly and rejects it.
+const include = ['src/**/*.test.ts'];
+
 export default defineConfig({
   test: {
     environment: 'node',
-    include: [
-      'src/**/*.test.ts',
-    ],
+    include,
     server: { deps: { inline: ['@glw907/cairn-cms'] } },
   },
 });

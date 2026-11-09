@@ -20,6 +20,8 @@ A heading gives a section its name. The editor's **Heading** button makes a seco
 
 ###### Sixth-level heading
 
+Six levels exist.
+
 ## Paragraphs and line breaks
 
 A paragraph is one or more lines of text with a blank line before and after. Write a second paragraph to see the space between them.
@@ -31,7 +33,7 @@ The text after the break starts on a new line in the same paragraph.
 
 Make a word **bold** to stand out, or *italic* for lighter stress. Cross out ~~text you've removed~~ with strikethrough. Set `inline code` in code style, such as a filename like `site.config.yaml`.
 
-Links come in three forms. A [web link](https://commonmark.org/help/) goes to another website. A bare address such as https://commonmark.org turns into a link on its own. A [link to a page](cairn:pages/about) goes to an entry on this site and survives a change of address.
+Links come in three forms. A [web link](https://commonmark.org/help/) goes to another website. A bare address such as https://commonmark.org turns into a link automatically. A [link to a page](cairn:pages/about) goes to an entry on this site and survives a change of address.
 
 ## Lists
 
@@ -43,7 +45,7 @@ An unordered list starts each item with a dash. Items can nest.
   - Another item one level in.
 - The third item.
 
-An ordered list numbers its items, and the editor counts for you.
+An ordered list numbers its items.
 
 1. Write the first step.
 2. Write the next step.
@@ -51,7 +53,7 @@ An ordered list numbers its items, and the editor counts for you.
 
 A task list adds a checkbox to each item.
 
-- [x] Install the editor
+- [x] Sign in to the editor
 - [x] Write a post
 - [ ] Publish it
 
@@ -62,6 +64,8 @@ A line that starts with `>` becomes a block quote, which sets a passage apart.
 > A cairn is a stack of stones that marks a path. Each traveler adds one.
 >
 > A second paragraph can sit inside the same quote.
+
+A pull quote sets one line in large type as a visual break.
 
 :::pull-quote[Write the post you wish someone had handed you.]
 :::
@@ -90,15 +94,15 @@ Line two.
 
 A table lines text up in rows and columns. A colon in the divider row sets a column's alignment.
 
-| Element | Written as | Aligned |
-| :------ | :--------: | ------: |
-| Bold | `**text**` | right |
-| Italic | `*text*` | right |
-| Link | `[text](address)` | right |
+| Left aligned | Centered | Right aligned |
+| :----------- | :--------: | ------------: |
+| Bold | `**text**` | Ctrl+B |
+| Italic | `*text*` | Ctrl+I |
+| Link | `[text](address)` | Ctrl+K |
 
 ## Dividers
 
-Three dashes on a line of their own make a horizontal rule, which marks a break between sections of a post.
+Three dashes on a separate line make a horizontal rule, which marks a break between sections of a post.
 
 ---
 
@@ -118,11 +122,11 @@ A cairn marks the path.
 
 ## Blocks
 
-A block is a ready-made piece of content. In the editor, select **Insert block** to choose one and fill in its form. Each block below appears once.
+A block is a ready-made piece of content. In the editor, select **Insert block** to choose one and fill in its form. Each block in this section appears once.
 
 A callout draws attention to one idea. Its tone is a note, a tip, or a warning.
 
-::::callout[Save before you publish]{tone="tip"}
+::::callout[You can publish without saving first]{tone="tip"}
 **Publish** saves your edits first, so you don't have to select **Save** beforehand.
 
 :::points
@@ -133,16 +137,16 @@ A callout draws attention to one idea. Its tone is a note, a tip, or a warning.
 
 An alert is a heavier notice for something a reader must not miss.
 
-:::alert[Check the date]{role=caution}
-A post's date sets its place in the archive and its address. Changing it after you publish changes the link.
+:::alert[Check the address]{role="caution"}
+A post's address is set when you create it, and it doesn't follow the title after that. To change it later, open **Details** and select **Change address**. Links from other entries update automatically.
 :::
 
-An icon marks a short line with a single symbol from the site's icon set.
+An icon shows a single symbol from the site's icon set.
 
 :::icon{name="flag"}
 :::
 
-A video link shows a panel that names where the video lives. The site requests nothing from the video platform until a reader selects it.
+A video link shows a panel that names where the video lives. The site requests nothing from the video platform until a reader selects it, and then it opens in a new tab.
 
 :::video{url="https://www.youtube.com/watch?v=YE7VzlLtp-4" title="Big Buck Bunny, a short film from the Blender Foundation"}
 :::
@@ -157,7 +161,7 @@ A compact pointer link suits further reading at the end of a section.
 :::micro-cta{label="More about cairn" url="https://cairn.pub" note="the project's documentation"}
 :::
 
-A question and answer opens and closes without any script.
+A question and answer opens and closes when a reader selects the question.
 
 :::faq{question="Can I delete the sample posts?"}
 Yes. Delete any post or page from its list when you no longer need it.
@@ -165,7 +169,7 @@ Yes. Delete any post or page from its list when you no longer need it.
 
 A banner announces something for a limited time. It removes itself after its expiry date.
 
-:::banner{message="This banner is a sample, and it shows until the year 3000." expires="2999-01-01"}
+:::banner{message="This banner is a sample, and it shows until the year 2999." expires="2999-01-01"}
 :::
 
-The fragment near the top of this post is an include. It repeats text that lives in one place and appears in many.
+An include places a fragment, a piece of text you write once on the **Fragments** screen, wherever you want it. The sample content note near the top of this post is one. To add one, select **Include a fragment** in the toolbar.

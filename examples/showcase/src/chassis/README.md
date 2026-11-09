@@ -59,7 +59,7 @@ both chassis-owned and outside that registry. `cairn-router-scrolling` is the on
 this prefix (`src/theme/site.css` and the `(site)` layout). A theme colors a `cairn-*` class
 through tokens and never restyles its structure. `site-*` is the theme's chrome and page
 classes and custom properties (`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`).
-`sg-*` is the demo classes of the cairn-cms showcase's `/styleguide` route, scoped to that route
+`sg-*` is the demo classes of the cairn-cms showcase's styleguide page, scoped to that page
 and absent from a scaffolded site. A directive class with no prefix at all (`.callout`, `.alert`, `.banner`) comes from the
 theme's `markdown-blocks.ts`, which stamps it in each component's `build()`; a theme may
 rename it, and it never collides with anything the engine fixes. `.card` is not a directive, and the
@@ -192,7 +192,7 @@ scratch. Two are real site uses: the home page's `.index` is `.cairn-section`, a
 error page's message block is `.cairn-band`. `.cairn-hero`, `.cairn-card`, and
 `.cairn-sidebar-layout` have no real site use in a scaffolded site (the home lead is not a card,
 and `related` renders as a block in the reading flow rather than a sidebar-shaped region), so the
-cairn-cms showcase's `/styleguide` route, which a scaffolded site does not carry, demonstrates
+cairn-cms showcase's styleguide page, which a scaffolded site does not carry, demonstrates
 them, a demonstration rather than a
 composition claim; adopting any of them elsewhere is a theme's choice, never a requirement. Each
 primitive exposes its `--cairn-<primitive>-*` custom
@@ -258,7 +258,7 @@ a build it silently breaks) fails this file's promise.
 | `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |
 | `prose.css` | `tokens.css`'s `@import './prose.css'` (its only inclusion point). | Delete the file and that one `@import` line; a theme rendering no markdown prose (a fully component-composed site) needs nothing else. Waymark itself uses this for every body of copy, so removing it is a demonstration of the seam, not a change Waymark would make. |
-| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point); `(site)/+layout.svelte` and `+error.svelte` (`.cairn-site-shell`/`.cairn-site-main`); `(site)/styleguide/+page.svelte`, in the showcase only (`.cairn-hero` on the masthead, `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-sidebar-layout` on the Composition section); `(site)/+page.svelte` (`.cairn-section`); `+error.svelte` (`.cairn-band`). | Not a bare deletion while the site shell and the composition primitives are in use: a theme dropping this file replaces the shell markup at both call sites with the theme's flex column, replaces the hero, section, and band markup at their real call sites with hand-rolled equivalents, and drops the showcase styleguide's Composition section (its `.cairn-card`/`.cairn-sidebar-layout` demonstration has no other call site in this theme). |
+| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point); `(site)/+layout.svelte` and `+error.svelte` (`.cairn-site-shell`/`.cairn-site-main`); the showcase's styleguide page (`+page.svelte` in its route folder), in the showcase only (`.cairn-hero` on the masthead, `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-sidebar-layout` on the Composition section); `(site)/+page.svelte` (`.cairn-section`); `+error.svelte` (`.cairn-band`). | Not a bare deletion while the site shell and the composition primitives are in use: a theme dropping this file replaces the shell markup at both call sites with the theme's flex column, replaces the hero, section, and band markup at their real call sites with hand-rolled equivalents, and drops the showcase styleguide's Composition section (its `.cairn-card`/`.cairn-sidebar-layout` demonstration has no other call site in this theme). |
 
 ## Adding a new primitive or seam
 

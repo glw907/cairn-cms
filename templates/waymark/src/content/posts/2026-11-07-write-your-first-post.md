@@ -14,6 +14,6 @@ A post is a dated entry. It appears on your home page, in the archive, and in yo
 6. Select **Save** to keep your work as a draft. Visitors can't see a draft.
 7. Select **Publish** to put the post on your site.
 
-After you publish, the editor shows a message that the live site shows the change once the site rebuilds. Open your home page after a minute or two and look for the post.
+After you publish, the editor shows a message that the live site shows the change once the site rebuilds. Open your home page after the site rebuilds and look for the post.
 
 You can delete this post and the other samples from the **Posts** list when you no longer need them. To keep going, read [Add a page](cairn:posts/2026-11-06-add-a-page) next.

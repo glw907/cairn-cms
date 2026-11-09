@@ -4,7 +4,7 @@ date: 2026-11-05
 description: Upload a picture, describe it for readers who can't see it, and place it in your text.
 author: author
 ---
-Pictures break up a long post, and a description makes them usable for everyone. You add both in one panel.
+Pictures break up a long post, and a description lets readers who can't see a picture follow the post. You add both in one panel.
 
 To upload a picture and place it in your text, follow these steps:
 

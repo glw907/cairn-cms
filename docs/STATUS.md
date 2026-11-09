@@ -54,6 +54,9 @@ pass, was dropped by Geoff on 2026-11-08.
   Item 8, 2026-11-09 13:3x: the one open PR is #208 (theme-garden-2), and none of its files is
   under pass 2's paths (`scripts/gate/`, `tool/`, `plugins/cairn/`, the two held skills,
   `gate-table.json`, `gate-publish.spec.ts`, `set-up-with-an-agent.md`); no other live branch.
+  Item 7's probe passed all eight forms with no refusal. Passes 1 and 2 launched side by side:
+  `workstation-setup-tooling-1` (session `685a8bbe`, from ~/.dotfiles) and
+  `cairn-cms-setup-tooling-2` (session `3d50a697`). Packet B follows them; pass 3 waits on it.
 
 ## Open decisions and watches
 

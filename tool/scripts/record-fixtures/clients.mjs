@@ -1,5 +1,6 @@
 // The two API clients. Both take their origins and their fetch by injection, so a test stands a
-// local server in for the live services. Each guard throws before the request is sent.
+// local server in for the live services. Each guard throws before the request is sent, and no
+// call follows a redirect.
 import { assertTestIdentity } from './guards.mjs';
 import { TIMEOUT_MS } from './recorder.mjs';
 
@@ -25,6 +26,9 @@ async function send({ fetcher, before, recorder, provider }, url, method, header
     method,
     headers: { accept: 'application/json', ...(options.body === undefined ? {} : { 'content-type': 'application/json' }), ...headers },
     ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
+    // A provider call never follows a redirect: a moved endpoint fails the call rather than
+    // carrying the bearer token to wherever it points.
+    redirect: 'error',
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   const text = await response.text();

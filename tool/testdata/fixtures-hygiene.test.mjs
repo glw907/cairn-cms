@@ -58,3 +58,30 @@ test('no fixture carries an email address or the estate account id', () => {
   }
   assert.deepEqual(offenders, [], `fixture(s) carry a real identifier: ${offenders.join(', ')}`);
 });
+
+// The fields Cloudflare's GET /user carries about the person behind an account. The recorder reduces
+// that body to its decoded fields before staging; this holds the line for any body promoted here.
+const PERSONAL_KEYS = new Set(['first_name', 'last_name', 'telephone', 'zipcode', 'organizations']);
+
+/**
+ * Report whether a parsed JSON value carries a personal-data key anywhere beneath it.
+ * @param {unknown} value the value to search
+ * @returns {boolean} true when such a key is present
+ */
+function hasPersonalKey(value) {
+  if (Array.isArray(value)) return value.some(hasPersonalKey);
+  if (value && typeof value === 'object') {
+    return Object.entries(value).some(([entryKey, entryValue]) => PERSONAL_KEYS.has(entryKey) || hasPersonalKey(entryValue));
+  }
+  return false;
+}
+
+test('no fixture carries a personal-data field', () => {
+  const offenders = [];
+  for (const entry of readdirSync(FIXTURES_DIR, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+    const path = join(entry.parentPath, entry.name);
+    if (hasPersonalKey(JSON.parse(readFileSync(path, 'utf8')))) offenders.push(path);
+  }
+  assert.deepEqual(offenders, [], `fixture(s) carry a personal-data field: ${offenders.join(', ')}`);
+});

@@ -40,7 +40,8 @@ id, or a worker name. Every body here is a real captured API response, but the i
 are scratch or estate values scrubbed to the fake shapes the code already used before
 extraction (a scratch domain, a synthetic hex id), never a value that identifies a person or a
 production account. `tool/testdata/fixtures-hygiene.test.mjs` gates this: it walks every file here and
-fails on an email-shaped string or the estate account id.
+fails on an email-shaped string, the estate account id, or a personal-data field (`first_name`,
+`last_name`, `telephone`, `zipcode`, `organizations`).
 
 One file is the exception to "a real captured API response":
 `cloudflare/observability-telemetry-query.ok.json` carries a live-recorded envelope around three

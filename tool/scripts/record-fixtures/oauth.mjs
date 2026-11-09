@@ -3,16 +3,27 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 
+// Only the scopes the run's calls need. The registered client offers no read-only scope for DNS
+// records or Workers routes, so their list reads ride on the write scope.
 export const SCOPES = [
-  'user-details.read', 'account-settings.read', 'zone.read', 'dns.write', 'workers-scripts.edit',
-  'workers-routes.write', 'd1.write', 'workers-r2.write', 'email-sending.write', 'user-api-tokens.write', 'offline_access',
+  'user-details.read', // GET /user
+  'account-settings.read', // GET /accounts, GET /accounts/{id}/subscriptions
+  'zone.read', // GET /zones
+  'dns.write', // GET /zones/{id}/dns_records
+  'workers-scripts.edit', // GET /accounts/{id}/workers/scripts and /workers/domains
+  'workers-routes.write', // GET /zones/{id}/workers/routes
+  'd1.write', // the scratch database
+  'workers-r2.write', // the scratch bucket
+  'user-api-tokens.write', // the minted deploy key
 ];
 export const CALLBACK_PATH = '/cloudflare/callback';
 
 const DONE_PAGE = '<!doctype html><meta charset="utf-8"><title>Connected</title><p>Cloudflare is connected. You can close this tab.</p><script>window.close()</script>';
+const STALE_PAGE = '<!doctype html><meta charset="utf-8"><title>Not this sign-in</title><p>This callback belongs to another consent. Use the tab the recorder opened last.</p>';
 
 /**
- * Run the consent: listen on loopback, open the authorize URL, and wait for the code.
+ * Run the consent: listen on loopback, open the authorize URL, and wait for the code. A callback
+ * whose state is not this consent's is answered and ignored, and the wait goes on.
  * @param {object} options
  * @param {string} options.dashBase Cloudflare's dashboard origin
  * @param {string} options.clientId the registered client id
@@ -36,10 +47,19 @@ export async function consent({ dashBase, clientId, openBrowser, port = 49152, w
       res.writeHead(404).end();
       return;
     }
+    if (url.searchParams.get('state') !== state) {
+      res.writeHead(400, { 'content-type': 'text/html; charset=utf-8' }).end(STALE_PAGE);
+      return;
+    }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(DONE_PAGE);
     arrived(url.searchParams);
   });
-  await new Promise((resolve) => server.listen(port, '127.0.0.1', () => resolve(undefined)));
+  await new Promise((resolve, reject) => {
+    server.once('error', (/** @type {NodeJS.ErrnoException} */ error) => {
+      reject(new Error(`The Cloudflare callback cannot listen on 127.0.0.1:${port} (${error.code ?? error.message}). Stop whatever holds the port and rerun.`));
+    });
+    server.listen(port, '127.0.0.1', () => resolve(undefined));
+  });
   const redirectUri = `http://127.0.0.1:${/** @type {import('node:net').AddressInfo} */ (server.address()).port}${CALLBACK_PATH}`;
   try {
     const authorize = new URL(`${dashBase}/oauth2/auth`);
@@ -57,11 +77,13 @@ export async function consent({ dashBase, clientId, openBrowser, port = 49152, w
       callback,
       new Promise((_, reject) => setTimeout(() => reject(new Error('The Cloudflare consent never reached the callback.')), waitMs).unref()),
     ]));
-    if (query.get('state') !== state || !query.get('code')) throw new Error('The Cloudflare callback carried the wrong state or no code.');
+    const code = query.get('code');
+    if (!code) throw new Error(`The Cloudflare callback carried no code${query.get('error') ? ` (${query.get('error')})` : ''}.`);
     const response = await fetcher(`${dashBase}/oauth2/token`, {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'authorization_code', client_id: clientId, code: /** @type {string} */ (query.get('code')), redirect_uri: redirectUri, code_verifier: verifier }),
+      body: new URLSearchParams({ grant_type: 'authorization_code', client_id: clientId, code, redirect_uri: redirectUri, code_verifier: verifier }),
+      redirect: 'error',
     });
     const json = await response.json();
     if (!response.ok || !json.access_token) throw new Error(`The Cloudflare token exchange answered ${response.status}.`);
@@ -73,7 +95,7 @@ export async function consent({ dashBase, clientId, openBrowser, port = 49152, w
 }
 
 /**
- * Revoke a token, as a probe: the outcome is recorded either way.
+ * Revoke a token. The caller records the status and fails the run on anything but a 2xx.
  * @param {string} dashBase Cloudflare's dashboard origin
  * @param {string} clientId the registered client id
  * @param {string} token the token to revoke
@@ -85,6 +107,7 @@ export async function revoke(dashBase, clientId, token, fetcher = fetch) {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ token, client_id: clientId }),
+    redirect: 'error',
   });
   return response.status;
 }

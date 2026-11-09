@@ -160,6 +160,8 @@ No documentation block quotes these; `check:transcripts` treats this list as the
 
 - `01-create-cairn-site.txt`: the wizard's run, kept until P6 retires the wizard. The setup pages
   describe `cairn new` and no longer quote it.
+- `06-cairn-new-dry-run-json.txt` and `08-cairn-new-usage-error.txt`: the set-up-with-an-agent page
+  (T5.4) quotes them and removes these two lines.
 
 ## Identifiers
 

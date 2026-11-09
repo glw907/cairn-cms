@@ -6,7 +6,7 @@ package spine
 type ParkCode string
 
 // The park codes ported from the Cloudflare chapter's error catalogue rows whose kind is
-// "wait" (packages/create-cairn-site/src/cloudflare/catalogue.mjs).
+// "wait" (the retired wizard's catalogue).
 const (
 	ParkDelegationPropagating   ParkCode = "delegation-propagating"
 	ParkDelegationPending       ParkCode = "delegation-pending"

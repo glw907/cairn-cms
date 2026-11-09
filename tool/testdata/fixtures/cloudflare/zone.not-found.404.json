@@ -1,7 +1,7 @@
 {
   "provenance": {
     "captured": "2026-08-11",
-    "source": "packages/create-cairn-site/test/fake-cloudflare.mjs:10-11",
+    "source": "the retired Node fake fake-cloudflare.mjs:10-11",
     "status": 404,
     "note": "no per-body capture comment"
   },

@@ -145,7 +145,7 @@ describe('check-stable-source', () => {
       entry('scripts/gate/legs.mjs'),
       entry('src/tests/unit/gate-x.test.ts', 'A'),
       entry('examples/showcase/e2e/golden-path.spec.ts'),
-      entry('packages/create-cairn-site/test/x.test.mjs', 'D'),
+      entry('packages/cairn-cms-dev/test/x.test.ts', 'D'),
       entry('docs/STATUS.md'),
       entry('BACKLOG.md'),
       entry('ROADMAP.md'),

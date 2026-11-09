@@ -4,9 +4,8 @@ import "net/http"
 
 // Reason classifies why a provider API call failed, past the raw HTTP status, so a health check
 // can render one stable, translatable message instead of branching on a provider's numeric
-// codes. The set mirrors the conditions
-// packages/create-cairn-site/src/cloudflare/api.mjs already catalogues for the Node CLI
-// (throwMapped, throwBuildsMapped), and ReasonUnknown is the catch-all no health check should
+// codes. The set mirrors the conditions the retired Node CLI
+// catalogued (throwMapped, throwBuildsMapped), and ReasonUnknown is the catch-all no health check should
 // ever treat as a specific, actionable condition.
 type Reason int
 

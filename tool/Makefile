@@ -27,7 +27,7 @@ build:
 	go build -trimpath -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/cairn
 
 # -count=1 disables the test cache: several tests (spine, logs, health, providers) read files
-# outside this module (conditions.ts, events.ts, docs, the create-cairn-site sources), and the
+# outside this module (conditions.ts, events.ts, docs, the launcher), and the
 # cache does not track those as inputs, so a cached pass can stay green after they drift on main.
 test:
 	go test -count=1 ./...

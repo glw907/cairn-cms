@@ -8,7 +8,7 @@ import (
 )
 
 // siteIDShape mirrors the Node CLI's SITE_ID_SHAPE
-// (packages/create-cairn-site/src/state.mjs): a slug of lowercase
+// (the retired wizard's state module): a slug of lowercase
 // alphanumeric segments followed by a six-character lowercase alphanumeric
 // suffix.
 var siteIDShape = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*-[a-z0-9]{6}$`)

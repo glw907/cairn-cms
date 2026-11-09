@@ -13,8 +13,8 @@
 // Six token classes, each resolved against a different ground truth, chosen because each
 // resolves reliably without guessing:
 //   - a CLI flag (`--some-flag`) inside a shell-tagged fenced block, resolved against the two
-//     CLIs this repository owns: `packages/create-cairn-site`'s argument parser, and the Go
-//     tool's committed flag list at `tool/testdata/flags.json`, which `make -C tool flags`
+//     CLIs this repository owns: `create-cairn-site` (the flags of `cairn new`, which it launches),
+//     and the Go tool's committed flag list at `tool/testdata/flags.json`, which `make -C tool flags`
 //     writes from the real cobra tree; anything else (npm, npx, wrangler, git, gh, node) comes
 //     from the allowlist
 //   - a `cairn` line (a shell-fenced line whose first word, after an optional `$ ` prompt, is
@@ -387,18 +387,6 @@ export function parseApiSurface(root = ROOT) {
   return bySubpath;
 }
 
-/** Parse `packages/create-cairn-site`'s flags from `src/args.mjs`. @param {string} root */
-export function createCairnSiteFlags(root = ROOT) {
-  const text = readFileSync(join(root, 'packages/create-cairn-site/src/args.mjs'), 'utf8');
-  const body = text.match(/const OPTIONS = \{([\s\S]*?)\n\};/);
-  if (!body) throw new Error('check-symbols: could not find OPTIONS in create-cairn-site/src/args.mjs');
-  const flags = new Set();
-  for (const m of body[1].matchAll(/^\s*(?:'([a-z0-9-]+)'|([a-z][a-z0-9]*)):/gm)) {
-    flags.add(m[1] ?? m[2]);
-  }
-  return flags;
-}
-
 /**
  * Read the Go tool's committed flag list (`tool/testdata/flags.json`) into a set of bare names,
  * the leading dashes stripped so it lines up with `createCairnSiteFlags`. The file is generated
@@ -438,6 +426,21 @@ export function cairnCommandFlags(root = ROOT) {
   return new Map(
     Object.entries(commands).map(([cmdPath, flags]) => [cmdPath, new Set(/** @type {string[]} */ (flags))]),
   );
+}
+
+/**
+ * The flags `create-cairn-site` accepts, bare names. The launcher hands its arguments to
+ * `cairn new`, so they are `cairn new`'s flags in `tool/testdata/flags.json`'s per-command map.
+ * Throws when the map has no `new` command: an empty set would turn every documented launcher
+ * flag into a finding.
+ * @param {string} root
+ */
+export function createCairnSiteFlags(root = ROOT) {
+  const flags = cairnCommandFlags(root).get('cairn new');
+  if (!flags) {
+    throw new Error('check-symbols: tool/testdata/flags.json has no "cairn new" command; run `make -C tool flags`');
+  }
+  return new Set([...flags].map((flag) => flag.replace(/^--/, '')));
 }
 
 /**
@@ -625,7 +628,7 @@ const GENERATED_TREE_EXCLUDES = ['node_modules', '.wrangler', '.svelte-kit', 'te
   .join(' ');
 
 /**
- * Whether a SCREAMING_SNAKE_CASE token appears anywhere in the source tree (excluding docs and
+ * Whether a SCREAMING_SNAKE_CASE token appears anywhere in the source tree, the Go tool included (excluding docs and
  * generated output), the ground truth for the environment-variable class.
  *
  * The walk skips `node_modules` (installed dependencies), `.wrangler` (the bundles `wrangler dev`
@@ -644,7 +647,7 @@ export function envVarInSourceTree(token, root = ROOT) {
   let found = false;
   try {
     const out = execSync(
-      `grep -rl ${GENERATED_TREE_EXCLUDES} -- "\\b${token}\\b" src packages migrations examples/showcase scripts .github 2>/dev/null || true`,
+      `grep -rl ${GENERATED_TREE_EXCLUDES} -- "\\b${token}\\b" src packages migrations examples/showcase scripts tool .github 2>/dev/null || true`,
       { cwd: root },
     )
       .toString()

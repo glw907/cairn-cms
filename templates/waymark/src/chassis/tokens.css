@@ -53,6 +53,9 @@
 @import "./prose.css";
 @import "./composition.css";
 @source not "../../.claude";
+/* Tailwind's automatic source detection skips gitignored paths, and the showcase gitignores its
+   generated src/theme/. Naming the directory keeps the theme's utilities in the build. */
+@source "../theme";
 
 @plugin "daisyui" {
   themes: false;

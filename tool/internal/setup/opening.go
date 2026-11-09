@@ -128,15 +128,20 @@ func (r *run) resumeOpening() error {
 // recordedSuffix is the taken-name suffix a resumed record's repository name carries, and 0 for
 // a new run or a record with no repository name yet.
 func (r *run) recordedSuffix() int {
-	name := r.rec.GitHub.Repo.Repo
+	return suffixOf(r.cfg.Answers.SiteName, r.rec)
+}
+
+// suffixOf finds the suffix whose repository name rec recorded for siteName.
+func suffixOf(siteName string, rec record.Record) int {
+	name := rec.GitHub.Repo.Repo
 	if name == "" {
-		name = r.rec.Setup.Intents.Repo
+		name = rec.Setup.Intents.Repo
 	}
 	if name == "" {
 		return 0
 	}
 	for s := 0; s <= maxSuffix; s = nextSuffix(s) {
-		if n, err := deriveNames(r.cfg.Answers.SiteName, s); err == nil && n.Repository == name {
+		if n, err := deriveNames(siteName, s); err == nil && n.Repository == name {
 			return s
 		}
 	}
@@ -187,6 +192,10 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		return r.fail(ctx, err, "Cloudflare")
 	}
 	r.email = strings.TrimSpace(r.email)
+	// An owner who already gave an address has it shown at the summary, not the sign-in's.
+	if given := strings.TrimSpace(r.cfg.Answers.OwnerEmail); given != "" {
+		r.email = given
+	}
 	r.cf = r.cfg.Cloudflare(r.account.ID, r.access)
 
 	zones, err := r.cf.ActiveZones(ctx)

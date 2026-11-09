@@ -745,13 +745,91 @@ func newBadPostureError(value string) error {
 	return translated(fmt.Errorf(tmplNewBadPosture, value))
 }
 
-// tmplNewNotImplemented is the stop a mode reaches while its agent view is unbuilt.
-const tmplNewNotImplemented = "cairn: %s is not implemented yet"
+// newExitCodes is cairn new's exit code table, which the agent guide prints and a golden holds.
+// A usage error keeps the 3 every cairn command uses.
+const newExitCodes = `Exit codes for cairn new:
+0  the run finished, the plan file was written, or the command only listed or printed
+1  setup stopped at a step; the run is saved, and cairn new --resume continues it
+2  setup stopped while waiting, after Ctrl+C or a passed time limit; cairn new --resume continues it
+3  a usage error: a flag or the plan file was refused
+A stream of events that does not end with a summary is unfinished.`
 
-// newNotImplementedError renders tmplNewNotImplemented.
-func newNotImplementedError(flag string) error {
-	return translated(fmt.Errorf(tmplNewNotImplemented, flag))
+// tmplNewUsage renders a refusal the agent view found in the flags or the plan file.
+const tmplNewUsage = "%s\nRun `cairn new --help` for the flags"
+
+// newUsageError renders tmplNewUsage.
+func newUsageError(problem string) error {
+	return translated(fmt.Errorf(tmplNewUsage, problem))
 }
+
+// tmplNewUnfinished is the refusal of --plan while one unfinished setup exists.
+const tmplNewUnfinished = "cairn: an unfinished setup exists: %s.\nContinue it with --resume %s, or start a new site with --new.\nRun `cairn new --help` for the flags"
+
+// newUnfinishedError renders tmplNewUnfinished.
+func newUnfinishedError(id string) error {
+	return translated(fmt.Errorf(tmplNewUnfinished, id, id))
+}
+
+// tmplNewSeveralUnfinished is the refusal of --plan while several unfinished setups exist.
+const tmplNewSeveralUnfinished = "cairn: several unfinished setups exist: %s.\nContinue one with --resume <id>, or start a new site with --new.\nRun `cairn new --help` for the flags"
+
+// newSeveralUnfinishedError renders tmplNewSeveralUnfinished.
+func newSeveralUnfinishedError(ids []string) error {
+	return translated(fmt.Errorf(tmplNewSeveralUnfinished, strings.Join(ids, ", ")))
+}
+
+// tmplNewNoSetup is the refusal of --resume with an id that names no unfinished setup.
+const tmplNewNoSetup = "cairn: no unfinished setup is named %s.\nRun `cairn new status` to list them"
+
+// newNoSetupError renders tmplNewNoSetup.
+func newNoSetupError(id string) error {
+	return translated(fmt.Errorf(tmplNewNoSetup, id))
+}
+
+// tmplNewNoRunForPlan is the refusal of --apply with a plan whose run has no unfinished setup.
+const tmplNewNoRunForPlan = "cairn: the plan's runId is %s, and no unfinished setup has that run.\nRun `cairn new status` to list them, or run --plan again"
+
+// newNoRunForPlanError renders tmplNewNoRunForPlan.
+func newNoRunForPlanError(runID string) error {
+	return translated(fmt.Errorf(tmplNewNoRunForPlan, runID))
+}
+
+// tmplNewPlanUnreadable is the refusal of a plan file that cannot be read.
+const tmplNewPlanUnreadable = "cairn: %v.\nRun `cairn new --help` for the flags"
+
+// newPlanUnreadableError renders tmplNewPlanUnreadable.
+func newPlanUnreadableError(err error) error {
+	return translated(fmt.Errorf(tmplNewPlanUnreadable, err))
+}
+
+// tmplNewPlanWritten is what --plan says on stderr once the plan file is written.
+const tmplNewPlanWritten = "Plan written to %s. Nothing was created on Cloudflare. Edit the email or the address if you need to, and then run cairn new --apply %s."
+
+// tmplNewDryRun is the text a dry run prints without --json.
+const tmplNewDryRun = "Site: %s\nRepository: %s\nWorker: %s\nDatabase: %s\nBucket: %s\nGitHub App: %s\nFolder: %s\nOwner email: %s\nAI crawlers: %s\nNothing was created."
+
+// tmplNewBadEmail is the refusal of an --email that is not one address.
+const tmplNewBadEmail = "cairn: --email must be one email address, such as owner@example.com.\nRun `cairn new --help` for the flags"
+
+// shortNewStatus is cairn new status's Short.
+const (
+	shortNewStatus   = "List the setups in progress and what each holds"
+	exampleNewStatus = "cairn new status"
+)
+
+// newStatusNone is what cairn new status prints when the registry holds no setup.
+const newStatusNone = "No setups found."
+
+// The rows of cairn new status. An unfinished setup lists what it still holds, so the owner
+// knows what to remove if they never continue it.
+const (
+	tmplNewStatusFinished   = "%s  finished  step %s"
+	tmplNewStatusUnfinished = "%s  unfinished  step %s"
+	tmplNewStatusKeys       = "  keyring entries: %s"
+	tmplNewStatusApp        = "  GitHub App: %s"
+	tmplNewStatusRepo       = "  repository: %s"
+	newStatusHint           = "Continue an unfinished setup with cairn new --resume <id>."
+)
 
 // newAgentGuide is what cairn new prints when no flag names a mode: the flags, and how an agent
 // plans and then applies. The exit codes are cairn help agents'.
@@ -782,4 +860,4 @@ Other flags:
   --new          start a new site instead of continuing an unfinished one
   --tag          the engine's npm dist-tag to build from (default latest)
 
-A usage error exits 3 and writes nothing to stdout. cairn help agents lists the exit codes.`
+A usage error exits 3 and writes nothing to stdout. The exit codes follow.`

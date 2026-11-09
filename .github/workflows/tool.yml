@@ -124,10 +124,13 @@ jobs:
       - name: End-to-end harness (Linux)
         # The harness builds its binaries with the cairne2e tag itself and skips on every system
         # but Linux, where Go reads SSL_CERT_FILE. make check runs it on all three, so a skip is
-        # invisible there; -v here shows the Linux leg ran each case rather than skipped it.
+        # invisible there; -v here shows the Linux leg ran each case rather than skipped it. The
+        # cairn new cases in cmd/cairn skip the same way, so the second command is their Linux leg.
         if: runner.os == 'Linux'
         working-directory: tool
-        run: go test -count=1 -v ./internal/testharness/...
+        run: |
+          go test -count=1 -v ./internal/testharness/...
+          go test -count=1 -v -run 'TestNewE2E' ./cmd/cairn/
       - name: Verbose store package tests (Windows)
         # make test runs go test ./... with no -v, so a skipped test (the symlink tests above
         # skip on Windows CI, which typically lacks the privilege to create one) is invisible in

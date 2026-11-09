@@ -106,18 +106,18 @@ func TestConfirmSummaryByMode(t *testing.T) {
 	ctx := context.Background()
 	s := setup.Summary{OwnerEmail: "a@b.co", Addresses: []string{"blog.example.com"}}
 
-	if _, err := (&View{Mode: Plan}).ConfirmSummary(ctx, s, ""); !errors.Is(err, setup.ErrPlanned) {
+	if _, err := (&View{Mode: PlanMode}).ConfirmSummary(ctx, s, ""); !errors.Is(err, setup.ErrPlanned) {
 		t.Errorf("plan mode: %v, want ErrPlanned", err)
 	}
-	edit, err := (&View{Mode: Resume}).ConfirmSummary(ctx, s, "")
+	edit, err := (&View{Mode: ResumeMode}).ConfirmSummary(ctx, s, "")
 	if err != nil || edit.OwnerEmail != "a@b.co" || edit.Host != "blog.example.com" {
 		t.Errorf("resume mode = %+v, %v; want the summary confirmed as shown", edit, err)
 	}
-	if _, err := (&View{Mode: Resume}).ConfirmSummary(ctx, s, "Enter a valid email address."); err == nil {
+	if _, err := (&View{Mode: ResumeMode}).ConfirmSummary(ctx, s, "Enter a valid email address."); err == nil {
 		t.Error("resume mode answered a refusal it cannot fix")
 	}
 
-	v := &View{Mode: Apply, Edit: setup.SummaryEdit{OwnerEmail: "new@b.co", Host: "example.com"}}
+	v := &View{Mode: ApplyMode, Edit: setup.SummaryEdit{OwnerEmail: "new@b.co", Host: "example.com"}}
 	if edit, err := v.ConfirmSummary(ctx, s, ""); err != nil || edit != v.Edit {
 		t.Errorf("apply mode = %+v, %v; want the plan's edit", edit, err)
 	}
@@ -129,7 +129,7 @@ func TestConfirmSummaryByMode(t *testing.T) {
 		{"address refused", setup.SummaryEdit{OwnerEmail: "a@b.co", Host: "example.com"}, "address"},
 		{"email refused", setup.SummaryEdit{OwnerEmail: "nope", Host: "example.com"}, "ownerEmail"},
 	} {
-		v := &View{Mode: Apply, Edit: tc.edit}
+		v := &View{Mode: ApplyMode, Edit: tc.edit}
 		_, err := v.ConfirmSummary(ctx, s, "That address already points to another site.")
 		if ue, ok := errors.AsType[*UsageError](err); !ok || !strings.Contains(ue.Error(), tc.want) {
 			t.Errorf("%s: err = %v, want a usage error naming %s", tc.name, err, tc.want)

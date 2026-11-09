@@ -78,6 +78,7 @@ func newNewCmd(d deps) *cobra.Command {
 	fl.StringVar(&f.tag, "tag", "latest", flagNewTagHelp)
 	fl.BoolVar(&f.dryRun, "dry-run", false, flagNewDryRunHelp)
 	fl.BoolVar(&f.asJSON, "json", false, flagNewJSONHelp)
+	cmd.AddCommand(newStatusCmd(d))
 	return cmd
 }
 
@@ -140,12 +141,12 @@ func runNew(cmd *cobra.Command, d deps, f newFlags) error {
 			return runAgentLane(cmd, d, f, m)
 		}
 	}
-	_, err := fmt.Fprintln(cmd.OutOrStdout(), newAgentGuide)
+	_, err := fmt.Fprintln(cmd.OutOrStdout(), newAgentGuide+"\n\n"+newExitCodes)
 	return err
 }
 
-// runAgentLane is the seam the agent view fills: it will build productionConfig with the agent
-// view and the NDJSON emitter, then run the mode.
-func runAgentLane(_ *cobra.Command, _ deps, _ newFlags, mode string) error {
-	return newNotImplementedError("--" + mode)
+// runAgentLane is the seam the agent view fills: the terminal view will take the run instead
+// when stdin and stdout are terminals.
+func runAgentLane(cmd *cobra.Command, d deps, f newFlags, mode string) error {
+	return runAgent(cmd, d, f, mode)
 }

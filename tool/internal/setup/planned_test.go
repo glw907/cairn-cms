@@ -19,9 +19,13 @@ func (planView) ConfirmSummary(context.Context, Summary, string) (SummaryEdit, e
 func TestAViewThatPlansStopsTheRunCleanlyAtTheSummary(t *testing.T) {
 	w := newWorld(t)
 	w.cfg.View = planView{w.view}
+	w.cfg.Answers.OwnerEmail = "agent@example.test"
 	_, err := w.run(context.Background())
 	if !errors.Is(err, ErrPlanned) {
 		t.Fatalf("Run error = %v, want ErrPlanned", err)
+	}
+	if got := w.events[len(w.events)-1].Summary.OwnerEmail; got != "agent@example.test" {
+		t.Errorf("summary email = %q, want the one the owner gave", got)
 	}
 	if slices.ContainsFunc(w.events, func(e Event) bool { return e.Kind == StepFailed }) {
 		t.Error("a planned stop emitted step_failed")

@@ -109,6 +109,13 @@ and commit the diff.
 
 - 
 Run the command again in %s
+-   GitHub App: %s
+-   keyring entries: %s
+-   repository: %s
+- %s
+Run `cairn new --help` for the flags
+- %s  finished  step %s
+- %s  unfinished  step %s
 - %s %s
 
 - %s (%s), go%s, %s/%s
@@ -154,12 +161,21 @@ Run `cairn health` after deploying to reach the checks that need a live site.
 With no site named, every zone-scoped and repository-scoped permission reports skip: run cairn auth check <site> to confirm those against one registered site's zone and repository, read-only.
 
 auth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
+- Continue an unfinished setup with cairn new --resume <id>.
 - Credentials:
 - Delete one credential's keyring entry
+- Exit codes for cairn new:
+0  the run finished, the plan file was written, or the command only listed or printed
+1  setup stopped at a step; the run is saved, and cairn new --resume continues it
+2  setup stopped while waiting, after Ctrl+C or a passed time limit; cairn new --resume continues it
+3  a usage error: a flag or the plan file was refused
+A stream of events that does not end with a summary is unfinished.
 - GitHub: skip, %s
 - List the Workers on the account that cairn could adopt
+- List the setups in progress and what each holds
 - List the sites cairn knows
 - Manage credentials in the OS keyring
+- No setups found.
 - Operate a cairn-cms production site
 - Operate a cairn-cms production site.
 
@@ -167,6 +183,7 @@ Run `cairn help agents` for the contract a program reads.
 Pass --json to a reporting command for a machine-readable payload on stdout.
 Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 - Permissions:
+- Plan written to %s. Nothing was created on Cloudflare. Edit the email or the address if you need to, and then run cairn new --apply %s.
 - Print the contract a program or an agent reads
 - Prompt for a value and store it in the keyring
 - Read one site's engine log records
@@ -178,6 +195,16 @@ Precedence is CRITICAL, then UNKNOWN, then WARNING, then OK, which is not numeri
 Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.
 - Set up a new cairn site
 - Show which provider answers each credential variable
+- Site: %s
+Repository: %s
+Worker: %s
+Database: %s
+Bucket: %s
+GitHub App: %s
+Folder: %s
+Owner email: %s
+AI crawlers: %s
+Nothing was created.
 - cairn adopt --worker my-site
 - cairn adopt list
 - cairn auth check my-site-a1b2c3
@@ -278,7 +305,8 @@ Other flags:
   --new          start a new site instead of continuing an unfinished one
   --tag          the engine's npm dist-tag to build from (default latest)
 
-A usage error exits 3 and writes nothing to stdout. cairn help agents lists the exit codes.
+A usage error exits 3 and writes nothing to stdout. The exit codes follow.
+- cairn new status
 - cairn sites
 - cairn sites list --json
 - cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them
@@ -295,17 +323,20 @@ Pipe a non-empty value: printf %%s "$v" | cairn auth set %s
 - cairn: %s is not a valid hold file.
 %v
 Write the file as a JSON array of entries, each carrying checkId and expires
-- cairn: %s is not implemented yet
 - cairn: %s is required with %s.
 Run `cairn new --help` for the flags
 - cairn: %v
 - cairn: %v.
 Run `%s --help` for usage
+- cairn: %v.
+Run `cairn new --help` for the flags
 - cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.
 Use the check and an expiry date, for example deploy=2026-10-01
 - cairn: --ack-file %s not found.
 Use a file that exists, or drop --ack-file to use the registry's default
 - cairn: --color %q is not %s, %s, or %s
+- cairn: --email must be one email address, such as owner@example.com.
+Run `cairn new --help` for the flags
 - cairn: --posture takes decline or invite, not %q.
 Run `cairn new --help` for the flags
 - cairn: --since %q is not a duration.
@@ -316,6 +347,9 @@ Use %s or %s
 Use a whole number from %d to %d
 - cairn: Cloudflare rate-limited this run.
 The checks that need Cloudflare could not run; the others are reported above
+- cairn: an unfinished setup exists: %s.
+Continue it with --resume %s, or start a new site with --new.
+Run `cairn new --help` for the flags
 - cairn: cairn adopt names one Worker.
 Run `cairn adopt list` to see the Workers on the account
 - cairn: cairn auth names a subcommand.
@@ -341,6 +375,11 @@ The health checks read your Cloudflare and GitHub tokens from the OS keyring or 
 Run `cairn auth set %s` to store one
 - cairn: no site named %q.
 Run `cairn sites list` to see the sites cairn knows
+- cairn: no unfinished setup is named %s.
+Run `cairn new status` to list them
+- cairn: several unfinished setups exist: %s.
+Continue one with --resume <id>, or start a new site with --new.
+Run `cairn new --help` for the flags
 - cairn: the %q entry in %s has an expires date cairn cannot read: %q.
 Use YYYY-MM-DD, for example 2026-10-01
 - cairn: the %q entry in %s has no expires date.
@@ -353,6 +392,8 @@ Set %s in the environment instead
 Run `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the domain it serves
 - cairn: the entry at position %d in %s carries no checkId.
 Name the check that entry holds
+- cairn: the plan's runId is %s, and no unfinished setup has that run.
+Run `cairn new status` to list them, or run --plan again
 - cairn: this output carries identifiers and is not safe to paste in public.
 - columns to render at, instead of the terminal's width
 - continue the unfinished setup with this site id

@@ -131,7 +131,7 @@ func TestNewStatusReportsWhatAnUnfinishedRunHolds(t *testing.T) {
 		t.Fatalf("code = %d, stderr = %q", code, stderr)
 	}
 	rows := map[string]string{}
-	for _, line := range strings.Split(stdout, "\n") {
+	for line := range strings.SplitSeq(stdout, "\n") {
 		if id, _, ok := strings.Cut(line, " "); ok {
 			rows[id] = line
 		}

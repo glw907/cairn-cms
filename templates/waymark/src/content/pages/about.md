@@ -1,7 +1,8 @@
 ---
 title: About
-robots: noindex
 ---
-This is Waymark, cairn's starter template, running here as the engine's development showcase. Every post and page on this site is deliberate placeholder content that a real site replaces. Each post demonstrates one component or surface of the theme.
+This is the About page that comes with every new site. It describes who writes here and what readers will find, and it's yours to rewrite.
 
-::include{fragment="trail-safety-notice"}
+A short About page answers three questions. Who are you? What do you write about? How can a reader reach you? Write a paragraph for each, or fewer, and delete this one.
+
+You can find the [author page](cairn:pages/author) and the [contact page](cairn:pages/contact) from here. The posts on this site show how to work in the editor, so you can read them as a guide or delete them when you're ready.

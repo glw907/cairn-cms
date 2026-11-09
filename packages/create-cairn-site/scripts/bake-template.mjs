@@ -7,7 +7,7 @@ import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { emitTemplate } from '../../../scripts/build/emit-template.mjs';
+import { emitTemplate, STARTER_OVERLAY_DIR } from '../../../scripts/build/emit-template.mjs';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const packageDir = path.resolve(scriptsDir, '..');
@@ -305,6 +305,7 @@ export async function bake({ to, engineSpec, devSpec }) {
     to,
     engineSpec: resolvedEngineSpec,
     devSpec: resolvedDevSpec,
+    starterOverlay: STARTER_OVERLAY_DIR,
   });
   const packageJsonPath = path.join(emitted, 'package.json');
   const pkg = JSON.parse(await readFile(packageJsonPath, 'utf8'));

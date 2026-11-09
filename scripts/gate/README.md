@@ -70,6 +70,7 @@ record with the domain. The zone's Email Sending records are never candidates. R
 | `sweep.mjs` | Lists, deletes, and probes, over the Cloudflare and GitHub APIs. |
 | `mail.mjs` | Reads the gate mailbox over JMAP; a method error throws. |
 | `browser.mjs` | Playwright: classifies each URL, clicks GitHub's pages, fails an unknown one through `failPage`, lists and deletes Apps, publishes through the admin. |
+| `stand-in.mjs` | The person at the browser while `cairn new` runs: tails `urls.log`, follows the setup tab by each page's next-step control after a 3 second pause, answers GitHub's pages, reads the sign-in mail when the tab offers the login page, ends on a signed-in admin page, and writes `stand-in.jsonl`. A page it cannot clear in 2 minutes fails through `failPage`. |
 | `totp.mjs` | RFC 6238 codes for the machine account's sign-in. |
 | `fetch-check.mjs` | Polls a live URL for a marker, or proves a page stayed unchanged. |
 | `resolve.mjs` | Finds the test domain's authoritative address, for a resolver that caches a negative answer. |

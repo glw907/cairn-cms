@@ -288,13 +288,60 @@ async function reachLoopback(page, { consent }, creds, pageOptions, evidence) {
 }
 
 /**
+ * On the install page, pick the machine account when the page asks which account to install on.
+ * @param {import('playwright').Page} page
+ * @param {Creds} creds
+ * @param {number} pauseMs
+ * @returns {Promise<boolean>} true when an account link was clicked
+ */
+async function chooseInstallAccount(page, creds, pauseMs) {
+  const chooser = page.getByRole('link', { name: creds.login });
+  if (!(await visible(page.getByRole('button', { name: /^install/i }))) && (await visible(chooser))) {
+    await chooser.first().click();
+    await settle(page, pauseMs);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Take one step on a page the setup tab reached on the provider's site: answer a sign-in,
+ * two-factor, or sudo prompt, choose the install account, or click the App-create, install, or
+ * authorize control, whichever the page shows. These are the controls `handleUrl` clicks for a URL
+ * the CLI opened.
+ * @param {import('playwright').Page} page the page
+ * @param {Creds} creds the machine account
+ * @param {number} [pauseMs] the pause after the page moves on
+ * @returns {Promise<string | null>} the action taken, or null when the page offers nothing yet
+ */
+export async function stepGithubPage(page, creds, pauseMs = 500) {
+  if (await answerAccountPrompts(page, creds, pauseMs)) return 'account-prompt';
+  if (classifyUrl(page.url()) === 'install' && (await chooseInstallAccount(page, creds, pauseMs))) return 'choose-account';
+  /** @type {Array<[RegExp, string]>} */
+  const controls = [
+    [/^create github app\b/i, 'create-app'],
+    [/^install/i, 'install'],
+    [/^authorize/i, 'authorize'],
+  ];
+  for (const [name, action] of controls) {
+    const button = page.getByRole('button', { name });
+    if (await visible(button)) {
+      await button.first().click();
+      await settle(page, pauseMs);
+      return action;
+    }
+  }
+  return null;
+}
+
+/**
  * Whether a path is a signed-in admin screen: `/admin` itself or any screen under it, such as the
  * `/admin/posts` the admin redirects a signed-in editor to. The login and auth pages mean the
  * sign-in did not take.
  * @param {string} pathname
  * @returns {boolean}
  */
-function isSignedInAdminPath(pathname) {
+export function isSignedInAdminPath(pathname) {
   const path = pathname.replace(/\/$/, '');
   if (path !== '/admin' && !path.startsWith('/admin/')) return false;
   return path !== '/admin/login' && !path.startsWith('/admin/auth');
@@ -347,11 +394,7 @@ export async function handleUrl(url, options) {
       await clickControl(page, /^create github app\b/i, creds, pageOptions);
       await reachLoopback(page, {}, creds, pageOptions, evidence);
     } else if (kind === 'install') {
-      const chooser = page.getByRole('link', { name: creds.login });
-      if (!(await visible(page.getByRole('button', { name: /^install/i }))) && (await visible(chooser))) {
-        await chooser.first().click();
-        await settle(page, pauseMs);
-      }
+      await chooseInstallAccount(page, creds, pauseMs);
       await clickControl(page, /^install/i, creds, pageOptions);
       await reachLoopback(page, {}, creds, pageOptions, evidence);
     } else {

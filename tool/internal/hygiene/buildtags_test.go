@@ -12,9 +12,11 @@ import (
 
 // allowedBuildTags maps the one file permitted a //go:build line to the exact
 // line it must carry. ADR-0003 makes cairne2e the end-to-end binary's test tag,
-// and keyring_e2e.go is the file it compiles; a release build never sets it.
+// and keyring_e2e.go and cmd/cairn/new_e2e_hook.go are the files it compiles; a release build
+// never sets it.
 var allowedBuildTags = map[string]string{
 	"internal/secrets/keyring_e2e.go": "//go:build cairne2e\n",
+	"cmd/cairn/new_e2e_hook.go":       "//go:build cairne2e\n",
 }
 
 // TestNoBuildTags asserts no .go file under the tool module carries a

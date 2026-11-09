@@ -113,6 +113,7 @@ func NewCase(t *testing.T, cfg Config) *Case {
 		"BROWSER":               Binary(t, "internal/testharness/browser"),
 		"CAIRN_E2E_BROWSER_LOG": c.browserLog,
 		"CAIRN_E2E_KEYRING_DIR": c.KeyringDir,
+		"CAIRN_E2E_GIT_REMOTES": c.Remotes,
 		"GIT_CONFIG_COUNT":      "1",
 		"GIT_CONFIG_KEY_0":      "url." + c.Remotes + "/.insteadOf",
 		"GIT_CONFIG_VALUE_0":    "https://github.com/",

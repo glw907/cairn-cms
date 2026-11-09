@@ -13,8 +13,21 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
 )
+
+// gitConfigPairs supplies the config pairs setup's git calls carry. It is nil in a release
+// build; the end-to-end build's hook (new_e2e_hook.go) sets it.
+var gitConfigPairs func(env map[string]string) []childenv.Pair
+
+// extraGitConfig returns the hook's pairs for env, or none when no hook is set.
+func extraGitConfig(env map[string]string) []childenv.Pair {
+	if gitConfigPairs == nil {
+		return nil
+	}
+	return gitConfigPairs(env)
+}
 
 // productionConfig builds the setup.Config a real run uses, over d's transport and registry. The
 // view and the emitter are parameters: the terminal view and the agent view each bring their own,
@@ -44,6 +57,7 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 	if register == nil {
 		register = func(providers.Credential) {}
 	}
+	env := environMap(os.Environ())
 	probe := providers.NewProbe(d.transport, d.resolver)
 	// A resume fetches the template version its record names, never the tag's current one.
 	fetch := setup.FetchFrom(scaffold.NewFetcher(d.transport), in.tag)
@@ -56,9 +70,11 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 		RunID:   runID,
 		Dir:     dir,
 		GOOS:    runtime.GOOS,
-		Env:     environMap(os.Environ()),
+		Env:     env,
 		Resume:  in.resume,
 		Apply:   in.apply,
+
+		GitConfigPairs: extraGitConfig(env),
 
 		Git: func(ctx context.Context) error {
 			return exec.CommandContext(ctx, "git", "--version").Run()

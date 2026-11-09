@@ -84,15 +84,8 @@ func Finalize(ctx context.Context, cfg FinalizeConfig) (string, error) {
 		return "", err
 	}
 	isolate := isolated()
-	head, err := git(ctx, cfg.Dir, isolate, "rev-parse", "HEAD")
-	if err != nil {
+	if _, err := onBase(ctx, cfg.Dir, cfg.Base); err != nil {
 		return "", err
-	}
-	if head != cfg.Base {
-		parent, err := git(ctx, cfg.Dir, isolate, "rev-parse", "HEAD^")
-		if err != nil || parent != cfg.Base {
-			return "", fmt.Errorf("scaffold: %s is not at the first commit %s", cfg.Dir, cfg.Base)
-		}
 	}
 	if _, err := git(ctx, cfg.Dir, isolate, "reset", "--quiet", "--hard", cfg.Base); err != nil {
 		return "", err
@@ -103,6 +96,75 @@ func Finalize(ctx context.Context, cfg FinalizeConfig) (string, error) {
 		return "", err
 	}
 	return sha, nil
+}
+
+// InstallationMessage is the message of the commit that writes a new GitHub App installation
+// into a finalized site's settings.
+const InstallationMessage = "Update the GitHub App installation"
+
+// SettingsFile is the site file that holds the GitHub App identity, in slash form under the
+// site folder.
+func SettingsFile() string { return targets.CairnConfig }
+
+// NamesApp reports whether the site's settings at commit in dir hold s's GitHub App identity,
+// its installation id included.
+func NamesApp(ctx context.Context, dir, commit string, s Site) (bool, error) {
+	content, err := git(ctx, dir, isolated(), "show", commit+":"+targets.CairnConfig)
+	if err != nil {
+		return false, err
+	}
+	return strings.Contains(content, githubApp(s)), nil
+}
+
+// UpdateInstallation writes cfg.Site's GitHub App identity over the one a finalized site's
+// settings hold and commits that file alone on Base with InstallationMessage, returning the new
+// SHA. Like Finalize it takes a folder at Base or at a commit whose parent is Base, which it
+// resets to Base first, so the caller must know that it made that commit and never pushed it. At
+// Base itself nothing is reset, and nothing but the settings file goes into the commit. A failed
+// edit or commit restores the file.
+func UpdateInstallation(ctx context.Context, cfg FinalizeConfig) (string, error) {
+	if err := cfg.Site.validate(true); err != nil {
+		return "", err
+	}
+	isolate := isolated()
+	head, err := onBase(ctx, cfg.Dir, cfg.Base)
+	if err != nil {
+		return "", err
+	}
+	if head != cfg.Base {
+		if _, err := git(ctx, cfg.Dir, isolate, "reset", "--quiet", "--hard", cfg.Base); err != nil {
+			return "", err
+		}
+	}
+	c := cfg.Commit
+	c.Message = InstallationMessage
+	var sha string
+	err = editInstallation(cfg.Dir, cfg.Site)
+	if err == nil {
+		sha, err = commitFile(ctx, cfg.Dir, targets.CairnConfig, c)
+	}
+	if err != nil {
+		_, _ = git(ctx, cfg.Dir, isolate, "checkout", "--quiet", "HEAD", "--", targets.CairnConfig)
+		return "", err
+	}
+	return sha, nil
+}
+
+// onBase returns the folder's HEAD when it is base or a commit whose parent is base: a pass that
+// committed before its caller could record it.
+func onBase(ctx context.Context, dir, base string) (string, error) {
+	isolate := isolated()
+	head, err := git(ctx, dir, isolate, "rev-parse", "HEAD")
+	if err != nil {
+		return "", err
+	}
+	if head != base {
+		parent, err := git(ctx, dir, isolate, "rev-parse", "HEAD^")
+		if err != nil || parent != base {
+			return "", fmt.Errorf("scaffold: %s is not at the commit %s", dir, base)
+		}
+	}
+	return head, nil
 }
 
 // write runs the first pass in a staging folder, then more (when non-nil) on it, and moves the

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // workerKeySecret is the Worker secret the engine reads the GitHub App's key from.
@@ -123,19 +125,29 @@ func (r *run) redeploy(ctx context.Context) error {
 	return r.pushCommit(ctx)
 }
 
-// redeployCommit returns the empty commit that deploys the site again. A folder whose HEAD is
-// already an empty redeploy commit on top of the recorded one is a run that stopped before
-// recording it, the rule scaffold.Finalize applies to the config commit, so that commit is used
-// rather than a second one.
+// pendingCommit reports the folder's HEAD when it is a commit setup made on top of the recorded
+// one and stopped before recording, the rule scaffold.Finalize applies to the config commit: its
+// parent is the recorded commit, its message is message, and its diff touches file alone, or
+// nothing when file is empty.
+func (r *run) pendingCommit(ctx context.Context, message, file string) (string, bool) {
+	dir, env := r.rec.Setup.Folder, gitEnv(r.cfg.Env)
+	head, err := runChild(ctx, dir, env, "git", "rev-parse", "HEAD")
+	if err != nil || head == r.rec.Setup.Commit {
+		return "", false
+	}
+	parent, perr := runChild(ctx, dir, env, "git", "rev-parse", "HEAD^")
+	msg, merr := runChild(ctx, dir, env, "git", "log", "-1", "--format=%B")
+	changed, derr := runChild(ctx, dir, env, "git", "diff", "--name-only", "HEAD^", "HEAD")
+	ok := perr == nil && merr == nil && derr == nil && parent == r.rec.Setup.Commit && msg == message && changed == file
+	return head, ok
+}
+
+// redeployCommit returns the empty commit that deploys the site again. A pending redeploy commit
+// is used rather than a second one.
 func (r *run) redeployCommit(ctx context.Context) (string, error) {
 	dir, env := r.rec.Setup.Folder, gitEnv(r.cfg.Env)
-	if head, err := runChild(ctx, dir, env, "git", "rev-parse", "HEAD"); err == nil && head != r.rec.Setup.Commit {
-		parent, perr := runChild(ctx, dir, env, "git", "rev-parse", "HEAD^")
-		msg, merr := runChild(ctx, dir, env, "git", "log", "-1", "--format=%B")
-		_, derr := runChild(ctx, dir, env, "git", "diff", "--quiet", "HEAD^", "HEAD")
-		if perr == nil && merr == nil && derr == nil && parent == r.rec.Setup.Commit && msg == redeployMessage {
-			return head, nil
-		}
+	if head, ok := r.pendingCommit(ctx, redeployMessage, ""); ok {
+		return head, nil
 	}
 	if err := r.ownFolder(ctx); err != nil {
 		return "", err
@@ -150,6 +162,93 @@ func (r *run) redeployCommit(ctx context.Context) (string, error) {
 	sha, err := runChild(ctx, dir, env, "git", "rev-parse", "HEAD")
 	if err != nil {
 		return "", r.localFailure(ctx, ReasonPush, "Setup couldn't read the new commit in "+dir+".", "Run cairn new again.", err)
+	}
+	return sha, nil
+}
+
+// followInstallation keeps a site past the commit step on the recorded installation. A resume
+// whose approval 4 replaced the installation leaves the recorded commit naming the deleted one,
+// and a site deployed from it can't commit content to GitHub. So setup commits the new id on
+// top of the recorded commit and records it, pushes it when the site was pushed, and, when the
+// first deploy has run, waits for the new commit's deploy as the first deploy does. A recorded
+// settings or redeploy commit past the first deploy is waited for again on every resume, since
+// a stop can land between its push and its run.
+func (r *run) followInstallation(ctx context.Context) error {
+	if !reached(r.rec.Step, spine.StepCommitted) {
+		return nil
+	}
+	current, err := scaffold.NamesApp(ctx, r.rec.Setup.Folder, r.rec.Setup.Commit, r.site())
+	if err != nil {
+		return r.unreadFolder(ctx, err)
+	}
+	if !current {
+		r.start(StepCommit)
+		sha, err := r.installationCommit(ctx)
+		if err != nil {
+			return err
+		}
+		r.rec.Setup.Commit = sha
+		if err := r.save(); err != nil {
+			return err
+		}
+		r.done()
+		if reached(r.rec.Step, spine.StepPushed) {
+			r.start(StepPush)
+			if _, err := r.pushIfBehind(ctx); err != nil {
+				return err
+			}
+			r.done()
+		}
+	}
+	if !reached(r.rec.Step, spine.StepDeployed) {
+		return nil
+	}
+	if current {
+		msg, err := runChild(ctx, r.rec.Setup.Folder, gitEnv(r.cfg.Env), "git", "log", "-1", "--format=%B", r.rec.Setup.Commit)
+		if err != nil {
+			return r.unreadFolder(ctx, err)
+		}
+		if msg != scaffold.InstallationMessage && msg != redeployMessage {
+			return nil
+		}
+	}
+	r.start(StepFirstDeploy)
+	if err := r.firstDeploy(ctx); err != nil {
+		return err
+	}
+	r.done()
+	return nil
+}
+
+// unreadFolder is the stop for a site folder whose recorded commit setup can't read.
+func (r *run) unreadFolder(ctx context.Context, err error) *Failure {
+	return r.localFailure(ctx, ReasonFolderNotOurs, "Setup couldn't read the commit it recorded in "+r.rec.Setup.Folder+".",
+		"Check that the folder is still there and unchanged, and then run cairn new again.", err)
+}
+
+// installationCommit returns the commit that writes the recorded installation into the site's
+// settings on top of the recorded commit. A pending one is used when it names the recorded
+// installation; one that names an installation a later reinstall replaced was never pushed, so
+// it is written again.
+func (r *run) installationCommit(ctx context.Context) (string, error) {
+	dir, site := r.rec.Setup.Folder, r.site()
+	head, pending := r.pendingCommit(ctx, scaffold.InstallationMessage, scaffold.SettingsFile())
+	if pending {
+		if ok, err := scaffold.NamesApp(ctx, dir, head, site); err == nil && ok {
+			return head, nil
+		}
+	} else if err := r.ownFolder(ctx); err != nil {
+		return "", err
+	}
+	sha, err := scaffold.UpdateInstallation(ctx, scaffold.FinalizeConfig{
+		Dir:    dir,
+		Base:   r.rec.Setup.Commit,
+		Site:   site,
+		Commit: r.commitIdentity(scaffold.InstallationMessage),
+	})
+	if err != nil {
+		return "", r.localFailure(ctx, ReasonFolderNotOurs, "Setup couldn't write the site's new GitHub App installation in "+dir+".",
+			"Undo your changes in that folder, and then run cairn new again.", err)
 	}
 	return sha, nil
 }

@@ -14,10 +14,15 @@ import (
 // watch runs the eight watch steps after the summary's Enter, skipping each one the record has
 // reached. Each step stores its intents and ids as it goes, and the record step that marks it
 // done is written once the whole step has passed. A watch that begins past the first deploy
-// starts the background install the first deploy would have, unless the record says it ran.
+// starts the background install the first deploy would have, unless the record says it ran. A
+// watch that begins past the commit step first brings the site's settings to the recorded
+// installation.
 func (r *run) watch(ctx context.Context) error {
 	if reached(r.rec.Step, spine.StepDeployed) {
 		r.startInstall()
+	}
+	if err := r.followInstallation(ctx); err != nil {
+		return err
 	}
 	steps := []struct {
 		id   string

@@ -199,20 +199,20 @@ func AppJWT(appID int64, pemKey Credential, now time.Time) (Credential, error) {
 // the runner turns into a restart of the browser step.
 var ErrBadVerificationCode = errors.New("github: the sign-in code is wrong or expired")
 
-// OAuthError reports a code exchange GitHub answered with an error or no access token. Code is
+// GitHubOAuthError reports a code exchange GitHub answered with an error or no access token. Code is
 // GitHub's error field.
-type OAuthError struct {
+type GitHubOAuthError struct {
 	Status int
 	Code   string
 }
 
 // Error implements the error interface.
-func (e *OAuthError) Error() string {
+func (e *GitHubOAuthError) Error() string {
 	return fmt.Sprintf("github: sign-in code exchange failed: %s (status %d)", e.Code, e.Status)
 }
 
 // Is matches ErrBadVerificationCode for the bad_verification_code error.
-func (e *OAuthError) Is(target error) bool {
+func (e *GitHubOAuthError) Is(target error) bool {
 	return target == ErrBadVerificationCode && e.Code == "bad_verification_code"
 }
 
@@ -247,13 +247,13 @@ func (w *GitHubWeb) ExchangeCode(ctx context.Context, clientID string, clientSec
 	}
 	_ = json.Unmarshal(data, &out)
 	if out.Error != "" {
-		return Credential{}, &OAuthError{Status: status, Code: out.Error}
+		return Credential{}, &GitHubOAuthError{Status: status, Code: out.Error}
 	}
 	if isErrorStatus(status) {
 		return Credential{}, githubFailure(status, header, data)
 	}
 	if out.AccessToken == "" {
-		return Credential{}, &OAuthError{Status: status, Code: "no access token in the response"}
+		return Credential{}, &GitHubOAuthError{Status: status, Code: "no access token in the response"}
 	}
 	return NewCredential(out.AccessToken), nil
 }

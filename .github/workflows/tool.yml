@@ -119,7 +119,7 @@ jobs:
       - name: Fixture recorder tests (Linux)
         # Run against a local fake server; no live service and no secrets are touched.
         if: runner.os == 'Linux'
-        run: node --test tool/scripts/record-fixtures/
+        run: node --test "tool/scripts/record-fixtures/*.test.mjs"
       - run: make -C tool check
       - name: Verbose store package tests (Windows)
         # make test runs go test ./... with no -v, so a skipped test (the symlink tests above

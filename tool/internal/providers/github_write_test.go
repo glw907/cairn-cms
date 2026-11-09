@@ -196,7 +196,7 @@ func TestExchangeCode(t *testing.T) {
 		{"success", fixtureReply(t, "oauth_access_token.success.200.json"), nil},
 		{"bad verification code", fixtureReply(t, "oauth_access_token.bad-verification-code.200.json"), func(err error) bool { return errors.Is(err, ErrBadVerificationCode) }},
 		{"no token", reply{200, []byte(`{}`)}, func(err error) bool {
-			var oe *OAuthError
+			var oe *GitHubOAuthError
 			return errors.As(err, &oe) && !errors.Is(err, ErrBadVerificationCode)
 		}},
 		{"server error", reply{500, []byte(`{"message":"boom"}`)}, func(err error) bool {

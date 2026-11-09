@@ -60,17 +60,27 @@ export function rewriteAppHtml(html, { light, dark }) {
 }
 
 /**
+ * Throws unless both color-mode names are lowercase daisyUI theme names. The names are written into
+ * code, so nothing reaches a file before this passes.
+ * @param {{ light: string, dark: string }} colorModes
+ * @returns {void}
+ */
+export function assertColorModes(colorModes) {
+  for (const key of /** @type {const} */ (['light', 'dark'])) {
+    if (typeof colorModes?.[key] !== 'string' || !NAME.test(colorModes[key])) {
+      throw new Error(`colorModes.${key} must be a lowercase daisyUI theme name, got ${JSON.stringify(colorModes?.[key])}`);
+    }
+  }
+}
+
+/**
  * Writes `theme-names.ts` and rewrites `app.html` under a site directory.
  * @param {string} siteDir
  * @param {{ light: string, dark: string }} colorModes
  * @returns {void}
  */
 export function generateThemeNames(siteDir, colorModes) {
-  for (const key of /** @type {const} */ (['light', 'dark'])) {
-    if (typeof colorModes?.[key] !== 'string' || !NAME.test(colorModes[key])) {
-      throw new Error(`colorModes.${key} must be a lowercase daisyUI theme name, got ${JSON.stringify(colorModes?.[key])}`);
-    }
-  }
+  assertColorModes(colorModes);
   const htmlPath = path.join(siteDir, 'src/app.html');
   const rewritten = rewriteAppHtml(readFileSync(htmlPath, 'utf8'), colorModes);
   writeFileSync(path.join(siteDir, 'src/theme/theme-names.ts'), renderThemeNames(colorModes));

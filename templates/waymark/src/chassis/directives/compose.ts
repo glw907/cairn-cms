@@ -21,7 +21,7 @@ export type DirectiveRenderers = Partial<Record<DirectiveName, DirectiveRenderer
  */
 export function composeBlocks(icons: IconSet, renderers: DirectiveRenderers) {
   for (const key of Object.keys(renderers)) {
-    if (!(key in vocabulary)) {
+    if (!Object.hasOwn(vocabulary, key)) {
       throw new Error(
         `cairn: renderer "${key}" is not a directive in the chassis vocabulary (${Object.keys(vocabulary).join(', ')})`,
       );

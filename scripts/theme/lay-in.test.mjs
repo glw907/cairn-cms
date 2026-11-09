@@ -51,6 +51,22 @@ test('a lay-in replaces the target wholesale, so a stale file is gone afterward'
   assert.ok(existsSync(path.join(site, 'src/theme/theme.css')));
 });
 
+test('a manifest with a bad color-mode name is refused before the site copy is touched', async (t) => {
+  const site = await scratchSite(t);
+  await mkdir(path.join(site, 'src/theme'), { recursive: true });
+  await writeFile(path.join(site, 'src/theme/keep.css'), '/* the previous theme */');
+  const theme = await mkdtemp(path.join(tmpdir(), 'cairn-lay-in-bad-'));
+  t.after(() => rm(theme, { recursive: true, force: true }));
+  await cp(WAYMARK, theme, { recursive: true });
+  const manifest = JSON.parse(await readFile(path.join(theme, 'cairn-theme.json'), 'utf8'));
+  manifest.colorModes.dark = "x'; alert(1)";
+  await writeFile(path.join(theme, 'cairn-theme.json'), JSON.stringify(manifest));
+  const run = layIn(theme, site);
+  assert.notEqual(run.status, 0);
+  assert.match(run.stderr, /colorModes\.dark/);
+  assert.ok(existsSync(path.join(site, 'src/theme/keep.css')), 'the previous theme must survive a refused lay-in');
+});
+
 test('a lay-in refuses a theme directory with no manifest, naming the file', async (t) => {
   const site = await scratchSite(t);
   const empty = await mkdtemp(path.join(tmpdir(), 'cairn-lay-in-empty-'));

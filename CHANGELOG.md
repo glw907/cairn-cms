@@ -30,8 +30,6 @@ Consumers must: keep the site config at `src/site/site.config.yaml`, the only pa
 
 Consumers must: replace an `uppercase` class on an eyebrow with the `eyebrow-case` utility and set the case through `--cairn-eyebrow-case`, and use `--cairn-scroll-cue` for the code block's scroll cue.
 
-
-
 ## 0.99.0-rc.4
 
 Released 2026-11-07.

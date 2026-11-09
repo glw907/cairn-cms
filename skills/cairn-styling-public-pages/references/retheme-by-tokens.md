@@ -212,8 +212,9 @@ between its two marker comments. In the cairn-cms repository:
 3. Lay the theme in again.
 
 A scaffolded site has no lay-in, so it edits by hand every place the old name appears: the block
-names and the dark selectors in `tokens.css` and `modes/`, `src/theme/theme-names.ts`, and the regex
-in `src/app.html`. Search the site for the old name to find them all.
+names and the dark selectors in `tokens.css` and any `options/` sheets, the names in
+`src/theme/cairn-theme.json`, `src/theme/theme-names.ts`, and the regex in `src/app.html`. Search
+the site for the old name to find them all.
 
 Check the regex after a rename. A stale one fails silently: a returning visitor's saved choice does
 not apply, and the page shows the system scheme.

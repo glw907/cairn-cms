@@ -132,7 +132,7 @@ A theme is now a directory with a contract. Waymark is `themes/waymark/`, with a
 builds from them. The showcase's `src/theme/` is generated from it by `npm run theme:lay-in` and no
 longer tracked, so edit `themes/waymark/` and lay it in again. A site that already exists keeps the
 `src/theme/` it has: nothing reads the manifest or the contract data file
-(`schema/cairn-theme-contract-1.json`) yet, and `theme.css` imports the built `themes/waymark/tokens/tokens.css`
+(`schema/cairn-theme-contract-1.json`) yet, and `theme.css` imports the built `./tokens/tokens.css`
 in place of the two daisyUI blocks and the `@theme` scale it held.
 
 ## 0.99.0-rc.4

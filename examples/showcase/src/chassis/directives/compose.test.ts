@@ -56,6 +56,11 @@ describe('composeBlocks', () => {
     expect(() => composeBlocks(icons, renderers)).toThrow(/not-a-block/);
   });
 
+  it('refuses a key inherited from Object.prototype, not only an unlisted name', () => {
+    const renderers = { toString: () => h('div') } as never;
+    expect(() => composeBlocks(icons, renderers)).toThrow(/toString/);
+  });
+
   it('replaces only the callout build when a callout renderer is passed', () => {
     const base = composeBlocks(icons, {});
     const custom = () => h('aside', { className: ['mine'] }, []);

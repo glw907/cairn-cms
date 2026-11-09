@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -43,6 +44,21 @@ test('a missing marker throws, naming the marker and leaving the file alone', as
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  }
+});
+
+test('a name that is not a lowercase theme name throws and writes nothing', async () => {
+  const dir = await scratchSite();
+  try {
+    const before = await readFile(path.join(dir, 'src/app.html'), 'utf8');
+    for (const bad of ["x'; alert(1)", 'A', '', '9lives']) {
+      assert.throws(() => generateThemeNames(dir, { light: bad, dark: 'ok-dark' }), /colorModes\.light/);
+      assert.throws(() => generateThemeNames(dir, { light: 'ok', dark: bad }), /colorModes\.dark/);
+    }
+    assert.equal(await readFile(path.join(dir, 'src/app.html'), 'utf8'), before);
+    assert.throws(() => readFileSync(path.join(dir, 'src/theme/theme-names.ts')), { code: 'ENOENT' });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });
 

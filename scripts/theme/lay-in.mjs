@@ -8,9 +8,9 @@
 // The copy under `src/theme/` is disposable, so nothing here preserves edits to it; the refusals
 // catch swapped arguments and a theme directory that is the copy itself, which the wholesale
 // replace would otherwise delete.
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import { generateThemeNames } from './theme-names.mjs';
+import { assertColorModes, generateThemeNames } from './theme-names.mjs';
 
 /**
  * True when `inner` is `outer` or sits below it.
@@ -20,7 +20,7 @@ import { generateThemeNames } from './theme-names.mjs';
  */
 function within(outer, inner) {
   const rel = path.relative(outer, inner);
-  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
 }
 
 /**
@@ -29,19 +29,22 @@ function within(outer, inner) {
  * @param {string} siteDir the site root, holding `package.json`
  */
 export function layIn(themeDir, siteDir) {
-  const theme = path.resolve(themeDir);
-  const site = path.resolve(siteDir);
-  if (!existsSync(path.join(theme, 'cairn-theme.json'))) {
-    throw new Error(`lay-in: ${theme} has no cairn-theme.json, so it is not a theme directory`);
+  if (!existsSync(path.join(path.resolve(themeDir), 'cairn-theme.json'))) {
+    throw new Error(`lay-in: ${path.resolve(themeDir)} has no cairn-theme.json, so it is not a theme directory`);
   }
-  if (!existsSync(path.join(site, 'package.json'))) {
-    throw new Error(`lay-in: ${site} has no package.json, so it is not a site directory`);
+  if (!existsSync(path.join(path.resolve(siteDir), 'package.json'))) {
+    throw new Error(`lay-in: ${path.resolve(siteDir)} has no package.json, so it is not a site directory`);
   }
+  // Real paths, so a symlinked theme directory cannot hide an overlap with the copy.
+  const theme = realpathSync(themeDir);
+  const site = realpathSync(siteDir);
   const target = path.join(site, 'src/theme');
   if (within(theme, target) || within(target, theme)) {
     throw new Error(`lay-in: the theme directory ${theme} and the site copy ${target} overlap`);
   }
   const manifest = JSON.parse(readFileSync(path.join(theme, 'cairn-theme.json'), 'utf8'));
+  // Validate the names before the replace deletes anything, so a bad manifest leaves the site as it was.
+  assertColorModes(manifest.colorModes);
   rmSync(target, { recursive: true, force: true });
   mkdirSync(path.dirname(target), { recursive: true });
   cpSync(theme, target, {

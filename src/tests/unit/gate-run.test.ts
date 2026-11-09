@@ -215,14 +215,14 @@ describe('naive', () => {
 });
 
 describe('scripted and probe', () => {
-  it('starts the stand-in and the scripted driver, and refuses on a live session', () => {
+  it('starts only the scripted driver, which owns the stand-in, and refuses on a live session', () => {
     const r = rig();
     const result = r.run(['scripted']);
     expect(result.status).toBe(0);
     const id = /run id: (\d{10})/.exec(result.stdout)?.[1] as string;
     expect(r.read('cleanroom')).toContain(`init ${id}`);
     const tmux = r.read('tmux');
-    expect(tmux).toContain(`new-session -d -s cleanroom-${id}-stand-in`);
+    expect(tmux).not.toContain(`cleanroom-${id}-stand-in`);
     expect(tmux).toMatch(new RegExp(`new-session -d -s cleanroom-${id} .*scripted\\.mjs ${r.root}/${id}/run`));
     const live = rig();
     live.sessions(['cleanroom-x']);

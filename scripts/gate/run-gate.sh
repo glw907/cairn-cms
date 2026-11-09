@@ -272,7 +272,10 @@ start_run() {
   mkdir -p -m 0700 "$handoff_dir"
   node -e 'const [leg, id, siteName, commit, engine, tool] = process.argv.slice(1); process.stdout.write(JSON.stringify({ leg, id, siteName, begin: process.env.GATE_BEGIN, commit, candidate: { engine, tool } }, null, 2) + "\n");' \
     "$leg" "$run_id" "$site_name" "$commit" "$engine" "$tool" >"$run_path/harness.json"
-  start_session "cleanroom-$run_id-stand-in" "$handoff_dir/$run_id-stand-in.env" node "$here/stand-in.mjs" "$run_path"
+  # The scripted driver starts its own stand-in, so only a naive run gets one here.
+  if [ "$leg" = naive ]; then
+    start_session "cleanroom-$run_id-stand-in" "$handoff_dir/$run_id-stand-in.env" node "$here/stand-in.mjs" "$run_path"
+  fi
 }
 
 report() {

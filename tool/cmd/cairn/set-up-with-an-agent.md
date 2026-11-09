@@ -17,11 +17,11 @@ The plugin is optional. This page works without it. [Suggested plugins](./sugges
 
 ## Run the command
 
-Run `cairn` as one bare command: no `cd`, no redirect, no pipe, and no `$(...)`. A redirect to a file, a `cd`, or a command substitution keeps the whole call in the agent's sandbox, and `cairn` can't run there, because it needs the owner's browser and the keyring ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). Start the command in the background, so you can read each `waiting` sentence to the owner while the run blocks. In Claude Code, that is the Bash tool's `run_in_background` option.
+Run `cairn` as one bare command: no `cd`, no redirect, no pipe, and no `$(...)`. A redirect to a file, a `cd`, or a command substitution keeps the whole call in the agent's sandbox ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). Run `cairn` outside the sandbox. Setup serves its approval tab on a local port, and a sandboxed command's localhost is private to the sandbox, so the owner's browser can't reach the tab. Start the command in the background, so you can read each `waiting` sentence to the owner while the run blocks. In Claude Code, that is the Bash tool's `run_in_background` option.
 
 ## Use a Cloudflare token for an unattended run
 
-An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. With it set, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.
+An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. With it set when a setup starts, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.
 
 Create the token as an account-owned token, with these permissions:
 

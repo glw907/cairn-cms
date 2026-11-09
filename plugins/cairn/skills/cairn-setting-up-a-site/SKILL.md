@@ -15,7 +15,7 @@ description: Sets up a new cairn site with `cairn new`. Use when a person asks t
 
 ## How to run `cairn`
 
-Run `cairn` as one bare command, with no `cd`, redirect, pipe, or `$(...)`. A redirect to a file, a `cd`, or a command substitution such as `$(...)` keeps the whole call sandboxed ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)), and `cairn` must run outside an agent's sandbox, because it needs the person's browser and the keyring. Start it with the Bash tool's `run_in_background`, so you can relay each `waiting` sentence to the person while the run blocks.
+Run `cairn` as one bare command, with no `cd`, redirect, pipe, or `$(...)`. A redirect to a file, a `cd`, or a command substitution such as `$(...)` keeps the whole call sandboxed ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)), and `cairn` must run outside an agent's sandbox, because a sandboxed command's localhost is private and the person's browser can't reach setup's approval tab. Start it with the Bash tool's `run_in_background`, so you can relay each `waiting` sentence to the person while the run blocks.
 
 ## Attended: the person is at the keyboard
 

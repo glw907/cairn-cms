@@ -16,7 +16,7 @@ The workflow is a file named `deploy.yml` in your repository's `.github/workflow
 
 A push that arrives while a deploy is running cancels that deploy, and the newer push deploys instead. Only the last two steps use the deploy key, so the install, the checks, and the build never hold it.
 
-The deploy key is a Cloudflare API token that setup mints for the site. It carries Workers Scripts, D1, and Workers R2 Storage write access on your account, and it doesn't expire. Setup seals it to the repository's public key and stores it as the repository secret `CLOUDFLARE_API_TOKEN`. Nobody can read the value back, including you.
+The deploy key is a Cloudflare API token that setup mints for the site, or, on a run with `CAIRN_CF_SETUP_TOKEN` set, the token you supplied. A minted key carries Workers Scripts, D1, and Workers R2 Storage write access on your account, and it doesn't expire. Setup seals it to the repository's public key and stores it as the repository secret `CLOUDFLARE_API_TOKEN`. Nobody can read the value back, including you.
 
 A publish from the admin commits to the repository, and a commit on the default branch starts a deploy. The live site changes when the run finishes, not when you select Publish.
 

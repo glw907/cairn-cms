@@ -22,12 +22,12 @@ function copy() {
 
 /** The ids of the rules a full run (every rule, one page) failed. */
 async function failedRules(dir) {
-  const result = await checkTheme(dir, { pages: ['/'] });
+  const result = await checkTheme(dir, { pages: ['/'], quick: true });
   return [...new Set(result.failures.map((failure) => failure.rule))];
 }
 
 test('the unbroken fixture passes every rule, render included', { timeout: 600_000 }, async () => {
-  const result = await checkTheme(copy(), { pages: ['/'] });
+  const result = await checkTheme(copy(), { pages: ['/'], quick: true });
   assert.deepEqual(result.failures, []);
   assert.ok(result.rules.includes('render'));
 });

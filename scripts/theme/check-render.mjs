@@ -22,16 +22,21 @@ function notFoundRoutes() {
 
 /**
  * Render a theme under every option value and both modes.
- * @param {{ dir: string, manifest: { options?: { key: string, values: { value: string }[] }[] } | null, pages?: string[] | 'all' }} ctx
- *   `pages` limits the run to the listed routes; every route the content serves when omitted
+ * @param {{ dir: string, manifest: { options?: { key: string, values: { value: string }[] }[] } | null, pages?: string[] | 'all', quick?: boolean }} ctx
+ *   `pages` limits the run to the listed routes, every route the content serves when omitted; `quick`
+ *   renders each option's default in the light mode only
  * @returns {Promise<{ file: string, message: string }[]>}
  */
-export async function renderRule({ dir, manifest, pages = 'all' }) {
+export async function renderRule({ dir, manifest, pages = 'all', quick = false }) {
   if (!manifest) return [];
-  const options = Object.fromEntries((manifest.options ?? []).map((option) => [option.key, option.values.map((v) => v.value)]));
+  // A quick run, which the tests use to prove a failure reaches this rule, renders each option's
+  // default in the light mode only; a full run covers every value in both modes.
+  const options = Object.fromEntries(
+    (manifest.options ?? []).map((option) => [option.key, quick ? [option.default] : option.values.map((v) => v.value)]),
+  );
   const out = mkdtempSync(path.join(tmpdir(), 'cairn-theme-check-render-'));
   try {
-    const shots = await runHeadless({ root: ROOT, theme: dir, pages, widths: [WIDTH], options, viewportOnly: true, outDir: out });
+    const shots = await runHeadless({ root: ROOT, theme: dir, pages, widths: [WIDTH], modes: quick ? ['light'] : undefined, options, viewportOnly: true, outDir: out });
     if (shots.length === 0) return [{ file: 'theme', message: 'the render ran no page' }];
     const expectedMissing = notFoundRoutes();
     const failures = [];

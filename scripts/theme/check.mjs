@@ -36,8 +36,9 @@ export const RULE_IDS = [
 /**
  * Run rules over one theme directory.
  * @param {string} dir the theme directory
- * @param {{ rules?: string[], pages?: string[] }} [options] the rule ids to run, every rule when
- *   omitted, and the routes the `render` rule loads, every route when omitted
+ * @param {{ rules?: string[], pages?: string[], quick?: boolean }} [options] the rule ids to run,
+ *   every rule when omitted; the routes the `render` rule loads, every route when omitted; and
+ *   `quick`, which has `render` build each option's default in the light mode only
  * @returns {Promise<{ schemaVersion: 1, kind: 'theme-check', theme: string, dir: string, verdict: 'pass' | 'fail', rules: string[], failures: { file: string, rule: string, message: string }[], notes: { rule: string, message: string }[] }>}
  */
 export async function checkTheme(dir, options = {}) {
@@ -50,7 +51,7 @@ export async function checkTheme(dir, options = {}) {
   const notes = [];
   for (const id of RULE_IDS.filter((rule) => ids.includes(rule))) {
     const run = id === 'render' ? (await import('./check-render.mjs')).renderRule : STATIC_RULES[id];
-    const result = await run(pages ? { ...ctx, pages } : ctx);
+    const result = await run({ ...ctx, ...(pages && { pages }), ...(options.quick && { quick: true }) });
     const list = Array.isArray(result) ? result : result.failures;
     for (const failure of list) failures.push({ file: failure.file, rule: id, message: failure.message });
     if (!Array.isArray(result)) for (const message of result.notes) notes.push({ rule: id, message });

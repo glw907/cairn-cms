@@ -182,11 +182,12 @@ func TestScaffoldCommitsLocally(t *testing.T) {
 	if got := run("rev-parse", "HEAD"); got != res.CommitSHA {
 		t.Errorf("HEAD = %q, Result.CommitSHA = %q", got, res.CommitSHA)
 	}
-	if got := run("rev-list", "--count", "HEAD"); got != "1" {
-		t.Errorf("commit count = %q, want 1", got)
+	if got := run("rev-list", "--count", "HEAD"); got != "2" {
+		t.Errorf("commit count = %q, want 2", got)
 	}
-	if got := run("log", "-1", "--format=%an <%ae>|%cn <%ce>|%s"); got != "Cairn Setup <setup@cairn.invalid>|Cairn Setup <setup@cairn.invalid>|Create the site" {
-		t.Errorf("commit = %q", got)
+	if got := run("log", "--format=%an <%ae>|%cn <%ce>|%s"); got != "Cairn Setup <setup@cairn.invalid>|Cairn Setup <setup@cairn.invalid>|"+ConfigMessage+"\n"+
+		"Cairn Setup <setup@cairn.invalid>|Cairn Setup <setup@cairn.invalid>|Create the site" {
+		t.Errorf("commits = %q", got)
 	}
 	if got := run("remote", "get-url", "origin"); got != "https://github.com/octo-owner/my-caf-the-site.git" {
 		t.Errorf("origin = %q", got)
@@ -197,6 +198,62 @@ func TestScaffoldCommitsLocally(t *testing.T) {
 	if got := run("ls-files", ".gitignore", ".dev.vars.example", ".github/workflows/deploy.yml"); strings.Count(got, "\n") != 2 {
 		t.Errorf("tracked files = %q, want .gitignore, .dev.vars.example, and deploy.yml", got)
 	}
+}
+
+func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
+	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
+	dir := filepath.Join(t.TempDir(), "site")
+	site := testSite()
+	early := site
+	early.DatabaseID = ""
+	first, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Dir: dir})
+	if err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if got := readFile(t, dir, targets.Wrangler); strings.Contains(got, site.Worker) {
+		t.Errorf("the first pass wrote the Worker settings:\n%s", got)
+	}
+	if got := readFile(t, dir, targets.PackageJSON); !strings.Contains(got, `"name": "my-caf-the-site"`) {
+		t.Errorf("the first pass did not name the package:\n%s", got)
+	}
+
+	fin := FinalizeConfig{Dir: first.Dir, Base: first.CommitSHA, Site: site, Commit: testCommit()}
+	second, err := Finalize(t.Context(), fin)
+	if err != nil {
+		t.Fatalf("Finalize: %v", err)
+	}
+	if got := readFile(t, dir, targets.Wrangler); !strings.Contains(got, `"database_id": "`+site.DatabaseID+`"`) {
+		t.Errorf("the second pass did not write the database id:\n%s", got)
+	}
+	if got := readFile(t, dir, targets.CairnConfig); !strings.Contains(got, "branch: 'trunk'") {
+		t.Errorf("the second pass did not write the App literal")
+	}
+
+	again, err := Finalize(t.Context(), fin)
+	if err != nil {
+		t.Fatalf("a repeated Finalize: %v", err)
+	}
+	if gitOut(t, dir, "rev-parse", "HEAD") != again || gitOut(t, dir, "rev-parse", "HEAD^") != first.CommitSHA {
+		t.Errorf("a repeated Finalize did not rebuild the second commit on the first")
+	}
+
+	stray := FinalizeConfig{Dir: dir, Base: second, Site: site, Commit: testCommit()}
+	gitOut(t, dir, "reset", "--quiet", "--hard", first.CommitSHA)
+	if _, err := Finalize(t.Context(), stray); err == nil {
+		t.Error("Finalize accepted a folder whose HEAD is neither the base nor its child")
+	}
+}
+
+func gitOut(t *testing.T, dir string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_CONFIG_NOSYSTEM=1")
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("git %v: %v", args, err)
+	}
+	return strings.TrimSpace(string(out))
 }
 
 // readTemplateFile reads a file of the real Waymark template.

@@ -272,7 +272,7 @@ func TestCreateRepo(t *testing.T) {
 			t.Fatal(err)
 		}
 		if repo.ID != 1450794126 || repo.Name != "cairn-rec-tmw8jn1a0-repo" || repo.FullName != "<REDACTED>-test/cairn-rec-tmw8jn1a0-repo" ||
-			repo.Owner.ID != 352097667 || repo.Owner.Login != "<REDACTED>-test" {
+			repo.Owner.ID != 352097667 || repo.Owner.Login != "<REDACTED>-test" || repo.DefaultBranch != "main" {
 			t.Errorf("repo = %+v", repo)
 		}
 		if got, want := string(rt.calls[0].body), `{"name":"cairn-rec-tmw8jn1a0-repo","private":true,"auto_init":false}`; got != want {
@@ -333,6 +333,22 @@ func TestAppRoutes(t *testing.T) {
 		if c.auth != "Bearer the-jwt" {
 			t.Errorf("%s %s carried auth %q", c.method, c.path, c.auth)
 		}
+	}
+}
+
+func TestInstallationRepositoriesWithTheInstallationToken(t *testing.T) {
+	rt := routes(map[string]reply{
+		"GET api.github.com/installation/repositories": fixtureReply(t, "installation_repositories.selected-one.200.json"),
+	})
+	ids, err := NewGitHub(NewCredential("the-installation-token"), rt).InstallationRepositories(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ids) != 1 || ids[0] != 998877 {
+		t.Errorf("ids = %v, want [998877]", ids)
+	}
+	if c := rt.calls[0]; c.auth != "Bearer the-installation-token" || c.query != "per_page=100&page=1" {
+		t.Errorf("call = %+v", c)
 	}
 }
 

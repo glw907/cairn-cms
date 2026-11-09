@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,7 +23,10 @@ import (
 )
 
 // The fakes below decode their data from the recorded corpus and keep one shared call log, so a
-// test can assert order across providers. Every fallible call has an error field.
+// test can assert order across providers. Every fallible call has an error field, and every
+// call made after the run's context ends fails the way a real client would. The site folder
+// and the GitHub remote are real git repositories, so the push, the ownership checks, and the
+// remote ref the fakes report are git's own.
 
 func fixture[T any](t *testing.T, provider, name string) T {
 	t.Helper()
@@ -41,6 +48,28 @@ func cfResult[T any](t *testing.T, name string) T {
 	}](t, "cloudflare", name).Result
 }
 
+// clock is a fake clock: every wait returns at once and moves the time forward by its length.
+type clock struct {
+	mu  sync.Mutex
+	now time.Time
+}
+
+func (c *clock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now
+}
+
+func (c *clock) After(d time.Duration) <-chan time.Time {
+	c.mu.Lock()
+	c.now = c.now.Add(d)
+	now := c.now
+	c.mu.Unlock()
+	ch := make(chan time.Time, 1)
+	ch <- now
+	return ch
+}
+
 // fakeTab scripts each callback route's waits. A scripted step receives the nonce the route was
 // armed with.
 type fakeTab struct {
@@ -48,6 +77,8 @@ type fakeTab struct {
 	arms   int
 	shown  []Page
 	script map[loopback.Route][]func(nonce string) (loopback.Callback, error)
+	nexts  []string
+	onNext func(url string)
 	closed bool
 	log    *[]string
 }
@@ -81,6 +112,14 @@ func (f *fakeTab) Show(p Page) error {
 	return nil
 }
 
+func (f *fakeTab) SetNext(url string) error {
+	f.nexts = append(f.nexts, url)
+	if f.onNext != nil {
+		f.onNext(url)
+	}
+	return nil
+}
+
 func (f *fakeTab) Close() error {
 	f.closed = true
 	return nil
@@ -91,9 +130,14 @@ func (f *fakeTab) push(r loopback.Route, step func(nonce string) (loopback.Callb
 }
 
 type fakeCFAuth struct {
-	tokens    []providers.OAuthToken
-	err       error
-	verifiers []string
+	tokens     []providers.OAuthToken
+	err        error
+	refreshErr error
+	revokeErr  error
+	verifiers  []string
+	issued     []providers.OAuthToken
+	refreshes  []string
+	revoked    []string
 }
 
 func (f *fakeCFAuth) Exchange(_ context.Context, code, verifier string) (*providers.OAuthToken, error) {
@@ -105,16 +149,54 @@ func (f *fakeCFAuth) Exchange(_ context.Context, code, verifier string) (*provid
 	if len(f.tokens) > 1 {
 		f.tokens = f.tokens[1:]
 	}
+	f.issued = append(f.issued, tok)
 	return &tok, nil
 }
 
+func (f *fakeCFAuth) Refresh(ctx context.Context, refreshToken string) (*providers.OAuthToken, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	f.refreshes = append(f.refreshes, refreshToken)
+	if f.refreshErr != nil {
+		return nil, f.refreshErr
+	}
+	n := strconv.Itoa(len(f.refreshes))
+	tok := providers.OAuthToken{
+		AccessToken:  "ACCESS_TOKEN_PLACEHOLDER-refreshed-" + n,
+		RefreshToken: "REFRESH_TOKEN_PLACEHOLDER-refreshed-" + n,
+		Scope:        providers.CloudflareScopes,
+	}
+	f.issued = append(f.issued, tok)
+	return &tok, nil
+}
+
+func (f *fakeCFAuth) Revoke(_ context.Context, token string) error {
+	f.revoked = append(f.revoked, token)
+	return f.revokeErr
+}
+
+// d1 is one fake database: its tables, and the auth rows the sign-in batch writes.
+type d1 struct {
+	uuid    string
+	tables  []string
+	editors map[string]string
+	tokens  map[string]tokenRow
+}
+
+type tokenRow struct {
+	email   string
+	expires int64
+}
+
 type fakeCF struct {
+	clock    *clock
 	accounts []providers.Account
 	email    string
 	active   []providers.Zone
 	all      []providers.Zone
-	workers  map[string]bool
-	d1       map[string]bool
+	workers  map[string]string
+	d1       map[string]*d1
 	r2       map[string]bool
 	dns      map[string][]providers.DNSRecord
 	domains  map[string][]providers.WorkerDomain
@@ -122,6 +204,17 @@ type fakeCF struct {
 	err      error
 	bound    []string
 	log      *[]string
+
+	creates    map[string]int
+	createErr  map[string]error
+	onCreate   func(kind string)
+	emailSubs  map[string]bool
+	userTokens map[string]string
+	keysMinted []providers.DeployKey
+	secrets    map[string]string
+	attached   map[string]string
+	sent       []providers.EmailMessage
+	sendErr    error
 }
 
 type cfClient struct {
@@ -130,8 +223,11 @@ type cfClient struct {
 	t       *testing.T
 }
 
-func (c cfClient) note(call string) error {
+func (c cfClient) note(ctx context.Context, call string) error {
 	*c.f.log = append(*c.f.log, "cf:"+call)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	return c.f.err
 }
 
@@ -141,62 +237,251 @@ func (c cfClient) needAccount() {
 	}
 }
 
-func (c cfClient) Accounts(context.Context) ([]providers.Account, error) {
-	return c.f.accounts, c.note("accounts")
+func (c cfClient) Accounts(ctx context.Context) ([]providers.Account, error) {
+	return c.f.accounts, c.note(ctx, "accounts")
 }
 
-func (c cfClient) UserEmail(context.Context) (string, error) {
-	return c.f.email, c.note("user")
+func (c cfClient) UserEmail(ctx context.Context) (string, error) {
+	return c.f.email, c.note(ctx, "user")
 }
 
-func (c cfClient) ActiveZones(context.Context) ([]providers.Zone, error) {
+func (c cfClient) ActiveZones(ctx context.Context) ([]providers.Zone, error) {
 	c.needAccount()
-	return c.f.active, c.note("active-zones")
+	return c.f.active, c.note(ctx, "active-zones")
 }
 
-func (c cfClient) ListZones(context.Context) ([]providers.Zone, error) {
-	return c.f.all, c.note("zones")
+func (c cfClient) ListZones(ctx context.Context) ([]providers.Zone, error) {
+	return c.f.all, c.note(ctx, "zones")
 }
 
-func (c cfClient) Subscriptions(context.Context) ([]providers.Subscription, bool, error) {
+func (c cfClient) Subscriptions(ctx context.Context) ([]providers.Subscription, bool, error) {
 	c.needAccount()
-	return nil, false, c.note("subscriptions")
+	return nil, false, c.note(ctx, "subscriptions")
 }
 
-func (c cfClient) WorkerExists(_ context.Context, name string) (bool, error) {
+func (c cfClient) WorkerExists(ctx context.Context, name string) (bool, error) {
 	c.needAccount()
-	return c.f.workers[name], c.note("worker:" + name)
+	_, ok := c.f.workers[name]
+	return ok, c.note(ctx, "worker:"+name)
 }
 
-func (c cfClient) D1DatabaseNamed(_ context.Context, name string) (*providers.D1Database, error) {
+func (c cfClient) ListWorkers(ctx context.Context) ([]providers.Worker, error) {
 	c.needAccount()
-	err := c.note("d1:" + name)
-	if c.f.d1[name] {
-		return &providers.D1Database{UUID: "uuid-" + name, Name: name}, err
+	if err := c.note(ctx, "workers"); err != nil {
+		return nil, err
+	}
+	var out []providers.Worker
+	for name, tag := range c.f.workers {
+		out = append(out, providers.Worker{Name: name, Tag: tag})
+	}
+	return out, nil
+}
+
+func (c cfClient) D1DatabaseNamed(ctx context.Context, name string) (*providers.D1Database, error) {
+	c.needAccount()
+	err := c.note(ctx, "d1:"+name)
+	if db, ok := c.f.d1[name]; ok {
+		return &providers.D1Database{UUID: db.uuid, Name: name}, err
 	}
 	return nil, err
 }
 
-func (c cfClient) R2BucketNamed(_ context.Context, name string) (*providers.R2Bucket, error) {
+func (c cfClient) R2BucketNamed(ctx context.Context, name string) (*providers.R2Bucket, error) {
 	c.needAccount()
-	err := c.note("r2:" + name)
+	err := c.note(ctx, "r2:"+name)
 	if c.f.r2[name] {
 		return &providers.R2Bucket{Name: name}, err
 	}
 	return nil, err
 }
 
-func (c cfClient) DNSRecordsNamed(_ context.Context, _, name string) ([]providers.DNSRecord, error) {
-	return c.f.dns[name], c.note("dns:" + name)
+func (c cfClient) DNSRecordsNamed(ctx context.Context, _, name string) ([]providers.DNSRecord, error) {
+	return c.f.dns[name], c.note(ctx, "dns:"+name)
 }
 
-func (c cfClient) WorkerDomainsFor(_ context.Context, hostname string) ([]providers.WorkerDomain, error) {
+func (c cfClient) WorkerDomainsFor(ctx context.Context, hostname string) ([]providers.WorkerDomain, error) {
 	c.needAccount()
-	return c.f.domains[hostname], c.note("domains:" + hostname)
+	return c.f.domains[hostname], c.note(ctx, "domains:"+hostname)
 }
 
-func (c cfClient) WorkerRoutes(_ context.Context, zoneID string) ([]providers.WorkerRoute, error) {
-	return c.f.routes, c.note("routes:" + zoneID)
+func (c cfClient) WorkerRoutes(ctx context.Context, zoneID string) ([]providers.WorkerRoute, error) {
+	return c.f.routes, c.note(ctx, "routes:"+zoneID)
+}
+
+// create counts one create of kind and fails it when the test asks.
+func (c cfClient) create(ctx context.Context, kind, name string) error {
+	if err := c.note(ctx, "create-"+kind+":"+name); err != nil {
+		return err
+	}
+	if err := c.f.createErr[kind]; err != nil {
+		return err
+	}
+	c.f.creates[kind]++
+	if c.f.onCreate != nil {
+		c.f.onCreate(kind)
+	}
+	return nil
+}
+
+func (c cfClient) CreateD1(ctx context.Context, name string) (*providers.D1Database, error) {
+	c.needAccount()
+	if err := c.create(ctx, "d1", name); err != nil {
+		return nil, err
+	}
+	db := &d1{uuid: "0a1b2c3d-4e5f-4a6b-8c7d-" + fmt.Sprintf("%012d", c.f.creates["d1"]), editors: map[string]string{}, tokens: map[string]tokenRow{}}
+	c.f.d1[name] = db
+	// A run killed while the create is in flight finds it done on Cloudflare's side.
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return &providers.D1Database{UUID: db.uuid, Name: name}, nil
+}
+
+func (c cfClient) CreateR2Bucket(ctx context.Context, name string) (*providers.R2Bucket, error) {
+	c.needAccount()
+	if err := c.create(ctx, "r2", name); err != nil {
+		return nil, err
+	}
+	c.f.r2[name] = true
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return &providers.R2Bucket{Name: name}, nil
+}
+
+func (c cfClient) EnsureEmailSendingSubdomain(ctx context.Context, _, name string) (providers.SendingSubdomain, bool, error) {
+	if err := c.note(ctx, "email-subdomains"); err != nil {
+		return providers.SendingSubdomain{}, false, err
+	}
+	if c.f.emailSubs[name] {
+		return providers.SendingSubdomain{Name: name, Enabled: true}, false, nil
+	}
+	if err := c.create(ctx, "email", name); err != nil {
+		return providers.SendingSubdomain{}, false, err
+	}
+	c.f.emailSubs[name] = true
+	return providers.SendingSubdomain{Name: name}, true, nil
+}
+
+func (c cfClient) dbByUUID(uuid string) *d1 {
+	for _, db := range c.f.d1 {
+		if db.uuid == uuid {
+			return db
+		}
+	}
+	c.t.Errorf("D1 query against unknown database %s", uuid)
+	return &d1{editors: map[string]string{}, tokens: map[string]tokenRow{}}
+}
+
+// D1Query runs the statements the runner sends, by their exact SQL.
+func (c cfClient) D1Query(ctx context.Context, uuid string, stmts []providers.D1Statement) ([]providers.D1Result, error) {
+	c.needAccount()
+	if err := c.note(ctx, "d1-query"); err != nil {
+		return nil, err
+	}
+	db := c.dbByUUID(uuid)
+	var out []providers.D1Result
+	for _, st := range stmts {
+		var res providers.D1Result
+		res.Success = true
+		p := st.Params
+		switch st.SQL {
+		case sqlTables:
+			for _, name := range db.tables {
+				res.Results = append(res.Results, json.RawMessage(`{"name":"`+name+`"}`))
+			}
+		case sqlInsertOwner:
+			if len(db.editors) == 0 {
+				db.editors[p[0].(string)] = "owner"
+				res.Meta.Changes = 1
+			}
+		case sqlSweepTokens:
+			for h, row := range db.tokens {
+				if row.email == p[0].(string) || row.expires <= p[1].(int64) {
+					delete(db.tokens, h)
+				}
+			}
+		case sqlInsertToken:
+			if _, ok := db.editors[p[4].(string)]; ok {
+				db.tokens[p[0].(string)] = tokenRow{email: p[1].(string), expires: p[2].(int64)}
+				res.Meta.Changes = 1
+			}
+		case sqlTokenLive:
+			if _, ok := db.tokens[p[0].(string)]; ok {
+				res.Results = append(res.Results, json.RawMessage(`{"token_hash":"x"}`))
+			}
+		default:
+			c.t.Errorf("unexpected SQL %q", st.SQL)
+		}
+		out = append(out, res)
+	}
+	return out, nil
+}
+
+func (c cfClient) MintDeployKey(ctx context.Context, runID string) (*providers.DeployKey, error) {
+	if err := c.create(ctx, "deploy-key", runID); err != nil {
+		return nil, err
+	}
+	id := "tok" + strconv.Itoa(len(c.f.keysMinted)+1)
+	key := providers.DeployKey{ID: id, Value: providers.NewCredential("deploy-key-value-" + id + "-abcdef0123456789")}
+	c.f.keysMinted = append(c.f.keysMinted, key)
+	c.f.userTokens[id] = providers.DeployKeyName(runID)
+	return &key, nil
+}
+
+func (c cfClient) DeleteUserToken(ctx context.Context, id string) error {
+	if err := c.note(ctx, "delete-token:"+id); err != nil {
+		return err
+	}
+	delete(c.f.userTokens, id)
+	return nil
+}
+
+func (c cfClient) DeleteUserTokensNamed(ctx context.Context, name string) (int, error) {
+	if err := c.note(ctx, "delete-tokens-named:"+name); err != nil {
+		return 0, err
+	}
+	n := 0
+	for id, nm := range c.f.userTokens {
+		if nm == name {
+			delete(c.f.userTokens, id)
+			n++
+		}
+	}
+	return n, nil
+}
+
+func (c cfClient) PutWorkerSecret(ctx context.Context, script, name, text string) error {
+	c.needAccount()
+	if err := c.note(ctx, "worker-secret:"+script+":"+name); err != nil {
+		return err
+	}
+	c.f.secrets[script+"/"+name] = text
+	return nil
+}
+
+func (c cfClient) AttachCustomDomain(ctx context.Context, hostname, zoneID, service string) (*providers.WorkerDomain, error) {
+	c.needAccount()
+	if err := c.note(ctx, "attach:"+hostname); err != nil {
+		return nil, err
+	}
+	c.f.attached[hostname] = service
+	d := providers.WorkerDomain{Hostname: hostname, Service: service, ZoneID: zoneID}
+	c.f.domains[hostname] = []providers.WorkerDomain{d}
+	c.f.dns[hostname] = []providers.DNSRecord{{Name: hostname, Type: "AAAA"}}
+	return &d, nil
+}
+
+func (c cfClient) SendEmail(ctx context.Context, m providers.EmailMessage) (*providers.EmailSendResult, error) {
+	c.needAccount()
+	if err := c.note(ctx, "send-email"); err != nil {
+		return nil, err
+	}
+	if c.f.sendErr != nil {
+		return nil, c.f.sendErr
+	}
+	c.f.sent = append(c.f.sent, m)
+	return &providers.EmailSendResult{Delivered: []string{m.To}}, nil
 }
 
 type install struct {
@@ -212,11 +497,19 @@ type fakeGH struct {
 	repo       providers.Repository
 	convertErr error
 	deleteErr  error
+	secretErr  error
 	taken      map[string]bool
 	installs   []install
 	writes     int
+	creates    map[string]int
 	onCreate   func()
-	log        *[]string
+	remotes    string
+	secrets    map[string]string
+	instTokens []providers.Credential
+	runFor     func(sha string) (providers.WorkflowRun, bool)
+	// deploy stands in for the deploy run's own effect: the Worker it creates.
+	deploy func(repo string)
+	log    *[]string
 }
 
 type ghClient struct {
@@ -229,11 +522,21 @@ func isJWT(c providers.Credential) bool {
 	return strings.HasPrefix(v, "eyJ") && strings.Count(v, ".") == 2
 }
 
-func (c ghClient) note(call string) { *c.f.log = append(*c.f.log, "gh:"+call) }
+func isInstallationToken(c providers.Credential) bool {
+	return strings.HasPrefix(c.Reveal(), "gh"+"s_")
+}
 
-func (c ghClient) ConvertManifest(_ context.Context, code string) (providers.AppRecord, error) {
-	c.note("convert")
+func (c ghClient) note(ctx context.Context, call string) error {
+	*c.f.log = append(*c.f.log, "gh:"+call)
+	return ctx.Err()
+}
+
+func (c ghClient) ConvertManifest(ctx context.Context, code string) (providers.AppRecord, error) {
+	if err := c.note(ctx, "convert"); err != nil {
+		return providers.AppRecord{}, err
+	}
 	c.f.writes++
+	c.f.creates["app"]++
 	if c.f.convertErr != nil {
 		return providers.AppRecord{}, c.f.convertErr
 	}
@@ -241,7 +544,9 @@ func (c ghClient) ConvertManifest(_ context.Context, code string) (providers.App
 }
 
 func (c ghClient) CreateRepo(ctx context.Context, name string) (providers.Repository, error) {
-	c.note("create:" + name)
+	if err := c.note(ctx, "create:"+name); err != nil {
+		return providers.Repository{}, err
+	}
 	if isJWT(c.cred) || c.cred.Reveal() == "" {
 		c.f.t.Error("CreateRepo ran without the user token")
 	}
@@ -255,14 +560,18 @@ func (c ghClient) CreateRepo(ctx context.Context, name string) (providers.Reposi
 	if c.f.taken[name] {
 		return providers.Repository{}, fmt.Errorf("test 422: %w", providers.ErrRepoNameTaken)
 	}
+	c.f.creates["repo"]++
 	r := c.f.repo
 	r.Name = name
 	r.FullName = r.Owner.Login + "/" + name
+	gitRun(c.f.t, "", "init", "--quiet", "--bare", "-b", r.DefaultBranch, filepath.Join(c.f.remotes, r.Owner.Login, name+".git"))
 	return r, nil
 }
 
-func (c ghClient) AppInstallations(context.Context) ([]providers.Installation, error) {
-	c.note("list")
+func (c ghClient) AppInstallations(ctx context.Context) ([]providers.Installation, error) {
+	if err := c.note(ctx, "list"); err != nil {
+		return nil, err
+	}
 	if !isJWT(c.cred) {
 		c.f.t.Error("AppInstallations ran without the App JWT")
 	}
@@ -273,8 +582,8 @@ func (c ghClient) AppInstallations(context.Context) ([]providers.Installation, e
 	return out, nil
 }
 
-func (c ghClient) DeleteInstallation(_ context.Context, id int64) error {
-	c.note("delete:" + strconv.FormatInt(id, 10))
+func (c ghClient) DeleteInstallation(ctx context.Context, id int64) error {
+	*c.f.log = append(*c.f.log, "gh:delete:"+strconv.FormatInt(id, 10))
 	if !isJWT(c.cred) {
 		c.f.t.Error("DeleteInstallation ran without the App JWT")
 	}
@@ -286,8 +595,10 @@ func (c ghClient) DeleteInstallation(_ context.Context, id int64) error {
 	return nil
 }
 
-func (c ghClient) ReadBackInstallation(_ context.Context, appID, repoID int64) (providers.ReadBack, error) {
-	c.note("readback")
+func (c ghClient) ReadBackInstallation(ctx context.Context, appID, repoID int64) (providers.ReadBack, error) {
+	if err := c.note(ctx, "readback"); err != nil {
+		return providers.ReadBack{}, err
+	}
 	if isJWT(c.cred) || c.cred.Reveal() == "" {
 		c.f.t.Error("ReadBackInstallation ran without the user token")
 	}
@@ -307,6 +618,92 @@ func (c ghClient) ReadBackInstallation(_ context.Context, appID, repoID int64) (
 		return rb, nil
 	}
 	return providers.ReadBack{}, providers.ErrInstallationNotFound
+}
+
+func (c ghClient) InstallationToken(ctx context.Context, id int64) (providers.Credential, time.Time, error) {
+	if err := c.note(ctx, "installation-token:"+strconv.FormatInt(id, 10)); err != nil {
+		return providers.Credential{}, time.Time{}, err
+	}
+	if !isJWT(c.cred) {
+		c.f.t.Error("InstallationToken ran without the App JWT")
+	}
+	// Built at run time: a token-shaped literal does not belong in source.
+	tok := providers.NewCredential("gh" + "s_" + strconv.FormatInt(id, 10) + strings.Repeat("k", 28) + strconv.Itoa(len(c.f.instTokens)))
+	c.f.instTokens = append(c.f.instTokens, tok)
+	return tok, time.Date(2026, 11, 8, 13, 0, 0, 0, time.UTC), nil
+}
+
+// installationFor reports the installation an installation token was minted for.
+func (f *fakeGH) installationFor(tok providers.Credential) int64 {
+	v := strings.TrimPrefix(tok.Reveal(), "gh"+"s_")
+	id, _ := strconv.ParseInt(v[:strings.Index(v, "k")], 10, 64)
+	return id
+}
+
+func (c ghClient) InstallationRepositories(ctx context.Context) ([]int64, error) {
+	if err := c.note(ctx, "installation-repositories"); err != nil {
+		return nil, err
+	}
+	if !isInstallationToken(c.cred) {
+		c.f.t.Error("InstallationRepositories ran without an installation token")
+	}
+	id := c.f.installationFor(c.cred)
+	for _, in := range c.f.installs {
+		if in.ID == id {
+			return in.Repos, nil
+		}
+	}
+	return nil, &providers.GitHubError{Status: 401, Reason: providers.ReasonUnauthorized}
+}
+
+func (c ghClient) remote(owner, repo string) string {
+	return filepath.Join(c.f.remotes, owner, repo+".git")
+}
+
+func (c ghClient) HeadSHA(ctx context.Context, owner, repo, ref string) (string, error) {
+	if err := c.note(ctx, "head:"+ref); err != nil {
+		return "", err
+	}
+	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", "refs/heads/"+ref)
+	cmd.Dir = c.remote(owner, repo)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", &providers.GitHubError{Status: 409, Message: "Git Repository is empty.", Reason: providers.ReasonUnknown}
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+func (c ghClient) SetActionsSecret(ctx context.Context, owner, repo, name, value string) error {
+	if err := c.note(ctx, "secret:"+name); err != nil {
+		return err
+	}
+	if !isInstallationToken(c.cred) {
+		c.f.t.Error("SetActionsSecret ran without the installation token")
+	}
+	if c.f.secretErr != nil {
+		err := c.f.secretErr
+		c.f.secretErr = nil
+		return err
+	}
+	c.f.secrets[owner+"/"+repo+"/"+name] = value
+	return nil
+}
+
+func (c ghClient) WorkflowRunForCommit(ctx context.Context, owner, repo, sha string) (providers.WorkflowRun, bool, error) {
+	if err := c.note(ctx, "run"); err != nil {
+		return providers.WorkflowRun{}, false, err
+	}
+	if !isInstallationToken(c.cred) {
+		c.f.t.Error("WorkflowRunForCommit ran without the installation token")
+	}
+	run, ok := providers.WorkflowRun{Status: "completed", Conclusion: "success", URL: "https://example.test/actions/runs/9001"}, true
+	if c.f.runFor != nil {
+		run, ok = c.f.runFor(sha)
+	}
+	if ok && run.Conclusion == "success" && c.f.deploy != nil {
+		c.f.deploy(repo)
+	}
+	return run, ok, nil
 }
 
 // ours reports the installations of the App under test that are still present.
@@ -348,6 +745,7 @@ type fakeVault struct {
 	probeErr error
 	putErr   map[secrets.EntryKind]error
 	puts     int
+	deleted  []string
 	saver    *fakeSaver
 }
 
@@ -378,12 +776,43 @@ func (v *fakeVault) PutPair(p secrets.OAuthPair) error {
 	return v.Put(secrets.EntryCloudflareAccess, p.Access)
 }
 
+func (v *fakeVault) Pair() (secrets.OAuthPair, error) {
+	a, err := v.Value(secrets.EntryCloudflareAccess)
+	if err != nil {
+		return secrets.OAuthPair{}, err
+	}
+	r, err := v.Value(secrets.EntryCloudflareRefresh)
+	if err != nil {
+		return secrets.OAuthPair{}, err
+	}
+	return secrets.OAuthPair{Access: a, Refresh: r}, nil
+}
+
 func (v *fakeVault) Value(kind secrets.EntryKind) (string, error) {
 	val, ok := v.entries[v.Entry(kind)]
 	if !ok {
 		return "", secrets.ErrNotFound
 	}
 	return val, nil
+}
+
+func (v *fakeVault) DeleteEntries(names []string) error {
+	for _, n := range names {
+		v.deleted = append(v.deleted, n)
+		delete(v.entries, n)
+	}
+	return nil
+}
+
+// ofRun reports the entries the vault holds for the run.
+func (v *fakeVault) ofRun() []string {
+	var out []string
+	for name := range v.entries {
+		if strings.HasPrefix(name, secrets.SetupEntryPrefix+v.runID+"/") {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 type fakeSaver struct {
@@ -423,6 +852,9 @@ type fakeView struct {
 	theme, account, zone          string
 	themeAsks, accountAsks, zones int
 	opened                        []string
+	// edits answer the summary in turn; once they run out, the summary is confirmed as shown.
+	edits    []SummaryEdit
+	problems []string
 }
 
 func (v *fakeView) ChooseTheme(_ context.Context, themes []scaffold.Theme) (string, error) {
@@ -445,11 +877,33 @@ func (v *fakeView) OpenBrowser(_ context.Context, url string) error {
 	return nil
 }
 
+func (v *fakeView) ConfirmSummary(ctx context.Context, s Summary, problem string) (SummaryEdit, error) {
+	if err := ctx.Err(); err != nil {
+		return SummaryEdit{}, err
+	}
+	v.problems = append(v.problems, problem)
+	if len(v.problems) > 10 {
+		return SummaryEdit{}, errors.New("test: the summary was asked more than ten times")
+	}
+	if len(v.edits) > 0 {
+		e := v.edits[0]
+		v.edits = v.edits[1:]
+		return e, nil
+	}
+	host := s.Zone
+	if len(s.Addresses) == 1 {
+		host = s.Addresses[0]
+	}
+	return SummaryEdit{OwnerEmail: s.OwnerEmail, Host: host}, nil
+}
+
 // world is one run's fakes, set up for the happy path: one account, one active zone, no names
-// taken, and an owner who approves each request once.
+// taken, an owner who approves each request once, a deploy that succeeds, and a site that
+// answers over HTTPS at once.
 type world struct {
 	t          *testing.T
 	log        []string
+	clock      *clock
 	tab        *fakeTab
 	cfAuth     *fakeCFAuth
 	cf         *fakeCF
@@ -467,6 +921,8 @@ type world struct {
 	nodeErr    error
 	template   Template
 	fetchErr   error
+	siteLive   bool
+	npmEnv     string
 	cfg        Config
 }
 
@@ -474,7 +930,8 @@ const foreignAppID = 15368
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
-	w := &world{t: t, node: "v24.1.0"}
+	w := &world{t: t, node: "v24.1.0", siteLive: true}
+	w.clock = &clock{now: time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)}
 	w.tab = &fakeTab{armed: map[loopback.Route]string{}, script: map[loopback.Route][]func(string) (loopback.Callback, error){}, log: &w.log}
 	tok := fixture[providers.OAuthToken](t, "cloudflare", "oauth_token.success.200.json")
 	w.cfAuth = &fakeCFAuth{tokens: []providers.OAuthToken{tok}}
@@ -483,17 +940,25 @@ func newWorld(t *testing.T) *world {
 		Email string `json:"email"`
 	}](t, "user.get.200.json")
 	w.cf = &fakeCF{
+		clock:    w.clock,
 		accounts: cfResult[[]providers.Account](t, "accounts.list.200.json"),
-		email:    user.Email,
-		active:   zones[:1],
-		all:      zones[:1],
-		workers:  map[string]bool{},
-		d1:       map[string]bool{},
-		r2:       map[string]bool{},
-		dns:      map[string][]providers.DNSRecord{},
-		domains:  map[string][]providers.WorkerDomain{},
-		routes:   cfResult[[]providers.WorkerRoute](t, "zone_workers_routes.list.200.json"),
-		log:      &w.log,
+		// The recorded address is scrubbed, so the world signs in as a valid one.
+		email:      strings.Replace(user.Email, "editor-redacted", "owner@example.test", 1),
+		active:     zones[:1],
+		all:        zones[:1],
+		workers:    map[string]string{},
+		d1:         map[string]*d1{},
+		r2:         map[string]bool{},
+		dns:        map[string][]providers.DNSRecord{},
+		domains:    map[string][]providers.WorkerDomain{},
+		routes:     cfResult[[]providers.WorkerRoute](t, "zone_workers_routes.list.200.json"),
+		log:        &w.log,
+		creates:    map[string]int{},
+		createErr:  map[string]error{},
+		emailSubs:  map[string]bool{},
+		userTokens: map[string]string{},
+		secrets:    map[string]string{},
+		attached:   map[string]string{},
 	}
 	conv := fixture[struct {
 		ID       int64  `json:"id"`
@@ -522,6 +987,9 @@ func newWorld(t *testing.T) *world {
 		repo:     fixture[providers.Repository](t, "github", "repo_create.ok.201.json"),
 		taken:    map[string]bool{},
 		installs: []install{{ID: 5550001, AppID: foreignAppID, Selection: "all"}},
+		creates:  map[string]int{},
+		remotes:  t.TempDir(),
+		secrets:  map[string]string{},
 		log:      &w.log,
 	}
 	w.web = &fakeWeb{}
@@ -534,18 +1002,36 @@ func newWorld(t *testing.T) *world {
 	w.tab.push(loopback.GitHubManifest, w.manifestApproves)
 	w.tab.push(loopback.GitHubCallback, w.installsAll)
 	w.tab.push(loopback.GitHubCallback, w.installsRepo)
+	w.tab.onNext = w.ownerUsesLink
+	w.gh.deploy = w.deployed
+
+	w.npmEnv = filepath.Join(t.TempDir(), "npm-env.txt")
+	bin := stubNPM(t, w.npmEnv)
+	t.Setenv("PATH", filepath.Dir(bin)+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	w.cfg = Config{
 		Answers: Answers{SiteName: "Example Site", Posture: Decline},
 		RunID:   "run7",
 		Dir:     t.TempDir(),
 		GOOS:    "linux",
-		Env:     map[string]string{"DISPLAY": ":0"},
-		Git:     func(context.Context) error { return w.gitErr },
+		Env: map[string]string{
+			"DISPLAY":              ":0",
+			"PATH":                 os.Getenv("PATH"),
+			"HOME":                 t.TempDir(),
+			"GH_TOKEN":             "inherited-gh-token-value",
+			"CLOUDFLARE_API_TOKEN": "inherited-cloudflare-token-value",
+			"GIT_CONFIG_COUNT":     "1",
+			"GIT_CONFIG_KEY_0":     "url." + w.gh.remotes + "/.insteadOf",
+			"GIT_CONFIG_VALUE_0":   "https://github.com/",
+		},
+		Git: func(context.Context) error { return w.gitErr },
 		NodeVersion: func(context.Context) (string, error) {
 			return w.node, w.nodeErr
 		},
 		FetchTemplate: func(context.Context) (Template, error) { return w.template, w.fetchErr },
+		WriteSite:     w.writeSite,
+		FinalizeSite:  w.finalizeSite,
+		SiteGet:       w.siteGet,
 		Listen: func(loopback.Config) (Tab, error) {
 			if w.listenErr != nil {
 				return nil, w.listenErr
@@ -564,9 +1050,113 @@ func newWorld(t *testing.T) *world {
 		View:      w.view,
 		Register:  func(c providers.Credential) { w.registered = append(w.registered, c) },
 		Emit:      func(e Event) { w.events = append(w.events, e) },
-		Now:       func() time.Time { return time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC) },
+		Now:       w.clock.Now,
+		After:     w.clock.After,
 	}
 	return w
+}
+
+// stubNPM writes an npm that prints to both streams and saves its environment to envFile, and
+// returns its path.
+func stubNPM(t *testing.T, envFile string) string {
+	t.Helper()
+	dir := filepath.Join(filepath.Dir(envFile), "bin")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	bin := filepath.Join(dir, "npm")
+	script := "#!/bin/sh\necho npm-stub-stdout\necho npm-stub-stderr >&2\nenv > " + envFile + "\n"
+	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return bin
+}
+
+// gitRun runs git for a fake, with the owner's config kept out.
+func gitRun(t *testing.T, dir string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_CONFIG_NOSYSTEM=1",
+		"GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.test", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.test")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %v: %v: %s", args, err, out)
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// writeSite is the scaffold's first pass in miniature: a folder holding one file, committed on
+// the default branch with origin set.
+func (w *world) writeSite(ctx context.Context, cfg scaffold.Config) (scaffold.Result, error) {
+	w.log = append(w.log, "scaffold:write")
+	if err := ctx.Err(); err != nil {
+		return scaffold.Result{}, err
+	}
+	if busy(cfg.Dir) {
+		return scaffold.Result{}, errors.New("test: folder is not empty")
+	}
+	if err := os.MkdirAll(cfg.Dir, 0o755); err != nil {
+		return scaffold.Result{}, err
+	}
+	if err := os.WriteFile(filepath.Join(cfg.Dir, "site.txt"), []byte(cfg.Site.Name+"\n"), 0o644); err != nil {
+		return scaffold.Result{}, err
+	}
+	gitRun(w.t, cfg.Dir, "init", "--quiet", "-b", cfg.Site.DefaultBranch)
+	gitRun(w.t, cfg.Dir, "remote", "add", "origin", "https://github.com/"+cfg.Site.Owner+"/"+cfg.Site.Repo+".git")
+	gitRun(w.t, cfg.Dir, "add", "--all")
+	gitRun(w.t, cfg.Dir, "commit", "--quiet", "-m", cfg.Commit.Message)
+	return scaffold.Result{Dir: cfg.Dir, CommitSHA: gitRun(w.t, cfg.Dir, "rev-parse", "HEAD"), EngineVersion: w.template.Version}, nil
+}
+
+// finalizeSite is the second pass in miniature: the database id written and committed on the
+// first commit.
+func (w *world) finalizeSite(ctx context.Context, cfg scaffold.FinalizeConfig) (string, error) {
+	w.log = append(w.log, "scaffold:finalize")
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if head := gitRun(w.t, cfg.Dir, "rev-parse", "HEAD"); head != cfg.Base {
+		return "", errors.New("test: the folder is not at the base")
+	}
+	if cfg.Site.DatabaseID == "" {
+		return "", errors.New("test: no database id")
+	}
+	if err := os.WriteFile(filepath.Join(cfg.Dir, "wrangler.jsonc"), []byte(cfg.Site.DatabaseID+"\n"), 0o644); err != nil {
+		return "", err
+	}
+	gitRun(w.t, cfg.Dir, "add", "--all")
+	gitRun(w.t, cfg.Dir, "commit", "--quiet", "-m", cfg.Commit.Message)
+	return gitRun(w.t, cfg.Dir, "rev-parse", "HEAD"), nil
+}
+
+// siteGet answers like the deployed site once the domain is attached and w.siteLive is set.
+func (w *world) siteGet(ctx context.Context, rawURL string) (int, string, error) {
+	w.log = append(w.log, "site:"+rawURL)
+	if err := ctx.Err(); err != nil {
+		return 0, "", err
+	}
+	if !w.siteLive || len(w.cf.attached) == 0 {
+		return 0, "", errors.New("test: tls handshake failed")
+	}
+	if strings.HasSuffix(rawURL, "/admin") {
+		return 303, "/admin/login", nil
+	}
+	return 200, "", nil
+}
+
+// ownerUsesLink is the owner selecting Sign in on the confirm page the tab moved to: the engine
+// consumes the link's row.
+func (w *world) ownerUsesLink(link string) {
+	u := link[strings.Index(link, "token=")+len("token="):]
+	for _, db := range w.cf.d1 {
+		delete(db.tokens, hashToken(u))
+	}
+}
+
+// deployed records the Worker the first deploy creates, as the deploy run would.
+func (w *world) deployed(repo string) {
+	w.cf.workers[repo] = "tag-0001"
 }
 
 func (w *world) code(prefix string) string {
@@ -600,7 +1190,37 @@ func (w *world) installsRepo(string) (loopback.Callback, error) {
 }
 
 func (w *world) run(ctx context.Context) (Result, error) {
+	if w.cfg.WriteSite == nil {
+		w.cfg.WriteSite = w.writeSite
+	}
 	return Run(ctx, w.cfg)
+}
+
+// resumeFrom sets the world up for the next run to resume the last saved record: a fresh tab
+// scripted with only the approvals the record has not reached, fresh events, and the summary
+// confirmed as shown.
+func (w *world) resumeFrom() {
+	rec, ok := w.saver.last()
+	if !ok {
+		w.t.Fatal("no record to resume")
+	}
+	w.cfg.Resume = &Resume{SiteID: w.saver.id, Record: rec}
+	w.events = nil
+	w.view.opened = nil
+	w.tab = &fakeTab{armed: map[loopback.Route]string{}, script: map[loopback.Route][]func(string) (loopback.Callback, error){}, log: &w.log, onNext: w.ownerUsesLink}
+	switch {
+	case !reached(rec.Step, "app-created") && rec.Cloudflare.AccountID == "" && !slices.Contains(rec.Setup.KeyringEntries, w.vault.Entry(secrets.EntryCloudflareRefresh)):
+		w.tab.push(loopback.CloudflareCallback, w.cloudflareApproves)
+		fallthrough
+	case !reached(rec.Step, "app-created"):
+		w.tab.push(loopback.GitHubManifest, w.manifestApproves)
+		fallthrough
+	case !reached(rec.Step, "repo-created"):
+		w.tab.push(loopback.GitHubCallback, w.installsAll)
+		fallthrough
+	case !reached(rec.Step, "installed"):
+		w.tab.push(loopback.GitHubCallback, w.installsRepo)
+	}
 }
 
 func (w *world) waits() []WaitState {

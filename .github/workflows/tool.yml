@@ -334,6 +334,14 @@ jobs:
         env:
           VERSION: ${{ steps.build.outputs.version }}
         run: node scripts/release/pack-platforms.mjs --version "$VERSION" --binaries tool/dist/platforms --out tool/dist/npm
+      - name: Attest the npm tarballs
+        # The owner's first publish of the platform packages takes these tarballs from a dispatch
+        # run's artifact and verifies each one with `gh attestation verify <tgz> --source-ref
+        # refs/heads/main` before `npm publish` (cairn-releasing, "The launcher and its platform
+        # packages"). The archive attestation above does not cover them, since they are packed after it.
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: tool/dist/npm/*.tgz
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: npm-tarballs

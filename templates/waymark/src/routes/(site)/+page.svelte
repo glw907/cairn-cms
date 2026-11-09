@@ -63,7 +63,7 @@
        deeper archive page are both browsing a list, not opening the front page. -->
   {#if showFeatured && data.featured}
     <article class="lead" data-cairn-post>
-      <p class="m-0 mb-2xs text-step--1 font-semibold uppercase tracking-eyebrow text-muted">
+      <p class="m-0 mb-2xs text-step--1 font-semibold eyebrow-case tracking-eyebrow text-muted">
         Latest
       </p>
       {#if data.featured.date}
@@ -83,7 +83,7 @@
 
   <div class="cairn-section index">
     <div class="index__head">
-      <p class="m-0 text-step--1 font-semibold uppercase tracking-eyebrow text-muted">Archive</p>
+      <p class="m-0 text-step--1 font-semibold eyebrow-case tracking-eyebrow text-muted">Archive</p>
       <span class="index__count">
         {visibleCount}
         {visibleCount === 1 ? 'entry' : 'entries'}

@@ -63,6 +63,12 @@ test("Waymark's names leave the committed app.html and theme-names.ts byte-ident
   }
 });
 
+test("Waymark's names match the two daisyUI theme blocks in its stylesheet", async () => {
+  const css = (await readFile(path.join(SHOWCASE, 'src/theme/theme.css'), 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
+  const names = [...css.matchAll(/@plugin\s+"daisyui\/theme"\s*\{[^}]*?\bname:\s*"([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(names.sort(), [WAYMARK.light, WAYMARK.dark].sort());
+});
+
 test("the regex in app.html accepts exactly the manifest's two names", async () => {
   const html = await readFile(path.join(SHOWCASE, 'src/app.html'), 'utf8');
   const source = /document\.cookie\.match\(\/(.+)\/\)/.exec(html)?.[1];

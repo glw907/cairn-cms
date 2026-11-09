@@ -8,6 +8,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
+/** What the admin says after a publish. */
+export const PUBLISHED_ALERT = 'Published. The live site shows this change once the site rebuilds.';
+
 /** @param {number} ms */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -304,7 +307,7 @@ function isSignedInAdminPath(pathname) {
  * @param {number} [waitMs]
  * @returns {Promise<void>}
  */
-async function requireAdmin(page, evidence, waitMs = 30_000) {
+export async function requireAdmin(page, evidence, waitMs = 30_000) {
   const atAdmin = () => isSignedInAdminPath(new URL(page.url()).pathname);
   await page.waitForURL(atAdmin, { timeout: waitMs }).catch(() => {});
   if (!atAdmin()) await failPage(page, evidence, 'the sign-in did not land on /admin');
@@ -596,4 +599,35 @@ export async function deleteGithubApp(context, slug, creds, { base = 'https://gi
   if (!(await clickControl(page, /^i understand\b.*\bdelete\b.*github app/i, creds, { pauseMs }))) throw new Error('The delete confirmation did not appear.');
   await page.close();
   return 'deleted';
+}
+
+/**
+ * List the machine account's GitHub Apps from its settings page, answering a sign-in or sudo prompt
+ * on the way. The page staying on `/settings/apps` once the prompts are answered is the proof that
+ * sudo passed.
+ * @param {import('playwright').BrowserContext} context the machine account's context
+ * @param {Creds} creds the account
+ * @param {{ base?: string, pauseMs?: number }} [options] `base` is GitHub's origin
+ * @returns {Promise<string[]>} each App's slug
+ * @throws when the page is not the Apps list after the prompts
+ */
+export async function listGithubApps(context, creds, { base = 'https://github.com', pauseMs = 500 } = {}) {
+  const page = await context.newPage();
+  const atList = () => new URL(page.url()).pathname.replace(/\/$/, '') === '/settings/apps';
+  try {
+    await page.goto(`${base}/settings/apps`, { waitUntil: 'load' });
+    await settle(page, pauseMs);
+    for (let step = 0; step < 6; step++) {
+      if (await answerAccountPrompts(page, creds, pauseMs)) continue;
+      if (atList()) break;
+      await page.goto(`${base}/settings/apps`, { waitUntil: 'load' });
+      await settle(page, pauseMs);
+    }
+    if (!atList()) throw new Error(`The GitHub Apps page did not open: ${where(page.url())}.`);
+    const hrefs = await page.locator('a[href^="/settings/apps/"]').evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
+    const slugs = hrefs.map((href) => /^\/settings\/apps\/([^/?#]+)/.exec(href)?.[1] ?? '').filter((slug) => slug && slug !== 'new');
+    return [...new Set(slugs)];
+  } finally {
+    await page.close().catch(() => {});
+  }
 }

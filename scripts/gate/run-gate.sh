@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The release gate's one entry: bash scripts/gate/run-gate.sh --smoke
+# The proving tools' one entry: bash scripts/gate/run-gate.sh --smoke, or sweep [--apply | --check-scopes]
 #
 # Sources the workstation's secrets (the pattern CLAUDE.md names for a script), makes this run's
 # directory outside the worktree with mode 0700, and starts gate.mjs under an environment built
@@ -44,7 +44,7 @@ echo "run dir: $run_dir"
 allowed=()
 while IFS= read -r name; do
   allowed+=("$name=${!name}")
-done < <(compgen -e | grep -E '^(CF_WS_CAIRN_GATE_TOKEN|CF_CI_CAIRN_BUILD_TOKEN|STALWART_PASSWORD_CAIRN_GATE|GITHUB_TEST_[A-Z_]+|GATE_[A-Z_]+)$' || true)
+done < <(compgen -e | grep -E '^(CF_WS_CAIRN_CLEANROOM_TOKEN|STALWART_PASSWORD_CAIRN_GATE|GITHUB_TEST_[A-Z_]+|GATE_[A-Z_]+)$' || true)
 
 # The display and session-bus names the headed browser needs. Each is passed only
 # when set, so a host without a display passes none.
@@ -53,10 +53,8 @@ for name in DISPLAY WAYLAND_DISPLAY XAUTHORITY XDG_RUNTIME_DIR DBUS_SESSION_BUS_
   if [ -n "${!name:-}" ]; then session+=("$name=${!name}"); fi
 done
 
-# Words placed before the child; the exit trap sets a timeout so the exit file is always written.
-wrap=()
 gate() {
-  "${wrap[@]}" env -i \
+  env -i \
     "${allowed[@]}" \
     "${session[@]}" \
     PATH="$PATH" \
@@ -67,14 +65,11 @@ gate() {
     node "$here/gate.mjs" "$@" 9>&-
 }
 
-# Not `exec`: when the run ends, however it ends, every install this run recorded and did not
-# already remove is torn down. A page held for a click keeps the run alive, so this fires only
-# after the hold times out or a later step fails. A run that recorded nothing finds nothing to do.
+# Not `exec`: the exit status lands in the run directory however the run ends, so a backgrounded
+# run can be read afterwards.
 cleanup() {
   local status=$?
   trap - EXIT
-  wrap=(timeout 20m)
-  gate --teardown-run || status=1
   echo "$status" >"$run_dir/exit"
   exit "$status"
 }

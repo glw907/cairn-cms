@@ -1,7 +1,0 @@
-#!/bin/sh
-# The gate's stand-in for xdg-open. The CLI's openBrowser spawns `xdg-open <url>`; with
-# scripts/gate first on PATH this records the URL in $GATE_URL_LOG for the browser half and opens
-# nothing. The log lives in the run directory only, since a sign-in URL in it carries a token.
-[ -n "$GATE_URL_LOG" ] || exit 1
-printf '%s\n' "$1" >> "$GATE_URL_LOG"
-exit 0

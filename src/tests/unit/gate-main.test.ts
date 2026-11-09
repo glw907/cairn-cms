@@ -1,166 +1,110 @@
-// The gate's command line: every leg ends with a row, one install's failure never stops the other's
-// legs, and a run that cannot mark its legs pending runs none.
+// The gate's command line: what it dispatches, what it refuses, and that the entry imports nothing
+// from the retired leg runner.
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { main, type makeSession } from '../../../scripts/gate/gate.mjs';
-import { runLeg } from '../../../scripts/gate/legs.mjs';
-import { mergeGateSection, parseGateRows, recordLeg, recordPending } from '../../../scripts/gate/record.mjs';
+import type { Clients } from '../../../scripts/gate/sweep.mjs';
 
 type Deps = NonNullable<Parameters<typeof main>[2]>;
-type Row = Record<string, string>;
-
-const VERSION = '1.0.0';
 
 beforeEach(() => {
-  vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** A session with no browser behind it: installs get an empty admin context. */
+/** A session with no browser behind it: it lists no Apps and closes cleanly. */
+const closed: string[] = [];
 const fakeSession = (() => ({
-  getBrowser: async () => ({ newAdminContext: async () => ({}) }),
-  creds: {},
-  teardownDeps: {},
-  close: async () => {},
+  getBrowser: async () => ({ github: { newPage: async () => ({}) } }),
+  creds: { login: 'l', password: 'p', totp: () => '123456' },
+  close: async () => void closed.push('closed'),
 })) as unknown as typeof makeSession;
 
 function harness() {
-  const runDir = path.join(mkdtempSync(path.join(tmpdir(), 'gate-main-')), 'run-7');
-  const env = { GATE_RUN_DIR: runDir, CF_WS_CAIRN_GATE_TOKEN: 'token' };
-  const events: string[] = [];
-  const rows: Row[] = [];
-  const pending: Array<{ legs: string[]; run: string; fresh?: boolean }> = [];
-  const base: Partial<Deps> = {
-    makeSession: fakeSession,
-    teardownRun: async () => [],
-    teardownStale: async () => [],
-    recordPending: async (input) => {
-      events.push('pending');
-      pending.push({ legs: input.legs, run: input.run, fresh: input.fresh });
+  const runDir = mkdtempSync(path.join(tmpdir(), 'gate-main-'));
+  const env = { GATE_RUN_DIR: runDir, CF_WS_CAIRN_CLEANROOM_TOKEN: 'cf-value', GITHUB_TEST_TOKEN: 'gh-value' };
+  const calls: string[] = [];
+  const lines: string[] = [];
+  const answer = (json: unknown) => ({ status: 200, json, headers: new Headers() });
+  const clients: Clients = {
+    accountId: 'acct',
+    cf: async (method, route) => {
+      calls.push(`${method} ${route.split('?')[0]}`);
+      if (route.startsWith('/zones?name=')) return answer({ success: true, result: [{ id: 'z' }] });
+      return answer({ success: true, result: route.includes('r2/buckets') ? { buckets: [] } : [] });
     },
-    recordLeg: async ({ row }) => {
-      rows.push(row);
+    gh: async (method, route) => {
+      calls.push(`${method} ${route.split('?')[0]}`);
+      return answer([]);
     },
   };
-  return { runDir, env, events, rows, pending, base };
+  const deps: Partial<Deps> = { makeSession: fakeSession, makeClients: () => clients, browserApps: () => ({ listApps: async () => [], deleteApp: async () => 'absent' as const }), print: (line) => lines.push(line) };
+  return { runDir, env, calls, lines, deps };
 }
 
 describe('main', () => {
-  it('runs group B after A1 throws, with a fail row for A1 and a skipped row for A2', async () => {
-    const { runDir, env, events, rows, pending, base } = harness();
-    const ran: string[] = [];
-    const code = await main(['--all', '--version', VERSION], env, {
-      ...base,
-      // A1 goes through the real runLeg, so its row comes from the finally; the rest stand in.
-      runLeg: async (ctx, legDeps) => {
-        events.push(`leg ${ctx.leg}`);
-        ran.push(ctx.leg);
-        if (ctx.leg === 'A1') return runLeg(ctx, legDeps);
-        return { pass: true, failures: [] };
-      },
-      legDeps: {
-        runDriver: (async () => {
-          throw new Error('boom');
-        }) as unknown as NonNullable<Deps['legDeps']>['runDriver'],
-      },
-    });
-    expect(code).toBe(1);
-    expect(ran).toEqual(['A1', 'B1', 'B2']);
-    expect(rows.find((r) => r.leg === 'A1')?.verdict).toBe('fail: boom');
-    expect(rows.find((r) => r.leg === 'A2')).toMatchObject({ verdict: 'skipped: needs A1', run: path.basename(runDir) });
-    expect(pending).toEqual([{ legs: ['A1', 'A2', 'B1', 'B2'], run: 'run-7', fresh: true }]);
-    expect(events[0]).toBe('pending');
-    expect(events.indexOf('pending')).toBeLessThan(events.indexOf('leg A1'));
+  it('refuses to run outside run-gate.sh', async () => {
+    expect(await main(['sweep'], {})).toBe(2);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('GATE_RUN_DIR');
   });
 
-  it('skips the legs after a failed verdict and still runs the other install', async () => {
-    const { env, rows, base } = harness();
-    const ran: string[] = [];
-    const code = await main(['--all', '--version', VERSION], env, {
-      ...base,
-      runLeg: async (ctx) => {
-        ran.push(ctx.leg);
-        return ctx.leg === 'B1' ? { pass: false, failures: ['x'] } : { pass: true, failures: [] };
-      },
-    });
-    expect(code).toBe(1);
-    expect(ran).toEqual(['A1', 'A2', 'B1']);
-    expect(rows).toEqual([expect.objectContaining({ leg: 'B2', verdict: 'skipped: needs B1' })]);
+  it.each([[['sweep', '--bogus']], [['sweep', '--apply', '--check-scopes']], [['--leg', 'A1']], [['nonsense']], [[]]])('returns 2 with the usage for %j', async (argv) => {
+    const { env, deps, calls } = harness();
+    expect(await main(argv, env, deps)).toBe(2);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('Usage: run-gate.sh');
+    expect(calls).toEqual([]);
   });
 
-  it('returns non-zero before any leg runs when the pending write fails', async () => {
-    const { env, base } = harness();
-    let ran = 0;
-    const code = await main(['--all', '--version', VERSION], env, {
-      ...base,
-      recordPending: async () => {
-        throw new Error('gh is down');
-      },
-      runLeg: async () => {
-        ran += 1;
-        return { pass: true, failures: [] };
-      },
-    });
-    expect(code).not.toBe(0);
-    expect(ran).toBe(0);
+  it('refuses a sweep without the two tokens, before any call', async () => {
+    const { runDir, deps, calls } = harness();
+    expect(await main(['sweep'], { GATE_RUN_DIR: runDir }, deps)).toBe(2);
+    expect(calls).toEqual([]);
   });
 
-  it('marks exactly the named legs pending, merging into the record', async () => {
-    const { env, base, pending } = harness();
-    const code = await main(['--leg', 'A1', '--leg', 'A2', '--version', VERSION], env, {
-      ...base,
-      runLeg: async () => ({ pass: true, failures: [] }),
-    });
-    expect(code).toBe(0);
-    expect(pending).toEqual([{ legs: ['A1', 'A2'], run: 'run-7', fresh: false }]);
+  it('runs a bare sweep as a dry run that reads and deletes nothing, logging to the run directory', async () => {
+    const { runDir, env, deps, calls, lines } = harness();
+    expect(await main(['sweep'], env, deps)).toBe(0);
+    expect(calls.every((call) => call.startsWith('GET '))).toBe(true);
+    expect(lines.at(-1)).toMatch(/^sweep: 0 target\(s\) to delete/);
+    expect(readFileSync(path.join(runDir, 'sweep.log'), 'utf8')).toContain('sweep: 0 target(s) to delete');
+    expect(closed.at(-1)).toBe('closed');
   });
 
-  it('aborts a --leg run whose pending write fails', async () => {
-    const { env, base } = harness();
-    let ran = 0;
-    const code = await main(['--leg', 'A1', '--version', VERSION], env, {
-      ...base,
-      recordPending: async () => {
-        throw new Error('gh is down');
-      },
-      runLeg: async () => {
-        ran += 1;
-        return { pass: true, failures: [] };
-      },
-    });
-    expect(code).not.toBe(0);
-    expect(ran).toBe(0);
+  it('sends --apply to the apply path, which checks the token first', async () => {
+    const { env, deps, calls } = harness();
+    await main(['sweep', '--apply'], env, deps);
+    expect(calls[0]).toBe('GET /accounts/acct/tokens/verify');
   });
 
-  it('leaves A1 pending, never the earlier pass, when the rerun dies before its row', async () => {
-    const { env, base } = harness();
-    let body = mergeGateSection('## Added\n\n- a thing', {
-      leg: 'A1', path: '/about', url: 'https://carin-test.org/about', commit: 'abc', marker: 'm', fetched: 't', verdict: 'pass', run: 'run-1',
-    });
-    // A gh over one release body: view answers the current text, edit replaces it.
-    const gh = async (args: string[]) => {
-      if (args[1] === 'view') return { code: 0, stdout: body };
-      body = readFileSync(args[args.indexOf('--notes-file') + 1], 'utf8');
-      return { code: 0, stdout: '' };
-    };
-    const code = await main(['--leg', 'A1', '--leg', 'A2', '--version', VERSION], env, {
-      ...base,
-      recordPending: (input) => recordPending({ ...input, gh }),
-      recordLeg: (input) => recordLeg({ ...input, gh }),
-      // Dies past the finally a real runLeg would write its row in.
-      runLeg: async () => {
-        throw new Error('process died');
-      },
-    });
-    expect(code).toBe(1);
-    const rows = parseGateRows(body);
-    expect(rows.find((r) => r.leg === 'A1')).toMatchObject({ verdict: 'pending', run: 'run-7' });
-    expect(rows.find((r) => r.leg === 'A2')?.verdict).toBe('skipped: needs A1');
-    expect(body).toContain('- a thing');
+  it('sends --check-scopes to the scope check', async () => {
+    const { env, deps, lines } = harness();
+    await main(['sweep', '--check-scopes'], env, deps);
+    expect(lines.some((line) => line.startsWith('scopes:'))).toBe(true);
+  });
+
+  it('reports a failed sweep and exits 1', async () => {
+    const { env, deps } = harness();
+    const failing: Partial<Deps> = { ...deps, makeClients: () => ({ accountId: 'a', cf: async () => { throw new Error('network down'); }, gh: async () => { throw new Error('x'); } }) as Clients };
+    expect(await main(['sweep'], env, failing)).toBe(1);
+    expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('network down');
+  });
+});
+
+describe('the gate directory', () => {
+  const dir = path.resolve('scripts/gate');
+
+  it('holds no file of the retired leg runner', () => {
+    for (const name of ['legs.mjs', 'driver.mjs', 'teardown.mjs', 'tail.mjs', 'xdg-open', 'cloudflare']) expect(existsSync(path.join(dir, name)), name).toBe(false);
+  });
+
+  it('imports nothing from a deleted file', () => {
+    const deleted = /\.\/(legs|driver|teardown|tail)\.mjs|\.\/cloudflare\//;
+    for (const name of readdirSync(dir).filter((file) => file.endsWith('.mjs'))) {
+      expect(readFileSync(path.join(dir, name), 'utf8'), name).not.toMatch(new RegExp(`from '(${deleted.source})`));
+    }
   });
 });

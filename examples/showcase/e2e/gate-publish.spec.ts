@@ -2,9 +2,7 @@ import { expect, test } from '@playwright/test';
 // The release gate's own publish routine, driven against the real editor. The scripts are plain
 // ESM with JSDoc and no declaration files, so the import carries no types.
 // @ts-expect-error untyped gate module
-import { publishViaAdmin } from '../../../scripts/gate/browser.mjs';
-// @ts-expect-error untyped gate module
-import { PUBLISHED_ALERT } from '../../../scripts/gate/legs.mjs';
+import { PUBLISHED_ALERT, publishViaAdmin } from '../../../scripts/gate/browser.mjs';
 
 test('the gate publish lands on main and returns the published alert', async ({
   context,

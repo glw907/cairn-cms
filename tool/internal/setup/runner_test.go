@@ -2413,3 +2413,16 @@ func TestFetchFromReadsTheTaggedTemplate(t *testing.T) {
 		t.Error("FetchFrom of a tag the registry lacks succeeded")
 	}
 }
+
+func TestATokenRunWithoutAnOwnerEmailIsRefusedBeforeAnyWrite(t *testing.T) {
+	w := newWorld(t)
+	w.cfg.CloudflareToken = providers.NewCredential("token-" + strings.Repeat("a", 36))
+	w.cfg.Answers.OwnerEmail = " "
+	_, err := w.run(context.Background())
+	if !errors.Is(err, errTokenNoEmail) || !strings.Contains(err.Error(), "--email") {
+		t.Fatalf("err = %v, want errTokenNoEmail naming --email", err)
+	}
+	if w.gh.writes != 0 || w.vault.puts != 0 || len(w.saver.saves) != 0 {
+		t.Errorf("writes: github %d, keyring %d, record %d; want none", w.gh.writes, w.vault.puts, len(w.saver.saves))
+	}
+}

@@ -48,5 +48,5 @@ var (
 	errNoEnv   = errors.New("no environment for git and npm (set Config.Env to the process's environment by name)")
 	// errTokenNoEmail refuses a token run with no owner email: the token cannot read the
 	// Cloudflare sign-in's address, so nothing else can supply one.
-	errTokenNoEmail = errors.New("a run with a Cloudflare token needs the owner email (set Answers.OwnerEmail)")
+	errTokenNoEmail = errors.New("a run with a Cloudflare token needs the owner's email: give --email")
 )

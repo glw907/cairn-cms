@@ -520,6 +520,7 @@ func (r *run) register(cs ...providers.Credential) {
 	}
 }
 
+// credential reports which Cloudflare credential the run works on, for its events and summary.
 func (r *run) credential() CloudflareCredential {
 	if r.tokenRun {
 		return CredentialToken

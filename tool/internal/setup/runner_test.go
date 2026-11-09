@@ -563,7 +563,7 @@ func TestAResumeWithoutTheAppKeyGivesTheDeleteGuidance(t *testing.T) {
 	w.vault.putErr = map[secrets.EntryKind]error{}
 	_, err := w.resume()
 	f := failureOf(t, err)
-	if f.Reason != ReasonKeyringWrite || !strings.Contains(f.Do, "https://github.com/settings/apps/cairn-example-site") {
+	if f.Reason != ReasonKeyringWrite || !strings.Contains(f.Do, "https://github.com/settings/apps/"+w.gh.app.Slug) {
 		t.Errorf("failure = %+v, want the delete-the-App guidance", f)
 	}
 	last, _ := w.saver.last()

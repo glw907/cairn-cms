@@ -980,10 +980,12 @@ func newWorld(t *testing.T) *world {
 		ID       int64  `json:"id"`
 		Slug     string `json:"slug"`
 		ClientID string `json:"client_id"`
-		Owner    struct {
-			Login string `json:"login"`
-		} `json:"owner"`
 	}](t, "github", "app_manifest_conversion.created.201.json")
+	// The recordings scrub the owner's login to a placeholder carrying < and >, which no Windows
+	// folder name can hold, and the fake keeps each repository's remote under its owner's folder.
+	const owner = "example-owner"
+	repo := fixture[providers.Repository](t, "github", "repo_create.ok.201.json")
+	repo.Owner.Login = owner
 	// The recording scrubs every secret to one placeholder, so the secrets come from the corpus's
 	// test-only credentials: a working key and values distinct enough for the scrub assertions.
 	creds := fixture[struct {
@@ -998,9 +1000,9 @@ func newWorld(t *testing.T) *world {
 			ClientSecret:  providers.NewCredential(creds.ClientSecret),
 			WebhookSecret: providers.NewCredential(creds.Webhook),
 			PEM:           providers.NewCredential(creds.PEM),
-			OwnerLogin:    conv.Owner.Login,
+			OwnerLogin:    owner,
 		},
-		repo:     fixture[providers.Repository](t, "github", "repo_create.ok.201.json"),
+		repo:     repo,
 		taken:    map[string]bool{},
 		installs: []install{{ID: 5550001, AppID: foreignAppID, Selection: "all"}},
 		creates:  map[string]int{},

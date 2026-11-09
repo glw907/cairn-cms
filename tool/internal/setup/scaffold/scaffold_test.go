@@ -325,6 +325,9 @@ func TestNoHookRunsInTheSiteFolder(t *testing.T) {
 		t.Fatalf("Write: %v", err)
 	}
 	marker := filepath.Join(t.TempDir(), "hook-ran")
+	if err := os.MkdirAll(filepath.Join(dir, ".git", "hooks"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	for _, name := range []string{"pre-commit", "post-commit", "reference-transaction"} {
 		hook := filepath.Join(dir, ".git", "hooks", name)
 		if err := os.WriteFile(hook, []byte("#!/bin/sh\ntouch '"+marker+"'\n"), 0o755); err != nil {

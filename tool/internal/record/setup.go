@@ -61,8 +61,9 @@ type Setup struct {
 	// AppOwner is the login of the account that owns the App and the repository, from the
 	// manifest conversion. A resume before the repository is recorded has no other way to learn it.
 	AppOwner string
-	// OwnerID is the GitHub user id of the repository's owner, which the repository-only install
-	// page preselects. A resume at that approval has no other way to learn it.
+	// OwnerID is the GitHub user id of the account that owns the App and the repository, from the
+	// manifest conversion and then the created repository. The owner checks compare it, and the
+	// repository-only install page preselects it. A resume has no other way to learn it.
 	OwnerID int64
 	// EngineVersion and EngineIntegrity are the resolved engine package's version and integrity.
 	EngineVersion   string

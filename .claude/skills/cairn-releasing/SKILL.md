@@ -59,7 +59,7 @@ node scripts/release/preflight.mjs <x.y.z>            # add --stable for a stabl
 ```
 
 It checks a clean tree, `HEAD` equal to `origin/main` (and prints that sha), a version absent from the
-registry on all three packages, both installs present, and a non-empty `## Unreleased` (a stable skips that
+registry on both packages, both installs present, and a non-empty `## Unreleased` (a stable skips that
 last check). Fix what it names and rerun.
 
 ## 3. Release sweep (capability releases only)
@@ -165,7 +165,7 @@ candidate is cut; a recapture merged after it fails the stable check by design a
 candidate. The order, each step waiting on the one before:
 
 1. `node scripts/release/preflight.mjs <x.y.z-rc.N>`, then fold the window (step 5) and commit the fold.
-2. `node scripts/release/bump.mjs <x.y.z-rc.N>` writes the eight files a cut touches: the three manifest
+2. `node scripts/release/bump.mjs <x.y.z-rc.N>` writes the seven files a cut touches: the two manifest
    versions, the lockfile version lines, the template pins and `VERSION`, the CHANGELOG heading with its
    `Released` line, and the MIGRATION-NOTES heading and anchors. It refuses a dirty tree and does nothing
    on a tree already at the version. `--date YYYY-MM-DD` sets the date. It replaces
@@ -206,7 +206,7 @@ candidate. The order, each step waiting on the one before:
    node scripts/release/verify.mjs <x.y.z-rc.N>
    ```
 
-   `wait` polls the registry with no cache until the tag holds the version on all three packages.
+   `wait` polls the registry with no cache until the tag holds the version on both packages.
    `verify` checks the tag and a provenance attestation on each.
 
 A consumer cannot reach a prerelease through its caret range: `^0.93.0` does not resolve
@@ -267,8 +267,9 @@ gh workflow run publish.yml --ref v<x.y.z-rc.N> -f promote=<x.y.z-rc.N>
 Note the newest publish `workflow_dispatch` run id first (`gh run list --workflow publish.yml --event
 workflow_dispatch --json databaseId,headBranch`), since the dispatch may not print its run URL. The
 `promote` job refuses unless the gate table shows four passes from one run, then moves `next` to the
-version on all three packages, `create-cairn-site` last, and moves `create-cairn-site@latest` too. The
-engine packages' `latest` never moves to a candidate. Then:
+version on the engine and the dev package. A `latest` never moves to a candidate: the engine packages'
+stays on the last stable, and the launcher's is set by the tool release (see "The launcher and its
+platform packages"). Then:
 
 ```bash
 gh run watch <run-id> --exit-status
@@ -313,6 +314,29 @@ config on npmjs.org is the suspect, not the code: the org/user, repository, work
 trusted-publisher configuration defaults to `npm stage publish`, so it needs publish chosen as its
 allowed action. Do not bump the version again to retry; fix the config and rerun the same release's
 workflow with `gh run rerun <run-id> --failed`.
+
+### The launcher and its platform packages
+
+`create-cairn-site` and the six `@glw907/cairn-<os>-<cpu>` packages (`darwin`, `linux`, `win32`, each on
+`x64` and `arm64`) are not part of the engine's lockstep and `publish.yml` never touches them. They version
+with the Go tool and publish from `tool.yml`'s `publish-npm` job when a `tool/vX.Y.Z` tag is pushed: the
+release job packs them with `scripts/release/pack-platforms.mjs` at the tag's version, and `publish-npm`
+publishes the six platform packages first and the launcher last, with provenance, to `gate` for a
+prerelease and `latest` for a stable. A `workflow_dispatch` run packs and dry-runs without publishing.
+
+The first publish of each of the seven packages is done by hand, because npm cannot bind a trusted
+publisher to a package that does not exist. Until the owner has done it, the job's publish fails on
+authorization. For each package, once:
+
+1. Pack with `node scripts/release/pack-platforms.mjs --version <x.y.z> --binaries <dir> --out <dir>`,
+   from binaries laid out `<os>-<cpu>/cairn` (`cairn.exe` on Windows), or take the tarballs from a
+   dispatch run's `npm-tarballs` artifact.
+2. Publish it with the owner's own npm login: `npm publish <tarball> --access public`.
+3. Bind its trusted publisher: `npm trust github <package> --repo glw907/cairn-cms --file tool.yml
+   --env npm-publish --allow-publish`.
+
+Do the six platform packages, then `create-cairn-site`. After that every tool tag publishes by itself, and
+the already-published guard lets a re-run recover a release that failed partway.
 
 ## 10. Judgment call: when something fails
 

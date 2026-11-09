@@ -27,6 +27,10 @@
 
 ## Medium
 
+- [ ] **#410** Ship the tokens build to a scaffolded site, or keep `tokens.json` out of the scaffold `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The lay-in copies a theme's `tokens/tokens.json` and `resolver.json` into a scaffolded site's `src/theme/tokens/`, but `scripts/theme/build-tokens.mjs` ships only in this repository, so a site developer retunes `src/theme/tokens/tokens.css` by hand and `tokens.json` drifts from it. Found in theme-garden pass G1 (register-check on `retheme-by-tokens.md`). Decide whether the build ships in the template or the scaffold leaves `tokens.json` out.
+  Placement: engine batch, with the theme-garden setup pass (design step 4).
+
 - [ ] **#388** The template's site config still describes the trail demo `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)* *(swept 2026-11-08)*
   Found in the cairn-new-4 pass. The starter content no longer mentions trails, but `templates/waymark/src/site/site.config.yaml` still carries the description "Trail reports and gear notes from the field." and the tag vocabulary `trail-reports`, `gear`, `weather`, `routes`, `season-notes`, and the `create-cairn-site` transcript fixture (`packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt`) lists the demo's routes. A new site's home page reads the description under its heading until setup replaces it.
   Placement: the description is done in cairn-setup P1 (the scaffold sets a neutral description, "A new site built with cairn."); the tag vocabulary and the transcript fixture still need a ruling on a neutral starter set.
@@ -274,6 +278,8 @@
   Placement: handed to the tooling brainstorm.
 
 ## Low
+- [ ] **#411** Give packaged `skills/` pages a drafting brief in the docs register `#docs` `#docs-process` `#cairn-cms` *(2026-11-09)*
+  `.claude/skills/cairn-writing-docs/references/docs-register.md` has no brief or surface-table row for the reference pages under `skills/`, so `register-check` grades them against Google plus the four deviation rows alone. Found in theme-garden pass G1. Also decide whether the register names a polysemy tell (one word in two senses in adjacent sentences, such as "rule" for a constraint and a horizontal line), which the reviewer proposed.
 - [ ] **#398** Give `cairn health` a deploy code with Actions wording for a Worker with no deployment `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   For a site recorded as `deploys: actions`, a Worker with no deployment reads Failing under `CodeDeployBuildFailed`, whose fix text says "Read the build log in the Cloudflare dashboard, then push a fix". That text fits Workers Builds, not an Actions site, where the place to look is the repository's Actions tab. T2.6 reused the code to avoid new entries in `spine/code.go`, the fixes table, the fixtures, and the goldens. Proposed: a dedicated code with Actions fix text and an anchor.
   Placement: after P5's health page, since the page names what the check reads.

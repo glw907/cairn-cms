@@ -523,7 +523,7 @@ func (r *run) await(ctx context.Context, route loopback.Route) (loopback.Callbac
 func (r *run) failure(reason Reason, happened, do string, err error) *Failure {
 	f := &Failure{Step: r.step, Reason: reason, Happened: happened, Did: r.did(), Do: do, Err: err}
 	if f.Did != nothingCreated {
-		f.Left = "What setup created stays in place, and the next run resumes from it."
+		f.Left = "Everything setup created stays, and the next run resumes from it."
 	}
 	return f
 }

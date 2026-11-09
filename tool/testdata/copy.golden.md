@@ -502,7 +502,6 @@ Name the check that entry holds
 ## newview
 
 - <host> and <www>
-- <n> accounts on your Cloudflare sign-in
 - <n> domains on your Cloudflare account
 - <name> is live at <url>
 - <time> left to approve
@@ -519,6 +518,7 @@ Name the check that entry holds
 - Before you start, read <link>.
 - Block AI training
 - Choose a domain
+- Choose a site that didn't finish setting up on this computer, or start a new site.
 - Choose an account
 - Choose whether AI companies can use your content to train their models. This setting doesn't affect search engines.
 - Cloudflare is issuing the site's HTTPS certificate. This can take up to 15 minutes.
@@ -553,13 +553,11 @@ Name the check that entry holds
 - Run the first deploy
 - Set up a cairn site
 - Setting up <name>
-- Setup
 - Setup also emailed a sign-in link to <email>.
 - Setup can't continue
 - Setup can't run over SSH
 - Setup couldn't open your browser. Go to <url>
 - Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
-- Setup didn't finish on this computer. Resume a site, or start a new one.
 - Setup needs a domain on Cloudflare
 - Setup opens a tab in your browser. Approve these four requests in that tab.
 - Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser.
@@ -572,6 +570,7 @@ Name the check that entry holds
 - Shown at the top of every page.
 - Sign in to the admin
 - Sign-in email
+- Site
 - Site name
 - Start a new site
 - Storage bucket
@@ -590,6 +589,7 @@ Name the check that entry holds
 - You can leave this running. When your site is live, setup emails a sign-in link to <email>.
 - You need a domain on Cloudflare and the Workers Paid plan.
 - You're signed in to the admin in your browser.
+- Your Cloudflare sign-in can use <n> accounts. Setup creates your site in the one you choose.
 - Your site's code and content are stored in <repo>.
 - approve in your browser (<n> of <total>)
 - back

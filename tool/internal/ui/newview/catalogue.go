@@ -81,11 +81,11 @@ const (
 
 	titleAccount = "Choose an account"
 	labelAccount = "Account"
-	descAccount  = "<n> accounts on your Cloudflare sign-in"
+	descAccount  = "Your Cloudflare sign-in can use <n> accounts. Setup creates your site in the one you choose."
 
 	titleResume = "Resume setup"
-	labelResume = "Setup"
-	descResume  = "Setup didn't finish on this computer. Resume a site, or start a new one."
+	labelResume = "Site"
+	descResume  = "Choose a site that didn't finish setting up on this computer, or start a new site."
 	optionNew   = "Start a new site"
 )
 

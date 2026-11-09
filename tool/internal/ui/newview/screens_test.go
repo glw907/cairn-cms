@@ -79,7 +79,7 @@ var (
 		Step: setup.StepFirstDeploy, Reason: setup.ReasonWorkersPaid,
 		Happened: "Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.",
 		Did:      "The completed steps above are kept.",
-		Left:     "What setup created stays in place, and the next run resumes from it.",
+		Left:     "Everything setup created stays, and the next run resumes from it.",
 		Do:       "Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.",
 	}
 	declined = setup.Failure{

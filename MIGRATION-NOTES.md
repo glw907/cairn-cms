@@ -135,21 +135,15 @@ longer tracked, so edit `themes/waymark/` and lay it in again. A site that alrea
 (`schema/cairn-theme-contract-1.json`) yet, and `theme.css` imports the built tokens sheet
 in place of the two daisyUI blocks and the `@theme` scale it held.
 
-A footnote's reference and backref links now name the ids the rendered footnote carries. A site that
-rendered a footnote saw a link to an id the page lacked (a prerender could fail with
-`prerender_missing_id`), and the fix needs nothing from the site. A site that wrote its own rehype step
-over `a[data-footnote-ref]` or `a[data-footnote-backref]` hrefs should read them again: they now carry
-the sanitize step's `user-content-` prefix once.
+A footnote link used to name an id the page lacked, and a prerender could fail with
+`prerender_missing_id`. The fix needs nothing from the site. A site with its own rehype step that reads
+the `href` of `a[data-footnote-ref]` or `a[data-footnote-backref]` should check that step: each `href`
+now carries the sanitize step's `user-content-` prefix exactly once.
 
 `cairn-audit` prints what it measured. `AuditReport` has a required `measured` list, so code that
 builds an `AuditReport` by hand adds `measured: []`, and a custom rule may add a `measured` method to
-list the files and theme blocks it read. The text report ends with a `Measured:` block, or `measured
+list the files and theme blocks it read. The text report prints a `Measured:` block before its summary lines, or `measured
 nothing` when no theme sheet was read.
-
-The theme check and the theme viewer are tools in the cairn-cms repository and change nothing in a
-site. `npm run check:theme -- <themeDir>` gives a theme directory one verdict, and `npm run theme:view`
-renders the standard content and the conformance set under any theme, option, color mode, and width
-with no Cloudflare account. `scripts/theme/conformance/` holds the conformance set.
 
 ## 0.99.0-rc.4
 

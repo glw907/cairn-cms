@@ -1,13 +1,12 @@
 # Checking a theme
 
-Contents: the theme check, its rules, the viewer, the control page's check action, the audit command
-a site runs, what each audit rule requires, the scope, the import chain, config keys, what
-theme-contrast leaves unmeasured, resolving a finding.
+Contents: the theme check and its rules, the viewer, the audit (what each rule requires, the
+scope, the import chain, config keys, what theme-contrast leaves unmeasured, resolving a finding).
 
 A theme is checked two ways. The theme check runs from the cairn-cms repository over a theme
 directory and gives one verdict. The audit runs from a site's root over the files the site holds.
-The theme check's `audit` rule runs the audit's three theme rules, so a theme that passes the check
-has passed them.
+The theme check's `audit` rule runs the audit's three theme rules. A theme that passes the check has
+passed them.
 
 ## The theme check
 
@@ -24,12 +23,12 @@ The check prints `check:theme: <id> pass` or `fail`, then one line per failure w
 and message. `--json` prints the verdict as one document that validates against
 `schema/cairn-theme-check.schema.json`: a `failures` list of `file`, `rule`, and `message`, and a
 `notes` list of what a passing rule measured. `--rules` runs only the named rules. `--catalog` checks
-every theme in `templates/catalog.json` and fails when the catalog names no theme or an entry's
-directory is missing. The `test` job in CI runs `--catalog` on every push, and a release waits on
-that job, so a catalog theme that fails the check cannot ship.
+every theme in `templates/catalog.json` and fails when the catalog names no theme, an entry is not an engine
+theme, or an entry's directory is missing. In CI, the `test` job runs `--catalog` on every pull request and on each push to `main`. A release
+waits on that job, and a failing catalog theme blocks it.
 
-One defect fails one rule. Each rule below owns a kind of defect and leaves the others to its
-neighbors.
+Each rule covers one kind of defect, and the rules don't overlap. A file under `fonts/`, for example,
+answers to `fonts`, not to `paths-unlisted`.
 
 | Rule | Fails when |
 |---|---|
@@ -39,44 +38,44 @@ neighbors.
 | `resolver-options` | A resolver modifier has no manifest option, an option has no modifier, or an option's values and the modifier's contexts differ. |
 | `paths-required` | A path the contract requires, or a file the manifest names, is missing. |
 | `paths-unlisted` | A file sits at a path the contract does not list. Files under `fonts/` belong to the `fonts` rule. |
-| `tokens-stale` | A built file differs from what `scripts/theme/build-tokens.mjs` writes from the tokens. |
+| `tokens-stale` | A built file differs from what `scripts/theme/build-tokens.mjs` writes from the tokens, or an option sheet is one no option value builds. |
 | `tokens-required` | A token name in the contract's `tokens.required` is not declared by the theme's built sheets in each color mode and option value. |
-| `render` | The viewer's headless run, over every standard and conformance page under each option value in both modes at 1440 pixels, hits a build error, a status other than 200 (the 404 pages excepted), a console error, or runs no page. |
+| `render` | The build fails, a page returns a status other than 200 (the 404 pages excepted), a page logs a console error, or no page runs. The run covers every standard and conformance page, under each option value, in both color modes, at 1440 pixels. |
 | `directive-styled` | A class in `src/chassis/directives/classes.json` is styled by no sheet the theme loads. The report names the sheet that styles each class. |
 | `audit` | `cairn-audit`'s `theme-contrast`, `theme-conformance`, or `public-literals` rule reports a finding, or the run measured no theme block. |
-| `fonts` | A file under `fonts/` is not woff2 or is named by no manifest font, a font has no SPDX license, or a font's files add up to more than 400 KB. |
+| `fonts` | A file under `fonts/` other than `fonts.css` is not woff2, or no manifest font names it. A font has no SPDX license, or its files total more than 400 KB. |
 | `external-host` | A CSS `url()` or `@import`, or a component's `src` or `href`, names a URL with a scheme or `//`. |
 
-Only `render` builds a site. It takes minutes, so run the other rules with `--rules` while editing
-and run all of them before calling a theme finished.
+Only `render` builds a site, and it is the slow rule. While you edit, run the other rules with `--rules`.
+Run all of them before you call a theme finished.
 
 ## The viewer
 
 `npm run theme:view` renders the standard content and the conformance set under any theme, option,
-color mode, and width. It runs on a workstation with no Cloudflare account: it builds a scratch copy
-of the showcase, binds every D1, R2, and KV binding locally, and never calls a Cloudflare API or
-reads a wrangler login. It finds themes only through `templates/catalog.json` and each theme's
-manifest, or a directory passed to `--theme`.
+color mode, and width. It needs no Cloudflare account. It builds a scratch copy of the showcase, runs
+its D1, R2, and email bindings locally, and never calls a Cloudflare API or reads a wrangler login. It
+finds themes only through `templates/catalog.json` and each theme's manifest, or a directory passed
+to `--theme`. Without `--theme`, it renders the first theme in the catalog, which is Waymark.
 
 ```bash
 npm run theme:view -- --theme themes/waymark
-npm run theme:view -- --headless --pages all --widths 390,1440 --modes light,dark
-npm run theme:view -- --headless --pages / --widths 1440 --viewport-only --option accent=ember,tide
+npm run theme:view -- --headless --theme themes/waymark --pages all --widths 390,1440 --modes light,dark
+npm run theme:view -- --headless --theme themes/waymark --pages / --widths 390 --modes light --viewport-only --out /tmp/shots
 ```
 
 Interactive mode serves a control page and prints one JSON line with its address and the site's.
 The page lists every route, the catalog's themes, each option's values, the color modes, and five
-widths (320, 390, 768, 1440, and 2560 pixels), and shows the site in a frame. An edit under the
-theme directory copies across, and an edit to `tokens/tokens.json` or `tokens/resolver.json` reruns
-the tokens build first. `THEME_VIEWER_PORT` and `THEME_VIEWER_SITE_PORT` pin the two ports.
+widths (320, 390, 768, 1440, and 2560 pixels), and shows the site in a frame. When you edit a file in
+the theme directory, the viewer copies it into the scratch site. An edit to `tokens/tokens.json` or
+`tokens/resolver.json` reruns the tokens build first. To check the loaded theme, select **Run the
+check**. The control page shows the check's `--json` document. `THEME_VIEWER_PORT` and
+`THEME_VIEWER_SITE_PORT` pin the two ports.
 
 Headless mode builds once per option combination and color mode, loads each page in Chromium, saves
 a full-page PNG (the first screen under `--viewport-only`), and prints a JSON list with each page's
-`status`, `options`, `mode`, `width`, `file`, and `consoleErrors`. It is how `themes/<id>/screenshots/`
-is made: the catalog images are the home page at 1440 by 960 in light and dark, and at 390 wide in light.
-
-The control page's "Run the check" button runs the theme check on the loaded theme and shows its
-`--json` document.
+`status`, `options`, `mode`, `width`, `file`, and `consoleErrors`. `--out` names the directory the PNGs
+go to. Headless mode makes the catalog images in `themes/<id>/screenshots/`: the home page at 1440 by
+960 in light and dark, and at 390 wide in light.
 
 ## The audit
 
@@ -90,11 +89,11 @@ A run of only these rules needs no built admin stylesheet; plain `npx cairn-audi
 rules and does need it. All three are advisory on a consumer: a finding never changes the exit code
 unless the run sets the `fail-on` flag to `advisory`. `theme-conformance` needs `daisyui` and
 `tailwindcss` installed beside the site, `theme-contrast` needs `daisyui`; a missing one exits
-nonzero and names the install command. The report ends with a `Measured:` block that names each
-daisyUI theme block a rule read and the file that holds it, and says `measured nothing` when the run
-read none, so an empty scope never reads as a clean theme.
+nonzero and names the install command. The report prints a `Measured:` block, before its summary lines, that names each
+daisyUI theme block a rule read and the file that holds it. It says `measured nothing` when the run
+read no block. An empty scope can't pass as a clean theme.
 
-## What each audit rule requires
+### What each audit rule requires
 
 - **`public-literals`.** No color literal (hex, `rgb()`, `hsl()`, `oklch()`, `color()`, a named
   color) and no absolute font size (`px`, `pt`, `rem`) in a CSS declaration, a `style=` value, a
@@ -119,7 +118,7 @@ read none, so an empty scope never reads as a clean theme.
   `prefersdark` block on a dark OS. A value the resolver cannot evaluate is reported unmeasured,
   never passed.
 
-## The public scope
+### The public scope
 
 The rules read the `.svelte` and `.css` files under `public.scope` minus `public.exclude`, and no
 others, so a theme drafted elsewhere must be copied into `src/theme/` first. No file answers to two
@@ -134,7 +133,7 @@ empty scan never reports clean. A default root the tree lacks is skipped, and a 
 rule never reads the scope. To confirm a file is covered, put `style="color: #abc"` in it, expect a
 `public-literals` finding naming it, then remove it.
 
-## The import chain
+### The import chain
 
 `theme-conformance` and `theme-contrast` read the site's real stylesheets, starting at each
 `public.stylesheets` entry and following every `@import` in order. Relative paths resolve from the
@@ -150,7 +149,7 @@ package not installed, an unexported subpath, a missing file) is never a finding
 Unread imports at the end of the report. An import resolving to a non-CSS file is a finding and is
 not parsed.
 
-## Config keys
+### Config keys
 
 In `cairn-audit.config.json` at the audited root, or the `config` flag with a path:
 
@@ -161,7 +160,7 @@ In `cairn-audit.config.json` at the audited root, or the `config` flag with a pa
 | `public.themeRoots` | `src/theme`, `src/chassis/tokens.css` | Where a design value may be defined; a definition there is never a `public-literals` finding |
 | `public.stylesheets` | `src/theme/theme.css` | Entry sheets whose chain is audited; name a second to audit an overlay layered after the theme |
 
-## What theme-contrast leaves unmeasured
+### What theme-contrast leaves unmeasured
 
 It follows `var()` chains to a literal and evaluates one `color-mix()` form: two operands, `in oklab`
 or `in oklch`, exactly one percentage. Unmeasured: a relative color (`oklch(from ...)`),
@@ -176,7 +175,7 @@ root only when every part is `:root`, `html`, `:host`, `*`, a `data-theme` test,
 `:root.dark`, a block whose `root` option is another element) makes every pair reading it
 unmeasured.
 
-## Resolving a finding
+### Resolving a finding
 
 | Symptom | Cause | Fix |
 |---|---|---|

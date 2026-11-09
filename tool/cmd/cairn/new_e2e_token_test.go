@@ -202,3 +202,33 @@ func TestNewE2EATokenResumeNeedsTheVariableAgain(t *testing.T) {
 		t.Fatalf("apply with the token again: exit %d\nstdout:\n%s\nstderr:\n%s", res.ExitCode, res.Stdout, res.Stderr)
 	}
 }
+
+func TestNewE2EAnOAuthResumeIgnoresTheSetupToken(t *testing.T) {
+	r := newE2ERun(t)
+	if res := r.planRun(); res.ExitCode != 0 {
+		t.Fatalf("plan: exit %d\n%s", res.ExitCode, res.Stderr)
+	}
+	r.c.Env[setupTokenVar] = e2eCFSetupToken
+	r.c.BareRepo(e2eOwner, "example-site")
+	apply := r.c.Run(r.bin, "new", "--apply", r.plan)
+	if apply.ExitCode != 0 {
+		t.Fatalf("apply: exit %d\nstdout:\n%s\nstderr:\n%s", apply.ExitCode, apply.Stdout, apply.Stderr)
+	}
+	events := stream(t, apply.Stdout)
+	validateAgainstSchema(t, events)
+	if _, summary := credentialOf(events); summary != "approval" {
+		t.Errorf("the final summary's credential = %v, want approval", summary)
+	}
+	calls := cloudflareAuthCalls(apply.Requests)
+	for _, want := range []string{"/oauth2/token", "/oauth2/revoke"} {
+		if !slices.ContainsFunc(calls, func(c string) bool { return strings.Contains(c, want) }) {
+			t.Errorf("approval calls = %v, want one to %s", calls, want)
+		}
+	}
+	if bad := r.w.badAuth; len(bad) != 0 {
+		t.Errorf("Cloudflare calls without the OAuth access token: %v", bad)
+	}
+	if got, ok := r.w.opened(providers.DeploySecretName); !ok || got == e2eCFSetupToken {
+		t.Errorf("the deploy-key secret opens to %q (stored %v), want a minted key, not the setup token", got, ok)
+	}
+}

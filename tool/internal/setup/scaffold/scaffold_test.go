@@ -39,13 +39,20 @@ func TestScaffoldWritesTheSite(t *testing.T) {
 	}
 
 	var cfg struct {
-		SiteName string `yaml:"siteName"`
+		SiteName    string `yaml:"siteName"`
+		Description string `yaml:"description"`
 	}
-	if err := yaml.Unmarshal([]byte(readFile(t, dir, "src/theme/site.config.yaml")), &cfg); err != nil {
+	siteConfig := readFile(t, dir, "src/theme/site.config.yaml")
+	if err := yaml.Unmarshal([]byte(siteConfig), &cfg); err != nil {
 		t.Fatalf("site.config.yaml does not parse: %v", err)
 	}
 	if cfg.SiteName != "My Café: The Site!" {
 		t.Errorf("siteName = %q", cfg.SiteName)
+	}
+	// The home page shows the description under its heading, so a new site carries a neutral
+	// line rather than the template's sample copy.
+	if cfg.Description != "A new site built with cairn." || strings.Contains(siteConfig, "Trail reports") {
+		t.Errorf("description = %q, want the neutral line and none of the template's", cfg.Description)
 	}
 
 	cairn := readFile(t, dir, "src/theme/cairn.config.ts")
@@ -206,7 +213,7 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 	site := testSite()
 	early := site
 	early.DatabaseID = ""
-	first, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Dir: dir})
+	first, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Env: testEnv(), Dir: dir})
 	if err != nil {
 		t.Fatalf("Write: %v", err)
 	}
@@ -217,7 +224,7 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 		t.Errorf("the first pass did not name the package:\n%s", got)
 	}
 
-	fin := FinalizeConfig{Dir: first.Dir, Base: first.CommitSHA, Site: site, Commit: testCommit()}
+	fin := FinalizeConfig{Dir: first.Dir, Base: first.CommitSHA, Site: site, Commit: testCommit(), Env: testEnv()}
 	second, err := Finalize(t.Context(), fin)
 	if err != nil {
 		t.Fatalf("Finalize: %v", err)
@@ -237,7 +244,7 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 		t.Errorf("a repeated Finalize did not rebuild the second commit on the first")
 	}
 
-	stray := FinalizeConfig{Dir: dir, Base: second, Site: site, Commit: testCommit()}
+	stray := FinalizeConfig{Dir: dir, Base: second, Site: site, Commit: testCommit(), Env: testEnv()}
 	gitOut(t, dir, "reset", "--quiet", "--hard", first.CommitSHA)
 	if _, err := Finalize(t.Context(), stray); err == nil {
 		t.Error("Finalize accepted a folder whose HEAD is neither the base nor its child")
@@ -254,7 +261,7 @@ func TestUpdateInstallationCommitsTheSettingsAlone(t *testing.T) {
 		site Site
 		want bool
 	}{{site, true}, {moved, false}} {
-		if got, err := NamesApp(t.Context(), dir, base, tc.site); err != nil || got != tc.want {
+		if got, err := NamesApp(t.Context(), testEnv(), dir, base, tc.site); err != nil || got != tc.want {
 			t.Errorf("NamesApp(installation %s) = %v, %v; want %v", tc.site.InstallationID, got, err, tc.want)
 		}
 	}
@@ -266,7 +273,7 @@ func TestUpdateInstallationCommitsTheSettingsAlone(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("mine\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	fin := FinalizeConfig{Dir: dir, Base: base, Site: moved, Commit: testCommit()}
+	fin := FinalizeConfig{Dir: dir, Base: base, Site: moved, Commit: testCommit(), Env: testEnv()}
 	first, err := UpdateInstallation(t.Context(), fin)
 	if err != nil {
 		t.Fatalf("UpdateInstallation: %v", err)
@@ -277,7 +284,7 @@ func TestUpdateInstallationCommitsTheSettingsAlone(t *testing.T) {
 	if got := gitOut(t, dir, "log", "-1", "--format=%s"); got != InstallationMessage {
 		t.Errorf("the commit's message = %q", got)
 	}
-	if got, err := NamesApp(t.Context(), dir, first, moved); err != nil || !got {
+	if got, err := NamesApp(t.Context(), testEnv(), dir, first, moved); err != nil || !got {
 		t.Errorf("the commit does not name installation %s: %v", moved.InstallationID, err)
 	}
 	if got := gitOut(t, dir, "status", "--porcelain"); !strings.Contains(got, "M "+targets.PackageJSON) || !strings.Contains(got, "?? notes.txt") {
@@ -294,13 +301,46 @@ func TestUpdateInstallationCommitsTheSettingsAlone(t *testing.T) {
 	if gitOut(t, dir, "rev-parse", "HEAD^") != base {
 		t.Error("a second update did not rewrite the settings commit on the base")
 	}
-	if got, err := NamesApp(t.Context(), dir, second, later); err != nil || !got {
+	if got, err := NamesApp(t.Context(), testEnv(), dir, second, later); err != nil || !got {
 		t.Errorf("the rewritten commit does not name installation %s: %v", later.InstallationID, err)
 	}
 
 	gitOut(t, dir, "reset", "--quiet", "--hard", res.CommitSHA+"^")
 	if _, err := UpdateInstallation(t.Context(), fin); err == nil {
 		t.Error("UpdateInstallation accepted a folder whose HEAD is neither the base nor its child")
+	}
+}
+
+// TestNoHookRunsInTheSiteFolder pins that a hook planted in the site folder never runs when a
+// later pass commits there.
+func TestNoHookRunsInTheSiteFolder(t *testing.T) {
+	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
+	dir := filepath.Join(t.TempDir(), "site")
+	site := testSite()
+	early := site
+	early.DatabaseID = ""
+	first, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Env: testEnv(), Dir: dir})
+	if err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	marker := filepath.Join(t.TempDir(), "hook-ran")
+	for _, name := range []string{"pre-commit", "post-commit", "reference-transaction"} {
+		hook := filepath.Join(dir, ".git", "hooks", name)
+		if err := os.WriteFile(hook, []byte("#!/bin/sh\ntouch '"+marker+"'\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	second, err := Finalize(t.Context(), FinalizeConfig{Dir: first.Dir, Base: first.CommitSHA, Site: site, Commit: testCommit(), Env: testEnv()})
+	if err != nil {
+		t.Fatalf("Finalize: %v", err)
+	}
+	moved := site
+	moved.InstallationID = "848484"
+	if _, err := UpdateInstallation(t.Context(), FinalizeConfig{Dir: dir, Base: second, Site: moved, Commit: testCommit(), Env: testEnv()}); err != nil {
+		t.Fatalf("UpdateInstallation: %v", err)
+	}
+	if _, err := os.Stat(marker); err == nil {
+		t.Error("a hook in the site folder ran")
 	}
 }
 
@@ -344,7 +384,7 @@ func TestAMissingAnchorFailsNamingTheFileAndLeavesNothing(t *testing.T) {
 			tpl := fetchOK(t, tarballOf(t, files))
 			parent := t.TempDir()
 			dir := filepath.Join(parent, "site")
-			_, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Dir: dir})
+			_, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Env: testEnv(), Dir: dir})
 			if err == nil {
 				t.Fatal("Scaffold succeeded on a template missing its anchor")
 			}
@@ -373,6 +413,7 @@ func TestEachAnchorOfAFileFailsWhenOnlyItIsMissing(t *testing.T) {
 		{targets.Wrangler, `"bucket_name": "cairn-showcase-media"`},
 		{targets.Wrangler, `"PUBLIC_ORIGIN"`},
 		{targets.PackageJSON, `"@glw907/cairn-cms": `},
+		{targets.SiteConfig, "description:"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.rel+" "+tt.drop, func(t *testing.T) {
@@ -384,7 +425,7 @@ func TestEachAnchorOfAFileFailsWhenOnlyItIsMissing(t *testing.T) {
 			files[key] = strings.Replace(files[key], tt.drop, "REMOVED", 1)
 			tpl := fetchOK(t, tarballOf(t, files))
 			dir := filepath.Join(t.TempDir(), "site")
-			_, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Dir: dir})
+			_, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Env: testEnv(), Dir: dir})
 			if err == nil || !strings.Contains(err.Error(), tt.rel) {
 				t.Errorf("error = %v, want one naming %s", err, tt.rel)
 			}
@@ -414,7 +455,7 @@ func TestScaffoldRefusesANonEmptyFolderAndBadValues(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(full, "keep"), []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Dir: full}); err == nil {
+	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Env: testEnv(), Dir: full}); err == nil {
 		t.Error("Scaffold wrote into a non-empty folder")
 	}
 	if got, _ := os.ReadFile(filepath.Join(full, "keep")); string(got) != "x" {
@@ -423,26 +464,55 @@ func TestScaffoldRefusesANonEmptyFolderAndBadValues(t *testing.T) {
 
 	bad := testSite()
 	bad.Owner = "o'); evil('"
-	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: bad, Commit: testCommit(), Dir: filepath.Join(t.TempDir(), "s")}); err == nil {
+	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: bad, Commit: testCommit(), Env: testEnv(), Dir: filepath.Join(t.TempDir(), "s")}); err == nil {
 		t.Error("Scaffold accepted an owner that breaks out of its literal")
 	}
 
 	empty := t.TempDir()
-	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Dir: empty}); err != nil {
+	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Env: testEnv(), Dir: empty}); err != nil {
 		t.Errorf("Scaffold into an empty folder: %v", err)
 	}
 }
 
-func TestChildEnvDropsEveryCredential(t *testing.T) {
-	in := []string{
-		"PATH=/usr/bin", "HOME=/home/x",
-		"CLOUDFLARE_API_TOKEN=a", "GH_TOKEN=b", "GITHUB_TOKEN=c",
-		"CAIRN_CLOUDFLARE_TOKEN=d", "CAIRN_GITHUB_TOKEN=e", "cairn_other_token=f",
-		"CAIRN_STATE_DIR=/tmp/state", "TOKEN_COUNT=3", "GIT_CONFIG_COUNT=1",
+// TestANilEnvironmentIsRefused pins that a scaffold given no environment stops before git runs
+// and leaves nothing behind, rather than running git with no PATH, HOME, or proxy settings.
+func TestANilEnvironmentIsRefused(t *testing.T) {
+	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
+	dir := filepath.Join(t.TempDir(), "site")
+	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Dir: dir}); err == nil || !strings.Contains(err.Error(), "environment") {
+		t.Errorf("Scaffold with a nil Env: err = %v, want a refusal naming the environment", err)
 	}
-	got := strings.Join(childEnv(in), " ")
-	if want := "PATH=/usr/bin HOME=/home/x CAIRN_STATE_DIR=/tmp/state TOKEN_COUNT=3 GIT_CONFIG_COUNT=1"; got != want {
-		t.Errorf("childEnv = %q, want %q", got, want)
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Errorf("Scaffold with a nil Env left %s behind", dir)
+	}
+	early := testSite()
+	early.DatabaseID = ""
+	if _, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Dir: dir}); err == nil {
+		t.Error("Write accepted a nil Env")
+	}
+	if _, err := Finalize(t.Context(), FinalizeConfig{Dir: t.TempDir(), Base: "abc", Site: testSite(), Commit: testCommit()}); err == nil || !strings.Contains(err.Error(), "environment") {
+		t.Errorf("Finalize with a nil Env: err = %v, want a refusal naming the environment", err)
+	}
+}
+
+// TestGitStartsFromTheInjectedEnvironment pins that the scaffold's git reads Config.Env, not
+// the process's environment: a config pair only Env carries reaches git init.
+func TestGitStartsFromTheInjectedEnvironment(t *testing.T) {
+	tmpl := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpl, "from-env"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	env := testEnv()
+	env["GIT_CONFIG_COUNT"] = "1"
+	env["GIT_CONFIG_KEY_0"] = "init.templateDir"
+	env["GIT_CONFIG_VALUE_0"] = tmpl
+	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
+	dir := filepath.Join(t.TempDir(), "site")
+	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Env: env, Dir: dir}); err != nil {
+		t.Fatalf("Scaffold: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".git", "from-env")); err != nil {
+		t.Errorf("git init never read the template folder Env names: %v", err)
 	}
 }
 

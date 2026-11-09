@@ -35,6 +35,12 @@ func (r *run) opening(ctx context.Context) error {
 		return r.failure(ReasonGitMissing, "Setup can't find git on this computer.",
 			"Install git, and then run cairn new again.", err)
 	}
+	hooks, err := os.MkdirTemp("", "cairn-no-hooks-")
+	if err != nil {
+		return r.failure(ReasonScaffold, "Setup couldn't make a folder in this computer's temporary folder.",
+			"Check that the temporary folder is writable, and then run cairn new again.", err)
+	}
+	r.hooks = hooks
 	out, err := r.cfg.NodeVersion(ctx)
 	if err != nil {
 		return r.failure(ReasonNodeMissing, "Setup can't find Node on this computer.",

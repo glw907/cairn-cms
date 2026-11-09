@@ -110,6 +110,7 @@ func (f *fakeTab) Wait(ctx context.Context, r loopback.Route) (loopback.Callback
 
 func (f *fakeTab) Show(p Page) error {
 	f.shown = append(f.shown, p)
+	*f.log = append(*f.log, "show:"+strconv.Itoa(int(p.Kind)))
 	return nil
 }
 
@@ -136,10 +137,13 @@ type fakeCFAuth struct {
 	err        error
 	refreshErr error
 	revokeErr  error
-	verifiers  []string
-	issued     []providers.OAuthToken
-	refreshes  []string
-	revoked    []string
+	// revokeErrFor, when it names a token, is the error that token's revoke returns in place of
+	// revokeErr.
+	revokeErrFor map[string]error
+	verifiers    []string
+	issued       []providers.OAuthToken
+	refreshes    []string
+	revoked      []string
 	// issuedAt is when each access token was issued, so the Cloudflare fake refuses one past its
 	// hour the way Cloudflare does.
 	issuedAt map[string]time.Time
@@ -180,6 +184,9 @@ func (f *fakeCFAuth) Refresh(ctx context.Context, refreshToken string) (*provide
 
 func (f *fakeCFAuth) Revoke(_ context.Context, token string) error {
 	f.revoked = append(f.revoked, token)
+	if err, ok := f.revokeErrFor[token]; ok {
+		return err
+	}
 	return f.revokeErr
 }
 
@@ -548,6 +555,13 @@ type fakeGH struct {
 	// refused for; ownerOf overrides the owner a read of the name reports.
 	created map[string]bool
 	ownerOf map[string]string
+	// public names the repositories a read reports as not private; createOwner, when set, is the
+	// owner CreateRepo reports.
+	public      map[string]bool
+	createOwner string
+	// userLogin, when set, is the account the user token belongs to; otherwise it is the App's
+	// owner.
+	userLogin string
 	// afterCreate runs once the repository exists, before CreateRepo returns.
 	afterCreate func()
 	// secretOnEmpty reports, for each Actions secret stored, whether the repository then held no
@@ -557,6 +571,7 @@ type fakeGH struct {
 	repo          providers.Repository
 	convertErr    error
 	deleteErr     error
+	listErr       error
 	secretErr     error
 	taken         map[string]bool
 	installs      []install
@@ -623,6 +638,9 @@ func (c ghClient) CreateRepo(ctx context.Context, name string) (providers.Reposi
 	c.f.creates["repo"]++
 	c.f.created[name] = true
 	r := c.f.repoNamed(name)
+	if c.f.createOwner != "" {
+		r.Owner.Login = c.f.createOwner
+	}
 	gitRun(c.f.t, "", "init", "--quiet", "--bare", "-b", r.DefaultBranch, filepath.Join(c.f.remotes, r.Owner.Login, name+".git"))
 	if c.f.afterCreate != nil {
 		c.f.afterCreate()
@@ -631,6 +649,20 @@ func (c ghClient) CreateRepo(ctx context.Context, name string) (providers.Reposi
 		}
 	}
 	return r, nil
+}
+
+// UserLogin reports the account the user token belongs to, as GitHub's GET /user does.
+func (c ghClient) UserLogin(ctx context.Context) (string, error) {
+	if err := c.note(ctx, "user"); err != nil {
+		return "", err
+	}
+	if isJWT(c.cred) || isInstallationToken(c.cred) || c.cred.Reveal() == "" {
+		c.f.t.Error("UserLogin ran without the user token")
+	}
+	if c.f.userLogin != "" {
+		return c.f.userLogin, nil
+	}
+	return c.f.app.OwnerLogin, nil
 }
 
 func (f *fakeGH) repoNamed(name string) providers.Repository {
@@ -655,6 +687,11 @@ func (c ghClient) RepoNamed(ctx context.Context, owner, name string) (*providers
 	if o, ok := c.f.ownerOf[name]; ok {
 		r.Owner.Login = o
 	}
+	if c.f.public[name] {
+		if err := json.Unmarshal([]byte(`{"private":false}`), &r); err != nil {
+			c.f.t.Fatal(err)
+		}
+	}
 	return &r, nil
 }
 
@@ -664,6 +701,9 @@ func (c ghClient) AppInstallations(ctx context.Context) ([]providers.Installatio
 	}
 	if !isJWT(c.cred) {
 		c.f.t.Error("AppInstallations ran without the App JWT")
+	}
+	if c.f.listErr != nil {
+		return nil, c.f.listErr
 	}
 	var out []providers.Installation
 	for _, in := range c.f.installs {
@@ -844,6 +884,7 @@ type fakeVault struct {
 	entries  map[string]string
 	probeErr error
 	putErr   map[secrets.EntryKind]error
+	valueErr map[secrets.EntryKind]error
 	puts     int
 	deleted  []string
 	saver    *fakeSaver
@@ -889,6 +930,9 @@ func (v *fakeVault) Pair() (secrets.OAuthPair, error) {
 }
 
 func (v *fakeVault) Value(kind secrets.EntryKind) (string, error) {
+	if err := v.valueErr[kind]; err != nil {
+		return "", err
+	}
 	val, ok := v.entries[v.Entry(kind)]
 	if !ok {
 		return "", secrets.ErrNotFound
@@ -1098,6 +1142,7 @@ func newWorld(t *testing.T) *world {
 		taken:    map[string]bool{},
 		created:  map[string]bool{},
 		ownerOf:  map[string]string{},
+		public:   map[string]bool{},
 		installs: []install{{ID: 5550001, AppID: foreignAppID, Selection: "all"}},
 		creates:  map[string]int{},
 		remotes:  t.TempDir(),
@@ -1174,8 +1219,8 @@ func failNPM(t *testing.T, w *world) {
 	writeNPM(t, w.npmEnv, 1)
 }
 
-// stubNPM writes an npm that prints to both streams, saves its environment to envFile, and
-// succeeds, and returns its path.
+// stubNPM writes an npm that prints to both streams, saves its environment to envFile and its
+// arguments to envFile plus ".args", and succeeds, and returns its path.
 func stubNPM(t *testing.T, envFile string) string {
 	t.Helper()
 	return writeNPM(t, envFile, 0)
@@ -1192,10 +1237,10 @@ func writeNPM(t *testing.T, envFile string, exit int) string {
 	}
 	code := strconv.Itoa(exit)
 	bin := filepath.Join(dir, "npm")
-	script := "#!/bin/sh\necho npm-stub-stdout\necho npm-stub-stderr >&2\nenv > '" + envFile + "'\nexit " + code + "\n"
+	script := "#!/bin/sh\necho npm-stub-stdout\necho npm-stub-stderr >&2\nenv > '" + envFile + "'\necho \"$@\" > '" + envFile + ".args'\nexit " + code + "\n"
 	if runtime.GOOS == "windows" {
 		bin += ".cmd"
-		script = "@echo off\r\necho npm-stub-stdout\r\necho npm-stub-stderr 1>&2\r\nset > \"" + envFile + "\"\r\nexit /b " + code + "\r\n"
+		script = "@echo off\r\necho npm-stub-stdout\r\necho npm-stub-stderr 1>&2\r\nset > \"" + envFile + "\"\r\necho %* > \"" + envFile + ".args\"\r\nexit /b " + code + "\r\n"
 	}
 	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
 		t.Fatal(err)

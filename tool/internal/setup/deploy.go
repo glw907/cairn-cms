@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
@@ -130,7 +131,7 @@ func (r *run) redeploy(ctx context.Context) error {
 // parent is the recorded commit, its message is message, and its diff touches file alone, or
 // nothing when file is empty.
 func (r *run) pendingCommit(ctx context.Context, message, file string) (string, bool) {
-	dir, env := r.rec.Setup.Folder, gitEnv(r.cfg.Env)
+	dir, env := r.rec.Setup.Folder, r.gitEnv()
 	head, err := runChild(ctx, dir, env, "git", "rev-parse", "HEAD")
 	if err != nil || head == r.rec.Setup.Commit {
 		return "", false
@@ -145,7 +146,7 @@ func (r *run) pendingCommit(ctx context.Context, message, file string) (string, 
 // redeployCommit returns the empty commit that deploys the site again. A pending redeploy commit
 // is used rather than a second one.
 func (r *run) redeployCommit(ctx context.Context) (string, error) {
-	dir, env := r.rec.Setup.Folder, gitEnv(r.cfg.Env)
+	dir, env := r.rec.Setup.Folder, r.gitEnv()
 	if head, ok := r.pendingCommit(ctx, redeployMessage, ""); ok {
 		return head, nil
 	}
@@ -153,7 +154,7 @@ func (r *run) redeployCommit(ctx context.Context) (string, error) {
 		return "", err
 	}
 	id := r.commitIdentity(redeployMessage)
-	cenv := append(gitEnv(r.cfg.Env),
+	cenv := append(r.gitEnv(),
 		"GIT_AUTHOR_NAME="+id.AuthorName, "GIT_AUTHOR_EMAIL="+id.AuthorEmail,
 		"GIT_COMMITTER_NAME="+id.AuthorName, "GIT_COMMITTER_EMAIL="+id.AuthorEmail)
 	if _, err := runChild(ctx, dir, cenv, "git", "commit", "--quiet", "--allow-empty", "--no-verify", "--no-gpg-sign", "-m", id.Message); err != nil {
@@ -177,7 +178,7 @@ func (r *run) followInstallation(ctx context.Context) error {
 	if !reached(r.rec.Step, spine.StepCommitted) {
 		return nil
 	}
-	current, err := scaffold.NamesApp(ctx, r.rec.Setup.Folder, r.rec.Setup.Commit, r.site())
+	current, err := scaffold.NamesApp(ctx, r.cfg.Env, r.rec.Setup.Folder, r.rec.Setup.Commit, r.site())
 	if err != nil {
 		return r.unreadFolder(ctx, err)
 	}
@@ -204,7 +205,7 @@ func (r *run) followInstallation(ctx context.Context) error {
 		return nil
 	}
 	if current {
-		msg, err := runChild(ctx, r.rec.Setup.Folder, gitEnv(r.cfg.Env), "git", "log", "-1", "--format=%B", r.rec.Setup.Commit)
+		msg, err := runChild(ctx, r.rec.Setup.Folder, r.gitEnv(), "git", "log", "-1", "--format=%B", r.rec.Setup.Commit)
 		if err != nil {
 			return r.unreadFolder(ctx, err)
 		}
@@ -234,7 +235,7 @@ func (r *run) installationCommit(ctx context.Context) (string, error) {
 	dir, site := r.rec.Setup.Folder, r.site()
 	head, pending := r.pendingCommit(ctx, scaffold.InstallationMessage, scaffold.SettingsFile())
 	if pending {
-		if ok, err := scaffold.NamesApp(ctx, dir, head, site); err == nil && ok {
+		if ok, err := scaffold.NamesApp(ctx, r.cfg.Env, dir, head, site); err == nil && ok {
 			return head, nil
 		}
 	} else if err := r.ownFolder(ctx); err != nil {
@@ -245,6 +246,7 @@ func (r *run) installationCommit(ctx context.Context) (string, error) {
 		Base:   r.rec.Setup.Commit,
 		Site:   site,
 		Commit: r.commitIdentity(scaffold.InstallationMessage),
+		Env:    r.cfg.Env,
 	})
 	if err != nil {
 		return "", r.localFailure(ctx, ReasonFolderNotOurs, "Setup couldn't write the site's new GitHub App installation in "+dir+".",
@@ -266,7 +268,7 @@ func (r *run) pushIfBehind(ctx context.Context) (bool, error) {
 	case err == nil && head == r.rec.Setup.Commit:
 		return false, nil
 	case err == nil:
-		if _, err := runChild(ctx, r.rec.Setup.Folder, gitEnv(r.cfg.Env), "git", "merge-base", "--is-ancestor", head, r.rec.Setup.Commit); err != nil {
+		if _, err := runChild(ctx, r.rec.Setup.Folder, r.gitEnv(), "git", "merge-base", "--is-ancestor", head, r.rec.Setup.Commit); err != nil {
 			return false, r.localFailure(ctx, ReasonRemoteDiffers, "The repository "+g.Owner+"/"+g.Repo+" already holds commits setup didn't make.",
 				"Remove those commits, or delete the repository, and then run cairn new again.", err)
 		}
@@ -287,9 +289,15 @@ func (r *run) deployFailure(runURL string) error {
 		"Open the run at "+runURL+" to see what failed. Then run cairn new again, and setup resumes at the first deploy.", nil)
 }
 
-// startInstall runs `npm install` in the site folder in the background, so the owner's agent can
-// start work as soon as setup ends. Its output is captured and its failure is a next step on
-// the done screen, never a stop. A folder the record says is installed is not installed again.
+// startInstall runs `npm install --ignore-scripts` in the site folder in the background, so the
+// owner's agent can start work as soon as setup ends. Its output is captured and its failure is
+// a next step on the done screen, never a stop. A folder the record says is installed is not
+// installed again.
+//
+// Lifecycle scripts are skipped on purpose: the install runs while the keyring still holds the
+// Cloudflare grant and the App's key, and a dependency's install script runs as the owner. A
+// dependency that needs its script gets it from the owner's `npm rebuild`, which Done's
+// ScriptsSkipped tells the done screen to say.
 func (r *run) startInstall() {
 	if r.installStop != nil || r.rec.Setup.DepsInstalled {
 		return
@@ -297,10 +305,10 @@ func (r *run) startInstall() {
 	ctx, cancel := context.WithCancel(context.Background())
 	end := make(chan struct{})
 	r.installStop, r.installEnd = cancel, end
-	dir, env := r.rec.Setup.Folder, scrubbedEnv(r.cfg.Env)
+	dir, env := r.rec.Setup.Folder, childenv.Scrub(r.cfg.Env)
 	r.install.Go(func() {
 		defer close(end)
-		_, r.installErr = runChild(ctx, dir, env, "npm", "install")
+		_, r.installErr = runChild(ctx, dir, env, "npm", "install", "--ignore-scripts")
 	})
 }
 
@@ -319,11 +327,14 @@ func (r *run) noteInstall() {
 	}
 }
 
-// waitInstall waits for the background install to end and records how it ended.
+// waitInstall waits for the background install to end and records how it ended. Every install
+// setup runs skips the lifecycle scripts, so one that ran here or in an earlier run sets
+// ScriptsSkipped.
 func (r *run) waitInstall() {
 	r.install.Wait()
 	r.noteInstall()
 	r.out.InstallFailed = r.installErr != nil
+	r.out.ScriptsSkipped = r.installStop != nil || r.rec.Setup.DepsInstalled
 }
 
 // stopInstall ends a background install a stopped run leaves behind.

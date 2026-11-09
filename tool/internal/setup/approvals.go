@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"slices"
-	"strconv"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
@@ -17,6 +16,12 @@ import (
 
 // installationsURL is where an owner removes an App installation by hand.
 const installationsURL = "https://github.com/settings/installations"
+
+// overGrantLeft is the "what is left" part of a stop that may leave an installation of the App
+// slug reaching all the owner's repositories.
+func overGrantLeft(slug string) string {
+	return "An installation of " + slug + " may still reach all your repositories. Remove it at " + installationsURL + "."
+}
 
 // approveCloudflare runs approval 1: the consent page, which names the permission Cloudflare
 // leaves unselected before it sends the tab on, PKCE consent on Cloudflare, the code exchange,
@@ -109,7 +114,7 @@ func (r *run) githubChain(ctx context.Context) (err error) {
 		defer cancel()
 		if _, serr := r.sweep(sctx, r.confirmed); serr != nil {
 			f := r.fail(ctx, err, "")
-			f.Left = "An installation of " + r.app.Slug + " may still reach all your repositories. Remove it at " + installationsURL + "."
+			f.Left = overGrantLeft(r.app.Slug)
 			err = f
 		}
 	}()
@@ -162,6 +167,13 @@ func (r *run) createApp(ctx context.Context) error {
 	}
 	r.register(app.PEM, app.ClientSecret, app.WebhookSecret)
 	r.app = app
+	if app.OwnerLogin == "" {
+		f := r.failure(ReasonNotOurs, "GitHub didn't say which account owns the GitHub App "+app.Slug+", so setup can't check that later approvals come from that account.",
+			"Delete the App, and then run cairn new again. Setup creates a new App.", nil)
+		f.Did = "Setup created the GitHub App " + app.Slug + ". Delete it at https://github.com/settings/apps/" + app.Slug + "."
+		f.Left = "The App stays on GitHub until you delete it."
+		return f
+	}
 	r.rec.Setup.IDs.AppID = app.ID
 	r.rec.Setup.AppSlug = app.Slug
 	r.rec.Setup.ClientID = app.ClientID
@@ -236,8 +248,9 @@ func (r *run) installDeleteFailure(ctx context.Context, err error) *Failure {
 	return f
 }
 
-// installCallback shows url, waits for the install redirect, and stores its installation id
-// before any other call.
+// installCallback shows url and waits for the install redirect. The installation id the redirect
+// carries is never recorded: any page that reaches the route can choose it, so only the id the
+// read-back confirms goes in the record, and the sweep deletes whatever a stop leaves unconfirmed.
 func (r *run) installCallback(ctx context.Context, url string, state WaitState) (loopback.Callback, error) {
 	if _, err := r.tab.Arm(loopback.GitHubCallback); err != nil {
 		return loopback.Callback{}, r.fail(ctx, err, "")
@@ -254,12 +267,7 @@ func (r *run) installCallback(ctx context.Context, url string, state WaitState) 
 		return loopback.Callback{}, r.fail(ctx, err, "")
 	}
 	r.registerValue(cb.Code)
-	id, err := strconv.ParseInt(cb.InstallationID, 10, 64)
-	if err != nil {
-		return loopback.Callback{}, err
-	}
-	r.rec.GitHub.InstallationID = id
-	return cb, r.save()
+	return cb, nil
 }
 
 // exchange trades an install callback's code for the user token. Only a code GitHub calls wrong
@@ -284,8 +292,19 @@ func (r *run) exchange(ctx context.Context, cb loopback.Callback) (tok providers
 // login, which setup learns only with the user token this approval issues. An earlier run may
 // have created the repository and stopped before recording it. So when the refused name is the
 // record's intent and no repository is recorded, setup reads it before taking a suffix.
+//
+// Before any create, the user token's account must be the App's owner: a token from another
+// account would create the repository there, or read that account's taken names as clashes and
+// walk the suffixes.
 func (r *run) createRepo(ctx context.Context) error {
 	gh := r.cfg.GitHub(r.user)
+	login, err := gh.UserLogin(ctx)
+	if err != nil {
+		return r.fail(ctx, err, "GitHub")
+	}
+	if login != r.app.OwnerLogin {
+		return r.wrongAccount(login)
+	}
 	unknown := r.rec.Setup.Intents.Repo == r.names.Repository && r.rec.GitHub.Repo.ID == 0
 	for {
 		r.rec.Setup.Intents.Repo = r.names.Repository
@@ -309,6 +328,9 @@ func (r *run) createRepo(ctx context.Context) error {
 		if err != nil {
 			return r.fail(ctx, err, "GitHub")
 		}
+		if repo.Owner.Login != r.app.OwnerLogin {
+			return r.repoElsewhere(repo)
+		}
 		r.repo = repo
 		r.rec.GitHub.Repo = record.GitHubRepo{ID: repo.ID, Owner: repo.Owner.Login, Repo: repo.Name, DefaultBranch: repo.DefaultBranch}
 		r.rec.Setup.OwnerID = repo.Owner.ID
@@ -318,9 +340,10 @@ func (r *run) createRepo(ctx context.Context) error {
 }
 
 // adoptRepo reads the repository of the recorded intent's name and returns it when the App's
-// owner holds it and it has no commits, which is what a create that landed before a stop leaves.
-// A repository the read cannot see falls back to the taken-name suffix; any other is not
-// setup's, and a suffix would leave the earlier run's repository behind, so the run stops.
+// owner holds it, it is private, and it has no commits, which is what a create that landed
+// before a stop leaves. A repository the read cannot see falls back to the taken-name suffix;
+// any other is not setup's, and a suffix would leave the earlier run's repository behind, so the
+// run stops.
 func (r *run) adoptRepo(ctx context.Context, gh GitHubAPI) (providers.Repository, error) {
 	owner, name := r.app.OwnerLogin, r.names.Repository
 	repo, err := gh.RepoNamed(ctx, owner, name)
@@ -329,7 +352,7 @@ func (r *run) adoptRepo(ctx context.Context, gh GitHubAPI) (providers.Repository
 		return providers.Repository{}, err
 	case repo == nil:
 		return providers.Repository{}, providers.ErrRepoNameTaken
-	case repo.Owner.Login != owner:
+	case repo.Owner.Login != owner, !repo.Private:
 		return providers.Repository{}, r.repoNotOurs(owner, name)
 	}
 	// GitHub answers a commit read of a repository with no commits with 409 "Git Repository is
@@ -348,6 +371,26 @@ func (r *run) adoptRepo(ctx context.Context, gh GitHubAPI) (providers.Repository
 func (r *run) repoNotOurs(owner, name string) *Failure {
 	return r.failure(ReasonNotOurs, "A repository named "+owner+"/"+name+" already exists on your GitHub account, and setup can't confirm it's the one it created.",
 		"If you don't need it, delete it under Settings on the repository's GitHub page, and then run cairn new again.", nil)
+}
+
+// repoElsewhere is the stop for a repository GitHub created under an account other than the
+// App's owner. No installation of the App can reach it, so the run records nothing of it.
+func (r *run) repoElsewhere(repo providers.Repository) *Failure {
+	f := r.failure(ReasonNotOurs, "GitHub created the repository under the account "+repo.Owner.Login+
+		", not "+r.app.OwnerLogin+", the account that owns the GitHub App "+r.app.Slug+".",
+		"Sign in to GitHub as "+r.app.OwnerLogin+", delete "+repo.Owner.Login+"/"+repo.Name+
+			" under Settings on its GitHub page if you don't need it, and then run cairn new again.", nil)
+	f.Did += " Setup created the private repository " + repo.Owner.Login + "/" + repo.Name + "."
+	f.Left = "The repository " + repo.Owner.Login + "/" + repo.Name + " stays on GitHub until you delete it."
+	return f
+}
+
+// wrongAccount is the stop for a user token that belongs to login, an account other than the
+// App's owner, found before setup creates anything with it.
+func (r *run) wrongAccount(login string) *Failure {
+	return r.failure(ReasonNotOurs, "You approved the GitHub install as "+login+", not "+r.app.OwnerLogin+
+		", the account that owns the GitHub App "+r.app.Slug+".",
+		"Sign in to GitHub as "+r.app.OwnerLogin+", and then run cairn new again.", nil)
 }
 
 // installRepo runs approval 4: an install preselected to the new repository, confirmed by the
@@ -394,9 +437,6 @@ func (r *run) installRepo(ctx context.Context) error {
 			return err
 		}
 		break
-	}
-	if err := r.tab.Show(Page{Kind: PageDone}); err != nil {
-		return err
 	}
 	r.done()
 	return nil
@@ -488,6 +528,20 @@ func (r *run) resumeSweep(ctx context.Context) error {
 	return r.checkKept(ctx, keep)
 }
 
+// dropApp is the stop for a recorded App setup can't act as. It drops the App from the record, so
+// the next run creates a new one, and says how to delete this one.
+func (r *run) dropApp(reason Reason, happened string, err error) error {
+	slug := r.rec.Setup.AppSlug
+	r.app = providers.AppRecord{}
+	r.rec.Setup.IDs.AppID, r.rec.Setup.AppSlug, r.rec.Setup.ClientID, r.rec.Setup.AppOwner, r.rec.Setup.Intents.App = 0, "", "", "", ""
+	r.rec.Step = string(spine.StepSetupStarted)
+	if err := r.save(); err != nil {
+		return err
+	}
+	return r.failure(reason, happened,
+		"Delete the App at https://github.com/settings/apps/"+slug+", and then run cairn new again. Setup creates a new App.", err)
+}
+
 // errOverGrant reports that the recorded installation is gone: it reached more than the
 // recorded repository and setup deleted it, or it no longer exists.
 var errOverGrant = errors.New("setup: the App's installation reaches more than the site's repository")
@@ -515,8 +569,10 @@ func (r *run) checkKept(ctx context.Context, id int64) error {
 	if len(repos) == 1 && repos[0] == r.rec.GitHub.Repo.ID {
 		return nil
 	}
+	// A failed delete is not errOverGrant: the installation still reaches more than the site's
+	// repository, which the stop must say.
 	if err := gh.DeleteInstallation(ctx, id); err != nil {
-		return errors.Join(errOverGrant, err)
+		return err
 	}
 	return errOverGrant
 }
@@ -525,9 +581,11 @@ func (r *run) checkKept(ctx context.Context, id int64) error {
 // so the approvals and the watch act as the App the record names. A record whose App key never
 // reached the keyring drops the App, since setup cannot act as it, and stops with the way to
 // delete it. When the sweep removes the recorded installation, the record drops its id and
-// approval 4 runs again at the step the record holds.
+// approval 4 runs again at the step the record holds. A stop before the sweep finished says
+// that an installation may still reach all the owner's repositories.
 func (r *run) resumeGitHub(ctx context.Context) error {
 	err := r.resumeSweep(ctx)
+	swept := err == nil || errors.Is(err, errOverGrant)
 	if errors.Is(err, errOverGrant) {
 		r.rec.GitHub.InstallationID = 0
 		err = r.save()
@@ -539,23 +597,23 @@ func (r *run) resumeGitHub(ctx context.Context) error {
 			err = errAppKeyLost
 		}
 	}
+	slug := r.rec.Setup.AppSlug
 	switch {
 	case errors.Is(err, errAppKeyLost):
-		slug := r.rec.Setup.AppSlug
-		r.app = providers.AppRecord{}
-		r.rec.Setup.IDs.AppID, r.rec.Setup.AppSlug, r.rec.Setup.ClientID, r.rec.Setup.AppOwner, r.rec.Setup.Intents.App = 0, "", "", "", ""
-		r.rec.Step = string(spine.StepSetupStarted)
-		if err := r.save(); err != nil {
-			return err
-		}
-		f := r.failure(ReasonKeyringWrite, "The keyring doesn't hold the key of the GitHub App "+slug+", so setup can't use that App.",
-			"Delete the App at https://github.com/settings/apps/"+slug+", and then run cairn new again. Setup creates a new App.", err)
-		return f
+		return r.dropApp(ReasonKeyringWrite, "The keyring doesn't hold the key of the GitHub App "+slug+", so setup can't use that App.", err)
 	case errors.Is(err, secrets.ErrKeyringUnavailable):
-		return r.failure(ReasonKeyring, "Setup couldn't read the GitHub App's keys from the keyring.",
+		f := r.failure(ReasonKeyring, "Setup couldn't read the GitHub App's keys from the keyring.",
 			"Unlock the keyring, and then run cairn new again.", err)
+		if !swept {
+			f.Left = overGrantLeft(r.rec.Setup.AppSlug)
+		}
+		return f
 	case err != nil:
-		return r.fail(ctx, err, "GitHub")
+		f := r.fail(ctx, err, "GitHub")
+		if !swept {
+			f.Left = overGrantLeft(r.rec.Setup.AppSlug)
+		}
+		return f
 	}
 	r.app.ClientSecret = providers.NewCredential(secret)
 	r.app.OwnerLogin = r.rec.Setup.AppOwner
@@ -563,6 +621,10 @@ func (r *run) resumeGitHub(ctx context.Context) error {
 		r.app.OwnerLogin = r.rec.GitHub.Repo.Owner
 	}
 	r.register(r.app.ClientSecret)
+	if r.app.OwnerLogin == "" {
+		return r.dropApp(ReasonNotOurs, "Setup's record doesn't name the account that owns the GitHub App "+slug+
+			", so setup can't check that later approvals come from that account.", nil)
+	}
 	if g := r.rec.GitHub.Repo; g.ID != 0 {
 		r.repo = providers.Repository{ID: g.ID, Name: g.Repo, FullName: g.Owner + "/" + g.Repo, DefaultBranch: g.DefaultBranch}
 		r.repo.Owner.Login, r.repo.Owner.ID = g.Owner, r.rec.Setup.OwnerID

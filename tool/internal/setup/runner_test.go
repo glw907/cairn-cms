@@ -1,11 +1,16 @@
 package setup
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -128,20 +133,53 @@ func TestAFullRunReachesDone(t *testing.T) {
 		t.Errorf("custom domains = %v", w.cf.attached)
 	}
 	if res.Done.URL != "https://carin-test-5.org" || !res.Done.SignedIn || !res.Done.Emailed || res.Done.NoSignIn ||
-		res.Done.InstallFailed || res.Done.RevokeFailed || res.Done.KeysLeft {
+		res.Done.InstallFailed || res.Done.RevokeFailed || res.Done.KeysLeft || !res.Done.ScriptsSkipped {
 		t.Errorf("done = %+v", res.Done)
 	}
 
 	if left := w.vault.ofRun(); len(left) != 0 {
 		t.Errorf("keyring holds %v after done, want nothing", left)
 	}
-	if len(w.cfAuth.revoked) != 1 || w.cfAuth.revoked[0] != w.cfAuth.tokens[0].RefreshToken {
-		t.Errorf("revoked %d tokens, want the refresh token once", len(w.cfAuth.revoked))
+	if want := []string{w.cfAuth.tokens[0].AccessToken, w.cfAuth.tokens[0].RefreshToken}; !slices.Equal(w.cfAuth.revoked, want) {
+		t.Errorf("revoked %d tokens, want the access token and then the refresh token", len(w.cfAuth.revoked))
 	}
 	if last, _ := w.saver.last(); last.Setup.KeysKept || len(last.Setup.KeyringEntries) != 0 {
 		t.Errorf("record keeps keys %v, entries %v; want none", last.Setup.KeysKept, last.Setup.KeyringEntries)
 	}
 	assertRegisteredAndUnseen(t, w)
+}
+
+// TestARefusedRevokeIsReportedNotFatal pins that a revoke Cloudflare refuses still lets the run
+// finish and tries both tokens, and that the done screen reports a refusal only when the refresh
+// token's revoke fails: revoking the refresh token ends the grant (RFC 7009 2.1), so a refused
+// access-token revoke alone leaves nothing standing past the access token's hour.
+func TestARefusedRevokeIsReportedNotFatal(t *testing.T) {
+	refused := &providers.OAuthError{Status: 403, Code: "access_denied"}
+	tok := newWorld(t).cfAuth.tokens[0]
+	for _, tc := range []struct {
+		name   string
+		errFor map[string]error
+		want   bool
+	}{
+		{"both refused", map[string]error{tok.AccessToken: refused, tok.RefreshToken: refused}, true},
+		{"the refresh token refused", map[string]error{tok.RefreshToken: refused}, true},
+		{"the access token refused alone", map[string]error{tok.AccessToken: refused}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			w.cfAuth.revokeErrFor = tc.errFor
+			res, err := w.run(context.Background())
+			if err != nil {
+				t.Fatalf("Run: %v", err)
+			}
+			if res.Done.RevokeFailed != tc.want || len(w.cfAuth.revoked) != 2 {
+				t.Errorf("done %+v after %d revokes, want both tried and RevokeFailed %v", res.Done, len(w.cfAuth.revoked), tc.want)
+			}
+			if left := w.vault.ofRun(); len(left) != 0 {
+				t.Errorf("keyring holds %v, want the entries deleted anyway", left)
+			}
+		})
+	}
 }
 
 // assertCreatedOnce checks that each create the run makes happened exactly once across every run
@@ -621,6 +659,255 @@ func TestAResumeSweepsAnOverGrantFirst(t *testing.T) {
 				t.Error("the kept installation's repositories were never listed")
 			}
 		})
+	}
+}
+
+// TestAResumeSweepsBeforeCloudflare pins that a resume deletes an all-repositories installation
+// before any Cloudflare step can stop it, and that a resume whose sweep cannot run says what
+// may still reach the owner's repositories.
+func TestAResumeSweepsBeforeCloudflare(t *testing.T) {
+	stopWithAnOverGrant := func(t *testing.T) *world {
+		t.Helper()
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		w.gh.installs = append(w.gh.installs, install{ID: allInstallID, AppID: w.gh.app.ID, Selection: "all"})
+		return w
+	}
+	t.Run("a declined reconsent still deletes the installation", func(t *testing.T) {
+		w := stopWithAnOverGrant(t)
+		w.cfAuth.refreshErr = &providers.OAuthError{Status: 400, Code: "invalid_grant"}
+		w.resumeFrom()
+		w.tab.push(loopback.CloudflareCallback, func(nonce string) (loopback.Callback, error) {
+			return loopback.Callback{Error: "access_denied", State: nonce}, nil
+		})
+		w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonDeclined {
+			t.Fatalf("failure = %+v, want the declined stop", f)
+		}
+		if ours := w.gh.ours(); len(ours) != 0 {
+			t.Errorf("installations left = %+v, want the all-repositories one deleted", ours)
+		}
+	})
+	for _, tc := range []struct {
+		name   string
+		block  func(w *world)
+		reason Reason
+	}{
+		{"a GitHub that cannot be reached", func(w *world) { w.gh.listErr = errors.New("dial tcp: i/o timeout") }, ReasonProvider},
+		{"a locked keyring", func(w *world) {
+			w.vault.valueErr = map[secrets.EntryKind]error{secrets.EntryAppKey: secrets.ErrKeyringUnavailable}
+		}, ReasonKeyring},
+	} {
+		t.Run("a sweep blocked by "+tc.name+" names the risk", func(t *testing.T) {
+			w := stopWithAnOverGrant(t)
+			tc.block(w)
+			_, err := w.resume()
+			f := failureOf(t, err)
+			if f.Reason != tc.reason {
+				t.Errorf("reason = %s, want %s", f.Reason, tc.reason)
+			}
+			if !strings.Contains(f.Left, "may still reach all your repositories") || !strings.Contains(f.Left, installationsURL) ||
+				!strings.Contains(f.Left, w.gh.app.Slug) {
+				t.Errorf("Left = %q, want the over-grant risk and where to remove it", f.Left)
+			}
+		})
+	}
+}
+
+// TestOnlyTheConfirmedInstallationIsRecorded pins that the installation id a callback carries,
+// which any page that reaches the route can choose, never reaches the record: only the id the
+// read-back confirms does.
+func TestOnlyTheConfirmedInstallationIsRecorded(t *testing.T) {
+	w := newWorld(t)
+	w.tab.script[loopback.GitHubCallback] = w.tab.script[loopback.GitHubCallback][:1]
+	w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+		w.gh.installs = append(w.gh.installs, install{ID: repoInstallID, AppID: w.gh.app.ID, Selection: "selected", Repos: []int64{w.gh.repo.ID}})
+		return loopback.Callback{Code: w.code("approve"), InstallationID: "4242", SetupAction: "install"}, nil
+	})
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	for _, r := range w.saver.saves {
+		if id := r.GitHub.InstallationID; id != 0 && id != repoInstallID {
+			t.Fatalf("a save recorded installation %d, want only the confirmed %d", id, repoInstallID)
+		}
+	}
+	if res.Record.GitHub.InstallationID != repoInstallID {
+		t.Errorf("record installation %d, want %d", res.Record.GitHub.InstallationID, repoInstallID)
+	}
+}
+
+// TestNoHookOrInstallScriptRunsWhileTheKeyringHoldsTheGrant pins that nothing the site folder or
+// its dependencies carry runs during setup: npm installs with its lifecycle scripts skipped, and
+// git runs no hook from the folder.
+func TestNoHookOrInstallScriptRunsWhileTheKeyringHoldsTheGrant(t *testing.T) {
+	w := newWorld(t)
+	marker := filepath.Join(t.TempDir(), "hook-ran")
+	w.cfg.WriteSite = func(ctx context.Context, cfg scaffold.Config) (scaffold.Result, error) {
+		res, err := w.writeSite(ctx, cfg)
+		if err != nil {
+			return res, err
+		}
+		hook := filepath.Join(res.Dir, ".git", "hooks", "pre-push")
+		if err := os.WriteFile(hook, []byte("#!/bin/sh\ntouch '"+marker+"'\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		return res, nil
+	}
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !w.pushed() {
+		t.Fatal("the run never pushed")
+	}
+	if _, err := os.Stat(marker); err == nil {
+		t.Error("the site folder's pre-push hook ran")
+	}
+	args, err := os.ReadFile(w.npmEnv + ".args")
+	if err != nil {
+		t.Fatalf("npm never ran: %v", err)
+	}
+	if !slices.Contains(strings.Fields(string(args)), "--ignore-scripts") {
+		t.Errorf("npm ran with %q, want --ignore-scripts", strings.TrimSpace(string(args)))
+	}
+}
+
+// TestAReconsentOnlyResumeStopsTheClock pins that a resume whose only approval is the Cloudflare
+// reconsent shows done.html before the watch, which stops the tab's 30-minute clock, so a long
+// watch still finds /next answering.
+func TestAReconsentOnlyResumeStopsTheClock(t *testing.T) {
+	w := newWorld(t)
+	_, _ = w.run(killAfter(w, StepProvision))
+	w.cfAuth.refreshErr = &providers.OAuthError{Status: 400, Code: "invalid_grant"}
+	w.resumeFrom()
+	w.tab.push(loopback.CloudflareCallback, w.cloudflareApproves)
+	w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+	start := len(w.log)
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("resume: %v", err)
+	}
+	log := w.log[start:]
+	done := slices.Index(log, "show:"+strconv.Itoa(int(PageDone)))
+	watch := slices.Index(log, "scaffold:finalize")
+	if done < 0 || watch < 0 || done > watch {
+		t.Errorf("log %v: want done.html shown before the watch's first step", log)
+	}
+}
+
+// TestARepositoryOnAnotherAccountStops pins that a repository GitHub creates under an account
+// other than the App's owner stops the run before any installation reaches it.
+func TestARepositoryOnAnotherAccountStops(t *testing.T) {
+	w := newWorld(t)
+	w.gh.createOwner = "someone-else"
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "someone-else") || !strings.Contains(f.Happened, "example-owner") ||
+		!strings.Contains(f.Did, "someone-else/example-site") || f.Do == "" || f.Left == "" {
+		t.Errorf("failure = %+v, want the four-part stop naming both accounts", f)
+	}
+	if strings.Count(strings.Join(w.log, " "), "wait:"+string(loopback.GitHubCallback)) != 1 {
+		t.Errorf("log %v: want the stop before approval 4", w.log)
+	}
+	if last, _ := w.saver.last(); last.GitHub.Repo.ID != 0 {
+		t.Errorf("record repository %+v, want none recorded", last.GitHub.Repo)
+	}
+}
+
+// TestAnotherAccountsApprovalCreatesNoRepository pins that the user token is read back before
+// the repository create: approval 3 given while signed in to GitHub as an account other than the
+// App's owner stops the run with nothing created on that account, and a resume taken the same way
+// stops again rather than walking the name suffixes.
+func TestAnotherAccountsApprovalCreatesNoRepository(t *testing.T) {
+	assertStop := func(t *testing.T, w *world, err error) {
+		t.Helper()
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "someone-else") || !strings.Contains(f.Happened, "example-owner") ||
+			!strings.Contains(f.Happened, w.gh.app.Slug) || !strings.Contains(f.Did, w.gh.app.Slug) ||
+			!strings.Contains(f.Do, "example-owner") || f.Left == "" {
+			t.Errorf("failure = %+v, want the four-part stop naming both accounts", f)
+		}
+		if w.gh.creates["repo"] != 0 || slices.ContainsFunc(w.log, func(l string) bool { return strings.HasPrefix(l, "gh:create:") }) {
+			t.Errorf("log %v: want no repository create", w.log)
+		}
+		if slices.ContainsFunc(w.log, func(l string) bool { return strings.Contains(l, "example-site-2") }) {
+			t.Errorf("log %v: want no suffixed name tried", w.log)
+		}
+		if ours := w.gh.ours(); len(ours) != 0 {
+			t.Errorf("installations left = %+v, want the all-repositories one deleted", ours)
+		}
+	}
+	t.Run("a new run", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userLogin = "someone-else"
+		_, err := w.run(context.Background())
+		assertStop(t, w, err)
+	})
+	t.Run("a resume", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		w.gh.userLogin = "someone-else"
+		w.gh.taken["example-site"] = true
+		_, err := w.resume()
+		assertStop(t, w, err)
+	})
+}
+
+// TestAnAppWithNoOwnerStops pins that setup never acts for an App whose owning account it does
+// not know, since every later account check compares against that owner: a conversion that names
+// no owner stops before any install, and so does a resumed record that names none.
+func TestAnAppWithNoOwnerStops(t *testing.T) {
+	t.Run("at the conversion", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.app.OwnerLogin = ""
+		_, err := w.run(context.Background())
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, w.gh.app.Slug) ||
+			!strings.Contains(f.Did, "https://github.com/settings/apps/"+w.gh.app.Slug) || f.Do == "" {
+			t.Errorf("failure = %+v, want the four-part stop with the App to delete", f)
+		}
+		if slices.Contains(w.log, "wait:"+string(loopback.GitHubCallback)) {
+			t.Errorf("log %v: want the stop before approval 3", w.log)
+		}
+	})
+	t.Run("on a resume", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.AppOwner = ""
+		w.saver.saves = append(w.saver.saves, rec)
+		_, err := w.resume()
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, w.gh.app.Slug) ||
+			!strings.Contains(f.Do, "https://github.com/settings/apps/"+w.gh.app.Slug) || f.Did == "" {
+			t.Errorf("failure = %+v, want the four-part stop with the App to delete", f)
+		}
+		if w.gh.creates["repo"] != 0 || slices.Contains(w.log, "wait:"+string(loopback.GitHubCallback)) {
+			t.Errorf("log %v: want the stop before approval 3", w.log)
+		}
+		if last, _ := w.saver.last(); last.Setup.IDs.AppID != 0 {
+			t.Errorf("record App %d, want the App dropped so the next run creates one", last.Setup.IDs.AppID)
+		}
+	})
+}
+
+// TestANilEnvironmentIsRefused pins that a run given no environment stops before it does
+// anything, since git and npm would start with no PATH, HOME, or proxy settings.
+func TestANilEnvironmentIsRefused(t *testing.T) {
+	w := newWorld(t)
+	w.cfg.Env = nil
+	if _, err := w.run(context.Background()); err == nil || !strings.Contains(err.Error(), "environment") {
+		t.Errorf("Run with a nil Env: err = %v, want a refusal naming the environment", err)
+	}
+	if len(w.log) != 0 || len(w.saver.saves) != 0 {
+		t.Errorf("log %v, %d saves; want nothing done", w.log, len(w.saver.saves))
 	}
 }
 
@@ -1589,6 +1876,10 @@ func TestAResumePastTheFirstDeployInstallsTheDependencies(t *testing.T) {
 		if _, err := os.Stat(w.npmEnv); err == nil || res.Done.InstallFailed || !res.Record.Setup.DepsInstalled {
 			t.Errorf("npm ran again: %v; done %+v, record installed %v", err == nil, res.Done, res.Record.Setup.DepsInstalled)
 		}
+		// The earlier run's install skipped the lifecycle scripts too.
+		if !res.Done.ScriptsSkipped {
+			t.Errorf("done %+v, want the skipped scripts reported", res.Done)
+		}
 	})
 	t.Run("a finished run records the install", func(t *testing.T) {
 		w := newWorld(t)
@@ -1646,6 +1937,7 @@ func TestAKillAfterTheRepositoryCreate(t *testing.T) {
 			gitRun(t, dir, "push", "--quiet", filepath.Join(w.gh.remotes, "example-owner", "example-site.git"), "HEAD:refs/heads/main")
 		}},
 		{"a repository another account owns is refused", func(w *world) { w.gh.ownerOf["example-site"] = "someone-else" }},
+		{"a public repository is refused", func(w *world) { w.gh.public["example-site"] = true }},
 	}
 	for _, tc := range refused {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1722,5 +2014,99 @@ func TestNodeMajor(t *testing.T) {
 		if (err == nil) != tc.ok || got != tc.want {
 			t.Errorf("nodeMajor(%q) = %d, %v", tc.in, got, err)
 		}
+	}
+}
+
+// TestTheWorkerIntentIsRecordedBeforeThePush pins that the record names the Worker the first
+// deploy creates before the push that starts that deploy.
+func TestTheWorkerIntentIsRecordedBeforeThePush(t *testing.T) {
+	w := newWorld(t)
+	remote := filepath.Join(w.gh.remotes, "example-owner", "example-site.git")
+	recorded, pushed := false, false
+	w.saver.onSave = func(rec record.Record) error {
+		if recorded || rec.Setup.Intents.Worker == "" {
+			return nil
+		}
+		recorded = true
+		if rec.Setup.Intents.Worker != "example-site" {
+			t.Errorf("Worker intent = %q, want example-site", rec.Setup.Intents.Worker)
+		}
+		cmd := exec.Command("git", "--git-dir", remote, "rev-parse", "--verify", "--quiet", "HEAD")
+		pushed = cmd.Run() == nil
+		return nil
+	}
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !recorded || pushed {
+		t.Errorf("Worker intent recorded %v, after the push %v; want it recorded before the push", recorded, pushed)
+	}
+	if err := exec.Command("git", "--git-dir", remote, "rev-parse", "--verify", "--quiet", "HEAD").Run(); err != nil {
+		t.Errorf("the remote at %s holds no push after the run: %v", remote, err)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
+
+// TestFetchFromReadsTheTaggedTemplate pins that FetchFrom resolves the tag it is given and hands
+// back that version, its integrity, the catalog's themes, and the tree.
+func TestFetchFromReadsTheTaggedTemplate(t *testing.T) {
+	var gz bytes.Buffer
+	zw := gzip.NewWriter(&gz)
+	tw := tar.NewWriter(zw)
+	for name, body := range map[string]string{
+		"package/template/catalog.json":         `{"themes":[{"id":"waymark","name":"Waymark","path":"themes/waymark"}]}`,
+		"package/template/themes/waymark/a.txt": "a",
+	} {
+		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o644, Size: int64(len(body)), Typeflag: tar.TypeReg}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	tarball := gz.Bytes()
+	sum := sha512.Sum512(tarball)
+	integrity := "sha512-" + base64.StdEncoding.EncodeToString(sum[:])
+	const registry = "https://registry.npmjs.org/"
+	tarURL := registry + "engine-2.0.0-next.3.tgz"
+	doc, err := json.Marshal(map[string]any{
+		"dist-tags": map[string]string{"latest": "1.9.0", "next": "2.0.0-next.3"},
+		"versions": map[string]any{
+			"1.9.0":        map[string]any{"dist": map[string]string{"tarball": registry + "engine-1.9.0.tgz", "integrity": integrity}},
+			"2.0.0-next.3": map[string]any{"dist": map[string]string{"tarball": tarURL, "integrity": integrity}},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rt := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		body := doc
+		if req.URL.String() == tarURL {
+			body = tarball
+		}
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(body)), Request: req}, nil
+	})
+
+	got, err := FetchFrom(scaffold.NewFetcher(rt), "next")(t.Context())
+	if err != nil {
+		t.Fatalf("FetchFrom: %v", err)
+	}
+	if got.Version != "2.0.0-next.3" || got.Integrity != integrity || got.Tree == nil {
+		t.Errorf("template = %q, %q, tree %v; want the next tag's version and integrity with its tree", got.Version, got.Integrity, got.Tree != nil)
+	}
+	if len(got.Themes) != 1 || got.Themes[0].ID != "waymark" || got.Themes[0].Path != "themes/waymark" {
+		t.Errorf("themes = %+v, want the catalog's one theme", got.Themes)
+	}
+	if _, err := FetchFrom(scaffold.NewFetcher(rt), "beta")(t.Context()); err == nil {
+		t.Error("FetchFrom of a tag the registry lacks succeeded")
 	}
 }

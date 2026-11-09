@@ -98,25 +98,33 @@ func TestNewManifestCutsTheWholeNameAt34(t *testing.T) {
 	}
 }
 
-func TestManifestFormAndURLs(t *testing.T) {
-	target := ManifestTarget("n0nce")
-	if target != "https://github.com/settings/apps/new?state=n0nce" {
-		t.Errorf("target = %q", target)
-	}
-	page, err := ManifestFormHTML(NewManifest("example", 49152), target)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, want := range []string{`action="` + target + `"`, `method="post"`, `name="manifest"`, `&#34;name&#34;:&#34;cairn-example&#34;`, `.submit()`} {
-		if !strings.Contains(page, want) {
-			t.Errorf("form page lacks %q:\n%s", want, page)
-		}
-	}
+func TestInstallURLs(t *testing.T) {
 	if got := InstallURL("cairn-example"); got != "https://github.com/apps/cairn-example/installations/new" {
 		t.Errorf("InstallURL = %q", got)
 	}
 	if got, want := PreselectURL("cairn-example", 4242, 998877), "https://github.com/apps/cairn-example/installations/new/permissions?suggested_target_id=4242&repository_ids[]=998877"; got != want {
 		t.Errorf("PreselectURL = %q, want %q", got, want)
+	}
+}
+
+// TestATransportErrorCarriesNoURL pins that a failed request's error keeps its cause and drops
+// the URL, which for the manifest conversion carries the one-time code in its path.
+func TestATransportErrorCarriesNoURL(t *testing.T) {
+	cause := errors.New("connection reset by peer")
+	rt := roundTripFunc(func(*http.Request) (*http.Response, error) { return nil, cause })
+	const code = "manifestc0de1234567"
+	_, err := NewGitHub(Credential{}, rt).ConvertManifest(context.Background(), code)
+	if err == nil {
+		t.Fatal("ConvertManifest succeeded through a failing transport")
+	}
+	if strings.Contains(err.Error(), code) || strings.Contains(err.Error(), "app-manifests") {
+		t.Errorf("error %q quotes the request URL", err)
+	}
+	if !errors.Is(err, cause) || !strings.Contains(err.Error(), cause.Error()) {
+		t.Errorf("error %q lost its cause", err)
+	}
+	if !strings.Contains(err.Error(), "Post") {
+		t.Errorf("error %q lost the request's method", err)
 	}
 }
 
@@ -309,7 +317,7 @@ func TestRepoNamed(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if repo == nil || repo.ID != 998877 || repo.Owner.Login != "example-owner" || repo.DefaultBranch != "main" {
+		if repo == nil || repo.ID != 998877 || repo.Owner.Login != "example-owner" || repo.DefaultBranch != "main" || !repo.Private {
 			t.Errorf("repo = %+v", repo)
 		}
 		if rt.calls[0].auth != "Bearer utok" {
@@ -327,6 +335,31 @@ func TestRepoNamed(t *testing.T) {
 		rt := routes(map[string]reply{"GET api.github.com/repos/example-owner/example-site": fixtureReply(t, "app_installations.bad-credentials.401.json")})
 		if _, err := NewGitHub(NewCredential("utok"), rt).RepoNamed(context.Background(), "example-owner", "example-site"); httpStatusOf(err) != 401 {
 			t.Errorf("err = %v, want the 401", err)
+		}
+	})
+}
+
+func TestUserLogin(t *testing.T) {
+	t.Run("signed in", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/user": fixtureReply(t, "user_get.ok.200.json")})
+		login, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background())
+		if err != nil || login != "example-owner" {
+			t.Errorf("UserLogin = %q, %v; want example-owner", login, err)
+		}
+		if rt.calls[0].auth != "Bearer utok" {
+			t.Errorf("auth = %q", rt.calls[0].auth)
+		}
+	})
+	t.Run("refused", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/user": fixtureReply(t, "app_installations.bad-credentials.401.json")})
+		if _, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background()); httpStatusOf(err) != 401 {
+			t.Errorf("err = %v, want the 401", err)
+		}
+	})
+	t.Run("no login", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/user": {200, []byte(`{"id":1}`)}})
+		if login, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background()); err == nil {
+			t.Errorf("UserLogin = %q with no error, want a body without a login refused", login)
 		}
 	})
 }

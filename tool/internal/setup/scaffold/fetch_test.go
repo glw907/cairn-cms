@@ -86,6 +86,10 @@ func TestUnsafeEntriesFailTheFetch(t *testing.T) {
 		{"hard link", tarEntry{name: "package/template/waymark/hard", typeflag: tar.TypeLink, link: "package/package.json"}},
 		{"fifo", tarEntry{name: "package/template/waymark/pipe", typeflag: tar.TypeFifo}},
 		{"file below a file", tarEntry{name: "package/template/waymark/ok.txt/inner", body: "x"}},
+		{"a .git folder", tarEntry{name: "package/template/waymark/.git/config", body: "[core]\n\tfsmonitor = evil\n"}},
+		{"a .GIT folder", tarEntry{name: "package/template/waymark/.GIT/hooks/post-checkout", body: "x"}},
+		{"a .git file", tarEntry{name: "package/template/.git", body: "gitdir: /elsewhere\n"}},
+		{"a .git directory entry", tarEntry{name: "package/template/waymark/sub/.Git/", typeflag: tar.TypeDir}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,6 +100,23 @@ func TestUnsafeEntriesFailTheFetch(t *testing.T) {
 				t.Fatalf("Fetch error = %v, want ErrUnsafeEntry", err)
 			}
 		})
+	}
+}
+
+// TestNamesThatOnlyStartWithGitAreKept pins that the .git refusal matches a whole path segment.
+func TestNamesThatOnlyStartWithGitAreKept(t *testing.T) {
+	tarball := makeTarball(t, []tarEntry{
+		{name: "package/template/waymark/.github/workflows/deploy.yml", body: "on: push\n"},
+		{name: "package/template/waymark/.gitignore", body: "node_modules\n"},
+		{name: "package/template/waymark/notes.git/a", body: "x"},
+	})
+	reg := newRegistry(t, tarball, integrityOf(tarball))
+	tpl, err := NewFetcher(reg).Fetch(t.Context(), "next")
+	if err != nil {
+		t.Fatalf("Fetch: %v", err)
+	}
+	if len(tpl.entries) != 3 {
+		t.Errorf("extracted %d entries, want all 3", len(tpl.entries))
 	}
 }
 

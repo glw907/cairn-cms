@@ -16,9 +16,15 @@ var pageFiles embed.FS
 
 var pages = template.Must(template.ParseFS(pageFiles, "pages/*.html"))
 
-// cookieName names the one cookie the server sets, in trade for the key. It gates the root and
-// /next, the route that hands out the sign-in URL.
+// cookieName names the one cookie the server sets, in trade for the key. It gates the root, every
+// callback, /cloudflare/go, and /next, the route that hands out the sign-in URL.
 const cookieName = "cairn_setup"
+
+// cookieMaxAge bounds the session cookie's life in seconds: two hours covers the approvals'
+// 30 minutes and a long watch, and the browser drops the cookie after. /next clears it sooner. A
+// watch can outlast it, and done.html then answers /next's 404 by sending the owner to the
+// terminal.
+const cookieMaxAge = 2 * 60 * 60
 
 type pageKind int
 
@@ -168,17 +174,25 @@ func (s *Server) openSession(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     cookieName,
-		Value:    cookie,
-		Path:     "/",
-		HttpOnly: true,
-		// Lax, because the tab comes back to the root from Cloudflare and GitHub through a
-		// redirect that their page started, and a browser sends a Strict cookie on none of those.
-		// /next makes up the difference by refusing any request another site started.
-		SameSite: http.SameSiteLaxMode,
-	})
+	http.SetCookie(w, sessionCookie(cookie, cookieMaxAge))
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// sessionCookie is the session cookie with value, living maxAge seconds; a negative maxAge
+// clears it.
+func sessionCookie(value string, maxAge int) *http.Cookie {
+	return &http.Cookie{
+		Name:     cookieName,
+		Value:    value,
+		Path:     "/",
+		MaxAge:   maxAge,
+		HttpOnly: true,
+		// Lax, because the tab comes back to the callbacks and the root from Cloudflare and GitHub
+		// through a redirect their page started, and a browser sends a Strict cookie on none of
+		// those. /next and /cloudflare/go make up the difference by requiring the Fetch Metadata
+		// a browser sends on the tab's same-origin requests.
+		SameSite: http.SameSiteLaxMode,
+	}
 }
 
 // hasSession reports whether r carries the session cookie.
@@ -220,11 +234,14 @@ func (s *Server) pageRoute(kind pageKind, file string) http.HandlerFunc {
 	}
 }
 
-// serveNext answers done.html's poll. The Lax cookie also rides a link on another site, so a
-// request whose Sec-Fetch-Site is anything but same-origin is refused and leaves the URL unserved.
+// serveNext answers done.html's poll. The poll is a same-origin fetch, so a browser marks it
+// Sec-Fetch-Site same-origin and Sec-Fetch-Mode cors, and both must be present: the Lax cookie also rides a link on
+// another site, and a tool replaying a cookie it read sends no Fetch Metadata. Any other request
+// is refused and leaves the URL unserved. The answer that hands out the URL also clears the
+// cookie, since the session has no use after it.
 func (s *Server) serveNext(w http.ResponseWriter, r *http.Request) {
-	site := r.Header.Get("Sec-Fetch-Site")
-	if !s.hasSession(r) || (site != "" && site != "same-origin") {
+	mode := r.Header.Get("Sec-Fetch-Mode")
+	if !s.hasSession(r) || r.Header.Get("Sec-Fetch-Site") != "same-origin" || (mode != "cors" && mode != "same-origin") {
 		http.NotFound(w, r)
 		return
 	}
@@ -247,18 +264,22 @@ func (s *Server) serveNext(w http.ResponseWriter, r *http.Request) {
 	}
 	s.nextServed = true
 	s.next = ""
+	http.SetCookie(w, sessionCookie("", -1))
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(body)
 }
 
 // goCloudflare answers the consent and scope-error pages' button with a redirect to the authorize
 // URL the page was shown with. It answers only while one of those pages shows and approval 1's
-// callback is armed, and only to the session's navigation from this origin: the URL carries the
-// state nonce and the PKCE challenge, so another site's link, a script's fetch, or a request
-// without the cookie gets 404 and learns nothing.
+// callback is armed, and only to the session's navigation, which a browser marks Sec-Fetch-Mode
+// navigate and Sec-Fetch-Site same-origin, or none when the owner opens the address directly.
+// Both headers must be present: the URL carries the state nonce and the PKCE challenge, so
+// another site's link, a script's fetch, a tool replaying the cookie, or a request without the
+// cookie gets 404 and learns nothing. A browser that sends the cookie but leaves a header out,
+// as Safari before 16.4 or a privacy extension does, gets the 404 as oldbrowser.html, which asks
+// for a current browser, so the owner is not left at a bare error.
 func (s *Server) goCloudflare(w http.ResponseWriter, r *http.Request) {
-	site, mode := r.Header.Get("Sec-Fetch-Site"), r.Header.Get("Sec-Fetch-Mode")
-	if !s.hasSession(r) || (site != "" && site != "same-origin") || (mode != "" && mode != "navigate") {
+	if !s.hasSession(r) {
 		http.NotFound(w, r)
 		return
 	}
@@ -267,6 +288,18 @@ func (s *Server) goCloudflare(w http.ResponseWriter, r *http.Request) {
 	a := s.routes[CloudflareCallback]
 	s.mu.Unlock()
 	if (p.kind != pageConsent && p.kind != pageScopeError) || a == nil || !a.open {
+		http.NotFound(w, r)
+		return
+	}
+	site, mode := r.Header.Get("Sec-Fetch-Site"), r.Header.Get("Sec-Fetch-Mode")
+	ownerSite, ownerMode := site == "same-origin" || site == "none", mode == "navigate"
+	if !ownerSite || !ownerMode {
+		// A header left out, with the other one absent or the owner's, is a browser that sends no
+		// Fetch Metadata; any present value that is not the owner's is another page's request.
+		if (site == "" || mode == "") && (site == "" || ownerSite) && (mode == "" || ownerMode) {
+			s.renderStatus(w, http.StatusNotFound, "oldbrowser.html", pageData{})
+			return
+		}
 		http.NotFound(w, r)
 		return
 	}

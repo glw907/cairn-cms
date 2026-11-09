@@ -20,8 +20,11 @@ const (
 	// GitHubManifest receives the redirect after the owner creates the App: code and state.
 	GitHubManifest Route = "/github/manifest"
 	// GitHubCallback receives both install redirects: code, installation_id, and setup_action.
-	// GitHub may leave state off, so a missing state is accepted and the runner's read-back of
-	// the installation is what authenticates it; a state that is present must match.
+	// GitHub may leave state off, so a missing state is accepted and a state that is present must
+	// match. The session cookie keeps out other processes and other sites' subresource requests,
+	// but not a hostile page's top-level navigation, on which a browser sends a Lax cookie. Such a
+	// page can spend the armed route: the runner's code exchange then fails and it sends the tab
+	// back to the install page. The runner's read-back of the installation is what confirms it.
 	GitHubCallback Route = "/github/callback"
 )
 
@@ -105,13 +108,26 @@ func (s *Server) Wait(ctx context.Context, r Route) (Callback, error) {
 	}
 }
 
+// callback answers r's redirect. It takes the redirect only from the browser holding the session
+// cookie, which the Lax cookie lets ride the provider's top-level redirect back. A request without
+// it, from another process, another site's subresource request, or a browser that never opened
+// the tab, is refused 403 and leaves the route armed for the owner's redirect. The refusal is a
+// page that tells an owner whose provider session lives in another browser where to finish. A
+// hostile page's top-level navigation does carry the cookie, so the state nonce, and on
+// GitHubCallback the runner's exchange and read-back, are what stop it.
 func (s *Server) callback(r Route) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		session := s.hasSession(req)
 		s.mu.Lock()
 		a := s.routes[r]
 		if a == nil || !a.open {
 			s.mu.Unlock()
 			http.NotFound(w, req)
+			return
+		}
+		if !session {
+			s.mu.Unlock()
+			s.renderStatus(w, http.StatusForbidden, "otherbrowser.html", pageData{})
 			return
 		}
 		cb, ok := parseCallback(r, req.URL.RawQuery)

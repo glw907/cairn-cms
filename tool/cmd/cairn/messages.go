@@ -754,6 +754,17 @@ const newExitCodes = `Exit codes for cairn new:
 3  a usage error: a flag or the plan file was refused
 A stream of events that does not end with a summary is unfinished.`
 
+// agentsSetupEvents is the part of the agents page that names what cairn new --apply writes: one
+// JSON object per line. The agents page prints it only once cairn new is not hidden.
+const agentsSetupEvents = `Events from cairn new --apply, one JSON object per line on stdout:
+  step_started, step_done  a step began or finished; step names it
+  step_failed              a step stopped the run; failure holds the four-part reason
+  waiting                  setup waits on the owner in a browser; waiting names the approval
+  resumed                  the run picked up an unfinished record
+  summary                  every derived value, for the owner to review
+Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
+approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.`
+
 // tmplNewUsage renders a refusal the agent view found in the flags or the plan file.
 const tmplNewUsage = "%s\nRun `cairn new --help` for the flags"
 

@@ -18,7 +18,7 @@ LDFLAGS := -X '$(MODULE)/internal/version.Version=$(VERSION)' -X '$(MODULE)/inte
 
 .PHONY: all build test vet install install-check check clean golden man \
 	tidy-check fmt-check lint vulncheck vale-comments \
-	copy-list check-copy copy-review flags \
+	copy-list check-copy copy-review flags reference \
 	build-golangci-lint build-govulncheck
 
 all: check
@@ -104,6 +104,13 @@ golden:
 # scripts/checks/check-symbols.mjs accepts a `--flag` in a docs shell fence against.
 flags:
 	go test ./cmd/cairn -run TestCommittedFlagListMatchesTheCommandTree -update
+
+# reference writes docs/setup-reference.md from the code: the flags from the built binary's
+# `cairn new --help`, and the steps, events, names, and exit codes from internal/setup and the
+# exit-code golden. `make test` compares the committed page with a fresh render, so a code change
+# that skips this step fails cmd/reference's test.
+reference:
+	go run ./cmd/reference > docs/setup-reference.md
 
 build-golangci-lint:
 	go build -C tools -o ../$(GOLANGCI) github.com/golangci/golangci-lint/v2/cmd/golangci-lint

@@ -22,3 +22,8 @@ func RecordedAnswers(rec record.Record) Answers {
 		Suffix:     suffixOf(rec.Name, rec),
 	}
 }
+
+// Steps returns the ordered plan every run follows, for the generated setup reference.
+func Steps() []Step {
+	return steps()
+}

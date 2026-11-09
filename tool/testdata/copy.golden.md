@@ -165,6 +165,14 @@ auth check's whole output is identifiers (permission labels, credential variable
 - Continue an unfinished setup with cairn new --resume <id>.
 - Credentials:
 - Delete one credential's keyring entry
+- Events from cairn new --apply, one JSON object per line on stdout:
+  step_started, step_done  a step began or finished; step names it
+  step_failed              a step stopped the run; failure holds the four-part reason
+  waiting                  setup waits on the owner in a browser; waiting names the approval
+  resumed                  the run picked up an unfinished record
+  summary                  every derived value, for the owner to review
+Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
+approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.
 - Exit codes for cairn new:
 0  the run finished, the plan file was written, or the command only listed or printed
 1  setup stopped at a step; the run is saved, and cairn new --resume continues it

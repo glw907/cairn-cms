@@ -1,9 +1,9 @@
 {
   "provenance": {
     "captured": "2026-11-09",
-    "source": "DELETE /repos/<REDACTED>-test/cairn-rec-tmw8jn1a0-repo",
+    "source": "DELETE /repos/<REDACTED>-test/cairn-rec-tmw8khn73-repo",
     "status": 204,
-    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": null
 }

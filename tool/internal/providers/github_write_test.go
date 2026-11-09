@@ -126,7 +126,7 @@ func TestConvertManifestDecodesTheConversion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ConvertManifest: %v", err)
 	}
-	if rec.ID != 5674023 || rec.Slug != "cairn-rec-tmw8jn1a0-app" || rec.OwnerLogin != "<REDACTED>-test" || rec.ClientID != "Iv23li0kiADWK6TBhHPV" {
+	if rec.ID != 5674210 || rec.Slug != "cairn-rec-tmw8khn73-app" || rec.OwnerLogin != "<REDACTED>-test" || rec.ClientID != "Iv23liWZuFARiRUZ9QX8" {
 		t.Errorf("record = %+v", rec)
 	}
 	// The recording scrubs each secret to the same placeholder, so these prove the three fields
@@ -164,7 +164,7 @@ func TestAppJWTSignsRS256WithTheDocumentedClaims(t *testing.T) {
 	if got := string(dec(parts[0])); got != `{"alg":"RS256","typ":"JWT"}` {
 		t.Errorf("header = %s", got)
 	}
-	if got := string(dec(parts[1])); got != `{"iat":1799999940,"exp":1800000540,"iss":"5674023"}` {
+	if got := string(dec(parts[1])); got != `{"iat":1799999940,"exp":1800000540,"iss":"5674210"}` {
 		t.Errorf("claims = %s", got)
 	}
 	block, _ := pem.Decode([]byte(rec.PEM.v))
@@ -214,8 +214,8 @@ func TestExchangeCode(t *testing.T) {
 		reply   reply
 		wantErr func(error) bool
 	}{
-		{"success", fixtureReply(t, "oauth_access_token.success.200.json"), nil},
-		{"bad verification code", fixtureReply(t, "oauth_access_token.bad-verification-code.200.json"), func(err error) bool { return errors.Is(err, ErrBadVerificationCode) }},
+		{"success", fixtureReply(t, "login_oauth_access_token.ok.200.json"), nil},
+		{"bad verification code", fixtureReply(t, "login_oauth_access_token.bad-verification-code.200.json"), func(err error) bool { return errors.Is(err, ErrBadVerificationCode) }},
 		{"no token", reply{200, []byte(`{}`)}, func(err error) bool {
 			var oe *GitHubOAuthError
 			return errors.As(err, &oe) && !errors.Is(err, ErrBadVerificationCode)
@@ -230,7 +230,7 @@ func TestExchangeCode(t *testing.T) {
 			rt := routes(map[string]reply{route: tt.reply})
 			tok, err := NewGitHubWeb(rt).ExchangeCode(context.Background(), "cid", NewCredential("csecret"), "the-code", "http://127.0.0.1:49152/github/callback")
 			if tt.wantErr == nil {
-				if err != nil || tok.v != "PLACEHOLDER-user-token" {
+				if err != nil || tok.v != "<REDACTED>" {
 					t.Fatalf("ExchangeCode = %q, %v", tok.v, err)
 				}
 			} else if err == nil || !tt.wantErr(err) {
@@ -267,15 +267,15 @@ func TestEachClientRefusesTheOtherHost(t *testing.T) {
 func TestCreateRepo(t *testing.T) {
 	t.Run("created", func(t *testing.T) {
 		rt := routes(map[string]reply{"POST api.github.com/user/repos": fixtureReply(t, "repo_create.ok.201.json")})
-		repo, err := NewGitHub(NewCredential("utok"), rt).CreateRepo(context.Background(), "cairn-rec-tmw8jn1a0-repo")
+		repo, err := NewGitHub(NewCredential("utok"), rt).CreateRepo(context.Background(), "cairn-rec-tmw8khn73-repo")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if repo.ID != 1450794126 || repo.Name != "cairn-rec-tmw8jn1a0-repo" || repo.FullName != "<REDACTED>-test/cairn-rec-tmw8jn1a0-repo" ||
+		if repo.ID != 1450808149 || repo.Name != "cairn-rec-tmw8khn73-repo" || repo.FullName != "<REDACTED>-test/cairn-rec-tmw8khn73-repo" ||
 			repo.Owner.ID != 352097667 || repo.Owner.Login != "<REDACTED>-test" || repo.DefaultBranch != "main" {
 			t.Errorf("repo = %+v", repo)
 		}
-		if got, want := string(rt.calls[0].body), `{"name":"cairn-rec-tmw8jn1a0-repo","private":true,"auto_init":false}`; got != want {
+		if got, want := string(rt.calls[0].body), `{"name":"cairn-rec-tmw8khn73-repo","private":true,"auto_init":false}`; got != want {
 			t.Errorf("sent %s, want %s", got, want)
 		}
 		if rt.calls[0].auth != "Bearer utok" {
@@ -305,9 +305,9 @@ func TestCreateRepo(t *testing.T) {
 func TestAppRoutes(t *testing.T) {
 	jwt := NewCredential("the-jwt")
 	rt := routes(map[string]reply{
-		"GET api.github.com/app/installations":                        fixtureReply(t, "app_installations.list.200.json"),
-		"DELETE api.github.com/app/installations/5550002":             fixtureReply(t, "app_installation_delete.success.204.json"),
-		"POST api.github.com/app/installations/5550002/access_tokens": fixtureReply(t, "app_installation_access_token.success.201.json"),
+		"GET api.github.com/app/installations":                          fixtureReply(t, "app_installations.list.200.json"),
+		"DELETE api.github.com/app/installations/180017528":             fixtureReply(t, "app_installation.delete.204.json"),
+		"POST api.github.com/app/installations/180017528/access_tokens": fixtureReply(t, "app_installation_access_tokens.created.201.json"),
 	})
 	gh := NewGitHub(jwt, rt)
 	ctx := context.Background()
@@ -316,17 +316,17 @@ func TestAppRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(list) != 2 || list[0].AppID != 1234567 || list[1].RepositorySelection != "all" {
+	if len(list) != 1 || list[0].ID != 180017528 || list[0].AppID != 5674210 || list[0].RepositorySelection != "selected" {
 		t.Errorf("installations = %+v", list)
 	}
-	if err := gh.DeleteInstallation(ctx, 5550002); err != nil {
+	if err := gh.DeleteInstallation(ctx, 180017528); err != nil {
 		t.Errorf("DeleteInstallation: %v", err)
 	}
-	tok, exp, err := gh.InstallationToken(ctx, 5550002)
+	tok, exp, err := gh.InstallationToken(ctx, 180017528)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tok.v != "PLACEHOLDER-installation-token" || !exp.Equal(time.Date(2026, 11, 8, 13, 0, 0, 0, time.UTC)) {
+	if tok.v != "<REDACTED>" || !exp.Equal(time.Date(2026, 11, 9, 2, 13, 50, 0, time.UTC)) {
 		t.Errorf("token = %q, expires %v", tok.v, exp)
 	}
 	for _, c := range rt.calls {
@@ -353,32 +353,40 @@ func TestInstallationRepositoriesWithTheInstallationToken(t *testing.T) {
 }
 
 func TestReadBackInstallation(t *testing.T) {
-	const repoID = 998877
+	// The recorded list holds one install, of the recorded App; the docs-sourced lists put the
+	// App 1234567 behind a foreign App's install.
+	const (
+		recordedApp, recordedInstall, recordedRepo = 5674210, 180017528, 1450808149
+		docsApp, docsInstall, docsRepo             = 1234567, 5550002, 998877
+	)
 	tests := []struct {
 		name       string
 		installs   string
 		repos      string
+		appID      int64
+		install    int64
 		repoID     int64
 		wantStatus ReadBackStatus
 		wantIDs    []int64
 	}{
-		{"our App picked from a list led by a foreign App with all, scoped to the one repo", "user_installations.foreign-first.200.json", "user_installation_repositories.selected-one.200.json", repoID, ReadBackOK, []int64{repoID}},
-		{"all is an over-grant", "user_installations.ours-all.200.json", "", repoID, ReadBackOverGrant, nil},
-		{"a selected list of two is an over-grant", "user_installations.foreign-first.200.json", "user_installation_repositories.selected-two.200.json", repoID, ReadBackOverGrant, []int64{repoID, 998878}},
-		{"a selected list without the recorded repo is an over-grant", "user_installations.foreign-first.200.json", "user_installation_repositories.selected-one.200.json", 1, ReadBackOverGrant, []int64{repoID}},
+		{"the recorded install scoped to the one repo", "user_installations.list.200.json", "user_installation_repositories.list.200.json", recordedApp, recordedInstall, recordedRepo, ReadBackOK, []int64{recordedRepo}},
+		{"our App picked from a list led by a foreign App with all, scoped to the one repo", "user_installations.foreign-first.200.json", "user_installation_repositories.list.200.json", docsApp, docsInstall, recordedRepo, ReadBackOK, []int64{recordedRepo}},
+		{"all is an over-grant", "user_installations.ours-all.200.json", "", docsApp, docsInstall, docsRepo, ReadBackOverGrant, nil},
+		{"a selected list of two is an over-grant", "user_installations.foreign-first.200.json", "user_installation_repositories.selected-two.200.json", docsApp, docsInstall, docsRepo, ReadBackOverGrant, []int64{docsRepo, 998878}},
+		{"a selected list without the recorded repo is an over-grant", "user_installations.foreign-first.200.json", "user_installation_repositories.list.200.json", docsApp, docsInstall, 1, ReadBackOverGrant, []int64{recordedRepo}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			table := map[string]reply{"GET api.github.com/user/installations": fixtureReply(t, tt.installs)}
 			if tt.repos != "" {
-				table["GET api.github.com/user/installations/5550002/repositories"] = fixtureReply(t, tt.repos)
+				table[fmt.Sprintf("GET api.github.com/user/installations/%d/repositories", tt.install)] = fixtureReply(t, tt.repos)
 			}
-			rb, err := NewGitHub(NewCredential("utok"), routes(table)).ReadBackInstallation(context.Background(), 1234567, tt.repoID)
+			rb, err := NewGitHub(NewCredential("utok"), routes(table)).ReadBackInstallation(context.Background(), tt.appID, tt.repoID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if rb.InstallationID != 5550002 || rb.Status != tt.wantStatus {
-				t.Errorf("read-back = %+v, want installation 5550002 status %v", rb, tt.wantStatus)
+			if rb.InstallationID != tt.install || rb.Status != tt.wantStatus {
+				t.Errorf("read-back = %+v, want installation %d status %v", rb, tt.install, tt.wantStatus)
 			}
 			if fmt.Sprint(rb.RepoIDs) != fmt.Sprint(tt.wantIDs) {
 				t.Errorf("RepoIDs = %v, want %v", rb.RepoIDs, tt.wantIDs)
@@ -455,7 +463,7 @@ func TestSetActionsSecretSealsToTheServedKeyAndPutsIt(t *testing.T) {
 	base := "api.github.com/repos/example-owner/example-site/actions/secrets"
 	rt := routes(map[string]reply{
 		"GET " + base + "/public-key":          {200, []byte(keyBody)},
-		"PUT " + base + "/" + DeploySecretName: fixtureReply(t, "actions_secret_put.created.201.json"),
+		"PUT " + base + "/" + DeploySecretName: fixtureReply(t, "repo_actions_secret_put.ok.201.json"),
 	})
 	if err := NewGitHub(NewCredential("itok"), rt).SetActionsSecret(context.Background(), "example-owner", "example-site", DeploySecretName, "cf-token-value"); err != nil {
 		t.Fatal(err)
@@ -482,7 +490,7 @@ func TestSetActionsSecretSealsToTheServedKeyAndPutsIt(t *testing.T) {
 }
 
 func TestRecordedPublicKeyIsAValidSealingKey(t *testing.T) {
-	_, body, err := Corpus("github", "actions_public_key.success.200.json")
+	_, body, err := Corpus("github", "repo_actions_secrets_public_key.ok.200.json")
 	if err != nil {
 		t.Fatal(err)
 	}

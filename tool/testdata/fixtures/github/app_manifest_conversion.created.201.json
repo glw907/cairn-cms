@@ -3,13 +3,13 @@
     "captured": "2026-11-09",
     "source": "POST /app-manifests/{code}/conversions",
     "status": 201,
-    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
-    "id": 5674023,
-    "client_id": "Iv23li0kiADWK6TBhHPV",
-    "slug": "cairn-rec-tmw8jn1a0-app",
-    "node_id": "A_kwDOFPyVg84AVpQn",
+    "id": 5674210,
+    "client_id": "Iv23liWZuFARiRUZ9QX8",
+    "slug": "cairn-rec-tmw8khn73-app",
+    "node_id": "A_kwDOFPyVg84AVpTi",
     "owner": {
       "login": "<REDACTED>-test",
       "id": 352097667,
@@ -31,12 +31,12 @@
       "user_view_type": "public",
       "site_admin": false
     },
-    "name": "cairn-rec-tmw8jn1a0-app",
+    "name": "cairn-rec-tmw8khn73-app",
     "description": null,
     "external_url": "https://carin-test.org",
-    "html_url": "https://github.com/apps/cairn-rec-tmw8jn1a0-app",
-    "created_at": "2026-11-09T00:49:59Z",
-    "updated_at": "2026-11-09T00:49:59Z",
+    "html_url": "https://github.com/apps/cairn-rec-tmw8khn73-app",
+    "created_at": "2026-11-09T01:13:41Z",
+    "updated_at": "2026-11-09T01:13:41Z",
     "webhook_secret": "<REDACTED>",
     "pem": "<REDACTED>",
     "client_secret": "<REDACTED>",

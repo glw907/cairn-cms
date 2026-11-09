@@ -3,15 +3,15 @@
     "captured": "2026-11-09",
     "source": "POST /accounts/{id}/r2/buckets",
     "status": 200,
-    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
     "success": true,
     "errors": [],
     "messages": [],
     "result": {
-      "name": "cairn-rec-tmw8jn1a0-bucket",
-      "creation_date": "2026-11-09T00:49:44.522Z",
+      "name": "cairn-rec-tmw8khn73-bucket",
+      "creation_date": "2026-11-09T01:13:29.016Z",
       "location": "WNAM",
       "storage_class": "Standard",
       "jurisdiction": "default"

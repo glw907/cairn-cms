@@ -180,10 +180,10 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 			t.Errorf("a substring matched: %+v", got)
 		}
 		cf, rt = writeClient(t, "d1_database.name-check.200.json")
-		if got, err := cf.D1DatabaseNamed(ctx, "cairn-rec-tmw8jn1a0-db"); got != nil || err != nil {
+		if got, err := cf.D1DatabaseNamed(ctx, "cairn-rec-tmw8khn73-db"); got != nil || err != nil {
 			t.Errorf("a free name = %+v, %v, want nil, nil", got, err)
 		}
-		if q, _ := url.ParseQuery(rt.sent[0].query); q.Get("name") != "cairn-rec-tmw8jn1a0-db" || len(rt.sent) != 1 {
+		if q, _ := url.ParseQuery(rt.sent[0].query); q.Get("name") != "cairn-rec-tmw8khn73-db" || len(rt.sent) != 1 {
 			t.Errorf("requests = %+v, want one GET filtered by name", rt.sent)
 		}
 	})
@@ -216,23 +216,23 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 	})
 	t.Run("create d1", func(t *testing.T) {
 		cf, rt := writeClient(t, "d1_database.create.200.json")
-		got, err := cf.CreateD1(ctx, "cairn-rec-tmw8jn1a0-db")
-		if err != nil || got.UUID != "f66e3a64-b9b7-43fa-97d6-1e67857edbcd" || got.Name != "cairn-rec-tmw8jn1a0-db" {
+		got, err := cf.CreateD1(ctx, "cairn-rec-tmw8khn73-db")
+		if err != nil || got.UUID != "5143f436-163b-4313-967c-7b478aa2bacd" || got.Name != "cairn-rec-tmw8khn73-db" {
 			t.Fatalf("CreateD1 = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "POST", "/accounts/acct1/d1/database")
-		if rt.sent[0].body != `{"name":"cairn-rec-tmw8jn1a0-db"}` {
+		if rt.sent[0].body != `{"name":"cairn-rec-tmw8khn73-db"}` {
 			t.Errorf("body = %s", rt.sent[0].body)
 		}
 	})
 	t.Run("create r2", func(t *testing.T) {
 		cf, rt := writeClient(t, "r2_buckets.create.200.json")
-		got, err := cf.CreateR2Bucket(ctx, "cairn-rec-tmw8jn1a0-bucket")
-		if err != nil || got.Name != "cairn-rec-tmw8jn1a0-bucket" || got.CreationDate != "2026-11-09T00:49:44.522Z" {
+		got, err := cf.CreateR2Bucket(ctx, "cairn-rec-tmw8khn73-bucket")
+		if err != nil || got.Name != "cairn-rec-tmw8khn73-bucket" || got.CreationDate != "2026-11-09T01:13:29.016Z" {
 			t.Fatalf("CreateR2Bucket = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "POST", "/accounts/acct1/r2/buckets")
-		if rt.sent[0].body != `{"name":"cairn-rec-tmw8jn1a0-bucket"}` {
+		if rt.sent[0].body != `{"name":"cairn-rec-tmw8khn73-bucket"}` {
 			t.Errorf("body = %s", rt.sent[0].body)
 		}
 	})

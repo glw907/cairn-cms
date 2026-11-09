@@ -3,17 +3,17 @@
     "captured": "2026-11-09",
     "source": "POST /user/tokens",
     "status": 200,
-    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
     "result": {
       "id": "00000000000000000000000000000446",
-      "name": "cairn-rec-tmw8jn1a0-key",
+      "name": "cairn-rec-tmw8khn73-key",
       "status": "active",
-      "issued_on": "2026-11-09T00:49:45Z",
-      "modified_on": "2026-11-09T00:49:45Z",
+      "issued_on": "2026-11-09T01:13:29Z",
+      "modified_on": "2026-11-09T01:13:29Z",
       "last_used_on": null,
-      "expires_on": "2026-11-09T01:04:44Z",
+      "expires_on": "2026-11-09T01:28:29Z",
       "value": "<REDACTED>",
       "policies": [
         {
@@ -39,7 +39,7 @@
         }
       ],
       "token_prefix": "cfut",
-      "token_suffix": "7c5f"
+      "token_suffix": "6a17"
     },
     "success": true,
     "errors": [],

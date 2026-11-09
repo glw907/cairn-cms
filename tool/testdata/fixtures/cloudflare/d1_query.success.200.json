@@ -1,9 +1,9 @@
 {
   "provenance": {
     "captured": "2026-11-09",
-    "source": "POST /accounts/{id}/d1/database/f66e3a64-b9b7-43fa-97d6-1e67857edbcd/query",
+    "source": "POST /accounts/{id}/d1/database/5143f436-163b-4313-967c-7b478aa2bacd/query",
     "status": 200,
-    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
     "result": [
@@ -20,9 +20,9 @@
           "served_by_colo": "SJC",
           "served_by_primary": true,
           "timings": {
-            "sql_duration_ms": 0.9129
+            "sql_duration_ms": 0.9595
           },
-          "duration": 0.9129,
+          "duration": 0.9595,
           "changes": 0,
           "last_row_id": 0,
           "changed_db": false,

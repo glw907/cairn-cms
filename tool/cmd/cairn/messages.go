@@ -714,7 +714,7 @@ const (
 	flagNewApplyHelp     = "create the site from a plan file"
 	flagNewResumeHelp    = "continue the unfinished setup with this site id"
 	flagNewNewHelp       = "start a new site instead of continuing an unfinished one"
-	flagNewTagHelp       = "the engine's npm dist-tag to build the site from"
+	flagNewTagHelp       = "the engine's npm dist-tag to build the site from, or npm's own tag setting when it is set"
 	flagNewDryRunHelp    = "print the names setup would use and create nothing"
 	flagNewJSONHelp      = "write the dry run as a JSON payload on stdout"
 )

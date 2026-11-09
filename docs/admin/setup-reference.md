@@ -24,7 +24,7 @@ through the two calls.
 | `--posture` | string | what the site does about AI crawlers: decline or invite |
 | `--resume` | string | continue the unfinished setup with this site id |
 | `--site-theme` | string | the theme id, when the template offers several |
-| `--tag` | string | the engine's npm dist-tag to build the site from (default "latest") |
+| `--tag` | string | the engine's npm dist-tag to build the site from, or npm's own tag setting when it is set (default "latest") |
 | `--zone` | string | the Cloudflare zone to serve the site from, when the account has several |
 
 ## Environment

@@ -98,6 +98,85 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 /** @param {import('playwright').Locator} locator */
 const visible = (locator) => locator.first().isVisible().catch(() => false);
 
+/** @param {string} text */
+const collapse = (text) => text.replace(/\s+/g, ' ').trim();
+
+/** @param {string} text */
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Whether a repository picker option's visible name is the one repository. GitHub names an option
+ * `owner/repo` followed by its description, so the name must start with the exact `owner/repo` and
+ * continue with a space or end there: `owner/repo-2` and `other/repo` are other repositories.
+ * @param {string} name the option's visible text
+ * @param {string} owner the repository owner's login
+ * @param {string} repo the repository name
+ * @returns {boolean}
+ */
+export function isRepoOption(name, owner, repo) {
+  const full = `${owner}/${repo}`;
+  const text = collapse(name);
+  return text === full || text.startsWith(`${full} `);
+}
+
+/**
+ * Whether a page's visible text shows the repository as a whole name, as `owner/repo` or the bare
+ * name, never as the prefix of a longer name or under another owner.
+ * @param {string} text the page's visible text
+ * @param {string} owner the repository owner's login
+ * @param {string} repo the repository name
+ * @returns {boolean}
+ */
+export function showsRepo(text, owner, repo) {
+  return new RegExp(`(?:^|\\s)(?:${escapeRegex(owner)}/)?${escapeRegex(repo)}(?![A-Za-z0-9_.-])`).test(collapse(text));
+}
+
+/**
+ * Pick the run repository in the open picker and wait until the page shows it selected. The click
+ * goes to the one visible button whose text is the exact `owner/repo`; the picker is then closed
+ * with Escape, and the wait ends only when the picker is closed, the page's visible text shows the
+ * repository, and the Install button is enabled. With the picker closed, the visible text no
+ * longer holds the search results, so the repository it shows is the selection.
+ * @param {import('playwright').Page} page the install page, its picker open and searched
+ * @param {object} options
+ * @param {string} options.owner the repository owner's login
+ * @param {string} options.repo the repository name
+ * @param {import('playwright').Locator} options.search the picker's search field, visible while it is open
+ * @param {(reason: string) => Promise<never>} options.fail writes the evidence and throws
+ * @param {number} [options.waitMs] how long each wait runs
+ * @param {number} [options.pollMs] the pause between looks
+ * @returns {Promise<void>}
+ */
+export async function pickRepository(page, { owner, repo, search, fail, waitMs = 15_000, pollMs = 250 }) {
+  /** @type {import('playwright').ElementHandle | null} */
+  let option = null;
+  for (const deadline = Date.now() + waitMs; !option;) {
+    for (const handle of await page.locator('button, [role="button"]').elementHandles()) {
+      if (!(await handle.isVisible().catch(() => false))) continue;
+      if (isRepoOption(await handle.innerText().catch(() => ''), owner, repo)) {
+        option = handle;
+        break;
+      }
+    }
+    if (option) break;
+    if (Date.now() > deadline) return fail('the repository picker never offered the run repository');
+    await sleep(pollMs);
+  }
+  await option.click();
+  await page.keyboard.press('Escape');
+  const install = page.getByRole('button', { name: /^install$/i });
+  for (const deadline = Date.now() + waitMs; ;) {
+    const closed = !(await visible(search));
+    if (closed) {
+      const shown = showsRepo(await page.locator('body').innerText().catch(() => ''), owner, repo);
+      if (shown && (await install.first().isEnabled().catch(() => false))) return;
+    }
+    if (Date.now() > deadline) return fail(closed ? 'the run repository never showed as selected' : 'the repository picker never closed');
+    if (!closed) await page.keyboard.press('Escape');
+    await sleep(pollMs);
+  }
+}
+
 /**
  * @param {{ env: Record<string, string | undefined>, stateDir: string, log: (line: string) => void }} options
  * @returns {Promise<import('./run.mjs').Adapter>}
@@ -171,8 +250,8 @@ export async function createBrowserAdapter({ env, stateDir, log }) {
 
   /**
    * Install the App on the one run repository: pick the account if GitHub asks, choose "Only select
-   * repositories", pick the run repository, and click Install. The gate's install step takes the
-   * default, every repository, so this drives the page itself with the same role-named controls.
+   * repositories", pick the run repository, wait until it shows as selected, and click Install. The
+   * gate's install step takes the default, every repository, so this drives the page itself.
    * @param {import('playwright').Page} page the install page
    * @param {string} repo the run repository's name
    */
@@ -195,12 +274,7 @@ export async function createBrowserAdapter({ env, stateDir, log }) {
     await page.getByRole('button', { name: /select repositories/i }).first().click({ timeout: 10_000 }).catch(fail('the install page shows no repository picker'));
     const search = page.getByRole('textbox', { name: /repositor/i }).or(page.getByPlaceholder(/repositor/i));
     await search.first().fill(repo, { timeout: 10_000 }).catch(fail('the repository picker has no search field'));
-    const name = new RegExp(`(?:^|[/\\s])${repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9_.-])`);
-    const option = page.getByRole('option', { name }).or(page.getByRole('menuitemcheckbox', { name })).or(page.getByRole('checkbox', { name }));
-    await option.first().click({ timeout: 15_000 }).catch(fail('the repository picker never offered the run repository'));
-    const apply = page.getByRole('button', { name: /^(apply|done|save)$/i });
-    if (await visible(apply)) await apply.first().click();
-    else await page.keyboard.press('Escape');
+    await pickRepository(page, { owner: TEST_LOGIN, repo, search, fail: (reason) => gate.failPage(page, evidence, reason) });
     if (!(await gate.clickControl(page, /^install/i, creds))) await gate.failPage(page, evidence, 'the install page lacks its Install control');
   }
 

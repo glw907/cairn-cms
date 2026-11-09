@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { buildManifest, createCallbackWaiter, requireTestLogin, withoutSignalListeners } from './browser-adapter.mjs';
+import { buildManifest, createCallbackWaiter, isRepoOption, pickRepository, requireTestLogin, showsRepo, withoutSignalListeners } from './browser-adapter.mjs';
 import { createCloudflare } from './clients.mjs';
 import { createGuards } from './guards.mjs';
 import { ledgerPath } from './ledger.mjs';
@@ -719,4 +719,89 @@ test('the loopback waiter resolves only on the flow state with well-formed param
   assert.equal((await arrived).get('installation_id'), '77');
   assert.equal(waiter.offer(new URLSearchParams({ state: 's1', installation_id: '78' })), false, 'a settled flow takes no second callback');
   await assert.rejects(waiter.expect('s2', isId, 10), /never reached the loopback/);
+});
+
+const OWNER = 'glw907-test';
+const REPO = 'cairn-rec-trun00001-repo';
+
+test('a picker option matches only the exact owner/repo, followed by a space or the end', () => {
+  assert.equal(isRepoOption(`${OWNER}/${REPO}`, OWNER, REPO), true);
+  assert.equal(isRepoOption(`${OWNER}/${REPO}\n  no description`, OWNER, REPO), true);
+  assert.equal(isRepoOption(`${OWNER}/${REPO}-2 no description`, OWNER, REPO), false, 'a sibling sharing the prefix');
+  assert.equal(isRepoOption(`someone-else/${REPO} no description`, OWNER, REPO), false, 'another owner');
+  assert.equal(isRepoOption(`x ${OWNER}/${REPO}`, OWNER, REPO), false, 'the name must start the option');
+  assert.equal(isRepoOption(REPO, OWNER, REPO), false, 'the bare name is not the option');
+});
+
+test('the selected repository shows as a whole name, never a sibling or another owner', () => {
+  assert.equal(showsRepo(`Selected 1 repository. ${OWNER}/${REPO} Install`, OWNER, REPO), true);
+  assert.equal(showsRepo(`Selected\n${REPO}\nInstall`, OWNER, REPO), true);
+  assert.equal(showsRepo(`${OWNER}/${REPO}-2 Install`, OWNER, REPO), false);
+  assert.equal(showsRepo(`someone-else/${REPO} Install`, OWNER, REPO), false);
+  assert.equal(showsRepo('Install on your personal account glw907-test', OWNER, REPO), false);
+});
+
+/**
+ * GitHub's install page with its repository picker open on a search: each option is a button
+ * named `owner/repo` then its description, a click selects it, and Escape closes the picker.
+ * @param {string[]} options the options' visible text
+ * @param {{ selectionShows?: boolean }} [spec] false for a page that never shows the selection
+ */
+function fakeInstallPage(options, { selectionShows = true } = {}) {
+  /** @type {string[]} */
+  const events = [];
+  let open = true;
+  /** @type {string | null} */
+  let selected = null;
+  const page = {
+    /** @param {string} selector */
+    locator(selector) {
+      if (selector === 'body') {
+        const lines = [`Install on your personal account ${OWNER}`, ...(open ? options : []), ...(!open && selectionShows && selected ? [selected] : []), 'Install Cancel'];
+        return { innerText: async () => lines.join('\n') };
+      }
+      const handles = (open ? options : []).map((text) => ({
+        isVisible: async () => true,
+        innerText: async () => text,
+        click: async () => {
+          events.push(`click ${text}`);
+          selected = text.split(/\s/)[0];
+        },
+      }));
+      return { elementHandles: async () => handles };
+    },
+    keyboard: {
+      /** @param {string} key */
+      press: async (key) => {
+        events.push(`press ${key}`);
+        if (key === 'Escape') open = false;
+      },
+    },
+    getByRole: () => ({ first: () => ({ isEnabled: async () => selected !== null }) }),
+  };
+  const search = { first: () => ({ isVisible: async () => open }) };
+  return { page: /** @type {any} */ (page), search: /** @type {any} */ (search), events };
+}
+
+/** @param {string} reason */
+const failWith = async (reason) => {
+  throw new Error(reason);
+};
+
+test('the picker clicks the exact repository once, closes, and returns only once it shows selected', async () => {
+  const exact = `${OWNER}/${REPO}\nno description`;
+  const { page, search, events } = fakeInstallPage([`${OWNER}/${REPO}-2\nno description`, `someone-else/${REPO}\nno description`, exact]);
+  await pickRepository(page, { owner: OWNER, repo: REPO, search, fail: failWith, waitMs: 200, pollMs: 5 });
+  assert.deepEqual(events, [`click ${exact}`, 'press Escape']);
+});
+
+test('the picker fails closed when only a sibling or another owner is offered', async () => {
+  const { page, search, events } = fakeInstallPage([`${OWNER}/${REPO}-2 no description`, `someone-else/${REPO} no description`]);
+  await assert.rejects(pickRepository(page, { owner: OWNER, repo: REPO, search, fail: failWith, waitMs: 30, pollMs: 5 }), /never offered the run repository/);
+  assert.deepEqual(events, [], 'nothing is clicked');
+});
+
+test('the picker fails closed when the page never shows the repository selected', async () => {
+  const { page, search } = fakeInstallPage([`${OWNER}/${REPO} no description`], { selectionShows: false });
+  await assert.rejects(pickRepository(page, { owner: OWNER, repo: REPO, search, fail: failWith, waitMs: 30, pollMs: 5 }), /never showed as selected/);
 });

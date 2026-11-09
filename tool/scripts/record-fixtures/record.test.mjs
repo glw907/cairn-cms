@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildManifest, createCallbackWaiter, isRepoOption, pickRepository, requireTestLogin, showsRepo, withoutSignalListeners } from './browser-adapter.mjs';
-import { createCloudflare } from './clients.mjs';
+import { createCloudflare, githubSource } from './clients.mjs';
 import { createGuards } from './guards.mjs';
 import { ledgerPath } from './ledger.mjs';
 import { consent, SCOPES } from './oauth.mjs';
@@ -113,6 +113,13 @@ test('a run records each recordable route, scrubbed, and deletes everything it m
   } finally {
     await fake.close();
   }
+});
+
+test('a GitHub source masks the whole manifest code and every numeric segment', () => {
+  assert.equal(githubSource('/app-manifests/3f9a1c0de2/conversions'), '/app-manifests/{code}/conversions');
+  assert.equal(githubSource('/app-manifests/abc123/conversions'), '/app-manifests/{code}/conversions');
+  assert.equal(githubSource('/app/installations/77/access_tokens'), '/app/installations/{id}/access_tokens');
+  assert.equal(githubSource('/repos/o/r/actions/secrets/public-key'), '/repos/o/r/actions/secrets/public-key');
 });
 
 test('identity and inventory bodies keep only their decoded fields, with no real name staged', async () => {

@@ -81,7 +81,18 @@ export function createGithub({ apiBase, webBase, testToken, recorder, fetcher = 
         before: method === 'GET' ? undefined : () => assertTestIdentity(fetcher, apiBase, testToken),
       };
       const origin = options.web ? webBase : apiBase;
-      return send(deps, `${origin}${path}`, method, { ...(options.auth ? { authorization: options.auth } : {}), 'x-github-api-version': '2022-11-28' }, options, `${method} ${path.replace(/\/\d+/g, '/{id}')}`);
+      return send(deps, `${origin}${path}`, method, { ...(options.auth ? { authorization: options.auth } : {}), 'x-github-api-version': '2022-11-28' }, options, `${method} ${githubSource(path)}`);
     },
   };
+}
+
+/**
+ * The path a GitHub recording's provenance names: the one-time manifest code becomes `{code}`
+ * whole, since its hex can open on digits the id mask would only partly cover, and every other
+ * numeric segment becomes `{id}`.
+ * @param {string} path the request path
+ * @returns {string} the path with its identifiers masked
+ */
+export function githubSource(path) {
+  return path.replace(/^\/app-manifests\/[^/]+\//, '/app-manifests/{code}/').replace(/\/\d+/g, '/{id}');
 }

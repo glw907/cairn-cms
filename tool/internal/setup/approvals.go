@@ -335,7 +335,10 @@ func (r *run) createRepo(ctx context.Context) error {
 		}
 		r.repo = repo
 		r.rec.GitHub.Repo = record.GitHubRepo{ID: repo.ID, Owner: repo.Owner.Login, Repo: repo.Name, DefaultBranch: repo.DefaultBranch}
-		r.rec.Setup.OwnerID = repo.Owner.ID
+		// A zero id is GitHub naming no id, which must not erase the one the App's conversion gave.
+		if repo.Owner.ID != 0 {
+			r.rec.Setup.OwnerID = repo.Owner.ID
+		}
 		r.rec.Step = string(spine.StepRepoCreated)
 		return r.save()
 	}
@@ -554,6 +557,7 @@ func (r *run) dropApp(reason Reason, happened string, err error) error {
 	}
 	r.app = providers.AppRecord{}
 	r.rec.Setup.IDs.AppID, r.rec.Setup.AppSlug, r.rec.Setup.ClientID, r.rec.Setup.AppOwner, r.rec.Setup.Intents.App = 0, "", "", "", ""
+	r.rec.Setup.OwnerID = 0
 	r.rec.Step = string(spine.StepSetupStarted)
 	if err := r.save(); err != nil {
 		return err

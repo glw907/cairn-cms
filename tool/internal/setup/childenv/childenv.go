@@ -4,8 +4,8 @@ package childenv
 
 import (
 	"maps"
-	"net/url"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -31,17 +31,24 @@ func credential(upper string) bool {
 	return strings.HasPrefix(upper, "CAIRN_") && strings.HasSuffix(upper, "_TOKEN")
 }
 
-// ScrubSecrets drops every variable Scrub drops, every one whose name ends in _TOKEN, _SECRET,
-// _PASSWORD, _PASSWD, _PASS, _KEY, _APIKEY, _PAT, _AUTH, or _CREDENTIALS, which covers
-// AWS_SECRET_ACCESS_KEY, and every one whose value is a URL that carries user information, such
-// as a DATABASE_URL of the form scheme://user:password@host. It is the environment a browser
-// launcher starts from, which needs none of them.
+// ScrubSecrets returns the environment a browser launcher starts from, which needs no
+// credential. It drops every variable Scrub drops and every one whose value carries user
+// information after a scheme, such as a DATABASE_URL of the form scheme://user:password@host.
+// It also drops every name that ends in _TOKEN, _SECRET, _PASSWORD, _PASSWD, _PASS, _PWD,
+// _PASSPHRASE, _KEY, _APIKEY, _PAT, _AUTH, _CREDENTIALS, _DSN, _COOKIE, or _SESSION, which covers
+// AWS_SECRET_ACCESS_KEY. A suffix needs a name part before it: PWD, the working directory, is
+// kept. DESKTOP_SESSION and KDE_FULL_SESSION are kept too; xdg-open reads them to find the
+// desktop.
 func ScrubSecrets(env map[string]string) []string {
 	return keep(env, func(upper, value string) bool {
-		if credential(upper) || credentialURL(value) {
+		if credential(upper) || credentialURL.MatchString(value) {
 			return false
 		}
-		for _, suffix := range []string{"_TOKEN", "_SECRET", "_PASSWORD", "_PASSWD", "_PASS", "_KEY", "_APIKEY", "_PAT", "_AUTH", "_CREDENTIALS"} {
+		if upper == "DESKTOP_SESSION" || upper == "KDE_FULL_SESSION" {
+			return true
+		}
+		for _, suffix := range []string{"_TOKEN", "_SECRET", "_PASSWORD", "_PASSWD", "_PASS", "_PWD", "_PASSPHRASE", "_KEY", "_APIKEY",
+			"_PAT", "_AUTH", "_CREDENTIALS", "_DSN", "_COOKIE", "_SESSION"} {
 			if strings.HasSuffix(upper, suffix) {
 				return false
 			}
@@ -50,15 +57,12 @@ func ScrubSecrets(env map[string]string) []string {
 	})
 }
 
-// credentialURL reports whether value is a URL with user information. A user name alone counts,
-// since a token often rides in that place.
-func credentialURL(value string) bool {
-	if !strings.Contains(value, "://") {
-		return false
-	}
-	u, err := url.Parse(value)
-	return err == nil && u.User != nil
-}
+// credentialURL matches a value with user information after a scheme: an @ between :// and the
+// next slash or space. It matches anywhere in the value, with no URL parse, so a password that
+// does not parse, such as one holding # or a bad % escape, still counts, and a user name alone
+// counts too, since a token often rides in that place. A DSN with no scheme, such as MySQL's
+// user:password@tcp(host)/db, does not match; the _DSN suffix drops it by name.
+var credentialURL = regexp.MustCompile(`://[^/\s]*@`)
 
 // Pair is one git config key and its value.
 type Pair struct {
@@ -72,8 +76,16 @@ type Pair struct {
 // helper, or certificate, or have it trace what it sends. Then it sets its own: the owner's user
 // and system git config kept out, prompts off, GIT_TRACE_REDACT on, core.fsmonitor off, and
 // core.hooksPath set to hooks, which must be an empty folder only setup can write, so no hook a
-// repository carries runs. pairs follow those two through git-config(1)'s GIT_CONFIG_COUNT, and
-// no pair env carries survives.
+// repository carries runs.
+//
+// Its pairs also outrank the plain keys a repository's .git/config sets for a token-bearing push:
+// http.sslVerify on, core.sshCommand empty, and http.proxy set to the proxy git reads from env
+// for an https remote, or empty when env names none. An empty http.proxy turns off env's proxy
+// too, so the value carries env's. A URL-scoped key such as http.<url>.sslVerify in the
+// repository's config still outranks these plain pairs.
+//
+// pairs follow setup's own through git-config(1)'s GIT_CONFIG_COUNT, so a caller's pair outranks
+// setup's, and no pair env carries survives.
 //
 // Git panics on an empty hooks: git would then run the hooks the repository carries, and every
 // caller holds a folder it made.
@@ -86,12 +98,27 @@ func Git(env map[string]string, hooks string, pairs ...Pair) []string {
 		return gitVariable(strings.ToUpper(name))
 	})
 	out = append(out, "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0", "GIT_TRACE_REDACT=1")
-	pairs = append([]Pair{{"core.hooksPath", hooks}, {"core.fsmonitor", "false"}}, pairs...)
+	own := []Pair{
+		{"core.hooksPath", hooks}, {"core.fsmonitor", "false"},
+		{"http.sslVerify", "true"}, {"http.proxy", httpsProxy(env)}, {"core.sshCommand", ""},
+	}
+	pairs = append(own, pairs...)
 	for i, p := range pairs {
 		n := strconv.Itoa(i)
 		out = append(out, "GIT_CONFIG_KEY_"+n+"="+p.Key, "GIT_CONFIG_VALUE_"+n+"="+p.Value)
 	}
 	return append(out, "GIT_CONFIG_COUNT="+strconv.Itoa(len(pairs)))
+}
+
+// httpsProxy returns the proxy git reads from env for an https remote: https_proxy, then
+// HTTPS_PROXY, and only when neither is set, all_proxy, then ALL_PROXY.
+func httpsProxy(env map[string]string) string {
+	for _, name := range []string{"https_proxy", "HTTPS_PROXY", "all_proxy", "ALL_PROXY"} {
+		if v, ok := env[name]; ok {
+			return v
+		}
+	}
+	return ""
 }
 
 // gitVariable reports whether upper, a variable name in upper case, is one Git drops.

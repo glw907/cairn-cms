@@ -16,6 +16,17 @@ every route. No `tool/v2.0.0` tag exists yet.
 
 ### Added
 
+- **The setup spine and its write routes.** `internal/setup` plans and runs every step of the
+  coming `cairn new` command against injected clients: the opening checks, the Cloudflare and
+  GitHub approvals, the eight watch steps, resume after any approval or step, and the sign-in.
+  The providers gain the Cloudflare OAuth client and write calls and the GitHub App, repository,
+  and secret calls, tested on recorded responses. Setup keeps its credentials in the keyring under
+  `setup/<run id>/`, deletes an over-granted GitHub installation on every exit path, and never
+  prints a token, key, or sign-in link. No command or view calls it yet, so a build of this module
+  behaves as before. ADR-0003 records the design.
+
+  Consumers must: nothing.
+
 - **The `config.migrations` check** reports an `AUTH_DB` migrations directory that lacks a migration
   the installed package ships, under the new condition `config.migrations-missing` (a warning). It
   lists `node_modules/@glw907/cairn-cms/migrations`, treats every `.sql` file there as required

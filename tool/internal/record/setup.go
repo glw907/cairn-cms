@@ -58,6 +58,9 @@ type Setup struct {
 	// AppSlug and ClientID identify the GitHub App; its key and client secret are keyring entries.
 	AppSlug  string
 	ClientID string
+	// AppOwner is the login of the account that owns the App and the repository, from the
+	// manifest conversion. A resume before the repository is recorded has no other way to learn it.
+	AppOwner string
 	// OwnerID is the GitHub user id of the repository's owner, which the repository-only install
 	// page preselects. A resume at that approval has no other way to learn it.
 	OwnerID int64
@@ -68,6 +71,9 @@ type Setup struct {
 	Folder string
 	// Commit is the SHA of the local commit. Resume owns the folder only when HEAD equals it.
 	Commit string
+	// DepsInstalled reports that `npm install` finished cleanly in Folder, so a resume does not
+	// run it again.
+	DepsInstalled bool
 	// KeyringEntries names every keyring entry the run wrote, recorded before each is written.
 	KeyringEntries []string
 	// KeysKept reports that the entries survive after a failure.
@@ -103,11 +109,13 @@ var setupFields = []field[Setup]{
 	scalarField("ids", func(s *Setup) *SetupIDs { return &s.IDs }),
 	scalarField("appSlug", func(s *Setup) *string { return &s.AppSlug }),
 	scalarField("clientId", func(s *Setup) *string { return &s.ClientID }),
+	scalarField("appOwner", func(s *Setup) *string { return &s.AppOwner }),
 	scalarField("ownerId", func(s *Setup) *int64 { return &s.OwnerID }),
 	scalarField("engineVersion", func(s *Setup) *string { return &s.EngineVersion }),
 	scalarField("engineIntegrity", func(s *Setup) *string { return &s.EngineIntegrity }),
 	scalarField("folder", func(s *Setup) *string { return &s.Folder }),
 	scalarField("commit", func(s *Setup) *string { return &s.Commit }),
+	scalarField("depsInstalled", func(s *Setup) *bool { return &s.DepsInstalled }),
 	scalarField("keyringEntries", func(s *Setup) *[]string { return &s.KeyringEntries }),
 	scalarField("keysKept", func(s *Setup) *bool { return &s.KeysKept }),
 	scalarField("ownerEmail", func(s *Setup) *string { return &s.OwnerEmail }),

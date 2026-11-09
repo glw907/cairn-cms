@@ -13,7 +13,7 @@
 // naming the file, because a silently dropped end marker would truncate the rest of the file.
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { cp, readFile, writeFile, rm, mkdir } from 'node:fs/promises';
+import { cp, readFile, writeFile, rm, mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -21,6 +21,14 @@ import { walk } from '../walk-files.mjs';
 
 const EXCLUDE_START = 'cairn-template:exclude-start';
 const EXCLUDE_END = 'cairn-template:exclude-end';
+
+/**
+ * The starter overlay's directory: the standard content every emitted template ships in place of
+ * the showcase's own (design "Starter content"). It mirrors the emitted tree's layout, so
+ * `src/content/**` and `static/**` under it land at the same paths, and its
+ * `src/content/.cairn/` holds the manifest and the site facts the overlay's content needs.
+ */
+export const STARTER_OVERLAY_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'starter-overlay');
 
 /** The committed content manifest's repo-relative path, the same constant every reader shares. */
 const CONTENT_MANIFEST_PATH = path.join('src', 'content', '.cairn', 'index.json');
@@ -201,13 +209,30 @@ async function writeTypegenScript(tree) {
 }
 
 /**
+ * Copy the starter overlay into the emitted tree. The overlay is the whole of `src/content/`
+ * (the showcase's `.cairn-template.json` excludes the directory) plus any assets it ships under
+ * `static/`, so the overlay's own manifest stands in for a regenerated one.
+ * @param {string} overlay the overlay directory
+ * @param {string} to the emitted tree
+ * @returns {Promise<void>}
+ */
+async function applyStarterOverlay(overlay, to) {
+  for (const entry of await readdir(overlay)) {
+    await cp(path.join(overlay, entry), path.join(to, entry), { recursive: true });
+  }
+}
+
+/**
  * Emit the template tree.
- * @param {{ from: string, to: string, engineSpec: string, devSpec: string, name?: string }} opts
+ * @param {{ from: string, to: string, engineSpec: string, devSpec: string, name?: string, starterOverlay?: string }} opts
  *  `from` is the showcase dir, `to` the target dir (must not exist or be empty), and
- *  `engineSpec`/`devSpec`/`name` pass through to transformPackageJson
+ *  `engineSpec`/`devSpec`/`name` pass through to transformPackageJson. `starterOverlay` names the
+ *  directory whose files replace `src/content` and add static assets; the showcase's manifest
+ *  excludes its own content, so the overlay is what a template ships. Without it the copy keeps
+ *  whatever content its manifest leaves in and filters the content manifest to match.
  * @returns {Promise<string>} the emitted tree's root (`opts.to`)
  */
-export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cairn-site' }) {
+export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cairn-site', starterOverlay }) {
   const manifest = JSON.parse(await readFile(path.join(from, '.cairn-template.json'), 'utf8'));
   const exclude = manifest.exclude ?? [];
   // node_modules, the build outputs, and the wrangler/playwright caches are all gitignored generated
@@ -237,7 +262,8 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
   // install. force ignores its absence, so no existence check is needed.
   await rm(path.join(to, 'package-lock.json'), { force: true });
   await stripMarkedBlocksInTree(to);
-  await regenerateManifest(from, to, exclude);
+  if (starterOverlay) await applyStarterOverlay(starterOverlay, to);
+  else await regenerateManifest(from, to, exclude);
   await regenerateWorkerTypes(to);
   return to;
 }
@@ -250,6 +276,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   }
   const from = path.join(path.dirname(new URL(import.meta.url).pathname), '../..', 'examples', 'showcase');
-  await emitTemplate({ from, to, engineSpec, devSpec, name });
+  await emitTemplate({ from, to, engineSpec, devSpec, name, starterOverlay: STARTER_OVERLAY_DIR });
   console.log(`emitted template to ${to}`);
 }

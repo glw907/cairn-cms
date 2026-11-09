@@ -66,13 +66,14 @@ func gitEnv(env map[string]string) []string {
 // pushEnv adds the installation token to a git environment as an http.extraheader for
 // github.com, through git-config(1)'s GIT_CONFIG_COUNT pairs, so it never reaches argv or
 // .git/config. The pair goes after any inherited pairs, which keeps those pairs working. The
-// caller registers header with the output scrub before git runs.
-func pushEnv(env map[string]string, token providers.Credential) (out []string, header string) {
+// caller registers header and its base64 credential, encoded, with the output scrub before git
+// runs.
+func pushEnv(env map[string]string, token providers.Credential) (out []string, header, encoded string) {
 	n, err := strconv.Atoi(env["GIT_CONFIG_COUNT"])
 	if err != nil || n < 0 {
 		n = 0
 	}
-	header = gitAuthHeader(token)
+	header, encoded = gitAuthHeader(token)
 	out = slices.DeleteFunc(gitEnv(env), func(kv string) bool { return strings.HasPrefix(kv, "GIT_CONFIG_COUNT=") })
 	key := strconv.Itoa(n)
 	out = append(out,
@@ -80,5 +81,5 @@ func pushEnv(env map[string]string, token providers.Credential) (out []string, h
 		"GIT_CONFIG_KEY_"+key+"=http.https://github.com/.extraheader",
 		"GIT_CONFIG_VALUE_"+key+"="+header,
 	)
-	return out, header
+	return out, header, encoded
 }

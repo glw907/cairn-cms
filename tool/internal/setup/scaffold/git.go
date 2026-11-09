@@ -70,18 +70,31 @@ func isolated() []string {
 	return []string{"GIT_CONFIG_GLOBAL=" + os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0"}
 }
 
-// commitAll stages everything in dir, commits it with c's fixed identity, and returns the SHA.
-func commitAll(ctx context.Context, dir string, c Commit) (string, error) {
-	isolate := isolated()
-	identity := append(isolated(),
+// identity is isolated plus c's fixed author and committer.
+func identity(c Commit) []string {
+	return append(isolated(),
 		"GIT_AUTHOR_NAME="+c.AuthorName, "GIT_AUTHOR_EMAIL="+c.AuthorEmail,
 		"GIT_COMMITTER_NAME="+c.AuthorName, "GIT_COMMITTER_EMAIL="+c.AuthorEmail,
 	)
+}
+
+// commitAll stages everything in dir, commits it with c's fixed identity, and returns the SHA.
+func commitAll(ctx context.Context, dir string, c Commit) (string, error) {
+	isolate := isolated()
 	if _, err := git(ctx, dir, isolate, "add", "--all"); err != nil {
 		return "", err
 	}
-	if _, err := git(ctx, dir, identity, "commit", "--quiet", "--no-verify", "--no-gpg-sign", "-m", c.Message); err != nil {
+	if _, err := git(ctx, dir, identity(c), "commit", "--quiet", "--no-verify", "--no-gpg-sign", "-m", c.Message); err != nil {
 		return "", err
 	}
 	return git(ctx, dir, isolate, "rev-parse", "HEAD")
+}
+
+// commitFile commits the tree's copy of rel alone with c's fixed identity and returns the SHA.
+// Whatever else the index or the tree holds stays out of the commit.
+func commitFile(ctx context.Context, dir, rel string, c Commit) (string, error) {
+	if _, err := git(ctx, dir, identity(c), "commit", "--quiet", "--no-verify", "--no-gpg-sign", "-m", c.Message, "--", rel); err != nil {
+		return "", err
+	}
+	return git(ctx, dir, isolated(), "rev-parse", "HEAD")
 }

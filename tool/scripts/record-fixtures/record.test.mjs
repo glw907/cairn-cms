@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildManifest, createCallbackWaiter, isRepoOption, pickRepository, requireTestLogin, showsRepo, withoutSignalListeners } from './browser-adapter.mjs';
-import { createCloudflare } from './clients.mjs';
+import { createCloudflare, githubSource } from './clients.mjs';
 import { createGuards } from './guards.mjs';
 import { ledgerPath } from './ledger.mjs';
 import { consent, SCOPES } from './oauth.mjs';
@@ -69,7 +69,8 @@ test('a run records each recordable route, scrubbed, and deletes everything it m
     const dir = await runRecording(ctx);
     const names = stagedFiles(dir).map((f) => f.slice(dir.length + 1)).sort();
     for (const expected of [
-      'cloudflare/accounts.list.200.json', 'cloudflare/user.get.200.json', 'cloudflare/zones.list.200.json',
+      'cloudflare/accounts.list.200.json', 'cloudflare/user.get.200.json', 'cloudflare/zones.active.200.json',
+      'cloudflare/zone_dns_records.named.200.json',
       'cloudflare/d1_database.create.200.json', 'cloudflare/r2_buckets.create.200.json', 'cloudflare/user_tokens.create.200.json',
       'cloudflare/user_tokens.delete.200.json', 'cloudflare/r2_bucket.name-check.404.json', 'cloudflare/d1_query.success.200.json',
       'github/repo_create.ok.201.json', 'github/app_manifest_conversion.created.201.json', 'github/login_oauth_access_token.ok.200.json',
@@ -82,6 +83,8 @@ test('a run records each recordable route, scrubbed, and deletes everything it m
     assert.equal(listing.provenance.status, 200);
     assert.equal(typeof listing.provenance.captured, 'string');
     assert.ok(listing.provenance.source.includes('GET /accounts'));
+    assert.equal(staged(dir, 'github/app_manifest_conversion.created.201.json').provenance.source, 'POST /app-manifests/{code}/conversions',
+      'the one-time manifest code is not staged in the source');
 
     const all = stagedFiles(dir).map((f) => readFileSync(f, 'utf8')).join('\n');
     for (const secret of [ACCOUNT, ZONE, EMAIL, ESTATE_WORKER, TOKEN_VALUE, OAUTH_TOKEN, TEST_TOKEN, CLIENT_SECRET, GH_USER_TOKEN, GH_REFRESH_TOKEN, GH_INSTALL_TOKEN, PEM, 'whsec_0123456789']) {
@@ -112,13 +115,20 @@ test('a run records each recordable route, scrubbed, and deletes everything it m
   }
 });
 
+test('a GitHub source masks the whole manifest code and every numeric segment', () => {
+  assert.equal(githubSource('/app-manifests/3f9a1c0de2/conversions'), '/app-manifests/{code}/conversions');
+  assert.equal(githubSource('/app-manifests/abc123/conversions'), '/app-manifests/{code}/conversions');
+  assert.equal(githubSource('/app/installations/77/access_tokens'), '/app/installations/{id}/access_tokens');
+  assert.equal(githubSource('/repos/o/r/actions/secrets/public-key'), '/repos/o/r/actions/secrets/public-key');
+});
+
 test('identity and inventory bodies keep only their decoded fields, with no real name staged', async () => {
   const { fake, ctx } = await setup('trun00008');
   fake.state.dbs.push({ uuid: '00000000-0000-4000-8000-0000000000ee', name: NEAR_NAME });
   try {
     const dir = await runRecording(ctx);
     assert.deepEqual(findLeaks(dir, [...Object.values(PERSONAL), ESTATE_WORKER, SHORT_WORKER]), []);
-    const zones = staged(dir, 'cloudflare/zones.list.200.json').body.result;
+    const zones = staged(dir, 'cloudflare/zones.active.200.json').body.result;
     assert.deepEqual(zones.map((/** @type {{ name: string }} */ z) => z.name), ['carin-test.org'], 'the zones list is reduced to the test zone');
     assert.deepEqual(Object.keys(zones[0]).sort(), ['account', 'id', 'name', 'name_servers', 'status']);
     const user = staged(dir, 'cloudflare/user.get.200.json').body.result;
@@ -133,7 +143,7 @@ test('identity and inventory bodies keep only their decoded fields, with no real
     const scripts = staged(dir, 'cloudflare/workers_scripts.list.200.json').body.result;
     assert.deepEqual(scripts.map((/** @type {{ id: string }} */ s) => s.id), ['example-worker-1', 'example-worker-2']);
     assert.ok(scripts.every((/** @type {object} */ s) => !('routes' in s)), 'route patterns across every zone are dropped');
-    const record = staged(dir, 'cloudflare/zone_dns_records.list.200.json').body.result[0];
+    const record = staged(dir, 'cloudflare/zone_dns_records.named.200.json').body.result[0];
     assert.deepEqual(Object.keys(record).sort(), ['comment', 'content', 'id', 'name', 'proxied', 'ttl', 'type']);
     assert.deepEqual([record.content, record.comment], ['example-txt-content', 'example record comment'], 'a DNS record carries made-up content and comment');
     assert.deepEqual(staged(dir, 'cloudflare/d1_database.name-check.200.json').body.result, [], 'the name check stages only a database with the run name');

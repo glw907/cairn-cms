@@ -33,8 +33,8 @@ const (
 	StepScaffold          = "scaffold"
 	StepProvision         = "provision"
 	StepCommit            = "commit"
-	StepPush              = "push"
 	StepDeployKey         = "deploy-key"
+	StepPush              = "push"
 	StepFirstDeploy       = "first-deploy"
 	StepDomains           = "domains"
 	StepSignIn            = "sign-in"
@@ -65,8 +65,8 @@ func steps() []Step {
 		{StepScaffold, "Scaffold the site folder", Tool, ""},
 		{StepProvision, "Create the D1 database, the R2 bucket, and the email sending subdomain", Tool, Cloudflare},
 		{StepCommit, "Write the config and commit locally", Tool, ""},
-		{StepPush, "Recheck the Worker name and push to GitHub", Tool, GitHub},
 		{StepDeployKey, "Mint the deploy key and store it as a repository secret", Tool, Cloudflare},
+		{StepPush, "Recheck the Worker name and push to GitHub", Tool, GitHub},
 		{StepFirstDeploy, "Deploy for the first time and set the Worker secret", Tool, GitHub},
 		{StepDomains, "Attach the custom domains and wait for HTTPS", Tool, Cloudflare},
 		{StepSignIn, "Check the sign-in row and redirect", Tool, Cloudflare},

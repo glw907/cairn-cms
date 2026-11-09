@@ -60,6 +60,7 @@ type CloudflareAPI interface {
 type GitHubAPI interface {
 	ConvertManifest(ctx context.Context, code string) (providers.AppRecord, error)
 	CreateRepo(ctx context.Context, name string) (providers.Repository, error)
+	RepoNamed(ctx context.Context, owner, name string) (*providers.Repository, error)
 	AppInstallations(ctx context.Context) ([]providers.Installation, error)
 	DeleteInstallation(ctx context.Context, id int64) error
 	ReadBackInstallation(ctx context.Context, appID, repoID int64) (providers.ReadBack, error)
@@ -243,8 +244,8 @@ type Result struct {
 type Done struct {
 	// URL is the live site's address.
 	URL string
-	// SignedIn reports that a D1 read showed the tab's sign-in link used. Only then does the
-	// done screen say the owner is signed in.
+	// SignedIn reports that a D1 read showed a session for the owner written after the tab's
+	// sign-in link was issued. Only then does the done screen say the owner is signed in.
 	SignedIn bool
 	// Emailed reports that setup sent the sign-in email.
 	Emailed bool
@@ -270,7 +271,9 @@ const (
 	MinNodeMajor = 24
 	// HTTPSLimit is how long the domain step waits for the site to answer over HTTPS.
 	HTTPSLimit = 15 * time.Minute
-	// DeployLimit is how long the first deploy may take, run and Worker together.
+	// DeployLimit is how long the first deploy may take, the Actions run and the Worker's
+	// appearance together. The design's limits table sets no bound for this step, so this one is
+	// the implementer's.
 	DeployLimit = 30 * time.Minute
 	// chainSlack pads each browser wait past the chain's limit. The loopback's own clock stops the
 	// chain at the limit once the tab opens; this deadline covers a tab that never opens.
@@ -327,7 +330,9 @@ type run struct {
 	install     sync.WaitGroup
 	installErr  error
 	installStop context.CancelFunc
-	out         Done
+	// installEnd closes when the background install ends, after installErr is set.
+	installEnd <-chan struct{}
+	out        Done
 }
 
 // ErrPlanned is what a View's ConfirmSummary returns to end the run at the summary without
@@ -405,7 +410,7 @@ func (r *run) steps(ctx context.Context) (Result, error) {
 
 // approvals runs the four approvals and the account checks, skipping each one the record shows
 // done. A resumed run whose record holds an App sweeps its installations before any other
-// GitHub call.
+// GitHub call, and runs approval 4 again when that leaves no installation recorded.
 func (r *run) approvals(ctx context.Context) error {
 	if err := r.cloudflare(ctx); err != nil {
 		return err
@@ -415,7 +420,7 @@ func (r *run) approvals(ctx context.Context) error {
 			return err
 		}
 	}
-	if reached(r.rec.Step, spine.StepInstalled) {
+	if reached(r.rec.Step, spine.StepInstalled) && r.rec.GitHub.InstallationID != 0 {
 		return nil
 	}
 	return r.githubChain(ctx)
@@ -504,7 +509,6 @@ func (r *run) keepKeys() {
 // in memory and end with the process.
 func (r *run) finish(ctx context.Context) {
 	r.waitInstall()
-	r.out.InstallFailed = r.installErr != nil
 	r.out.URL = "https://" + r.host
 	// RFC 7009 2.1: revoking a refresh token "SHOULD also invalidate all access tokens based on the
 	// same authorization grant", and the access token lapses within the hour regardless.
@@ -532,6 +536,15 @@ func (r *run) sleep(ctx context.Context, d time.Duration) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+// pause waits one poll of d and then refreshes the Cloudflare grant once it has aged, so a long
+// wait inside a step never reaches a Cloudflare call on a lapsed access token.
+func (r *run) pause(ctx context.Context, d time.Duration) error {
+	if err := r.sleep(ctx, d); err != nil {
+		return r.fail(ctx, err, "")
+	}
+	return r.freshGrant(ctx)
 }
 
 // await waits for one callback with a deadline, so a tab that never opens still ends the wait.

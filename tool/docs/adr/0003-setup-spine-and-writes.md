@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed, 2026-11-08.
+Accepted, 2026-11-08.
 
 ## Context
 
@@ -48,14 +48,14 @@ fixture's PEM is a committed test-only key that guards nothing.
 
 Credentials live in the OS keyring only, under `setup/<run id>/`. The GitHub user
 token and installation token stay in process memory and are never stored. The
-deploy key lives only in a GitHub repository secret. A refresh writes the new pair
-before anything uses it, because GitHub's refresh "works (200, returns a new pair)
-but REVOKES the previous access token", so a crash between the call and the write
-would otherwise lose both.
+deploy key lives only in a GitHub repository secret. A refresh of the Cloudflare
+OAuth pair writes the new pair before anything uses it, because Cloudflare's
+refresh "works (200, returns a new pair) but REVOKES the previous access token",
+so a crash between the call and the write would otherwise lose both.
 
 The Windows keyring has a size limit: the go-keyring Windows backend returns
-"password may not exceed 2560 bytes". A value near that size, a PEM in
-particular, is split or kept out of the keyring.
+"password may not exceed 2560 bytes". The App's PEM is about 1.7 KB, under that
+limit, so it is stored whole as one entry.
 
 ### The never-printed list
 
@@ -67,7 +67,7 @@ only typed event fields, never a free-form string a provider returned.
 
 ### The test build tag
 
-The end-to-end binary is built with a test build tag. Its file binds the keyring
+The end-to-end binary is built with the test build tag `cairne2e`. Its file binds the keyring
 package vars (`keyringGet`, `keyringSet`, `keyringDelete`, at
 `tool/internal/secrets/keyring.go:21-26`) to a file store under a directory the
 harness names. `go help buildconstraint` defines a constraint as "a condition under
@@ -103,6 +103,19 @@ sign-in callback listens on port 49152.
 which seals a GitHub repository secret to the repository's public key. As ADR-0002
 does for its list, `internal/render/purity_test.go` pins the direct requires, so
 its `otherDirectRequires` gains the entry in the task that adds the require.
+
+## Errata found while building
+
+- The spec's public-name check before approval 3 is not built. It needs the owner's
+  login, which setup learns only from the user token approval 3 issues, so the 422 on
+  create is the only clash check for the repository.
+- R2 adoption is not possible through the REST API, which offers no read of a
+  bucket's objects. A bucket intent with no recorded id stops with the not-ours
+  failure, which says how to delete the bucket.
+- The first deploy's limit is 30 minutes. The design's limits table sets none for
+  that step, so the bound is the implementer's.
+- The watch stores the deploy key before it pushes: a workflow job gets the
+  repository's secrets when it starts, so the push must find the key already stored.
 
 ## Consequences
 

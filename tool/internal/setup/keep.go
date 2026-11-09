@@ -16,9 +16,12 @@ func keepCredential(v Vault, kind secrets.EntryKind, c providers.Credential) err
 	return v.Put(kind, c.Reveal())
 }
 
-// gitAuthHeader is the http.extraheader value that pushes to github.com as the installation.
-func gitAuthHeader(token providers.Credential) string {
-	return "AUTHORIZATION: basic " + base64.StdEncoding.EncodeToString([]byte("x-access-token:"+token.Reveal()))
+// gitAuthHeader returns the http.extraheader value that pushes to github.com as the
+// installation. It also returns the base64 credential inside the header, which git can print
+// without the header around it.
+func gitAuthHeader(token providers.Credential) (header, encoded string) {
+	encoded = base64.StdEncoding.EncodeToString([]byte("x-access-token:" + token.Reveal()))
+	return "AUTHORIZATION: basic " + encoded, encoded
 }
 
 // secretText is c as the plain value a sealed repository secret carries.

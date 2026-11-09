@@ -74,16 +74,16 @@
       "Provider": ""
     },
     {
-      "ID": "push",
-      "Label": "Recheck the Worker name and push to GitHub",
-      "Actor": "tool",
-      "Provider": "github"
-    },
-    {
       "ID": "deploy-key",
       "Label": "Mint the deploy key and store it as a repository secret",
       "Actor": "tool",
       "Provider": "cloudflare"
+    },
+    {
+      "ID": "push",
+      "Label": "Recheck the Worker name and push to GitHub",
+      "Actor": "tool",
+      "Provider": "github"
     },
     {
       "ID": "first-deploy",

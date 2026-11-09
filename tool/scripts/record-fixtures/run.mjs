@@ -365,7 +365,7 @@ async function recordCloudflare(ctx, session, probes) {
   let zone;
   let accountId = '';
   for (const account of accounts.json.result) {
-    const zones = await cf.request('GET', `/zones?account.id=${account.id}&status=active`, { route: 'zones', caseName: 'list' });
+    const zones = await cf.request('GET', `/zones?account.id=${account.id}&status=active`, { route: 'zones', caseName: 'active' });
     zone = zones.json.result.find((/** @type {{ name: string }} */ z) => z.name === TEST_ZONE);
     if (zone) {
       accountId = account.id;
@@ -380,7 +380,7 @@ async function recordCloudflare(ctx, session, probes) {
     route: 'workers_scripts', caseName: 'list',
     hold: (json) => (json?.result ?? []).forEach((/** @type {{ id: string }} */ s) => scrubber.alias(s.id, 'worker')),
   });
-  await cf.request('GET', `/zones/${zone.id}/dns_records?name=${TEST_ZONE}`, { route: 'zone_dns_records', caseName: 'list' });
+  await cf.request('GET', `/zones/${zone.id}/dns_records?name=${TEST_ZONE}`, { route: 'zone_dns_records', caseName: 'named' });
   await cf.request('GET', `/accounts/${accountId}/workers/domains`, { route: 'workers_domains', caseName: 'list' });
   await cf.request('GET', `/zones/${zone.id}/workers/routes`, { route: 'zone_workers_routes', caseName: 'list' });
   const database = resourceName(runId, 'd1');

@@ -1,0 +1,22 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://docs.github.com/en/rest/repos/repos#get-a-repository",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "id": 998877,
+    "node_id": "R_kgDOexample",
+    "name": "example-site",
+    "full_name": "example-owner/example-site",
+    "private": true,
+    "owner": {
+      "login": "example-owner",
+      "id": 4242,
+      "type": "User"
+    },
+    "default_branch": "main",
+    "size": 0
+  }
+}

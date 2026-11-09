@@ -12,7 +12,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve, join, relative } from 'node:path';
-import { emitTemplate, isAlwaysSkippedPath } from '../../../scripts/build/emit-template.mjs';
+import { emitTemplate, isAlwaysSkippedPath, STARTER_OVERLAY_DIR } from '../../../scripts/build/emit-template.mjs';
 import { walk } from '../../../scripts/walk-files.mjs';
 
 const ROOT = resolve(__dirname, '../../..');
@@ -91,6 +91,7 @@ describe('the emitted template tree', () => {
       engineSpec: 'file:/tmp/does-not-exist-cairn-cms.tgz',
       devSpec: 'file:/tmp/does-not-exist-cairn-cms-dev.tgz',
       name: 'emitted-test-site',
+      starterOverlay: STARTER_OVERLAY_DIR,
     });
   });
 

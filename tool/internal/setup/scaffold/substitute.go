@@ -204,7 +204,16 @@ const githubAppTemplate = "createGithubApp({ owner: 'showcase', repo: 'demo', br
 var (
 	emailFromRE      = regexp.MustCompile(`email:\s*\{\s*from:\s*'[^']*'\s*\}`)
 	publicOriginTSRE = regexp.MustCompile(`export const publicOrigin\s*=\s*'[^']*'`)
+	// githubAppRE matches the call githubApp writes, whatever ids it holds.
+	githubAppRE = regexp.MustCompile(`createGithubApp\(\{ owner: '[^']*', repo: '[^']*', branch: '[^']*', appId: '[^']*', installationId: '[^']*' \}\)`)
 )
+
+// githubApp is the GitHub App identity the site's settings carry, with the repository's real
+// default branch.
+func githubApp(s Site) string {
+	return "createGithubApp({ owner: '" + s.Owner + "', repo: '" + s.Repo + "', branch: '" + s.DefaultBranch +
+		"', appId: '" + s.AppID + "', installationId: '" + s.InstallationID + "' })"
+}
 
 // editCairnConfig writes the posture block, the GitHub App identity with the repository's real
 // default branch, the sender address, and the site's origin.
@@ -218,15 +227,20 @@ func editCairnConfig(dir string, s Site, _ string) error {
 		if err != nil {
 			return "", err
 		}
-		app := "createGithubApp({ owner: '" + s.Owner + "', repo: '" + s.Repo + "', branch: '" + s.DefaultBranch +
-			"', appId: '" + s.AppID + "', installationId: '" + s.InstallationID + "' })"
-		if c, err = replaceExact(c, githubAppTemplate, app, targets.CairnConfig); err != nil {
+		if c, err = replaceExact(c, githubAppTemplate, githubApp(s), targets.CairnConfig); err != nil {
 			return "", err
 		}
 		if c, err = replacePattern(c, emailFromRE, "email: { from: '"+s.EmailFrom+"' }", targets.CairnConfig); err != nil {
 			return "", err
 		}
 		return replacePattern(c, publicOriginTSRE, "export const publicOrigin = 'https://"+s.Address+"'", targets.CairnConfig)
+	})
+}
+
+// editInstallation writes the GitHub App identity over the one a finalized site's settings hold.
+func editInstallation(dir string, s Site) error {
+	return edit(dir, targets.CairnConfig, func(c string) (string, error) {
+		return replacePattern(c, githubAppRE, githubApp(s), targets.CairnConfig)
 	})
 }
 

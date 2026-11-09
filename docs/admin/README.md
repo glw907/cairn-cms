@@ -1,6 +1,6 @@
 # Set up and run a cairn site
 
-A person who is comfortable pasting a command into a terminal and following written steps exactly can set up and run a cairn site without writing code. The setup command, `cairn new`, does the work. Start it with `npm create cairn-site`, or hand it to a coding agent. These pages explain what setup does, state what it costs, and get you moving again when a step stops.
+A person who is comfortable pasting a command into a terminal and following written steps exactly can set up and run a cairn site without writing code. The setup command, `cairn new`, does the work. Start it with `npm create cairn-site`, or hand it to a coding agent. These pages explain what setup does, state what it costs, and explain how to resume a setup that stopped.
 
 If you write content on a site that someone else set up, you want the editors' help instead, which opens from the admin's **Help** link. If you build custom screens or features on cairn, start from the [cairn repository](https://github.com/glw907/cairn-cms), whose README routes a developer.
 
@@ -22,7 +22,7 @@ The following table routes you by what is happening now.
 
 1. [Before you start](./before-you-start.md) covers what you end up owning, what it costs, and what a developer still has to do.
 2. [Create your site](./create-your-site.md) takes you from nothing to a live site with you signed in.
-3. [Own your domain](./own-your-domain.md) moves the site onto a domain you own, turns on sign-in email, and connects automatic deploys.
+3. [Own your domain](./own-your-domain.md) gets a domain you already own onto Cloudflare before setup, and explains what sign-in email does to your domain's mail.
 4. [Invite editors](./invite-editors.md) adds the people who will write on the site.
 
 ## Also in this track

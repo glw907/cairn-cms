@@ -15,8 +15,11 @@ import (
 // doctor's paragraph: what it checks, that it needs no credential and no adopted site, and
 // which exit-3 cases it adds to the ones cairn health already states. It was raised from 50 to
 // 55 for the three published addresses the page now ends with, which are what an agent follows
-// when this summary is not enough and the machine holds no cairn-cms checkout.
-const agentsPageLineBound = 70
+// when this summary is not enough and the machine holds no cairn-cms checkout. It was raised from
+// 55 to 70 for the pages' other additions, and from 70 to 120 when cairn new left hiding, since the
+// setup contract (the plan and apply flow, the event kinds, the waiting states, the exit codes)
+// is now part of the page an agent reads.
+const agentsPageLineBound = 120
 
 // TestHelpAgentsIsReachableAndExitsZero covers the surface itself: the topic resolves, it is not
 // hidden from `cairn --help`, and reaching it is a success.
@@ -148,20 +151,19 @@ func TestHealthHelpCarriesTheExitCodeBlock(t *testing.T) {
 	}
 }
 
-// TestAgentsPageCarriesTheSetupContractOnlyWhenNewShows covers cairn new's visibility: while the
-// command is hidden the page holds no setup section, and once it shows the page carries the
+// TestAgentsPageCarriesTheSetupContractWhenNewShows covers cairn new's visibility: a build where
+// the command is hidden gets the monitoring contract alone, and the shipped build carries the
 // plan and apply flow, the event kinds, the waiting states, and the exit codes.
-func TestAgentsPageCarriesTheSetupContractOnlyWhenNewShows(t *testing.T) {
+func TestAgentsPageCarriesTheSetupContractWhenNewShows(t *testing.T) {
 	d, _ := testDeps(t)
 	out, _, err := execTree(t, d, "help", "agents")
 	if err != nil {
 		t.Fatalf("cairn help agents: %v", err)
 	}
-	if strings.Contains(out, "cairn new") {
-		t.Errorf("the page names cairn new while it is hidden:\n%s", out)
-	}
-
 	shown := agentsPageFor(false)
+	if !strings.Contains(out, "cairn new --plan") {
+		t.Errorf("cairn help agents does not print the page with cairn new shown:\n%s", out)
+	}
 	if !strings.HasPrefix(shown, agentsPage) {
 		t.Error("the page with cairn new shown does not start with the monitoring contract")
 	}

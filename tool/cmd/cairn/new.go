@@ -53,7 +53,7 @@ var newAnswerFlags = []string{"name", "email", "posture", "account", "zone", "ho
 // newResumeAnswerFlags are the answer flags --resume still takes: the choices a run can stop at.
 var newResumeAnswerFlags = []string{"account", "zone"}
 
-// newNewCmd builds cairn new. It is hidden until the command ships: it is absent from the root help and the completions.
+// newNewCmd builds cairn new, the setup command create-cairn-site launches.
 func newNewCmd(d deps, rf *rootFlags) *cobra.Command {
 	var f newFlags
 
@@ -61,7 +61,6 @@ func newNewCmd(d deps, rf *rootFlags) *cobra.Command {
 		Use:     "new",
 		Short:   shortNew,
 		Example: exampleNew,
-		Hidden:  true,
 		GroupID: groupSite,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {

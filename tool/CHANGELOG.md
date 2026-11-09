@@ -27,6 +27,27 @@ every route. No `tool/v2.0.0` tag exists yet.
 
   Consumers must: nothing.
 
+- **`cairn new`, hidden, with its agent lane.** The command runs setup from flags with no terminal:
+  `--plan <file>` runs the questions and the four approvals and writes a plan, `--apply <file>`
+  runs from it, `--resume <id>` and `--new` choose between an unfinished run and a fresh one,
+  `--dry-run --json` prints the plan with no network, and `--tag` picks the engine dist-tag. The
+  run writes one JSON event per line (`schema/cairn-setup-event.schema.json`) with the waiting
+  states, ends with a `summary` event, and exits 0, 1 (stopped, resumable), 2 (stopped while
+  waiting), or 3 (usage). `cairn new status` lists each setup record, whether it finished, and
+  what an unfinished run still holds. `make reference` writes the generated setup reference to
+  `tool/docs/setup-reference.md`, and a test fails when the page and the code disagree. The
+  setup contract joins `cairn help agents` once the command is shown. The
+  command stays hidden until the launcher ships, and no release gate depends on it.
+
+  Consumers must: nothing.
+
+- **`cairn health` reads a Worker's latest deployment for a site that deploys from GitHub
+  Actions.** A site `cairn new` creates records `deploys: actions`, so its deploy check is OK with
+  a deployment and Failing without one, where it read UNKNOWN before. A site on Workers Builds
+  keeps its result.
+
+  Consumers must: nothing.
+
 - **The `config.migrations` check** reports an `AUTH_DB` migrations directory that lacks a migration
   the installed package ships, under the new condition `config.migrations-missing` (a warning). It
   lists `node_modules/@glw907/cairn-cms/migrations`, treats every `.sql` file there as required

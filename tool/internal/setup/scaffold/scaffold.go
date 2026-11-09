@@ -27,7 +27,7 @@ type Config struct {
 	// Dir is the site folder. It must not exist, or be empty.
 	Dir string
 	// Env is the environment git starts from, by name. Every variable that holds a credential is
-	// dropped before git sees it.
+	// dropped before git sees it. A nil Env is refused before git runs.
 	Env map[string]string
 }
 

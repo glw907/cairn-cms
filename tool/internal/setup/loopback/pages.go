@@ -21,7 +21,9 @@ var pages = template.Must(template.ParseFS(pageFiles, "pages/*.html"))
 const cookieName = "cairn_setup"
 
 // cookieMaxAge bounds the session cookie's life in seconds: two hours covers the approvals'
-// 30 minutes and a long watch, and the browser drops the cookie after. /next clears it sooner.
+// 30 minutes and a long watch, and the browser drops the cookie after. /next clears it sooner. A
+// watch can outlast it, and done.html then answers /next's 404 by sending the owner to the
+// terminal.
 const cookieMaxAge = 2 * 60 * 60
 
 type pageKind int
@@ -273,10 +275,11 @@ func (s *Server) serveNext(w http.ResponseWriter, r *http.Request) {
 // navigate and Sec-Fetch-Site same-origin, or none when the owner opens the address directly.
 // Both headers must be present: the URL carries the state nonce and the PKCE challenge, so
 // another site's link, a script's fetch, a tool replaying the cookie, or a request without the
-// cookie gets 404 and learns nothing.
+// cookie gets 404 and learns nothing. A browser that sends the cookie but leaves a header out,
+// as Safari before 16.4 or a privacy extension does, gets the 404 as oldbrowser.html, which asks
+// for a current browser, so the owner is not left at a bare error.
 func (s *Server) goCloudflare(w http.ResponseWriter, r *http.Request) {
-	site := r.Header.Get("Sec-Fetch-Site")
-	if !s.hasSession(r) || (site != "same-origin" && site != "none") || r.Header.Get("Sec-Fetch-Mode") != "navigate" {
+	if !s.hasSession(r) {
 		http.NotFound(w, r)
 		return
 	}
@@ -285,6 +288,18 @@ func (s *Server) goCloudflare(w http.ResponseWriter, r *http.Request) {
 	a := s.routes[CloudflareCallback]
 	s.mu.Unlock()
 	if (p.kind != pageConsent && p.kind != pageScopeError) || a == nil || !a.open {
+		http.NotFound(w, r)
+		return
+	}
+	site, mode := r.Header.Get("Sec-Fetch-Site"), r.Header.Get("Sec-Fetch-Mode")
+	ownerSite, ownerMode := site == "same-origin" || site == "none", mode == "navigate"
+	if !ownerSite || !ownerMode {
+		// A header left out, with the other one absent or the owner's, is a browser that sends no
+		// Fetch Metadata; any present value that is not the owner's is another page's request.
+		if (site == "" || mode == "") && (site == "" || ownerSite) && (mode == "" || ownerMode) {
+			s.renderStatus(w, http.StatusNotFound, "oldbrowser.html", pageData{})
+			return
+		}
 		http.NotFound(w, r)
 		return
 	}

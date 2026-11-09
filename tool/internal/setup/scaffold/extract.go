@@ -15,7 +15,8 @@ import (
 // extract reads the template out of a verified engine tarball, entirely in memory, so that one
 // unsafe entry fails the fetch before any file exists. Only entries under package/template/ are
 // read. Each must be a regular file or a directory whose path, below that prefix, is local: a
-// link, a device, an absolute path, or one that climbs out is refused, never skipped.
+// link, a device, an absolute path, one that climbs out, or one with a .git segment is refused,
+// never skipped. A .git entry would plant config or hooks that setup's own git calls then read.
 func extract(tgz []byte) (map[string]entry, error) {
 	zr, err := gzip.NewReader(bytes.NewReader(tgz))
 	if err != nil {
@@ -45,6 +46,9 @@ func extract(tgz []byte) (map[string]entry, error) {
 			return nil, fmt.Errorf("%w: %q leaves the template", ErrUnsafeEntry, hdr.Name)
 		}
 		rel = path.Clean(rel)
+		if gitSegment(rel) {
+			return nil, fmt.Errorf("%w: %q is a git folder", ErrUnsafeEntry, hdr.Name)
+		}
 		switch hdr.Typeflag {
 		case tar.TypeDir:
 			entries[rel] = entry{dir: true}
@@ -79,4 +83,15 @@ func extract(tgz []byte) (map[string]entry, error) {
 		}
 	}
 	return entries, nil
+}
+
+// gitSegment reports whether any segment of rel, a cleaned slash path, names .git in any case.
+// Trailing dots and spaces are ignored, since Windows drops them from a file name.
+func gitSegment(rel string) bool {
+	for seg := range strings.SplitSeq(rel, "/") {
+		if strings.EqualFold(strings.TrimRight(seg, ". "), ".git") {
+			return true
+		}
+	}
+	return false
 }

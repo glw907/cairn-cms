@@ -296,7 +296,8 @@ func (r *run) deployFailure(runURL string) error {
 //
 // Lifecycle scripts are skipped on purpose: the install runs while the keyring still holds the
 // Cloudflare grant and the App's key, and a dependency's install script runs as the owner. A
-// dependency that needs its script gets it from the owner's `npm rebuild`.
+// dependency that needs its script gets it from the owner's `npm rebuild`, which Done's
+// ScriptsSkipped tells the done screen to say.
 func (r *run) startInstall() {
 	if r.installStop != nil || r.rec.Setup.DepsInstalled {
 		return
@@ -326,11 +327,14 @@ func (r *run) noteInstall() {
 	}
 }
 
-// waitInstall waits for the background install to end and records how it ended.
+// waitInstall waits for the background install to end and records how it ended. Every install
+// setup runs skips the lifecycle scripts, so one that ran here or in an earlier run sets
+// ScriptsSkipped.
 func (r *run) waitInstall() {
 	r.install.Wait()
 	r.noteInstall()
 	r.out.InstallFailed = r.installErr != nil
+	r.out.ScriptsSkipped = r.installStop != nil || r.rec.Setup.DepsInstalled
 }
 
 // stopInstall ends a background install a stopped run leaves behind.

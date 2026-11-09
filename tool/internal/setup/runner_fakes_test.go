@@ -141,9 +141,9 @@ type fakeCFAuth struct {
 	// revokeErr.
 	revokeErrFor map[string]error
 	verifiers    []string
-	issued     []providers.OAuthToken
-	refreshes  []string
-	revoked    []string
+	issued       []providers.OAuthToken
+	refreshes    []string
+	revoked      []string
 	// issuedAt is when each access token was issued, so the Cloudflare fake refuses one past its
 	// hour the way Cloudflare does.
 	issuedAt map[string]time.Time

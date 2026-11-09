@@ -297,6 +297,9 @@ func (r *run) push(ctx context.Context) error {
 			"Delete that Worker or rename it in Cloudflare, and then run cairn new again.", nil)
 	}
 	// The push starts the first deploy, which creates the Worker.
+	// WATCH: this intent records a name, not a Worker setup made. A consumer that deletes the
+	// Worker by this name must first confirm the Worker came from this repository's deploy, such
+	// as by the recorded WorkerTag, or it can delete a Worker someone else created under the name.
 	r.rec.Setup.Intents.Worker = r.names.Worker
 	if err := r.save(); err != nil {
 		return err

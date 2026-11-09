@@ -177,7 +177,7 @@ func TestDoneSaysSignedInOnlyWhenTheLinkWasUsed(t *testing.T) {
 		{"used", setup.Done{SignedIn: true, Emailed: true}, []string{doneSignedIn, "Setup also emailed a sign-in link to sam@example.com."}, []string{setup.LineDoneOpen}},
 		{"not used", setup.Done{Emailed: true}, []string{setup.LineDoneOpen}, []string{doneSignedIn}},
 		{"no email", setup.Done{SignedIn: true}, []string{doneSignedIn}, []string{"emailed"}},
-		{"other editors", setup.Done{NoSignIn: true}, []string{"Setup sent no sign-in link, because the site already has editors and sam@example.com isn't one of them."}, []string{doneSignedIn, setup.LineDoneOpen}},
+		{"other editors", setup.Done{NoSignIn: true}, []string{"Setup didn't send a sign-in link. This site already has editors, and sam@example.com isn't one of them."}, []string{doneSignedIn, setup.LineDoneOpen}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

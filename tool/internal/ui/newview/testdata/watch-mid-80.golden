@@ -2,7 +2,7 @@
   Setting up Field Notes                                                  5:12
 
   ● Write the site files
-  ● Create the database, storage bucket, and email
+  ● Set up the database, storage bucket, and email
   ● Commit the site
   ● Push the site to GitHub
   ● Store the deploy key in GitHub

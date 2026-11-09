@@ -4,7 +4,7 @@
   ⣽ Write the site files
     Setup writes your site into
     /home/sam/sites/field-notes on this computer.
-  ○ Create the database, storage bucket, and email
+  ○ Set up the database, storage bucket, and email
   ○ Commit the site
   ○ Push the site to GitHub
   ○ Store the deploy key in GitHub

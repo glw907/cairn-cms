@@ -117,10 +117,10 @@ const (
 
 	stepScaffold     = "Write the site files"
 	whyScaffold      = "Setup writes your site into <folder> on this computer."
-	stepProvision    = "Create the database, storage bucket, and email"
-	whyProvision     = "The admin stores sign-ins and settings in the database and uploads in the storage bucket. Cloudflare sends the admin's sign-in links from <host>."
+	stepProvision    = "Set up the database, storage bucket, and email"
+	whyProvision     = "The admin stores sign-ins and settings in the database. The storage bucket holds the images and files that editors upload. Cloudflare sends the admin's sign-in links from <domain>."
 	stepCommit       = "Commit the site"
-	whyCommit        = "Setup writes your site's settings and makes its first commit in <folder>."
+	whyCommit        = "Setup adds your site's settings and makes the site's first Git commit."
 	stepPush         = "Push the site to GitHub"
 	whyPush          = "Your site's code and content are stored in <repo>."
 	stepDeployKey    = "Store the deploy key in GitHub"
@@ -139,7 +139,7 @@ const (
 	doneLive     = "<name> is live at <url>"
 	doneSignedIn = "You're signed in to the admin in your browser."
 	doneEmailed  = "Setup also emailed a sign-in link to <email>."
-	doneNoSignIn = "Setup sent no sign-in link, because the site already has editors and <email> isn't one of them."
+	doneNoSignIn = "Setup didn't send a sign-in link. This site already has editors, and <email> isn't one of them. Ask one of them to invite you in Admin > Editors."
 	labelEdit    = "Edit your site"
 	labelInvite  = "Invite an editor"
 	valueInvite  = "Admin > Editors"
@@ -159,6 +159,7 @@ const (
 	windowBase     = "cairn new"
 	windowApprove  = "approve in your browser (<n> of <total>)"
 	windowReview   = "review"
+	windowChoose   = "choose"
 	windowSettings = "setting up"
 	windowDone     = "done"
 	windowStopped  = "stopped"
@@ -213,7 +214,7 @@ func Catalogue() []string {
 		doneLive, doneSignedIn, doneEmailed, doneNoSignIn, labelEdit, labelInvite, valueInvite, labelDocs,
 		linkDocs, doneTook,
 		stopNothing, stopResume,
-		windowBase, windowApprove, windowReview, windowSettings, windowDone, windowStopped,
+		windowBase, windowApprove, windowReview, windowChoose, windowSettings, windowDone, windowStopped,
 		verbStart, verbNext, verbOpen, verbChoose, verbBack, verbQuit, verbStop,
 		verbSetUp, verbEditEmail, verbEditAddress, verbSave, verbCancel,
 	}

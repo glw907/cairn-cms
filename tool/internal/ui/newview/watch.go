@@ -174,7 +174,7 @@ func names(s setup.Summary) *strings.Replacer {
 	if len(s.Addresses) > 0 {
 		host = s.Addresses[0]
 	}
-	return strings.NewReplacer("<folder>", s.Folder, "<host>", host, "<repo>", s.Repository)
+	return strings.NewReplacer("<folder>", s.Folder, "<host>", host, "<repo>", s.Repository, "<domain>", s.Zone)
 }
 
 // fill replaces each placeholder in s with its value, given as alternating pairs.

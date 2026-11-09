@@ -525,7 +525,6 @@ Name the check that entry holds
 - Cloudflare: Allow
 - Commit the site
 - Connect <host>
-- Create the database, storage bucket, and email
 - Database
 - Deploys
 - Design
@@ -552,21 +551,22 @@ Name the check that entry holds
 - Review the settings for <name>
 - Run the first deploy
 - Set up a cairn site
+- Set up the database, storage bucket, and email
 - Setting up <name>
+- Setup adds your site's settings and makes the site's first Git commit.
 - Setup also emailed a sign-in link to <email>.
 - Setup can't continue
 - Setup can't run over SSH
 - Setup couldn't open your browser. Go to <url>
 - Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
+- Setup didn't send a sign-in link. This site already has editors, and <email> isn't one of them. Ask one of them to invite you in Admin > Editors.
 - Setup needs a domain on Cloudflare
 - Setup opens a tab in your browser. Approve these four requests in that tab.
 - Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser.
-- Setup sent no sign-in link, because the site already has editors and <email> isn't one of them.
 - Setup stopped. Nothing was created.
 - Setup stopped. To resume, run cairn new again.
 - Setup took <time>.
 - Setup writes your site into <folder> on this computer.
-- Setup writes your site's settings and makes its first commit in <folder>.
 - Shown at the top of every page.
 - Sign in to the admin
 - Sign-in email
@@ -576,7 +576,7 @@ Name the check that entry holds
 - Storage bucket
 - Store the deploy key in GitHub
 - The admin sends your sign-in links to this address.
-- The admin stores sign-ins and settings in the database and uploads in the storage bucket. Cloudflare sends the admin's sign-in links from <host>.
+- The admin stores sign-ins and settings in the database. The storage bucket holds the images and files that editors upload. Cloudflare sends the admin's sign-in links from <domain>.
 - The first deploy failed
 - Theme
 - To resume, run cairn new again.

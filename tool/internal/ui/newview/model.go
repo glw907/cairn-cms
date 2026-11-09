@@ -463,7 +463,9 @@ func (m *Model) windowTitle() string {
 	switch {
 	case m.phase == phaseBrowser && m.browser.opened:
 		what = fill(windowApprove, "<n>", strconv.Itoa(m.browser.current+1), "<total>", strconv.Itoa(len(approvals)))
-	case m.phase == phaseChoose || m.phase == phaseSummary:
+	case m.phase == phaseChoose:
+		what = windowChoose
+	case m.phase == phaseSummary:
 		what = windowReview
 	case m.phase == phaseWatch:
 		what = windowSettings

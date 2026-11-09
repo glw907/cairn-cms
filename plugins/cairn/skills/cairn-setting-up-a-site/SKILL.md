@@ -18,7 +18,7 @@ description: Sets up a new cairn site with `cairn new`. Use when a person asks t
 Plan first, then apply.
 
 1. `cairn new --plan plan.json --name "<name>" --email <email> --posture <decline|invite>` runs the questions and the browser approvals, writes the plan, and creates nothing.
-2. Show the person the plan. Fill in any choice it leaves open (`--account`, `--zone`, `--host`, `--site-theme`), and ask before you decide.
+2. Show the person the plan. Give every choice you already know (`--account`, `--zone`, `--host`, `--site-theme`) on the first `--plan` call. For a choice the plan leaves open, the person edits the plan's open fields (`account`, `zone`, `address`), or you run `cairn new --resume <id> --account <a> --zone <z>`. Ask before you decide. Never run `--plan` again or add `--new` to change an answer: that starts a second setup with new approvals and a new GitHub App.
 3. `cairn new --apply plan.json` creates the site.
 
 Each `waiting` event carries a `sentence`. Show that sentence to the person as written, and wait. The run blocks until the browser step lands. Never click for them.
@@ -35,7 +35,7 @@ An unattended run still needs the person for every browser approval. Start it on
 
 ## Hard rules
 
-- Never print, log, or paste a sign-in link, a token, a code, or a key. Setup shows none in its events; do not go looking for one.
+- Never print, log, or paste a sign-in link, a token, a code, or a key. Setup shows none in its events; do not go looking for one. One exception: when no browser opens, setup prints the setup tab's one-time link to stderr. Give that link to the person to open on this computer, and keep it out of any log or record.
 - Never create the Cloudflare grant, the GitHub App, or its installation for the person.
 - Never edit the plan's names after the person approved it, or run `--apply` on a plan they have not read.
 - On a failure, do not retry with different flags to get past it. Report the failure and the fix the event names.

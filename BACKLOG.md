@@ -48,7 +48,7 @@
   `ReasonWorkersPaid` is defined in `tool/internal/setup/messages.go` and never raised: setup reads neither the subscription nor the Actions run (`deploy.go` names no cause). The deploys and create-your-site pages describe the generic failure, with a line to check the plan first; when the read lands they gain one sentence.
   Placement: engine batch; a `tool/` change in the cairn-setup follow-up pass, with its page edit.
 - [ ] **#405** A finished setup that could not delete its keyring entries tells nobody `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
-  `finish` in `tool/internal/setup/runner.go` sets `KeysLeft`, which nothing reads, and `cairn new status` lists entries only for unfinished runs, so the owner never learns an entry stayed. The credentials page cannot say how to find them.
+  `finish` in `tool/internal/setup/runner.go` records the leftover entries as `KeysKept`, but `cairn new status` lists entries only for unfinished runs, so the owner never learns one stayed. The credentials page cannot say how to find them.
   Placement: engine batch; a `tool/` change, with the credentials page's removal steps.
 - [ ] **#406** `check:symbols` resolves a site path against the template but not the setup overlay `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   `pathExists` in `scripts/checks/check-symbols.mjs` misses `scripts/build/setup-overlay/`, so a page that cites the deploy workflow's path in a code span fails; `deploys.md` words around it.

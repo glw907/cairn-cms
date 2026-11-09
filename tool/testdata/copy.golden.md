@@ -517,7 +517,7 @@ Name the check that entry holds
 - Cloudflare: Allow
 - Design
 - Domain
-- Enter a name with at least one letter from A to Z or a number.
+- Enter a name that has at least one number or one letter from A to Z.
 - GitHub: Approve
 - GitHub: Create
 - GitHub: Install & Authorize

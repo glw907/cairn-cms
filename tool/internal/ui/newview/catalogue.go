@@ -1,5 +1,7 @@
 package newview
 
+import "github.com/glw907/cairn-cms/tool/v2/internal/setup"
+
 // This file holds the view's own copy: every string the screens show that the setup package
 // leaves to the view. A value the view fills at run time appears as <n>, <url>, <time>, or <link>,
 // which the call site replaces. The failure parts come from setup.Failure, and the waiting
@@ -29,8 +31,8 @@ const (
 	labelSiteName = "Site name"
 	descSiteName  = "Shown at the top of every page."
 	labelRepo     = "Repository"
-	// errSlug repeats setup's line for a name that yields no repository name, word for word.
-	errSlug = "Enter a name with at least one letter from A to Z or a number."
+	// errSlug is setup's line for a name that yields no repository name.
+	errSlug = setup.LineSlugNoLetters
 
 	labelCrawlers = "AI crawlers"
 	descCrawlers  = "Choose whether AI companies can use your content to train their models. This setting doesn't affect search engines."

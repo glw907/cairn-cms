@@ -215,9 +215,9 @@ var entries = map[Reason]Entry{
 
 // Lines the copy deck did not word, each from a ruling that changed a screen.
 const (
-	// lineSlugNoLetters is the site-name error for a name that yields no repository name, such
+	// LineSlugNoLetters is the site-name error for a name that yields no repository name, such
 	// as one written only in another script.
-	lineSlugNoLetters = "Enter a name that has at least one number or one letter from A to Z."
+	LineSlugNoLetters = "Enter a name that has at least one number or one letter from A to Z."
 	// lineSignInStep replaces the watch sentence for the sign-in step, since the confirm page
 	// takes one more click.
 	lineSignInStep = "Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Sign in there."
@@ -239,6 +239,10 @@ func Catalogue() []string {
 	for _, e := range entries {
 		out = append(out, e.Happened, e.Did, e.Left, e.Do)
 	}
-	out = append(out, lineSlugNoLetters, lineSignInStep, lineDoneOpen, linePageFooter, lineLinkExpired, lineAppNameTaken)
+	out = append(out, LineSlugNoLetters, lineSignInStep, lineDoneOpen, linePageFooter, lineLinkExpired, lineAppNameTaken)
 	return slices.DeleteFunc(out, func(s string) bool { return s == "" })
 }
+
+// Anchor returns the before-you-start.md heading, as a fragment, that explains a failure of the
+// opening checks. It is empty for a reason with no such section.
+func Anchor(r Reason) string { return entries[r].Anchor }

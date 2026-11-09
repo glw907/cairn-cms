@@ -211,8 +211,9 @@ between its two marker comments. In the cairn-cms repository:
 2. Rebuild the tokens.
 3. Lay the theme in again.
 
-A scaffolded site has no lay-in, so it makes the same three changes by hand: the block names in
-`tokens.css`, `src/theme/theme-names.ts`, and the regex in `src/app.html`.
+A scaffolded site has no lay-in, so it edits by hand every place the old name appears: the block
+names and the dark selectors in `tokens.css` and `modes/`, `src/theme/theme-names.ts`, and the regex
+in `src/app.html`. Search the site for the old name to find them all.
 
 Check the regex after a rename. A stale one fails silently: a returning visitor's saved choice does
 not apply, and the page shows the system scheme.

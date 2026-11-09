@@ -39,7 +39,8 @@ pass, was dropped by Geoff on 2026-11-08.
   `20261109T022112-3127080`). G1 merged (#207, `64cbe711d`, the theme contract and Waymark's port);
   G2 merged (#208, `412900111`, the conformance set, viewer, check, and CI) under the plan's gates
   (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`). The garden record
-  packet goes to Geoff next, with G3's sittings.
+  (the grant's removal and whether G3's planner starts) rides the setup tooling run's packet B, since
+  the queue refuses a packet with no open PR or design.
 - cairn-setup tooling: Geoff approved the setup tooling design on 2026-11-09
   (`~/Projects/initiatives/cairn-setup/specs/2026-11-09-setup-tooling-design.md`). Its planner,
   `cairn-cms-setup-tooling-plan` (session `06cc7ec5`), handed the plan to `conductor-cairn-cms`.

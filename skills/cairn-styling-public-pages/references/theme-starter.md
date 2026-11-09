@@ -1,6 +1,6 @@
 # Theme starter
 
-One complete daisyUI theme block. daisyUI does not merge a block that names no built-in theme, so a key left out is a runtime hole. Copy the block into `theme.css` once per scheme, change `name`, `default`, `prefersdark`, and `color-scheme` for the second scheme, and replace every value.
+One complete daisyUI theme block. daisyUI does not merge a block that names no built-in theme, so a key left out is a runtime hole. Copy the block into `tokens/tokens.css` once per scheme, change `name`, `default`, `prefersdark`, and `color-scheme` for the second scheme, and replace every value.
 
 ```css
 @plugin "daisyui/theme" {

@@ -24,7 +24,7 @@ skill rather than this one.
 | Restyle one piece (the catalogue below) | the page named for it |
 
 The core rule: change the token for the job, never a literal beside it. A retheme edits the two
-daisyUI blocks of `src/theme/theme.css` and no other file. Setting `--color-primary` and
+daisyUI blocks in `src/theme/tokens/tokens.css` and no other file (in the engine repository the build writes that file from `tokens/tokens.json`). Setting `--color-primary` and
 `--color-base-100` in both blocks, then moving `--color-base-200` and `--color-base-300` with the
 page color, recolors the links, focus ring, code keywords, cards, and bands with no override.
 

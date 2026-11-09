@@ -6,6 +6,8 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { findSignInMessage } from '../../../scripts/gate/mail.mjs';
+import { gateFetch } from '../../../scripts/gate/fetch-check.mjs';
 import { grade, missedRelays, parseTranscript, permissionPrompts, setupEvents } from '../../../scripts/gate/grade.mjs';
 
 const roots: string[] = [];
@@ -111,11 +113,11 @@ async function makeRun(opts: Options = {}) {
   const deps = {
     cleanroom,
     githubFetch: githubFetch as typeof fetch,
-    siteFetch: (async () => ({ status: 200, text: async () => '' })) as never,
+    siteFetch: (async () => ({ status: 200, text: async () => '' })) as unknown as typeof gateFetch, // the grader reads only status and text()
     findMail: (async () => {
       if (opts.mail === 'throws') throw new Error('JMAP Email/query answered an error');
       return { found: true, from: 'noreply@carin-test.org', url: 'https://carin-test.org/admin/auth/confirm?token=SECRET' };
-    }) as never,
+    }) as unknown as typeof findSignInMessage, // the stub answers the shape the grader reads
     provingDir,
     env: { GITHUB_TEST_TOKEN: 'stub-gh', STALWART_PASSWORD_CAIRN_GATE: 'stub-mail' },
   };
@@ -209,7 +211,7 @@ describe('the end-state checks and the outcome', () => {
 
   it('records a read that failed as a failed check, not an empty one', async () => {
     const run = await makeRun();
-    run.deps.githubFetch = (async () => ({ status: 500, json: async () => ({}) })) as never;
+    run.deps.githubFetch = (async () => ({ status: 500, json: async () => ({}) })) as unknown as typeof fetch; // only status and json() are read
     const record = await grade({ runDir: run.runDir, deps: run.deps });
     expect(record.reads.filter((read: { ok: boolean }) => !read.ok).map((read: { name: string }) => read.name)).toEqual(['repository package.json', 'first deploy jobs']);
     expect(record.outcome.result).toBe('fail');

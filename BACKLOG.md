@@ -76,6 +76,7 @@
   `scripts/release/bump.mjs:112-114`: with no `--date`, `dateAt` is -1, so `i !== dateAt + 1` excludes index 0 and `version` reads as `''`, which is the positional version. `node scripts/release/bump.mjs 0.99.0-rc.4` therefore fails unless `--date` is passed. Left alone, every cut that omits the flag fails its first step. Fix: test `dateAt >= 0 && i === dateAt + 1`. Source: rc.4 release retro.
 - [ ] **#369** Give `preflight.mjs` a recut mode `#improvement` `#cairn-cms` `#tooling` *(2026-11-07)* *(swept 2026-11-08)*
   `scripts/release/preflight.mjs:60-61` refuses a non-stable cut with "## Unreleased is missing or empty; there is nothing to release" once the window was folded into a version section, and there is no mode that accepts a recut of the same candidate (lines 53-55 also refuse a version already published). Left alone, a recut after a failed publish or a late fix has no supported path and the maintainer edits the changelog to satisfy the check. Proposed: a `--recut` flag that checks the folded section for the version instead of `## Unreleased`. Source: rc.4 release retro.
+  Placement: Not needed by the setup-tooling loop; build it when a recut of the same version is needed.
 - [ ] **#370** Stop `check:close` running out of memory on the 3G light lane `#bug` `#cairn-cms` `#tooling` *(2026-11-07)* *(swept 2026-11-08)*
   Reported, not reproduced here: `npm run check:close` (`scripts/checks/close-prebuilt.mjs`) is killed for memory during its `check` step with `CAIRN_GATE_LANE=light` (the 3G lane) and passes on the default lane. Left alone, a close on the light lane cannot run the committed close check. Proposed: cap that step's heap, or run it serially on the light lane. Source: rc.4 release retro.
 - [ ] **#371** Name the local steps a reinstall or a playwright bump needs `#improvement` `#cairn-cms` `#docs-process` *(2026-11-07)* *(swept 2026-11-08)*
@@ -290,6 +291,9 @@
   Placement: handed to the tooling brainstorm.
 
 ## Low
+- [ ] **#420** `cairn new` run inside an agent's Linux sandbox waits on a setup tab the browser cannot reach `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09)*
+  Setup serves its approval tab on a loopback port; an agent's sandbox can start `cairn new` while the owner's browser cannot reach that port, so setup waits for a click that never comes. The cause is known from the sandboxing page, and no product check names it yet.
+  Placement: the setup skill and the agent page say to run it as one bare command outside the sandbox (T2.7); a product check that names the cause waits on a run that meets it.
 - [ ] **#411** Give packaged `skills/` pages a drafting brief in the docs register `#docs` `#docs-process` `#cairn-cms` *(2026-11-09)*
   `.claude/skills/cairn-writing-docs/references/docs-register.md` has no brief or surface-table row for the reference pages under `skills/`, so `register-check` grades them against Google plus the four deviation rows alone. Found in theme-garden pass G1. Also decide whether the register names a polysemy tell (one word in two senses in adjacent sentences, such as "rule" for a constraint and a horizontal line), which the reviewer proposed.
 - [ ] **#398** Give `cairn health` a deploy code with Actions wording for a Worker with no deployment `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*

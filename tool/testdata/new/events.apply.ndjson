@@ -8,10 +8,10 @@
 {"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"provision"}
 {"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"commit"}
 {"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"commit"}
-{"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"push"}
-{"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"push"}
 {"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"deploy-key"}
 {"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"deploy-key"}
+{"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"push"}
+{"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"push"}
 {"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"first-deploy"}
 {"schemaVersion":1,"kind":"step_done","timestamp":"<timestamp>","step":"first-deploy"}
 {"schemaVersion":1,"kind":"step_started","timestamp":"<timestamp>","step":"domains"}

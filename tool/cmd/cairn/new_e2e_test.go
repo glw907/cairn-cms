@@ -299,7 +299,7 @@ func TestNewE2EPlanNamesAnOpenChoiceLeftOpen(t *testing.T) {
 }
 
 // watchSteps are the eight steps after the summary's Enter, in watch order.
-var watchSteps = []string{"scaffold", "provision", "commit", "push", "deploy-key", "first-deploy", "domains", "sign-in"}
+var watchSteps = []string{"scaffold", "provision", "commit", "deploy-key", "push", "first-deploy", "domains", "sign-in"}
 
 // stepsOf returns the step of every event of kind, in stream order.
 func stepsOf(events []map[string]any, kind string) []string {
@@ -454,7 +454,7 @@ func TestNewE2EAStoppedApplyIsUnfinishedAndResumes(t *testing.T) {
 		t.Errorf("stderr = %q, want the four-part stop", res.Stderr)
 	}
 	status := r.status()
-	if !strings.Contains(status, "unfinished  step committed") || !strings.Contains(status, "GitHub App: cairn-example-site") ||
+	if !strings.Contains(status, "unfinished  step deploy-key-stored") || !strings.Contains(status, "GitHub App: cairn-example-site") ||
 		!strings.Contains(status, "repository: "+e2eOwner+"/example-site") {
 		t.Errorf("status = %q, want the stop's step and what it holds", status)
 	}

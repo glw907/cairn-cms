@@ -103,6 +103,7 @@ func NewCase(t *testing.T, cfg Config) *Case {
 		"HOME":                  c.Home,
 		"HTTPS_PROXY":           c.Proxy.URL,
 		"SSL_CERT_FILE":         c.Proxy.CAFile,
+		"GIT_SSL_CAINFO":        c.Proxy.CAFile, // a git linked against GnuTLS ignores SSL_CERT_FILE
 		"BROWSER":               Binary(t, "internal/testharness/browser"),
 		"CAIRN_E2E_BROWSER_LOG": c.browserLog,
 		"CAIRN_E2E_KEYRING_DIR": c.KeyringDir,

@@ -20,16 +20,19 @@ the Go tool is `tool/v1.1.0`. The newest candidate is **`0.99.0-rc.4`** (cut com
 
 ## Immediate next action
 
-The cairn-setup run is under way: `cairn new` replaces the wizard over seven passes (P1 to P7),
-conducted unattended by `conductor-cairn-cms` (session `e82b126f`, launched 2026-11-08). The plan
-is `~/Projects/initiatives/cairn-setup/plans/2026-11-08-cairn-new-plan.md`, approved through three
-Approval Queue packets, and its pre-flight record sits beside it. The conductor launches P1
-(`cairn-cms-cairn-new-1`) and P7 (`cairn-pub-cairn-pub-docs-md`) first, merges P1, P2, P5, and P6
-itself under Decide 11, and updates this section after each merge. Geoff's one set point is
-recording session S1, about four hours into P1, which the run never waits on. The same conductor
-then runs the theme-garden initiative's sequence. The `## High` items the run clears are listed in
-the plan's backlog sweep; no release is cut until the tooling gates in
-`~/Projects/initiatives/cairn-setup/research/handoff-tooling.md` exist.
+The cairn-setup run is under way: `cairn new` replaces the wizard over six passes (P1 to P6; P7, the
+cairn.pub docs pass, was dropped by Geoff on 2026-11-08), conducted unattended by
+`conductor-cairn-cms` (session `e82b126f`). The plan is
+`~/Projects/initiatives/cairn-setup/plans/2026-11-08-cairn-new-plan.md`.
+
+- Merged: P4 (#202, the standard starter set) and P1 (#201, merge `1f131f871`, the setup engine).
+  P1's security record is `~/Projects/initiatives/cairn-setup/reviews/p1-whole-branch-reviews.md`.
+- In flight: P2 (#203, `cairn-cms-cairn-new-2`) merges `main` and merges next; P3 (#204,
+  `cairn-cms-cairn-new-3`) follows P2 and merges itself.
+- Next: P5 launches after P2 and P3 merge; P6 stacks on P5. The theme-garden planner
+  (`cairn-cms-theme-garden-plan`) launches now that P1 and P4 are on `main`.
+- Geoff gets one record packet at P6's close. No release is cut until the tooling gates in
+  `~/Projects/initiatives/cairn-setup/research/handoff-tooling.md` exist.
 
 ## Open decisions and watches
 

@@ -4,7 +4,7 @@ import type { BlockContext } from '@glw907/cairn-cms';
 import { composeBlocks } from './compose.js';
 import classes from './classes.json';
 
-const icons = { flag: { viewBox: '0 0 24 24', body: '<path d="M0 0"/>' } };
+const icons = { flag: '<path d="M0 0"/>' };
 
 /** A context carrying the slice every default build reads. */
 function contextFor(attributes: Record<string, string>): BlockContext {
@@ -66,10 +66,14 @@ describe('composeBlocks', () => {
         expect(block.build).toBe(custom);
         const { build: _custom, ...rest } = block;
         const { build: _default, ...baseRest } = baseBlock;
-        expect(rest).toEqual(baseRest);
+        // Fresh validator closures differ by identity, so compare the data and the key set.
+        expect(Object.keys(rest)).toEqual(Object.keys(baseRest));
+        expect(JSON.stringify(rest)).toBe(JSON.stringify(baseRest));
       } else {
         expect(outcome(block.build)).toEqual(outcome(baseBlock.build));
-        expect(block.attributeSchema).toEqual(baseBlock.attributeSchema);
+        expect(JSON.stringify({ ...block, build: 0 })).toBe(
+          JSON.stringify({ ...baseBlock, build: 0 }),
+        );
       }
     }
   });

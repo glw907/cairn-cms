@@ -1,8 +1,8 @@
 // This site's adapter: the single seam the engine consumes. It declares the posts, pages, and
 // fragments concepts, the media wiring, the navLayout, and the preview knob, over a render that
 // runs the engine pipeline and a backend the dev GitHub double answers for. The
-// icon set and the registered markdown blocks live in separate modules
-// (`icons.ts`, `markdown-blocks.ts`); this file holds only the adapter, concepts, backend,
+// icon set and the directive renderers live in separate modules (`icons.ts`,
+// `directives/renderers.ts`); this file holds only the adapter, concepts, backend,
 // and navLayout.
 import {
   createRenderer,
@@ -13,10 +13,11 @@ import {
   type MediaConfig,
 } from '@glw907/cairn-cms';
 import { createMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
-import { siteIslands } from '#theme/islands/registry.js';
+import { siteIslands } from '#theme/directives/islands/registry.js';
 import { proseTypography } from '#chassis/render.js';
 import { icons } from '#theme/icons.js';
-import { blocks } from '#theme/markdown-blocks.js';
+import { composeBlocks } from '#chassis/directives/compose.js';
+import { renderers } from '#theme/directives/renderers.js';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
 // sheet must stay ?url-only; see the header comment in site.css.
@@ -55,6 +56,10 @@ const media: MediaConfig = { bucketBinding: 'MEDIA_BUCKET' };
 // `media:` reference from throwing when no per-call resolver is supplied. Exported so the public
 // route can inject the same resolver for the frontmatter hero, one source of truth.
 export const resolveMedia = createMediaResolver(media, mediaManifest);
+
+// The registered directive blocks: the chassis vocabulary over this theme's icon set, with the
+// theme's renderer overrides (none for Waymark).
+const blocks = composeBlocks(icons, renderers);
 
 const renderer = createRenderer({
   blocks,

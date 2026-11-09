@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { banner } from './markdown-blocks.js';
+import { composeBlocks } from './compose.js';
 import type { BlockContext } from '@glw907/cairn-cms';
+
+const banner = composeBlocks({}, {}).find((block) => block.name === 'banner')!;
 
 /** The slice of a component context the banner's `build` reads. */
 function contextFor(attributes: Record<string, string>): BlockContext {

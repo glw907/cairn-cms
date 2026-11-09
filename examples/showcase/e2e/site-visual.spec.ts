@@ -131,7 +131,7 @@ test('a short page pins the footer with no background seam below it', async ({ p
 });
 
 // The alert directive's inner classes are inlined at this site's call site
-// (`markdown-blocks.ts`/`render.ts`'s `headRow`), not built by an engine helper, so nothing
+// (`chassis/directives/vocabulary.ts`, `render.ts`'s `headRow`), not built by an engine helper, so nothing
 // but the theme's code enforces that the inlined literals stay `cairn-alert-body`/
 // `cairn-head-title` rather than drifting back to DaisyUI's `card-body`/`card-title` names.
 // This asserts the inlined shape directly against the rendered DOM, not against source text.

@@ -6,7 +6,7 @@
 // SvelteKit never ships a `+layout.server.ts` module (or anything it imports) to the client, so
 // this reads the theme's island registry and its lean site-config reader directly with no
 // client-bundle cost; the root layout's client script imports only the returned boolean,
-// never the registry module itself (see `#theme/islands/registry.js` for why importing the
+// never the registry module itself (see `#theme/directives/islands/registry.js` for why importing the
 // registry client-side stays gated behind that flag rather than happening unconditionally).
 // `site-config.ts`, not `#site/cairn.config.js`, is the import for the nav and the site name on
 // purpose: the full adapter also builds the renderer, the icon set, and the registered
@@ -15,7 +15,7 @@
 // `#chassis/content.js`'s `siteMeta.title` reads the same `site-config.ts` export, so the name
 // still has exactly one source no matter which module reads it.
 import type { LayoutServerLoad } from './$types';
-import { siteIslands } from '#theme/islands/registry.js';
+import { siteIslands } from '#theme/directives/islands/registry.js';
 import { primaryNav, footerNav, siteName } from '#site/site-config.js';
 
 export const load: LayoutServerLoad = () => {

@@ -10,7 +10,7 @@ to vanish mid-visit, only stay correct across a fresh mount. Every prop is autho
 untrusted, so `message` only ever reaches a text binding, never `{@html}`.
 -->
 <script lang="ts">
-  import { isBannerExpired } from './banner-expiry.js';
+  import { isBannerExpired } from '#chassis/directives/banner-expiry.js';
 
   interface Props {
     /** The announcement text. */

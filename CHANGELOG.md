@@ -10,6 +10,8 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
 - **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
+- **The admin docs describe `cairn new`.** `before-you-start`, `create-your-site`, `own-your-domain`, `setup-recovery`, `troubleshooting`, and `credentials` are rebuilt for the new setup, and four pages are new: `set-up-with-an-agent`, `deploys`, `suggested-plugins`, and the generated `setup-reference`. The agent page is also embedded in the `cairn` binary, and a test fails when the copy drifts. Until the launcher lands, the pages that name `npm create cairn-site` describe the command the next release builds.
+- **A `cairn` Claude Code plugin and marketplace.** `.claude-plugin/marketplace.json` names the marketplace `cairn`, and `plugins/cairn` holds one skill, `cairn-setting-up-a-site`, that runs the plan and apply steps for an owner. A new site's `.claude/settings.json` offers the Svelte, Cloudflare, and daisyUI plugins, and its `.mcp.json` adds the Svelte MCP server. Both READMEs open with "Setting up with an agent".
 
 Consumers must: nothing.
 

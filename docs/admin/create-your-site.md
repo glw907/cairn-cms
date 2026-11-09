@@ -94,7 +94,7 @@ Setup shows its steps, and only the current one explains itself. You can leave t
 3. Commit the site, with its first Git commit.
 4. Push the site to GitHub. While it pushes, setup installs the site's dependencies in the folder, so you can start working on the site at once.
 5. Store the deploy key in GitHub. GitHub Actions deploys your site to Cloudflare with this key, and only workflows in your repository can read it.
-6. Run the first deploy. GitHub Actions deploys the site, and each publish from the admin later runs the same workflow. The first one takes a few minutes, and setup waits up to 30 minutes for it.
+6. Run the first deploy. GitHub Actions deploys the site, and each publish from the admin later runs the same workflow. The first one takes a few minutes, and setup waits up to 30 minutes for it. [Deploys](./deploys.md) covers the free limit and moving to Workers Builds.
 7. Connect your address. Cloudflare issues the site's HTTPS certificate, which can take up to 15 minutes.
 8. Sign in to the admin.
 
@@ -143,4 +143,6 @@ No setups found.
 - [Before you start](./before-you-start.md) covers the cost and what stays yours.
 - [Own your domain](./own-your-domain.md) covers a domain's existing records and the sign-in email.
 - [Invite editors](./invite-editors.md) adds the people who write on the site.
+- [Deploys](./deploys.md) covers how the site deploys, the free limit, and moving to Workers Builds.
+- [Set up with an agent](./set-up-with-an-agent.md) runs the same setup through a coding agent.
 - [Troubleshoot a live site](./troubleshooting.md) covers a live site that misbehaves.

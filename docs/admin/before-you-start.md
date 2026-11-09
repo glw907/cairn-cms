@@ -108,3 +108,4 @@ Two accounts hold everything: GitHub and Cloudflare. To hand the site over, give
 - [Create your site](./create-your-site.md) runs the setup.
 - [Own your domain](./own-your-domain.md) covers the domain's existing records and the sign-in email.
 - [Check that your site works](./is-it-working.md) explains each readiness result.
+- [Set up with an agent](./set-up-with-an-agent.md) is the same setup run through a coding agent.

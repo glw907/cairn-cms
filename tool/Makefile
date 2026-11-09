@@ -107,12 +107,12 @@ golden:
 flags:
 	go test ./cmd/cairn -run TestCommittedFlagListMatchesTheCommandTree -update
 
-# reference writes docs/setup-reference.md from the code: the flags from the built binary's
+# reference writes ../docs/admin/setup-reference.md from the code: the flags from the built binary's
 # `cairn new --help`, and the steps, events, names, and exit codes from internal/setup and the
 # exit-code golden. `make test` compares the committed page with a fresh render, so a code change
 # that skips this step fails cmd/reference's test.
 reference:
-	go run ./cmd/reference > docs/setup-reference.md
+	go run ./cmd/reference > ../docs/admin/setup-reference.md
 
 build-golangci-lint:
 	go build -C tools -o ../$(GOLANGCI) github.com/golangci/golangci-lint/v2/cmd/golangci-lint

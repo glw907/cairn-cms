@@ -43,6 +43,7 @@ const QUOTING_DIR = 'docs/admin';
 const PAGE_FLOORS = {
   'docs/admin/create-your-site.md': 2,
   'docs/admin/is-it-working.md': 1,
+  'docs/admin/set-up-with-an-agent.md': 2,
 };
 
 const MARKER_RE = /^<!-- transcript: (.+) -->$/;

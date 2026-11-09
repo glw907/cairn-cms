@@ -1,6 +1,6 @@
 # Set up and run a cairn site
 
-A person who is comfortable pasting a command into a terminal and following written steps exactly can set up and run a cairn site without writing code. The setup command, `create-cairn-site`, does the work, and these pages explain what it does, state what it costs, and get you moving again when a step stops.
+A person who is comfortable pasting a command into a terminal and following written steps exactly can set up and run a cairn site without writing code. The setup command, `cairn new`, does the work. Start it with `npm create cairn-site`, or hand it to a coding agent. These pages explain what setup does, state what it costs, and get you moving again when a step stops.
 
 If you write content on a site that someone else set up, you want the editors' help instead, which opens from the admin's **Help** link. If you build custom screens or features on cairn, start from the [cairn repository](https://github.com/glw907/cairn-cms), whose README routes a developer.
 
@@ -12,9 +12,11 @@ The following table routes you by what is happening now.
 | --- | --- |
 | You're deciding whether to set up a site | [Before you start](./before-you-start.md) |
 | You're setting up for the first time | The numbered pages in the next section, in order |
+| You want a coding agent to set up the site | [Set up a site with an agent](./set-up-with-an-agent.md) |
 | A setup run stopped | [Recover a setup that stopped](./setup-recovery.md) |
 | A `cairn doctor` check failed | [Check that your site works](./is-it-working.md) |
 | The live site misbehaves | [Troubleshoot a live site](./troubleshooting.md) |
+| You want to know how the site deploys, or move it to Cloudflare's own builds | [Deploys](./deploys.md) |
 
 ## Set up a site in order
 
@@ -25,6 +27,10 @@ The following table routes you by what is happening now.
 
 ## Also in this track
 
+- [Set up a site with an agent](./set-up-with-an-agent.md) hands setup to a coding agent, from flags and a plan file.
+- [Setup reference](./setup-reference.md) lists every flag, derived name, step, event, and exit code of `cairn new`, generated from the code.
+- [Deploys](./deploys.md) explains how the site deploys and how to move it to Cloudflare's own build service.
+- [Suggested plugins](./suggested-plugins.md) lists the Claude Code plugins a new site offers and how to install them.
 - [Rotate the GitHub App key](./rotate-the-github-app-key.md) replaces the key your site signs its commits with.
 - [Credentials](./credentials.md) says which secrets the `cairn` CLI stores and where.
 - [Run cairn on a schedule](./tripwire.md) describes a scheduled health check that pages someone when a site needs attention.

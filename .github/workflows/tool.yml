@@ -20,6 +20,7 @@ on:
       - 'docs/admin/is-it-working.md'
       # the opening checks' failure messages point at this page's headings; anchors_test.go resolves them
       - 'docs/admin/before-you-start.md'
+      - 'docs/admin/setup-reference.md'
       - 'scripts/checks/shipped-anchors.json'
       - 'scripts/checks/fixtures/consumers-must/**'
       - 'schema/**'
@@ -37,6 +38,7 @@ on:
       - 'docs/admin/is-it-working.md'
       # the opening checks' failure messages point at this page's headings; anchors_test.go resolves them
       - 'docs/admin/before-you-start.md'
+      - 'docs/admin/setup-reference.md'
       - 'scripts/checks/shipped-anchors.json'
       - 'scripts/checks/fixtures/consumers-must/**'
       - 'schema/**'

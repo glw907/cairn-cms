@@ -156,18 +156,21 @@ function measure(tree: Tree) {
   return measureThemeContrast(chainOf(tree).files, BUILT_IN);
 }
 
-/** The showcase's real theme and chassis files, laid out as a site holds them. */
-function showcaseTree(theme = read('examples/showcase/src/theme/theme.css')): Tree {
-  const files: Record<string, string> = {};
+/**
+ * The showcase's real theme and chassis files, laid out as a site holds them. Waymark's daisyUI
+ * blocks live in the built `tokens/tokens.css` its theme.css imports.
+ */
+function showcaseTree(tokens = read('examples/showcase/src/theme/tokens/tokens.css')): Tree {
+  const files: Record<string, string> = { 'src/theme/tokens/tokens.css': tokens };
   for (const name of ['tokens.css', 'prose.css', 'composition.css']) {
     files[`src/chassis/${name}`] = read(`examples/showcase/src/chassis/${name}`);
   }
-  return { theme, files };
+  return { theme: read('examples/showcase/src/theme/theme.css'), files };
 }
 
-/** Waymark with its four hand-tuned status inks removed from both daisyUI blocks. */
+/** Waymark's built tokens with its four hand-tuned status inks removed from both daisyUI blocks. */
 function strippedWaymark(): string {
-  return read('examples/showcase/src/theme/theme.css').replace(/^\s*--cairn-(?:success|warning|error|info)-ink:[^;]*;\n/gm, '');
+  return read('examples/showcase/src/theme/tokens/tokens.css').replace(/^\s*--cairn-(?:success|warning|error|info)-ink:[^;]*;\n/gm, '');
 }
 
 describe('theme-contrast: registration', () => {

@@ -83,21 +83,21 @@ export function directiveCounts(markdown, names) {
 
 /**
  * The directive names a site's markdown can use: the engine's reserved built-ins, read from the
- * render registry's source, plus every block the showcase's theme registers, read from its
- * `defineBlock` calls. Reading source keeps the list from drifting when either one changes.
+ * render registry's source, plus every block the chassis vocabulary registers, read from its
+ * `classes.json`. Reading source keeps the list from drifting when either one changes.
  * @returns {Promise<string[]>} the names, in source order
  */
 export async function engineDirectiveNames() {
   const registry = await readFile(path.join(repoRoot, 'src', 'lib', 'render', 'registry.ts'), 'utf8');
   const reserved = /RESERVED_DIRECTIVE_NAMES\s*=\s*new Set\(\[([^\]]*)\]\)/.exec(registry)?.[1];
   const builtIns = [...(reserved ?? '').matchAll(/'([^']+)'/g)].map((m) => m[1]);
-  const theme = await readFile(
-    path.join(repoRoot, 'examples', 'showcase', 'src', 'theme', 'markdown-blocks.ts'),
+  const classes = await readFile(
+    path.join(repoRoot, 'examples', 'showcase', 'src', 'chassis', 'directives', 'classes.json'),
     'utf8',
   );
-  const registered = [...theme.matchAll(/defineBlock\(\{\s*name:\s*'([^']+)'/g)].map((m) => m[1]);
+  const registered = Object.keys(JSON.parse(classes));
   if (builtIns.length === 0 || registered.length === 0) {
-    throw new Error('engineDirectiveNames: read no directive names from the registry or the theme');
+    throw new Error('engineDirectiveNames: read no directive names from the registry or the vocabulary');
   }
   return [...registered, ...builtIns];
 }

@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import { readVocabulary } from '@glw907/cairn-cms';
 import { buildSeoMeta } from '@glw907/cairn-cms/delivery';
 import { posts } from '#chassis/content.js';
-import { siteConfig } from '#theme/site-config.js';
+import { siteConfig } from '#site/site-config.js';
 import { paginateArchive } from '#chassis/archive.js';
 import { publicRoutesConfig } from '#chassis/public-routes.js';
 

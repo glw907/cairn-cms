@@ -13,6 +13,7 @@ Reads:
 - The block binds `--cairn-code-bg`, `--cairn-code-ink`, and `--cairn-code-border`. The six token classes `cairn-tok-keyword`, `cairn-tok-string`, `cairn-tok-comment`, `cairn-tok-function`, `cairn-tok-number`, and `cairn-tok-punct` bind `--cairn-code-keyword`, `--cairn-code-string`, `--cairn-code-comment`, `--cairn-code-function`, `--cairn-code-number`, and `--cairn-code-punct`.
 - The string, function, and number roles default to the status inks, so retuning an ink retunes the code palette with it.
 - Inline code reads `--font-mono`, `--color-base-200`, and `--color-base-300`.
+- A block that scrolls sideways paints a cue at its end, a gradient over the last stretch and a soft shadow at the edge. The `--cairn-scroll-cue` role holds that image list, and `none` turns the cue off.
 
 Override seams:
 

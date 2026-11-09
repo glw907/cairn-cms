@@ -17,7 +17,7 @@ const DICTIONARY_PATH = 'src/content/.cairn/dictionary.txt';
 // The site-config path a scaffolded site uses. The scaffold bakes this path and the Go doctor embeds
 // it, from scripts/build/site-config-path.json; the engine cannot read that file
 // at runtime, so this is a committed twin that a unit test pins to it.
-export const DEFAULT_SITE_CONFIG_PATH = 'src/theme/site.config.yaml';
+export const DEFAULT_SITE_CONFIG_PATH = 'src/site/site.config.yaml';
 
 // The in-admin help's fallback hand-off when a site sets no support contact of its own: cairn's
 // hosted editor help. An explicit `editor.supportContact` still wins.

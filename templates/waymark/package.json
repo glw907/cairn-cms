@@ -5,6 +5,7 @@
   "imports": {
     "#chassis/*": "./src/chassis/*",
     "#lib/*": "./src/lib/*",
+    "#site/*": "./src/site/*",
     "#theme/*": "./src/theme/*"
   },
   "scripts": {
@@ -21,6 +22,7 @@
     "check:cairn": "npm run build:admin-css && cairn-audit",
     "format": "prettier --write --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte,css}' 'e2e/**/*.ts' '*.ts' '*.js'",
     "format:check": "prettier --check --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte,css}' 'e2e/**/*.ts' '*.ts' '*.js'",
+    "pretest:unit": "svelte-kit sync",
     "test:unit": "vitest run",
     "cf-typegen": "wrangler types --env-file=.dev.vars.example --include-runtime=false"
   },
@@ -31,9 +33,6 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261107.1",
-    "@fontsource-variable/figtree": "^5.3.0",
-    "@fontsource-variable/source-code-pro": "^5.3.1",
-    "@fontsource-variable/source-sans-3": "^5.3.1",
     "@glw907/cairn-cms-dev": "^0.99.0-rc.4",
     "@sveltejs/adapter-cloudflare": "^8.0.2",
     "@sveltejs/kit": "^3.1.1",

@@ -1309,7 +1309,7 @@ func (w *world) writeSite(ctx context.Context, cfg scaffold.Config) (scaffold.Re
 }
 
 // siteConfig is the site file that carries the GitHub App identity.
-const siteConfig = "src/theme/cairn.config.ts"
+const siteConfig = "src/site/cairn.config.ts"
 
 // appLiteral is the createGithubApp call the scaffold's second pass writes for s.
 func appLiteral(s scaffold.Site) string {

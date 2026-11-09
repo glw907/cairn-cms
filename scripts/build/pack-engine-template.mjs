@@ -1,9 +1,9 @@
 // Writes the root `template/` tree the engine tarball packs: `template/waymark/` is the composed
-// Waymark template (bake plus the repo overlay) with the setup overlay on top, and
+// Waymark template (bake, the theme lay-in, and the repo overlay) with the setup overlay on top, and
 // `template/catalog.json` is the theme catalog. The tree is gitignored and rebuilt on every run.
 // npm's packlist drops any file literally named `.gitignore`, so the composed tree's `.gitignore`
 // is renamed to `gitignore` last, after the overlay has appended to it.
-import { cp, mkdir, rename, rm } from 'node:fs/promises';
+import { cp, mkdir, readFile, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { composeTemplate } from './emit-template-dir.mjs';
@@ -22,20 +22,27 @@ export const SETUP_OVERLAY_DIR = path.join(repoRoot, 'scripts/build/setup-overla
 export async function packEngineTemplate({ engineSpec, devSpec } = {}) {
   const out = path.join(repoRoot, 'template');
   await rm(out, { recursive: true, force: true });
-  const scratch = await composeTemplate({ engineSpec, devSpec });
-  try {
-    const waymark = path.join(out, 'waymark');
-    await mkdir(out, { recursive: true });
-    await cp(scratch, waymark, { recursive: true });
-    await cp(SETUP_OVERLAY_DIR, waymark, {
-      recursive: true,
-      filter: (source) => path.relative(SETUP_OVERLAY_DIR, source) !== 'README.md',
-    });
-    await rename(path.join(waymark, '.gitignore'), path.join(waymark, 'gitignore'));
-    await cp(path.join(repoRoot, 'templates/catalog.json'), path.join(out, 'catalog.json'));
-  } finally {
-    await rm(scratch, { recursive: true, force: true });
+  await mkdir(out, { recursive: true });
+  const catalogPath = path.join(repoRoot, 'templates/catalog.json');
+  const catalog = JSON.parse(await readFile(catalogPath, 'utf8'));
+  for (const entry of catalog.themes) {
+    if (entry.source !== 'engine') {
+      throw new Error(`pack-engine-template: catalog entry ${entry.id} has source ${JSON.stringify(entry.source)}, expected "engine"`);
+    }
+    const scratch = await composeTemplate({ engineSpec, devSpec, theme: entry.id });
+    try {
+      const dest = path.join(out, entry.path);
+      await cp(scratch, dest, { recursive: true });
+      await cp(SETUP_OVERLAY_DIR, dest, {
+        recursive: true,
+        filter: (source) => path.relative(SETUP_OVERLAY_DIR, source) !== 'README.md',
+      });
+      await rename(path.join(dest, '.gitignore'), path.join(dest, 'gitignore'));
+    } finally {
+      await rm(scratch, { recursive: true, force: true });
+    }
   }
+  await cp(catalogPath, path.join(out, 'catalog.json'));
   return out;
 }
 

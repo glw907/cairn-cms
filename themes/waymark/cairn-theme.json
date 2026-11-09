@@ -1,0 +1,58 @@
+{
+  "$schema": "https://cairn.pub/schemas/cairn-theme/1.json",
+  "id": "waymark",
+  "name": "Waymark",
+  "description": "An intentionally neutral look that's easy to edit.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "cairn",
+    "url": "https://cairn.pub"
+  },
+  "contract": 1,
+  "colorModes": {
+    "light": "cairn",
+    "dark": "cairn-dark"
+  },
+  "options": [],
+  "fonts": [
+    {
+      "name": "Figtree",
+      "license": "OFL-1.1",
+      "source": "https://fontsource.org/fonts/figtree",
+      "files": [
+        "fonts/figtree-latin-ext-wght-normal.woff2",
+        "fonts/figtree-latin-wght-normal.woff2"
+      ]
+    },
+    {
+      "name": "Source Sans 3",
+      "license": "OFL-1.1",
+      "source": "https://fontsource.org/fonts/source-sans-3",
+      "files": [
+        "fonts/source-sans-3-cyrillic-ext-wght-normal.woff2",
+        "fonts/source-sans-3-cyrillic-wght-normal.woff2",
+        "fonts/source-sans-3-greek-ext-wght-normal.woff2",
+        "fonts/source-sans-3-greek-wght-normal.woff2",
+        "fonts/source-sans-3-latin-ext-wght-normal.woff2",
+        "fonts/source-sans-3-latin-wght-normal.woff2",
+        "fonts/source-sans-3-vietnamese-wght-normal.woff2"
+      ]
+    },
+    {
+      "name": "Source Code Pro",
+      "license": "OFL-1.1",
+      "source": "https://fontsource.org/fonts/source-code-pro",
+      "files": [
+        "fonts/source-code-pro-cyrillic-ext-wght-normal.woff2",
+        "fonts/source-code-pro-cyrillic-wght-normal.woff2",
+        "fonts/source-code-pro-greek-ext-wght-normal.woff2",
+        "fonts/source-code-pro-greek-wght-normal.woff2",
+        "fonts/source-code-pro-latin-ext-wght-normal.woff2",
+        "fonts/source-code-pro-latin-wght-normal.woff2",
+        "fonts/source-code-pro-vietnamese-wght-normal.woff2"
+      ]
+    }
+  ],
+  "screenshots": []
+}

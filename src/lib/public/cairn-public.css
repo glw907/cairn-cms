@@ -56,6 +56,10 @@
    styles every placement it wants to honor. */
 
 @layer theme {
+  /* A role built with var() resolves where it is declared. On `:root` alone, a nested element that
+     carries its own `data-theme` (daisyUI sets the base colors on `[data-theme=<name>]`) would
+     inherit the value computed from the root's colors. Declaring the roles on `[data-theme]` too
+     recomputes each one from that region's colors. */
   :root,
   [data-theme] {
     /* The one rhythm variable the reading surface's owl selector reads. */

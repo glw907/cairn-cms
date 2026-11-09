@@ -27,6 +27,7 @@ export const CAIRN_LOG_EVENTS = Object.freeze([
   'commit.failed',
   'commit.reverted',
   'config.invalid',
+  'config.missing',
   'config.access_unmapped',
   'content.field_behavior_failed',
   'content.field_unmarked',

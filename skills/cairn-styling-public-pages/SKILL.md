@@ -23,8 +23,12 @@ skill rather than this one.
 | Add a public component | `references/public-component.md` |
 | Restyle one piece (the catalogue below) | the page named for it |
 
-The core rule: change the token for the job, never a literal beside it. A retheme edits the two
-daisyUI blocks of `src/theme/theme.css` and no other file. Setting `--color-primary` and
+The core rule: change the token for the job, never a literal beside it. A retheme in a scaffolded
+site edits `src/theme/tokens/tokens.css` directly, a plain file that holds the two daisyUI blocks
+and the root tokens, and no other file. The tokens build that regenerates that file from
+`tokens/tokens.json` ships in the cairn-cms repository, not in a scaffolded site, so a site that
+edits the CSS leaves `tokens.json` as the theme's original source. In the repository, edit
+`themes/<id>/tokens/tokens.json` and run the build and the lay-in. Setting `--color-primary` and
 `--color-base-100` in both blocks, then moving `--color-base-200` and `--color-base-300` with the
 page color, recolors the links, focus ring, code keywords, cards, and bands with no override.
 

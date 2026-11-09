@@ -1,0 +1,21 @@
+{
+  "version": "2025.10",
+  "name": "waymark",
+  "description": "Waymark's resolver: the base set and the color mode. Waymark offers no theme options.",
+  "sets": {
+    "base": { "sources": [{ "$ref": "tokens.json#/base" }] }
+  },
+  "modifiers": {
+    "mode": {
+      "contexts": {
+        "light": [{ "$ref": "tokens.json#/color/light" }],
+        "dark": [{ "$ref": "tokens.json#/color/dark" }]
+      },
+      "default": "light"
+    }
+  },
+  "resolutionOrder": [
+    { "$ref": "#/sets/base" },
+    { "$ref": "#/modifiers/mode" }
+  ]
+}

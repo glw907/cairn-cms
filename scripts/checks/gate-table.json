@@ -21,7 +21,7 @@
     ],
     "harness": [".claude/"],
     "toolTestdata": ["tool/testdata/flags.json"],
-    "showcase": ["examples/showcase/", "templates/", "packages/create-cairn-site/"],
+    "showcase": ["examples/showcase/", "themes/", "templates/", "packages/create-cairn-site/"],
     "engine": [
       "src/lib/",
       "scripts/build/",
@@ -63,7 +63,7 @@
     "scripts/checks/fixtures/consumers-must/cases.json",
     "docs/admin/",
     "schema/",
-    "examples/showcase/src/theme/site.config.yaml",
+    "examples/showcase/src/site/site.config.yaml",
     "tool/testdata/fixtures/",
     "scripts/checks/shipped-anchors.json"
   ],
@@ -262,7 +262,8 @@
         "prefixes": [
           "examples/showcase/src/routes/(site)/",
           "examples/showcase/src/chassis/",
-          "examples/showcase/src/theme/"
+          "examples/showcase/src/theme/",
+          "themes/"
         ],
         "specs": [
           "site-visual.spec.ts",
@@ -272,6 +273,7 @@
           "prose-table.spec.ts",
           "reading-surface-edge-cases.spec.ts",
           "theme-toggle.spec.ts",
+          "chassis-roles.spec.ts",
           "tag-filter.spec.ts",
           "styleguide.spec.ts",
           "islands.spec.ts",

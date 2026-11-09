@@ -28,6 +28,10 @@ dist/
 # the showcase keeps no Claude Code tooling of its own; its template manifest excludes the path
 /examples/showcase/.claude/
 
+# the showcase's theme is generated: scripts/theme/lay-in.mjs copies themes/waymark here (on npm
+# ci, and before dev, build, check, and test:unit). Anchored, so a site's src/theme/ stays tracked.
+/examples/showcase/src/theme/
+
 # the theme-fixture harness's throwaway showcase copy, removed when the harness exits
 .cairn-theme-fixture-*/
 

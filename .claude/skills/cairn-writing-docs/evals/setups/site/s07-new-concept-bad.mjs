@@ -5,9 +5,9 @@ import { join } from 'node:path';
 
 /** @param {string} root */
 export default function setup(root) {
-  mkdirSync(join(root, 'src/theme'), { recursive: true });
+  mkdirSync(join(root, 'src/site'), { recursive: true });
   writeFileSync(
-    join(root, 'src/theme/cairn.config.ts'),
+    join(root, 'src/site/cairn.config.ts'),
     `import { defineAdapter, defineConcept, fields } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({

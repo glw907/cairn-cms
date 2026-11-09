@@ -603,7 +603,7 @@ const ROWS = {
           `${params.detail}\n` +
           "The tool then could not put your site's address on disk back to its workers.dev one:\n" +
           `${params.restoreFailed}\n` +
-          'So wrangler.jsonc and src/theme/cairn.config.ts may still name ' +
+          'So wrangler.jsonc and src/site/cairn.config.ts may still name ' +
           `${params.domainOrigin}. Your site is still working at its workers.dev address, since ` +
           'it was never redeployed, and a re-run writes both files again.\n' +
           `Next: fix what was reported above, then re-run npx create-cairn-site --dir ` +

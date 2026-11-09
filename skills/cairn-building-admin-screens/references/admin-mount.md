@@ -19,7 +19,7 @@ release reaches the site through the version bump alone.
 // src/chassis/cairn.server.ts: build the runtime once; every server route imports it.
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '#theme/cairn.config.js';
+import { cairn, siteConfig } from '#site/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin({ runtime });
@@ -39,7 +39,7 @@ export const actions = admin.actions;
 <script lang="ts">
   import { CairnAdmin } from '@glw907/cairn-cms/admin';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '#theme/cairn.config.js';
+  import { cairn } from '#site/cairn.config.js';
   import type { ActionData } from './$types';
 
   let { data, form }: { data: AdminData; form: ActionData } = $props();

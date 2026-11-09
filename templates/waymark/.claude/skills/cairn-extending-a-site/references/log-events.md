@@ -72,6 +72,7 @@ Contents:
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
 | `config.invalid` | error | `scope` (`nav`, `settings`, `vocabulary`), `conditionId`, `error` | Committed site config failed to parse or validate. The nav and vocabulary loads fall back to empty, and the settings load to the deployed conventions; the settings and vocabulary saves answer `fail(500)` with generic copy. `error` holds the parser message. |
+| `config.missing` | warn | `scope` (`nav`, `settings`, `vocabulary`), `path` | The site config file is absent at the engine's fixed path, `src/site/site.config.yaml`. The nav and vocabulary loads, and the settings load when tidy is enabled and its key is set (it reads the file only then), degrade as they do for an unreadable file (an empty menu, an empty vocabulary, the deployed conventions), so a site still on the old `src/theme/` layout loses its menu visibly. Move the file to the path. |
 | `config.access_unmapped` | warn | `unmapped` | The access map keys at least one screen and leaves the listed concepts or fixed screens (`media`, `vocabulary`, `nav`, `settings`) without a rule. Fires once per isolate at cold start: widen the query window. Route keys never count. |
 
 ## Preview

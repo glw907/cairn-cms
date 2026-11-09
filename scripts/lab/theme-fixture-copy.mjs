@@ -6,8 +6,10 @@
 //
 // A copy is removed when its process exits, failure and signals included, and any copy left by a
 // process that no longer runs is deleted before a new one is made.
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { stripLayIn } from '../build/strip-lay-in.mjs';
+import { layIn } from '../theme/lay-in.mjs';
 
 /** The directory-name prefix every copy carries, matched by `.gitignore`. */
 export const COPY_PREFIX = '.cairn-theme-fixture-';
@@ -89,6 +91,14 @@ export function makeShowcaseCopy({ root, themeFile, themeDir }) {
     },
   });
   symlinkSync(join(showcase, 'node_modules'), join(dir, 'node_modules'), 'dir');
+  // The copy sits at the repo root, where the showcase's `npm --prefix ../..` lay-in step would miss
+  // the root package. Lay Waymark in here and strip the step from the copy's scripts, so the copy
+  // does not depend on the showcase's generated src/theme/ being present or current.
+  layIn(resolve(root, 'themes/waymark'), dir);
+  const packagePath = join(dir, 'package.json');
+  const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+  stripLayIn(pkg);
+  writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
   if (themeDir) {
     if (!existsSync(themeDir)) throw new Error(`theme directory not found: ${themeDir}`);
     cpSync(resolve(themeDir), join(dir, 'src/theme'), { recursive: true });

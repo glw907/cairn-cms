@@ -9,7 +9,7 @@
 // it for the render rather than waiting for the save to land.
 import { error } from '@sveltejs/kit';
 import { createMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
-import { cairn } from '#theme/cairn.config.js';
+import { cairn } from '#site/cairn.config.js';
 import { devBackendOptIn } from '#chassis/dev-gate.js';
 import type { RequestHandler } from './$types';
 

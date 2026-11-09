@@ -13,7 +13,7 @@ const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '../../..');
 // project's vitest config does not resolve.
 describe('the showcase pages concept', () => {
   it('declares an explicit singular so the create button reads "New page", not "New Pages"', () => {
-    const configSrc = readFileSync(resolve(ROOT, 'examples/showcase/src/theme/cairn.config.ts'), 'utf8');
+    const configSrc = readFileSync(resolve(ROOT, 'examples/showcase/src/site/cairn.config.ts'), 'utf8');
     const pagesBlock = configSrc.match(/pages:\s*defineConcept\(\{[\s\S]*?\n\s{4}\}\),/);
     expect(pagesBlock).not.toBeNull();
     expect(pagesBlock?.[0]).toMatch(/singular:\s*'page'/);

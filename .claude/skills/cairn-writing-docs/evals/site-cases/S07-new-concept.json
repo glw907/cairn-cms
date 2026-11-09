@@ -25,9 +25,9 @@
     "npm run check and npm run build pass."
   ],
   "checks": [
-    { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "events:\\s*defineConcept" },
-    { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "singular:\\s*['\"]event['\"]" },
-    { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "refine|behavior\\s*:[\\s\\S]*endDate\\s*:\\s*\\{[\\s\\S]*validate" },
+    { "type": "contains", "path": "src/site/cairn.config.ts", "regex": "events:\\s*defineConcept" },
+    { "type": "contains", "path": "src/site/cairn.config.ts", "regex": "singular:\\s*['\"]event['\"]" },
+    { "type": "contains", "path": "src/site/cairn.config.ts", "regex": "refine|behavior\\s*:[\\s\\S]*endDate\\s*:\\s*\\{[\\s\\S]*validate" },
     { "type": "contains", "path": "src/content/.cairn/index.json", "text": "\"concept\": \"events\"" },
     { "type": "bash", "pattern": "cairn-manifest|cairn:manifest" },
     { "type": "unchanged", "path": "src/content/events" },

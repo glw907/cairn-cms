@@ -19,7 +19,7 @@ function swap(file, from, to) {
 
 /** @param {string} root */
 export default function setup(root) {
-  swap(join(root, 'src/theme/site.config.yaml'), 'tidy:\n  enabled: true\n', 'tidy:\n  enabled: false\n');
+  swap(join(root, 'src/site/site.config.yaml'), 'tidy:\n  enabled: true\n', 'tidy:\n  enabled: false\n');
   swap(
     join(root, 'src/routes/robots.txt/+server.ts'),
     "    disallow: ['/admin'],\n    posture: cairn.aiPosture,\n",

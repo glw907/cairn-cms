@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schemas/cairn-theme/1.json",
+  "title": "cairn theme manifest, contract 1",
+  "description": "The manifest, cairn-theme.json, of a theme directory. An option key is a contract: once a theme ships, renaming or removing a key is a breaking change to the theme, because a later update or switch matches options by key. A default that names one of the option's values is checked by the tokens build, which a schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "description", "version", "license", "author", "contract", "colorModes", "options"],
+  "properties": {
+    "$schema": {
+      "description": "This schema's URL, versioned by contract.",
+      "const": "https://cairn.pub/schemas/cairn-theme/1.json"
+    },
+    "id": {
+      "description": "Stable id, matching the theme's directory name.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,31}$"
+    },
+    "name": { "description": "Display name.", "type": "string", "minLength": 1 },
+    "description": {
+      "description": "One line an owner sees at setup, printed beside the theme name.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+    },
+    "version": {
+      "description": "Semver for the theme itself.",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "license": { "$ref": "#/$defs/spdx" },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "url"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "contract": {
+      "description": "The theme-contract major version the theme targets.",
+      "const": 1
+    },
+    "colorModes": {
+      "description": "The daisyUI theme names for the light and dark blocks.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["light", "dark"],
+      "properties": {
+        "light": { "$ref": "#/$defs/name" },
+        "dark": { "$ref": "#/$defs/name" }
+      }
+    },
+    "options": {
+      "description": "Zero to four options an owner chooses at setup. Each key matches a resolver modifier and each value one of its contexts. An option key is a contract.",
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "label", "values", "default"],
+        "properties": {
+          "key": {
+            "description": "The option's key. A contract: renaming or removing it breaks the theme.",
+            "allOf": [{ "$ref": "#/$defs/name" }, { "not": { "const": "mode" } }]
+          },
+          "label": { "type": "string", "minLength": 1 },
+          "values": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value", "label"],
+              "properties": {
+                "value": { "$ref": "#/$defs/name" },
+                "label": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "default": { "description": "One of the option's values.", "$ref": "#/$defs/name" }
+        }
+      }
+    },
+    "fonts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "license", "source", "files"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "license": { "$ref": "#/$defs/spdx" },
+          "source": { "type": "string", "format": "uri" },
+          "files": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "pattern": "\\.woff2$" }
+          }
+        }
+      }
+    },
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "shows"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "shows": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "derivedFrom": {
+      "description": "The design system the theme was built from.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" }
+      }
+    }
+  },
+  "$defs": {
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "spdx": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.+() -]*$" }
+  }
+}

@@ -35,6 +35,14 @@ test('the engine tarball lists the template catalog and the composed Waymark tre
       assert.ok(packed.has(`template/${theme.path}/${file}`), `theme ${theme.id} lacks ${file}`);
     }
   }
+  for (const theme of catalog.themes) {
+    assert.equal(theme.source, 'engine', `catalog entry ${theme.id} carries no source`);
+  }
+  assert.ok(packed.has('template/waymark/src/theme/cairn-theme.json'), 'the tarball lacks the laid-in manifest');
+  assert.ok(
+    ![...packed].some((file) => file.startsWith('template/waymark/src/theme/screenshots')),
+    'the tarball carries theme screenshots',
+  );
   assert.ok(!packed.has('template/waymark/.gitignore'));
   const lines = readFileSync(path.join(root, 'template/waymark/gitignore'), 'utf8').split('\n');
   assert.ok(lines.includes('!.dev.vars.example'), 'template/waymark/gitignore lacks !.dev.vars.example');

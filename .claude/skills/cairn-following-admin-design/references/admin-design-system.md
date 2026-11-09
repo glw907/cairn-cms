@@ -1116,7 +1116,7 @@ alongside the component recipes above and below it.
   5.86:1 dark).
 - **Media: the placement default CSS (`.cairn-place-*`).** cairn defines the figure placement class
   contract; a site owns the pixels. The reference values live in the showcase
-  (`examples/showcase/src/theme/site.css`): the bare `figure` at the text measure, `.cairn-place-center`
+  (`themes/waymark/site.css`): the bare `figure` at the text measure, `.cairn-place-center`
   a below-measure centered image, `.cairn-place-wide` a viewport-centered breakout past the measure,
   and `.cairn-place-full` a full-bleed image with its `figcaption` returned to the measure. A site
   copies and restyles those classes. This is content CSS, not admin chrome, so it lives with the site's
@@ -1504,8 +1504,8 @@ site's own, not the admin's, so its tokens live with the site and a developer re
 showcase custom-surface ledger (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`)
 records the tiers.
 
-- **Tier 1 is the template's own DaisyUI theme, not Warm Stone.** `examples/showcase/src/theme/theme.css`
-  holds two `@plugin "daisyui/theme"` blocks, `cairn` (light) and `cairn-dark` (under
+- **Tier 1 is the template's own DaisyUI theme, not Warm Stone.** `themes/waymark/tokens/tokens.css`
+  (built from `tokens/tokens.json`) holds two `@plugin "daisyui/theme"` blocks, `cairn` (light) and `cairn-dark` (under
   `prefers-color-scheme: dark`), a warm stone pairing that is the showcase's brand and distinct from the
   admin's Warm Stone. The public output stays design-agnostic by charter, so the template does not impose
   the admin theme.
@@ -1516,7 +1516,7 @@ records the tiers.
   gives an uncolored `btn-outline` and `badge-outline` the same hairline edge the admin's own
   idiom does (`--btn-border`/`border-color` at a 22% `base-content` mix); a color variant
   (`btn-outline btn-primary`, a colored `badge-outline`) keeps its own edge untouched. The rule
-  lives in `theme.css`, the one file a re-skin edits, so a site can drop it; the re-skin recipe's
+  lives in `theme.css`, the hand-written sheet beside the built tokens, so a site can drop it; the re-skin recipe's
   own numbered steps name the ladder as family geometry a site is free to retune, from square to
   fully rounded. Everything else in this file (palette, faces, heading weights, size step, depth
   and noise) is unchanged.

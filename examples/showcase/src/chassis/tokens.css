@@ -41,8 +41,8 @@
      - Two heading levers are a theme's to set: `--font-weight-heading` (in `@theme`, generating
        the `font-heading` utility) and `--cairn-heading-case` (a plain role, since `text-transform`
        has no Tailwind namespace, applied by the `heading-case` utility below). `prose.css`'s
-       heading rules and the chrome's titles read them, so one value moves every heading; an eyebrow
-       keeps its `uppercase tracking-eyebrow` and weight.
+       heading rules and the chrome's titles read them, so one value moves every heading. An eyebrow
+       keeps its `tracking-eyebrow` and weight, and takes its case from `--cairn-eyebrow-case`.
      - The CTA panel keys and the nav caption tracking are a theme's tokens. The theme defines
        them, and this file holds no default for them.
      - prose.css (the reading-surface foundation) and composition.css (the card/band/section/hero/
@@ -53,6 +53,9 @@
 @import "./prose.css";
 @import "./composition.css";
 @source not "../../.claude";
+/* Tailwind's automatic source detection skips gitignored paths, and the showcase gitignores its
+   generated src/theme/. Naming the directory keeps the theme's utilities in the build. */
+@source "../theme";
 
 @plugin "daisyui" {
   themes: false;
@@ -74,11 +77,28 @@
 
 /* The heading-case role, in the lowest layer so a theme's `:root` or daisyUI block value
    wins. `none` leaves a heading as authored; a theme that sets `uppercase` here uppercases every
-   heading that applies `heading-case` or reads the key in its rule. */
+   heading that applies `heading-case` or reads the key in its rule.
+
+   The eyebrow-case role is the same switch for the small labels above a heading (the home and
+   archive eyebrows): `uppercase` by default, `none` for a theme with no all-caps labels.
+
+   The scroll-cue role holds the image list `prose.css` paints behind a code block that scrolls
+   sideways: a gradient that covers the block's end and a soft shadow at the viewport edge. `none`
+   turns the cue off. Its colors read the code ground and the body ink, so one value serves both
+   color schemes. A custom property resolves its `var()` references where it is declared, so
+   `--cairn-code-bg` must be set at `:root` or `[data-theme]` for the cue to follow it. */
 @layer theme {
   :root,
   [data-theme] {
     --cairn-heading-case: none;
+    --cairn-eyebrow-case: uppercase;
+    --cairn-scroll-cue:
+      linear-gradient(to right, transparent, var(--cairn-code-bg) 85%),
+      radial-gradient(
+        farthest-side at 100% 50%,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent),
+        transparent
+      );
   }
 }
 
@@ -86,6 +106,10 @@
    `var(--font-weight-heading)` and `var(--cairn-heading-case)` directly. */
 @utility heading-case {
   text-transform: var(--cairn-heading-case);
+}
+
+@utility eyebrow-case {
+  text-transform: var(--cairn-eyebrow-case);
 }
 
 @theme {

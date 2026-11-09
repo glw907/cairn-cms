@@ -1,0 +1,191 @@
+/* ============================================================================
+   Waymark, cairn's public reading template, neutral by default. A site owner re-skins it by
+   editing `tokens/tokens.json` and rebuilding. The signature cairn theme identity (the display
+   serif, the warm-tinted paper, the cairn-glyph rule, the diamond bullet, the hanging pull-quote)
+   lives on as an opt-in layer behind `[data-flourish]` in prose.css, not the default. Each of the
+   three prose gestures already has its flourish rule written there, scoped under
+   `.prose[data-flourish]` and never deleted; a theme brings all three back at once by adding a
+   `data-flourish` attribute to the `.prose` root, no CSS edit and no other markup change. The
+   display face and the paper tint are a separate, ordinary re-skin edit (see the recipe below),
+   not gated by that attribute.
+
+   This file is the THEME half of the chassis boundary (src/chassis/README.md): it `@import`s the
+   chassis token SYSTEM (Tailwind, the engine's cairn-public.css role defaults, the DaisyUI plugin
+   activation, prose.css, composition.css, and every design-scale key with a generic default),
+   then the built `tokens/tokens.css`, which redeclares every one of those design-scale keys with
+   Waymark's concrete numbers and colors, plus the two named DaisyUI themes the chassis
+   deliberately never declares. Cascade order does the override: a property declared again later
+   in the same build wins, so nothing here duplicates chassis machinery, only chassis VALUES, plus
+   the hand-written rules below: the hairline edge an uncolored outline gets (see "Hairline
+   outlines") and the motion rules.
+
+   RE-SKIN RECIPE (the committed N). The whole surface, chrome and article alike, reads the role
+   tokens in `tokens/tokens.json`, so editing them re-skins everything. The prose reading surface
+   is included at zero extra edits. Each token key is the custom property name without its leading
+   dashes; `color.light` is the `cairn` daisyUI block, `color.dark` the `cairn-dark` one, and
+   `base` the values both share. Run `node scripts/theme/build-tokens.mjs themes/waymark` after an
+   edit.
+
+     1. The brand accent: edit `color-primary` in both modes. To stay contrast-stable, ROTATE THE
+        HUE only: change the third oklch component (the 248 here) and hold the lightness and
+        chroma. `color-primary-content` (the text on the accent) keeps its light/dark value.
+     2. The paper and ink: `color-base-100` (paper) and `color-base-content` (ink), plus the
+        `-200`/`-300` steps, light and dark.
+     3. Secondary, accent, neutral, and the four status hues follow the same pattern if you want
+        them on-brand; most owners leave them.
+     4. The faces: swap `font-display` and `font-body` in `base`.
+     5. Optional fine-tuning of the design scale, all of it in `base`: the type ratio lives in the
+        `text-step-*` clamps, the space-scale steps in `spacing-*`, the rhythm in `leading-*` and
+        `tracking-*`, and the reading column in `container-measure` and `container-measure-wide`.
+        The card hairline is a color role in the same group, `color-card-border`, with its dark
+        sibling in `color.dark`; the muted ink `color-muted` sits in each mode. Because each of
+        these is built into `@theme`, Tailwind also emits a NAMED UTILITY for it (`text-step-*`,
+        the spacing utilities such as `gap-m`/`px-m`/`mt-2xl`, `leading-*`, `tracking-*`,
+        `max-w-measure` and `max-w-measure-wide`, `font-display`/`font-body`/`font-mono`,
+        `text-muted`, and `border-card-border`), which the chrome markup uses instead of an
+        arbitrary-value bracket. Editing one token re-tunes both the `var()` consumers and the
+        utility, so the whole surface tracks the change.
+     6. The status-ink seam. The callout and alert titles and left rules, and the code
+        highlighter's string / function / number colours, read one on-surface ink token per
+        status, `--cairn-<status>-ink`. The ink follows the fill: the engine derives it from the
+        status fill (`color-info`, `color-success`, `color-warning`, `color-error` in each mode),
+        so retuning a fill retunes its ink with it, in both schemes. Override an ink only to
+        hand-tune it: set `cairn-<status>-ink` in the matching mode, as Waymark does for all four,
+        and the muted ink `color-muted` the same way. Waymark hand-tunes all of them, so a status
+        rebrand here retunes each ink with its fill, or deletes the override and lets the ink
+        follow.
+     7. The corner ladder (`radius-selector`, `radius-field`, `radius-box`, in each mode) is
+        family geometry, not brand: change all three freely to fit your site's chosen roundness,
+        from square to fully rounded.
+
+   Twelve role values cover the brand-and-base headline: a new accent and a new paper-and-ink,
+   the change most owners make. That set is `color-primary` and `-content`, the three
+   `color-base-*` steps, and `color-base-content`, light and dark. A FULL status rebrand is more,
+   because each status carries both a fill and an on-surface ink in each mode (step 6), the ink
+   derived from its fill unless you hand-tune it, as Waymark does. Every prose element, the code
+   highlighter, the chrome, and the components recolor from these tokens, because none of them
+   hard-codes a colour; they all read them. A contrast check over these tokens proves the
+   re-skinned theme still clears AA in both sRGB and P3, and its token-resolution check fails the
+   build if a rule references a token no block defines.
+
+   This file is linked by the (site) layout and by the editor preview config, so the reader and
+   the author see the same surface. The token grammar matches the admin's Warm Stone system
+   (`src/lib/admin/cairn-admin.css`); only the palette differs.
+
+   TIER MAP (this theme's token ownership, by how far a re-skin reaches):
+     - Tier 1: the two daisyUI theme blocks (cairn, cairn-dark), built from `color.light` and
+       `color.dark`. This site's DaisyUI theme. Not the admin's Warm Stone.
+     - Tier 2 (owned, the documented floor): the on-surface inks (--color-muted and the
+       --cairn-<status>-ink set, hand-tuned per scheme in the two daisyUI blocks), the elevation
+       pair (--color-card-border, --cairn-shadow), the CTA pair (--cairn-cta-*), and the
+       code-highlight binding (pre.shiki plus the engine-owned .cairn-tok-* class contract, both in
+       the engine's cairn-public.css). The build writes a mode value a daisyUI block cannot carry
+       (the comma-bearing shadow and dark card border, and the CTA pair, which stays unlayered)
+       into unlayered rules on `:root` and the two dark selectors. --color-card-border lives in
+       @theme (so the border-card-border utility generates) but keeps its Tier-2 role.
+     - Tier 3: the design-scale token home (--text-step-*, --spacing-*, --font-*, the tracking/
+       leading/measure values), built into `@theme`. Tailwind 4 `@theme` generates the named
+       utilities; the chassis declares the same keys with generic defaults, and Waymark's
+       overrides every one with its real numbers.
+   ============================================================================ */
+@import "../chassis/tokens.css";
+
+/* The editorial pairing, self-hosted from the woff2 files in `fonts/` so the real faces are the
+   default first paint (CLS-safe, the performance dimension) with no third-party font origin. This
+   `@import` must precede every other rule, so it sits directly under the chassis import. Each
+   family registers as "<Name> Variable"; the `font-*` tokens in `tokens/tokens.json` name them exactly. Loading
+   them here, not in the layout, means the editor preview frame links this same sheet and gets the
+   same faces (the parity rule). All three faces here need only the `wght` axis. */
+@import "./fonts/fonts.css";
+
+/* The token values: the two daisyUI theme blocks, the `@theme` scale, and the unlayered root and
+   dark rules, built from `tokens/tokens.json` by scripts/theme/build-tokens.mjs. Imported here,
+   after the chassis and the faces, so a value still lands later in the build than the chassis
+   default it overrides. */
+@import "./tokens/tokens.css";
+
+/* Hairline outlines, a shared family trait with the admin's idiom (both give an uncolored
+   outline a visible edge instead of full ink). Pinned after DaisyUI's utilities (this rule
+   compiles into a sublayer declared after `daisyui`, so it outranks every state DaisyUI's button
+   and badge rules restate regardless of selector specificity). Everything a re-skin needs to touch
+   lives in `tokens/tokens.json`; this is the one rule this file declares outright rather than a
+   token value.
+
+   The button half only overrides `--btn-border`, never `--btn-bg`, so the fallback chain does the
+   work across every state DaisyUI restates that variable (rest, hover, focus-visible, active): a
+   color variant (`btn-outline btn-primary`) sets `--btn-color` itself, so the fallback here never
+   runs and the colored edge is untouched.
+
+   The badge half sets `border-color` directly, because DaisyUI's `.badge-outline` rule reads
+   `border-color: currentColor` rather than a variable, leaving no fallback slot to join. The
+   `:not()` list excludes every DaisyUI badge color modifier, so a colored outline badge keeps its
+   `currentColor` edge. */
+@layer utilities {
+  @layer site-theme {
+    .btn-outline {
+      --btn-border: var(
+        --btn-color,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent)
+      );
+    }
+
+    .badge-outline:not(
+      .badge-primary,
+      .badge-secondary,
+      .badge-accent,
+      .badge-neutral,
+      .badge-info,
+      .badge-success,
+      .badge-warning,
+      .badge-error
+    ) {
+      border-color: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Motion: a token-level cross-fade on an explicit scheme change, and a plain root
+   cross-fade on internal navigation. Neither runs always-on: the toggle transition is scoped
+   behind a class `theme-toggle.ts` adds only for the duration of one flip (SiteHeader.svelte), and
+   the navigation transition only fires inside the View Transitions API's transient pseudo-
+   element tree, which the (site) layout's `onNavigate` hook opts into per navigation. Nothing here
+   animates a first paint or a `prefers-color-scheme` media change.
+   ---------------------------------------------------------------------------- */
+
+/* The toggle flip: `.theme-flip-transition` lands on `<html>` for one flip only (theme-toggle.ts),
+   so a scheme switch that came from the OS (the media-query rule in tokens/tokens.css) or from first paint never
+   animates, only an explicit click does. Scoped to the token-consuming chrome surfaces (the shell,
+   header, main, footer) rather than the whole document, so an `<img>` or embed never cross-fades
+   its paint alongside the surrounding color change. */
+:root.theme-flip-transition .site-shell,
+:root.theme-flip-transition .site-header,
+:root.theme-flip-transition .site-main,
+:root.theme-flip-transition .site-footer {
+  transition:
+    background-color 0.2s ease-out,
+    color 0.2s ease-out,
+    border-color 0.2s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root.theme-flip-transition .site-shell,
+  :root.theme-flip-transition .site-header,
+  :root.theme-flip-transition .site-main,
+  :root.theme-flip-transition .site-footer {
+    transition: none;
+  }
+}
+
+/* Internal navigation: a plain root cross-fade only (no slide, no shared-element morph), scoped to
+   the document's view-transition pseudo-elements. `startViewTransition` only ever runs from the
+   (site) group's `onNavigate` hook, so this never fires for the admin, which loads no theme.css. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.18s;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

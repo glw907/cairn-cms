@@ -4,7 +4,8 @@
       "id": "waymark",
       "name": "Waymark",
       "description": "An intentionally neutral look that's easy to edit.",
-      "path": "waymark"
+      "path": "waymark",
+      "source": "engine"
     }
   ]
 }

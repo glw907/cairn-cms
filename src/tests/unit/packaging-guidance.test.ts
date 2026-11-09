@@ -100,8 +100,11 @@ describe('claude/snippets/* against their in-repo counterparts', () => {
       'check:cairn',
     ];
     expect(Object.keys(snippet).sort()).toEqual(keys.slice().sort());
+    // The showcase lays its theme in first; a site's snippet has no such file, so compare each script
+    // in its template form.
+    const templateForm = (script: string) => script.replace('npm --prefix ../.. run theme:lay-in && ', '');
     for (const key of keys) {
-      expect(snippet[key]).toBe(showcase.scripts[key]);
+      expect(snippet[key]).toBe(templateForm(showcase.scripts[key]));
     }
   });
 

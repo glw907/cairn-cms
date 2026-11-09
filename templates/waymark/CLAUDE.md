@@ -6,9 +6,10 @@ Add your project-specific guidance here; `cairn-guidance install` only ever refr
 
 ## Where things live
 
-Imports use the aliases in `package.json`: `#theme/*`, `#chassis/*`, and `#lib/*`, not `$lib`.
+Imports use the aliases in `package.json`: `#site/*`, `#theme/*`, `#chassis/*`, and `#lib/*`, not `$lib`.
 
-- `src/theme`: the site's config (`site.config.yaml`, `cairn.config.ts`), its components, and its look (`theme.css`).
+- `src/site`: the site's files (`site.config.yaml`, `cairn.config.ts`, `theme-options.css`, `overrides.css`). Edit these.
+- `src/theme`: the theme's components and look (`theme.css`), laid in from the theme you chose.
 - `src/chassis`: the public reading layer (tokens, prose styles, content readers, feeds). Change it last.
 - `src/routes`: the public pages and the mounted `/admin`.
 - `src/content`: your markdown, one folder per content type.

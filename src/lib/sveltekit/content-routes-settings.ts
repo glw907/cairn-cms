@@ -245,9 +245,11 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       try {
         const backend = ctx.resolveBackend(event);
         raw = await backend.readFile(siteConfigPath(), backend.defaultBranch);
+        if (raw === null) log.warn('config.missing', { scope: 'settings', path: siteConfigPath() });
         const committed = raw === null ? undefined : parseSiteConfig(raw).tidy?.conventions;
-        // Absent or empty keeps the deployed values silently; anything else is validated, so a
-        // hand-edited bad value (including a non-object) throws into the catch, logs, and falls back.
+        // An absent file logs config.missing above; an absent or empty block keeps the deployed values
+        // silently. Anything else is validated, so a hand-edited bad value (including a non-object)
+        // throws into the catch, logs, and falls back.
         if (committed != null) conventions = resolveTidyConventions(validateTidyConventions(committed));
       } catch (err) {
         // A read failure (raw still null) degrades silently: an outage is not a config fault. A throw
@@ -346,8 +348,9 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     let raw: string | null = null;
     try {
       raw = await backend.readFile(siteConfigPath(), backend.defaultBranch);
+      if (raw === null) log.warn('config.missing', { scope: 'vocabulary', path: siteConfigPath() });
     } catch {
-      // An unreadable config degrades to an empty vocabulary; the first save writes a clean list.
+      // An unreadable config degrades to an empty vocabulary; a save refuses until the file exists.
       raw = null;
     }
     if (raw !== null) {

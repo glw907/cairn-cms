@@ -55,7 +55,7 @@ export default function setup(root) {
 
   patch(
     root,
-    'src/theme/cairn.config.ts',
+    'src/site/cairn.config.ts',
     '    // The Fragments concept',
     `    notes: defineConcept({
       dir: 'src/content/notes',

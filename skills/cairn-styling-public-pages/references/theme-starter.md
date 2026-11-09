@@ -1,6 +1,6 @@
 # Theme starter
 
-One complete daisyUI theme block. daisyUI does not merge a block that names no built-in theme, so a key left out is a runtime hole. Copy the block into `theme.css` once per scheme, change `name`, `default`, `prefersdark`, and `color-scheme` for the second scheme, and replace every value.
+One complete daisyUI theme block. daisyUI does not merge a block that names no built-in theme, so a key left out is a runtime hole. Copy the block into `src/theme/tokens/tokens.css` once per scheme, change `name`, `default`, `prefersdark`, and `color-scheme` for the second scheme, and replace every value.
 
 ```css
 @plugin "daisyui/theme" {
@@ -40,20 +40,32 @@ One complete daisyUI theme block. daisyUI does not merge a block that names no b
 }
 ```
 
-`name` is the string `data-theme` selects and the cookie stores. `default: true` marks the first-visit scheme and `prefersdark: true` the block a dark system selects. `--color-base-300` is a rule color, never the ground under text. `--depth` and `--noise` are `0` or `1`.
+`name` is the string `data-theme` selects and the cookie stores. `default: true` marks the first-visit scheme and `prefersdark: true` the block a dark system selects. `--color-base-300` is the divider and border color, not a background for text. `--depth` and `--noise` are `0` or `1`.
 
-A hand-tuned ink, `--color-muted`, or `--cairn-<status>-ink` goes in this block too, and in the other scheme's block. `references/retheme-by-tokens.md` ("Where a value goes") covers the keys that cannot go here.
+A hand-tuned ink, `--color-muted`, or `--cairn-<status>-ink` goes in this block too, and in the other scheme's block. [Retheme by tokens](retheme-by-tokens.md) ("Where a value goes") covers the keys that cannot go here.
+
+A scaffolded site edits `src/theme/tokens/tokens.css` directly. The tokens build that regenerates that file from `tokens/tokens.json` ships in the cairn-cms repository, not in a scaffolded site, so a site that edits the CSS leaves `tokens.json` as the theme's original source. In the repository, edit `themes/<id>/tokens/tokens.json` and run the build and the lay-in.
 
 ## The design scale
 
-The chassis `tokens.css` defaults every design-scale key inside `@theme` (faces, `--font-weight-heading`, `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`, the two measures), so a theme may omit any and still generate every named utility.
+The chassis `tokens.css` defaults every design-scale key inside `@theme`, so a key a theme omits still generates its named utility. The contract does not count that default as the theme's definition. A theme's built sheets declare each name in `tokens.required` in each color mode and each option value, and a chassis or engine default never fills that gap.
 
-A theme sets a defaulted key only to change its value. Redeclare it in the theme's `@theme` block, after the `tokens.css` import.
+The required design-scale names are:
 
-`--cairn-heading-case` is defaulted too, but as a plain role in a lowest layer rather than in `@theme`, since `text-transform` has no Tailwind namespace. The chassis sets it to `none`. A theme overrides it in each daisyUI block, or in its own `:root`, and leaves it out to keep headings as authored.
+- The three faces, `--font-body`, `--font-display`, and `--font-mono`.
+- The type steps `--text-step--2` through `--text-step-5`.
+- The spacing steps `--spacing-3xs` through `--spacing-2xl`.
+- The leadings `--leading-body`, `--leading-snug`, and `--leading-tight`, and the trackings `--tracking-eyebrow` and `--tracking-tight`.
+- The two measures, `--container-measure` and `--container-measure-wide`.
 
-A theme must set these, since neither the engine nor the chassis defaults them:
+Redeclare each in the theme's `@theme` block, after the `tokens.css` import. The required roles also include `--cairn-eyebrow-case`, `--cairn-scroll-cue`, `--cairn-shadow`, `--color-muted`, `--color-card-border`, the four `--cairn-<status>-ink` names, the five `--cairn-cta-*` keys, and `--cairn-caption-tracking`.
 
-- Both daisyUI blocks, since the chassis declares none.
-- The five `--cairn-cta-*` keys and `--cairn-caption-tracking`.
-- `--text-step--2` when the header reads `text-step--2`, as Waymark's `SiteHeader.svelte` does for the tracked nav. The chassis scale starts at `--text-step--1`.
+`--font-weight-heading` and `--cairn-heading-case` are defaulted and not required. `--cairn-heading-case` is a plain role in a lowest layer rather than a key in `@theme`, since `text-transform` has no Tailwind namespace. The chassis sets it to `none`. A theme overrides it in each daisyUI block, or in its `:root`, and leaves it out to keep headings as authored.
+
+Both daisyUI blocks are the theme's to write, since the chassis declares none. Waymark's `SiteHeader.svelte` reads `text-step--2` for the tracked nav, and the chassis scale starts at `--text-step--1`, so the theme supplies that step.
+
+## See also
+
+- [Retheme by tokens](retheme-by-tokens.md) covers where each token lands.
+- [What a theme directory holds](theme-directory.md) covers the contract and the build.
+- [Checking a theme](checking-a-theme.md) covers the audit rules.

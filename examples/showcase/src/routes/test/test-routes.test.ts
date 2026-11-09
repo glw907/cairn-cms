@@ -14,7 +14,7 @@ vi.mock('@glw907/cairn-cms-dev', () => ({
   committedFile: () => 'committed body',
   lastRecordedCommit: () => ({ sha: 'recorded' }),
 }));
-vi.mock('#theme/cairn.config.js', () => ({
+vi.mock('#site/cairn.config.js', () => ({
   cairn: { rendering: { render: async () => '<p>rendered</p>' } },
 }));
 

@@ -9,11 +9,12 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     // The whole SvelteKit config lives here, so the site carries no svelte.config.js. The
-    // #chassis, #theme, and #lib specifiers are subpath imports declared in package.json:
+    // #chassis, #site, #theme, and #lib specifiers are subpath imports declared in package.json:
     // #chassis is the genre-free layer (src/chassis/), the plumbing and composition primitives any
-    // cairn theme mounts onto; #theme is the Waymark theme's content (src/theme/), the chrome,
-    // the adapter config, the token values, and the starter component looks (see
-    // src/chassis/README.md for the boundary rule); #lib is the site's helpers (src/lib/).
+    // cairn theme mounts onto; #site is the site's files (src/site/), the adapter config, the site
+    // config, and the two option sheets; #theme is the theme's content (src/theme/), the chrome,
+    // the token values, and the starter component looks (see src/chassis/README.md for the
+    // boundary rule); #lib is the site's helpers (src/lib/).
     sveltekit({
       preprocess: vitePreprocess(),
       // remoteBindings: false keeps `vite dev`'s platform proxy local, so a binding marked
@@ -48,6 +49,6 @@ export default defineConfig({
         },
       },
     }),
-    cairnManifest({ configModule: '/src/theme/cairn.config.ts' }),
+    cairnManifest({ configModule: '/src/site/cairn.config.ts' }),
   ],
 });

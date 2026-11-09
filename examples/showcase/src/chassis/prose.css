@@ -247,13 +247,7 @@
     font-size: var(--text-step--1);
     line-height: var(--leading-body);
     --flow-space: var(--spacing-m);
-    background-image:
-      linear-gradient(to right, transparent, var(--cairn-code-bg) 85%),
-      radial-gradient(
-        farthest-side at 100% 50%,
-        color-mix(in oklab, var(--color-base-content) 22%, transparent),
-        transparent
-      );
+    background-image: var(--cairn-scroll-cue);
     background-repeat: no-repeat, no-repeat;
     background-position:
       100% 0,

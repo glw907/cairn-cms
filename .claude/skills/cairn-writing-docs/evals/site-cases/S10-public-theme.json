@@ -36,7 +36,7 @@
     { "type": "unchanged", "path": "src/theme/site.css" },
     { "type": "unchanged", "path": "src/theme/components" },
     { "type": "unchanged", "path": "src/chassis" },
-    { "type": "unchanged", "path": "src/theme/cairn.config.ts" },
+    { "type": "unchanged", "path": "src/site/cairn.config.ts" },
     { "type": "absent", "path": "src/theme/components", "regex": "oklch\\(\\s*(45|74|97\\.5)%\\s+0?\\.\\d+\\s+(150|100)" },
     { "type": "bash", "pattern": "cairn-audit" },
     { "type": "npm", "script": "check" }

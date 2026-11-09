@@ -3,7 +3,7 @@
 // `EntryData`/`PreviewData` shape, factored here so the two routes cannot drift apart on it.
 import { resolveReferences, buildSiteDescriptors, type EntryRef } from '@glw907/cairn-cms/delivery';
 import { site } from './content.js';
-import { cairn } from '#theme/cairn.config.js';
+import { cairn } from '#site/cairn.config.js';
 
 // The concept descriptors, by id, so withReferences can hand resolveReferences the right field
 // schema for the entry it resolved. buildSiteDescriptors derives them from the same adapter the resolver

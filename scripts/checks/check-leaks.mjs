@@ -198,7 +198,7 @@ export function profileFor(relPath) {
     path === 'examples/showcase/README.md' ||
     path === 'MIGRATION-NOTES.md' ||
     /^docs\/(?:admin|editors)\/.+\.md$/.test(path) ||
-    /^schema\/.+\.json$/.test(path)
+    /^schema\/.+\.(?:json|md)$/.test(path)
   ) {
     return { tier: 'T1', classes: all, mode: 'whole' };
   }

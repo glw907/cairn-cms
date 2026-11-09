@@ -118,7 +118,7 @@ export default function setup(root) {
   // The generated Worker types: NOTES_DB is current, and the APP_DB line is a leftover that
   // `wrangler types` would drop, which is why a read of APP_DB still type-checks.
   swap(join(root, 'worker-configuration.d.ts'), '\tAUTH_DB: D1Database;\n', '\tAUTH_DB: D1Database;\n\tNOTES_DB: D1Database;\n\tAPP_DB: D1Database;\n');
-  const config = join(root, 'src/theme/cairn.config.ts');
+  const config = join(root, 'src/site/cairn.config.ts');
   swap(config, '  type MediaConfig,\n} from', '  type MediaConfig,\n  defineAccess,\n} from');
   swap(config, '  media,\n', "  media,\n  access: defineAccess(undefined, { '/admin/notes': ['owner', 'editor'] }),\n");
 

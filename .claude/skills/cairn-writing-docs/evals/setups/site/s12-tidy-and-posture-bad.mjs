@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const FILES = {
-  'src/theme/site.config.yaml': `siteName: Waymark
+  'src/site/site.config.yaml': `siteName: Waymark
 tidy:
   enabled: true
   model: claude-haiku-4-5
@@ -15,7 +15,7 @@ tidy:
     oxfordComma: always
     smartQuotes: true
 `,
-  'src/theme/cairn.config.ts': `import { defineAdapter } from '@glw907/cairn-cms';
+  'src/site/cairn.config.ts': `import { defineAdapter } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
   aiPosture: 'decline',

@@ -7,7 +7,7 @@
 // routes can never drift their rendering config apart by editing one copy and forgetting the others.
 import type { PublicRoutesConfig } from '@glw907/cairn-cms/delivery';
 import { site, siteMeta } from './content.js';
-import { cairn, resolveMedia } from '#theme/cairn.config.js';
+import { cairn, resolveMedia } from '#site/cairn.config.js';
 
 export const publicRoutesConfig: PublicRoutesConfig<typeof site> = {
   site,

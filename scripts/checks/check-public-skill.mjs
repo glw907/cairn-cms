@@ -419,9 +419,12 @@ async function loadRegistry(root) {
     optimizeDeps: { noDiscovery: true, include: [] },
   });
   try {
-    const list = await server.ssrLoadModule('/src/theme/markdown-blocks.ts');
+    const { composeBlocks } = await server.ssrLoadModule('/src/chassis/directives/compose.ts');
+    const { icons } = await server.ssrLoadModule('/src/theme/icons.ts');
+    const { renderers } = await server.ssrLoadModule('/src/theme/directives/renderers.ts');
+    const blocks = composeBlocks(icons, renderers);
     const engine = await server.ssrLoadModule('@glw907/cairn-cms');
-    return /** @type {{ name: string, hydrate?: boolean, preview?: unknown }[]} */ (list.blocks).map((def) => ({
+    return /** @type {{ name: string, hydrate?: boolean, preview?: unknown }[]} */ (blocks).map((def) => ({
       name: def.name,
       hydrate: def.hydrate === true,
       previewMarkdown: engine.previewMarkdown(def),

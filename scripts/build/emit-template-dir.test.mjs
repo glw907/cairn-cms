@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -195,4 +196,29 @@ test('findTemplateViolations passes a clean tree with a clean audit config', asy
   await put(root, 'cairn-audit.config.json', JSON.stringify({ sheet: ['.cairn/admin.css'] }));
 
   assert.deepEqual(await findTemplateViolations(root), []);
+});
+
+test('a composed tree carries its theme under src/theme, and git would track it', async (t) => {
+  const tree = await composeTemplate(PUBLISHED_SPECS);
+  t.after(() => rm(tree, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q'], { cwd: tree });
+  execFileSync('git', ['add', '-A'], { cwd: tree });
+  const tracked = execFileSync('git', ['ls-files', 'src/theme'], { cwd: tree, encoding: 'utf8' }).split('\n');
+  assert.ok(tracked.includes('src/theme/cairn-theme.json'), 'cairn-theme.json is not tracked');
+  assert.ok(tracked.includes('src/theme/theme.css'), 'theme.css is not tracked');
+});
+
+test('no script in a composed tree names the lay-in, which exists only in cairn-cms', async (t) => {
+  const tree = await composeTemplate(PUBLISHED_SPECS);
+  t.after(() => rm(tree, { recursive: true, force: true }));
+  const pkg = JSON.parse(await readFile(path.join(tree, 'package.json'), 'utf8'));
+  for (const [name, command] of Object.entries(pkg.scripts)) {
+    assert.ok(!command.includes('lay-in'), `script ${name} names the lay-in: ${command}`);
+  }
+});
+
+test('the showcase tracks no file under src/theme, since the lay-in generates it', () => {
+  const repo = path.resolve(import.meta.dirname, '../..');
+  const tracked = execFileSync('git', ['ls-files', 'examples/showcase/src/theme'], { cwd: repo, encoding: 'utf8' });
+  assert.equal(tracked.trim(), '');
 });

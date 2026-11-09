@@ -4,7 +4,7 @@
 import type { FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, siteMeta } from './content.js';
 import { feedItemsFrom } from './feed-items.js';
-import { cairn, resolveMedia } from '#theme/cairn.config.js';
+import { cairn, resolveMedia } from '#site/cairn.config.js';
 
 /** Build this site's post feed items, shared by the RSS and JSON Feed routes. */
 export function buildFeedItems(): Promise<FeedItem[]> {

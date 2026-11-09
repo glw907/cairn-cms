@@ -124,3 +124,11 @@ test('emitTemplate regenerates the manifest by dropping excluded entries, with n
     await rm(to, { recursive: true, force: true });
   }
 });
+
+test('the committed template keeps the site-owned files under src/site, never under src/theme', async () => {
+  const root = path.resolve(import.meta.dirname, '../../templates/waymark/src');
+  for (const name of ['cairn.config.ts', 'site-config.ts', 'site.config.yaml']) {
+    await assert.doesNotReject(readFile(path.join(root, 'site', name)), `src/site/${name} is missing`);
+    await assert.rejects(readFile(path.join(root, 'theme', name)), { code: 'ENOENT' }, `src/theme/${name} must not exist`);
+  }
+});

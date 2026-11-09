@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { scopeReport } from '../../../scripts/checks/audit-gate.mjs';
 import { ADMIN_SCOPE, CSS_FILES, SCAN_SCOPE } from '../../../scripts/checks/check-invisible-craft.mjs';
 import { resolveConfig } from '../../lib/audit/config.js';
@@ -92,7 +92,10 @@ describe('the engine gate: static.adminScope narrows the admin-only motion rules
     writeFileSync(join(root, 'dist/admin/cairn-admin.css'), '.type-body { font-size: var(--cairn-type-body) }\n');
     // CSS_FILES entries must exist for loadCssFiles to read them; harmless content keeps the
     // count this test asserts free of an extra motion-property hit from the standalone sheet.
-    for (const cssFile of CSS_FILES) writeFileSync(join(root, cssFile), '.harmless { color: red }\n');
+    for (const cssFile of CSS_FILES) {
+      mkdirSync(dirname(join(root, cssFile)), { recursive: true });
+      writeFileSync(join(root, cssFile), '.harmless { color: red }\n');
+    }
     writeFileSync(join(root, 'src/lib/admin/Fixture.svelte'), FIXTURE);
     writeFileSync(join(root, 'examples/showcase/src/theme/Fixture.svelte'), FIXTURE);
   });

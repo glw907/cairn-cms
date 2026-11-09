@@ -149,6 +149,17 @@ describe('vocabularyLoad', () => {
     expect(data.unlisted).toEqual([]);
   });
 
+  it('logs config.missing, naming the scope and the path, when the config file is absent', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const routes = createContentRoutes({ runtime: runtime() });
+    await routes.vocabularyLoad(loadEvent());
+    const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; scope?: string; path?: string });
+    const missing = records.filter((r) => r.event === 'config.missing');
+    expect(missing).toHaveLength(1);
+    expect(missing[0]).toMatchObject({ scope: 'vocabulary', path: CONFIG_PATH });
+  });
+
   it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
     seeded();
     const routes = createContentRoutes({ runtime: runtime() });

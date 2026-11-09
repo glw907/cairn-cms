@@ -43,7 +43,7 @@ func TestScaffoldWritesTheSite(t *testing.T) {
 		SiteName    string `yaml:"siteName"`
 		Description string `yaml:"description"`
 	}
-	siteConfig := readFile(t, dir, "src/theme/site.config.yaml")
+	siteConfig := readFile(t, dir, "src/site/site.config.yaml")
 	if err := yaml.Unmarshal([]byte(siteConfig), &cfg); err != nil {
 		t.Fatalf("site.config.yaml does not parse: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestScaffoldWritesTheSite(t *testing.T) {
 		t.Errorf("description = %q, want the neutral line and none of the template's", cfg.Description)
 	}
 
-	cairn := readFile(t, dir, "src/theme/cairn.config.ts")
+	cairn := readFile(t, dir, "src/site/cairn.config.ts")
 	for _, want := range []string{
 		"aiPosture: 'invite',",
 		"createGithubApp({ owner: 'octo-owner', repo: 'my-caf-the-site', branch: 'trunk', appId: '424242', installationId: '737373' })",

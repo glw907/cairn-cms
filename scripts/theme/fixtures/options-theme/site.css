@@ -1,0 +1,19 @@
+/* The fixture theme's site sheet: Waymark's banner rules, so a compiled fixture page carries the
+   one block `site.css` styles. */
+:root {
+  --site-banner-border-width: 3px;
+  --site-banner-radius: 0.25rem;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-s);
+  padding: var(--spacing-s) var(--spacing-m);
+  border-left: var(--site-banner-border-width) solid var(--cairn-info-ink);
+  border-radius: var(--site-banner-radius);
+  background: color-mix(in oklab, var(--color-info) 10%, var(--color-base-100));
+}
+.banner-message {
+  margin: 0;
+}

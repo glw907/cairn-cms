@@ -16,7 +16,7 @@ func pagePath(t *testing.T) string {
 	if !ok {
 		t.Fatal("resolve this file's path")
 	}
-	return filepath.Join(filepath.Dir(thisFile), "..", "..", "docs", "setup-reference.md")
+	return filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "docs", "admin", "setup-reference.md")
 }
 
 // TestPageMatchesTheCode fails when the committed page and a fresh render disagree, which is
@@ -31,7 +31,7 @@ func TestPageMatchesTheCode(t *testing.T) {
 		t.Fatalf("read the page: %v", err)
 	}
 	if got != string(want) {
-		t.Errorf("docs/setup-reference.md does not match the code; run `make -C tool reference` and commit the diff")
+		t.Errorf("docs/admin/setup-reference.md does not match the code; run `make -C tool reference` and commit the diff")
 	}
 }
 

@@ -90,6 +90,10 @@ The engine package also ships the Waymark site template and its theme catalog be
 `cairn new` command that a later release adds. A site that already deploys is unaffected, and no
 export, entry point, or migration changes.
 
+A new site's template also carries a `.claude/settings.json` that offers the Svelte, Cloudflare, and
+daisyUI Claude Code plugins, and a `.mcp.json` for the Svelte MCP server. A site that already exists
+keeps its settings and is unaffected.
+
 ## 0.99.0-rc.4
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,

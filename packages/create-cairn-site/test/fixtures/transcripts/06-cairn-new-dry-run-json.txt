@@ -1,0 +1,1 @@
+{"schemaVersion":1,"kind":"dryRun","siteName":"My Site","repository":"my-site","worker":"my-site","database":"my-site-auth","bucket":"my-site-media","app":"cairn-my-site","folder":"./my-site","ownerEmail":"me@example.com","posture":"decline"}

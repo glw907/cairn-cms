@@ -23,6 +23,8 @@ test('the engine tarball lists the template catalog and the composed Waymark tre
     'template/waymark/.dev.vars.example',
     'template/waymark/.github/workflows/deploy.yml',
     'template/waymark/.github/workflows/check.yml',
+    'template/waymark/.claude/settings.json',
+    'template/waymark/.mcp.json',
   ]) {
     assert.ok(packed.has(required), `the packed tarball is missing ${required}`);
   }

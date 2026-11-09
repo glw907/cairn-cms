@@ -1,7 +1,7 @@
 // Command reference writes the setup reference: every flag, derived name, step, event, and exit
 // code of cairn new, read from the code. `make reference` writes its output to
-// tool/docs/setup-reference.md, and its test fails when the committed page and a fresh render
-// disagree.
+// docs/admin/setup-reference.md at the repository root, and its test fails when the committed
+// page and a fresh render disagree.
 //
 // Like cmd/mangen, it cannot import cmd/cairn (a package main), so it builds the real binary and
 // reads the flags from `cairn new --help`. Steps, events, and names come from internal/setup,
@@ -30,7 +30,8 @@ This page is generated from the code by ` + "`make reference`" + `. Do not edit 
 It describes how to run ` + "`cairn new`" + ` without a terminal: the flags that answer each question, the
 names setup derives, the steps it takes, the events it writes, and the exit codes it returns.
 Run ` + "`cairn new --plan plan.json`" + ` with the answers as flags, review the plan, and then run
-` + "`cairn new --apply plan.json`" + `.
+` + "`cairn new --apply plan.json`" + `. [Set up a site with an agent](./set-up-with-an-agent.md) walks
+through the two calls.
 `
 
 // flagLine matches one line of the Flags block of `cairn new --help`: a long name, an optional

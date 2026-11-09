@@ -1,14 +1,14 @@
 # Invite editors
 
-An editor on a cairn site is someone who signs in and writes, and the site's owner decides who is on that list. Adding a person takes one short form on the **Editors** screen. The person then signs themselves in with a link that cairn emails them. This page is for the owner who wants to add, remove, or change the role of the people who write on the site. The setup command, `create-cairn-site`, makes the person who ran it the first owner, as [Create your site](./create-your-site.md) shows.
+An editor on a cairn site is someone who signs in and writes, and the site's owner decides who is on that list. Adding a person takes one short form on the **Editors** screen. The person then signs themselves in with a link that cairn emails them. This page is for the owner who wants to add, remove, or change the role of the people who write on the site. The setup command, `cairn new`, makes the sign-in email address you confirmed the first owner, as [Create your site](./create-your-site.md) shows.
 
 ## Prerequisites
 
-Your site needs sign-in email turned on, which first needs a domain connected. Without it, you remain the only person who can sign in, and adding someone to the list changes nothing for them. [Turn on sign-in email](./own-your-domain.md#turn-on-sign-in-email) covers both.
+Your site needs sign-in email, which `cairn new` turns on for the domain it connects. Without working email, you remain the only person who can sign in, and adding someone to the list changes nothing for them. [Own your domain](./own-your-domain.md) covers the domain the email sends from.
 
 ## Owner, editor, and other roles
 
-On a site set up with the setup command, everyone who can sign in is an **owner** or an **editor**. An owner can do everything an editor can, and also manages the list on this screen: adding people, removing them, and changing their roles. An editor writes and publishes but can't change who has access.
+On a site set up with `cairn new`, everyone who can sign in is an **owner** or an **editor**. An owner can do everything an editor can, and also manages the list on this screen: adding people, removing them, and changing their roles. An editor writes and publishes but can't change who has access.
 
 A developer can declare more roles for a site. If yours has, they appear as extra choices on this screen.
 
@@ -39,11 +39,11 @@ Your own row has both controls turned off, so you can't remove or demote yoursel
 The new editor can go to your site's `/admin`, enter their email address, and receive a sign-in link. If nothing arrives, check these in order:
 
 1. Confirm the person's address is on the list, spelled the way they type it.
-2. Look in their spam folder. A domain that just started sending can take a while to earn delivery, as [Own your domain](./own-your-domain.md#turn-on-sign-in-email) explains.
+2. Look in their spam folder. A domain that just started sending can take a while to earn delivery, as [Own your domain](./own-your-domain.md) explains.
 3. See [Troubleshoot a live site](./troubleshooting.md#nobody-can-sign-in-or-one-person-cant) for the checks that apply to everyone.
 
 ## See also
 
-- [Own your domain](./own-your-domain.md) turns on sign-in email.
+- [Own your domain](./own-your-domain.md) covers the domain your site's sign-in email sends from.
 - [Check that your site works](./is-it-working.md#provision-the-auth-store) covers a role the site doesn't declare.
 - [Troubleshoot a live site](./troubleshooting.md) covers a live site that misbehaves.

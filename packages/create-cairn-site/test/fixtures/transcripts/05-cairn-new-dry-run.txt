@@ -1,0 +1,10 @@
+Site: My Site
+Repository: my-site
+Worker: my-site
+Database: my-site-auth
+Bucket: my-site-media
+GitHub App: cairn-my-site
+Folder: ./my-site
+Owner email: me@example.com
+AI crawlers: decline
+Nothing was created.

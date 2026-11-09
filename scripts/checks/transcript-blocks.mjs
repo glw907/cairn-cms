@@ -41,8 +41,9 @@ const QUOTING_DIR = 'docs/admin';
 // cover for another page carrying no recorded proof at all. A floor holds only while the quoting
 // directory holds any page.
 const PAGE_FLOORS = {
-  'docs/admin/create-your-site.md': 3,
+  'docs/admin/create-your-site.md': 2,
   'docs/admin/is-it-working.md': 1,
+  'docs/admin/set-up-with-an-agent.md': 2,
 };
 
 const MARKER_RE = /^<!-- transcript: (.+) -->$/;

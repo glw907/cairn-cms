@@ -5,7 +5,8 @@ This page is generated from the code by `make reference`. Do not edit it by hand
 It describes how to run `cairn new` without a terminal: the flags that answer each question, the
 names setup derives, the steps it takes, the events it writes, and the exit codes it returns.
 Run `cairn new --plan plan.json` with the answers as flags, review the plan, and then run
-`cairn new --apply plan.json`.
+`cairn new --apply plan.json`. [Set up a site with an agent](./set-up-with-an-agent.md) walks
+through the two calls.
 
 ## Flags
 

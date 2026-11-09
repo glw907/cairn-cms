@@ -18,7 +18,7 @@ LDFLAGS := -X '$(MODULE)/internal/version.Version=$(VERSION)' -X '$(MODULE)/inte
 
 .PHONY: all build test vet install install-check check clean golden man \
 	tidy-check fmt-check lint vulncheck vale-comments \
-	copy-list check-copy copy-review flags reference \
+	copy-list check-copy copy-review flags reference agent-guide \
 	build-golangci-lint build-govulncheck
 
 all: check
@@ -107,12 +107,18 @@ golden:
 flags:
 	go test ./cmd/cairn -run TestCommittedFlagListMatchesTheCommandTree -update
 
-# reference writes docs/setup-reference.md from the code: the flags from the built binary's
+# reference writes ../docs/admin/setup-reference.md from the code: the flags from the built binary's
 # `cairn new --help`, and the steps, events, names, and exit codes from internal/setup and the
 # exit-code golden. `make test` compares the committed page with a fresh render, so a code change
 # that skips this step fails cmd/reference's test.
 reference:
-	go run ./cmd/reference > docs/setup-reference.md
+	go run ./cmd/reference > ../docs/admin/setup-reference.md
+
+# agent-guide copies the agent page into cmd/cairn for go:embed, which reaches only the package's
+# own directory. `make test` compares the copy with the page, so an edit to the page that skips
+# this step fails TestAgentPageMatchesTheDocsPage.
+agent-guide:
+	cp ../docs/admin/set-up-with-an-agent.md cmd/cairn/set-up-with-an-agent.md
 
 build-golangci-lint:
 	go build -C tools -o ../$(GOLANGCI) github.com/golangci/golangci-lint/v2/cmd/golangci-lint

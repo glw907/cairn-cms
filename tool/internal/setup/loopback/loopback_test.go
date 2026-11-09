@@ -98,7 +98,7 @@ func (h *harness) do(method, target string, edit func(*http.Request)) (*http.Res
 	if err != nil {
 		h.t.Fatalf("%s %s: %v", method, target, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		h.t.Fatalf("read %s: %v", target, err)
@@ -359,7 +359,7 @@ func TestGitHubManifestCallback(t *testing.T) {
 
 func TestGitHubInstallCallback(t *testing.T) {
 	h := newHarness(t)
-	nonce := h.arm(GitHubCallback)
+	h.arm(GitHubCallback)
 	for _, query := range []string{
 		"code=abc&installation_id=12a&setup_action=install",
 		"code=abc&installation_id=-1&setup_action=install",
@@ -392,7 +392,7 @@ func TestGitHubInstallCallback(t *testing.T) {
 	}
 
 	// The second install approval arms the route again, and a matching state is accepted.
-	nonce = h.arm(GitHubCallback)
+	nonce := h.arm(GitHubCallback)
 	resp, _ = h.get("/github/callback?code=c0de2&installation_id=2&setup_action=install&state=" + nonce)
 	if resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("callback with state: status %d, want 303", resp.StatusCode)
@@ -596,15 +596,14 @@ func TestPortInUse(t *testing.T) {
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
-	defer held.Close()
+	defer func() { _ = held.Close() }()
 
 	s, err := New(Config{addr: held.Addr().String()})
 	if err == nil {
 		_ = s.Close()
 		t.Fatal("New bound a port another listener holds")
 	}
-	var inUse *PortInUseError
-	if !errors.As(err, &inUse) {
+	if _, ok := errors.AsType[*PortInUseError](err); !ok {
 		t.Fatalf("error %T %v, want *PortInUseError", err, err)
 	}
 	if err.Error() != "Port 49152 is in use. Another setup may be running." {

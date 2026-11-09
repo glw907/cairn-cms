@@ -138,11 +138,9 @@ func (r *run) startInstall() {
 	ctx, cancel := context.WithCancel(context.Background())
 	r.installStop = cancel
 	dir, env := r.rec.Setup.Folder, scrubbedEnv(r.cfg.Env)
-	r.install.Add(1)
-	go func() {
-		defer r.install.Done()
+	r.install.Go(func() {
 		_, r.installErr = runChild(ctx, dir, env, "npm", "install")
-	}()
+	})
 }
 
 // waitInstall waits for the background install to end.

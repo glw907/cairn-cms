@@ -373,6 +373,22 @@ func (c cfClient) dbByUUID(uuid string) *d1 {
 	return &d1{editors: map[string]string{}, tokens: map[string]tokenRow{}}
 }
 
+func (c cfClient) str(p []any, i int) string {
+	v, ok := p[i].(string)
+	if !ok {
+		c.t.Errorf("D1 parameter %d = %#v, want a string", i, p[i])
+	}
+	return v
+}
+
+func (c cfClient) num(p []any, i int) int64 {
+	v, ok := p[i].(int64)
+	if !ok {
+		c.t.Errorf("D1 parameter %d = %#v, want an int64", i, p[i])
+	}
+	return v
+}
+
 // D1Query runs the statements the runner sends, by their exact SQL.
 func (c cfClient) D1Query(ctx context.Context, uuid string, stmts []providers.D1Statement) ([]providers.D1Result, error) {
 	c.needAccount()
@@ -392,22 +408,22 @@ func (c cfClient) D1Query(ctx context.Context, uuid string, stmts []providers.D1
 			}
 		case sqlInsertOwner:
 			if len(db.editors) == 0 {
-				db.editors[p[0].(string)] = "owner"
+				db.editors[c.str(p, 0)] = "owner"
 				res.Meta.Changes = 1
 			}
 		case sqlSweepTokens:
 			for h, row := range db.tokens {
-				if row.email == p[0].(string) || row.expires <= p[1].(int64) {
+				if row.email == c.str(p, 0) || row.expires <= c.num(p, 1) {
 					delete(db.tokens, h)
 				}
 			}
 		case sqlInsertToken:
-			if _, ok := db.editors[p[4].(string)]; ok {
-				db.tokens[p[0].(string)] = tokenRow{email: p[1].(string), expires: p[2].(int64)}
+			if _, ok := db.editors[c.str(p, 4)]; ok {
+				db.tokens[c.str(p, 0)] = tokenRow{email: c.str(p, 1), expires: c.num(p, 2)}
 				res.Meta.Changes = 1
 			}
 		case sqlTokenLive:
-			if _, ok := db.tokens[p[0].(string)]; ok {
+			if _, ok := db.tokens[c.str(p, 0)]; ok {
 				res.Results = append(res.Results, json.RawMessage(`{"token_hash":"x"}`))
 			}
 		default:

@@ -227,8 +227,9 @@ async function applyStarterOverlay(overlay, to) {
  * @param {{ from: string, to: string, engineSpec: string, devSpec: string, name?: string, starterOverlay?: string }} opts
  *  `from` is the showcase dir, `to` the target dir (must not exist or be empty), and
  *  `engineSpec`/`devSpec`/`name` pass through to transformPackageJson. `starterOverlay` names the
- *  directory whose files replace the showcase's content; without it the copy keeps the showcase's
- *  content and filters its manifest.
+ *  directory whose files replace `src/content` and add static assets; the showcase's manifest
+ *  excludes its own content, so the overlay is what a template ships. Without it the copy keeps
+ *  whatever content its manifest leaves in and filters the content manifest to match.
  * @returns {Promise<string>} the emitted tree's root (`opts.to`)
  */
 export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cairn-site', starterOverlay }) {

@@ -1,19 +1,21 @@
 {
   "provenance": {
-    "captured": "2026-11-08",
-    "source": "https://developers.cloudflare.com/api/resources/user/methods/get/",
+    "captured": "2026-11-09",
+    "source": "GET /user",
     "status": 200,
-    "note": "pending live recording"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
     "success": true,
     "errors": [],
     "messages": [],
     "result": {
-      "id": "0000000000000000000000000000eu01",
-      "email": "owner-scrubbed",
-      "first_name": null,
-      "last_name": null
+      "id": "00000000000000000000000000000002",
+      "email": "editor-redacted",
+      "suspended": false,
+      "two_factor_authentication_enabled": true,
+      "created_on": "2025-10-28T02:11:50.175294Z",
+      "modified_on": "2026-10-18T06:01:11.747730Z"
     }
   }
 }

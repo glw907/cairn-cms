@@ -3,7 +3,7 @@
     "captured": "2026-11-08",
     "source": "RFC 7009 section 2.2: a 200 with an empty body",
     "status": 200,
-    "note": "pending live recording"
+    "note": "pending live recording; a live revoke probe on 2026-11-09 answered 200, which this status matches, but its body was not kept"
   },
   "body": {}
 }

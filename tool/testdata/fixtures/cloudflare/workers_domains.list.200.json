@@ -1,0 +1,75 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "GET /accounts/{id}/workers/domains",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "success": true,
+    "errors": null,
+    "messages": null,
+    "result_info": {
+      "page": 1,
+      "per_page": 6,
+      "count": 6,
+      "total_count": 6
+    },
+    "result": [
+      {
+        "id": "a8db561f0ac999a01b869e1cfba910b38cb14bee",
+        "zone_id": "00000000000000000000000000000021",
+        "environment": "production",
+        "enabled": true,
+        "zone_name": "example-zone-2.org",
+        "hostname": "example-1.carin-test.org",
+        "service": "example-worker-6"
+      },
+      {
+        "id": "b68093049d9fbf001fd5b1f839e45d6066a4f59a",
+        "zone_id": "00000000000000000000000000000022",
+        "environment": "production",
+        "enabled": true,
+        "zone_name": "example-zone-4.org",
+        "hostname": "example-zone-4.org",
+        "service": "example-worker-8"
+      },
+      {
+        "id": "1ed1a65f02a39fd724ee09b6d9326ab42f461998",
+        "zone_id": "00000000000000000000000000000023",
+        "environment": "production",
+        "enabled": true,
+        "zone_name": "example-zone-1.org",
+        "hostname": "example-2.carin-test.org",
+        "service": "example-worker-14"
+      },
+      {
+        "id": "92d2bddde5f8da98f8ad125ac434e80ef05a84ce",
+        "zone_id": "00000000000000000000000000000023",
+        "environment": "production",
+        "enabled": true,
+        "zone_name": "example-zone-1.org",
+        "hostname": "example-3.carin-test.org",
+        "service": "example-worker-13"
+      },
+      {
+        "id": "dfad55c70c7b3b9968f132481c2e764699343c11",
+        "zone_id": "00000000000000000000000000000023",
+        "environment": "production",
+        "enabled": true,
+        "zone_name": "example-zone-1.org",
+        "hostname": "example-4.carin-test.org",
+        "service": "example-worker-12"
+      },
+      {
+        "id": "fa0ce79a33ed3a9c896567652f801ec6722454f6",
+        "zone_id": "00000000000000000000000000000024",
+        "environment": "production",
+        "enabled": true,
+        "zone_name": "example-zone-6.org",
+        "hostname": "example-zone-6.org",
+        "service": "example-worker-10"
+      }
+    ]
+  }
+}

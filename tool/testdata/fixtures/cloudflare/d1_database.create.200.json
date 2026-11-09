@@ -1,21 +1,26 @@
 {
   "provenance": {
-    "captured": "2026-11-08",
-    "source": "https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/create/",
+    "captured": "2026-11-09",
+    "source": "POST /accounts/{id}/d1/database",
     "status": 200,
-    "note": "pending live recording"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
-    "success": true,
+    "result": {
+      "uuid": "f66e3a64-b9b7-43fa-97d6-1e67857edbcd",
+      "name": "cairn-rec-tmw8jn1a0-db",
+      "created_at": "2026-11-09T00:49:43.855Z",
+      "version": "production",
+      "file_size": 8192,
+      "num_tables": 0,
+      "created_in_region": "WNAM",
+      "jurisdiction": null,
+      "read_replication": {
+        "mode": "disabled"
+      }
+    },
     "errors": [],
     "messages": [],
-    "result": {
-      "uuid": "00000000-0000-0000-0000-0000000000d2",
-      "name": "example-db",
-      "created_at": "2026-11-08T00:00:00.000Z",
-      "version": "production",
-      "file_size": 0,
-      "num_tables": 0
-    }
+    "success": true
   }
 }

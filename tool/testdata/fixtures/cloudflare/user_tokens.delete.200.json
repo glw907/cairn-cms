@@ -1,16 +1,16 @@
 {
   "provenance": {
-    "captured": "2026-11-08",
-    "source": "https://developers.cloudflare.com/api/resources/user/subresources/tokens/methods/delete/",
+    "captured": "2026-11-09",
+    "source": "DELETE /user/tokens/{id}",
     "status": 200,
-    "note": "pending live recording"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
+    "result": {
+      "id": "00000000000000000000000000000446"
+    },
     "success": true,
     "errors": [],
-    "messages": [],
-    "result": {
-      "id": "00000000000000000000000000000t01"
-    }
+    "messages": []
   }
 }

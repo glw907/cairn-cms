@@ -113,8 +113,6 @@ type fakeCF struct {
 	email    string
 	active   []providers.Zone
 	all      []providers.Zone
-	subs     []providers.Subscription
-	subsOK   bool
 	workers  map[string]bool
 	d1       map[string]bool
 	r2       map[string]bool
@@ -162,7 +160,7 @@ func (c cfClient) ListZones(context.Context) ([]providers.Zone, error) {
 
 func (c cfClient) Subscriptions(context.Context) ([]providers.Subscription, bool, error) {
 	c.needAccount()
-	return c.f.subs, c.f.subsOK, c.note("subscriptions")
+	return nil, false, c.note("subscriptions")
 }
 
 func (c cfClient) WorkerExists(_ context.Context, name string) (bool, error) {
@@ -447,8 +445,8 @@ func (v *fakeView) OpenBrowser(_ context.Context, url string) error {
 	return nil
 }
 
-// world is one run's fakes, set up for the happy path: one account, one active zone, Workers
-// Paid present, no names taken, and an owner who approves each request once.
+// world is one run's fakes, set up for the happy path: one account, one active zone, no names
+// taken, and an owner who approves each request once.
 type world struct {
 	t          *testing.T
 	log        []string
@@ -489,8 +487,6 @@ func newWorld(t *testing.T) *world {
 		email:    user.Email,
 		active:   zones[:1],
 		all:      zones[:1],
-		subs:     cfResult[[]providers.Subscription](t, "account_subscriptions.list.200.json"),
-		subsOK:   true,
 		workers:  map[string]bool{},
 		d1:       map[string]bool{},
 		r2:       map[string]bool{},
@@ -500,26 +496,30 @@ func newWorld(t *testing.T) *world {
 		log:      &w.log,
 	}
 	conv := fixture[struct {
-		ID           int64  `json:"id"`
-		Slug         string `json:"slug"`
-		ClientID     string `json:"client_id"`
+		ID       int64  `json:"id"`
+		Slug     string `json:"slug"`
+		ClientID string `json:"client_id"`
+		Owner    struct {
+			Login string `json:"login"`
+		} `json:"owner"`
+	}](t, "github", "app_manifest_conversion.created.201.json")
+	// The recording scrubs every secret to one placeholder, so the secrets come from the corpus's
+	// test-only credentials: a working key and values distinct enough for the scrub assertions.
+	creds := fixture[struct {
 		ClientSecret string `json:"client_secret"`
 		Webhook      string `json:"webhook_secret"`
 		PEM          string `json:"pem"`
-		Owner        struct {
-			Login string `json:"login"`
-		} `json:"owner"`
-	}](t, "github", "app_manifest_conversion.success.201.json")
+	}](t, "github", "test-only.app-credentials.json")
 	w.gh = &fakeGH{
 		t: t,
 		app: providers.AppRecord{
 			ID: conv.ID, Slug: conv.Slug, ClientID: conv.ClientID,
-			ClientSecret:  providers.NewCredential(conv.ClientSecret),
-			WebhookSecret: providers.NewCredential(conv.Webhook),
-			PEM:           providers.NewCredential(conv.PEM),
+			ClientSecret:  providers.NewCredential(creds.ClientSecret),
+			WebhookSecret: providers.NewCredential(creds.Webhook),
+			PEM:           providers.NewCredential(creds.PEM),
 			OwnerLogin:    conv.Owner.Login,
 		},
-		repo:     fixture[providers.Repository](t, "github", "repo_create.success.201.json"),
+		repo:     fixture[providers.Repository](t, "github", "repo_create.ok.201.json"),
 		taken:    map[string]bool{},
 		installs: []install{{ID: 5550001, AppID: foreignAppID, Selection: "all"}},
 		log:      &w.log,

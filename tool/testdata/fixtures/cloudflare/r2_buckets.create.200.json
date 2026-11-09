@@ -1,19 +1,20 @@
 {
   "provenance": {
-    "captured": "2026-11-08",
-    "source": "https://developers.cloudflare.com/api/resources/r2/subresources/buckets/methods/create/",
+    "captured": "2026-11-09",
+    "source": "POST /accounts/{id}/r2/buckets",
     "status": 200,
-    "note": "pending live recording"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
     "success": true,
     "errors": [],
     "messages": [],
     "result": {
-      "name": "example-media",
-      "creation_date": "2026-11-08T00:00:00.000Z",
-      "location": "ENAM",
-      "storage_class": "Standard"
+      "name": "cairn-rec-tmw8jn1a0-bucket",
+      "creation_date": "2026-11-09T00:49:44.522Z",
+      "location": "WNAM",
+      "storage_class": "Standard",
+      "jurisdiction": "default"
     }
   }
 }

@@ -225,9 +225,9 @@ func TestRegisterRedactsACredentialThatArrivesLater(t *testing.T) {
 
 // TestRegisterSplitsAPEMIntoLines covers the key a GitHub App conversion returns: the scrub
 // matches within a line, so each line of a multi-line value is its own needle. The key is the
-// corpus's committed test-only key.
+// corpus's committed test-only key, since the recorded conversion scrubs its pem.
 func TestRegisterSplitsAPEMIntoLines(t *testing.T) {
-	_, body, err := providers.Corpus("github", "app_manifest_conversion.success.201.json")
+	_, body, err := providers.Corpus("github", "test-only.app-credentials.json")
 	if err != nil {
 		t.Fatal(err)
 	}

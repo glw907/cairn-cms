@@ -27,7 +27,7 @@
     },
     {
       "ID": "cloudflare-checks",
-      "Label": "Check accounts, zones, Workers Paid, names, and the address",
+      "Label": "Check accounts, zones, names, and the address",
       "Actor": "tool",
       "Provider": "cloudflare"
     },

@@ -79,7 +79,7 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 	t.Run("accounts", func(t *testing.T) {
 		rt := &scriptedRT{t: t, script: []string{"accounts.list.200.json"}}
 		got, err := NewCloudflare("", NewCredential("tok"), rt).Accounts(ctx)
-		if err != nil || len(got) != 1 || got[0].Name != "Example account" || got[0].ID == "" {
+		if err != nil || len(got) != 1 || got[0].Name != "example-account-1" || got[0].ID != "00000000000000000000000000000001" {
 			t.Fatalf("Accounts = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/accounts")
@@ -87,15 +87,15 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 	t.Run("user email", func(t *testing.T) {
 		cf, rt := writeClient(t, "user.get.200.json")
 		got, err := cf.UserEmail(ctx)
-		if err != nil || got != "owner-scrubbed" {
+		if err != nil || got != "editor-redacted" {
 			t.Fatalf("UserEmail = %q, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/user")
 	})
 	t.Run("active zones", func(t *testing.T) {
-		cf, rt := writeClient(t, "zones.list.200.json")
+		cf, rt := writeClient(t, "zones.active.200.json")
 		got, err := cf.ActiveZones(ctx)
-		if err != nil || len(got) != 2 || got[0].Status != "active" {
+		if err != nil || len(got) != 1 || got[0].Status != "active" || got[0].Name != "carin-test.org" {
 			t.Fatalf("ActiveZones = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/zones")
@@ -113,13 +113,13 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 	})
 	t.Run("dns records named", func(t *testing.T) {
 		cf, rt := writeClient(t, "zone_dns_records.named.200.json")
-		got, err := cf.DNSRecordsNamed(ctx, zone, "www.example.test")
-		if err != nil || len(got) != 1 || got[0].Type != "CNAME" {
+		got, err := cf.DNSRecordsNamed(ctx, zone, "carin-test.org")
+		if err != nil || len(got) != 3 || got[0].Type != "MX" || got[2].Type != "TXT" || got[2].Name != "carin-test.org" {
 			t.Fatalf("DNSRecordsNamed = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/zones/zone1/dns_records")
-		if q, _ := url.ParseQuery(rt.sent[0].query); q.Get("name") != "www.example.test" {
-			t.Errorf("query = %q, want name=www.example.test", rt.sent[0].query)
+		if q, _ := url.ParseQuery(rt.sent[0].query); q.Get("name") != "carin-test.org" {
+			t.Errorf("query = %q, want name=carin-test.org", rt.sent[0].query)
 		}
 	})
 	t.Run("dns records none", func(t *testing.T) {
@@ -130,24 +130,31 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 		}
 	})
 	t.Run("worker domains filtered by hostname", func(t *testing.T) {
-		cf, rt := writeClient(t, "workers_domains.hostname-match.200.json")
-		got, err := cf.WorkerDomainsFor(ctx, "www.example.test")
-		if err != nil || len(got) != 1 || got[0].Service != "other-site" {
+		cf, rt := writeClient(t, "workers_domains.list.200.json")
+		got, err := cf.WorkerDomainsFor(ctx, "example-zone-4.org")
+		if err != nil || len(got) != 1 || got[0].Service != "example-worker-8" || got[0].ZoneID != "00000000000000000000000000000022" {
 			t.Fatalf("WorkerDomainsFor = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/accounts/acct1/workers/domains")
-		cf, _ = writeClient(t, "workers_domains.hostname-match.200.json")
+		if q, _ := url.ParseQuery(rt.sent[0].query); q.Get("hostname") != "example-zone-4.org" {
+			t.Errorf("query = %q, want hostname=example-zone-4.org", rt.sent[0].query)
+		}
+		cf, _ = writeClient(t, "workers_domains.list.200.json")
 		if got, _ := cf.WorkerDomainsFor(ctx, "other.example.test"); len(got) != 0 {
 			t.Errorf("a stranger's domain matched: %+v", got)
 		}
 	})
 	t.Run("worker routes", func(t *testing.T) {
-		cf, rt := writeClient(t, "zone_workers_routes.list.200.json")
+		cf, rt := writeClient(t, "zone_workers_routes.one-route.200.json")
 		got, err := cf.WorkerRoutes(ctx, zone)
 		if err != nil || len(got) != 1 || got[0].Pattern != "www.example.test/*" || got[0].Script != "other-site" {
 			t.Fatalf("WorkerRoutes = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/zones/zone1/workers/routes")
+		cf, _ = writeClient(t, "zone_workers_routes.list.200.json")
+		if got, err := cf.WorkerRoutes(ctx, zone); err != nil || len(got) != 0 {
+			t.Errorf("a zone with no routes = %+v, %v, want none", got, err)
+		}
 	})
 	t.Run("worker exists", func(t *testing.T) {
 		cf, rt := writeClient(t, "workers_scripts.list.200.json")
@@ -156,6 +163,10 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 			t.Fatalf("WorkerExists = %v, %v, want false", got, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/accounts/acct1/workers/scripts")
+		cf, _ = writeClient(t, "workers_scripts.list.200.json")
+		if got, err := cf.WorkerExists(ctx, "example-worker-3"); err != nil || !got {
+			t.Errorf("WorkerExists(a listed script) = %v, %v, want true", got, err)
+		}
 	})
 	t.Run("d1 by name", func(t *testing.T) {
 		cf, rt := writeClient(t, "d1_database.list-by-name.200.json")
@@ -168,6 +179,13 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 		if got, _ := cf.D1DatabaseNamed(ctx, "example"); got != nil {
 			t.Errorf("a substring matched: %+v", got)
 		}
+		cf, rt = writeClient(t, "d1_database.name-check.200.json")
+		if got, err := cf.D1DatabaseNamed(ctx, "cairn-rec-tmw8jn1a0-db"); got != nil || err != nil {
+			t.Errorf("a free name = %+v, %v, want nil, nil", got, err)
+		}
+		if q, _ := url.ParseQuery(rt.sent[0].query); q.Get("name") != "cairn-rec-tmw8jn1a0-db" || len(rt.sent) != 1 {
+			t.Errorf("requests = %+v, want one GET filtered by name", rt.sent)
+		}
 	})
 	t.Run("r2 bucket present and absent", func(t *testing.T) {
 		cf, rt := writeClient(t, "r2_bucket.get.200.json")
@@ -176,13 +194,13 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 			t.Fatalf("R2BucketNamed = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/accounts/acct1/r2/buckets/example-media")
-		cf, _ = writeClient(t, "r2_bucket.get.not-found.404.json")
+		cf, _ = writeClient(t, "r2_bucket.name-check.404.json")
 		if got, err := cf.R2BucketNamed(ctx, "example-media"); got != nil || err != nil {
 			t.Errorf("absent bucket = %+v, %v, want nil, nil", got, err)
 		}
 	})
 	t.Run("subscriptions", func(t *testing.T) {
-		cf, rt := writeClient(t, "account_subscriptions.list.200.json")
+		cf, rt := writeClient(t, "subscriptions.list.200.json")
 		subs, ok, err := cf.Subscriptions(ctx)
 		if err != nil || !ok || len(subs) != 1 || subs[0].RatePlan.ID != "workers_paid" {
 			t.Fatalf("Subscriptions = %+v, %v, %v", subs, ok, err)
@@ -190,7 +208,7 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 		wantReq(t, rt.sent[0], "GET", "/accounts/acct1/subscriptions")
 	})
 	t.Run("subscriptions refused is a result", func(t *testing.T) {
-		cf, _ := writeClient(t, "account_subscriptions.list.refused.403.json")
+		cf, _ := writeClient(t, "subscriptions.list.403.json")
 		subs, ok, err := cf.Subscriptions(ctx)
 		if err != nil || ok || subs != nil {
 			t.Fatalf("Subscriptions = %+v, %v, %v, want absent without error", subs, ok, err)
@@ -198,23 +216,23 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 	})
 	t.Run("create d1", func(t *testing.T) {
 		cf, rt := writeClient(t, "d1_database.create.200.json")
-		got, err := cf.CreateD1(ctx, "example-db")
-		if err != nil || got.UUID != "00000000-0000-0000-0000-0000000000d2" {
+		got, err := cf.CreateD1(ctx, "cairn-rec-tmw8jn1a0-db")
+		if err != nil || got.UUID != "f66e3a64-b9b7-43fa-97d6-1e67857edbcd" || got.Name != "cairn-rec-tmw8jn1a0-db" {
 			t.Fatalf("CreateD1 = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "POST", "/accounts/acct1/d1/database")
-		if rt.sent[0].body != `{"name":"example-db"}` {
+		if rt.sent[0].body != `{"name":"cairn-rec-tmw8jn1a0-db"}` {
 			t.Errorf("body = %s", rt.sent[0].body)
 		}
 	})
 	t.Run("create r2", func(t *testing.T) {
 		cf, rt := writeClient(t, "r2_buckets.create.200.json")
-		got, err := cf.CreateR2Bucket(ctx, "example-media")
-		if err != nil || got.Name != "example-media" {
+		got, err := cf.CreateR2Bucket(ctx, "cairn-rec-tmw8jn1a0-bucket")
+		if err != nil || got.Name != "cairn-rec-tmw8jn1a0-bucket" || got.CreationDate != "2026-11-09T00:49:44.522Z" {
 			t.Fatalf("CreateR2Bucket = %+v, %v", got, err)
 		}
 		wantReq(t, rt.sent[0], "POST", "/accounts/acct1/r2/buckets")
-		if rt.sent[0].body != `{"name":"example-media"}` {
+		if rt.sent[0].body != `{"name":"cairn-rec-tmw8jn1a0-bucket"}` {
 			t.Errorf("body = %s", rt.sent[0].body)
 		}
 	})
@@ -240,9 +258,9 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 		}
 	})
 	t.Run("deploy key", func(t *testing.T) {
-		cf, rt := writeClient(t, "user_tokens_permission_groups.list.200.json", "user_tokens.create.200.json")
+		cf, rt := writeClient(t, "user_token_permission_groups.list.200.json", "user_tokens.create.200.json")
 		key, err := cf.MintDeployKey(ctx, "run1")
-		if err != nil || key.ID != "00000000000000000000000000000t01" || key.Value.Reveal() != "TOKEN_VALUE_PLACEHOLDER" {
+		if err != nil || key.ID != "00000000000000000000000000000446" || key.Value.Reveal() != "<REDACTED>" {
 			t.Fatalf("MintDeployKey = %+v, %v", key, err)
 		}
 		wantReq(t, rt.sent[0], "GET", "/user/tokens/permission_groups")
@@ -271,10 +289,10 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 		for _, g := range body.Policies[0].Groups {
 			ids = append(ids, g.ID)
 		}
-		if got := strings.Join(ids, ","); got != "00000000000000000000000000000g01,00000000000000000000000000000g03,00000000000000000000000000000g04" {
+		if got := strings.Join(ids, ","); got != "00000000000000000000000000000415,00000000000000000000000000000189,00000000000000000000000000000411" {
 			t.Errorf("group ids = %s, want Workers Scripts, D1, R2 write only", got)
 		}
-		if strings.Contains(key.Value.String(), "TOKEN_VALUE") {
+		if strings.Contains(key.Value.String(), "<REDACTED>") {
 			t.Error("the minted value prints through String")
 		}
 	})
@@ -337,6 +355,19 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 			t.Errorf("body = %s", rt.sent[0].body)
 		}
 	})
+	t.Run("d1 query one statement", func(t *testing.T) {
+		cf, _ := writeClient(t, "d1_query.success.200.json")
+		got, err := cf.D1Query(ctx, "db-uuid", []D1Statement{{SQL: "SELECT 1 AS n"}})
+		if err != nil || len(got) != 1 || !got[0].Success || len(got[0].Results) != 1 {
+			t.Fatalf("D1Query = %+v, %v", got, err)
+		}
+		var row struct {
+			N int `json:"n"`
+		}
+		if err := json.Unmarshal(got[0].Results[0], &row); err != nil || row.N != 1 {
+			t.Errorf("row = %+v, %v, want n = 1", row, err)
+		}
+	})
 	t.Run("email send", func(t *testing.T) {
 		cf, rt := writeClient(t, "email_send.success.200.json")
 		got, err := cf.SendEmail(ctx, EmailMessage{From: "noreply", To: "owner", Subject: "s", Text: "t"})
@@ -376,7 +407,7 @@ func TestCloudflareWriteErrorsMapToReasons(t *testing.T) {
 			script := []string{tt.fixture}
 			switch tt.name {
 			case "missing scope":
-				script = []string{"user_tokens_permission_groups.list.200.json", tt.fixture}
+				script = []string{"user_token_permission_groups.list.200.json", tt.fixture}
 			case "zone pending":
 				script = []string{"zone_email_sending_subdomains.list.200.json", tt.fixture}
 			}

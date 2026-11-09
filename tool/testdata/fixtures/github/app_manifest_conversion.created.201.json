@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "POST /app-manifests/{code}/conversions",
+    "status": 201,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "id": 5674023,
+    "client_id": "Iv23li0kiADWK6TBhHPV",
+    "slug": "cairn-rec-tmw8jn1a0-app",
+    "node_id": "A_kwDOFPyVg84AVpQn",
+    "owner": {
+      "login": "<REDACTED>-test",
+      "id": 352097667,
+      "node_id": "U_kgDOFPyVgw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/352097667?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/<REDACTED>-test",
+      "html_url": "https://github.com/<REDACTED>-test",
+      "followers_url": "https://api.github.com/users/<REDACTED>-test/followers",
+      "following_url": "https://api.github.com/users/<REDACTED>-test/following{/other_user}",
+      "gists_url": "https://api.github.com/users/<REDACTED>-test/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/<REDACTED>-test/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/<REDACTED>-test/subscriptions",
+      "organizations_url": "https://api.github.com/users/<REDACTED>-test/orgs",
+      "repos_url": "https://api.github.com/users/<REDACTED>-test/repos",
+      "events_url": "https://api.github.com/users/<REDACTED>-test/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/<REDACTED>-test/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "name": "cairn-rec-tmw8jn1a0-app",
+    "description": null,
+    "external_url": "https://carin-test.org",
+    "html_url": "https://github.com/apps/cairn-rec-tmw8jn1a0-app",
+    "created_at": "2026-11-09T00:49:59Z",
+    "updated_at": "2026-11-09T00:49:59Z",
+    "webhook_secret": "<REDACTED>",
+    "pem": "<REDACTED>",
+    "client_secret": "<REDACTED>",
+    "permissions": {
+      "contents": "write",
+      "secrets": "write",
+      "metadata": "read"
+    },
+    "events": []
+  }
+}

@@ -1,88 +1,218 @@
 {
   "provenance": {
-    "captured": "2026-09-21",
-    "source": "GET /accounts/{account_id}/workers/scripts?page=1",
+    "captured": "2026-11-09",
+    "source": "GET /accounts/{id}/workers/scripts",
     "status": 200,
-    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's placeholder shapes; every key set, result_info value, and count below is the live one. The live body carried 14 scripts and no result_info; two are kept here and the absent result_info is the property under test."
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
     "result": [
       {
-        "created_on": "2026-01-25T18:00:10.112994Z",
-        "modified_on": "2026-08-30T20:25:54.280296Z",
-        "id": "example-site",
-        "tag": "c918794033c69ddc9b1eeeaf503248b0",
-        "tags": [],
-        "deployment_id": "",
-        "tail_consumers": null,
-        "logpush": false,
-        "observability": {
-          "enabled": true,
-          "head_sampling_rate": 1,
-          "redact_query_string": false,
-          "logs": {
-            "enabled": true,
-            "head_sampling_rate": 1,
-            "persist": true,
-            "invocation_logs": true
-          },
-          "traces": {
-            "enabled": false,
-            "persist": true,
-            "head_sampling_rate": 1
-          }
-        },
-        "has_assets": true,
-        "has_modules": true,
-        "etag": "43de32a69ad011589795caefa417e3e4b6c74997daa2f1177f8f9ad31b754cc9",
-        "handlers": [
-          "fetch"
-        ],
-        "last_deployed_from": "wrangler",
-        "compatibility_date": "2025-05-05",
-        "compatibility_flags": [
-          "nodejs_compat"
-        ],
-        "usage_model": "standard",
-        "routes": null
-      },
-      {
+        "tag": "00000000000000000000000000000004",
         "created_on": "2026-02-08T23:12:06.330312Z",
-        "modified_on": "2026-08-30T02:54:01.582932Z",
-        "id": "example-worker-1",
-        "tag": "f48cdde8c2df3f0f35d99c3885813ff4",
-        "tags": [],
-        "deployment_id": "",
-        "tail_consumers": null,
-        "logpush": false,
-        "has_assets": true,
-        "has_modules": true,
-        "etag": "af3f6b4aeff73c2509c2e833c13a8382702c70d6ace0b42327f2240abf1cce7a",
+        "modified_on": "2026-11-07T22:27:55.393748Z",
         "handlers": [
           "fetch",
           "email"
         ],
-        "last_deployed_from": "wrangler",
-        "compatibility_date": "2025-04-01",
+        "has_assets": true,
+        "has_modules": true,
         "usage_model": "standard",
-        "routes": [
-          {
-            "id": "5f90c0ab40234dc3168bfbb385173d32",
-            "pattern": "www.carin-test-2.org/*",
-            "script": "example-worker-1",
-            "request_limit_fail_open": false
-          },
-          {
-            "id": "0ac8d16818fbae90b269a31d477694f5",
-            "pattern": "carin-test-2.org/*",
-            "script": "example-worker-1",
-            "request_limit_fail_open": false
-          }
-        ]
+        "compatibility_date": "2025-04-01",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-1"
+      },
+      {
+        "tag": "00000000000000000000000000000005",
+        "created_on": "2026-02-27T23:53:36.793843Z",
+        "modified_on": "2026-11-07T22:27:17.893965Z",
+        "handlers": [
+          "fetch"
+        ],
+        "has_assets": true,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2025-04-01",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-2"
+      },
+      {
+        "tag": "00000000000000000000000000000006",
+        "created_on": "2026-02-08T22:28:05.571534Z",
+        "modified_on": "2026-11-07T22:27:37.031954Z",
+        "handlers": [
+          "scheduled",
+          "fetch"
+        ],
+        "has_assets": false,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2025-04-01",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-3"
+      },
+      {
+        "tag": "00000000000000000000000000000007",
+        "created_on": "2026-02-17T20:58:15.579913Z",
+        "modified_on": "2026-02-17T20:58:17.445155Z",
+        "handlers": [
+          "fetch"
+        ],
+        "has_assets": false,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2024-01-01",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-4"
+      },
+      {
+        "tag": "00000000000000000000000000000008",
+        "created_on": "2026-03-27T22:31:12.452284Z",
+        "modified_on": "2026-03-28T00:18:46.251574Z",
+        "handlers": [
+          "scheduled",
+          "fetch"
+        ],
+        "has_assets": false,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2025-04-01",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-5"
+      },
+      {
+        "tag": "00000000000000000000000000000009",
+        "created_on": "2026-07-07T00:15:09.400683Z",
+        "modified_on": "2026-11-07T22:27:35.576822Z",
+        "handlers": [
+          "fetch",
+          "scheduled"
+        ],
+        "has_assets": true,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2026-07-06",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-6"
+      },
+      {
+        "tag": "00000000000000000000000000000010",
+        "created_on": "2026-03-19T04:54:43.760303Z",
+        "modified_on": "2026-07-14T17:25:03.132724Z",
+        "handlers": [
+          "scheduled",
+          "fetch"
+        ],
+        "has_assets": false,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2025-04-01",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-7"
+      },
+      {
+        "tag": "00000000000000000000000000000011",
+        "created_on": "2026-07-03T02:17:01.695591Z",
+        "modified_on": "2026-10-20T04:38:58.113621Z",
+        "handlers": [
+          "fetch"
+        ],
+        "has_assets": true,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2026-05-28",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-8"
+      },
+      {
+        "tag": "00000000000000000000000000000012",
+        "created_on": "2026-11-03T06:10:54.005842Z",
+        "modified_on": "2026-11-03T06:12:19.074302Z",
+        "handlers": [
+          "fetch"
+        ],
+        "has_assets": true,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2026-08-21",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-9"
+      },
+      {
+        "tag": "00000000000000000000000000000013",
+        "created_on": "2026-06-09T02:42:22.239792Z",
+        "modified_on": "2026-11-03T05:56:56.450896Z",
+        "handlers": [
+          "fetch"
+        ],
+        "has_assets": true,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2025-05-05",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-10"
+      },
+      {
+        "tag": "00000000000000000000000000000014",
+        "created_on": "2026-03-25T00:57:15.230454Z",
+        "modified_on": "2026-03-25T15:28:02.699745Z",
+        "handlers": [
+          "fetch"
+        ],
+        "has_assets": true,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2026-03-01",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-11"
+      },
+      {
+        "tag": "00000000000000000000000000000015",
+        "created_on": "2026-10-25T23:26:19.494271Z",
+        "modified_on": "2026-11-07T22:07:07.67808Z",
+        "handlers": [
+          "fetch",
+          "scheduled"
+        ],
+        "has_assets": true,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2026-10-01",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-12"
+      },
+      {
+        "tag": "00000000000000000000000000000016",
+        "created_on": "2026-10-19T01:31:51.367778Z",
+        "modified_on": "2026-10-24T23:19:34.61956Z",
+        "handlers": [
+          "fetch",
+          "scheduled"
+        ],
+        "has_assets": false,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2026-10-12",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-13"
+      },
+      {
+        "tag": "00000000000000000000000000000017",
+        "created_on": "2026-10-18T23:23:53.219975Z",
+        "modified_on": "2026-10-21T19:53:04.60432Z",
+        "handlers": [
+          "fetch"
+        ],
+        "has_assets": false,
+        "has_modules": true,
+        "usage_model": "standard",
+        "compatibility_date": "2026-10-12",
+        "last_deployed_from": "wrangler",
+        "id": "example-worker-14"
       }
-    ],
-    "success": true,
-    "errors": [],
-    "messages": []
+    ]
   }
 }

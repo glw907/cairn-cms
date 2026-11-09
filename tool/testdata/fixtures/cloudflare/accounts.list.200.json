@@ -1,26 +1,28 @@
 {
   "provenance": {
-    "captured": "2026-11-08",
-    "source": "https://developers.cloudflare.com/api/resources/accounts/methods/list/",
+    "captured": "2026-11-09",
+    "source": "GET /accounts",
     "status": 200,
-    "note": "pending live recording"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
     "success": true,
     "errors": [],
     "messages": [],
-    "result": [
-      {
-        "id": "0000000000000000000000000000ex01",
-        "name": "Example account"
-      }
-    ],
     "result_info": {
       "page": 1,
       "per_page": 20,
+      "total_pages": 1,
       "count": 1,
-      "total_count": 1,
-      "total_pages": 1
-    }
+      "total_count": 1
+    },
+    "result": [
+      {
+        "id": "00000000000000000000000000000001",
+        "type": "standard",
+        "created_on": "2025-10-28T02:11:50.175294Z",
+        "name": "example-account-1"
+      }
+    ]
   }
 }

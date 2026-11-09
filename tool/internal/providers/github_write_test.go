@@ -121,18 +121,21 @@ func TestManifestFormAndURLs(t *testing.T) {
 }
 
 func TestConvertManifestDecodesTheConversion(t *testing.T) {
-	rt := routes(map[string]reply{"POST api.github.com/app-manifests/the-code/conversions": fixtureReply(t, "app_manifest_conversion.success.201.json")})
+	rt := routes(map[string]reply{"POST api.github.com/app-manifests/the-code/conversions": fixtureReply(t, "app_manifest_conversion.created.201.json")})
 	rec, err := NewGitHub(Credential{}, rt).ConvertManifest(context.Background(), "the-code")
 	if err != nil {
 		t.Fatalf("ConvertManifest: %v", err)
 	}
-	if rec.ID != 1234567 || rec.Slug != "cairn-example-site" || rec.OwnerLogin != "example-owner" || rec.ClientID != "PLACEHOLDER-client-id" {
+	if rec.ID != 5674023 || rec.Slug != "cairn-rec-tmw8jn1a0-app" || rec.OwnerLogin != "<REDACTED>-test" || rec.ClientID != "Iv23li0kiADWK6TBhHPV" {
 		t.Errorf("record = %+v", rec)
 	}
-	if !strings.Contains(rec.PEM.v, "PRIVATE KEY") || rec.ClientSecret.v != "PLACEHOLDER-client-secret" {
-		t.Error("record lost the pem or the client secret")
+	// The recording scrubs each secret to the same placeholder, so these prove the three fields
+	// decode; the leak check below fails on that placeholder appearing in the formatted record
+	// anywhere but the owner login, whose scrub carries the same text.
+	if rec.PEM.v != "<REDACTED>" || rec.ClientSecret.v != "<REDACTED>" || rec.WebhookSecret.v != "<REDACTED>" {
+		t.Error("record lost the pem, the client secret, or the webhook secret")
 	}
-	if shown := fmt.Sprintf("%v %+v", rec, rec); strings.Contains(shown, "PRIVATE KEY") || strings.Contains(shown, "PLACEHOLDER-client-secret") {
+	if shown := strings.ReplaceAll(fmt.Sprintf("%v %+v", rec, rec), rec.OwnerLogin, ""); strings.Contains(shown, "<REDACTED>") {
 		t.Errorf("formatting the record leaked a secret: %s", shown)
 	}
 	if rt.calls[0].auth != "" {
@@ -161,7 +164,7 @@ func TestAppJWTSignsRS256WithTheDocumentedClaims(t *testing.T) {
 	if got := string(dec(parts[0])); got != `{"alg":"RS256","typ":"JWT"}` {
 		t.Errorf("header = %s", got)
 	}
-	if got := string(dec(parts[1])); got != `{"iat":1799999940,"exp":1800000540,"iss":"1234567"}` {
+	if got := string(dec(parts[1])); got != `{"iat":1799999940,"exp":1800000540,"iss":"5674023"}` {
 		t.Errorf("claims = %s", got)
 	}
 	block, _ := pem.Decode([]byte(rec.PEM.v))
@@ -181,14 +184,26 @@ func TestAppJWTRejectsANonKey(t *testing.T) {
 	}
 }
 
-// convertedApp loads the conversion fixture's record, whose pem is the corpus's TEST-ONLY key.
+// convertedApp loads the recorded conversion's record with its scrubbed pem swapped for the
+// corpus's TEST-ONLY key, so a test can sign with it.
 func convertedApp(t *testing.T) AppRecord {
 	t.Helper()
-	rt := routes(map[string]reply{"POST api.github.com/app-manifests/c/conversions": fixtureReply(t, "app_manifest_conversion.success.201.json")})
+	rt := routes(map[string]reply{"POST api.github.com/app-manifests/c/conversions": fixtureReply(t, "app_manifest_conversion.created.201.json")})
 	rec, err := NewGitHub(Credential{}, rt).ConvertManifest(context.Background(), "c")
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, body, err := Corpus("github", "test-only.app-credentials.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var key struct {
+		PEM string `json:"pem"`
+	}
+	if err := json.Unmarshal(body, &key); err != nil {
+		t.Fatal(err)
+	}
+	rec.PEM = NewCredential(key.PEM)
 	return rec
 }
 
@@ -251,15 +266,16 @@ func TestEachClientRefusesTheOtherHost(t *testing.T) {
 
 func TestCreateRepo(t *testing.T) {
 	t.Run("created", func(t *testing.T) {
-		rt := routes(map[string]reply{"POST api.github.com/user/repos": fixtureReply(t, "repo_create.success.201.json")})
-		repo, err := NewGitHub(NewCredential("utok"), rt).CreateRepo(context.Background(), "example-site")
+		rt := routes(map[string]reply{"POST api.github.com/user/repos": fixtureReply(t, "repo_create.ok.201.json")})
+		repo, err := NewGitHub(NewCredential("utok"), rt).CreateRepo(context.Background(), "cairn-rec-tmw8jn1a0-repo")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if repo.ID != 998877 || repo.FullName != "example-owner/example-site" || repo.Owner.ID != 4242 {
+		if repo.ID != 1450794126 || repo.Name != "cairn-rec-tmw8jn1a0-repo" || repo.FullName != "<REDACTED>-test/cairn-rec-tmw8jn1a0-repo" ||
+			repo.Owner.ID != 352097667 || repo.Owner.Login != "<REDACTED>-test" {
 			t.Errorf("repo = %+v", repo)
 		}
-		if got, want := string(rt.calls[0].body), `{"name":"example-site","private":true,"auto_init":false}`; got != want {
+		if got, want := string(rt.calls[0].body), `{"name":"cairn-rec-tmw8jn1a0-repo","private":true,"auto_init":false}`; got != want {
 			t.Errorf("sent %s, want %s", got, want)
 		}
 		if rt.calls[0].auth != "Bearer utok" {

@@ -51,6 +51,11 @@ synthesized records, so one fixture covers three engine events and two levels. I
 so is `cloudflare/observability-telemetry-query.mixed-lines.200.json`, which carries both kinds of
 line a Worker writes: one cairn engine record and one bare `console.error` line.
 
+`github/test-only.app-credentials.json` is not an API response at all. The recorded manifest
+conversion scrubs its `pem` and secrets, so this file carries a TEST-ONLY RSA key and two distinct
+secret values for the tests that sign with the key or tell the secrets apart. Its name starts
+with `test-only` so it cannot be read as a recording.
+
 ## One recorded response per route
 
 Every provider route the Go tool reads has a body here recorded from a live call, and a test that

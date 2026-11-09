@@ -57,7 +57,7 @@ func steps() []Step {
 	return []Step{
 		{StepOpeningChecks, "Check git, Node 24 or later, port 49152, the keyring, the template, and the folder", Tool, NPM},
 		{StepApproveCloudflare, "Approve Cloudflare sign-in", Owner, Cloudflare},
-		{StepCloudflareChecks, "Check accounts, zones, Workers Paid, names, and the address", Tool, Cloudflare},
+		{StepCloudflareChecks, "Check accounts, zones, names, and the address", Tool, Cloudflare},
 		{StepApproveCreateApp, "Create the GitHub App", Owner, GitHub},
 		{StepApproveInstall, "Install and authorize the App on all repositories", Owner, GitHub},
 		{StepApproveRepo, "Approve, install, and authorize the App on the new repository only", Owner, GitHub},

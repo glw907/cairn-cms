@@ -232,7 +232,6 @@ func TestCloudflareChecksStopBeforeAnyProviderWrite(t *testing.T) {
 			w.cf.active = nil
 			w.cf.all = cfResult[[]providers.Zone](t, "zones.pending.200.json")
 		}, ReasonZonePending},
-		{"workers paid absent", func(w *world) { w.cf.subs = nil }, ReasonWorkersPaid},
 		{"apex has records", func(w *world) {
 			w.cf.dns["carin-test-5.org"] = cfResult[[]providers.DNSRecord](t, "zone_dns_records.named.200.json")
 		}, ReasonAddressRecords},
@@ -271,11 +270,15 @@ func TestCloudflareChecksStopBeforeAnyProviderWrite(t *testing.T) {
 	}
 }
 
-func TestSubscriptionsUnreadableDoesNotStop(t *testing.T) {
+// TestTheChecksNeverReadSubscriptions holds the live finding that the subscriptions route answers
+// the setup grant with a 403: the checks do not ask for the plan at all.
+func TestTheChecksNeverReadSubscriptions(t *testing.T) {
 	w := newWorld(t)
-	w.cf.subs, w.cf.subsOK = nil, false
 	if _, err := w.run(context.Background()); err != nil {
 		t.Fatalf("Run: %v", err)
+	}
+	if slices.Contains(w.log, "cf:subscriptions") {
+		t.Errorf("log %v reads the subscriptions route", w.log)
 	}
 }
 
@@ -530,7 +533,7 @@ func TestAFailedAppKeyWriteNamesTheAppToDelete(t *testing.T) {
 	w.vault.putErr[secrets.EntryAppKey] = secrets.ErrKeyringUnavailable
 	_, err := w.run(context.Background())
 	f := failureOf(t, err)
-	if f.Reason != ReasonKeyringWrite || !strings.Contains(f.Did, "https://github.com/settings/apps/cairn-example-site") {
+	if f.Reason != ReasonKeyringWrite || !strings.Contains(f.Did, "https://github.com/settings/apps/"+w.gh.app.Slug) {
 		t.Errorf("failure = %+v, want a keyring failure linking the App's settings", f)
 	}
 	last, _ := w.saver.last()

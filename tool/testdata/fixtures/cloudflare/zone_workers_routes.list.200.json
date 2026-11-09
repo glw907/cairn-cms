@@ -1,20 +1,14 @@
 {
   "provenance": {
-    "captured": "2026-11-08",
-    "source": "https://developers.cloudflare.com/api/resources/workers/subresources/routes/methods/list/",
+    "captured": "2026-11-09",
+    "source": "GET /zones/{id}/workers/routes",
     "status": 200,
-    "note": "pending live recording"
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
   },
   "body": {
     "success": true,
     "errors": [],
     "messages": [],
-    "result": [
-      {
-        "id": "0000000000000000000000000000er01",
-        "pattern": "www.example.test/*",
-        "script": "other-site"
-      }
-    ]
+    "result": []
   }
 }

@@ -20,9 +20,6 @@ import (
 // maxSuffix is the last taken-name suffix setup tries before it stops.
 const maxSuffix = 9
 
-// workersPaidPlan is the rate plan id the subscriptions route reports for Workers Paid.
-const workersPaidPlan = "workers_paid"
-
 // opening runs the checks that need no account. Each one fails before setup writes anything,
 // the record included.
 func (r *run) opening(ctx context.Context) error {
@@ -111,8 +108,8 @@ func (r *run) folderBusy(n Names) bool {
 	return err != nil || len(entries) > 0
 }
 
-// cloudflareChecks reads the account the first approval granted: its accounts, zones, plan,
-// address, and free names. It writes to no provider.
+// cloudflareChecks reads the account the first approval granted: its accounts, zones, address,
+// and free names. It writes to no provider.
 func (r *run) cloudflareChecks(ctx context.Context) error {
 	r.start(StepCloudflareChecks)
 	user := r.cfg.Cloudflare("", r.access)
@@ -148,14 +145,8 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 	if len(zones) == 0 {
 		return r.noActiveZone(ctx)
 	}
-	subs, readable, err := r.cf.Subscriptions(ctx)
-	if err != nil {
-		return r.fail(ctx, err, "Cloudflare")
-	}
-	if readable && !slices.ContainsFunc(subs, func(s providers.Subscription) bool { return s.RatePlan.ID == workersPaidPlan }) {
-		return r.failure(ReasonWorkersPaid, "Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it.",
-			"Subscribe to Workers Paid, and then run cairn new again.", nil)
-	}
+	// Workers Paid is not checked here: the live subscriptions route answers the setup grant with
+	// a 403, so the plan cannot be read. Telling a missing plan apart is left to the first deploy.
 	r.zone = zones[0]
 	if len(zones) > 1 {
 		id, err := r.cfg.View.ChooseZone(ctx, zones)

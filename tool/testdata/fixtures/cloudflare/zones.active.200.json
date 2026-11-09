@@ -1,0 +1,39 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "GET /zones?account.id={id}&status=active",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8jn1a0; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result_info": {
+      "page": 1,
+      "per_page": 20,
+      "total_pages": 1,
+      "count": 8,
+      "total_count": 8
+    },
+    "result": [
+      {
+        "id": "00000000000000000000000000000003",
+        "name": "carin-test.org",
+        "status": "active",
+        "paused": false,
+        "type": "full",
+        "created_on": "2026-08-12T02:24:09.668801Z",
+        "activated_on": "2026-08-12T02:24:10.025031Z",
+        "name_servers": [
+          "ns1.example.ns.cloudflare.com",
+          "ns2.example.ns.cloudflare.com"
+        ],
+        "account": {
+          "id": "00000000000000000000000000000001",
+          "name": "<REDACTED>"
+        }
+      }
+    ]
+  }
+}

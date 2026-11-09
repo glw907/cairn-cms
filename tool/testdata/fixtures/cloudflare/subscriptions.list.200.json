@@ -3,7 +3,7 @@
     "captured": "2026-11-08",
     "source": "https://developers.cloudflare.com/api/resources/accounts/subresources/subscriptions/methods/get/",
     "status": 200,
-    "note": "pending live recording"
+    "note": "pending live recording; the live route answered the setup grant with a 403 on 2026-11-09 (subscriptions.list.403.json), so this readable case has never been seen"
   },
   "body": {
     "success": true,

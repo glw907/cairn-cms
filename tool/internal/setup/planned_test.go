@@ -48,6 +48,67 @@ func TestAnOpenChoiceStopsTheRunCleanlyAndTheRecordResumesWithoutAnotherApproval
 	}
 }
 
+// accountOpenView leaves the account choice open the way the agent view does for --plan with
+// several accounts and no --account.
+type accountOpenView struct{ *fakeView }
+
+func (accountOpenView) ChooseAccount(context.Context, []providers.Account) (string, error) {
+	return "", ErrOpenChoice
+}
+
+// TestAStopAtAnOpenChoiceKeepsTheOwnersEmailAndAddressForTheResume proves a record stopped at the
+// account or the zone carries the email and address given to the plan, so the resume signs the
+// owner in with them and not with the Cloudflare sign-in's email.
+func TestAStopAtAnOpenChoiceKeepsTheOwnersEmailAndAddressForTheResume(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		view   func(*world) View
+		setup  func(*world)
+		resume func(*world)
+	}{
+		{"account", func(w *world) View { return accountOpenView{w.view} },
+			func(w *world) {
+				w.cf.accounts = append(w.cf.accounts, providers.Account{ID: "0000000000000000000000000000ex02", Name: "Second"})
+			},
+			func(w *world) { w.view.account = w.cf.accounts[0].ID }},
+		{"zone", func(w *world) View { return openView{w.view} },
+			func(w *world) {
+				w.cf.active = append(w.cf.active, providers.Zone{ID: "zone-two", Name: "example.org", Status: "active"})
+			},
+			func(w *world) { w.view.zone = "zone-two" }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			tc.setup(w)
+			w.cfg.View = tc.view(w)
+			w.cfg.Answers.OwnerEmail = "given@example.com"
+			w.cfg.Answers.Host = "blog.example.org"
+			if _, err := w.run(context.Background()); !errors.Is(err, ErrOpenChoice) {
+				t.Fatalf("Run error = %v, want ErrOpenChoice", err)
+			}
+			rec, ok := w.saver.last()
+			if !ok || rec.Setup.OwnerEmail != "given@example.com" || rec.Setup.Address != "blog.example.org" {
+				t.Fatalf("record email %q, address %q; want the plan's, saved at the stop", rec.Setup.OwnerEmail, rec.Setup.Address)
+			}
+
+			w.cfg.View = w.view
+			w.cfg.Answers = RecordedAnswers(rec)
+			tc.resume(w)
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			if res.Record.Setup.OwnerEmail != "given@example.com" {
+				t.Errorf("owner email after the resume = %q, want the plan's", res.Record.Setup.OwnerEmail)
+			}
+			// The address stands only where it fits the zone the resume chose.
+			if want := map[string]string{"zone": "blog.example.org"}[tc.name]; want != "" && res.Record.Setup.Address != want {
+				t.Errorf("address after the resume = %q, want %q", res.Record.Setup.Address, want)
+			}
+		})
+	}
+}
+
 // planView ends the run at the summary, the way the agent view does for --plan.
 type planView struct{ *fakeView }
 

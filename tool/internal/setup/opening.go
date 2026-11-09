@@ -187,6 +187,11 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		r.account = accounts[i]
 	} else if len(accounts) > 1 {
 		id, err := r.cfg.View.ChooseAccount(ctx, accounts)
+		if errors.Is(err, ErrOpenChoice) {
+			if serr := r.keepGiven(); serr != nil {
+				return serr
+			}
+		}
 		if err != nil {
 			return err
 		}
@@ -205,6 +210,7 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		r.email = given
 	}
 	r.cf = r.cfg.Cloudflare(r.account.ID, r.access)
+	kept := r.rec.Setup.Address
 
 	zones, err := r.cf.ActiveZones(ctx)
 	if err != nil {
@@ -221,7 +227,7 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		if errors.Is(err, ErrOpenChoice) {
 			// Keep the account the stop already settled, so the plan can name it.
 			r.rec.Cloudflare.AccountID = r.account.ID
-			if serr := r.save(); serr != nil {
+			if serr := r.keepGiven(); serr != nil {
 				return serr
 			}
 		}
@@ -247,11 +253,28 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 	r.rec.Cloudflare.ZoneID = r.zone.ID
 	r.rec.Setup.OwnerEmail = r.email
 	r.rec.Setup.Address = r.zone.Name
+	if _, err := addresses(r.zone.Name, kept); kept != "" && err == nil {
+		// An address an open-choice stop kept stands when it fits the zone the resume chose.
+		r.rec.Setup.Address = kept
+	}
 	if err := r.save(); err != nil {
 		return err
 	}
 	r.done()
 	return nil
+}
+
+// keepGiven saves the owner email and address the run was given into the record, for a run
+// that stops at an open choice, so the resume, which cannot be given them again, sends the
+// sign-in link to the owner's address and not to the Cloudflare sign-in's.
+func (r *run) keepGiven() error {
+	if given := strings.TrimSpace(r.cfg.Answers.OwnerEmail); given != "" {
+		r.rec.Setup.OwnerEmail = given
+	}
+	if host := strings.ToLower(strings.TrimSpace(r.cfg.Answers.Host)); host != "" {
+		r.rec.Setup.Address = host
+	}
+	return r.save()
 }
 
 // noActiveZone tells a domain still being added apart from no domain at all.

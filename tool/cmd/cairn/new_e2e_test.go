@@ -315,6 +315,15 @@ func TestNewE2EPlanLeavesAnOpenChoiceOpenAndApplyTakesItFromThePlan(t *testing.T
 	if status := r.status(); !strings.Contains(status, "unfinished") || !strings.Contains(status, "keyring entries: setup/") {
 		t.Errorf("status = %q, want the stopped record unfinished with its keyring entries", status)
 	}
+	planData, _ := os.ReadFile(r.plan)
+	leaks := r.w.leaks(map[string]string{"stdout": res.Stdout, "stderr": res.Stderr, "plan.json": string(planData)}, r.c.Home, r.c.Dir)
+	if len(leaks) != 0 {
+		t.Errorf("a credential reached an output: %v", leaks)
+	}
+	// The same grep finds the planted values in the keyring, so a clean result elsewhere is no blind grep.
+	if len(r.w.leaks(nil, r.c.KeyringDir)) == 0 {
+		t.Error("the keyring holds none of the planted values, so the leak check proved nothing")
+	}
 
 	// Left open, the plan is refused before anything runs.
 	refused := r.c.Run(r.bin, "new", "--apply", r.plan)
@@ -369,6 +378,10 @@ func TestNewE2EResumeTakesTheChoiceFlag(t *testing.T) {
 	}
 	if len(r.w.d1Create) != 1 {
 		t.Errorf("databases created = %v, want one", r.w.d1Create)
+	}
+	// The sign-in link goes to the --email the plan was given, not to the Cloudflare sign-in's.
+	if got := r.w.emailTo; got != "owner@example.com" {
+		t.Errorf("sign-in email went to %q, want the plan's --email", got)
 	}
 }
 

@@ -25,7 +25,7 @@ type agentRun struct {
 	out *agentview.Writer
 	// held are the events before the opening's first step ends. A usage error found there is a
 	// refusal before anything ran, which leaves stdout empty, so they are written only once the
-	// run is past it or fails some other way.
+	// run is past it, or finish finds the end is not a usage error.
 	held     []setup.Event
 	released bool
 }
@@ -85,7 +85,8 @@ func (a *agentRun) emit(e setup.Event) {
 		return
 	}
 	a.held = append(a.held, e)
-	if e.Kind == setup.StepDone || e.Kind == setup.StepFailed {
+	// A step_failed stays held: Run emits it for a usage error too, and finish decides.
+	if e.Kind == setup.StepDone {
 		a.release()
 	}
 }
@@ -106,6 +107,14 @@ func (a *agentRun) plan() error {
 	if err := checkEmail(a.f.email); err != nil {
 		return err
 	}
+	if a.f.host != "" && strings.Contains(a.f.zone, ".") {
+		// A zone given by name is checked before anything runs. One given by id, or left open,
+		// is checked by --apply, which also runs before anything else.
+		host, zone := strings.ToLower(a.f.host), strings.ToLower(a.f.zone)
+		if host != zone && !strings.HasSuffix(host, "."+zone) {
+			return newHostOutsideZoneError(a.f.host, a.f.zone)
+		}
+	}
 	if !a.f.fresh {
 		switch open := a.unfinished(); len(open) {
 		case 0:
@@ -122,7 +131,7 @@ func (a *agentRun) plan() error {
 	view := a.view(agentview.PlanMode)
 	view.Theme, view.Account, view.Zone = a.f.siteTheme, a.f.account, a.f.zone
 	in := newInput{
-		answers: setup.Answers{SiteName: a.f.name, OwnerEmail: a.f.email, Posture: setup.Posture(a.f.posture)},
+		answers: setup.Answers{SiteName: a.f.name, OwnerEmail: a.f.email, Posture: setup.Posture(a.f.posture), Host: strings.ToLower(a.f.host)},
 		tag:     a.f.tag,
 	}
 	cfg, err := productionConfig(a.d, in, view, a.emit)
@@ -152,8 +161,6 @@ func (a *agentRun) plan() error {
 		if p.Zone == "" && len(p.Zones) == 0 {
 			p.Zone = a.f.zone
 		}
-	} else if err := agentview.Check(p, e.Record); err != nil {
-		return newUsageError(err.Error())
 	}
 	if err := agentview.WritePlan(a.f.plan, p); err != nil {
 		return err
@@ -189,7 +196,7 @@ func (a *agentRun) resume() error {
 		return newNoSetupError(a.f.resume)
 	}
 	view := a.view(agentview.ResumeMode)
-	view.Theme, view.Account, view.Zone = a.f.siteTheme, a.f.account, a.f.zone
+	view.Account, view.Zone = a.f.account, a.f.zone
 	// A resume that runs approvals shows the owner a browser tab, but the agent never watches it,
 	// so the sign-in link goes by email as it does after --apply.
 	return a.runRecord(store.Entry{ID: a.f.resume, Record: rec}, view, true)

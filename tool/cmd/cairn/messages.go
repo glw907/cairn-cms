@@ -768,6 +768,14 @@ approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the
 // tmplNewUsage renders a refusal the agent view found in the flags or the plan file.
 const tmplNewUsage = "%s\nRun `cairn new --help` for the flags"
 
+// tmplNewHostOutsideZone is the refusal of a --host that is not the --zone or a subdomain of it.
+const tmplNewHostOutsideZone = "cairn: --host %s must be the zone %s or a subdomain of it"
+
+// newHostOutsideZoneError renders tmplNewHostOutsideZone.
+func newHostOutsideZoneError(host, zone string) error {
+	return newUsageError(fmt.Sprintf(tmplNewHostOutsideZone, host, zone))
+}
+
 // newUsageError renders tmplNewUsage.
 func newUsageError(problem string) error {
 	return translated(fmt.Errorf(tmplNewUsage, problem))
@@ -850,12 +858,15 @@ Plan. Answer every question with a flag. Setup waits on the owner for each brows
 approval, writes nothing to Cloudflare, and saves its plan to the file:
   cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
 A Cloudflare account or domain that no flag chose is left open. Setup stops there, exits 0
-with no summary event (an unfinished stream), and the plan lists the options.
+with no summary event (an unfinished stream), and the plan lists the options. With the
+account left open the plan lists no domains: give --account with --plan, or finish with
+--resume <id> --account <a> --zone <z>.
 
 Apply. After the owner has reviewed the plan, create the site from it. The plan's open
 fields, the account, the domain, the email, and the address, may be edited first; apply
 refuses a plan that leaves the account or the domain open, before anything runs:
   cairn new --apply plan.json
+An apply still runs the approvals in the owner's browser, so it waits on the owner.
 
 Required with --plan and --dry-run:
   --name         the site's name

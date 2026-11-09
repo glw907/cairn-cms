@@ -48,7 +48,7 @@ var newModeFlags = []string{"plan", "apply", "dry-run", "resume"}
 var newAnswerFlags = []string{"name", "email", "posture", "account", "zone", "host", "site-theme"}
 
 // newResumeAnswerFlags are the answer flags --resume still takes: the choices a run can stop at.
-var newResumeAnswerFlags = []string{"account", "zone", "site-theme"}
+var newResumeAnswerFlags = []string{"account", "zone"}
 
 // newNewCmd builds cairn new. It is hidden until the command ships: it is absent from the root help and the completions.
 func newNewCmd(d deps) *cobra.Command {

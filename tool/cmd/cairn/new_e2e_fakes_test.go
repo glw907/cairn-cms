@@ -42,6 +42,9 @@ type e2eWorld struct {
 	deployed bool
 	// emailTo and emailText are what the sign-in email carried.
 	emailTo, emailText string
+	// catalog replaces the template's catalog.json when set, for a run that meets several themes.
+	catalog string
+	custom  []byte
 	// secrets holds every value the world planted, for the leak grep.
 	secrets []string
 }
@@ -428,7 +431,7 @@ func (w *e2eWorld) site(rw http.ResponseWriter, r *http.Request) {
 
 // engineTarball is the real Waymark template the way the engine package ships it: the template
 // directory, its setup overlay, and the catalog, rooted at package/template/.
-func engineTarball(t *testing.T) []byte {
+func engineTarball(t *testing.T, catalogOverride string) []byte {
 	t.Helper()
 	root, err := providers.RepoRoot()
 	if err != nil {
@@ -463,6 +466,9 @@ func engineTarball(t *testing.T) []byte {
 		t.Fatal(err)
 	}
 	files["catalog.json"] = string(catalog)
+	if catalogOverride != "" {
+		files["catalog.json"] = catalogOverride
+	}
 
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
@@ -515,7 +521,15 @@ var (
 )
 
 func (w *e2eWorld) tarball() []byte {
-	tarballOnce.Do(func() { tarballBytes = engineTarball(w.t) })
+	if w.catalog != "" {
+		w.mu.Lock()
+		defer w.mu.Unlock()
+		if w.custom == nil {
+			w.custom = engineTarball(w.t, w.catalog)
+		}
+		return w.custom
+	}
+	tarballOnce.Do(func() { tarballBytes = engineTarball(w.t, "") })
 	return tarballBytes
 }
 

@@ -65,6 +65,7 @@ func TestNewRefusesBadValuesAndConflicts(t *testing.T) {
 		{"json without dry run", append([]string{"--json", "--plan", "p.json"}, good...), []string{"--json", "--dry-run"}},
 		{"apply with an answer flag", []string{"--apply", "p.json", "--name", "X"}, []string{"--apply", "--name"}},
 		{"apply with a choice flag", []string{"--apply", "p.json", "--zone", "example.com"}, []string{"--apply", "--zone"}},
+		{"resume with a site theme", []string{"--resume", "site-a1b2c3", "--site-theme", "waymark"}, []string{"--resume", "--site-theme"}},
 		{"resume with a name", []string{"--resume", "site-a1b2c3", "--name", "X"}, []string{"--resume", "--name"}},
 	}
 	for _, tt := range tests {
@@ -88,7 +89,7 @@ func TestNewRefusesBadValuesAndConflicts(t *testing.T) {
 // TestNewResumeTakesTheChoiceFlags shows --resume past the flag check: the run then fails for
 // the id it was given, not for the choice flags.
 func TestNewResumeTakesTheChoiceFlags(t *testing.T) {
-	_, stderr, code := runNewTree(t, "new", "--resume", "site-nope", "--account", "acc1", "--zone", "example.com", "--site-theme", "waymark")
+	_, stderr, code := runNewTree(t, "new", "--resume", "site-nope", "--account", "acc1", "--zone", "example.com")
 	if code != int(spine.VerdictUnknown) || !strings.Contains(stderr, "site-nope") || strings.Contains(stderr, "--zone") {
 		t.Errorf("code = %d, stderr = %q; want the missing record named, no conflict", code, stderr)
 	}

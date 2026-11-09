@@ -151,7 +151,7 @@ func (v *View) ConfirmSummary(_ context.Context, s setup.Summary, problem string
 			"Fix the "+field+" in the plan file, and then run cairn new --apply again.")
 	}
 	if problem != "" {
-		return setup.SummaryEdit{}, refusal("Setup refused the summary: "+problem, "Run cairn new --plan again.")
+		return setup.SummaryEdit{}, refusal("Setup refused the summary: "+problem, "Correct the value, and then run cairn new --resume <id> again with this site's id.")
 	}
 	return setup.SummaryEdit{OwnerEmail: s.OwnerEmail, Host: s.Addresses[0]}, nil
 }

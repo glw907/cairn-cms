@@ -293,12 +293,15 @@ Plan. Answer every question with a flag. Setup waits on the owner for each brows
 approval, writes nothing to Cloudflare, and saves its plan to the file:
   cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
 A Cloudflare account or domain that no flag chose is left open. Setup stops there, exits 0
-with no summary event (an unfinished stream), and the plan lists the options.
+with no summary event (an unfinished stream), and the plan lists the options. With the
+account left open the plan lists no domains: give --account with --plan, or finish with
+--resume <id> --account <a> --zone <z>.
 
 Apply. After the owner has reviewed the plan, create the site from it. The plan's open
 fields, the account, the domain, the email, and the address, may be edited first; apply
 refuses a plan that leaves the account or the domain open, before anything runs:
   cairn new --apply plan.json
+An apply still runs the approvals in the owner's browser, so it waits on the owner.
 
 Required with --plan and --dry-run:
   --name         the site's name
@@ -350,6 +353,7 @@ Use a file that exists, or drop --ack-file to use the registry's default
 - cairn: --color %q is not %s, %s, or %s
 - cairn: --email must be one email address, such as owner@example.com.
 Run `cairn new --help` for the flags
+- cairn: --host %s must be the zone %s or a subdomain of it
 - cairn: --posture takes decline or invite, not %q.
 Run `cairn new --help` for the flags
 - cairn: --since %q is not a duration.

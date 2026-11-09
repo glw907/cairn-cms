@@ -34,3 +34,22 @@ func TestAUsageErrorBeforeTheOpeningEndsLeavesStdoutEmpty(t *testing.T) {
 		})
 	}
 }
+
+// TestAUsageErrorSetupWrapsIntoAStepFailedLeavesStdoutEmpty is the stream Run produces for a
+// usage error found inside the first step: Run wraps it in a Failure and emits step_failed
+// before it returns, and the refusal still ran nothing, so stdout stays empty.
+func TestAUsageErrorSetupWrapsIntoAStepFailedLeavesStdoutEmpty(t *testing.T) {
+	ue := &agentview.UsageError{Problem: "cairn: give --site-theme"}
+	f := &setup.Failure{Step: setup.StepOpeningChecks, Reason: setup.ReasonProvider, Happened: "stopped", Err: ue}
+	var out strings.Builder
+	a := &agentRun{cmd: newNewCmd(mustDeps(t)), out: agentview.NewWriter(&out)}
+	a.emit(setup.Event{Kind: setup.StepStarted, Step: setup.StepOpeningChecks})
+	a.emit(setup.Event{Kind: setup.StepFailed, Step: f.Step, Failure: f})
+	err := a.finish(setup.Result{}, f)
+	if out.Len() != 0 {
+		t.Errorf("stdout = %q, want empty", out.String())
+	}
+	if _, coded := err.(codedError); coded || err == nil || !strings.Contains(err.Error(), "--site-theme") {
+		t.Errorf("finish = %v, want the usage error, which exits 3", err)
+	}
+}

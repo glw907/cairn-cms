@@ -1,3 +1,15 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+A new site now starts from a small standard content set in place of the showcase's trail demo. The
+template carries a home page, About, an author page, a Contact page with a placeholder address, six
+short how-to posts, and one post that shows every markdown element and each block once. Its one image
+ships with the site, so no page loads a picture from another host. The showcase keeps its own fixtures.
+The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/`.
+
+Consumers must: nothing.
+
 ## 0.99.0-rc.4
 
 Released 2026-11-07.

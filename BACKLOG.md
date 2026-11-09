@@ -32,6 +32,14 @@
 
 ## Medium
 
+- [ ] **#388** The template's site config still describes the trail demo `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+  Found in the cairn-new-4 pass. The starter content no longer mentions trails, but `templates/waymark/src/theme/site.config.yaml` still carries the description "Trail reports and gear notes from the field." and the tag vocabulary `trail-reports`, `gear`, `weather`, `routes`, `season-notes`, and the `create-cairn-site` transcript fixture (`packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt`) lists the demo's routes. A new site's home page reads the description under its heading until setup replaces it.
+  Placement: cairn-setup P1 T1.9 (the substitution targets) owns the description; the vocabulary needs a ruling on a neutral starter set.
+
+- [ ] **#387** A markdown footnote renders a link to an id the page does not carry, which fails the prerender `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+  Found in the cairn-new-4 pass while drafting the every-element starter post. A post with `[^1]` and its definition builds a footnote link to `#user-content-fn-1`, and the page holds no element with that id, so the template's build fails with `prerender_missing_id`. The render pipeline runs `remark-gfm` (`src/lib/render/pipeline.ts:178`) and the sanitize step (`src/lib/render/sanitize-schema.ts`), and the mismatch points at one of them rewriting the id or the href but not both. Reproduce with one footnote in any post and `npm run build` in the showcase. The starter post omits footnotes until this is fixed.
+  Placement: engine batch; fix in `src/lib/render/`, with a render test for a footnote's link and id.
+
 - [ ] **#383** Show an admin a failed deploy, with what to do next `#feature` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   Placement: the cairn-setup design's admin view of a failed deploy; to be planned in the cairn-setup initiative.
 - [ ] **#384** Make `cairn health` check the deploy of a site deployed by Actions `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*

@@ -74,6 +74,9 @@ type deps struct {
 	// because they fall under logx.MinLength. main fills it; the root command discloses it once
 	// under --verbose, so a run whose redaction is weaker than it looks says so.
 	scrubSkipped int
+	// register hands a credential that arrived mid-run to the output scrub, which main wires to
+	// both process streams. A nil register ignores it.
+	register func(providers.Credential)
 }
 
 // writeJSONPayload writes a marshaled JSON payload followed by one newline, the shape every

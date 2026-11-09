@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
 )
 
 // agentsPageLineBound is the length this page is held to. An agent reads it in one pass and pays
@@ -143,6 +145,40 @@ func TestHealthHelpCarriesTheExitCodeBlock(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Errorf("cairn health --help does not carry %q", want)
 		}
+	}
+}
+
+// TestAgentsPageCarriesTheSetupContractOnlyWhenNewShows covers cairn new's visibility: while the
+// command is hidden the page holds no setup section, and once it shows the page carries the
+// plan and apply flow, the event kinds, the waiting states, and the exit codes.
+func TestAgentsPageCarriesTheSetupContractOnlyWhenNewShows(t *testing.T) {
+	d, _ := testDeps(t)
+	out, _, err := execTree(t, d, "help", "agents")
+	if err != nil {
+		t.Fatalf("cairn help agents: %v", err)
+	}
+	if strings.Contains(out, "cairn new") {
+		t.Errorf("the page names cairn new while it is hidden:\n%s", out)
+	}
+
+	shown := agentsPageFor(false)
+	if !strings.HasPrefix(shown, agentsPage) {
+		t.Error("the page with cairn new shown does not start with the monitoring contract")
+	}
+	wants := []string{"cairn new --plan", "cairn new --apply", "--posture", "Exit codes for cairn new"}
+	for _, k := range []setup.EventKind{setup.StepStarted, setup.StepDone, setup.StepFailed, setup.Waiting, setup.Resumed, setup.SummaryKind} {
+		wants = append(wants, string(k))
+	}
+	for _, w := range []setup.WaitState{setup.WaitCloudflare, setup.WaitCreateApp, setup.WaitInstallAll, setup.WaitInstallRepo, setup.WaitCloudflareReconsent} {
+		wants = append(wants, string(w))
+	}
+	for _, want := range wants {
+		if !strings.Contains(shown, want) {
+			t.Errorf("the page with cairn new shown does not carry %q", want)
+		}
+	}
+	if agentsPageFor(true) != agentsPage {
+		t.Error("the hidden page differs from the monitoring contract")
 	}
 }
 

@@ -344,6 +344,28 @@ func (cf *Cloudflare) BuildsLatest(ctx context.Context, workerTag string) (*Buil
 	return &builds[0], nil
 }
 
+// Deployment is one Worker deployment. Only its identity and time are read: a deployment's
+// existence is what a site deployed outside Workers Builds has to show.
+type Deployment struct {
+	ID        string    `json:"id"`
+	CreatedOn time.Time `json:"created_on"`
+}
+
+// WorkerDeployments returns scriptName's most recent deployments, newest first, or an empty
+// slice when it has none. It reads GET /accounts/{account_id}/workers/scripts/{script_name}/deployments
+// (https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/),
+// whose result is an object holding a "deployments" list rather than the list itself.
+func (cf *Cloudflare) WorkerDeployments(ctx context.Context, scriptName string) ([]Deployment, error) {
+	var result struct {
+		Deployments []Deployment `json:"deployments"`
+	}
+	path := fmt.Sprintf("/accounts/%s/workers/scripts/%s/deployments", cf.accountID, url.PathEscape(scriptName))
+	if err := cf.get(ctx, path, &result); err != nil {
+		return nil, err
+	}
+	return result.Deployments, nil
+}
+
 // Zone is a Cloudflare DNS zone.
 type Zone struct {
 	ID   string `json:"id"`

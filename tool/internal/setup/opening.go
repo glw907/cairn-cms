@@ -134,15 +134,20 @@ func (r *run) resumeOpening() error {
 // recordedSuffix is the taken-name suffix a resumed record's repository name carries, and 0 for
 // a new run or a record with no repository name yet.
 func (r *run) recordedSuffix() int {
-	name := r.rec.GitHub.Repo.Repo
+	return suffixOf(r.cfg.Answers.SiteName, r.rec)
+}
+
+// suffixOf finds the suffix whose repository name rec recorded for siteName.
+func suffixOf(siteName string, rec record.Record) int {
+	name := rec.GitHub.Repo.Repo
 	if name == "" {
-		name = r.rec.Setup.Intents.Repo
+		name = rec.Setup.Intents.Repo
 	}
 	if name == "" {
 		return 0
 	}
 	for s := 0; s <= maxSuffix; s = nextSuffix(s) {
-		if n, err := deriveNames(r.cfg.Answers.SiteName, s); err == nil && n.Repository == name {
+		if n, err := deriveNames(siteName, s); err == nil && n.Repository == name {
 			return s
 		}
 	}
@@ -178,8 +183,21 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 			"Create a Cloudflare account, and then run cairn new again.", nil)
 	}
 	r.account = accounts[0]
-	if len(accounts) > 1 {
+	if kept := r.rec.Cloudflare.AccountID; kept != "" {
+		// A run that stopped at its zone choice already settled the account.
+		i := slices.IndexFunc(accounts, func(a providers.Account) bool { return a.ID == kept })
+		if i < 0 {
+			return r.failure(ReasonAccountMissing, "The Cloudflare approval doesn't reach the account this setup began in.",
+				"Run cairn new again, and on the Cloudflare page approve the same account as before.", nil)
+		}
+		r.account = accounts[i]
+	} else if len(accounts) > 1 {
 		id, err := r.cfg.View.ChooseAccount(ctx, accounts)
+		if errors.Is(err, ErrOpenChoice) {
+			if serr := r.keepGiven(); serr != nil {
+				return serr
+			}
+		}
 		if err != nil {
 			return err
 		}
@@ -193,7 +211,12 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		return r.fail(ctx, err, "Cloudflare")
 	}
 	r.email = strings.TrimSpace(r.email)
+	// An owner who already gave an address has it shown at the summary, not the sign-in's.
+	if given := strings.TrimSpace(r.cfg.Answers.OwnerEmail); given != "" {
+		r.email = given
+	}
 	r.cf = r.cfg.Cloudflare(r.account.ID, r.access)
+	kept := r.rec.Setup.Address
 
 	zones, err := r.cf.ActiveZones(ctx)
 	if err != nil {
@@ -207,6 +230,13 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 	r.zone = zones[0]
 	if len(zones) > 1 {
 		id, err := r.cfg.View.ChooseZone(ctx, zones)
+		if errors.Is(err, ErrOpenChoice) {
+			// Keep the account the stop already settled, so the plan can name it.
+			r.rec.Cloudflare.AccountID = r.account.ID
+			if serr := r.keepGiven(); serr != nil {
+				return serr
+			}
+		}
 		if err != nil {
 			return err
 		}
@@ -217,6 +247,11 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		r.zone, r.zoneChosen = zones[i], true
 	}
 	r.host = r.zone.Name
+	if _, err := addresses(r.zone.Name, kept); kept != "" && err == nil {
+		// An address an open-choice stop kept stands when it fits the zone the resume chose, and
+		// it is the address the check below reads.
+		r.host = kept
+	}
 	r.addresses, _ = addresses(r.zone.Name, r.host)
 	if err := r.checkAddress(ctx, ""); err != nil {
 		return err
@@ -228,12 +263,25 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 	r.rec.Cloudflare.AccountID = r.account.ID
 	r.rec.Cloudflare.ZoneID = r.zone.ID
 	r.rec.Setup.OwnerEmail = r.email
-	r.rec.Setup.Address = r.zone.Name
+	r.rec.Setup.Address = r.host
 	if err := r.save(); err != nil {
 		return err
 	}
 	r.done()
 	return nil
+}
+
+// keepGiven saves the owner email and address the run was given into the record, for a run
+// that stops at an open choice, so the resume, which cannot be given them again, sends the
+// sign-in link to the owner's address and not to the Cloudflare sign-in's.
+func (r *run) keepGiven() error {
+	if given := strings.TrimSpace(r.cfg.Answers.OwnerEmail); given != "" {
+		r.rec.Setup.OwnerEmail = given
+	}
+	if host := strings.ToLower(strings.TrimSpace(r.cfg.Answers.Host)); host != "" {
+		r.rec.Setup.Address = host
+	}
+	return r.save()
 }
 
 // noActiveZone tells a domain still being added apart from no domain at all.

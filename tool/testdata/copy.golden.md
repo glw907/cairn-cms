@@ -57,6 +57,7 @@ and commit the diff.
 - the DMARC record carries no p= policy
 - the GitHub token expires %s, in %d days
 - the Worker does not exist in this account
+- the Worker has no deployment
 - the Worker has no observability dataset
 - the Workers Builds connection is waiting to settle
 - the account has reached its daily send limit
@@ -109,6 +110,13 @@ and commit the diff.
 
 - 
 Run the command again in %s
+-   GitHub App: %s
+-   keyring entries: %s
+-   repository: %s
+- %s
+Run `cairn new --help` for the flags
+- %s  finished  step %s
+- %s  unfinished  step %s
 - %s %s
 
 - %s (%s), go%s, %s/%s
@@ -154,12 +162,29 @@ Run `cairn health` after deploying to reach the checks that need a live site.
 With no site named, every zone-scoped and repository-scoped permission reports skip: run cairn auth check <site> to confirm those against one registered site's zone and repository, read-only.
 
 auth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
+- Continue an unfinished setup with cairn new --resume <id>.
 - Credentials:
 - Delete one credential's keyring entry
+- Events from cairn new --plan, --apply, and --resume, one JSON object per line on stdout:
+  step_started, step_done  a step began or finished; step names it
+  step_failed              a step stopped the run; failure holds the four-part reason
+  waiting                  setup waits on the owner in a browser; waiting names the approval
+  resumed                  the run picked up an unfinished record
+  summary                  every derived value, for the owner to review
+Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
+approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.
+- Exit codes for cairn new:
+0  the run finished, the plan file was written, or the command only listed or printed
+1  setup stopped at a step, including a refusal found after the run began; the run is saved, and cairn new --resume continues it
+2  setup stopped: interrupted or timed out; cairn new --resume continues it
+3  a usage error: a flag or the plan file was refused before anything ran, and stdout is empty
+A stream of events that does not end with a summary is unfinished.
 - GitHub: skip, %s
 - List the Workers on the account that cairn could adopt
+- List the setups in progress and what each holds
 - List the sites cairn knows
 - Manage credentials in the OS keyring
+- No setups found.
 - Operate a cairn-cms production site
 - Operate a cairn-cms production site.
 
@@ -167,6 +192,7 @@ Run `cairn help agents` for the contract a program reads.
 Pass --json to a reporting command for a machine-readable payload on stdout.
 Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 - Permissions:
+- Plan written to %s. Nothing was created on Cloudflare. Edit the email or the address if you need to, and then run cairn new --apply %s.
 - Print the contract a program or an agent reads
 - Prompt for a value and store it in the keyring
 - Read one site's engine log records
@@ -176,7 +202,18 @@ Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 Precedence is CRITICAL, then UNKNOWN, then WARNING, then OK, which is not numeric order.
 Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.
+- Set up a new cairn site
 - Show which provider answers each credential variable
+- Site: %s
+Repository: %s
+Worker: %s
+Database: %s
+Bucket: %s
+GitHub App: %s
+Folder: %s
+Owner email: %s
+AI crawlers: %s
+Nothing was created.
 - cairn adopt --worker my-site
 - cairn adopt list
 - cairn auth check my-site-a1b2c3
@@ -249,6 +286,43 @@ the https and email checks that need a live, adopted site.
 
 To check every site cairn knows, run: cairn health --json
 - cairn logs my-site-a1b2c3 --since 24h
+- cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
+- cairn new sets up a site on Cloudflare and GitHub. An agent runs it in two steps.
+
+Plan. Answer every question with a flag. Setup waits on the owner for each browser
+approval, writes nothing to Cloudflare, and saves its plan to the file:
+  cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
+A Cloudflare account or domain that no flag chose is left open. Setup stops there, exits 0
+with no summary event (an unfinished stream), and the plan lists the options. With the
+account left open the plan lists no domains: give --account with --plan, or finish with
+--resume <id> --account <a> --zone <z>.
+
+Apply. After the owner has reviewed the plan, create the site from it. The plan's open
+fields, the account, the domain, the email, and the address, may be edited first; apply
+refuses a plan that leaves the account or the domain open, before anything runs:
+  cairn new --apply plan.json
+An apply still runs the approvals in the owner's browser, so it waits on the owner.
+
+Required with --plan and --dry-run:
+  --name         the site's name
+  --email        the first owner's email address
+  --posture      decline or invite, the site's AI-crawler stance
+
+Answers asked for only when there is more than one choice:
+  --account      the Cloudflare account id
+  --zone         the Cloudflare zone
+  --host         the site's address, the zone or a subdomain of it
+  --site-theme   the theme id
+
+Other flags:
+  --dry-run      print the names setup would use and create nothing; add --json for a payload
+  --resume       continue the unfinished setup with this site id
+  --new          start a new site instead of continuing an unfinished one
+  --tag          the engine's npm dist-tag to build from (default latest)
+
+A usage error exits 3, before anything ran, and writes nothing to stdout. An unfinished run
+takes --account and --zone with --resume. The exit codes follow.
+- cairn new status
 - cairn sites
 - cairn sites list --json
 - cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them
@@ -256,6 +330,8 @@ To check every site cairn knows, run: cairn health --json
 Run `cairn --help` for the commands
 - cairn: %q is not a credential cairn stores.
 The names are %s
+- cairn: %s and %s cannot be used together.
+Run `cairn new --help` for the flags
 - cairn: %s crashed with a %s.
 This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: %s is empty.
@@ -263,14 +339,23 @@ Pipe a non-empty value: printf %%s "$v" | cairn auth set %s
 - cairn: %s is not a valid hold file.
 %v
 Write the file as a JSON array of entries, each carrying checkId and expires
+- cairn: %s is required with %s.
+Run `cairn new --help` for the flags
 - cairn: %v
 - cairn: %v.
 Run `%s --help` for usage
+- cairn: %v.
+Run `cairn new --help` for the flags
 - cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.
 Use the check and an expiry date, for example deploy=2026-10-01
 - cairn: --ack-file %s not found.
 Use a file that exists, or drop --ack-file to use the registry's default
 - cairn: --color %q is not %s, %s, or %s
+- cairn: --email must be one email address, such as owner@example.com.
+Run `cairn new --help` for the flags
+- cairn: --host %s must be the zone %s or a subdomain of it
+- cairn: --posture takes decline or invite, not %q.
+Run `cairn new --help` for the flags
 - cairn: --since %q is not a duration.
 Use a whole number of minutes, hours, or days: 90m, 24h, 7d
 - cairn: --theme %q is not a theme cairn renders.
@@ -279,6 +364,9 @@ Use %s or %s
 Use a whole number from %d to %d
 - cairn: Cloudflare rate-limited this run.
 The checks that need Cloudflare could not run; the others are reported above
+- cairn: an unfinished setup exists: %s.
+Continue it with --resume %s, or start a new site with --new.
+Run `cairn new --help` for the flags
 - cairn: cairn adopt names one Worker.
 Run `cairn adopt list` to see the Workers on the account
 - cairn: cairn auth names a subcommand.
@@ -304,6 +392,11 @@ The health checks read your Cloudflare and GitHub tokens from the OS keyring or 
 Run `cairn auth set %s` to store one
 - cairn: no site named %q.
 Run `cairn sites list` to see the sites cairn knows
+- cairn: no unfinished setup is named %s.
+Run `cairn new status` to list them
+- cairn: several unfinished setups exist: %s.
+Continue one with --resume <id>, or start a new site with --new.
+Run `cairn new --help` for the flags
 - cairn: the %q entry in %s has an expires date cairn cannot read: %q.
 Use YYYY-MM-DD, for example 2026-10-01
 - cairn: the %q entry in %s has no expires date.
@@ -316,8 +409,12 @@ Set %s in the environment instead
 Run `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the domain it serves
 - cairn: the entry at position %d in %s carries no checkId.
 Name the check that entry holds
+- cairn: the plan's runId is %s, and no unfinished setup has that run.
+Run `cairn new status` to list them, or run --plan again
 - cairn: this output carries identifiers and is not safe to paste in public.
 - columns to render at, instead of the terminal's width
+- continue the unfinished setup with this site id
+- create the site from a plan file
 - error records in the window that still report OK
 - hold one check until an expiry date: <check-id>=<YYYY-MM-DD>. Repeatable, and applies to that check on every site in a sweep.
 - lookback window for the error count: a whole number of m, h, or d
@@ -329,18 +426,30 @@ Name the check that entry holds
 - print the entries as JSON
 - print the identifiers a run otherwise withholds
 - print the listing as JSON
+- print the names setup would use and create nothing
 - print the permission report as JSON
 - print the report as JSON
 - print the version and exit
 - run `cairn auth check <site>` to confirm this permission
+- run the questions and approvals, write the plan to this file, and create nothing
+- start a new site instead of continuing an unfinished one
+- the Cloudflare account id, when the sign-in lists several
+- the Cloudflare zone to serve the site from, when the account has several
 - the OS keyring did not open
 - the Workers script to adopt
 - the domain the Worker serves, for a Worker with no Custom Domain
+- the engine's npm dist-tag to build the site from
+- the first owner's email address
 - the ground to render for: dark or light
 - the number of sites the registry is expected to hold
 - the repository the Worker deploys from, as owner/name
+- the site's address: the zone itself or a subdomain of it
+- the site's name; the repository, Worker, and database names derive from it
+- the theme id, when the template offers several
 - wall-clock budget for the whole run
+- what the site does about AI crawlers: decline or invite
 - when to colour the output: auto, always, or never
+- write the dry run as a JSON payload on stdout
 
 ## doctor
 
@@ -435,6 +544,7 @@ Name the check that entry holds
 - Cloudflare didn't approve setup's request.
 - Cloudflare no longer accepts setup's approval.
 - Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.
+- Correct the answer, and then run cairn new again.
 - Create a Cloudflare account, and then run cairn new again.
 - Delete that Worker or rename it in Cloudflare, and then run cairn new again.
 - Delete the GitHub App at <url>. Then unlock the keyring and run cairn new again.
@@ -472,8 +582,10 @@ Name the check that entry holds
 - Setup couldn't push the site to GitHub.
 - Setup couldn't save its record of this run.
 - Setup couldn't store a credential in the keyring.
+- Setup couldn't use an answer it was given.
 - Setup couldn't write the site into <folder>.
 - Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Sign in there.
+- Setup keeps what it already created.
 - Setup needs Node.js 24 or later. This computer has Node.js <n>.
 - Setup stopped.
 - Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.

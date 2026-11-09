@@ -37,6 +37,9 @@ func (r *run) summary(ctx context.Context) (Summary, error) {
 		s := r.summaryOf()
 		r.emit(Event{Kind: SummaryKind, Step: StepSummary, Summary: &s})
 		edit, err := r.cfg.View.ConfirmSummary(ctx, s, problem)
+		if errors.Is(err, ErrPlanned) {
+			return Summary{}, err
+		}
 		if err != nil {
 			return Summary{}, r.fail(ctx, err, "")
 		}
@@ -111,3 +114,6 @@ func validEmail(s string) bool {
 	a, err := mail.ParseAddress(s)
 	return err == nil && a.Address == s && strings.Contains(s[strings.LastIndex(s, "@"):], ".")
 }
+
+// ValidEmail reports whether s is an address the summary accepts for the owner.
+func ValidEmail(s string) bool { return validEmail(s) }

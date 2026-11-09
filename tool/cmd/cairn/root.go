@@ -250,6 +250,7 @@ func newRootCmd(d deps) *cobra.Command {
 	cmd.SetHelpCommandGroupID(groupOther)
 	cmd.SetCompletionCommandGroupID(groupOther)
 
+	newSetup := newNewCmd(d)
 	cmd.AddCommand(
 		newSitesCmd(d, f),
 		newHealthCmd(d, f),
@@ -257,7 +258,8 @@ func newRootCmd(d deps) *cobra.Command {
 		newLogsCmd(d, f),
 		newAdoptCmd(d, f),
 		newAuthCmd(d),
-		newAgentsCmd(),
+		newSetup,
+		newAgentsCmd(newSetup.Hidden),
 	)
 
 	// A flag error names the command the flag was given to, not the root: an agent told to run

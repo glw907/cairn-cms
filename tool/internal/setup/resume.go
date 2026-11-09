@@ -57,7 +57,7 @@ func (r *run) freshGrant(ctx context.Context) error {
 // that stopped after approval 1 and before the checks recorded the account refreshes the stored
 // grant and runs the checks, so the owner is not asked again.
 func (r *run) cloudflare(ctx context.Context) error {
-	if r.rec.Cloudflare.AccountID != "" {
+	if r.rec.Cloudflare.AccountID != "" && r.rec.Cloudflare.ZoneID != "" {
 		return r.resumeCloudflare(ctx)
 	}
 	err := errGrantSpent

@@ -211,6 +211,13 @@ var entries = map[Reason]Entry{
 		Did:      kept,
 		Do:       "Wait a few minutes, and then run cairn new again. Setup resumes at the Connect <domain> step.",
 	},
+	// ReasonRefused is the agent lane's stop: its caller words each Happened and Do, so this entry
+	// is the fixed fallback for a view that cannot.
+	ReasonRefused: {
+		Happened: "Setup couldn't use an answer it was given.",
+		Did:      "Setup keeps what it already created.",
+		Do:       "Correct the answer, and then run cairn new again.",
+	},
 }
 
 // Lines the copy deck did not word, each from a ruling that changed a screen.

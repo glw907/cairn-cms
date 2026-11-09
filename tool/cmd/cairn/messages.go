@@ -697,3 +697,193 @@ func translateError(err error) error {
 	}
 	return fallbackError(err)
 }
+
+// cairn new's Short, Example, and flag help. The command is Hidden until it ships, so none of
+// this reaches the root help yet. Every line is new to this table.
+const (
+	shortNew   = "Set up a new cairn site"
+	exampleNew = "cairn new --plan plan.json --name \"My Site\" --email me@example.com --posture decline"
+
+	flagNewNameHelp      = "the site's name; the repository, Worker, and database names derive from it"
+	flagNewEmailHelp     = "the first owner's email address"
+	flagNewPostureHelp   = "what the site does about AI crawlers: decline or invite"
+	flagNewAccountHelp   = "the Cloudflare account id, when the sign-in lists several"
+	flagNewZoneHelp      = "the Cloudflare zone to serve the site from, when the account has several"
+	flagNewHostHelp      = "the site's address: the zone itself or a subdomain of it"
+	flagNewSiteThemeHelp = "the theme id, when the template offers several"
+	flagNewPlanHelp      = "run the questions and approvals, write the plan to this file, and create nothing"
+	flagNewApplyHelp     = "create the site from a plan file"
+	flagNewResumeHelp    = "continue the unfinished setup with this site id"
+	flagNewNewHelp       = "start a new site instead of continuing an unfinished one"
+	flagNewTagHelp       = "the engine's npm dist-tag to build the site from"
+	flagNewDryRunHelp    = "print the names setup would use and create nothing"
+	flagNewJSONHelp      = "write the dry run as a JSON payload on stdout"
+)
+
+// tmplNewRequires is the refusal of a run that leaves out a flag its mode needs, or that gives
+// a flag only another flag allows. It names the missing flag and the one that needs it.
+const tmplNewRequires = "cairn: %s is required with %s.\nRun `cairn new --help` for the flags"
+
+// newRequiresError renders tmplNewRequires.
+func newRequiresError(missing, with string) error {
+	return translated(fmt.Errorf(tmplNewRequires, missing, with))
+}
+
+// tmplNewConflict is the refusal of two flags that cannot be given together. It names both.
+const tmplNewConflict = "cairn: %s and %s cannot be used together.\nRun `cairn new --help` for the flags"
+
+// newConflictError renders tmplNewConflict.
+func newConflictError(first, second string) error {
+	return translated(fmt.Errorf(tmplNewConflict, first, second))
+}
+
+// tmplNewBadPosture is the refusal of a --posture outside the two values setup writes.
+const tmplNewBadPosture = "cairn: --posture takes decline or invite, not %q.\nRun `cairn new --help` for the flags"
+
+// newBadPostureError renders tmplNewBadPosture.
+func newBadPostureError(value string) error {
+	return translated(fmt.Errorf(tmplNewBadPosture, value))
+}
+
+// newExitCodes is cairn new's exit code table, which the agent guide prints and a golden holds.
+// A usage error keeps the 3 every cairn command uses, and it is found before anything runs.
+const newExitCodes = `Exit codes for cairn new:
+0  the run finished, the plan file was written, or the command only listed or printed
+1  setup stopped at a step, including a refusal found after the run began; the run is saved, and cairn new --resume continues it
+2  setup stopped: interrupted or timed out; cairn new --resume continues it
+3  a usage error: a flag or the plan file was refused before anything ran, and stdout is empty
+A stream of events that does not end with a summary is unfinished.`
+
+// agentsSetupEvents is the part of the agents page that names what cairn new --apply writes: one
+// JSON object per line. The agents page prints it only once cairn new is not hidden.
+const agentsSetupEvents = `Events from cairn new --plan, --apply, and --resume, one JSON object per line on stdout:
+  step_started, step_done  a step began or finished; step names it
+  step_failed              a step stopped the run; failure holds the four-part reason
+  waiting                  setup waits on the owner in a browser; waiting names the approval
+  resumed                  the run picked up an unfinished record
+  summary                  every derived value, for the owner to review
+Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
+approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.`
+
+// tmplNewUsage renders a refusal the agent view found in the flags or the plan file.
+const tmplNewUsage = "%s\nRun `cairn new --help` for the flags"
+
+// tmplNewHostOutsideZone is the refusal of a --host that is not the --zone or a subdomain of it.
+const tmplNewHostOutsideZone = "cairn: --host %s must be the zone %s or a subdomain of it"
+
+// newHostOutsideZoneError renders tmplNewHostOutsideZone.
+func newHostOutsideZoneError(host, zone string) error {
+	return newUsageError(fmt.Sprintf(tmplNewHostOutsideZone, host, zone))
+}
+
+// newUsageError renders tmplNewUsage.
+func newUsageError(problem string) error {
+	return translated(fmt.Errorf(tmplNewUsage, problem))
+}
+
+// tmplNewUnfinished is the refusal of --plan while one unfinished setup exists.
+const tmplNewUnfinished = "cairn: an unfinished setup exists: %s.\nContinue it with --resume %s, or start a new site with --new.\nRun `cairn new --help` for the flags"
+
+// newUnfinishedError renders tmplNewUnfinished.
+func newUnfinishedError(id string) error {
+	return translated(fmt.Errorf(tmplNewUnfinished, id, id))
+}
+
+// tmplNewSeveralUnfinished is the refusal of --plan while several unfinished setups exist.
+const tmplNewSeveralUnfinished = "cairn: several unfinished setups exist: %s.\nContinue one with --resume <id>, or start a new site with --new.\nRun `cairn new --help` for the flags"
+
+// newSeveralUnfinishedError renders tmplNewSeveralUnfinished.
+func newSeveralUnfinishedError(ids []string) error {
+	return translated(fmt.Errorf(tmplNewSeveralUnfinished, strings.Join(ids, ", ")))
+}
+
+// tmplNewNoSetup is the refusal of --resume with an id that names no unfinished setup.
+const tmplNewNoSetup = "cairn: no unfinished setup is named %s.\nRun `cairn new status` to list them"
+
+// newNoSetupError renders tmplNewNoSetup.
+func newNoSetupError(id string) error {
+	return translated(fmt.Errorf(tmplNewNoSetup, id))
+}
+
+// tmplNewNoRunForPlan is the refusal of --apply with a plan whose run has no unfinished setup.
+const tmplNewNoRunForPlan = "cairn: the plan's runId is %s, and no unfinished setup has that run.\nRun `cairn new status` to list them, or run --plan again"
+
+// newNoRunForPlanError renders tmplNewNoRunForPlan.
+func newNoRunForPlanError(runID string) error {
+	return translated(fmt.Errorf(tmplNewNoRunForPlan, runID))
+}
+
+// tmplNewPlanUnreadable is the refusal of a plan file that cannot be read.
+const tmplNewPlanUnreadable = "cairn: %v.\nRun `cairn new --help` for the flags"
+
+// newPlanUnreadableError renders tmplNewPlanUnreadable.
+func newPlanUnreadableError(err error) error {
+	return translated(fmt.Errorf(tmplNewPlanUnreadable, err))
+}
+
+// tmplNewPlanWritten is what --plan says on stderr once the plan file is written.
+const tmplNewPlanWritten = "Plan written to %s. Nothing was created on Cloudflare. Edit the email or the address if you need to, and then run cairn new --apply %s."
+
+// tmplNewDryRun is the text a dry run prints without --json.
+const tmplNewDryRun = "Site: %s\nRepository: %s\nWorker: %s\nDatabase: %s\nBucket: %s\nGitHub App: %s\nFolder: %s\nOwner email: %s\nAI crawlers: %s\nNothing was created."
+
+// tmplNewBadEmail is the refusal of an --email that is not one address.
+const tmplNewBadEmail = "cairn: --email must be one email address, such as owner@example.com.\nRun `cairn new --help` for the flags"
+
+// shortNewStatus is cairn new status's Short.
+const (
+	shortNewStatus   = "List the setups in progress and what each holds"
+	exampleNewStatus = "cairn new status"
+)
+
+// newStatusNone is what cairn new status prints when the registry holds no setup.
+const newStatusNone = "No setups found."
+
+// The rows of cairn new status. An unfinished setup lists what it still holds, so the owner
+// knows what to remove if they never continue it.
+const (
+	tmplNewStatusFinished   = "%s  finished  step %s"
+	tmplNewStatusUnfinished = "%s  unfinished  step %s"
+	tmplNewStatusKeys       = "  keyring entries: %s"
+	tmplNewStatusApp        = "  GitHub App: %s"
+	tmplNewStatusRepo       = "  repository: %s"
+	newStatusHint           = "Continue an unfinished setup with cairn new --resume <id>."
+)
+
+// newAgentGuide is what cairn new prints when no flag names a mode: the flags, and how an agent
+// plans and then applies. The exit codes are cairn help agents'.
+const newAgentGuide = `cairn new sets up a site on Cloudflare and GitHub. An agent runs it in two steps.
+
+Plan. Answer every question with a flag. Setup waits on the owner for each browser
+approval, writes nothing to Cloudflare, and saves its plan to the file:
+  cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
+A Cloudflare account or domain that no flag chose is left open. Setup stops there, exits 0
+with no summary event (an unfinished stream), and the plan lists the options. With the
+account left open the plan lists no domains: give --account with --plan, or finish with
+--resume <id> --account <a> --zone <z>.
+
+Apply. After the owner has reviewed the plan, create the site from it. The plan's open
+fields, the account, the domain, the email, and the address, may be edited first; apply
+refuses a plan that leaves the account or the domain open, before anything runs:
+  cairn new --apply plan.json
+An apply still runs the approvals in the owner's browser, so it waits on the owner.
+
+Required with --plan and --dry-run:
+  --name         the site's name
+  --email        the first owner's email address
+  --posture      decline or invite, the site's AI-crawler stance
+
+Answers asked for only when there is more than one choice:
+  --account      the Cloudflare account id
+  --zone         the Cloudflare zone
+  --host         the site's address, the zone or a subdomain of it
+  --site-theme   the theme id
+
+Other flags:
+  --dry-run      print the names setup would use and create nothing; add --json for a payload
+  --resume       continue the unfinished setup with this site id
+  --new          start a new site instead of continuing an unfinished one
+  --tag          the engine's npm dist-tag to build from (default latest)
+
+A usage error exits 3, before anything ran, and writes nothing to stdout. An unfinished run
+takes --account and --zone with --resume. The exit codes follow.`

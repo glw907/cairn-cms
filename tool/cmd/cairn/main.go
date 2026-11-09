@@ -47,7 +47,7 @@ func notifyContext(parent context.Context) (context.Context, context.CancelFunc)
 //
 // The flush emits whatever partial line is still buffered, since a scrubber that holds output to
 // a line boundary has to be told when the last line will never arrive.
-func scrubbedWriters(d deps) (out, errOut io.Writer, skipped int, flush func()) {
+func scrubbedWriters(d deps) (out, errOut *logx.Writer, skipped int, flush func()) {
 	creds := scrubTargets(d)
 
 	o := logx.New(os.Stdout, creds)
@@ -73,6 +73,10 @@ func main() {
 	d.scrubSkipped = skipped
 	// A command that reports a verdict ends the process through d.exit rather than by returning,
 	// so the flush has to ride that path too or the last unterminated line is lost.
+	d.register = func(c providers.Credential) {
+		out.Register(c)
+		errOut.Register(c)
+	}
 	d.exit = func(code int) {
 		flush()
 		os.Exit(code)

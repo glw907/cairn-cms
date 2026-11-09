@@ -107,7 +107,8 @@ type SummaryEdit struct {
 // View answers the questions only the owner can, at the moment the run needs them. The
 // terminal view asks; the agent lane answers from its flags. The runner calls ChooseTheme only
 // for a catalog of several themes, ChooseAccount only for several accounts, and ChooseZone only
-// for several active zones.
+// for several active zones. ChooseAccount and ChooseZone may return ErrOpenChoice to stop the
+// run with its record resumable.
 type View interface {
 	ChooseTheme(ctx context.Context, themes []scaffold.Theme) (string, error)
 	ChooseAccount(ctx context.Context, accounts []providers.Account) (string, error)
@@ -140,12 +141,29 @@ func FetchFrom(f *scaffold.Fetcher, tag string) func(ctx context.Context) (Templ
 		if err != nil {
 			return Template{}, err
 		}
-		themes, err := t.Catalog()
+		return templateOf(t)
+	}
+}
+
+// FetchRecorded returns a Config.FetchTemplate for a resume: it fetches the engine version and
+// integrity rec recorded, not the dist-tag's current version, so a resumed run builds from the
+// template it began with.
+func FetchRecorded(f *scaffold.Fetcher, rec record.Record) func(ctx context.Context) (Template, error) {
+	return func(ctx context.Context) (Template, error) {
+		t, err := f.FetchVersion(ctx, rec.Setup.EngineVersion, rec.Setup.EngineIntegrity)
 		if err != nil {
 			return Template{}, err
 		}
-		return Template{Version: t.Version, Integrity: t.Integrity, Themes: themes, Tree: t}, nil
+		return templateOf(t)
 	}
+}
+
+func templateOf(t *scaffold.Template) (Template, error) {
+	themes, err := t.Catalog()
+	if err != nil {
+		return Template{}, err
+	}
+	return Template{Version: t.Version, Integrity: t.Integrity, Themes: themes, Tree: t}, nil
 }
 
 // Resume names the unfinished record a run continues.
@@ -338,6 +356,17 @@ type run struct {
 	out        Done
 }
 
+// ErrPlanned is what a View's ConfirmSummary returns to end the run at the summary without
+// failing it. The run stops with its record resumable, the keyring entries kept, and no
+// step_failed event, so a later run resumes at the summary. Run returns it as is.
+var ErrPlanned = errors.New("setup: stopped at the summary to plan")
+
+// ErrOpenChoice is what a View's ChooseAccount or ChooseZone returns to leave the choice open:
+// the run stops as it does for ErrPlanned, with its record resumable and no step_failed event.
+// The record holds no account or zone yet, so a resume asks the view again, and the Cloudflare
+// grant the stop kept answers without a second approval.
+var ErrOpenChoice = errors.New("setup: stopped at a choice the owner has not made")
+
 // Run runs a setup from the opening to the done screen: the opening, the four approvals, the
 // summary and its one Enter, the eight watch steps, and the end, where the Cloudflare grant is
 // revoked and the run's keyring entries are deleted. With Config.Resume it starts at the first
@@ -368,6 +397,10 @@ func Run(ctx context.Context, cfg Config) (Result, error) {
 		}
 	}()
 	res, err := r.steps(ctx)
+	if errors.Is(err, ErrPlanned) || errors.Is(err, ErrOpenChoice) {
+		r.keepKeys()
+		return Result{}, err
+	}
 	if err != nil {
 		f := r.fail(ctx, err, "")
 		r.keepKeys()
@@ -596,6 +629,13 @@ func (r *run) localFailure(ctx context.Context, reason Reason, happened, do stri
 // unexpected stop when who is empty.
 func (r *run) fail(ctx context.Context, err error, who string) *Failure {
 	if f, ok := errors.AsType[*Failure](err); ok {
+		if f.Step == "" {
+			// A view's stop carries its own sentences; the run supplies where it stopped.
+			f.Step, f.Did = r.step, r.did()
+			if f.Did != nothingCreated {
+				f.Left = "What setup created stays in place, and the next run resumes from it."
+			}
+		}
 		return f
 	}
 	switch {

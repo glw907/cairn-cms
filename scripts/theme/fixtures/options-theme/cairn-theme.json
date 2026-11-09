@@ -1,0 +1,24 @@
+{
+  "$schema": "https://cairn.pub/schemas/cairn-theme/1.json",
+  "id": "options-theme",
+  "name": "Options theme",
+  "description": "A fixture theme with one accent option.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": { "name": "cairn", "url": "https://cairn.pub" },
+  "contract": 1,
+  "colorModes": { "light": "opts", "dark": "opts-dark" },
+  "options": [
+    {
+      "key": "accent",
+      "label": "Accent",
+      "values": [
+        { "value": "ember", "label": "Ember" },
+        { "value": "tide", "label": "Tide" }
+      ],
+      "default": "ember"
+    }
+  ],
+  "fonts": [],
+  "screenshots": []
+}

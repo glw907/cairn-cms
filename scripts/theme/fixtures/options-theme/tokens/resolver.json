@@ -1,0 +1,29 @@
+{
+  "version": "2025.10",
+  "name": "options-theme",
+  "description": "The fixture theme: the base set, the color mode, and one option.",
+  "sets": {
+    "base": { "sources": [{ "$ref": "tokens.json#/base" }] }
+  },
+  "modifiers": {
+    "mode": {
+      "contexts": {
+        "light": [{ "$ref": "tokens.json#/color/light" }],
+        "dark": [{ "$ref": "tokens.json#/color/dark" }]
+      },
+      "default": "light"
+    },
+    "accent": {
+      "contexts": {
+        "ember": [{ "$ref": "tokens.json#/options/accent/ember" }],
+        "tide": [{ "$ref": "tokens.json#/options/accent/tide" }]
+      },
+      "default": "ember"
+    }
+  },
+  "resolutionOrder": [
+    { "$ref": "#/sets/base" },
+    { "$ref": "#/modifiers/mode" },
+    { "$ref": "#/modifiers/accent" }
+  ]
+}

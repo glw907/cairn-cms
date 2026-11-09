@@ -41,6 +41,14 @@ already covers it. The `cairn-extending-a-site` skill opens with the question of
 `daisyui-first.md` reference names the seam and the recipe; reach for it before writing new markup
 under `/admin`.
 
+## Plugins
+
+This site's `.claude/settings.json` offers the Svelte, Cloudflare, and daisyUI plugins, and its
+`.mcp.json` adds the Svelte MCP server. Claude Code offers them when you trust the folder, but a
+plugin from an external source still needs one install per person. The cairn plugin sets up new
+sites and is not needed here. The full list and the install commands are on the
+[suggested plugins](https://github.com/glw907/cairn-cms/blob/main/docs/admin/suggested-plugins.md) page.
+
 ## Where the docs are
 
 Start from the installed skills: `cairn-extending-a-site` routes every site job to its reference.

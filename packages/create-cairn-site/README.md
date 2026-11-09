@@ -3,6 +3,17 @@
 Scaffold a branded [cairn](https://github.com/glw907/cairn-cms) site from the Waymark starter
 theme and run it locally.
 
+## Setting up with an agent
+
+Install the cairn plugin in Claude Code, and ask it to set up a site:
+
+```
+claude plugin marketplace add glw907/cairn-cms
+claude plugin install cairn@cairn
+```
+
+The agent runs `cairn new`, shows you each step, and waits while you approve it in your browser. [Set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md) covers the whole run.
+
 ## Usage
 
 ```

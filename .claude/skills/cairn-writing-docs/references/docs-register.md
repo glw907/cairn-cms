@@ -478,8 +478,9 @@ engine-internal name. Every command shown is copyable as printed and traces to a
 run.
 
 **Arrival state.** Through the root README or word of mouth, deciding to create a site, or
-inheriting a running site someone else created; `create-cairn-site` is the setup spine, and
-the docs narrate and recover it, never replace it with hand-authoring.
+inheriting a running site someone else created; `cairn new` is the setup spine, started with
+`npm create cairn-site` or by an agent, and the docs narrate and recover it, never replace it
+with hand-authoring.
 
 **Success criterion.** The default site is live and healthy with zero code authored, and
 every failure the reader can hit ends in a named next step classified wait, act, or ask a

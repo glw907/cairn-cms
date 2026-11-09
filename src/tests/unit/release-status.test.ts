@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { status } from '../../../scripts/release/status.mjs';
 
-const NAMES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev', 'create-cairn-site'];
+const NAMES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
 
 interface World {
   tagOnOrigin: boolean;
@@ -16,7 +16,7 @@ function world(version: string, patch: Partial<World> = {}): World {
   const pre = version.includes('-');
   const tags: Record<string, Record<string, string>> = {};
   for (const n of NAMES) {
-    tags[n] = pre ? { next: version, ...(n === 'create-cairn-site' ? { latest: version } : { latest: '0.98.0' }) } : { latest: version };
+    tags[n] = pre ? { next: version, latest: '0.98.0' } : { latest: version };
   }
   return {
     tagOnOrigin: true,
@@ -71,8 +71,7 @@ describe('release status', () => {
     ['no tag on origin', 'tag', () => ({ tagOnOrigin: false })],
     ['isPrerelease false on a prerelease', 'release', () => ({ isPrerelease: false })],
     ['next behind on one package', 'distTags', (w) => ({ tags: { ...w.tags, '@glw907/cairn-cms-dev': { next: '0.99.0-rc.3', latest: '0.98.0' } } })],
-    ['create-cairn-site latest behind', 'distTags', (w) => ({ tags: { ...w.tags, 'create-cairn-site': { next: PRE, latest: '0.99.0-rc.3' } } })],
-    ['no provenance on one package', 'provenance', (w) => ({ provenance: { ...w.provenance, 'create-cairn-site': false } })],
+    ['no provenance on one package', 'provenance', (w) => ({ provenance: { ...w.provenance, '@glw907/cairn-cms-dev': false } })],
     ['no CHANGELOG heading', 'changelog', () => ({ changelog: '# Changelog\n\n## 0.99.0-rc.3\n' })],
     ['verdict exit 1', 'verdict', () => ({ verdictStatus: 1 })]
   ];

@@ -8,13 +8,12 @@ import { checkStableSource } from '../../../scripts/checks/check-stable-source.m
 
 const FIXTURE = resolve(__dirname, 'fixtures/release-bump/rc3');
 const VERSION_FILE = 'templates/waymark/.claude/cairn/VERSION';
-const EIGHT = [
+const SEVEN = [
   'CHANGELOG.md',
   'MIGRATION-NOTES.md',
   'package-lock.json',
   'package.json',
   'packages/cairn-cms-dev/package.json',
-  'packages/create-cairn-site/package.json',
   VERSION_FILE,
   'templates/waymark/package.json'
 ];
@@ -76,7 +75,7 @@ function runner(root: string, fake: Fake = {}) {
 const DATE = '2026-11-04';
 
 describe('bump', () => {
-  it('changes exactly the eight files, emitting the template after the manifests are written', () => {
+  it('changes exactly the seven files, emitting the template after the manifests are written', () => {
     const root = tree();
     const before = snapshot(root);
     const { run, calls } = runner(root);
@@ -85,7 +84,7 @@ describe('bump', () => {
     expect(result.next).toMatch(/^Next: /);
     const after = snapshot(root);
     const changed = Object.keys(after).filter((p) => after[p] !== before[p]).sort();
-    expect(changed).toEqual(EIGHT);
+    expect(changed).toEqual(SEVEN);
     expect(after['CHANGELOG.md']).toMatch(/^## 0\.99\.0-rc\.4\n\nReleased 2026-11-04\.\n\n<!-- release-size: minor -->/);
     expect(after['MIGRATION-NOTES.md']).toContain('## 0.99.0-rc.4');
     expect(after['MIGRATION-NOTES.md']).toContain('(./CHANGELOG.md#0990-rc4)');

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // cairn-cms: the release preflight. Before a cut it checks the tree is clean, HEAD is the tip of
 // origin's main as the remote reports it (a stale local `origin/main` cannot pass), the version is
-// unpublished on all three packages, both installs are present, and `## Unreleased` holds something
+// unpublished on both packages, both installs are present, and `## Unreleased` holds something
 // to release. A stable cut is the candidate's own tree, so `--stable` skips the empty-window check.
 //
 // Interface: `node scripts/release/preflight.mjs <version> [--stable]`. Exit 0 or 1; the last line

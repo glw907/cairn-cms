@@ -227,6 +227,11 @@ jobs:
             echo "building ${name}"
             GOOS="$goos" GOARCH="$goarch" go build -trimpath -ldflags "$ldflags" -o "${stage}/${binary}" ./cmd/cairn
             cp man/*.1 "${stage}/man/"
+            # The npm platform packages carry the bare binary, in Node's os and cpu spelling.
+            case "$goos" in windows) nodeos=win32 ;; *) nodeos="$goos" ;; esac
+            case "$goarch" in amd64) nodecpu=x64 ;; *) nodecpu="$goarch" ;; esac
+            mkdir -p "dist/platforms/${nodeos}-${nodecpu}"
+            cp "${stage}/${binary}" "dist/platforms/${nodeos}-${nodecpu}/${binary}"
             if [ "$goos" = "windows" ]; then
               (cd "$stage" && zip -qr "../${name}.zip" "$binary" man)
             else
@@ -315,3 +320,100 @@ jobs:
             --title "${{ github.ref_name }}" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - name: Pack the npm packages
+        # The six platform packages and the create-cairn-site launcher, all at the tool's version
+        # (the tag without its `tool/v` prefix), not the engine's. The script reads each binary's
+        # header and refuses one built for another platform, and uses only Node's standard
+        # library, so nothing is installed.
+        env:
+          VERSION: ${{ steps.build.outputs.version }}
+        run: node scripts/release/pack-platforms.mjs --version "$VERSION" --binaries tool/dist/platforms --out tool/dist/npm
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: npm-tarballs
+          path: tool/dist/npm
+          if-no-files-found: error
+
+  # Publishes the packed npm packages, on a tag only. It holds the id-token and the `npm-publish`
+  # environment; the release job above, which compiles and packs, has no publish credential in
+  # reach. The six platform packages publish first and the launcher last, so a launcher on the
+  # registry never names a platform package that is absent.
+  #
+  # The already-published guard exists because a re-run recovers a release that failed partway.
+  publish-npm:
+    name: publish npm packages
+    needs: release
+    if: ${{ github.ref_type == 'tag' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write # required for OIDC trusted publishing
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: npm-tarballs
+          path: npm-tarballs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version).
+      # WATCH: pinned to exactly 11.21.1, the newest 11.x at the pin, because npm 12.0.0
+      # (2026-07-08) ships without its sigstore module and every publish fails on
+      # MODULE_NOT_FOUND in libnpmpublish; the 12 line's 12.2.0 is the first to carry the dist-tag
+      # support, so move to a 12.x only once one publishes cleanly.
+      - run: npm install -g npm@11.21.1
+      # `--provenance` is passed explicitly: npm's OIDC helper can swallow an attestation failure
+      # and publish without one, so the flag turns a silent gap into a loud one.
+      - name: Publish the platform packages, then the launcher
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#tool/v}"
+          case "$VERSION" in
+            *-*) TAG=gate ;;
+            *)   TAG=latest ;;
+          esac
+          publish() {
+            # $1 package name, $2 tarball
+            if npm view "$1@$VERSION" version >/dev/null 2>&1; then
+              echo "$1@$VERSION is already on the registry; skipping"
+              return 0
+            fi
+            [ -f "$2" ] || { echo "::error::no tarball at $2"; exit 1; }
+            echo "publishing $1@$VERSION to the '$TAG' dist-tag"
+            npm publish "$2" --ignore-scripts --access public --provenance --tag "$TAG"
+          }
+          for target in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
+            publish "@glw907/cairn-$target" "$PWD/npm-tarballs/glw907-cairn-$target-$VERSION.tgz"
+          done
+          publish create-cairn-site "$PWD/npm-tarballs/create-cairn-site-$VERSION.tgz"
+
+  # A dry run (workflow_dispatch) packs and uploads in the release job and publishes nothing;
+  # this job runs `npm publish --dry-run` on each tarball so the packaging is proved before a tag.
+  publish-npm-dry-run:
+    name: npm publish dry run
+    needs: release
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: npm-tarballs
+          path: npm-tarballs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - name: Dry-run publish each tarball
+        run: |
+          set -euo pipefail
+          for tgz in npm-tarballs/*.tgz; do
+            npm publish "$tgz" --dry-run --ignore-scripts --access public --tag gate
+          done

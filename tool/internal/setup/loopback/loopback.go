@@ -3,12 +3,20 @@
 // The server listens on 127.0.0.1:49152 from New until Close, which is also what keeps setup to
 // one run at a time. Every request must name a loopback Host with that port, which is the defence
 // against a page that rebinds a hostname to 127.0.0.1. The root opens a session only for the
-// one-time key in URL, so another process on the machine, or another site's page in the owner's
-// browser, cannot take the cookie that gates the sign-in URL. A callback route answers only while
-// the runner has it armed, and only to the state nonce it was armed with. /cloudflare/go hands the
-// Cloudflare authorize URL to the consent page's button only while that callback is armed, so the
-// URL never sits in a page's source. Any other path answers 404. The runner drives the tab through Show and learns of each approval through Wait, so the
-// browser is answered at once and the API work runs in the runner afterwards.
+// one-time key in URL, so another site's page in the owner's browser cannot take the session
+// cookie. That cookie gates every route that acts: a callback answers only to it, only while the
+// runner has the route armed, and only to the state nonce it was armed with. /cloudflare/go hands
+// the Cloudflare authorize URL to the consent page's button only while that callback is armed, so
+// the URL never sits in a page's source, and /next hands out the sign-in URL once. Both also
+// require the Fetch Metadata headers a browser sends on the tab's requests. Any other path
+// answers 404. The runner drives the tab through Show and learns of each approval through Wait.
+// The browser is answered at once, and the API work runs in the runner afterwards.
+//
+// A cookie is not scoped to a port, so the browser also sends the session cookie to any other
+// listener on 127.0.0.1 it visits. A process on this machine that can observe the browser's
+// localhost traffic, or collect the cookie on another port and forge a browser's headers, is out
+// of scope. What the server refuses is a request without the cookie, and a generic tool that
+// replays the cookie without the Fetch Metadata a browser sends.
 //
 // Nothing here logs. The key, the nonces, the codes, the cookie, and the sign-in URL reach only
 // the browser and the runner.

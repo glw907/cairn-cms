@@ -20,8 +20,9 @@ const (
 	// GitHubManifest receives the redirect after the owner creates the App: code and state.
 	GitHubManifest Route = "/github/manifest"
 	// GitHubCallback receives both install redirects: code, installation_id, and setup_action.
-	// GitHub may leave state off, so a missing state is accepted and the runner's read-back of
-	// the installation is what authenticates it; a state that is present must match.
+	// GitHub may leave state off, so a missing state is accepted, the session cookie gates it as
+	// it gates every callback, and the runner's read-back of the installation is what confirms
+	// it; a state that is present must match.
 	GitHubCallback Route = "/github/callback"
 )
 
@@ -105,13 +106,23 @@ func (s *Server) Wait(ctx context.Context, r Route) (Callback, error) {
 	}
 }
 
+// callback answers r's redirect. It takes the redirect only from the browser holding the session
+// cookie, which the Lax cookie lets ride the provider's top-level redirect back. A request without
+// it, from another process or another site's navigation, is refused 403 and leaves the route armed
+// for the owner's redirect.
 func (s *Server) callback(r Route) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		session := s.hasSession(req)
 		s.mu.Lock()
 		a := s.routes[r]
 		if a == nil || !a.open {
 			s.mu.Unlock()
 			http.NotFound(w, req)
+			return
+		}
+		if !session {
+			s.mu.Unlock()
+			http.Error(w, "This request is not part of the current setup.", http.StatusForbidden)
 			return
 		}
 		cb, ok := parseCallback(r, req.URL.RawQuery)

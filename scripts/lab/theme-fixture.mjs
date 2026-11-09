@@ -51,6 +51,8 @@ import { parseArgs } from 'node:util';
 import { chromium } from 'playwright';
 import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
+import { stripLayIn } from '../build/bake-template.mjs';
+import { layIn } from '../theme/lay-in.mjs';
 import { makeShowcaseCopy } from './theme-fixture-copy.mjs';
 
 const ROOT = repoRoot(import.meta.url);
@@ -333,6 +335,13 @@ async function templateArm({ themeFile, themeDir, probe }) {
     const dev = pack(join(ROOT, 'packages/cairn-cms-dev'), packs);
     const site = join(tmp, 'site');
     run('node', ['scripts/build/emit-template.mjs', site, `file:${engine}`, `file:${dev}`, 'fixture-template'], { cwd: ROOT });
+    // The raw emit leaves out src/theme and keeps the showcase's lay-in scripts. Give the site what the
+    // bake gives a real template: Waymark laid in, and the lay-in step stripped from its scripts.
+    layIn(join(ROOT, 'themes/waymark'), site);
+    const sitePackagePath = join(site, 'package.json');
+    const sitePackage = JSON.parse(readFileSync(sitePackagePath, 'utf8'));
+    stripLayIn(sitePackage);
+    writeFileSync(sitePackagePath, JSON.stringify(sitePackage, null, 2) + '\n');
     // The preview serves the built site under `wrangler dev`, whose workerd cannot read a working
     // tree, and the dev backend's default content mode refuses there. The copy opts into the seeded
     // fixtures, the way the example site's hooks do.

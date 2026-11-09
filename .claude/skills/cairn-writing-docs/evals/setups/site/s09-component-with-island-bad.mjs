@@ -6,9 +6,9 @@ import { join } from 'node:path';
 
 /** @param {string} root */
 export default function setup(root) {
-  mkdirSync(join(root, 'src/theme'), { recursive: true });
+  mkdirSync(join(root, 'src/site'), { recursive: true });
   writeFileSync(
-    join(root, 'src/theme/markdown-blocks.ts'),
+    join(root, 'src/site/countdown-block.ts'),
     `import { defineBlock, fields } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 

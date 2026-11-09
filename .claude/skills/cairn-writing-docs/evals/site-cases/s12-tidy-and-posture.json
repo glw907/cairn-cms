@@ -18,7 +18,7 @@
     "setups/site/s12-tidy-and-posture.mjs sets enabled: false and removes the posture pass-through from the robots route, the shape https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/choose-an-ai-posture.md calls a site scaffolded before the pass-through existed"
   ],
   "expectations": [
-    "src/theme/site.config.yaml has tidy.enabled true and tidy.model claude-haiku-4-5, and the conventions block (oxfordComma always, smartQuotes true) is intact.",
+    "src/site/site.config.yaml has tidy.enabled true and tidy.model claude-haiku-4-5, and the conventions block (oxfordComma always, smartQuotes true) is intact.",
     "src/chassis/cairn.server.ts passes timeoutMs: 60000 in the tidy block of createCairnAdmin and keeps the dev-gated client.",
     "@anthropic-ai/sdk is declared as a dependency in package.json.",
     "The adapter sets aiPosture: 'decline', and the robots route passes cairn.aiPosture to buildRobotsResponse as posture, so the served file changes.",
@@ -27,25 +27,25 @@
   "checks": [
     {
       "type": "contains",
-      "path": "src/theme/site.config.yaml",
+      "path": "src/site/site.config.yaml",
       "regex": "tidy:(?:\\n[ \\t]+.*)*?\\n[ \\t]+enabled:\\s*true",
       "source": "src/lib/nav/site-config.ts:126"
     },
     {
       "type": "contains",
-      "path": "src/theme/site.config.yaml",
+      "path": "src/site/site.config.yaml",
       "regex": "model:\\s*['\"]?claude-haiku-4-5['\"]?\\s*$",
       "source": "src/lib/nav/site-config.ts:128; https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/turn-on-tidy.md (Choose a model)"
     },
     {
       "type": "contains",
-      "path": "src/theme/site.config.yaml",
+      "path": "src/site/site.config.yaml",
       "regex": "oxfordComma:\\s*always[\\s\\S]*smartQuotes:\\s*true|smartQuotes:\\s*true[\\s\\S]*oxfordComma:\\s*always",
       "source": "src/lib/nav/site-config.ts:140 TidyConventions; the save on /admin/settings and the house style live in this block"
     },
     {
       "type": "absent",
-      "path": "src/theme/site.config.yaml",
+      "path": "src/site/site.config.yaml",
       "regex": "timeoutMs|timeout",
       "source": "src/lib/nav/site-config.ts:124: TidyConfig has no timeout key; timeoutMs belongs to createCairnAdmin"
     },
@@ -63,7 +63,7 @@
     },
     {
       "type": "contains",
-      "path": "src/theme/cairn.config.ts",
+      "path": "src/site/cairn.config.ts",
       "regex": "aiPosture\\s*:\\s*['\"`]decline['\"`]",
       "source": "src/lib/content/types.ts:276; src/lib/delivery/robots.ts:36"
     },

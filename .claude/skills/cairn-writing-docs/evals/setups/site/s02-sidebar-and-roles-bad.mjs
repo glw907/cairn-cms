@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const FILES = {
-  'src/theme/cairn.config.ts': `import { defineAdapter } from '@glw907/cairn-cms';
+  'src/site/cairn.config.ts': `import { defineAdapter } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
   editor: {

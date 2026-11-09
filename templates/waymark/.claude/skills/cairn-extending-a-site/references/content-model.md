@@ -16,7 +16,7 @@ Contents:
 
 A concept is its adapter entry, plus a manifest run when its directory already holds files.
 
-1. **Adapter** (`src/theme/cairn.config.ts`): a `defineConcept` under `content`, keyed by the concept
+1. **Adapter** (`src/site/cairn.config.ts`): a `defineConcept` under `content`, keyed by the concept
    id, with `dir` and `fields`. Set `singular`: it falls back to `label`, so an omitted singular
    reads **New Events**. `dir` sits under `src/content`, and each entry sits directly in it.
 2. **Manifest**: if the directory already holds entries, run `npx cairn-manifest` (scaffold script

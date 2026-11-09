@@ -535,4 +535,4 @@ when the remediation pass lands.
 
 - **Verdict:** accept, reshaped where noted. Setup asking for the theme first, or taking `--theme`, is accepted: choosing which template `cairn new` copies belongs to the operator's tool, not the engine surface. A theme declaring its options in a manifest is accepted, reshaped: the manifest is static data that only `cairn new` reads, at scaffold time, and it never becomes a runtime API, an admin theme switcher, or an npm export. The free-form brand color prompt retires. The `app.html` cookie regex is accepted: it is generated from the theme's names, so a theme never edits a file outside its directory.
 - **Shape:** out of scope are a theme shipped as an npm dependency that updates in place, a marketplace for outside themes, and per-theme content or directives.
-- **Reopens on:** a site that needs the engine to read a theme's options at runtime, or a second operator tool that must share the manifest's reader.
+- **Reopens on:** closed. Ratified with the theme-garden design (2026-11-08), which names no evidence that would reopen it; filed by theme-garden pass G1.

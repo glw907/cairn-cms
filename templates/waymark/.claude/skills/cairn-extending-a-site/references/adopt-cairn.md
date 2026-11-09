@@ -33,7 +33,7 @@ commits `worker-configuration.d.ts`; rerun it after adding or renaming a binding
 
 ## Site config, adapter, content
 
-1. `src/theme/site.config.yaml` with a non-empty `siteName` (unknown top-level keys are rejected).
+1. `src/site/site.config.yaml` with a non-empty `siteName` (unknown top-level keys are rejected).
    The nav editor, Settings, and the tag vocabulary read and write that fixed path.
 2. `src/lib/cairn.config.ts` exports `cairn = defineAdapter({ content, backend, email, rendering, editor })`
    and `siteConfig = parseSiteConfig(siteYaml)` (imported with `?raw`). Declare a field for every

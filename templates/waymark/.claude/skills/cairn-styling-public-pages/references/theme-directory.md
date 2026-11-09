@@ -2,10 +2,12 @@
 
 On the chassis, `src/theme/` is the theme and `src/chassis/` is the plumbing under it. The routes and
 the chassis import these files by the `#theme` subpath import, so a theme built from scratch supplies
-each: `theme.css`, `site.css`, `cairn.config.ts`, `site-config.ts`, `islands/registry.ts`, and the
+each: `theme.css`, `site.css`, `directives/renderers.ts`, `directives/islands/registry.ts`, and the
 components `SiteHeader.svelte`, `SiteFooter.svelte`, `ArticleView.svelte`, and `EntryRow.svelte`.
-`vite.config.ts` also reads `src/theme/cairn.config.ts` by path. Waymark's other files are reached by
-relative import from those, and a theme needs one only when its files import it.
+The site's adapter, `cairn.config.ts`, and its `site-config.ts` and `site.config.yaml` live in
+`src/site/`, reached by `#site`, and `vite.config.ts` reads `src/site/cairn.config.ts` by path.
+Waymark's other files are reached by relative import from those, and a theme needs one only when its
+files import it.
 
 - `theme.css` holds the two daisyUI blocks, the `@theme` scale, and an `@import` of
   `../chassis/tokens.css`. CSS reaches the chassis by relative import, since aliases do not resolve in

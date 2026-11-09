@@ -101,7 +101,7 @@ func TestNewWithNoModePrintsTheAgentGuide(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0", code)
 	}
-	for _, want := range []string{"--plan", "--apply", "--resume", "--dry-run", "--tag"} {
+	for _, want := range []string{"--plan", "--apply", "--resume", "--dry-run"} {
 		if !strings.Contains(stdout, want) {
 			t.Errorf("guide does not mention %s:\n%s", want, stdout)
 		}

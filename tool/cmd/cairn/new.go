@@ -158,6 +158,6 @@ func runNew(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 		}
 		return runTerminal(cmd, d, rf, f)
 	}
-	_, err := fmt.Fprintln(cmd.OutOrStdout(), newAgentGuide+"\n\n"+newExitCodes)
+	_, err := fmt.Fprint(cmd.OutOrStdout(), agentPage)
 	return err
 }

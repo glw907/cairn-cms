@@ -19,6 +19,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/loopback"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
 )
@@ -552,16 +553,21 @@ type install struct {
 type fakeGH struct {
 	t *testing.T
 	// created names every repository CreateRepo made, which a second create of the name is
-	// refused for; ownerOf overrides the owner a read of the name reports.
-	created map[string]bool
-	ownerOf map[string]string
+	// refused for; ownerOf and ownerIDOf override the owner login and id a read of the name
+	// reports.
+	created   map[string]bool
+	ownerOf   map[string]string
+	ownerIDOf map[string]int64
 	// public names the repositories a read reports as not private; createOwner, when set, is the
 	// owner CreateRepo reports.
 	public      map[string]bool
 	createOwner string
-	// userLogin, when set, is the account the user token belongs to; otherwise it is the App's
-	// owner.
+	// createOwnerID, when set, is the owner id CreateRepo reports.
+	createOwnerID int64
+	// userLogin and userID, when set, are the account the user token belongs to; otherwise it is
+	// the App's owner.
 	userLogin string
+	userID    int64
 	// afterCreate runs once the repository exists, before CreateRepo returns.
 	afterCreate func()
 	// secretOnEmpty reports, for each Actions secret stored, whether the repository then held no
@@ -641,6 +647,9 @@ func (c ghClient) CreateRepo(ctx context.Context, name string) (providers.Reposi
 	if c.f.createOwner != "" {
 		r.Owner.Login = c.f.createOwner
 	}
+	if c.f.createOwnerID != 0 {
+		r.Owner.ID = c.f.createOwnerID
+	}
 	gitRun(c.f.t, "", "init", "--quiet", "--bare", "-b", r.DefaultBranch, filepath.Join(c.f.remotes, r.Owner.Login, name+".git"))
 	if c.f.afterCreate != nil {
 		c.f.afterCreate()
@@ -651,18 +660,22 @@ func (c ghClient) CreateRepo(ctx context.Context, name string) (providers.Reposi
 	return r, nil
 }
 
-// UserLogin reports the account the user token belongs to, as GitHub's GET /user does.
-func (c ghClient) UserLogin(ctx context.Context) (string, error) {
+// User reports the account the user token belongs to, as GitHub's GET /user does.
+func (c ghClient) User(ctx context.Context) (string, int64, error) {
 	if err := c.note(ctx, "user"); err != nil {
-		return "", err
+		return "", 0, err
 	}
 	if isJWT(c.cred) || isInstallationToken(c.cred) || c.cred.Reveal() == "" {
-		c.f.t.Error("UserLogin ran without the user token")
+		c.f.t.Error("User ran without the user token")
 	}
+	login, id := c.f.app.OwnerLogin, c.f.app.OwnerID
 	if c.f.userLogin != "" {
-		return c.f.userLogin, nil
+		login = c.f.userLogin
 	}
-	return c.f.app.OwnerLogin, nil
+	if c.f.userID != 0 {
+		id = c.f.userID
+	}
+	return login, id, nil
 }
 
 func (f *fakeGH) repoNamed(name string) providers.Repository {
@@ -686,6 +699,9 @@ func (c ghClient) RepoNamed(ctx context.Context, owner, name string) (*providers
 	r := c.f.repoNamed(name)
 	if o, ok := c.f.ownerOf[name]; ok {
 		r.Owner.Login = o
+	}
+	if id, ok := c.f.ownerIDOf[name]; ok {
+		r.Owner.ID = id
 	}
 	if c.f.public[name] {
 		if err := json.Unmarshal([]byte(`{"private":false}`), &r); err != nil {
@@ -887,7 +903,9 @@ type fakeVault struct {
 	valueErr map[secrets.EntryKind]error
 	puts     int
 	deleted  []string
-	saver    *fakeSaver
+	// deleteErr, when set, fails DeleteEntries with every entry left in place.
+	deleteErr error
+	saver     *fakeSaver
 }
 
 func (v *fakeVault) Probe(time.Duration) error { return v.probeErr }
@@ -941,6 +959,9 @@ func (v *fakeVault) Value(kind secrets.EntryKind) (string, error) {
 }
 
 func (v *fakeVault) DeleteEntries(names []string) error {
+	if v.deleteErr != nil {
+		return v.deleteErr
+	}
 	for _, n := range names {
 		v.deleted = append(v.deleted, n)
 		delete(v.entries, n)
@@ -1116,6 +1137,9 @@ func newWorld(t *testing.T) *world {
 		ID       int64  `json:"id"`
 		Slug     string `json:"slug"`
 		ClientID string `json:"client_id"`
+		Owner    struct {
+			ID int64 `json:"id"`
+		} `json:"owner"`
 	}](t, "github", "app_manifest_conversion.created.201.json")
 	// The recordings scrub the owner's login to a placeholder carrying < and >, which no Windows
 	// folder name can hold, and the fake keeps each repository's remote under its owner's folder.
@@ -1137,6 +1161,7 @@ func newWorld(t *testing.T) *world {
 			WebhookSecret: providers.NewCredential(creds.Webhook),
 			PEM:           providers.NewCredential(creds.PEM),
 			OwnerLogin:    owner,
+			OwnerID:       conv.Owner.ID,
 		},
 		repo:     repo,
 		taken:    map[string]bool{},
@@ -1177,11 +1202,9 @@ func newWorld(t *testing.T) *world {
 			"HOME":                 t.TempDir(),
 			"GH_TOKEN":             "inherited-gh-token-value",
 			"CLOUDFLARE_API_TOKEN": "inherited-cloudflare-token-value",
-			"GIT_CONFIG_COUNT":     "1",
-			"GIT_CONFIG_KEY_0":     "url." + w.gh.remotes + "/.insteadOf",
-			"GIT_CONFIG_VALUE_0":   "https://github.com/",
 		},
-		Git: func(context.Context) error { return w.gitErr },
+		GitConfigPairs: []childenv.Pair{{Key: "url." + w.gh.remotes + "/.insteadOf", Value: "https://github.com/"}},
+		Git:            func(context.Context) error { return w.gitErr },
 		NodeVersion: func(context.Context) (string, error) {
 			return w.node, w.nodeErr
 		},

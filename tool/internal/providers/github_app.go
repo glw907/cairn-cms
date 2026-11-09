@@ -103,6 +103,8 @@ type AppRecord struct {
 	WebhookSecret Credential
 	PEM           Credential
 	OwnerLogin    string
+	// OwnerID is the owning account's id, zero when the conversion names none.
+	OwnerID int64
 }
 
 // ConvertManifest trades the one-time code from the manifest redirect for the new App's
@@ -118,6 +120,7 @@ func (gh *GitHub) ConvertManifest(ctx context.Context, code string) (AppRecord, 
 		PEM           string `json:"pem"`
 		Owner         struct {
 			Login string `json:"login"`
+			ID    int64  `json:"id"`
 		} `json:"owner"`
 	}
 	if err := gh.call(ctx, http.MethodPost, "/app-manifests/"+url.PathEscape(code)+"/conversions", nil, &out); err != nil {
@@ -131,6 +134,7 @@ func (gh *GitHub) ConvertManifest(ctx context.Context, code string) (AppRecord, 
 		WebhookSecret: NewCredential(out.WebhookSecret),
 		PEM:           NewCredential(out.PEM),
 		OwnerLogin:    out.Owner.Login,
+		OwnerID:       out.Owner.ID,
 	}, nil
 }
 
@@ -338,20 +342,22 @@ func (gh *GitHub) ReadBackInstallation(ctx context.Context, appID, repoID int64)
 	return result, nil
 }
 
-// UserLogin returns the login of the account the credential acts for, through GET /user. The
-// credential must be the user token. A body without a login is an error, so a caller comparing
-// accounts never compares against an empty name.
-func (gh *GitHub) UserLogin(ctx context.Context) (string, error) {
+// User returns the login and account id of the account the credential acts for, through
+// GET /user. The credential must be the user token. A body without a login is an error, so a
+// caller comparing accounts never compares against an empty name; a body without an id leaves
+// id zero.
+func (gh *GitHub) User(ctx context.Context) (login string, id int64, err error) {
 	var out struct {
 		Login string `json:"login"`
+		ID    int64  `json:"id"`
 	}
 	if err := gh.getJSON(ctx, "/user", &out); err != nil {
-		return "", err
+		return "", 0, err
 	}
 	if out.Login == "" {
-		return "", errors.New("github: the signed-in user has no login")
+		return "", 0, errors.New("github: the signed-in user has no login")
 	}
-	return out.Login, nil
+	return out.Login, out.ID, nil
 }
 
 // findUserInstallation walks GET /user/installations for the one installation of appID.

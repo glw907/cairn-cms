@@ -48,9 +48,11 @@ func git(ctx context.Context, env map[string]string, dir string, extra []string,
 }
 
 // initRepository makes dir a git repository on branch, adds origin, commits everything with
-// the fixed identity, and returns the commit's SHA.
+// the fixed identity, and returns the commit's SHA. The empty --template copies no template
+// folder, git's default one included, whose config or info/attributes could add a filter that
+// the commit's add would run.
 func initRepository(ctx context.Context, env map[string]string, dir, branch, originURL string, c Commit) (string, error) {
-	if _, err := git(ctx, env, dir, nil, "init", "--quiet", "-b", branch); err != nil {
+	if _, err := git(ctx, env, dir, nil, "init", "--quiet", "--template=", "-b", branch); err != nil {
 		return "", err
 	}
 	if _, err := git(ctx, env, dir, nil, "remote", "add", "origin", originURL); err != nil {

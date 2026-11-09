@@ -94,9 +94,10 @@ for the whole run.
   pair, so a push to GitHub lands in a local bare repository. The git-config(1)
   manual says: "If GIT_CONFIG_COUNT is set to a positive number, all environment
   pairs GIT_CONFIG_KEY_<n> and GIT_CONFIG_VALUE_<n> up to that number will be
-  added ... The config pairs are zero-indexed." Setup appends its pairs after any
-  inherited count and raises the count to match, so an operator's own pairs
-  survive.
+  added ... The config pairs are zero-indexed." The harness hands its pair to the
+  setup `Config`'s test-only `GitConfigPairs`, which setup sends after its own
+  pairs. Setup reads no pair from its environment, so a pair an operator's shell
+  carries never reaches git.
 - PATH stubs stand in for `node` (reporting v24) and `npm`.
 
 ### A new direct require
@@ -139,9 +140,11 @@ its `otherDirectRequires` gains the entry in the task that adds the require.
   carries no state, so such a page can spend it: the runner's code exchange then fails
   and the tab goes back to the install page.
 - Setup runs `npm install --ignore-scripts`, and every git call it makes points
-  `core.hooksPath` at an empty folder, turns `core.fsmonitor` off, drops each variable
-  that points git at another repository, config, or program, and pushes with
-  `--no-verify`. The template extractor refuses any `.git` path. Those run while
+  `core.hooksPath` at an empty folder, turns `core.fsmonitor` off, starts with no
+  inherited variable whose name begins `GIT_` and no `SSH_ASKPASS`, and pushes with
+  `--no-verify`. Its `git init` passes an empty `--template`, so no template folder's
+  config or attributes reach the repository. The template extractor refuses any
+  `.git` path. Those run while
   the keyring holds the Cloudflare grant and the GitHub App key, and a dependency's
   install script or a planted hook would run with the owner's account. The install
   scripts the showcase's lockfile marks (esbuild, workerd, and `@parcel/watcher`, with

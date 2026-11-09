@@ -130,6 +130,36 @@ export function rewriteDevScript(pkg) {
   pkg.scripts.dev = 'node scripts/dev.mjs';
 }
 
+const LAY_IN_COMMAND = 'npm --prefix ../.. run theme:lay-in';
+
+// The showcase lays its theme in before these scripts run; a scaffolded site's theme is already in
+// `src/theme/`, and `scripts/theme/lay-in.mjs` exists only in cairn-cms. Each value is the script's
+// form in the template, after the lay-in step is stripped.
+const LAY_IN_SCRIPTS = {
+  predev: 'npm run build:admin-css',
+  prebuild: 'npm run build:admin-css',
+  precheck: 'npm run build:admin-css',
+  'pretest:unit': 'svelte-kit sync',
+};
+
+/**
+ * Strip the lay-in step from an emitted package.json's scripts in place, leaving each in its
+ * template form. Throws naming the script when it is not the exact string expected, so a change to
+ * a showcase script surfaces here rather than shipping a script that calls a file the site lacks.
+ * @param {{ scripts?: Record<string, string> }} pkg the parsed, emitted package.json
+ * @returns {void}
+ */
+export function stripLayIn(pkg) {
+  for (const [name, templateForm] of Object.entries(LAY_IN_SCRIPTS)) {
+    const expected = `${LAY_IN_COMMAND} && ${templateForm}`;
+    const current = pkg.scripts?.[name];
+    if (current !== expected) {
+      throw new Error(`bake: expected the showcase script "${name}" to be "${expected}", found "${current}"`);
+    }
+    pkg.scripts[name] = templateForm;
+  }
+}
+
 /**
  * Remove the showcase-only scripts and devDependencies from an emitted package.json object,
  * mutating it in place. Throws naming any expected key that is already missing, so a future
@@ -310,6 +340,7 @@ export async function bake({ to, engineSpec, devSpec }) {
   const packageJsonPath = path.join(emitted, 'package.json');
   const pkg = JSON.parse(await readFile(packageJsonPath, 'utf8'));
   rewriteDevScript(pkg);
+  stripLayIn(pkg);
   pruneShowcaseOnlyPackageFields(pkg);
   await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
   await writeFile(path.join(emitted, 'README.md'), SITE_README);

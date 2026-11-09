@@ -11,6 +11,7 @@ import {
   PRUNED_DEV_DEPENDENCIES,
   pruneShowcaseOnlyPackageFields,
   rewriteDevScript,
+  stripLayIn,
 } from './bake-template.mjs';
 
 // The showcase's placeholder backend call, which `cairn new` rewrites in a pushed scaffold
@@ -164,6 +165,26 @@ test('rewriteDevScript throws naming an unexpected showcase dev script', () => {
     () => rewriteDevScript(pkg),
     /expected the showcase dev script to be "vite dev", found "vite dev --host"/,
   );
+});
+
+test('stripLayIn leaves each script in its template form and throws naming an unexpected one', () => {
+  const lay = 'npm --prefix ../.. run theme:lay-in && ';
+  const pkg = {
+    scripts: {
+      predev: `${lay}npm run build:admin-css`,
+      prebuild: `${lay}npm run build:admin-css`,
+      precheck: `${lay}npm run build:admin-css`,
+      'pretest:unit': `${lay}svelte-kit sync`,
+    },
+  };
+  stripLayIn(pkg);
+  assert.deepEqual(pkg.scripts, {
+    predev: 'npm run build:admin-css',
+    prebuild: 'npm run build:admin-css',
+    precheck: 'npm run build:admin-css',
+    'pretest:unit': 'svelte-kit sync',
+  });
+  assert.throws(() => stripLayIn({ scripts: { ...pkg.scripts } }), /"predev"/);
 });
 
 // Plain bake() (emit-template-dir.mjs's entry point) keeps the emitted .gitignore under its

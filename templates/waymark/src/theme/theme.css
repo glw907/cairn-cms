@@ -89,15 +89,13 @@
    ============================================================================ */
 @import "../chassis/tokens.css";
 
-/* The editorial pairing, self-hosted via Fontsource variable packages so the real faces are the
-   default first paint (CLS-safe, the performance dimension) with no third-party font origin. These
-   `@import` rules must precede every other rule, so they sit directly under the chassis import.
-   Fontsource registers each family as "<Name> Variable"; the `--font-*` tokens below name them
-   exactly. Loading them here, not in the layout, means the editor preview frame links this same sheet
-   and gets the same faces (the parity rule). All three faces here need only the `wght` axis. */
-@import "@fontsource-variable/figtree/index.css";
-@import "@fontsource-variable/source-sans-3/index.css";
-@import "@fontsource-variable/source-code-pro/index.css";
+/* The editorial pairing, self-hosted from the woff2 files in `fonts/` so the real faces are the
+   default first paint (CLS-safe, the performance dimension) with no third-party font origin. This
+   `@import` must precede every other rule, so it sits directly under the chassis import. Each
+   family registers as "<Name> Variable"; the `--font-*` tokens below name them exactly. Loading
+   them here, not in the layout, means the editor preview frame links this same sheet and gets the
+   same faces (the parity rule). All three faces here need only the `wght` axis. */
+@import "./fonts/fonts.css";
 
 /* The light theme (default). DaisyUI 5 reads these role tokens at point of use,
    so every `bg-base-100` / `text-primary` utility and every component tracks them. */

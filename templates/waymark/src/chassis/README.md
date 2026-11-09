@@ -1,7 +1,8 @@
 # The chassis
 
 The boundary rule: **a theme is everything that isn't chassis.** `src/chassis/` holds the
-genre-free layer this site's theme (Waymark, living in `src/theme/`, plus the route files
+genre-free layer this site's theme (Waymark, edited in `themes/waymark/` and laid into the
+showcase's generated `src/theme/` by `npm run theme:lay-in`, plus the route files
 under `src/routes/` that SvelteKit's filesystem routing pins in place) mounts onto: the plumbing
 no site skips regardless of what it looks like, and the composition primitives a theme reaches for
 instead of hand-rolling one. Everything outside `src/chassis/` (the concrete adapter config,
@@ -168,11 +169,11 @@ differently named themes, or a second theme entirely, reuses this module unchang
 its config. With no `data-theme` on `<html>`, `resolveTheme` reads the root's computed
 `color-scheme`, so a dark-first theme needs no edit to `app.html`; a computed value other than
 exactly `light` or `dark` (`normal`, or `light dark`) leaves the system scheme to decide. This
-theme's config lives in `src/theme/theme-names.ts`, which `SiteHeader.svelte` imports. Two places
-cannot import it and change by hand with it: the inline script in `app.html` (the cookie name and
-the regex, which keeps naming both themes so a stale cookie left by a rename falls back to the
-system scheme) and the `name:` values of the two `@plugin "daisyui/theme"` blocks in `theme.css`.
-`theme-names.test.ts` fails when either drifts.
+theme's config lives in `src/theme/theme-names.ts`, which `SiteHeader.svelte` imports. The lay-in
+generates it, and the cookie regex in `app.html`'s inline script (which keeps naming both themes
+so a stale cookie left by a rename falls back to the system scheme), from the `colorModes` in the
+theme's `cairn-theme.json`. The `name:` values of the two `@plugin "daisyui/theme"` blocks in
+`theme.css` change by hand with it, and `scripts/theme/theme-names.test.mjs` fails when they drift.
 
 **The heading levers (`tokens.css`).** `--font-weight-heading` (default `600`, in `@theme`,
 generating the `font-heading` utility) and `--cairn-heading-case` (default `none`, a plain role in

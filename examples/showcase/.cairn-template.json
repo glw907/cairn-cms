@@ -17,6 +17,7 @@
     ".claude",
     "scripts",
     "README.md",
-    "src/content"
+    "src/content",
+    "src/theme"
   ]
 }

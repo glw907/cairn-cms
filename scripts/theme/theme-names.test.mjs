@@ -46,7 +46,7 @@ test('a missing marker throws, naming the marker and leaving the file alone', as
   }
 });
 
-test("Waymark's names leave the committed app.html and theme-names.ts byte-identical", async () => {
+test("Waymark's names leave the committed app.html byte-identical", async () => {
   const dir = await scratchSite();
   try {
     generateThemeNames(dir, WAYMARK);
@@ -54,17 +54,18 @@ test("Waymark's names leave the committed app.html and theme-names.ts byte-ident
       await readFile(path.join(dir, 'src/app.html'), 'utf8'),
       await readFile(path.join(SHOWCASE, 'src/app.html'), 'utf8'),
     );
-    assert.equal(
-      await readFile(path.join(dir, 'src/theme/theme-names.ts'), 'utf8'),
-      await readFile(path.join(SHOWCASE, 'src/theme/theme-names.ts'), 'utf8'),
-    );
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
 });
 
+test("Waymark's manifest names the two themes the generator is fed", async () => {
+  const manifest = JSON.parse(await readFile(path.join(SHOWCASE, '../../themes/waymark/cairn-theme.json'), 'utf8'));
+  assert.deepEqual(manifest.colorModes, WAYMARK);
+});
+
 test("Waymark's names match the two daisyUI theme blocks in its stylesheet", async () => {
-  const css = (await readFile(path.join(SHOWCASE, 'src/theme/theme.css'), 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = (await readFile(path.join(SHOWCASE, '../../themes/waymark/theme.css'), 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
   const names = [...css.matchAll(/@plugin\s+"daisyui\/theme"\s*\{[^}]*?\bname:\s*"([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(names.sort(), [WAYMARK.light, WAYMARK.dark].sort());
 });

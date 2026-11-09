@@ -14,6 +14,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const CLASSIFIER = resolve(fileURLToPath(import.meta.url), '../gate-tier.mjs');
+const LAY_IN = 'npm run theme:lay-in';
 
 /**
  * Turn the classifier's result into the legs to run.
@@ -64,6 +65,10 @@ export function runFastLane(range, { classify = classifyRange, run = runLeg } = 
     console.error(`fast-lane: ${plan.error}`);
     return 1;
   }
+  // The showcase's src/theme/ is generated from themes/waymark/, and a gate leg may read it, so the
+  // lane lays it in once before the first leg.
+  const layIn = run(LAY_IN);
+  if (layIn !== 0) return layIn;
   for (const line of plan.lines) {
     const code = run(line);
     if (code !== 0) return code;

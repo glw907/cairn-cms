@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { bake } from './bake-template.mjs';
 import { regenerateWorkerTypes } from './emit-template.mjs';
+import { layIn } from '../theme/lay-in.mjs';
 import { walk } from '../walk-files.mjs';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -73,14 +74,17 @@ export async function applyOverlay(sourceDir, overlayDir) {
 const SECRET_NAMES_ARGS = ['--env-file=.dev.vars.example'];
 
 /**
- * Compose the template tree (bake plus overlay) into a scratch directory, then regenerate its
- * Worker `Env` from the composed config.
- * @param {{ engineSpec: string, devSpec: string, overlayDir?: string }} options
+ * Compose the template tree (bake, the theme's lay-in, then the overlay) into a scratch directory,
+ * then regenerate its Worker `Env` from the composed config. The lay-in goes before the overlay so
+ * the overlay's files win over a theme's.
+ * @param {{ engineSpec: string, devSpec: string, overlayDir?: string, theme?: string }} options
+ *  `theme` is a directory name under `themes/`, `waymark` by default
  * @returns {Promise<string>} the scratch directory holding the composed tree
  */
-export async function composeTemplate({ engineSpec, devSpec, overlayDir = OVERLAY_DIR }) {
+export async function composeTemplate({ engineSpec, devSpec, overlayDir = OVERLAY_DIR, theme = 'waymark' }) {
   const scratch = await mkdtemp(path.join(tmpdir(), 'cairn-waymark-'));
   await bake({ to: scratch, engineSpec, devSpec });
+  layIn(path.join(repoRoot, 'themes', theme), scratch);
   await applyOverlay(scratch, overlayDir);
   await regenerateWorkerTypes(scratch, SECRET_NAMES_ARGS);
   return scratch;
@@ -88,16 +92,15 @@ export async function composeTemplate({ engineSpec, devSpec, overlayDir = OVERLA
 
 /**
  * Read every file in a tree into a path-keyed map, so two trees can be compared without shelling
- * out to git (which would only see files git already tracks). The template is text throughout, so
- * the utf8 decode is lossless; a binary asset entering the showcase would be compared through its
- * decoding rather than its bytes.
+ * out to git (which would only see files git already tracks). Contents are read as bytes, since a
+ * theme's fonts are binary and a utf8 decode would compare two different files as equal.
  * @param {string} root the directory to read
- * @returns {Promise<Map<string, string>>} relative path to file contents
+ * @returns {Promise<Map<string, Buffer>>} relative path to file contents
  */
 async function readTree(root) {
   const entries = new Map();
   for (const file of walk(root, () => true)) {
-    entries.set(path.relative(root, file), await readFile(file, 'utf8'));
+    entries.set(path.relative(root, file), await readFile(file));
   }
   return entries;
 }
@@ -115,7 +118,7 @@ export async function diffTrees(fresh, committed) {
   for (const [relativePath, content] of freshFiles) {
     if (!committedFiles.has(relativePath)) {
       differences.push(`missing from the repo: ${relativePath}`);
-    } else if (committedFiles.get(relativePath) !== content) {
+    } else if (!committedFiles.get(relativePath).equals(content)) {
       differences.push(`differs: ${relativePath}`);
     }
   }

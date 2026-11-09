@@ -18,7 +18,7 @@ The following list routes you to the right page for each situation.
    cairn doctor
    ```
 
-The following report comes from a run against a site that the setup command, `create-cairn-site`, had just deployed. Every line passed except one skip, which the sections after the report explain.
+The following report comes from a run against a site just after its first deploy. Every line passed except one skip, which the sections after the report explain.
 
 <!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/04-doctor-report.txt -->
 ```
@@ -59,9 +59,11 @@ Workers Logs has no sink failed.
 
 The report prints a title for each check and never a condition id. This page files each check under its condition id, a name such as `config.bindings-missing`, because the id is how the rest of cairn's diagnostics refer to the same problem. A check's title changes with its result, so a passing line and a failing line word the same check differently. Each section heading names the remedy. The following table maps each title to its section.
 
-A site that the setup command built is already wired for the bindings, logging, origin, and admin-mount checks, so those fail only after someone changes the site's code. The dependency check can still fail later as packages drift, with nothing customized.
+A site that `cairn new` built is already wired for the bindings, logging, origin, and admin-mount checks, so those fail only after someone changes the site's code. The dependency check can still fail later as packages drift, with nothing customized.
 
-Apart from fetching the public `robots.txt`, `cairn doctor` never runs the checks that need a deployed site or a credential. `cairn health` runs two of them, after you register the site with `cairn adopt`. No command runs the others yet. Each section says which case it is.
+Apart from fetching the public `robots.txt`, `cairn doctor` never runs the checks that need a deployed site or a credential. `cairn health` runs two of them, for a site in cairn's registry, which `cairn new` adds a site to and `cairn adopt` adds any other to. No command runs the others yet. Each section says which case it is.
+
+A site that `cairn new` made deploys through GitHub Actions. For such a site, the `cairn health` deploy check reads the latest deployment of the site's Worker, because such a site has no Workers Builds trigger to read. The check fails when the Worker has never deployed, and otherwise it reports when the latest deployment was made.
 
 ## Find a check by its title
 
@@ -118,7 +120,7 @@ An earlier version of cairn refused a form outside the admin when its `Origin` h
 
 ## Onboard the sending domain
 
-**`email.sender-not-onboarded`, a blocker.** `cairn health` confirms that the domain in your site's sign-in address has an enabled Cloudflare sending subdomain. Without one, the site can't send a sign-in email, and nobody besides the owner can sign in. [Own your domain](./own-your-domain.md#turn-on-sign-in-email) normally handles this step, and `cairn health` confirms that it held.
+**`email.sender-not-onboarded`, a blocker.** `cairn health` confirms that the domain in your site's sign-in address has an enabled Cloudflare sending subdomain. Without one, the site can't send a sign-in email, and nobody besides the owner can sign in. `cairn new` turns on sending for your domain, and `cairn health` confirms that it held.
 
 **Act:** run `npx wrangler email sending enable <domain>`, then `npx wrangler deploy`. The domain must match the site's configured sign-in sender.
 

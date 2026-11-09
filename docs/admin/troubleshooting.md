@@ -1,11 +1,11 @@
 # Troubleshoot a live site
 
-A cairn site writes a log record for every event that matters, and each symptom below names the event to look for. This page is for the owner of a live site who sees it do something wrong when no `cairn doctor` check names the problem. Each section gives what you see, what it means, and the log event that confirms the cause. A cause you can fix yourself comes with the fix. A cause that needs code changed says so and points a developer to the [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md).
+A cairn site writes a log record for every event that matters, and each symptom below names the event to look for. This page is for the owner of a live site made by `cairn new` who sees it do something wrong when no `cairn doctor` check names the problem. Each section gives what you see, what it means, and the log event that confirms the cause. A cause you can fix yourself comes with the fix. A cause that needs code changed says so and points a developer to the [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md).
 
 Two other pages cover problems at other moments:
 
 - If a `cairn doctor` check named a problem, read [Check that your site works](./is-it-working.md).
-- If a setup step failed or stopped before the site went live, read [Recover a setup that stopped](./setup-recovery.md).
+- If `cairn new` stopped before the site went live, read [Recover a setup that stopped](./setup-recovery.md).
 
 ## Read your site's logs
 
@@ -39,7 +39,7 @@ A third message points somewhere else. `That sign-in link didn’t work` covers 
 
 The logs stop at Cloudflare's acceptance. A link that Cloudflare accepted and then dropped or filtered looks like a success: an `auth.link.sent` record, which carries the ID Cloudflare returned, and no `auth.link.send_failed` after it. The site has no signal past that point. The default Cloudflare sender writes that record; a custom `send` logs for itself. If a person reports no link and the logs show one sent, ask them to check spam, and check the sending domain as the preceding list says.
 
-An owner who is locked out can get a fresh link from the computer that created the site, as [Sign in again](./create-your-site.md#sign-in-again) describes. Without that computer, a developer can add a recovery link directly in the `AUTH_DB` database. A row seeded that way confirms from any browser.
+An owner who is locked out requests a new link on the site's own sign-in page, as [Sign in again](./setup-recovery.md#sign-in-again) describes. If the email never arrives, a developer can add a recovery link directly in the `AUTH_DB` database. A row seeded that way confirms from any browser.
 
 **The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.sent`, `auth.link.send_failed`, and `auth.link.refused`.
 
@@ -66,6 +66,18 @@ If every admin page, the sign-in page included, shows the same branded error, th
 The **Publish all** button appears only when something is waiting to publish. Its absence usually means nothing is pending, or that you're inside an entry, where the button never shows. If an editor has saved work that hasn't gone live and the button is still missing from the main screen, the site couldn't read GitHub to count what is pending, and it hid the button rather than guess. Check the App the same way.
 
 **The log events:** `commit.failed` for an ordinary save and `publish.failed` for a publish. Their `reason` field is `conflict` in the ordinary case. Otherwise their `error` field carries what GitHub said. A `github.unreachable` record with `scope: 'shell'` is the case where the missing button means something is wrong.
+
+## A publish succeeds and the live site doesn't change
+
+**What you see:** an editor publishes, the admin confirms it, and the public site still shows the old content after several minutes.
+
+**What it means:** publishing commits to your GitHub repository, and a GitHub Actions job deploys each push. The commit worked, and the deploy didn't run or didn't finish. The site's logs don't record deploys, so this symptom has no log event. Work through these in order:
+
+1. Open the **Actions** tab of your repository on GitHub and look at the newest run. A failed run shows its failing step in the log. GitHub's own notification settings decide who is emailed about a failed run, and the admin doesn't show deploy status.
+2. If the newest run is missing, check whether the repository has used up its free Actions minutes. On GitHub's free plan, a private repository gets about 2,000 minutes a month, which covers roughly 650 deploys. Deploys stop until the month resets.
+3. Run `cairn health <site>`. For a site made by `cairn new`, the deploy check reads the latest deployment of your Worker. It fails when the Worker has never deployed, and otherwise it reports when the latest deployment was made. It doesn't compare that deployment with your newest commit, so a recent time doesn't prove that the latest publish went live. [Give cairn its credentials](./credentials.md) shows how to set up the CLI for it.
+
+A run that fails on a build error in the site's code needs a developer.
 
 ## Someone signs in and every screen refuses them
 

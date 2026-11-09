@@ -31,8 +31,8 @@ func (e ExtraField) GoString() string {
 }
 
 // GitHubRepo carries the identifiers the Node CLI persists under
-// "github.repo" once a site's repository exists (see createRepo in
-// packages/create-cairn-site/src/github/repo.mjs). Every other key under
+// "github.repo" once a site's repository exists (as the retired wizard's
+// createRepo did). Every other key under
 // "github.repo" lands in Extra rather than a typed field.
 type GitHubRepo struct {
 	// ID is the repository's GitHub id.

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// cairn-cms: the release bump. It turns the tree into the cut of one version: the three manifests,
+// cairn-cms: the release bump. It turns the tree into the cut of one version: the two manifests,
 // the lockfile's version lines, the CHANGELOG heading and its `Released` line, the MIGRATION-NOTES
 // heading and anchors, and the template pins and VERSION that `npm run emit:template` derives. The
-// eight files are exactly the set `check-stable-source.mjs` allows. Every new text is computed in
+// seven files are within the set `check-stable-source.mjs` allows. Every new text is computed in
 // memory and checked before any file is written, and a failed emit puts every written file back.
 //
 // Interface: `node scripts/release/bump.mjs <version> [--date YYYY-MM-DD]`. Exit 0 or 1; the last
@@ -15,7 +15,7 @@ import { checkVersion } from '../checks/check-version.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
-const MANIFESTS = ['package.json', 'packages/cairn-cms-dev/package.json', 'packages/create-cairn-site/package.json'];
+const MANIFESTS = ['package.json', 'packages/cairn-cms-dev/package.json'];
 const TEMPLATE_FILES = ['templates/waymark/package.json', 'templates/waymark/.claude/cairn/VERSION'];
 const WRITTEN = [...MANIFESTS, 'package-lock.json', 'CHANGELOG.md', 'MIGRATION-NOTES.md'];
 

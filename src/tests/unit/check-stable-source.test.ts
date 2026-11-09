@@ -25,7 +25,7 @@ function patchFor(file: string): string {
 interface World {
   head: string;
   origin: string;
-  next: [string, string, string];
+  next: [string, string];
   tagPresent: boolean;
   raw: string[];
   diffs: Record<string, string>;
@@ -36,7 +36,7 @@ function world(): World {
   return {
     head: 'abc123',
     origin: 'abc123',
-    next: ['0.99.0-rc.2', '0.99.0-rc.2', '0.99.0-rc.2'],
+    next: ['0.99.0-rc.2', '0.99.0-rc.2'],
     tagPresent: true,
     raw: [...RAW],
     diffs: {},
@@ -45,7 +45,7 @@ function world(): World {
 }
 
 function check(w: World) {
-  const packages = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev', 'create-cairn-site'];
+  const packages = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
   return checkStableSource((cmd, args) => {
     const key = [cmd, ...args].join(' ');
     const ok = (stdout = '') => ({ status: 0, stdout });
@@ -145,7 +145,7 @@ describe('check-stable-source', () => {
       entry('scripts/gate/legs.mjs'),
       entry('src/tests/unit/gate-x.test.ts', 'A'),
       entry('examples/showcase/e2e/golden-path.spec.ts'),
-      entry('packages/create-cairn-site/test/x.test.mjs', 'D'),
+      entry('packages/cairn-cms-dev/test/x.test.ts', 'D'),
       entry('docs/STATUS.md'),
       entry('BACKLOG.md'),
       entry('ROADMAP.md'),
@@ -197,7 +197,7 @@ describe('check-stable-source', () => {
 
   it('fails when next differs across the packages', () => {
     const w = world();
-    w.next = ['0.99.0-rc.2', '0.99.0-rc.2', '0.99.0-rc.1'];
+    w.next = ['0.99.0-rc.2', '0.99.0-rc.1'];
     expect(check(w).ok).toBe(false);
   });
 

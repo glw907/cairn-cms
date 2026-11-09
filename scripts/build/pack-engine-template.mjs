@@ -6,7 +6,7 @@
 import { cp, mkdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { composeTemplate } from '../../packages/create-cairn-site/scripts/emit-template-dir.mjs';
+import { composeTemplate } from './emit-template-dir.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 

@@ -73,21 +73,12 @@ jobs:
       - name: Report retried tests
         if: always()
         run: node scripts/ci/retries-notice.mjs "$RUNNER_TEMP/vitest-node-retries.json" "$RUNNER_TEMP/vitest-component-retries.json"
-      # Two node:test suites vitest does not reach. The emitter's own tests were never wired into
-      # any workflow; the create-cairn-site package is new. Both gate the scaffolded output, so a
-      # break here ships a broken first-run experience while every vitest project stays green.
+      # Two node:test suites vitest does not reach. The emitter's own tests, and the launcher's:
+      # the launcher test builds the Go tool and packs it into a platform package, so it needs Go,
+      # which the setup-go step above supplies. Both gate the scaffolded output, so a break here
+      # ships a broken first-run experience while every vitest project stays green.
       - run: npm run test:emit
-      # Two of the create-cairn-site tests read the baked `template/`, which is gitignored and
-      # produced by `prepack`. Bake it first, or those two fail on a clean checkout while passing
-      # on any machine that has run the CLI. The step names the engine's version for both specs,
-      # as create-site.yml does. The bake's defaults (`prepack`) take caret specs from each
-      # package's own version, which match the engine's while the packages share a version.
-      - name: Bake the create-cairn-site template
-        working-directory: packages/create-cairn-site
-        run: |
-          VERSION="$(node -p "require('../../package.json').version")"
-          node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
-      - run: npm --prefix packages/create-cairn-site test
+      - run: npm test -w packages/create-cairn-site
       - run: npm run check:package
       # The cairn-audit pack smoke test: a real install of the packed engine in an empty directory,
       # with the optional daisyUI and Tailwind peers absent and then present. Needs the registry.

@@ -16,7 +16,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const CONDITIONS_JS = 'dist/diagnostics/conditions.js';
-const SITE_CONFIG_PATH_SOURCE = 'packages/create-cairn-site/src/site-config-path.json';
+const SITE_CONFIG_PATH_SOURCE = 'scripts/build/site-config-path.json';
 
 export const CONDITIONS_OUT = 'tool/internal/spine/conditions.json';
 export const SITE_CONFIG_PATH_OUT = 'tool/internal/doctor/site-config-path.json';

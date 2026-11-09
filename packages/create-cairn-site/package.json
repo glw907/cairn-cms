@@ -1,7 +1,7 @@
 {
   "name": "create-cairn-site",
   "version": "0.99.0-rc.4",
-  "description": "Create a cairn CMS site: scaffold a branded Waymark starter and run it locally.",
+  "description": "Set up a cairn CMS site: installs the cairn command line tool and runs cairn new.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -17,16 +17,9 @@
   },
   "files": [
     "bin.mjs",
-    "src",
-    "!src/**/*.test.mjs",
-    "template",
     "README.md"
   ],
   "scripts": {
-    "test": "node --test --import ./test/no-desktop.mjs \"src/*.test.mjs\" \"src/github/*.test.mjs\" \"src/cloudflare/*.test.mjs\" \"src/console/*.test.mjs\" \"scripts/*.test.mjs\" \"test/*.test.mjs\"",
-    "prepack": "node scripts/bake-template.mjs --to template"
-  },
-  "dependencies": {
-    "@clack/prompts": "^1.8.1"
+    "test": "node --test test/launcher.test.mjs"
   }
 }

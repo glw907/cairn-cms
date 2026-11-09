@@ -22,6 +22,8 @@ var wantPages = []string{
 	"cairn-logs.1",
 	"cairn-adopt.1",
 	"cairn-adopt-list.1",
+	"cairn-new.1",
+	"cairn-new-status.1",
 	"cairn-auth.1",
 	"cairn-auth-set.1",
 	"cairn-auth-list.1",

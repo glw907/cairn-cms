@@ -1,80 +1,23 @@
 package spine
 
 import (
-	"os"
-	"path/filepath"
-	"regexp"
 	"slices"
-	"strings"
 	"testing"
-
-	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
-var (
-	catalogueRowKey = regexp.MustCompile(`^\s*'([a-z0-9-]+)':\s*\{`)
-	catalogueKind   = regexp.MustCompile(`kind:\s*'wait'`)
-)
+// TestParkCodesAreAllListed holds the park vocabulary closed: every ParkCode constant declared in
+// park.go is in parkCodes, which ReasonCodes publishes, and nothing else is, so a code added as a
+// constant but left out of the list never reaches the reason catalogue.
+func TestParkCodesAreAllListed(t *testing.T) {
+	declared := declaredConsts(t, "park.go", "ParkCode")
 
-// waitCodesIn scans a catalogue.mjs file's ROWS object for every row whose kind is "wait",
-// returning the row's key: the vocabulary a ParkCode names.
-func waitCodesIn(path string) (map[string]bool, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	found := make(map[string]bool)
-	var currentCode string
-	for line := range strings.SplitSeq(string(data), "\n") {
-		if m := catalogueRowKey.FindStringSubmatch(line); m != nil {
-			currentCode = m[1]
-			continue
-		}
-		if catalogueKind.MatchString(line) && currentCode != "" {
-			found[currentCode] = true
-		}
-	}
-	return found, nil
-}
-
-// TestParkCodesMatchWaitKindCatalogueRows reads the cloudflare and github chapter error
-// catalogues through providers.RepoRoot and asserts the set of "wait"-kind codes equals the
-// ParkCode constants.
-func TestParkCodesMatchWaitKindCatalogueRows(t *testing.T) {
-	root, err := providers.RepoRoot()
-	if err != nil {
-		t.Fatalf("providers.RepoRoot: %v", err)
-	}
-
-	catalogues := []string{
-		filepath.Join(root, "packages", "create-cairn-site", "src", "cloudflare", "catalogue.mjs"),
-		filepath.Join(root, "packages", "create-cairn-site", "src", "github", "catalogue.mjs"),
-	}
-
-	found := make(map[string]bool)
-	for _, path := range catalogues {
-		rows, err := waitCodesIn(path)
-		if err != nil {
-			t.Fatalf("scan %s: %v", path, err)
-		}
-		for code := range rows {
-			found[code] = true
-		}
-	}
-
-	var nodeCodes []string
-	for c := range found {
-		nodeCodes = append(nodeCodes, c)
-	}
-	slices.Sort(nodeCodes)
-
-	var goCodes []string
+	var listed []string
 	for _, c := range parkCodes {
-		goCodes = append(goCodes, string(c))
+		listed = append(listed, string(c))
 	}
-	slices.Sort(goCodes)
+	slices.Sort(listed)
 
-	if !slices.Equal(nodeCodes, goCodes) {
-		t.Fatalf("wait-kind code sets differ:\nnode: %v\ngo:   %v", nodeCodes, goCodes)
+	if !slices.Equal(declared, listed) {
+		t.Fatalf("declared ParkCode constants and parkCodes differ:\ndeclared: %v\nlisted:   %v", declared, listed)
 	}
 }

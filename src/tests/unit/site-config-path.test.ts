@@ -24,7 +24,7 @@ function composed(editor?: CairnAdapter['editor']) {
 describe('the site-config path', () => {
   it('defaults to the path the scaffold bakes and the doctor embeds', () => {
     const canonical = JSON.parse(
-      readFileSync(resolve(import.meta.dirname, '../../../packages/create-cairn-site/src/site-config-path.json'), 'utf8'),
+      readFileSync(resolve(import.meta.dirname, '../../../scripts/build/site-config-path.json'), 'utf8'),
     ) as { path: string };
     expect(DEFAULT_SITE_CONFIG_PATH).toBe(canonical.path);
     expect(composed().siteConfigPath).toBe(canonical.path);

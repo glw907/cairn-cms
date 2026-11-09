@@ -1,8 +1,7 @@
 # Fixture corpus
 
-This directory holds the literal API response bodies `packages/create-cairn-site/test/fake-cloudflare.mjs` and
-`packages/create-cairn-site/test/fake-github.mjs` play back, extracted out of those two files so a second reader can load
-the same captured bodies by path. One file per captured body, named
+This directory holds the literal API response bodies the retired Node wizard's two fakes (`fake-cloudflare.mjs` and
+`fake-github.mjs`) played back, extracted out of those two files so any reader can load the captured bodies by path. One file per captured body, named
 `<endpoint-slug>.<variant>.json`, grouped under `cloudflare/` or `github/`.
 
 Each file is language-neutral: a plain JSON object, readable by Node or by any other runtime,
@@ -30,7 +29,7 @@ names that comment's file and line in the fake, and `note` says so.
 
 Nothing about this corpus assumes a JavaScript reader. `provenance` and `body` are plain JSON,
 so the `tool/` Go module's tests read these files directly off disk by path, the same way
-`packages/create-cairn-site/test/fake-server.mjs`'s `loadFixture` helper does for the two Node fakes. A reader needs only
+the retired Node fakes' `loadFixture` helper did. A reader needs only
 `status` and `body`; `provenance` is documentation, not part of the request/response contract.
 
 ## No real identifiers
@@ -73,8 +72,6 @@ sent it, because those are the parts a fixture exists to pin.
 ## When this corpus moves
 
 The corpus lives under `tool/testdata/fixtures/`, inside the Go module, so it leaves the
-repository with the tool. The day the tool does, the two Node fakes in
-`packages/create-cairn-site/test/` lose their path to it and need a copy or a package of their
-own. The tool's tests are the reason the corpus exists as data rather than as inline JavaScript
-object literals: a Go test cannot import a `.mjs` module, and the two fakes already prove these
-bodies match the real platforms.
+repository with the tool. The tool's tests are the reason the corpus exists as data rather than as inline JavaScript
+object literals: a Go test cannot import a `.mjs` module, and the bodies were captured from the
+real platforms.

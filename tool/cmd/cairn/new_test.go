@@ -148,19 +148,19 @@ func TestNewChoosesItsLaneByTheTerminal(t *testing.T) {
 	}
 }
 
-// TestNewIsHiddenUntilItShips keeps cairn new out of the root help and the completions.
-func TestNewIsHiddenUntilItShips(t *testing.T) {
+// TestNewIsListedInRootHelp keeps cairn new in the root help and the completions.
+func TestNewIsListedInRootHelp(t *testing.T) {
 	root := newRootCmd(mustDeps(t))
 	cmd, _, err := root.Find([]string{"new"})
 	if err != nil || cmd.Name() != "new" {
 		t.Fatalf("Find(new) = %v, %v", cmd, err)
 	}
-	if !cmd.Hidden {
-		t.Error("cairn new is not Hidden; it ships in pass P6")
+	if cmd.Hidden {
+		t.Error("cairn new is Hidden; the launcher sends every owner to it")
 	}
 	stdout, _, _ := runNewTree(t, "--help")
-	if strings.Contains(stdout, "cairn new") || strings.Contains(stdout, "  new ") {
-		t.Errorf("root help lists new:\n%s", stdout)
+	if !strings.Contains(stdout, "new ") {
+		t.Errorf("root help does not list new:\n%s", stdout)
 	}
 }
 

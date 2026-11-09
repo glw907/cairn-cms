@@ -71,69 +71,14 @@ Readiness checklist:
 - [x] **The admin reads as an idiomatic exemplar**: the admin idiomatic re-expression initiative is done
   (the admin sweep, the starter-template fold, and the docs phase), so the surface a developer copies is
   native, not bespoke, and the developer-facing design vocabulary is a documented, versioned seam.
-- [ ] **`create-cairn-site` ships**, so a new consumer starts from a scaffold rather than hand-copying the
-  showcase. (Weigh whether this gates 1.0 or rides the first 1.x.) Running as Passes T1 to T3 under the
-  admin-setup umbrella. **Pass T1 is complete**: the package, the dry-run action frame, the state
-  store, pre-flight, the pack-time template bake, the substitution pass, the wired command, and a CI
-  gate that builds the site the CLI actually produces. **Pass T2 is complete**: the GitHub chapter
-  (manifest-first own-App creation, one-trip install and authorize, repo create with coverage
-  verify, the no-git-binary push, the resume frame with `--start-over`, the dev shim making bare
-  `npm run dev` reach the local admin), proven by a recorded live e2e on a personal account and a
-  scratch org. **Pass T3 is complete**: the Cloudflare chapter, which deploys the site to the
-  admin's own free `workers.dev` hostname, provisions and migrates both D1 databases and the R2
-  bucket from an id-less config, moves the GitHub App's key out of local state into a Worker
-  secret, and seeds a bootstrap sign-in so the first login is one click with no email. It also
-  writes the App's real identity into the scaffold before the push, so the repository is born able
-  to publish. **Pass T4a is complete**: the domain half of chapter 2, token-prefill, zone create
-  or adopt, the DNS carry-over gate that preserves MX priority, nameserver delegation with
-  park-and-resume, and a rollback-safe custom-hostname cutover, proven end to end against a live
-  scratch domain. **Pass T4b is complete**: the email chapter and the money framing, sending a
-  site's own sign-in mail once the owner opts in. **Pass T4c is complete**: Workers Builds
-  connect, a trigger bound to the site's existing Worker, and deploy-config reconciliation,
-  closing the silent `PUBLIC_ORIGIN` reconciliation defect through an admin-attributed `base_tree`
-  commit, with the first Builds deploy watched to `success` end to end against a live scratch site
-  (the account's existing 907-life Builds usage was left untouched throughout). **T4d shipped the
-  localhost console and T5 split, leaving one open item: T5a'**, the browser door's public-repo
-  half (the public template repo, the Deploy button, C3 `--template` compatibility), which comes
-  after the release. **Pass D is done** (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-08-14-pass-d-docs-reset.md`,
-  post-mortem appended there); the tool is tagged at the stable cut, and the template repo and
-  Deploy button come after the release.
-
-  **T5 split at execution** (Geoff, 2026-08-13). **T5a is done**: the sync script that generates the
-  template repo wholesale from the bake plus an overlay, its GitHub Actions wiring (a release job,
-  a manual dispatch, and a weekly drift cron), a build gate that proves the tree the sync would
-  push actually builds, and the deploy guide's three-door framing. **T5a' waits for the release**:
-  the public repo, its first sync, the live button spike, the spike-derived overlay content and
-  completion checklist, and the C3 `--template` verification. The reason is a finding, not a
-  scheduling preference: the bake emits the showcase's current tree while the emitted engine spec
-  resolves to the last published version, so a template synced today imports engine symbols the
-  registry does not serve. The release resolves it by definition, and the template repo follows it.
-
-  **Why the console is its own pass** (Geoff, 2026-08-11): it was bundled with email because the
-  email chapter was assumed to have a long wait worth watching, and the research found that
-  onboarding a Cloudflare-DNS domain takes minutes. The wait that earns a console is chapter 2's
-  nameserver delegation, which can run for hours, so the console attaches to no single chapter and
-  bundling it with email was adjacency rather than design. It sits after Builds because it improves
-  a flow that already works through terminal parks, where Builds closed a real capability gap
-  including the silent `PUBLIC_ORIGIN` reconciliation defect. T4c, now shipped, added two inputs
-  to the console's own brief: the build watch as a second long wait worth rendering, and the grown
-  fake-server surface its plumbing extraction must now cover (recorded in the T4c spec's own "What
-  follows" section, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-12-create-cairn-site-t4c-design.md`). The T4a
-  spec carries the T4b and T4c briefs:
-  [`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-11-create-cairn-site-t4a-design.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-11-create-cairn-site-t4a-design.md),
-  and the banked research behind the split is
-  [`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4b-email-console-cost-research.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4b-email-console-cost-research.md).
-
-  **The baseline walk is recorded** at
-  [`docs/internal/2026-08-unagented-setup-baseline.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-unagented-setup-baseline.md).
-  It measured the path no one had measured, the tutorial's `wrangler`-plus-dashboard setup walked cold,
-  since every site so far was provisioned by an agent holding account-wide access (Geoff, 2026-08-05,
-  the harvest sitting). Geoff first ruled he would walk it himself, then revised that the same day: a
-  persona agent run several times fresh from several vantage points beats one human walk, because
-  independent runs buy agreement. Five blind walks ran; their findings are triaged in the friction log,
-  and the documentation half is Pass D's work list.
-  **`@glw907/cairn-cms-dev` must publish in the same cut as the tool**: a scaffolded site cannot build
-  without it, and the bake refuses to run while it sits unpublished at `0.0.0`.
+- [ ] **`cairn new` ships**, so a new consumer starts from one command rather than hand-copying the
+  showcase. The Go tool's `cairn new` replaces the retired JavaScript wizard (cairn-setup initiative,
+  passes P1 to P6): one browser approval chain, a terminal view and an agent lane, the standard starter
+  set, and `npm create cairn-site` as a thin launcher over the prebuilt binary. The command is shown
+  as of P6; the release waits on the tooling brainstorm's gates, then on the real-account recording leg
+  and the first publish of the six platform packages (`cairn-releasing`, "The launcher and its platform
+  packages"). **`@glw907/cairn-cms-dev` must publish in the same cut as the tool**: a scaffolded site
+  cannot build without it. The wizard's history (Passes T1 to T5, Pass D) is at the `pre-agent-first` tag.
 - [ ] **The core-feature roadmap has landed** to the point the author opens the project up: the intro's
   "closely held until the core lands" condition is the same condition as 1.0. Named contents (Geoff,
   2026-08-01): entry history, revert, and public preview for a non-editor, all three ratified as

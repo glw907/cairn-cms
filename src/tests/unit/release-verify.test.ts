@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { verify, untar, diffTrees, judgeDiffs } from '../../../scripts/release/verify.mjs';
 
-const NAMES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev', 'create-cairn-site'];
+const NAMES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/release-verify/${name}`, import.meta.url));
 const RC2_RC3 = JSON.parse(fixture('rc2-rc3.json').toString('utf8'));
 
@@ -29,11 +29,6 @@ describe('judgeDiffs on the captured rc.2 to rc.3 diffs', () => {
     expect(errors.join('\n')).toContain('dist/admin/EditPage.svelte');
   });
 
-  it('fails create-cairn-site, naming a source path', () => {
-    const { errors } = judgeDiffs('create-cairn-site', RC2_RC3['create-cairn-site']);
-    expect(errors.join('\n')).toContain('src/cloudflare/deploy.mjs');
-  });
-
   it('passes the dev package, whose only change is the version', () => {
     expect(judgeDiffs('@glw907/cairn-cms-dev', RC2_RC3['@glw907/cairn-cms-dev']).errors).toEqual([]);
   });
@@ -53,25 +48,9 @@ describe('diffTrees and judgeDiffs on a synthetic cut', () => {
     'MIGRATION-NOTES.md': '# Notes\n\n## 0.99.0\n\nSee [log](./CHANGELOG.md#0990).\n'
   };
 
-  it('passes edits to the version, template pins, VERSION, headings, Released line and anchor', () => {
+  it('passes edits to the version, headings, Released line and anchor', () => {
     const engine = judgeDiffs('@glw907/cairn-cms', diffTrees(tree(engineBefore), tree(engineAfter)));
     expect(engine.errors).toEqual([]);
-    const create = judgeDiffs(
-      'create-cairn-site',
-      diffTrees(
-        tree({
-          'package.json': '{\n  "version": "0.99.0-rc.4"\n}\n',
-          'template/package.json': '{\n  "devDependencies": {\n    "@glw907/cairn-cms": "^0.99.0-rc.4"\n  }\n}\n',
-          'template/.claude/cairn/VERSION': '0.99.0-rc.4\n'
-        }),
-        tree({
-          'package.json': '{\n  "version": "0.99.0"\n}\n',
-          'template/package.json': '{\n  "devDependencies": {\n    "@glw907/cairn-cms": "^0.99.0"\n  }\n}\n',
-          'template/.claude/cairn/VERSION': '0.99.0\n'
-        })
-      )
-    );
-    expect(create.errors).toEqual([]);
   });
 
   it('fails a changed source line, an added file, and a reordered file', () => {
@@ -118,10 +97,10 @@ describe('verify', () => {
   });
 
   it('fails a prerelease with gate behind on one package', async () => {
-    const d = deps('0.99.0-rc.4', { tags: { 'create-cairn-site': { gate: '0.99.0-rc.3' } } });
+    const d = deps('0.99.0-rc.4', { tags: { '@glw907/cairn-cms-dev': { gate: '0.99.0-rc.3' } } });
     const r = await verify(d, { version: '0.99.0-rc.4' });
     expect(r.ok).toBe(false);
-    expect(r.errors).toContain('create-cairn-site: gate holds 0.99.0-rc.3, expected 0.99.0-rc.4');
+    expect(r.errors).toContain('@glw907/cairn-cms-dev: gate holds 0.99.0-rc.3, expected 0.99.0-rc.4');
   });
 
   it('fails a missing provenance attestation', async () => {
@@ -154,9 +133,7 @@ describe('verify', () => {
         [`${reg}/@glw907/cairn-cms-dev/-/cairn-cms-dev-0.99.0-rc.2.tgz`]: rc2,
         [`${reg}/@glw907/cairn-cms-dev/-/cairn-cms-dev-0.99.0.tgz`]: rc3,
         [`${reg}/@glw907/cairn-cms/-/cairn-cms-0.99.0-rc.2.tgz`]: cut('0.99.0-rc.2'),
-        [`${reg}/@glw907/cairn-cms/-/cairn-cms-0.99.0.tgz`]: cut('0.99.0'),
-        [`${reg}/create-cairn-site/-/create-cairn-site-0.99.0-rc.2.tgz`]: cut('0.99.0-rc.2'),
-        [`${reg}/create-cairn-site/-/create-cairn-site-0.99.0.tgz`]: cut('0.99.0')
+        [`${reg}/@glw907/cairn-cms/-/cairn-cms-0.99.0.tgz`]: cut('0.99.0')
       }
     });
     const r = await verify(d, { version: root, from: '0.99.0-rc.2' });

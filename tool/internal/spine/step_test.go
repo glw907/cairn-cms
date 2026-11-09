@@ -1,109 +1,70 @@
 package spine
 
 import (
-	"os"
-	"path/filepath"
-	"regexp"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"slices"
-	"strings"
+	"strconv"
 	"testing"
-
-	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
-// recordStepLiteral matches a "step" object key holding a quoted literal, the shape every real
-// record write uses (an updateSite or saveSite call's argument object).
-var recordStepLiteral = regexp.MustCompile(`step:\s*'([a-z0-9-]+)'`)
-
-// constStepAssign matches a computed local named step, the second real record-write shape: a
-// hop that picks one of a small set of literals for the step it is about to persist
-// (github/chapter.mjs's `const step = resumeStep === 'repo-created' ? 'repo-created' :
-// 'installed';`).
-var constStepAssign = regexp.MustCompile(`const step = `)
-
-// quotedLiteral matches any single-quoted string literal on a line.
-var quotedLiteral = regexp.MustCompile(`'([a-z0-9-]+)'`)
-
-// bareStepUpdateSite matches an updateSite (or saveSite) call passed the step local by shorthand,
-// the form that turns a `const step = ...` assignment into a real record write rather than a
-// value that is only read or logged.
-var bareStepUpdateSite = regexp.MustCompile(`(updateSite|saveSite)\([^)]*\{\s*step[,}]`)
-
-// recordStepLiteralsUnder scans every non-test .mjs file under root for the record's "step"
-// writes. The scope excludes two shapes that also match a naive "step: '...'" grep but name no
-// record step: a chapterError context object (browser-step-abandoned's "step" key names
-// where a browser flow was abandoned, never persisted to a record) and a comment quoting a step
-// name for exposition. Both are recognized by the same line carrying "chapterError(" or a "//"
-// or block-comment-continuation prefix ("*" or "/*"); nothing under this package's test data
-// uses either shape for a real write. A third shape, a computed local named step whose literals
-// are only counted when the same file also passes that local to updateSite or saveSite by
-// shorthand, covers a hop that picks its step from a small set of literals rather than writing
-// one inline.
-func recordStepLiteralsUnder(root string) (map[string]bool, error) {
-	found := make(map[string]bool)
-	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
+// declaredConsts returns the string value of every constant of type typeName declared in file,
+// read from the source rather than the compiled sets, so a constant a set forgot is caught.
+func declaredConsts(t *testing.T, file, typeName string) []string {
+	t.Helper()
+	parsed, err := parser.ParseFile(token.NewFileSet(), file, nil, 0)
+	if err != nil {
+		t.Fatalf("parse %s: %v", file, err)
+	}
+	var values []string
+	for _, decl := range parsed.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.CONST {
+			continue
 		}
-		if d.IsDir() || !strings.HasSuffix(path, ".mjs") || strings.Contains(path, ".test.") {
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		content := string(data)
-		hasBareStepWrite := bareStepUpdateSite.MatchString(content)
-		for line := range strings.SplitSeq(content, "\n") {
-			trimmed := strings.TrimSpace(line)
-			if strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "*") ||
-				strings.HasPrefix(trimmed, "/*") || strings.Contains(line, "chapterError(") {
+		for _, spec := range gen.Specs {
+			vs, ok := spec.(*ast.ValueSpec)
+			if !ok {
 				continue
 			}
-			for _, m := range recordStepLiteral.FindAllStringSubmatch(line, -1) {
-				found[m[1]] = true
+			ident, ok := vs.Type.(*ast.Ident)
+			if !ok || ident.Name != typeName || len(vs.Values) != 1 {
+				continue
 			}
-			if hasBareStepWrite && constStepAssign.MatchString(line) {
-				for _, m := range quotedLiteral.FindAllStringSubmatch(line, -1) {
-					found[m[1]] = true
-				}
+			lit, ok := vs.Values[0].(*ast.BasicLit)
+			if !ok || lit.Kind != token.STRING {
+				continue
 			}
+			value, err := strconv.Unquote(lit.Value)
+			if err != nil {
+				t.Fatalf("unquote %s: %v", lit.Value, err)
+			}
+			values = append(values, value)
 		}
-		return nil
-	})
-	return found, err
+	}
+	slices.Sort(values)
+	return values
 }
 
-// TestStepConstantsMatchNodeRecordSteps reads packages/create-cairn-site/src through
-// providers.RepoRoot and asserts the record-step literal set the Node CLI writes equals the Step
-// constants, so a step the Node side adds or renames fails here before it fails silently at
-// runtime.
-func TestStepConstantsMatchNodeRecordSteps(t *testing.T) {
-	root, err := providers.RepoRoot()
-	if err != nil {
-		t.Fatalf("providers.RepoRoot: %v", err)
-	}
-	src := filepath.Join(root, "packages", "create-cairn-site", "src")
+// TestStepConstantsAreAllRegistered holds the record-step vocabulary closed: every Step constant
+// declared in step.go is a known step (allSteps) or a setup step, and nothing else is, so a
+// constant left out of both lists fails here instead of reading back as unknown from a record
+// on disk.
+func TestStepConstantsAreAllRegistered(t *testing.T) {
+	declared := declaredConsts(t, "step.go", "Step")
 
-	found, err := recordStepLiteralsUnder(src)
-	if err != nil {
-		t.Fatalf("scan %s: %v", src, err)
-	}
-
-	var nodeSteps []string
-	for s := range found {
-		nodeSteps = append(nodeSteps, s)
-	}
-	slices.Sort(nodeSteps)
-
-	var goSteps []string
+	var registered []string
 	for s := range allSteps {
-		goSteps = append(goSteps, string(s))
+		registered = append(registered, string(s))
 	}
-	slices.Sort(goSteps)
+	for _, s := range setupSteps {
+		registered = append(registered, string(s))
+	}
+	slices.Sort(registered)
 
-	if !slices.Equal(nodeSteps, goSteps) {
-		t.Fatalf("record-step literal sets differ:\nnode: %v\ngo:   %v", nodeSteps, goSteps)
+	if !slices.Equal(declared, registered) {
+		t.Fatalf("declared Step constants and registered steps differ:\ndeclared:   %v\nregistered: %v", declared, registered)
 	}
 }
 

@@ -66,9 +66,9 @@ describe('preflight', () => {
   });
 
   it('refuses a version already published on one package', () => {
-    const r = check(world({ published: { 'create-cairn-site': ['0.98.0', '0.99.0'] } }));
+    const r = check(world({ published: { '@glw907/cairn-cms-dev': ['0.98.0', '0.99.0'] } }));
     expect(r.ok).toBe(false);
-    expect(r.errors).toEqual([expect.stringContaining('create-cairn-site already has 0.99.0')]);
+    expect(r.errors).toEqual([expect.stringContaining('@glw907/cairn-cms-dev already has 0.99.0')]);
   });
 
   it('refuses when npm view fails, instead of reading nothing as unpublished', () => {

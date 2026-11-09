@@ -16,7 +16,7 @@ import {
   scanTree,
 } from '../../../scripts/checks/transcript-blocks.mjs';
 
-const FIXTURES_DIR = 'packages/create-cairn-site/test/fixtures/transcripts';
+const FIXTURES_DIR = 'tool/testdata/transcripts';
 
 describe('renderTranscript: control characters', () => {
   it('applies carriage return as a column reset, letting later writes overwrite earlier ones', () => {

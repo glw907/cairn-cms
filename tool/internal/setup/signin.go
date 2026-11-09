@@ -23,7 +23,7 @@ const tokenTTL = 10 * time.Minute
 const signInPoll = 5 * time.Second
 
 // The sign-in batch, as one D1 transaction: the wizard's three statements
-// (packages/create-cairn-site/src/cloudflare/bootstrap.mjs) with the engine's issueToken sweep
+// (the retired wizard's bootstrap step) with the engine's issueToken sweep
 // (src/lib/auth/store.ts). The owner row is written only into an empty editor table, and the
 // token row only for an address the table holds. The token row carries no nonce_hash, so it is
 // unbound and any browser can confirm it, the path the engine keeps for a hand-seeded row.

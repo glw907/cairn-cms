@@ -11,7 +11,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
-// delegationCheck ports checkDelegation (packages/create-cairn-site/src/cloudflare/zone.mjs):
+// delegationCheck checks delegation:
 // it compares the domain's actual nameservers against the pair Cloudflare assigned this account
 // at provisioning, then, once they match, reads the zone's activation state.
 type delegationCheck struct{}

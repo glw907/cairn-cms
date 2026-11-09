@@ -61,7 +61,7 @@ func assertGitHubReason(t *testing.T, err error, wantStatus int, wantReason Reas
 // TestHeadSHADecodesSuccess and TestFileAtRefDecodesSuccess cover the 200 half of the acceptance
 // criterion's "commits/main and contents/package.json" pair. The fixture corpus carries no
 // success body for either route, since the Node CLI this corpus was extracted from
-// (packages/create-cairn-site) never calls GitHub's REST commits or contents endpoints; only its
+// never called GitHub's REST commits or contents endpoints; only its
 // lower-level Git Data API. These bodies are therefore hand-built to the real REST shape rather
 // than read through Corpus, the same precedent cloudflare_test.go's TestVerifyTokenDecodesSuccess
 // sets for a success shape the corpus does not carry.

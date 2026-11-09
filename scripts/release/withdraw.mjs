@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // cairn-cms: the candidate withdrawal. It prints the commands that retire a failed candidate and
 // never runs one: npm trusted publishing does not cover `npm deprecate`, so a person runs the
-// printed lines with their own login. It reads the registry to learn which of the three packages
+// printed lines with their own login. It reads the registry to learn which of the two packages
 // published, so a half-published candidate is deprecated only where it landed. For a promoted
 // candidate, `--promote-run <id>` names the promote run whose log holds the `dist-tags before the
-// move:` listing, and the output moves `next` (and `create-cairn-site`'s `latest`) back to it.
+// move:` listing, and the output moves `next` back to it.
 //
 // Interface: `node scripts/release/withdraw.mjs <version> [--promote-run <id>]`. Exit 0 or 1; the
 // last line is `Next:`.
@@ -89,11 +89,8 @@ export function withdraw(run, { version, promoteRun }) {
   if (before.length) {
     for (const pkg of published) {
       const previous = before[PACKAGES.indexOf(pkg)];
-      const moved = pkg === 'create-cairn-site' ? ['next', 'latest'] : ['next'];
-      for (const name of moved) {
-        if (previous[name] === version) continue;
-        commands.push(previous[name] ? `npm dist-tag add ${pkg}@${previous[name]} ${name}` : `npm dist-tag rm ${pkg} ${name}`);
-      }
+      if (previous.next === version) continue;
+      commands.push(previous.next ? `npm dist-tag add ${pkg}@${previous.next} next` : `npm dist-tag rm ${pkg} next`);
     }
   }
   return { ok: true, errors: [], commands, next: 'Next: run the printed commands with your own npm login' };

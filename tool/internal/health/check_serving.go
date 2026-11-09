@@ -12,10 +12,10 @@ import (
 )
 
 // adminLoginPath is the path the site-specific marker's /admin redirect must land on, ported
-// from packages/create-cairn-site/src/cloudflare/hostname.mjs's ADMIN_LOGIN_PATH.
+// from the retired Node wizard's admin login path.
 const adminLoginPath = "/admin/login"
 
-// servingCheck ports confirmHostname (packages/create-cairn-site/src/cloudflare/hostname.mjs):
+// servingCheck confirms the hostname serves the site:
 // it probes the record's domain for the site-specific marker pair, distinguishing a
 // certificate still issuing, a hostname not yet propagated, and a hostname serving something
 // else entirely.

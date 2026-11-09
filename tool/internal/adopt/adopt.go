@@ -35,7 +35,7 @@ type Candidate struct {
 	NameServers []string
 	// Domain is the Custom Domain attached to this Worker, and is empty when none is. cairn
 	// provisions Workers Custom Domains and never Workers Routes
-	// (packages/create-cairn-site/src/cloudflare/hostname.mjs), so discovery reads only the
+	// (the retired Node wizard did the same), so discovery reads only the
 	// Custom Domains route, and a Worker serving a site through a route leaves this empty.
 	Domain string
 	// AccountID is the Cloudflare account the Worker lives in.
@@ -243,7 +243,7 @@ func isNonPublic(ip net.IP) bool {
 }
 
 // idSuffixLength is the six-character random tail the Node CLI's site id shape requires
-// (packages/create-cairn-site/src/state.mjs).
+// (the retired Node wizard's state shape).
 const idSuffixLength = 6
 
 // newSiteID returns a fresh registry id for a site called name: name slugged, then a random

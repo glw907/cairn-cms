@@ -14,10 +14,10 @@ State lives in `docs/STATUS.md` (the rolling now, with the next action), `BACKLO
 Cut a worktree off `main` for the pass, then run:
 
 ```sh
-npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync) && npm --prefix packages/create-cairn-site run prepack
+npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)
 ```
 
-The prepack bakes the gitignored template that most `packages/create-cairn-site` tests read. The second install keeps the worktree's showcase off the main checkout's engine. The sync writes the `$app/tsconfig` that `check:public-skill` needs. `references/durable-gotchas.md` under `cairn-writing-engine-code` explains why.
+The second install keeps the worktree's showcase off the main checkout's engine. The sync writes the `$app/tsconfig` that `check:public-skill` needs. `references/durable-gotchas.md` under `cairn-writing-engine-code` explains why.
 
 ## Gates
 
@@ -27,7 +27,7 @@ The prepack bakes the gitignored template that most `packages/create-cairn-site`
 
 ## Risk classes
 
-- `auth-data`: `src/lib/{auth,auth-crypto,github}/**`, `src/lib/sveltekit/{csrf*,auth-*,commit-log,guard,preview}.ts`, `src/lib/admin/{csrf-context.ts,CsrfField.svelte}`, `migrations*/**`, `examples/showcase/migrations*/**`, `templates/*/migrations*/**`, `**/hooks.server.ts`, `**/preview/\[token\]/**` (escaped, because `[token]` is a character class in a pathspec), `**/admin/signups/**`, `tool/internal/secrets/**`, `tool/internal/setup/{loopback,signin,runner}*`, `tool/internal/providers/{cloudflare_oauth,github_app}*`, `packages/create-cairn-site/src/{github,cloudflare}/**`, `wrangler.*`.
+- `auth-data`: `src/lib/{auth,auth-crypto,github}/**`, `src/lib/sveltekit/{csrf*,auth-*,commit-log,guard,preview}.ts`, `src/lib/admin/{csrf-context.ts,CsrfField.svelte}`, `migrations*/**`, `examples/showcase/migrations*/**`, `templates/*/migrations*/**`, `**/hooks.server.ts`, `**/preview/\[token\]/**` (escaped, because `[token]` is a character class in a pathspec), `**/admin/signups/**`, `tool/internal/secrets/**`, `tool/internal/setup/{loopback,signin,runner}*`, `tool/internal/providers/{cloudflare_oauth,github_app}*`, `wrangler.*`.
 - `runner`: `scripts/checks/**`, `scripts/gate/**`, `scripts/release/**`, `.github/workflows/**`, `.github/ci-green.json`.
 - `ordinary`: everything else.
 

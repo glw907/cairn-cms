@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // cairn-cms: the dist-tag wait. After a publish it polls the registry, bypassing every cache, until
-// the tag holds the version on all three packages, for up to ten minutes. A timeout names each
+// the tag holds the version on both packages, for up to ten minutes. A timeout names each
 // package and what its tag holds, so a lagging package is visible rather than a bare failure.
 //
 // Interface: `node scripts/release/wait.mjs <version> <tag>`. Exit 0 or 1; the last line is
@@ -39,7 +39,7 @@ export async function waitForTag(fetchFn, { version, tag, sleep, now, timeoutMs 
       })
     );
     if (held.every((v) => v === version)) {
-      return { ok: true, errors: [], next: `Next: ${tag} serves ${version} on all three packages; run the smoke` };
+      return { ok: true, errors: [], next: `Next: ${tag} serves ${version} on both packages; run the smoke` };
     }
     if (clock() - start >= timeoutMs) break;
     await pause(intervalMs);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // cairn-cms: the release status. It prints a JSON checklist of what a finished release holds and
 // exits non-zero until every item does: the tag on origin, the GitHub release and its prerelease
-// flag, the dist-tags for the stage, a provenance attestation on all three packages, and the
+// flag, the dist-tags for the stage, a provenance attestation on both packages, and the
 // CHANGELOG heading. A prerelease also needs a passing gate verdict, which runs through
 // `scripts/gate/verdict.mjs`; a stable runs no verdict.
 //
@@ -63,7 +63,7 @@ export async function status({ run, fetchFn, changelog }, version) {
   const packuments = await Promise.all(PACKAGES.map((p) => getJson(fetchFn, `${REGISTRY}/${p}`)));
   /** @type {Record<string, string | undefined>[]} */
   const tags = packuments.map((m) => m?.['dist-tags'] ?? {});
-  const expected = prerelease ? { next: PACKAGES, latest: ['create-cairn-site'] } : { latest: PACKAGES };
+  const expected = prerelease ? { next: PACKAGES } : { latest: PACKAGES };
   /** @type {string[]} */
   const behind = [];
   for (const [name, pkgs] of Object.entries(expected)) {
@@ -76,7 +76,7 @@ export async function status({ run, fetchFn, changelog }, version) {
 
   const versions = await Promise.all(PACKAGES.map((p) => getJson(fetchFn, `${REGISTRY}/${p}/${version}`)));
   const unattested = PACKAGES.filter((_, i) => !versions[i]?.dist?.attestations?.provenance);
-  items.provenance = { ok: unattested.length === 0, detail: unattested.length ? `no provenance on ${unattested.join(', ')}` : 'provenance on all three' };
+  items.provenance = { ok: unattested.length === 0, detail: unattested.length ? `no provenance on ${unattested.join(', ')}` : 'provenance on both' };
 
   const heading = new RegExp(`^## ${version.replace(/[.+]/g, '\\$&')}$`, 'm');
   items.changelog = { ok: heading.test(changelog), detail: heading.test(changelog) ? `CHANGELOG has ## ${version}` : `CHANGELOG has no ## ${version} heading` };

@@ -19,9 +19,9 @@ import { teardownStateDir } from './teardown.mjs';
 
 const execFileAsync = promisify(execFile);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-// The CLI's own API client. It is loaded by a computed specifier so the type check does not pull
-// the package's untyped source into the repo's checked graph.
-const API_MODULE = new URL('../../packages/create-cairn-site/src/cloudflare/api.mjs', import.meta.url).href;
+// The gate's Cloudflare API client. It is loaded by a computed specifier so the type check does not
+// pull its untyped source into the repo's checked graph.
+const API_MODULE = new URL('./cloudflare/api.mjs', import.meta.url).href;
 
 /** The Cloudflare account the gate token and its throwaway resources live on. */
 export const GATE_ACCOUNT_ID = '120c269ad6d3dfbe6d63a0bb53758ca0';

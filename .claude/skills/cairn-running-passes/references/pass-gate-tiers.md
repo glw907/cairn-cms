@@ -55,8 +55,8 @@ Seven legs, in this order. Each prints only when it applies.
    when every path is a docs-bucket path, a harness-bucket path, or on the no-check list, since the
    component project cannot see them; stderr says so. A selection that cannot be computed runs the
    whole project.
-5. `npm test -w packages/create-cairn-site`, when a path matches `packages/create-cairn-site/**`,
-   `examples/showcase/**`, `scripts/build/emit-template*`, or the root `package.json`.
+5. `npm test -w packages/create-cairn-site`, when a path matches `packages/create-cairn-site/**` or
+   `scripts/release/pack-platforms*`. The suite builds the Go tool, so it needs Go.
 6. The e2e specs the map selects (below), at zero retries, behind
    `export E2E_PORT=4392 && ! ss -Htln 'sport = :4392' | grep -q .` so a listener already on the
    port fails the gate instead of testing the wrong site. A selection that holds

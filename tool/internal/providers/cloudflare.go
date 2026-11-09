@@ -317,7 +317,7 @@ func (cf *Cloudflare) BuildsConnections(ctx context.Context, workerTag string) (
 
 // Build is one Workers Builds run. The field names below match the live shape captured in
 // https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-13-t5-task8-live-e2e.md and the fake server's
-// createBuildKickHandler (packages/create-cairn-site/test/fake-cloudflare.mjs): the commit hash
+// the retired Node fake that played it back: the commit hash
 // nests under "build_trigger_metadata" rather than sitting on the build itself, since that
 // object also carries the commit that triggered a push-sourced build.
 type Build struct {

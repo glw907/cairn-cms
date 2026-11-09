@@ -51,7 +51,7 @@ and `npm run lane:fast` replaces the lane they name.
 - [A barrel grep misses the `CairnAdminConfig` member pins](#a-barrel-grep-misses-the-cairnadminconfig-member-pins)
 - [The dev handle imports the engine from `dist`](#the-dev-handle-imports-the-engine-from-dist)
 - [A skill edit fails `guidance/bin.test.ts` until `emit:template`](#a-skill-edit-fails-guidancebintestts-until-emittemplate)
-- [`packages/create-cairn-site/template` goes stale after a showcase comment change](#packagescreate-cairn-sitetemplate-goes-stale-after-a-showcase-comment-change)
+- [`templates/waymark` goes stale after a showcase comment change](#templateswaymark-goes-stale-after-a-showcase-comment-change)
 - [`packages/cairn-cms-dev`'s `dist` builds only through the root `package` script](#packagescairn-cms-devs-dist-builds-only-through-the-root-package-script)
 - [A line-based dead-name grep misses a phrase wrapped across a comment line](#a-line-based-dead-name-grep-misses-a-phrase-wrapped-across-a-comment-line)
 - [Tightening a shared failure type can break a `viewAction` delegate](#tightening-a-shared-failure-type-can-break-a-viewaction-delegate)
@@ -219,8 +219,9 @@ it to exit, and rerun. Only a failure that survives a contention-free rerun is y
 that reads a site emitted this way sees none of the agent guidance a consumer receives, and its
 audit falls back to the packaged sheet, which reports two false `no-uncompiled-class` errors
 that the clean template does not. Pass B's first probe was invalid for this reason (2026-09-28).
-Build a probe site the way `.github/workflows/create-site.yml` does: bake, pack the CLI, run
-`create-cairn-site --yes`, then point the site's engine specs at the fresh tarballs.
+Build a probe site with the built `cairn` binary: `cairn new --plan` with the answers as flags, then
+`--apply`, or scaffold from the packed engine tarball's template and point the site's engine specs
+at the fresh tarballs.
 
 ## `cloudflare:workers` in the engine
 
@@ -327,11 +328,6 @@ for that reason alone. Run the setup before trusting a red or a green:
   tree. `check-public-skill.test.ts` skips itself when the showcase has no `tailwindcss` binary.
 - `npm run package`, which builds `dist`. The same test skips without `dist/audit/index.js`, and
   `emit-tool-conditions.mjs` and `check-readiness.mjs` read `dist` rather than the TypeScript source.
-- The baked create-cairn-site template (`test.yml`, the "Bake the create-cairn-site template" step),
-  which most `packages/create-cairn-site` tests read; without it they fail with `ENOENT` or
-  `scaffold: no template found`. The template is gitignored and only `prepack` bakes it, never
-  `npm install` or `npm test`. From the root, run `npm --prefix packages/create-cairn-site run prepack`.
-  `test.yml` passes explicit specs instead, because a `0.0.0` version or a `file:` spec makes the bake refuse.
 - `npx svelte-kit sync` in the showcase, which its `npm run check` script runs first. Without it
   `check-public-skill.test.ts` fails with `TSCONFIG_ERROR` for the missing
   `examples/showcase/.svelte-kit/tsconfig.json`. The output is gitignored.
@@ -468,7 +464,7 @@ seconds without a rebuild.
 - A path inside a fenced block's `//` comment is checked against the repo root, not the doc's
   directory. `// see [x](../../../../docs/admin/README.md)` extracts `admin/README.md`, which does not
   exist. Cite another doc by bare filename or in prose, with no slash.
-- A `--flag` in a fenced shell block resolves only against `create-cairn-site`'s own argv parser.
+- A `--flag` in a fenced shell block resolves only against `cairn new`'s flags and the Go tool's flag list (`tool/testdata/flags.json`).
   `npx cairn-audit --help` in a fenced example fails as an unresolved `cli-flag` until
   `scripts/checks/check-symbols-allowlist.mjs` carries a `'cli-flag:--help'` entry with a comment
   naming the real tool. The same flag in a table cell is never scanned, which makes the failure look
@@ -660,7 +656,7 @@ The packaged skills are baked into the template, and `src/tests/unit/guidance/bi
 the installed guidance against them. Editing a file under `skills/` fails that test until
 `npm run emit:template` re-emits the template tree; commit the emitted tree in the same commit.
 
-## `packages/create-cairn-site/template` goes stale after a showcase comment change
+## `templates/waymark` goes stale after a showcase comment change
 
 The template is generated from `examples/showcase`, so a comment-only change in the showcase leaves
 the committed template stale, and `npm run check:template` fails on it. Run `npm run emit:template`

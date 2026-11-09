@@ -12,9 +12,9 @@ import (
 var siteConfigPathJSON []byte
 
 // siteConfigPath returns the canonical site-config path baked into the shipped mirror
-// (site-config-path.json), the same value packages/create-cairn-site/src/substitute.mjs bakes
+// (site-config-path.json), the same value `cairn new` bakes
 // into a scaffolded site. It panics if the embedded file fails to parse or fails the four shape
-// rules substitute.mjs's verifySiteConfigPath enforces: a bad shipped file is a build-time
+// rules the retired wizard enforced: a bad shipped file is a build-time
 // defect, so this fails loudly on first use rather than degrading a single check.
 func siteConfigPath() string {
 	var payload struct {
@@ -30,7 +30,7 @@ func siteConfigPath() string {
 }
 
 // validateSiteConfigPathShape applies the four rules ported from
-// packages/create-cairn-site/src/substitute.mjs's verifySiteConfigPath: non-empty, no leading
+// the retired wizard's verifySiteConfigPath: non-empty, no leading
 // slash, no NUL byte, no ".." segment.
 func validateSiteConfigPathShape(path string) error {
 	if path == "" {

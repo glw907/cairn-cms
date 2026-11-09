@@ -1,5 +1,5 @@
-// Bake the Waymark template (examples/showcase, via the repo-root emitter) into this package
-// at pack time, so a tarball install carries a ready-to-scaffold tree rather than a `file:`
+// Bake the Waymark template (examples/showcase, via the repo-root emitter) into a directory
+// so a scaffold starts from a ready tree rather than a `file:`
 // reference into the monorepo. Resolving the engine and dev-backend dependency specs from the
 // repo's package.json versions keeps the baked template honest: it fails loud rather than
 // emit a dependency spec no registry can install, an unpublished 0.0.0 most of all.
@@ -7,11 +7,10 @@ import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { emitTemplate, STARTER_OVERLAY_DIR } from '../../../scripts/build/emit-template.mjs';
+import { emitTemplate, STARTER_OVERLAY_DIR } from './emit-template.mjs';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
-const packageDir = path.resolve(scriptsDir, '..');
-const repoRoot = path.resolve(packageDir, '../..');
+const repoRoot = path.resolve(scriptsDir, '../..');
 
 // The showcase carries a test-harness (Playwright) and a design-lab tool that a scaffolded site
 // never needs; the emitted package.json still lists their scripts and devDependencies because
@@ -184,12 +183,12 @@ Imports use the aliases in \`package.json\`: \`#theme/*\`, \`#chassis/*\`, and \
 /**
  * Read the guidance source straight from the monorepo's `skills/` and `claude/` trees at
  * `repoRoot`, never through the installed-package resolution install.ts's readers use at
- * runtime: this package carries no dependency on @glw907/cairn-cms, so nothing here can resolve
+ * runtime: the bake carries no dependency on @glw907/cairn-cms, so nothing here can resolve
  * "installed". The version stamped is parsed out of the resolved engine spec (the caret
  * stripped), not the repo's package.json version, since an overridden engineSpec should
  * stamp what the template will actually depend on.
  * @param {string} engineSpec the resolved engine dependency spec, `^x.y.z`
- * @returns {Promise<import('../../../src/lib/guidance/install.js').GuidanceSource>} the guidance
+ * @returns {Promise<import('../../src/lib/guidance/install.js').GuidanceSource>} the guidance
  *  source, ready for installGuidance
  */
 async function readMonorepoGuidanceSource(engineSpec) {
@@ -219,11 +218,11 @@ async function readMonorepoGuidanceSource(engineSpec) {
  * Load the compiled guidance install module, thrown with a clear instruction when `npm run
  * package` has not run yet, so a missing `dist/` fails loud rather than with a bare
  * ERR_MODULE_NOT_FOUND.
- * @returns {Promise<typeof import('../../../src/lib/guidance/install.js')>} the compiled module
+ * @returns {Promise<typeof import('../../src/lib/guidance/install.js')>} the compiled module
  */
 async function loadGuidanceInstall() {
   try {
-    return await import('../../../dist/guidance/install.js');
+    return await import('../../dist/guidance/install.js');
   } catch (cause) {
     throw new Error('bake: dist/guidance/install.js is missing. Run "npm run package" first.', { cause });
   }
@@ -269,7 +268,7 @@ export function assertInstallableSpec(packageName, spec) {
   if (spec.startsWith('file:')) {
     throw new Error(
       `bake: ${packageName} resolves to ${spec}, a workspace-relative path no registry can install. ` +
-        `Pass an explicit spec for ${packageName} before packing create-cairn-site.`,
+        `Pass an explicit spec for ${packageName} before baking the template.`,
     );
   }
   // Compare the parsed version, never the spec as a substring: `^10.0.0` and `^20.0.0` both
@@ -279,7 +278,7 @@ export function assertInstallableSpec(packageName, spec) {
   if (/^0\.0\.0(?:$|[-+])/.test(version)) {
     throw new Error(
       `bake: ${packageName} resolves to ${spec}, which no registry can install. ` +
-        `Publish the dev backend (or pass devSpec) before packing create-cairn-site.`,
+        `Publish the dev backend (or pass devSpec) before baking the template.`,
     );
   }
 }
@@ -348,8 +347,8 @@ async function renameGitignoreForPacking(emitted) {
 
 /**
  * Bake the template, then store its `.gitignore` under the dot-free name a published tarball can
- * carry (see `renameGitignoreForPacking`). This is the entry point create-cairn-site's
- * `prepack` step uses to build what gets packed. A caller that instead commits the baked tree to
+ * carry (see `renameGitignoreForPacking`). This is the entry point the release's
+ * template bake uses to build what gets published. A caller that instead commits the baked tree to
  * this repo (`emit-template-dir.mjs`, whose overlay appends onto the emitted `.gitignore`
  * directly) calls plain `bake()`, since a committed tree has no npm packlist to survive.
  * @param {{ to: string, engineSpec?: string, devSpec?: string }} opts same as `bake`
@@ -385,9 +384,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   }
   try {
-    // Relative to the package, so `--to template` lands on the `template/` directory the package
-    // gitignores and ships through its `files` list.
-    const to = path.resolve(packageDir, values.to);
+    const to = path.resolve(values.to);
     await bakeForPacking({ to, engineSpec: values['engine-spec'], devSpec: values['dev-spec'] });
     console.log(`baked template to ${to}`);
   } catch (err) {

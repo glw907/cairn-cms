@@ -11,7 +11,7 @@ import {
   OVERLAY_DIR,
   TEMPLATE_DIR,
 } from './emit-template-dir.mjs';
-import { walk } from '../../../scripts/walk-files.mjs';
+import { walk } from '../walk-files.mjs';
 
 // Published specs, so a compose under test never depends on what the monorepo's versions
 // happen to be.
@@ -29,7 +29,7 @@ async function tempDir(t) {
 }
 
 test('the template lands outside the workspace glob, so it keeps its install', async () => {
-  const rootPackageJson = path.resolve(import.meta.dirname, '../../../package.json');
+  const rootPackageJson = path.resolve(import.meta.dirname, '../../package.json');
   const rootPkg = JSON.parse(await readFile(rootPackageJson, 'utf8'));
   // Cloudflare treats the subdirectory as the root of the repo it creates and requires the app be
   // fully isolated within it. A `packages/*` member would be hoisted to the root lockfile instead.

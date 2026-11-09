@@ -4,3 +4,7 @@
 # file as changed. Normalizing the checkout keeps fmt-check meaningful on
 # every leg of the CI matrix.
 * text=auto eol=lf
+
+# The recorded-run transcripts are pty captures whose carriage returns are part of what they
+# record, and check:transcripts replays them byte for byte, so they are never normalized.
+testdata/transcripts/** -text

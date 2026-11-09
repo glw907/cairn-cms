@@ -25,7 +25,7 @@ cairn new --dry-run --json --name "My Site" --host example.com --email me@exampl
 
 With `--json`, the dry run writes one payload to stdout:
 
-<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/06-cairn-new-dry-run-json.txt -->
+<!-- transcript: tool/testdata/transcripts/06-cairn-new-dry-run-json.txt -->
 ```
 {"schemaVersion":1,"kind":"dryRun","siteName":"My Site","repository":"my-site","worker":"my-site","database":"my-site-auth","bucket":"my-site-media","app":"cairn-my-site","folder":"./my-site","ownerEmail":"me@example.com","posture":"decline"}
 ```
@@ -78,7 +78,7 @@ cairn new --apply plan.json
 
 A usage error exits 3 before anything runs and leaves stdout empty. The message goes to stderr, and this block merges both streams:
 
-<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/08-cairn-new-usage-error.txt -->
+<!-- transcript: tool/testdata/transcripts/08-cairn-new-usage-error.txt -->
 ```
 cairn: --posture is required with --dry-run.
 Run `cairn new --help` for the flags

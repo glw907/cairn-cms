@@ -1,4 +1,4 @@
-// Emit the public Waymark template into `templates/waymark/` at the repo root, from this package's
+// Emit the public Waymark template into `templates/waymark/` at the repo root, from the
 // bake output plus the repo-only overlay (README, LICENSE, .dev.vars.example, the .gitignore
 // negation). The tree is generated wholesale: every emit regenerates it, so a hand edit survives at
 // most one run, and `--check` fails when the committed tree and a fresh emit disagree.
@@ -18,15 +18,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { bake } from './bake-template.mjs';
-import { regenerateWorkerTypes } from '../../../scripts/build/emit-template.mjs';
-import { walk } from '../../../scripts/walk-files.mjs';
+import { regenerateWorkerTypes } from './emit-template.mjs';
+import { walk } from '../walk-files.mjs';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
-const packageDir = path.resolve(scriptsDir, '..');
-const repoRoot = path.resolve(packageDir, '../..');
+const repoRoot = path.resolve(scriptsDir, '../..');
 
-/** The overlay skeleton this package ships beside the bake, versioned with the tool. */
-export const OVERLAY_DIR = path.join(packageDir, 'template-repo');
+/** The overlay skeleton kept beside the bake, versioned with the tool. */
+export const OVERLAY_DIR = path.join(scriptsDir, 'template-repo');
 
 /** Where the composed template lands, repo-relative. */
 export const TEMPLATE_DIR = 'templates/waymark';

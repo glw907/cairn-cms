@@ -43,7 +43,7 @@ To see every name setup derives from a site name without creating anything, add 
 cairn new --dry-run --name "My Site" --host example.com --email me@example.com --posture decline
 ```
 
-<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/05-cairn-new-dry-run.txt -->
+<!-- transcript: tool/testdata/transcripts/05-cairn-new-dry-run.txt -->
 ```
 Site: My Site
 Repository: my-site
@@ -142,7 +142,7 @@ Press Ctrl+C at any point to stop. Before anything exists, setup says *Setup sto
 
 To see what unfinished setups this computer holds, run `cairn new status`. With nothing in progress it prints:
 
-<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/07-cairn-new-status-empty.txt -->
+<!-- transcript: tool/testdata/transcripts/07-cairn-new-status-empty.txt -->
 ```
 No setups found.
 ```

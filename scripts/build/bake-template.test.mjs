@@ -12,7 +12,11 @@ import {
   pruneShowcaseOnlyPackageFields,
   rewriteDevScript,
 } from './bake-template.mjs';
-import { TEMPLATE_GITHUB_APP_LITERAL } from '../src/github/finalize.mjs';
+
+// The showcase's placeholder backend call, which `cairn new` rewrites in a pushed scaffold
+// (tool/internal/setup/scaffold/substitute.go pins the same text).
+const TEMPLATE_GITHUB_APP_LITERAL =
+  "createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' })";
 
 // Published specs, so a bake under test never depends on what the monorepo's versions
 // happen to be. The resolved defaults have their test below.
@@ -45,11 +49,10 @@ test('bake emits a real tree, not just a rewritten package.json', async (t) => {
   await access(path.join(to, 'wrangler.jsonc'));
 });
 
-// The rot gate: finalizeGithubIdentity (src/github/finalize.mjs) rewrites this exact literal in
-// a pushed scaffold's cairn.config.ts, verified against the showcase directly. Pinning it here
-// too means showcase drift that changes the backend line's shape fails this fast bake test,
-// rather than surfacing only inside a live create-cairn-site run against real GitHub.
-test('the baked template\'s cairn.config.ts carries the exact createGithubApp(...) literal finalizeGithubIdentity targets', async (t) => {
+// The rot gate: `cairn new` rewrites this exact literal in a pushed scaffold's cairn.config.ts.
+// Pinning it here means showcase drift that changes the backend line's shape fails this fast
+// bake test, rather than surfacing only inside a live setup run against real GitHub.
+test('the baked template\'s cairn.config.ts carries the exact createGithubApp(...) literal `cairn new` targets', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
   const config = await readFile(path.join(to, 'src/theme/cairn.config.ts'), 'utf8');
@@ -179,8 +182,8 @@ test('bake keeps the emitted .gitignore under its real name, covering the secret
 });
 
 // The rot gate against npm's packlist: it drops any file literally named ".gitignore" from a
-// published tarball, so bakeForPacking (create-cairn-site's prepack entry point) must rename
-// the emitted copy to a dot-free name before packing; scaffold.mjs renames it back on the way out.
+// published tarball, so bakeForPacking (the release bake's entry point) must rename
+// the emitted copy to a dot-free name before packing; the Go scaffold step renames it back on the way out.
 test('bakeForPacking renames the emitted .gitignore to a dot-free "gitignore", covering the secret-bearing entries', async (t) => {
   const to = await tempTarget(t);
   await bakeForPacking({ to, ...PUBLISHED_SPECS });

@@ -92,7 +92,7 @@ python3 -I ptycapture.py \
   --answer 'Install, build, and deploy your site now?=' \
   --answer 'Sign-in email=my-owner@example.org' \
   --answer 'Connect a domain you own to this site now?=n' \
-  01-create-cairn-site.txt -- node packages/create-cairn-site/bin.mjs
+  01-create-cairn-site.txt -- node <the retired wizard's bin.mjs>
 ```
 
 The App was installed with "All repositories", since the run creates the repository after the
@@ -158,7 +158,7 @@ live steps need real accounts, so the pages describe them from the recorded fixt
 
 No documentation block quotes these; `check:transcripts` treats this list as their citation.
 
-- `01-create-cairn-site.txt`: the wizard's run, kept until P6 retires the wizard. The setup pages
+- `01-create-cairn-site.txt`: the wizard's run, kept as the record of the retired wizard. The setup pages
   describe `cairn new` and no longer quote it.
 
 ## Identifiers

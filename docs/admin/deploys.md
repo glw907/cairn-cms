@@ -1,6 +1,6 @@
 # Deploys
 
-A site that `cairn new` sets up deploys itself each time a commit reaches the repository's default branch. A GitHub Actions workflow in the repository runs the deploy, using a key that setup stores as a repository secret. This page explains how that deploy works, where to read its result, and what limit a busy site can reach. It also shows a developer or technical owner how to move the site to Workers Builds, Cloudflare's build service, by hand.
+A site that `cairn new` sets up deploys itself each time a commit reaches the repository's default branch. A GitHub Actions workflow in the repository runs the deploy, using a key that setup stores as a repository secret. This page shows how to read a deploy's result, recover from a failed first deploy, and move the site to Workers Builds, Cloudflare's build service, by hand. It also explains how the deploy works and what limit a busy site can reach.
 
 The page is for the person who owns the site's repository. Reading the page needs no code, and the move to Workers Builds needs access to the Cloudflare dashboard and the repository's settings on GitHub. For a run that stopped before the site went live, read [Recover a setup that stopped](./setup-recovery.md).
 
@@ -11,7 +11,7 @@ The workflow is a file named `deploy.yml` in your repository's `.github/workflow
 1. Installs the site's dependencies.
 2. Runs the site's checks.
 3. Builds the site.
-4. Applies the database migrations to the site's D1 database.
+4. Applies the database migrations to the site's sign-in database (D1).
 5. Deploys the Worker, the part of your site that runs on Cloudflare.
 
 A push that arrives while a deploy is running cancels that deploy, and the newer push deploys instead. Only the last two steps use the deploy key, so the install, the checks, and the build never hold it.
@@ -22,7 +22,7 @@ A publish from the admin commits to the repository, and a commit on the default 
 
 ## Read a deploy's result
 
-The admin shows no deploy status, and the GitHub App your site commits through has no access to Actions. To see whether the most recent deploy worked:
+The admin shows no deploy status, though the site's GitHub App holds read access to Actions. To see whether the most recent deploy worked:
 
 1. On GitHub, open your site's repository.
 2. Select **Actions**.
@@ -34,18 +34,19 @@ A green check means the Worker deployed. A red cross means it didn't, and the ru
 
 The first deploy runs while setup is still working. If it fails, setup stops with the message "The first deploy failed in GitHub Actions" and prints the address of the run. To recover:
 
-1. Open the run to see the cause, and fix it.
-2. Run `cairn new` again.
+1. Open the run at the address setup printed, and read which step failed.
+2. If the cause is the plan, subscribe to Workers Paid. Otherwise, hand the run's address to a developer.
+3. Run `cairn new` again.
 
 Setup resumes at the first deploy. When the earlier run ended in a failure, setup pushes one empty commit to start a new run.
 
 Setup waits up to 30 minutes for the first deploy. When the run hasn't finished by then, setup stops and points you to the repository's Actions page.
 
-Every cairn site needs the Workers Paid plan, which costs $5 a month. A site on an account without it can't deploy. When setup can read that your Cloudflare account lacks the plan, the stop says so and asks you to subscribe and run `cairn new` again. When it can't read the plan, the stop names no cause, and the run's log is where the Cloudflare error appears.
+Every cairn site needs the Workers Paid plan, which costs $5 a month. A site on an account without it can't deploy. Setup can't read your plan, so a missing plan shows only as a failed first deploy that names no cause. The run's log in GitHub Actions carries the Cloudflare error.
 
 ## Know the free deploy allowance
 
-GitHub's free plan includes a monthly amount of Actions compute for private repositories, and a deploy draws from it. GitHub states the amount as $12 of compute, which covers about 2,000 minutes on a standard Linux runner. A deploy that takes about three minutes, an estimate, gives roughly 650 deploys a month. Standard runners in a public repository don't draw from the allowance. GitHub's [Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions) page has the current amounts for each plan.
+GitHub's free plan includes a monthly amount of Actions compute for private repositories, and a deploy draws from it. GitHub states the amount as $12 of compute, which covers about 2,000 minutes on a standard Linux runner. At about three minutes a deploy (an estimate), that covers roughly 650 deploys a month. Standard runners in a public repository don't draw from the allowance. GitHub's [Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions) page has the current amounts for each plan.
 
 When a private repository uses up the allowance, GitHub blocks further runs if the account has no payment method on file. With a payment method, GitHub bills the extra usage. A blocked deploy resumes when the month's allowance resets.
 
@@ -65,7 +66,7 @@ You need the following:
 
 ### Create a deploy token
 
-Workers Builds deploys with an API token. Its **Create new token** option makes a token with Account Settings read, Workers Scripts edit, Workers KV Storage edit, and Workers R2 Storage edit permissions, with no D1 permission. A site that applies migrations needs D1, so make your own token instead. Cloudflare's [build configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token) page says Workers Builds supports only user tokens for now.
+Workers Builds deploys with an API token. Its **Create new token** option makes a token with Account Settings read, Workers Scripts edit, Workers KV Storage edit, and Workers R2 Storage edit permissions, with no D1 permission. A site that applies migrations needs D1, so make your own token instead. Cloudflare's [build configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token) page says Workers Builds supports only user tokens.
 
 1. In the Cloudflare dashboard, open **My Profile**, and then **API Tokens**.
 2. Create a custom token with the Workers Scripts, D1, and Workers R2 Storage account permissions, each at the edit level. Under **Account Resources**, limit the token to the one account that holds the site.
@@ -86,13 +87,20 @@ Every build can read this token, so anyone who can push to the branch can read i
 
 The Worker's name in the dashboard must match `name` in the repository's `wrangler.jsonc`, or the build fails. Setup deployed the Worker under that name, so they already match unless you edited one of them.
 
-To keep applying the database migrations, a developer can add a script to the site's `package.json` that runs `npx wrangler d1 migrations apply AUTH_DB --remote` and then `npx wrangler deploy`, and set the deploy command to run that script with `npm run`. Cloudflare's [build configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#deploy-command) page documents an `npm run` script as a deploy command.
+To keep applying the database migrations, a developer does two things:
+
+1. Add a script to the site's `package.json` that runs `npx wrangler d1 migrations apply AUTH_DB --remote` and then `npx wrangler deploy`.
+2. Set the deploy command to run that script with `npm run`.
+
+Cloudflare's [build configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#deploy-command) page documents an `npm run` script as a deploy command.
 
 ### Switch off the Actions workflow
 
-Two services deploying the same commit would race, so switch the workflow off once a Workers Builds deploy has succeeded.
+Left on, the workflow and Workers Builds would both deploy the same commit, so switch the workflow off once a Workers Builds deploy has succeeded.
 
-Turn off the `deploy` workflow, as [GitHub's workflow documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows) describes. Alternatively, delete the `deploy.yml` file from `.github/workflows` and commit the deletion. After a successful Workers Builds deploy, you can also delete the repository secret `CLOUDFLARE_API_TOKEN` in the repository's settings, and revoke the deploy key in Cloudflare's **API Tokens** page, where setup named it `cairn-deploy-` followed by the run's id.
+1. Turn off the `deploy` workflow, as [GitHub's workflow documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows) describes. Alternatively, delete the file named `deploy.yml` in the `.github/workflows` folder and commit the deletion.
+2. Optionally, in the repository's settings, delete the secret `CLOUDFLARE_API_TOKEN`.
+3. Optionally, on Cloudflare's **API Tokens** page, revoke the deploy key. Setup named it `cairn-deploy-` followed by the run's id.
 
 ### Verify the move
 

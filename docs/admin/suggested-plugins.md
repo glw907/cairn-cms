@@ -1,6 +1,6 @@
 # Suggested plugins
 
-A site that `cairn new` sets up carries Claude Code settings that suggest three plugins, and a `.mcp.json` file that adds the Svelte MCP (Model Context Protocol) server. A fourth plugin, `cairn`, installs before the site exists. This page lists them and shows how each person installs their copy. It is for the owner or developer who opens the site's folder in Claude Code, and it leaves out what each plugin teaches.
+A site that `cairn new` sets up carries Claude Code settings that suggest three plugins, and a `.mcp.json` file that adds the Svelte Model Context Protocol (MCP) server. You install a fourth plugin, `cairn`, before the site exists. This page lists them and shows how each person installs their copy. It is for the owner or developer who opens the site's folder in Claude Code, and it leaves out what each plugin teaches.
 
 ## What the site suggests
 
@@ -13,11 +13,11 @@ The site's `.claude/settings.json` declares three marketplaces and the plugin ea
 | `cloudflare` | `cloudflare/skills` | `cloudflare` | Yes |
 | `daisyui` | `saadeghi/daisyui` | `daisyui` | Yes |
 
-The default set leaves out GitHub's plugin. The `saadeghi/daisyui` repository also publishes `daisyui-blueprint`, which needs a paid licence, so the site doesn't suggest it.
+The `saadeghi/daisyui` repository also publishes `daisyui-blueprint`, which needs a paid license, so the site doesn't suggest it. Its [marketplace file](https://raw.githubusercontent.com/saadeghi/daisyui/master/.claude-plugin/marketplace.json) says so.
 
 ## Install your own copy
 
-Claude Code offers the marketplaces the site declares when you trust the site's folder. A plugin from an external source still needs one install for each person, so each person who opens the folder installs the plugins once.
+Claude Code offers the marketplaces the site declares when you trust the site's folder, as the [Claude Code plugin documentation](https://code.claude.com/docs/en/plugins/) describes. A plugin from an external source still needs one install for each person, so each person who opens the folder installs the plugins once.
 
 1. Open the site's folder in Claude Code and accept the trust prompt.
 2. If Claude Code doesn't offer a marketplace, add it by its source repository. For example:

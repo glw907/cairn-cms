@@ -1,8 +1,8 @@
 # Set up a site with an agent
 
-A coding agent can set up a cairn site from flags and a plan file, so the owner never answers a prompt in a terminal. The agent runs `cairn new` in two calls: one writes a plan and creates nothing on Cloudflare, and the second creates the site from that plan once the owner has reviewed it. The owner still approves each browser step, because setup reaches into the owner's Cloudflare and GitHub accounts and the agent can't consent for them.
+A coding agent can set up a cairn site from flags and a plan file, with no prompt in a terminal. The agent runs `cairn new` in two calls: one writes a plan and creates nothing on Cloudflare, and the second creates the site from that plan once the owner has reviewed it. The owner still approves each browser step, because setup reaches into the owner's Cloudflare and GitHub accounts and the agent can't consent for them.
 
-This page is for two readers. If you own the site, hand this page to your agent. If you are the agent, it is the whole contract, and the generated [setup reference](./setup-reference.md) lists every flag, derived name, step, event, and exit code. To answer the questions yourself in a terminal, start with `npm create cairn-site` instead, which installs `cairn` and runs `cairn new`. A run with no terminal and no mode flag prints the agent guide.
+This page is for two readers. If you own the site, hand this page to your agent. If you are the agent, it is the whole contract, and the generated [setup reference](./setup-reference.md) lists every flag, derived name, step, event, and exit code. To answer the questions yourself in a terminal, start with `npm create cairn-site` instead, which installs the `cairn` CLI and runs `cairn new`. A run with no terminal and no mode flag prints the agent guide.
 
 The owner needs the accounts and the computer that [Before you start](./before-you-start.md) lists, and the agent needs a terminal on that computer. The owner's browser opens on the same computer.
 
@@ -40,7 +40,7 @@ Answer every question with a flag, and name a file for the plan:
 cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
 ```
 
-This call runs the owner's four browser approvals, which are Cloudflare sign-in and three GitHub steps that create the site's GitHub App and give it access to the repository. It then stops where the summary would appear and writes `plan.json`. Nothing exists on Cloudflare yet. The plan holds no credential.
+This call runs the owner's four browser approvals. The first signs in to Cloudflare. The other three create the site's GitHub App and give it access to the repository. The call then stops where the summary would appear and writes `plan.json`. Nothing exists on Cloudflare yet. The plan holds no credential.
 
 Give the flags only for the choices that apply:
 
@@ -49,7 +49,7 @@ Give the flags only for the choices that apply:
 - `--host` sets the site's address: the zone itself, or a subdomain of it.
 - `--site-theme` names the theme, when the template offers several.
 
-A choice that no flag answered stays open. The call exits 0 and its stream has no `summary` event. The plan lists the options, and it lists no domains while the account is open, so give `--account` with `--plan`.
+An account or domain that no flag answered stays open. The call exits 0 and its stream has no `summary` event. The plan lists the options, and it lists no domains while the account is open, so give `--account` with `--plan`. A theme that no flag answered is a usage error, because setup asks for it before it writes a record.
 
 A second `--plan` refuses to start while an unfinished setup exists. It names the unfinished setup and asks you to resume it or add `--new`.
 
@@ -62,13 +62,13 @@ Show the owner `plan.json` before anything is created. The fields that derive fr
 | `account` | The Cloudflare account id. Fill it in when the plan lists several `accounts`. |
 | `zone` | The Cloudflare domain. Fill it in when the plan lists several `zones`. |
 | `address` | The site's address: the zone, or a subdomain of it. |
-| `ownerEmail` | The first owner's email address, which setup takes from the Cloudflare account. |
+| `ownerEmail` | The first owner's email address, which setup takes from `--email`. |
 
-Read the email aloud. Setup sends the sign-in link there.
+Confirm the email address with the owner. Setup sends the sign-in link there.
 
 ## Apply the plan
 
-Create the site from the reviewed plan. This is the owner's single go:
+Create the site from the reviewed plan. This command creates the site:
 
 ```bash
 cairn new --apply plan.json
@@ -98,7 +98,7 @@ cairn new --dry-run --name "My Site" --host example.com --email me@example.com -
 | --- | --- |
 | `step_started`, `step_done` | Track progress. The `step` field names the step. |
 | `waiting` | Read the `sentence` field to the owner, word for word. The run blocks until the owner finishes that browser step. |
-| `step_failed` | The run stopped. The `failure` field holds the four-part reason: what happened, why, what setup already did, and what to do. |
+| `step_failed` | The run stopped. The `failure` field holds the four-part reason: what happened, what setup already did, what it left in place, and what to do. |
 | `resumed` | The run picked up an unfinished record. |
 | `summary` | Every derived value. The run finished. |
 
@@ -111,7 +111,7 @@ Check the exit code first.
 | Code | Meaning |
 | --- | --- |
 | 0 | The run finished, the plan file was written, or the command only listed or printed. |
-| 1 | Setup stopped at a step. The run is saved, and `cairn new --resume` continues it. |
+| 1 | Setup stopped at a step. A stop after setup saved its record resumes with `cairn new --resume`. |
 | 2 | Setup stopped because it was interrupted or timed out. `cairn new --resume` continues it. |
 | 3 | A usage error. A flag or the plan file was refused before anything ran, and stdout is empty. |
 
@@ -129,7 +129,7 @@ Each row names a site id, whether the run is finished, and its current step. Con
 cairn new --resume <id>
 ```
 
-A resume confirms the summary as the record holds it, with no second review, so review the plan before the first call. `--resume` takes `--account` and `--zone`, for a run that stopped at one of those choices. To start another site while one is unfinished, add `--new` to `--plan`. `--new` can't combine with `--resume` or `--apply`.
+A resume confirms the summary as the record holds it, with no second review, so the owner reviews the plan before `--apply`. `--resume` takes `--account` and `--zone`, for a run that stopped at one of those choices. To start another site while one is unfinished, add `--new` to `--plan`. `--new` can't combine with `--resume` or `--apply`.
 
 ## Follow the hard rules
 

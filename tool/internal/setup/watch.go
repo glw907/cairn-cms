@@ -23,8 +23,8 @@ func (r *run) watch(ctx context.Context) error {
 		{StepScaffold, spine.StepScaffolded, r.scaffold},
 		{StepProvision, spine.StepResourcesCreated, r.provision},
 		{StepCommit, spine.StepCommitted, r.commit},
-		{StepPush, spine.StepPushed, r.push},
 		{StepDeployKey, spine.StepDeployKeyStored, r.deployKey},
+		{StepPush, spine.StepPushed, r.push},
 		{StepFirstDeploy, spine.StepDeployed, r.firstDeploy},
 		{StepDomains, spine.StepDomainLive, r.domains},
 		{StepSignIn, spine.StepLive, r.signIn},
@@ -244,7 +244,7 @@ func (r *run) installationToken(ctx context.Context) (providers.Credential, erro
 	return tok, nil
 }
 
-// push is watch step 4. A remote branch already at the recorded commit means an earlier run
+// push is watch step 5. A remote branch already at the recorded commit means an earlier run
 // pushed and stopped before recording it, so nothing is sent again. Otherwise the folder must
 // still be at the recorded commit and no Worker may hold the site's name, since the push starts
 // the first deploy.
@@ -306,9 +306,11 @@ func (r *run) ownFolder(ctx context.Context) error {
 		"Undo the new commits in that folder, and then run cairn new again.", err)
 }
 
-// deployKey is watch step 5. A run that stopped inside this step may have minted a key it never
-// stored, so every earlier key of the run is deleted, by its recorded id and by its run-named
-// name, before a new one is minted.
+// deployKey is watch step 4. It comes before the push because GitHub hands a workflow job the
+// repository's secrets when the job starts, so the deploy the push starts must find the key
+// already stored. A run that stopped inside this step may have minted a key it never stored, so
+// every earlier key of the run is deleted, by its recorded id and by its run-named name, before
+// a new one is minted.
 func (r *run) deployKey(ctx context.Context) error {
 	s := &r.rec.Setup
 	name := providers.DeployKeyName(r.cfg.RunID)

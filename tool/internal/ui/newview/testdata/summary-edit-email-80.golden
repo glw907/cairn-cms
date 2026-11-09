@@ -1,0 +1,19 @@
+
+  Review the settings for Field Notes
+
+  Domain            fieldnotes.example.com
+  Address           fieldnotes.example.com and www.fieldnotes.example.com
+  Sign-in email   > sam@example.com                                            
+                    The admin sends your sign-in links to this address.
+
+  Repository        field-notes
+  Worker            field-notes
+  Database          field-notes-auth
+  Storage bucket    field-notes-media
+
+  Theme             Waymark
+  AI crawlers       Block AI training
+
+  Deploys           GitHub Actions, each time you publish
+
+  Enter save · Esc cancel

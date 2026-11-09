@@ -24,10 +24,11 @@ const (
 	ProfileTrueColor
 )
 
-// colorprofile maps p to the six-value type lipgloss.Complete expects. It is not one of this
-// package's forbidden colorprofile entry points (Detect, Env, Terminfo): it names no OS
-// resource and reads nothing, it only relabels a value this package already holds.
-func (p Profile) colorprofile() colorprofile.Profile {
+// ColorProfile maps p to the six-value type lipgloss.Complete and the terminal view's styles
+// expect. It is not one of this package's forbidden colorprofile entry points (Detect, Env,
+// Terminfo): it names no OS resource and reads nothing, it only relabels a value this package
+// already holds.
+func (p Profile) ColorProfile() colorprofile.Profile {
 	switch p {
 	case ProfileANSI16:
 		return colorprofile.ANSI
@@ -67,8 +68,8 @@ type Terminal struct {
 	TTY bool
 }
 
-// DetectProfile is this package's one TTY check and its one caller of term.IsTerminal;
-// purity_test.go's grep test names this file as the sole exception for both. It reports the
+// DetectProfile is this package's one TTY check, through IsTerminal; purity_test.go's grep test
+// names this file as the sole exception for term.IsTerminal. It reports the
 // colour profile to paint with, the terminal's column count when stdout is a terminal (0
 // otherwise), whether output should render at the ASCII glyph tier, and whether stdout is a
 // terminal at all.
@@ -93,7 +94,7 @@ func DetectProfile(stdout *os.File, env Env) Terminal {
 		return Terminal{Profile: profile, ASCII: ascii}
 	}
 
-	isTTY := term.IsTerminal(int(stdout.Fd()))
+	isTTY := IsTerminal(stdout)
 	vtOK := !isTTY || enableVirtualTerminal(stdout.Fd())
 	profile, ascii := detect(isTTY, vtOK, env)
 	out := Terminal{Profile: profile, ASCII: ascii, TTY: isTTY}
@@ -104,6 +105,13 @@ func DetectProfile(stdout *os.File, env Env) Terminal {
 		}
 	}
 	return out
+}
+
+// IsTerminal reports whether f is a terminal, and false for a nil f. It holds the module's one
+// term.IsTerminal call: DetectProfile asks it of stdout, and cairn new asks it of stdin and
+// stdout to choose the terminal view.
+func IsTerminal(f *os.File) bool {
+	return f != nil && term.IsTerminal(int(f.Fd()))
 }
 
 // detect is DetectProfile's pure core: every input it needs travels as a parameter, so

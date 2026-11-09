@@ -1,0 +1,21 @@
+
+  Review the settings for Field Notes
+
+  Domain            samrivera.example.com
+  Address         > blog.samrivera.example.com                                 
+                    That address already points to another
+                    site. Choose another address, or remove
+                    its DNS records in Cloudflare first.
+  Sign-in email     sam@example.com
+
+  Repository        field-notes-2
+  Worker            field-notes-2
+  Database          field-notes-2-auth
+  Storage bucket    field-notes-2-media
+
+  Theme             Survey
+  AI crawlers       Allow AI training
+
+  Deploys           GitHub Actions, each time you publish
+
+  Enter save · Esc cancel

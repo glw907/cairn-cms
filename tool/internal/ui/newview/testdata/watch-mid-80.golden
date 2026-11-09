@@ -1,0 +1,18 @@
+
+  Setting up Field Notes                                                  5:12
+
+  ● Write the site files
+  ● Set up the database, storage bucket, and email
+  ● Commit the site
+  ● Store the deploy key in GitHub
+  ● Push the site to GitHub
+  ⣽ Run the first deploy
+    GitHub Actions deploys your site each time someone
+    publishes. The first deploy takes a few minutes.
+  ○ Connect fieldnotes.example.com
+  ○ Sign in to the admin
+
+  You can leave this running. When your site is live,
+  setup emails a sign-in link to sam@example.com.
+
+  Ctrl+C stop

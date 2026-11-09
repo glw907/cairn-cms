@@ -250,7 +250,7 @@ func newRootCmd(d deps) *cobra.Command {
 	cmd.SetHelpCommandGroupID(groupOther)
 	cmd.SetCompletionCommandGroupID(groupOther)
 
-	newSetup := newNewCmd(d)
+	newSetup := newNewCmd(d, f)
 	cmd.AddCommand(
 		newSitesCmd(d, f),
 		newHealthCmd(d, f),

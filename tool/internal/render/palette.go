@@ -103,7 +103,7 @@ func (t Theme) color(role Role) color.Color {
 	v := warmStone[role]
 	ld := lipgloss.LightDark(t.dark)
 	ansi16 := lipgloss.Color(v.ansi16)
-	return lipgloss.Complete(t.profile.colorprofile())(
+	return lipgloss.Complete(t.profile.ColorProfile())(
 		ld(ansi16, ansi16),
 		ld(lipgloss.Color(v.light256), lipgloss.Color(v.dark256)),
 		ld(lipgloss.Color(v.lightHex), lipgloss.Color(v.darkHex)),

@@ -1,0 +1,22 @@
+
+  Approve setup in your browser
+
+  Approve each request in the setup tab.
+  The next request opens in the same tab.
+
+  ⣽ Cloudflare: Allow
+    On the Cloudflare page, select API Tokens: Write,
+    and then select Allow. Cloudflare leaves
+    API Tokens: Write unselected, and setup needs it
+    to create your site's deploy key.
+  ○ GitHub: Create
+  ○ GitHub: Install & Authorize
+  ○ GitHub: Approve
+
+  If no tab opened, go to
+  http://127.0.0.1:49152/?k=5f0
+  c9e2a7b4d4e1f8a3c6b9d0e2f4a71
+
+  To resume, run cairn new again.
+
+  Ctrl+C stop

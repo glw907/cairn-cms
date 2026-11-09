@@ -29,7 +29,19 @@ done < <(
 )
 [ "${#files[@]}" -gt 0 ] || { echo "vale-comments: no Go files"; exit 0; }
 
-if vale --minAlertLevel=error --output=line "${files[@]}"; then
+# Vale runs in batches: the whole list passed as arguments overruns Windows's
+# command-line limit once the module has a few hundred files. Every batch's
+# status counts.
+status=0
+total=${#files[@]}
+batch=100
+i=0
+while [ "$i" -lt "$total" ]; do
+  vale --minAlertLevel=error --output=line "${files[@]:i:batch}" || status=1
+  i=$((i + batch))
+done
+
+if [ "$status" -eq 0 ]; then
   echo "vale-comments: clean"
 else
   echo "vale-comments: error-level findings in Go comment prose (above)." >&2

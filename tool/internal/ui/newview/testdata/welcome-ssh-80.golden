@@ -1,0 +1,7 @@
+
+  Setup can't run over SSH
+
+  Setup opens its approval pages in a browser on the computer where it runs.
+  Run cairn new in a terminal on the computer where you use your browser.
+
+  Nothing was created.

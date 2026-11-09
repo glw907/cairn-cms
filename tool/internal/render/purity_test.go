@@ -179,10 +179,12 @@ var renderDirectRequires = []string{
 // internal/doctor's site-config parse, ADR-0002's addendum), pflag (promoted from indirect
 // when cmd/cairn's flag-list test began walking the command tree's flag sets, which are
 // pflag values cobra hands back), and x/crypto, whose nacl/box seals the deploy secret for
-// GitHub's Actions secrets API. They are counted rather than named, because internal/secrets
-// confines one of those import paths to its file and that check reads every .go file in the
-// module as text, this one included.
-const otherDirectRequires = 7
+// GitHub's Actions secrets API, plus Bubble Tea v2, teatest v2, Huh v2 and Bubbles v2 for the
+// terminal view, its frame harness, its forms and its key-hint footers (ADR-0004), plus Fang
+// v2, which themes Cobra help for a terminal reader. They are counted rather than named, because
+// internal/secrets confines one of those import paths to its file and that check reads every .go
+// file in the module as text, this one included.
+const otherDirectRequires = 12
 
 // TestRenderDirectRequiresArePinned holds ADR-0002's pin policy to its list, and the module
 // to its total. A fifth library taken for this package, or one of the four dropped, fails here
@@ -224,7 +226,9 @@ func TestRenderDirectRequiresArePinned(t *testing.T) {
 // The list is longer than Task 20b-ii's criterion 16 enumerates, and the difference is recorded
 // rather than hidden: View and its constants, SelectBody, Env, Terminal, Glyphs, and Credential all
 // landed with the foundations and the first bodies, and the criterion's prose names only the
-// types it was adding to. Everything here is reachable from Render's input or its output.
+// types it was adding to. Everything here is reachable from Render's input or its output, but
+// IsTerminal: cairn new asks it of stdin to choose the terminal view, which keeps the module's
+// one term.IsTerminal call in profile.go.
 var exportedSurface = []string{
 	"Body", "BodyMany", "BodyPlain", "BodySingle",
 	"Credential",
@@ -232,6 +236,7 @@ var exportedSurface = []string{
 	"Env",
 	"Frame",
 	"GlyphSet", "Glyphs",
+	"IsTerminal",
 	"MarshalAdoptList", "MarshalAuthCheck", "MarshalLogs", "MarshalSite", "MarshalSiteLine", "MarshalSitesList",
 	"MarshalSummary",
 	"AdoptCandidate", "AuthCheckPermission",

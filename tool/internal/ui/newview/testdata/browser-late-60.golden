@@ -1,0 +1,24 @@
+
+  Approve setup in your browser
+
+  Approve each request in the setup tab.
+  The next request opens in the same tab.
+
+  ● Cloudflare: Allow
+  ● GitHub: Create
+  ⣽ GitHub: Install & Authorize
+    Select Install & Authorize to let setup create the
+    field-notes repository. This access covers all your
+    repositories. Setup removes it within seconds.
+  ○ GitHub: Approve
+
+  4:12 left to approve
+
+  If no tab opened, go to
+  http://127.0.0.1:49152/?k=5f0
+  c9e2a7b4d4e1f8a3c6b9d0e2f4a71
+
+  If the countdown reaches 0:00,
+  run cairn new again to resume.
+
+  Ctrl+C stop

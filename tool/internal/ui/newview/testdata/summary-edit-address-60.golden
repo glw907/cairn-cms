@@ -1,0 +1,21 @@
+
+  Review the settings for Field Notes
+
+  Domain            fieldnotes.example.com
+  Address         > fieldnotes.example.com                 
+                    Use the bare domain, or a subdomain
+                    such as blog.fieldnotes.example.com.
+                    A subdomain gets no www.
+  Sign-in email     sam@example.com
+
+  Repository        field-notes
+  Worker            field-notes
+  Database          field-notes-auth
+  Storage bucket    field-notes-media
+
+  Theme             Waymark
+  AI crawlers       Block AI training
+
+  Deploys           GitHub Actions, each time you publish
+
+  Enter save · Esc cancel

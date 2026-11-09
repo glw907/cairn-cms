@@ -108,6 +108,46 @@ func TestNewWithNoModePrintsTheAgentGuide(t *testing.T) {
 	}
 }
 
+// TestNewChoosesItsLaneByTheTerminal runs a mode-less cairn new with and without a terminal. With
+// one it takes the terminal lane and fetches the template first. The test transport's npm has no
+// template, so the run stops with 1 and prints no guide. The lane refuses an answer flag, since
+// the questions ask it. Without a terminal the run prints the guide.
+func TestNewChoosesItsLaneByTheTerminal(t *testing.T) {
+	t.Setenv("SSH_CONNECTION", "")
+	t.Setenv("SSH_TTY", "")
+	t.Setenv("BROWSER", "true")
+	for _, tc := range []struct {
+		name     string
+		terminal bool
+		args     []string
+		code     int
+		stdout   string
+		stderr   []string
+	}{
+		{"terminal", true, nil, 1, "", []string{"download the site template"}},
+		{"terminal with an answer flag", true, []string{"--name", "X"}, int(spine.VerdictUnknown), "", []string{"--plan", "--name"}},
+		{"no terminal", false, nil, 0, "--plan", nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			d := mustDeps(t)
+			d.interactive = func() bool { return tc.terminal }
+			var out, errOut bytes.Buffer
+			code := runTree(context.Background(), d, &out, &errOut, append([]string{"new"}, tc.args...))
+			if code != tc.code {
+				t.Errorf("exit %d, want %d; stderr %q", code, tc.code, errOut.String())
+			}
+			if (tc.stdout == "") != (out.Len() == 0) || !strings.Contains(out.String(), tc.stdout) {
+				t.Errorf("stdout = %q, want %q", out.String(), tc.stdout)
+			}
+			for _, w := range tc.stderr {
+				if !strings.Contains(errOut.String(), w) {
+					t.Errorf("stderr = %q, want it to name %s", errOut.String(), w)
+				}
+			}
+		})
+	}
+}
+
 // TestNewIsHiddenUntilItShips keeps cairn new out of the root help and the completions.
 func TestNewIsHiddenUntilItShips(t *testing.T) {
 	root := newRootCmd(mustDeps(t))

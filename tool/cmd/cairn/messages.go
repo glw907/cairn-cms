@@ -821,6 +821,11 @@ func newPlanUnreadableError(err error) error {
 	return translated(fmt.Errorf(tmplNewPlanUnreadable, err))
 }
 
+// tmplNewTemplateFetch is the stop of a terminal run whose template fetch failed before the
+// first question, which needs the template's catalog for the theme question. It goes to stderr,
+// since no screen is drawn yet.
+const tmplNewTemplateFetch = "cairn: setup couldn't download the site template from npm: %v.\nCheck your internet connection, and then run cairn new again."
+
 // tmplNewPlanWritten is what --plan says on stderr once the plan file is written.
 const tmplNewPlanWritten = "Plan written to %s. Nothing was created on Cloudflare. Edit the email or the address if you need to, and then run cairn new --apply %s."
 

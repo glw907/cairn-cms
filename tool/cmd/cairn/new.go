@@ -38,6 +38,9 @@ type newInput struct {
 	apply bool
 	// resume names the unfinished record a run continues.
 	resume *setup.Resume
+	// template is the template the terminal view fetched for its theme question; a new run
+	// builds from it rather than fetch the tag again.
+	template *setup.Template
 }
 
 // The mode flags, in the order a conflict names them.
@@ -51,7 +54,7 @@ var newAnswerFlags = []string{"name", "email", "posture", "account", "zone", "ho
 var newResumeAnswerFlags = []string{"account", "zone"}
 
 // newNewCmd builds cairn new. It is hidden until the command ships: it is absent from the root help and the completions.
-func newNewCmd(d deps) *cobra.Command {
+func newNewCmd(d deps, rf *rootFlags) *cobra.Command {
 	var f newFlags
 
 	cmd := &cobra.Command{
@@ -62,7 +65,7 @@ func newNewCmd(d deps) *cobra.Command {
 		GroupID: groupSite,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runNew(cmd, d, f)
+			return runNew(cmd, d, rf, f)
 		},
 	}
 	fl := cmd.Flags()
@@ -134,10 +137,11 @@ func (f newFlags) validate(c *cobra.Command) error {
 	return nil
 }
 
-// runNew validates the flags and dispatches to the agent lane's mode. With no mode flag it
-// prints the agent guide: the terminal view is not built, and a program with no terminal has
-// nothing else to read.
-func runNew(cmd *cobra.Command, d deps, f newFlags) error {
+// runNew validates the flags and dispatches to the agent lane's mode. With no mode flag, a run
+// whose stdin and stdout are both a terminal gets the terminal view, which asks every question
+// itself; any other run prints the agent guide, since a program with no terminal has nothing
+// else to read.
+func runNew(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 	if err := f.validate(cmd); err != nil {
 		return err
 	}
@@ -145,6 +149,14 @@ func runNew(cmd *cobra.Command, d deps, f newFlags) error {
 		if cmd.Flags().Changed(m) {
 			return runAgent(cmd, d, f, m)
 		}
+	}
+	if d.interactive != nil && d.interactive() {
+		for _, a := range newAnswerFlags {
+			if cmd.Flags().Changed(a) {
+				return newRequiresError("--plan", "--"+a)
+			}
+		}
+		return runTerminal(cmd, d, rf, f)
 	}
 	_, err := fmt.Fprintln(cmd.OutOrStdout(), newAgentGuide+"\n\n"+newExitCodes)
 	return err

@@ -1,0 +1,13 @@
+
+  Set up a cairn site
+
+  Setup creates your site on GitHub and
+  Cloudflare and publishes it to your domain.
+
+  You approve four requests in your browser.
+
+  You need a domain on Cloudflare and the Workers Paid plan.
+
+  Before you start, read cairn.pub/start.
+
+  Enter start · Ctrl+C quit

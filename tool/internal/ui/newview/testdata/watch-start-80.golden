@@ -1,0 +1,17 @@
+
+  Setting up Field Notes                                                  0:00
+
+  ⣽ Write the site files
+    Setup writes your site into /home/sam/sites/field-notes on this computer.
+  ○ Set up the database, storage bucket, and email
+  ○ Commit the site
+  ○ Store the deploy key in GitHub
+  ○ Push the site to GitHub
+  ○ Run the first deploy
+  ○ Connect fieldnotes.example.com
+  ○ Sign in to the admin
+
+  You can leave this running. When your site is live,
+  setup emails a sign-in link to sam@example.com.
+
+  Ctrl+C stop

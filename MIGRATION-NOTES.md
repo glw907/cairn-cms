@@ -80,7 +80,7 @@ reference walks them.
 
 ## Unreleased
 
-Nothing to do. The engine package now ships `template/waymark/` and `template/catalog.json` beside
+Nothing to do. The engine package now ships the Waymark site template and its theme catalog beside
 `dist`, for the `cairn new` command that a later release adds. A site that already deploys is
 unaffected, and no export, entry point, or migration changes.
 

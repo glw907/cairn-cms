@@ -25,6 +25,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/loopback"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
@@ -942,8 +943,8 @@ func TestADroppedAppLeavesNoKeys(t *testing.T) {
 				t.Errorf("the keyring still holds %s", name)
 			}
 		}
-		if last, _ := w.saver.last(); last.Setup.IDs.AppID != 0 {
-			t.Errorf("record App %d, want the App dropped", last.Setup.IDs.AppID)
+		if last, _ := w.saver.last(); last.Setup.IDs.AppID != 0 || last.Setup.OwnerID != 0 {
+			t.Errorf("record App %d owner id %d, want the App and its owner dropped", last.Setup.IDs.AppID, last.Setup.OwnerID)
 		}
 	})
 	t.Run("a refused delete keeps the record", func(t *testing.T) {
@@ -1010,6 +1011,67 @@ func TestTheOwnerChecksCompareAccountIDs(t *testing.T) {
 			t.Fatalf("resume: %v", err)
 		}
 	})
+}
+
+// TestARepositoryWithNoOwnerIDKeepsTheRecordedOne pins that a created repository whose owner
+// GitHub reports with no id leaves the App owner's id the record already holds.
+func TestARepositoryWithNoOwnerIDKeepsTheRecordedOne(t *testing.T) {
+	w := newWorld(t)
+	want := w.gh.app.OwnerID
+	if want == 0 {
+		t.Fatal("the fake App's owner has no id")
+	}
+	w.gh.repo.Owner.ID = 0
+	_, _ = w.run(context.Background())
+	for _, rec := range w.saver.saves {
+		if rec.GitHub.Repo.ID != 0 && rec.Setup.OwnerID != want {
+			t.Fatalf("a save with the repository recorded holds owner id %d, want %d", rec.Setup.OwnerID, want)
+		}
+	}
+	if last, _ := w.saver.last(); last.GitHub.Repo.ID == 0 {
+		t.Errorf("record repository %+v, want the repository recorded", last.GitHub.Repo)
+	}
+}
+
+// TestTheFolderGitConfigCannotLoosenThePush pins that setup's config pairs on the push outrank
+// what a resumed site folder's .git/config says: the push reads certificate checks on, the proxy
+// the environment names, and no ssh command. A Config pair still lands after setup's, so the
+// harness can point github.com at a local remote.
+func TestTheFolderGitConfigCannotLoosenThePush(t *testing.T) {
+	marker := filepath.Join(t.TempDir(), "ssh-ran")
+	harness := childenv.Pair{Key: "url./harness/.insteadOf", Value: "https://github.com/"}
+	r := &run{
+		cfg: Config{
+			Env:            map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir(), "HTTPS_PROXY": "http://proxy.example.test:3128"},
+			GitConfigPairs: []childenv.Pair{harness},
+		},
+		hooks: t.TempDir(),
+	}
+	folder := t.TempDir()
+	ctx := context.Background()
+	gitIn := func(env []string, args ...string) string {
+		t.Helper()
+		out, err := runChild(ctx, folder, env, "git", args...)
+		if err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+		return out
+	}
+	gitIn(r.gitEnv(), "init", "--quiet")
+	gitIn(r.gitEnv(), "config", "http.sslVerify", "false")
+	gitIn(r.gitEnv(), "config", "http.proxy", "http://folder.example.test:1")
+	gitIn(r.gitEnv(), "config", "core.sshCommand", "touch "+marker)
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	for _, tt := range []struct{ key, want string }{
+		{"http.sslVerify", "true"},
+		{"http.proxy", "http://proxy.example.test:3128"},
+		{"core.sshCommand", ""},
+		{harness.Key, harness.Value},
+	} {
+		if got := gitIn(env, "config", "--get", tt.key); got != tt.want {
+			t.Errorf("the push reads %s = %q, want %q", tt.key, got, tt.want)
+		}
+	}
 }
 
 // TestInheritedGitConfigPairsNeverReachGit pins that the config pairs a git child reads come from

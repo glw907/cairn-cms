@@ -75,12 +75,12 @@ var (
 		ZoneChosen:       true,
 	}
 
-	workersPaid = setup.Failure{
-		Step: setup.StepFirstDeploy, Reason: setup.ReasonWorkersPaid,
-		Happened: "Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.",
+	deployFailed = setup.Failure{
+		Step: setup.StepFirstDeploy, Reason: setup.ReasonDeployFailed,
+		Happened: "The first deploy failed in GitHub Actions.",
 		Did:      "The completed steps above are kept.",
 		Left:     "Everything setup created stays, and the next run resumes from it.",
-		Do:       "Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.",
+		Do:       "If the account isn't on Workers Paid, the first deploy fails: check the plan first. Open the run at https://example.test/runs/1 to see what failed. Then run cairn new again. Setup resumes at the first deploy.",
 	}
 	declined = setup.Failure{
 		Step: setup.StepApproveCloudflare, Reason: setup.ReasonDeclined,
@@ -291,7 +291,7 @@ var screens = []struct {
 	{"watch-start", oneTheme, false, watched(0)},
 	{"watch-mid", oneTheme, false, watched(5)},
 	{"watch-sign-in", oneTheme, false, watched(7)},
-	{"failure-deploy", oneTheme, false, failed(workersPaid)},
+	{"failure-deploy", oneTheme, false, failed(deployFailed)},
 	{"failure-declined", oneTheme, false, failed(declined)},
 	{"done", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, Emailed: true})},
 	{"done-open", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", Emailed: true})},
@@ -428,7 +428,7 @@ func TestQuestionsHandTheAnswersToStart(t *testing.T) {
 func TestATokenRunAsksForTheOwnerEmail(t *testing.T) {
 	var got []setup.Answers
 	cfg := testConfig(true, oneTheme)
-	cfg.AskEmail = true
+	cfg.Token = true
 	cfg.Start = func(a setup.Answers) tea.Cmd { got = append(got, a); return nil }
 	m := driven(cfg, 80, 24, func(m *Model) {
 		send(m, enter)

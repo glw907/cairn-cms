@@ -35,7 +35,6 @@ type CloudflareAPI interface {
 	UserEmail(ctx context.Context) (string, error)
 	ActiveZones(ctx context.Context) ([]providers.Zone, error)
 	ListZones(ctx context.Context) ([]providers.Zone, error)
-	Subscriptions(ctx context.Context) ([]providers.Subscription, bool, error)
 	WorkerExists(ctx context.Context, name string) (bool, error)
 	ListWorkers(ctx context.Context) ([]providers.Worker, error)
 	D1DatabaseNamed(ctx context.Context, name string) (*providers.D1Database, error)

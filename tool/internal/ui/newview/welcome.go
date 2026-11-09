@@ -2,14 +2,18 @@ package newview
 
 import "strings"
 
-// welcome is the opening screen, ending on footer.
-func (g Grid) welcome(footer string) string {
+// welcome is the opening screen, ending on footer. A token run counts one approval fewer.
+func (g Grid) welcome(token bool, footer string) string {
 	lead, tail, _ := strings.Cut(welcomeRead, "<link>")
 	text := g.Styles.Text.Render
+	approve := welcomeApprove
+	if token {
+		approve = welcomeApproveToken
+	}
 	return Frame(
 		g.Title(titleWelcome),
 		g.Para(RoleText, welcomeCreates),
-		g.Para(RoleText, welcomeApprove),
+		g.Para(RoleText, approve),
 		g.Para(RoleText, welcomeNeed),
 		margin+text(lead)+g.link(linkStart, urlStart)+text(tail),
 		footer,

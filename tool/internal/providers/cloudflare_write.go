@@ -186,32 +186,6 @@ func (cf *Cloudflare) CreateR2Bucket(ctx context.Context, name string) (*R2Bucke
 	return &b, nil
 }
 
-// Subscription is one billing subscription of the account, decoded loosely: the route's shape is
-// only read for the plan's identity.
-type Subscription struct {
-	ID       string `json:"id"`
-	State    string `json:"state"`
-	RatePlan struct {
-		ID         string `json:"id"`
-		PublicName string `json:"public_name"`
-	} `json:"rate_plan"`
-}
-
-// Subscriptions returns the account's subscriptions. The route has answered code 10000 to every
-// token tried, so a 403 is a result and not a failure: available is false and the error is nil,
-// and the caller falls back to stating the plan's cost. Any other failure is returned.
-func (cf *Cloudflare) Subscriptions(ctx context.Context) (subs []Subscription, available bool, err error) {
-	err = cf.get(ctx, fmt.Sprintf("/accounts/%s/subscriptions", cf.accountID), &subs)
-	var ae *APIError
-	if errors.As(err, &ae) && ae.Status == http.StatusForbidden {
-		return nil, false, nil
-	}
-	if err != nil {
-		return nil, false, err
-	}
-	return subs, true, nil
-}
-
 // EnsureEmailSendingSubdomain onboards name for Email Sending on zoneID unless the zone already
 // lists it, reading before writing so a resumed run never onboards twice. created reports
 // whether a POST was sent.

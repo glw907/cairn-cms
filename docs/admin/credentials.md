@@ -25,7 +25,7 @@ Two more credentials end up with the site, and setup doesn't delete them, becaus
 Setup deletes each of the following at a fixed moment:
 
 - **The all-repositories GitHub installation.** The third browser step installs the App on all your repositories so that setup can create the new one. Setup deletes that installation right after it creates the repository. The fourth step installs the App on the new repository only, and setup reads that installation back to confirm it covers only that repository. A stop in either step, and every resumed run, deletes any installation the read-back hasn't confirmed.
-- **The Cloudflare approval.** When your site is live, setup revokes both Cloudflare tokens, whether or not you signed in through the setup tab. If Cloudflare refuses to revoke the refresh token, the last screen says so. In that case, go to your Cloudflare profile, open **Access Management** and then **Connected Applications**, and revoke cairn.
+- **The Cloudflare approval.** When your site is live, setup revokes both Cloudflare tokens, whether or not you signed in through the setup tab. If Cloudflare refuses to revoke the refresh token, the last screen says so. In that case, go to your Cloudflare profile, select **Manage OAuth authorizations**, find cairn, and select **Revoke**.
 - **The four keyring entries.** Setup deletes all four right after it revokes the approval. A GitHub App that setup can't use is dropped earlier: setup deletes that App's two entries and tells you the address where you delete the App.
 
 Nothing is kept for a second site. Each site gets a GitHub App and a run of its own.

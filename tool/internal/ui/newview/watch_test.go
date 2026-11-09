@@ -28,7 +28,7 @@ func TestWindowTitleAndProgressFollowThePhase(t *testing.T) {
 		{"browser on approval 2", opened(setup.WaitCreateApp), "cairn new · approve in your browser (2 of 4)", &bar{tea.ProgressBarIndeterminate, 0}},
 		{"summary", asked(fieldNotes, ""), "cairn new · review", nil},
 		{"watch", watched(2), "cairn new · setting up", &bar{tea.ProgressBarDefault, 25}},
-		{"failure", failed(workersPaid), "cairn new · stopped", &bar{tea.ProgressBarError, 62}},
+		{"failure", failed(deployFailed), "cairn new · stopped", &bar{tea.ProgressBarError, 62}},
 		{"prerequisite", failed(nodeOld), "cairn new · stopped", &bar{tea.ProgressBarError, 0}},
 		{"done", finished(setup.Done{URL: "https://fieldnotes.example.com"}), "cairn new · done", &bar{tea.ProgressBarDefault, 100}},
 		{"stopped", func(m *Model) { send(m, ctrlC) }, "cairn new · stopped", nil},
@@ -172,7 +172,7 @@ func TestFailureEmphasisAndLinks(t *testing.T) {
 	}{
 		{"an opening failure links its before-you-start section", nodeOld, urlStart + setup.Anchor(setup.ReasonNodeOld)},
 		{"a domain check links its section", noZones, urlStart + setup.Anchor(setup.ReasonNoZones)},
-		{"the Workers Paid failure links the plans", workersPaid, urlWorkers},
+		{"the deploy failure links the plans", deployFailed, urlWorkers},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			f, _ := frame(oneTheme, 80, failed(tt.f))
@@ -191,14 +191,14 @@ func TestFailureEmphasisAndLinks(t *testing.T) {
 
 func TestDoneShowsEachNoticeOnlyWhenItsFlagIsSet(t *testing.T) {
 	const skipped = "To protect your computer, setup didn't run dependency install scripts. If a dependency needs its script, go to /home/sam/sites/field-notes and run npm rebuild."
-	const revoke = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, go to Access Management > Connected Applications, and then revoke cairn."
+	const revoke = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Manage OAuth authorizations. Then find cairn and select Revoke."
 	tests := []struct {
 		name      string
 		done      setup.Done
 		want, not []string
 	}{
-		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "Connected Applications"}},
-		{"scripts skipped", setup.Done{ScriptsSkipped: true}, []string{skipped}, []string{"Connected Applications"}},
+		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "Manage OAuth authorizations"}},
+		{"scripts skipped", setup.Done{ScriptsSkipped: true}, []string{skipped}, []string{"Manage OAuth authorizations"}},
 		{"revoke failed", setup.Done{RevokeFailed: true}, []string{revoke}, []string{"npm rebuild"}},
 		{"both", setup.Done{ScriptsSkipped: true, RevokeFailed: true}, []string{skipped, revoke}, nil},
 	}

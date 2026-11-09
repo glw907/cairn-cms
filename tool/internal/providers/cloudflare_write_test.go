@@ -199,21 +199,6 @@ func TestCloudflareWriteRoutes(t *testing.T) {
 			t.Errorf("absent bucket = %+v, %v, want nil, nil", got, err)
 		}
 	})
-	t.Run("subscriptions", func(t *testing.T) {
-		cf, rt := writeClient(t, "subscriptions.list.200.json")
-		subs, ok, err := cf.Subscriptions(ctx)
-		if err != nil || !ok || len(subs) != 1 || subs[0].RatePlan.ID != "workers_paid" {
-			t.Fatalf("Subscriptions = %+v, %v, %v", subs, ok, err)
-		}
-		wantReq(t, rt.sent[0], "GET", "/accounts/acct1/subscriptions")
-	})
-	t.Run("subscriptions refused is a result", func(t *testing.T) {
-		cf, _ := writeClient(t, "subscriptions.list.403.json")
-		subs, ok, err := cf.Subscriptions(ctx)
-		if err != nil || ok || subs != nil {
-			t.Fatalf("Subscriptions = %+v, %v, %v, want absent without error", subs, ok, err)
-		}
-	})
 	t.Run("create d1", func(t *testing.T) {
 		cf, rt := writeClient(t, "d1_database.create.200.json")
 		got, err := cf.CreateD1(ctx, "cairn-rec-tmw8khn73-db")

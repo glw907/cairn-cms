@@ -17,7 +17,6 @@ const (
 	ReasonNoAccount      Reason = "no-account"
 	ReasonNoZones        Reason = "no-zones"
 	ReasonZonePending    Reason = "zone-pending"
-	ReasonWorkersPaid    Reason = "workers-paid"
 	ReasonAddressRecords Reason = "address-records"
 	ReasonAddressInUse   Reason = "address-in-use"
 	ReasonNamesTaken     Reason = "names-taken"

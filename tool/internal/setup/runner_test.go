@@ -408,18 +408,6 @@ func TestCloudflareChecksStopBeforeAnyProviderWrite(t *testing.T) {
 	}
 }
 
-// TestTheChecksNeverReadSubscriptions holds the live finding that the subscriptions route answers
-// the setup grant with a 403: the checks do not ask for the plan at all.
-func TestTheChecksNeverReadSubscriptions(t *testing.T) {
-	w := newWorld(t)
-	if _, err := w.run(context.Background()); err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if slices.Contains(w.log, "cf:subscriptions") {
-		t.Errorf("log %v reads the subscriptions route", w.log)
-	}
-}
-
 func TestATakenCloudflareNameTakesTheNextSuffix(t *testing.T) {
 	w := newWorld(t)
 	w.cf.d1["example-site-auth"] = &d1{uuid: "someone-elses-database"}

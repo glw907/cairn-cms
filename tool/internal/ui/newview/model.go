@@ -74,9 +74,10 @@ type Config struct {
 	Env  map[string]string
 	// Start runs once the questions are answered, with the owner's answers; nil starts nothing.
 	Start func(setup.Answers) tea.Cmd
-	// AskEmail adds a last question for the owner's email, for a run whose Cloudflare token
-	// cannot read it from the sign-in.
-	AskEmail bool
+	// Token reports a run on a supplied Cloudflare token. It asks a last question for the owner's
+	// email, which the token cannot read from the sign-in, and counts three approvals, since the
+	// Cloudflare request never comes.
+	Token bool
 }
 
 // OpenBrowserMsg asks the owner's go-ahead to open the setup tab at URL. The view answers on
@@ -184,8 +185,8 @@ func New(cfg Config) *Model {
 	m := &Model{
 		cfg:       cfg,
 		keys:      k,
-		questions: newQuestions(cfg.Styles, cfg.Glyphs, k, cfg.Themes, cfg.AskEmail),
-		browser:   newBrowser(cfg.Styles, cfg.Glyphs, k, ascii),
+		questions: newQuestions(cfg.Styles, cfg.Glyphs, k, cfg.Themes, cfg.Token),
+		browser:   newBrowser(cfg.Styles, cfg.Glyphs, k, ascii, cfg.Token),
 		summary:   newSummary(cfg.Styles, cfg.Glyphs, k, cfg.Themes),
 		watch:     newWatch(cfg.Styles, cfg.Glyphs, k, ascii),
 	}
@@ -489,7 +490,7 @@ func (m *Model) screen(g Grid) string {
 	case phaseWatch:
 		return m.watch.Render(m.width, m.sum)
 	}
-	return g.welcome(g.Footer(m.keys.Start, m.keys.Quit))
+	return g.welcome(m.cfg.Token, g.Footer(m.keys.Start, m.keys.Quit))
 }
 
 // windowTitle names what the window wants from the owner, so the window list or tab bar says
@@ -498,7 +499,7 @@ func (m *Model) windowTitle() string {
 	what := ""
 	switch {
 	case m.phase == phaseBrowser && m.browser.opened:
-		what = fill(windowApprove, "<n>", strconv.Itoa(m.browser.current+1), "<total>", strconv.Itoa(len(approvals)))
+		what = fill(windowApprove, "<n>", strconv.Itoa(m.browser.current+1), "<total>", strconv.Itoa(len(m.browser.approvals)))
 	case m.phase == phaseChoose:
 		what = windowChoose
 	case m.phase == phaseSummary:

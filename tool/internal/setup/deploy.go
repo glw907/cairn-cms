@@ -282,11 +282,11 @@ func (r *run) pushIfBehind(ctx context.Context) (bool, error) {
 }
 
 // deployFailure is the stop for a failed first deploy. It points at the run's page and names no
-// cause, since setup reads only the run's conclusion; the subscriptions read that could name a
-// missing Workers Paid plan answers 403 to setup's grant.
+// cause, since setup reads only the run's conclusion. The subscriptions route that could name a
+// missing Workers Paid plan answers 403 to setup's grant, so the next step says to check the plan.
 func (r *run) deployFailure(runURL string) error {
 	return r.failure(ReasonDeployFailed, "The first deploy failed in GitHub Actions.",
-		"Open the run at "+runURL+" to see what failed. Then run cairn new again, and setup resumes at the first deploy.", nil)
+		"If the account isn't on Workers Paid, the first deploy fails: check the plan first. Open the run at "+runURL+" to see what failed. Then run cairn new again, and setup resumes at the first deploy.", nil)
 }
 
 // startInstall runs `npm install --ignore-scripts` in the site folder in the background, so the

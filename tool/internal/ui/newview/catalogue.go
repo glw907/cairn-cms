@@ -12,8 +12,10 @@ const (
 	titleWelcome   = "Set up a cairn site"
 	welcomeCreates = "Setup creates your site on GitHub and Cloudflare and publishes it to your domain."
 	welcomeApprove = "You approve four requests in your browser."
-	welcomeNeed    = "You need a domain on Cloudflare and the Workers Paid plan."
-	welcomeRead    = "Before you start, read <link>."
+	// welcomeApproveToken is the count when a Cloudflare token stands in for the first request.
+	welcomeApproveToken = "You approve three requests in your browser."
+	welcomeNeed         = "You need a domain on Cloudflare and the Workers Paid plan."
+	welcomeRead         = "Before you start, read <link>."
 
 	titleSSH       = "Setup can't run over SSH"
 	sshBody        = "Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser."
@@ -47,15 +49,16 @@ const (
 
 // The browser screens.
 const (
-	titleBrowser   = "Approve setup in your browser"
-	browserBefore  = "Setup opens a tab in your browser. Approve these four requests in that tab."
-	browserDuring  = "Approve each request in the setup tab. The next request opens in the same tab."
-	browserNoTab   = "If no tab opened, go to <url>"
-	browserNoOpen  = "Setup couldn't open your browser. Go to <url>"
-	browserResume  = "To resume, run cairn new again."
-	countdownLeft  = "<time> left to approve"
-	countdownLate  = "If the countdown reaches 0:00, run cairn new again to resume."
-	permissionName = "API Tokens: Write"
+	titleBrowser       = "Approve setup in your browser"
+	browserBefore      = "Setup opens a tab in your browser. Approve these four requests in that tab."
+	browserBeforeToken = "Setup opens a tab in your browser. Approve these three requests in that tab."
+	browserDuring      = "Approve each request in the setup tab. The next request opens in the same tab."
+	browserNoTab       = "If no tab opened, go to <url>"
+	browserNoOpen      = "Setup couldn't open your browser. Go to <url>"
+	browserResume      = "To resume, run cairn new again."
+	countdownLeft      = "<time> left to approve"
+	countdownLate      = "If the countdown reaches 0:00, run cairn new again to resume."
+	permissionName     = "API Tokens: Write"
 
 	approvalAllow   = "Cloudflare: Allow"
 	approvalCreate  = "GitHub: Create"
@@ -153,7 +156,11 @@ const (
 	doneTook     = "Setup took <time>."
 
 	doneScriptsSkipped = "To protect your computer, setup didn't run dependency install scripts. If a dependency needs its script, go to <folder> and run npm rebuild."
-	doneRevokeFailed   = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, go to Access Management > Connected Applications, and then revoke cairn."
+	// doneRevokeFailed follows Cloudflare's page on viewing and revoking authorized applications,
+	// https://developers.cloudflare.com/fundamentals/oauth/authorizing-an-application/ (read
+	// 2026-11-09). The page names the profile link and the Revoke button; the client name cairn
+	// is the registered one and awaits a live check.
+	doneRevokeFailed = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Manage OAuth authorizations. Then find cairn and select Revoke."
 )
 
 // The Ctrl+C lines.
@@ -202,11 +209,11 @@ const (
 // Catalogue returns every string the view's copy carries, for the copy golden.
 func Catalogue() []string {
 	return []string{
-		titleWelcome, welcomeCreates, welcomeApprove, welcomeNeed, welcomeRead,
+		titleWelcome, welcomeCreates, welcomeApprove, welcomeApproveToken, welcomeNeed, welcomeRead,
 		titleSSH, sshBody, nothingCreated,
 		titleQuestions, labelTheme, descTheme, labelDesign, labelSiteName, descSiteName, labelRepo,
 		errSlug, labelCrawlers, descCrawlers, optionBlock, optionAllow, labelOwnerEmail, descOwnerEmail,
-		titleBrowser, browserBefore, browserDuring, browserNoTab, browserNoOpen, browserResume,
+		titleBrowser, browserBefore, browserBeforeToken, browserDuring, browserNoTab, browserNoOpen, browserResume,
 		countdownLeft, countdownLate,
 		approvalAllow, approvalCreate, approvalInstall, approvalApprove,
 		titleNoDomain, titleStopped, partHappened, partDid, partLeft, partDo,

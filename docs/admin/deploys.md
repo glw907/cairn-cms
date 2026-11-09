@@ -32,10 +32,10 @@ A green check means the Worker deployed. A red cross means it didn't, and the ru
 
 ## Handle a failed first deploy
 
-The first deploy runs while setup is still working. If it fails, setup stops with the message "The first deploy failed in GitHub Actions" and prints the address of the run. To recover:
+The first deploy runs while setup is still working. If it fails, setup stops with the message "The first deploy failed in GitHub Actions" and prints the address of the run. Its next step opens with "If the account isn't on Workers Paid, the first deploy fails: check the plan first." To recover:
 
-1. Open the run at the address setup printed, and read which step failed.
-2. If the cause is the plan, subscribe to Workers Paid. Otherwise, hand the run's address to a developer.
+1. Check that the account is on Workers Paid.
+2. Open the run at the address setup printed, and read which step failed. If the cause is the plan, subscribe to Workers Paid. Otherwise, hand the run's address to a developer.
 3. Run `cairn new` again.
 
 Setup resumes at the first deploy. When the earlier run ended in a failure, setup pushes one empty commit to start a new run.

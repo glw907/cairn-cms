@@ -446,7 +446,7 @@ Run `cairn new status` to list them, or run --plan again
 - the OS keyring did not open
 - the Workers script to adopt
 - the domain the Worker serves, for a Worker with no Custom Domain
-- the engine's npm dist-tag to build the site from
+- the engine's npm dist-tag to build the site from, or npm's own tag setting when it is set
 - the first owner's email address
 - the ground to render for: dark or light
 - the number of sites the registry is expected to hold
@@ -551,7 +551,6 @@ Run `cairn new status` to list them, or run --plan again
 - Choose another site name, and then run cairn new again.
 - Cloudflare didn't approve setup's request.
 - Cloudflare no longer accepts setup's approval.
-- Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.
 - Correct the answer, and then run cairn new again.
 - Create a Cloudflare account, and then run cairn new again.
 - Delete that Worker or rename it in Cloudflare, and then run cairn new again.
@@ -561,6 +560,7 @@ Run `cairn new status` to list them, or run --plan again
 - Every name from <repo> to <repo>-9 is already in use.
 - Finish or stop the other setup, and then run cairn new again.
 - If GitHub says the name is taken, change it on that page. Setup uses the name you choose.
+- If the account isn't on Workers Paid, the first deploy fails: check the plan first. Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.
 - If the link has expired, request a new one on the sign-in page.
 - If you don't need it, delete the <kind> in Cloudflare. If you need it, choose another site name. Then run cairn new again.
 - Install Git, and then run cairn new again.
@@ -569,7 +569,6 @@ Run `cairn new status` to list them, or run --plan again
 - Move or rename that folder, or run cairn new from another folder.
 - Nothing was created.
 - On GitHub, open the Actions tab of <repo> to see whether the deploy is still running. Then run cairn new again. Setup resumes at the first deploy.
-- Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.
 - Port 49152 is in use. Another setup may be running.
 - Register a domain with Cloudflare, or add a domain you already own to Cloudflare. Then run cairn new again.
 - Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve to give the App access to <repo> only.
@@ -597,7 +596,6 @@ Run `cairn new status` to list them, or run --plan again
 - Setup keeps what it already created.
 - Setup needs Node.js 24 or later. This computer has Node.js <n>.
 - Setup stopped.
-- Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.
 - That address already points to another site. Choose another address, or remove its DNS records in Cloudflare first.
 - The 30-minute limit to approve the requests ran out.
 - The Cloudflare approval doesn't include the account that setup started with.
@@ -681,11 +679,12 @@ Run `cairn new status` to list them, or run --plan again
 - Setup can't read your email from a Cloudflare token. The admin sends your sign-in links to this address.
 - Setup can't run over SSH
 - Setup couldn't open your browser. Go to <url>
-- Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, go to Access Management > Connected Applications, and then revoke cairn.
+- Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Manage OAuth authorizations. Then find cairn and select Revoke.
 - Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
 - Setup didn't send a sign-in link. This site already has editors, and <email> isn't one of them. Ask one of them to invite you in Admin > Editors.
 - Setup needs a domain on Cloudflare
 - Setup opens a tab in your browser. Approve these four requests in that tab.
+- Setup opens a tab in your browser. Approve these three requests in that tab.
 - Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser.
 - Setup stopped. Nothing was created.
 - Setup stopped. To resume, run cairn new again.
@@ -711,6 +710,7 @@ Run `cairn new status` to list them, or run --plan again
 - Workers pricing
 - Write the site files
 - You approve four requests in your browser.
+- You approve three requests in your browser.
 - You can leave this running. When your site is live, setup emails a sign-in link to <email>.
 - You need a domain on Cloudflare and the Workers Paid plan.
 - You're signed in to the admin in your browser.

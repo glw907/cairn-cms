@@ -100,11 +100,6 @@ var entries = map[Reason]Entry{
 		Do:       "Wait until Cloudflare shows the domain as active, and then run cairn new again.",
 		Anchor:   anchorCloudflare,
 	},
-	ReasonWorkersPaid: {
-		Happened: "Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.",
-		Did:      kept,
-		Do:       "Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.",
-	},
 	ReasonAddressRecords: {
 		Happened: "The address <host> already points to another site. It has DNS records in Cloudflare.",
 		Did:      nothingCreated,
@@ -199,7 +194,7 @@ var entries = map[Reason]Entry{
 	ReasonDeployFailed: {
 		Happened: "The first deploy failed in GitHub Actions.",
 		Did:      kept,
-		Do:       "Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.",
+		Do:       "If the account isn't on Workers Paid, the first deploy fails: check the plan first. Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.",
 	},
 	ReasonDeployTimeout: {
 		Happened: "The first deploy didn't finish within 30 minutes.",

@@ -1,0 +1,10 @@
+{
+  "name": "cairn",
+  "description": "Sets up a new cairn site with an agent through cairn new.",
+  "author": {
+    "name": "Geoff Wright"
+  },
+  "homepage": "https://github.com/glw907/cairn-cms#readme",
+  "repository": "https://github.com/glw907/cairn-cms",
+  "license": "MIT"
+}

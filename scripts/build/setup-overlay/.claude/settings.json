@@ -1,0 +1,18 @@
+{
+  "extraKnownMarketplaces": {
+    "svelte": {
+      "source": { "source": "github", "repo": "sveltejs/ai-tools" }
+    },
+    "cloudflare": {
+      "source": { "source": "github", "repo": "cloudflare/skills" }
+    },
+    "daisyui": {
+      "source": { "source": "github", "repo": "saadeghi/daisyui" }
+    }
+  },
+  "enabledPlugins": {
+    "svelte@svelte": true,
+    "cloudflare@cloudflare": true,
+    "daisyui@daisyui": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "cairn",
+  "owner": {
+    "name": "Geoff Wright"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for cairn, a CMS for SvelteKit and Cloudflare."
+  },
+  "plugins": [
+    {
+      "name": "cairn",
+      "source": "./plugins/cairn",
+      "description": "Sets up a new cairn site with an agent: the cairn new plan and apply steps, each approval handed to the person, and the hand-off to the site's own skills."
+    }
+  ]
+}

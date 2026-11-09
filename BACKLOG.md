@@ -44,6 +44,18 @@
   Placement: handed to the tooling brainstorm; the legs drive `create-cairn-site`, which `cairn new` replaces.
 - [ ] **#386** Record the S1 pending routes for the release's real-account leg `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   Placement: the cairn-setup plan's S1 pending routes, to be recorded for the release's real-account leg.
+- [ ] **#404** The first-deploy failure never names Workers Paid, though Decide 3 ruled it should when the plan is absent `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+  `ReasonWorkersPaid` is defined in `tool/internal/setup/messages.go` and never raised: setup reads neither the subscription nor the Actions run (`deploy.go` names no cause). The deploys and create-your-site pages describe the generic failure, with a line to check the plan first; when the read lands they gain one sentence.
+  Placement: engine batch; a `tool/` change in the cairn-setup follow-up pass, with its page edit.
+- [ ] **#405** A finished setup that could not delete its keyring entries tells nobody `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+  `finish` in `tool/internal/setup/runner.go` records the leftover entries as `KeysKept`, but `cairn new status` lists entries only for unfinished runs, so the owner never learns one stayed. The credentials page cannot say how to find them.
+  Placement: engine batch; a `tool/` change, with the credentials page's removal steps.
+- [ ] **#406** `check:symbols` resolves a site path against the template but not the setup overlay `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+  `pathExists` in `scripts/checks/check-symbols.mjs` misses `scripts/build/setup-overlay/`, so a page that cites the deploy workflow's path in a code span fails; `deploys.md` words around it.
+  Placement: engine batch; a `runner` change to the check.
+- [ ] **#407** `cairn help agents` carries a compact setup guide while `cairn new` prints the docs page `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+  `newAgentGuide` in `tool/cmd/cairn/messages.go` and the embedded `set-up-with-an-agent.md` overlap, and only the page names the plugin. Either the help topic embeds the page too, or it links it.
+  Placement: engine batch; decide with the tooling brainstorm's agent-lane polish.
 - [ ] **#368** Make `bump.mjs` read the version when `--date` is absent `#bug` `#cairn-cms` `#tooling` *(2026-11-07)* *(swept 2026-11-08)*
   `scripts/release/bump.mjs:112-114`: with no `--date`, `dateAt` is -1, so `i !== dateAt + 1` excludes index 0 and `version` reads as `''`, which is the positional version. `node scripts/release/bump.mjs 0.99.0-rc.4` therefore fails unless `--date` is passed. Left alone, every cut that omits the flag fails its first step. Fix: test `dateAt >= 0 && i === dateAt + 1`. Source: rc.4 release retro.
 - [ ] **#369** Give `preflight.mjs` a recut mode `#improvement` `#cairn-cms` `#tooling` *(2026-11-07)* *(swept 2026-11-08)*

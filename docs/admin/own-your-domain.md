@@ -1,50 +1,44 @@
 # Own your domain
 
-A new site answers at a `workers.dev` address that Cloudflare assigns. This page moves the site onto a domain you own, turns on the sign-in email that lets anyone besides you sign in, and optionally connects the site's repository to Cloudflare so that every push deploys itself. You can stop after any part. Sign-in email needs the domain part first, and Workers Builds needs neither.
-
-The page is for the person who ran the setup command, `create-cairn-site`, and now wants a domain or a second writer. If you only want pushes to redeploy the site, skip to [Connect to Workers Builds](#connect-to-workers-builds). A part that stalls is covered by [Recover a setup that stopped](./setup-recovery.md).
-
-The first two parts share one Cloudflare API token. The Workers Builds part asks for that token with one more permission, and then for a second, narrower token that Workers Builds deploys with. Run the setup command from the computer that created the site, and run it again whenever you want the next part. Each run picks up where the last one stopped.
-
-```
-npx create-cairn-site --dir <your-site-directory>
-```
+A cairn site serves from a domain that is active on Cloudflare, and setup connects that domain for you. This page is for the person who is about to run setup, or already has, and wants to use a domain registered somewhere else. It gets the domain onto Cloudflare and states what the sign-in email does to the domain's mail. It leaves the run itself to [Create your site](./create-your-site.md), and a part that stalls to [Recover a setup that stopped](./setup-recovery.md).
 
 ## Prerequisites
 
-- A site that has finished [Create your site](./create-your-site.md).
-- A domain that is already registered, at any registrar. This page connects a domain you own and doesn't sell you one.
-- For sign-in email, Cloudflare's Workers Paid plan, which the deploy step already required.
+- A domain that is already registered, at any registrar. This page connects a domain you own and doesn't sell you one. To buy one, [register it with Cloudflare](https://developers.cloudflare.com/registrar/get-started/register-domain/) and skip to [Choose the site's address](#choose-the-sites-address), because a domain registered there is active already.
+- Access to the domain's DNS settings and its nameservers at your registrar. If you don't control the domain's DNS yourself, stop here and talk to whoever does: an agency, a previous developer, or an IT contact. Guessing or forcing past this risks your organization's existing mail.
+- A domain that isn't already active under someone else's Cloudflare account. Such a domain doesn't appear in yours, and setup reports that your account has no domains. The fix is for that person to remove it from their account.
 
-## Connect your domain
+## Add your domain to Cloudflare
 
-Creating the Cloudflare zone and connecting the domain both run on the free plan. A zone is Cloudflare's name for the settings and records it holds for your domain. Whether the domain's certificate adds a charge is unconfirmed, and [What it costs](./before-you-start.md#what-it-costs) explains.
+Cloudflare calls the settings and records it holds for your domain a zone. A nameserver is the server that answers questions about your domain. Your domain keeps using its old nameservers until you change them, and the change is the step that takes time. Setup checks that a domain on your account is active. When none is yet, it stops with a note that the domain is still being added, creates nothing, and resumes when you run it again.
 
-1. Run the setup command with your site's directory.
-2. Answer **Yes** to `Connect a domain you own to this site now?`, then enter your domain.
-3. In the browser page the command opens, read every row of the permissions that Cloudflare selected: Zone, DNS, Workers Scripts, SSL and Certificates, and email sending.
-4. Create the API token.
-5. Paste the token into the terminal.
-6. Review the DNS records the command lists, and confirm the copy. [Carry over existing DNS records](#carry-over-existing-dns-records) explains what the list covers.
-7. Switch your domain's nameservers, as [Switch your domain's nameservers](#switch-your-domains-nameservers) describes.
+1. In the Cloudflare dashboard, add your domain, following [Cloudflare's guide to adding a domain](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/). Adding it creates the zone and gives you a pair of nameservers.
+2. Review the DNS records Cloudflare lists for the zone. [Carry over existing DNS records](#carry-over-existing-dns-records) explains why.
+3. If a record from your registrar is missing, add it in Cloudflare's DNS settings before you change nameservers.
+4. At your registrar, the company where you bought the domain, replace the domain's nameservers with the pair Cloudflare gave you.
+5. Wait until Cloudflare shows the domain as active.
 
-Cloudflare can render a permission row as an empty control when something goes wrong on its end. A token missing a permission still passes this step and fails later, at the step that needed it.
-
-### Switch your domain's nameservers
-
-Cloudflare creates the zone and gives you a pair of nameservers. A nameserver is the server that answers questions about your domain, and your domain keeps using its old ones until you change them.
-
-1. Copy the pair of nameservers that the command prints.
-2. At your registrar, the company where you bought the domain, replace the domain's nameservers with that pair.
-3. Run the setup command again to check whether the switch has taken effect.
-
-The change spreads across the internet gradually, which is called propagation, and it can take anywhere from a few minutes to 48 hours. The site keeps answering at its `workers.dev` address in the meantime.
+The change spreads across the internet gradually, which is called propagation, and it can take hours. If you run setup before then, it stops at the first Cloudflare check, creates nothing, and resumes when you run `cairn new` again.
 
 ### Carry over existing DNS records
 
-DNS records are the entries that tell the internet where your domain's web traffic and mail go. Your domain probably carries records that have nothing to do with cairn, and mail records are the most common. Before the switch, the command reads the records your domain has today and shows them to you. It copies them into the new Cloudflare zone only after you confirm. The list comes from a fixed set of lookups, so it can miss a record the lookups never asked about. Compare it with what you know.
+DNS records are the entries that tell the internet where your domain's web traffic and mail go. Your domain probably carries records that have nothing to do with cairn, and mail records are the most common. Setup never edits or deletes a record your zone already holds. It refuses an address that already has DNS records or a Worker, and it adds only the records the site needs.
 
-Neither the site nor `cairn doctor` can see or check the zone's Minimum TLS Version setting, the oldest version of the TLS protocol that Cloudflare accepts from a visitor. The default is old, because [TLS 1.0 is the version that Cloudflare sets by default](https://developers.cloudflare.com/ssl/reference/protocols/). In the dashboard, open **SSL/TLS**, then **Edge Certificates**, and set the Minimum TLS Version to 1.2, as [Cloudflare's Minimum TLS Version page](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/minimum-tls/) describes.
+Cloudflare, not setup, brings records into a new zone when you add a domain, and its scan can miss a record. Compare the list with what you know before you switch nameservers. Mail that depends on a missing record stops working when the switch takes effect. An owner with live mail is the most exposed here, so read [Turn on sign-in email](#turn-on-sign-in-email) as well.
+
+### You know it worked when
+
+Cloudflare shows the domain as active, and setup's first Cloudflare check passes with no stop about a pending domain. A domain you registered through Cloudflare is active at once, with nothing to copy.
+
+## Choose the site's address
+
+Setup serves the site at your bare domain and its `www` form, such as `example.com` and `www.example.com`. On the summary, you can change this to a subdomain of the domain, such as `blog.example.com`, which gets no `www`. Setup checks the address in the opening and again when you change it, and it refuses one that already points somewhere else. If the account has several active domains, setup asks which to use.
+
+When the site's HTTPS certificate is ready, setup confirms that your address answers over HTTPS. This can take up to 15 minutes. If it takes longer, setup stops with the work kept, and running it again resumes at that step.
+
+## Turn on sign-in email
+
+Setup turns on sign-in email during the run. It onboards your site's address for Cloudflare's email sending, and the admin sends each sign-in link from `no-reply@` that address. Everyone other than you signs in through such a link, so [Invite editors](./invite-editors.md) depends on it.
 
 ```mermaid
 flowchart LR
@@ -52,88 +46,33 @@ flowchart LR
   accDescr: One Cloudflare zone holds two unrelated groups of records. Your organization's existing mail records sit beside cairn's sending records. Only cairn's records carry the sign-in mail from no-reply@yourdomain.
 
   subgraph zone["Your domain's Cloudflare zone"]
-    existing["Existing mail records<br/>carried over unchanged"]
+    existing["Existing mail records<br/>left unchanged"]
     added["cairn's sending records<br/>added at email onboarding"]
   end
 
   added -->|sends| signin["no-reply@yourdomain<br/>sign-in mail"]
 ```
 
-*After the switch, one zone holds both groups of records, and the existing mail records carry over unchanged. When the domain has no DMARC policy yet, turning on sign-in email adds one for the whole domain, so it also governs mail your organization sends.*
+*One zone holds both groups of records. Setup leaves the existing mail records unchanged. When the domain has no DMARC policy yet, Cloudflare adds one for the whole domain, so it also governs mail your organization sends.*
 
 Two different things share this one domain, and they are easy to conflate:
 
-- The address your site sends sign-in mail from is `no-reply@yourdomain`. It uses Cloudflare's sending service, and it exists only once you turn on sign-in email.
-- Your organization's existing mail on the domain carries over unchanged and has nothing to do with the site's sign-in mail.
+- The address your site sends sign-in mail from is `no-reply@yourdomain`. It uses Cloudflare's sending service.
+- Your organization's existing mail on the domain stays as it is and has nothing to do with the site's sign-in mail.
 
-If you don't control the domain's DNS yourself, stop here and talk to whoever does: an agency, a previous developer, or an IT contact. Guessing or forcing past this step risks your organization's existing mail. A domain already active under someone else's Cloudflare account can't be connected from yours. The command says so, and the one fix is for that person to remove the domain from their account.
+A DMARC record is a mail-policy entry at `_dmarc.yourdomain`. When your domain has none, Cloudflare's onboarding adds one with the policy `p=reject`, and when it already has one, onboarding keeps it unchanged. A `p=reject` policy asks receivers to reject mail that claims to come from your domain without authenticating, and it covers every sender on the domain, not only cairn. Otherwise a receiver rejects mail from any service that doesn't authenticate. Before you run setup:
 
-If your domain's nameservers already point at Cloudflare, for example a domain you registered through Cloudflare, the zone arrives active and there is nothing to copy.
+1. List the services that already send as your domain, such as a newsletter tool, a ticketing system, or a mailing list.
+2. Follow each one's instructions for authenticating against your domain's mail records.
+3. Do the same for any service you add afterward.
 
-### You know it worked when
-
-The command confirms that your domain answers over HTTPS, switches the site's address to the domain, and redeploys once. The site then answers at both `https://yourdomain` and its original `workers.dev` address. Sign in at `https://yourdomain/admin`.
-
-Sometimes your domain's own nameservers already serve the site, but the DNS resolver on your computer hasn't caught up. If the command can reach the site directly through those nameservers, it reports the site live and prints a line that this computer's DNS resolver may take up to 30 minutes to see the domain. Nothing needs fixing. The domain works for everyone whose resolver has caught up, and yours will follow.
-
-## Turn on sign-in email
-
-Sign-in email is what lets anyone other than you sign in, because everyone else gets in through a link sent to their address. You keep signing in as the owner through [`--sign-in`](./create-your-site.md#sign-in-again) either way.
-
-1. Finish [Connect your domain](#connect-your-domain), so the domain is live.
-2. Answer **Yes** to `Turn on email sign-in for your domain now?`. The prompt first states what onboarding does to your domain's DMARC record: it adds a `p=reject` policy for the whole domain when the domain has none, and keeps an existing record unchanged. The DMARC paragraph below explains what that means.
-3. Wait while the command onboards the domain for sending and sends a test message to your sign-in address.
-
-The command asks in the same run once the domain is live. If the run stopped to wait for the nameserver switch, run it again.
-
-Your Workers Paid plan was confirmed at the deploy step, so this step doesn't ask about it again. If you answer no, nothing changes: the site keeps serving, and you keep signing in as the owner. A later run from a terminal asks again, whether or not you have connected Workers Builds. A run that can't ask, such as `--yes` without `--email` or a script with no terminal, stays declined and prints the flags that turn sign-in email on unattended. A `--yes` run connects Workers Builds whether or not it declined email.
-
-A new domain has no sending history, so mail providers can take a while to trust it. If someone's first sign-in link doesn't arrive at once, this delay is the usual reason. It isn't a sign that anything is broken.
-
-A DMARC record is a mail-policy entry at `_dmarc.yourdomain`. When your domain has none, onboarding adds one with the policy `p=reject`, and when it already has one, onboarding keeps it unchanged. The command reads the record first and says which case applies, or says it couldn't read the record. A `p=reject` policy asks receivers to reject mail that claims to come from your domain without authenticating, and it covers every sender on the domain, not only cairn. When onboarding adds the record, list the services that already send as your domain before you turn on sign-in email, such as a newsletter tool, a ticketing system, or a mailing list. Follow each one's instructions for authenticating against your domain's mail records, and do the same for any you add afterward. Otherwise a receiver rejects its mail.
+A new domain has no sending history, so mail providers can delay mail from it. If someone's first sign-in link doesn't arrive at once, this delay is the usual reason. It isn't a sign that anything is broken.
 
 The running site reads none of your SPF, DKIM, or DMARC records, so a broken record never shows up as a site error. Only `cairn doctor` looks at them. It checks that a DMARC record with a real policy exists, that an SPF record names Cloudflare's mail servers, and that a DKIM record answers under one of a short list of common selector names. A DKIM record under any other name goes unseen, so a missing result there doesn't prove the record is absent.
 
 ### You know it worked when
 
-The command reports that Cloudflare accepted a test message sent from your site to your sign-in address. [Invite editors](./invite-editors.md) covers getting other people signed in.
-
-## Connect to Workers Builds
-
-Workers Builds is Cloudflare's service for building and deploying from a repository. Once it's connected, every push to the repository's default branch deploys the site without your computer or the setup command. The step is optional, separate from the domain parts, and available as soon as the site is live. If you decline the domain, the setup command offers Builds in the same run.
-
-Until Builds is connected, a publish from the admin commits to GitHub and the live site doesn't change. To deploy, connect Builds or deploy by hand.
-
-Workers Builds uses two tokens. The setup token is the one you paste for the domain parts, plus one more permission, Workers Builds, which lets the command connect your repository and watch builds. The command keeps it until Builds setup finishes, and deletes it then.
-
-The second token is the one Workers Builds deploys with. It carries three permissions, each at the edit level: Workers Scripts, D1, and Workers R2 Storage. Cloudflare keeps it, registered with Workers Builds under the name `cairn-build`, and hands it to every build, so anyone who can push to your default branch can read it. It is narrow on purpose. You limit it to this one Cloudflare account, where it can deploy every Worker and edit every D1 database and R2 bucket, and it can't edit DNS, zones, or email.
-
-You create the `cairn-build` token once for each Cloudflare account. A later site on the same account finds the registration and reuses it without asking. Revoking or rolling the token later can break your automatic deploys: the next push builds and then fails. If you rotate tokens on a schedule, update this one too.
-
-1. Run the setup command with the connect flag:
-
-   ```
-   npx create-cairn-site --dir <your-site-directory> --connect
-   ```
-
-2. Create the setup token in the browser page the command opens, and paste it into the terminal.
-3. If this Cloudflare account has no `cairn-build` token yet, create one in the second browser page the command opens. Under **Account Resources**, check that the token is limited to this one account, not all accounts. At the prompt `Paste your Workers Builds deploy token`, paste it. A later site on the account skips this step.
-4. If the command asks, authorize Cloudflare's Workers and Pages GitHub App on your account.
-5. Click the sign-in link the command opens later in the run.
-
-An unattended run, with `--yes`, can't open a browser or ask for a paste. Set `CAIRN_CF_API_TOKEN` to the setup token, and for the first site on an account set `CAIRN_CF_BUILD_TOKEN` to the deploy token. With neither a registered `cairn-build` token nor `CAIRN_CF_BUILD_TOKEN`, the run stops with `build-token-missing` before it registers anything, and the site keeps working. [Recover a setup that stopped](./setup-recovery.md#connect-to-workers-builds) covers it.
-
-If the Workers and Pages GitHub App isn't authorized yet, the run stops after the token paste and tells you where to authorize it. Run the command with `--connect` again afterward. It continues without asking for a fresh token.
-
-Workers Builds is free at this scale. [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) has the current limits.
-
-### You know it worked when
-
-The command watches your first Workers Builds deploy through to the end and confirms that the site answers. From then on, every commit to the default branch deploys itself.
-
-After Builds is connected, the command no longer builds or deploys from your computer. A domain or sign-in email change is committed to `wrangler.jsonc` and `src/theme/cairn.config.ts` in your repository, through the same sign-in click, and Builds deploys that commit. Run `git pull` in the site's folder afterward to bring the commit into your checkout. If your repository holds edits to either file that your checkout doesn't, the command stops before committing and tells you to run `git pull` and then run it again.
-
-A build deploys code and doesn't apply database migrations. A cairn update that ships a migration still needs a developer to run it. The package's `MIGRATION-NOTES.md` says how to apply one.
+Setup emails your first sign-in link to the address you gave it, and the done screen says so. [Invite editors](./invite-editors.md) covers getting other people signed in.
 
 ## See also
 

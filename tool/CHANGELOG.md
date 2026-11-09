@@ -35,7 +35,7 @@ every route. No `tool/v2.0.0` tag exists yet.
   states, ends with a `summary` event, and exits 0, 1 (stopped, resumable), 2 (interrupted or timed out,
   resumable), or 3 (usage, before anything ran). `cairn new status` lists each setup record, whether it finished, and
   what an unfinished run still holds. `make reference` writes the generated setup reference to
-  `tool/docs/setup-reference.md`, and a test fails when the page and the code disagree. The
+  `docs/admin/setup-reference.md`, and a test fails when the page and the code disagree. The
   setup contract joins `cairn help agents` once the command is shown. The
   command stays hidden until the launcher ships, and no release gate depends on it.
 

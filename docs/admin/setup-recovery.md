@@ -1,108 +1,111 @@
 # Recover a setup that stopped
 
-The setup command saves its progress after every step, so a step that fails, a browser page you close, or a run you interrupt never costs you the steps before it. This page is for the moment a run stopped and you need to know where it stands and what to type next. Each row in the tables below lists one stopping point, what it means, and whether to wait, act, or ask someone. The page covers setup only. It doesn't cover a site that is already live.
+Setup saves its progress as it goes, so a step that fails, a browser tab you close, or a run you interrupt never costs you the steps before it. This page is for the moment a `cairn new` run stopped and you need to know what it kept and what to do next. It covers a run that stopped before the site went live, and it expects only that you saw setup stop. Each stop below is classed as one of three next steps: wait, act, or ask someone else.
 
-This page covers a setup that stopped. Two other pages cover problems at other moments:
+Two other pages cover problems at other moments:
 
 - If a `cairn doctor` check named a problem, read [Check that your site works](./is-it-working.md).
 - If the site is live and doing something wrong, and no check names it, read [Troubleshoot a live site](./troubleshooting.md).
 
 ## Resume a run
 
-The command writes its progress to a record on the computer you ran it from, in `~/.config/cairn/sites`. The record never lives inside your site's folder, so a push can't publish it. To continue after any stop, run the same command again with the folder you created:
+Setup writes a record of each run to your computer, in cairn's registry folder, which [Credentials](./credentials.md#remove-what-an-unfinished-run-holds) locates. The record never lives in your site's folder, so a push can't publish it. To resume, run `cairn new`. The tables below call that the setup command. To continue a stopped run:
+
+1. Open a terminal on the computer where you ran setup.
+2. Run `cairn new`, or run `npm create cairn-site`, which starts it.
+3. In the list titled **Resume setup**, choose the site that didn't finish. Each entry shows the site's name and its domain.
+
+The list always ends with **Start a new site**, so a stopped run never blocks another site. Setup continues from the last step it completed. Finished steps don't repeat: an existing GitHub App isn't created again, and a pushed repository isn't pushed again. A resumed run asks for a Cloudflare approval again only when Cloudflare no longer accepts the saved one.
+
+`cairn new --resume <id>` continues one run by name, and `cairn new --new` starts another site and ignores the unfinished ones. `cairn new status` lists the ids. [Set up with an agent](./set-up-with-an-agent.md) covers a run with no terminal.
+
+## Check that the run resumed
+
+When a resumed run finishes, `cairn new status` lists it as `finished`:
 
 ```
-npx create-cairn-site --dir <your-site-directory>
+cairn new status
 ```
 
-The command reads what it already finished and continues from there. Finished steps don't repeat: an existing App isn't created again, a pushed repository isn't pushed again, and a connected domain isn't connected again. Every table below ends in this command, sometimes with an extra flag.
+A run that stopped again is listed as `unfinished`, with the step where it stopped.
 
-A local address such as `http://127.0.0.1:36927` can appear during a long step, with a note to leave the run going. The address works only on your own computer and only during that step, and the page it serves shows no secret. You can open it, ignore it, or close it. The run continues either way, and the page disappears when the step finishes.
+## Read a stop
 
-## Get your site onto GitHub
+Every stop is worded in four parts: what happened, what setup already did, what it left in place, and what to do. The tables below give each stop as what happened and why, what setup kept, and what to do, with the class of the next step in bold. A stop before anything exists says `Nothing was created.` After that, setup lists what it made, and everything it lists stays in place for the next run.
 
-The following table lists where a run can stop on its way to GitHub, what each stop means, and what to do.
+A stop ends with one of three exit codes, which matter to a script and not to you at the terminal:
 
-| Where you stopped | What it means | What to do |
+- Exit code 1 means setup stopped at a step. This covers every failure in the tables, including a refusal found after the run began.
+- Exit code 2 means setup was interrupted or timed out: you pressed Ctrl+C, or the 30-minute limit for the browser approvals ran out.
+- Exit code 3 means setup refused a flag or a plan file before it ran anything, so it created nothing.
+
+A stop after setup saved its record leaves the run saved, and `cairn new --resume` continues it. That holds for exit code 2 and for most stops with exit code 1. A stop in the opening checks creates no record, so the rerun starts fresh.
+
+## Fix a stop before setup creates anything
+
+The following table lists the stops that happen on your computer, before the browser approvals. Setup created nothing, so each fix is to change what setup found and run it again. [Before you start](./before-you-start.md#what-you-need-on-your-computer) lists what the computer needs.
+
+| What happened and why | What setup kept | What to do |
 | --- | --- | --- |
-| A browser step was never finished | The App's name was taken, or you closed the page. If the App was created but never installed, its saved credentials are safe. | **Act:** run the command again. Add `--app-name <a-new-name>` if GitHub said the name was taken. |
-| The App may exist but its key was never collected | GitHub allows one hour to collect the new App's credentials, and that hour passed. | **Act:** delete the App on [GitHub's apps page](https://github.com/settings/apps) if it exists, then run the command again, with a new `--app-name` if needed. |
-| GitHub's authorization code expired | The browser step took too long and nothing was collected. | **Act:** run the command again and finish the browser step promptly. |
-| A repository with that name exists | GitHub refused to create it. | **Act:** run the command again with `--repo-name <a-different-name>`. |
-| Waiting on an organization owner | You're creating the App under an organization, and GitHub needs an owner's approval to install it. GitHub has already emailed the owners. | **Ask an organization owner:** once they approve, run the command again. |
-| The organization enforces single sign-on | GitHub blocked the request until the App is authorized for the organization. | **Ask an organization owner:** have them authorize the App under the organization's settings. Then run the command again. |
-| The App is installed, but the push was interrupted | Nothing is lost or duplicated. | **Act:** run the command again. The push resumes. |
-| The App's installation doesn't cover your repository | The install page's repository choice left it out. The repository exists, and the next run reuses it. | **Act:** on [GitHub's installations page](https://github.com/settings/installations), open the App, set the repository access to **All repositories** (or, under **Only select repositories**, add your repository), then run the command again. |
-| No browser window reached you | The command opened the browser, but the window never appeared, or it opened somewhere you aren't working. | **Act:** copy the link the command printed into the browser you work in, and use that link rather than GitHub's own "New GitHub App" form, because an App made there never reports back. |
+| Setup can't run over SSH or without a display. It opens its approval pages in a browser on the computer where it runs. | Nothing was created. | **Act:** run the setup command in a terminal on the computer where you use your browser. |
+| Setup can't find Git, or can't find Node.js, or the computer has a Node.js older than 24. | Nothing was created. | **Act:** install Git, or Node.js 24 or later, then run the setup command again. |
+| Port 49152 is in use, because another setup may be running. | Nothing was created. | **Wait or act:** let the other setup finish, or stop it, then run the setup command again. |
+| Setup can't use your computer's keyring, which stores its credentials until the run ends. | Nothing was created. | **Act:** unlock or set up your keyring, then run the setup command again. |
+| Setup couldn't get the site template from npm. | Nothing was created. | **Act:** check your internet connection, then run the setup command again. |
+| The folder for your site already exists and isn't empty. | Nothing was created. | **Act:** move or rename that folder, or run the setup command from another folder. |
 
-## Get your site onto Cloudflare
+## Fix a stop after the Cloudflare approval
 
-The following table lists where a run can stop on its way to Cloudflare, what each stop means, and what to do.
+The following table lists the stops that setup finds by checking your Cloudflare account, which happens right after approval 1. Setup created nothing on GitHub or Cloudflare. It does keep the Cloudflare approval in your keyring, so the rerun can reuse it. An approval that leaves out `API Tokens: Write` isn't a stop. The setup tab shows an error page with **Try again**, which asks Cloudflare again. Setup needs that permission to create the site's deploy key, so select it and then **Allow**. [Before you start](./before-you-start.md#what-you-need-on-cloudflare) lists what the account needs.
 
-| Where you stopped | What it means | What to do |
+| What happened and why | What setup kept | What to do |
 | --- | --- | --- |
-| You declined the deploy prompt | Nothing is wrong. The site stays on GitHub only. | **Act when you're ready:** run the command again. It asks again. |
-| Cloudflare's sign-in wasn't completed | Wrangler has no account to deploy to. Nothing changed. | **Act:** run the command again and finish the browser sign-in. |
-| Wrangler can't run | The site's dependencies aren't installed. | **Act:** run `npm install` in the site's folder, then run the command again. |
-| Your account already has a resource with your site's name | Before the first build, and again just before the first deploy, the command checks your Cloudflare account for a Worker with your site's name, a database with that name plus `-auth`, and a storage bucket with that name plus `-media`. It found at least one, and deploying would replace or reuse it, so the command stopped before it deployed anything. The message gives each resource's creation time when Cloudflare reports one. When a run resumes a deploy that stopped partway, the command still checks, and accepts only what that deploy made. | **Act:** run the command again with `--name <a-different-name>` and a new `--dir <a-new-folder>`. The GitHub repository and App for this site stay in place, for you to delete or reuse. |
-| The command refuses the names your own earlier deploy made | This site's first deploy stopped partway, either on an earlier version of `create-cairn-site` or because the run ended without recording when it stopped, such as when you pressed Ctrl+C. The command can't tell the Worker, database, or bucket that deploy made from someone else's, so it refuses them. | **Act:** match each creation time in the message to when your earlier run deployed. If they match, delete the Worker, database, and bucket the message names in Cloudflare's dashboard, but only if they hold nothing you need. Then run the command again. |
-| The command couldn't check those names | Wrangler couldn't read your account's Workers, databases, or buckets, or the command couldn't read the site's `wrangler.jsonc`. Or that file names a different Worker, database, or bucket than the site's name gives, or carries a `database_id`, a bucket `jurisdiction`, a `preview_` key on a database or bucket binding, or an `env` block. The command stopped before it deployed anything, rather than risk deploying over a resource it didn't check. | **Act:** fix what the command printed, then run the command again. |
-| Installing, building, or deploying failed partway | The command printed what npm, the build, or wrangler reported. | **Act:** fix what it printed, then run the command again. A second deploy finds the resources the first one made and creates no more. |
-| Your account has no `workers.dev` subdomain | Cloudflare needs you to register one before a Worker can deploy. It's free. | **Act:** accept the suggested subdomain in Cloudflare's dashboard, then run the command again. |
-| More than one Cloudflare account on the login | An unattended run can't ask which to use. | **Act:** run the command again without `--yes`, so it can ask. |
-| The deploy finished but the database or the key step didn't | The Worker, the database, and the bucket all exist. The migrations, the App-key upload, or the first sign-in record didn't complete. | **Act:** run the command again. Each of those steps is safe to retry. |
+| Your Cloudflare sign-in has no account, so setup has nowhere to create the site. | Nothing was created. | **Act:** create a Cloudflare account, then run the setup command again. |
+| Your Cloudflare account has no domains. Your site sends sign-in links by email, and Cloudflare sends email only from a domain on your account. | Nothing was created. | **Act:** register a domain with Cloudflare, or add a domain you own to Cloudflare, then run the setup command again. |
+| Your domain is still being added to Cloudflare. | Nothing was created. | **Wait:** when Cloudflare shows the domain as active, run the setup command again. |
+| The address you chose already has DNS records in Cloudflare, so it points at another site. | Nothing was created. | **Act:** remove the DNS records for that address in Cloudflare, or choose another address. Then run the setup command again. |
+| A Worker already serves the address you chose. | Nothing was created. | **Act, or ask whoever runs that Worker:** remove the Worker's custom domain or route for that address in Cloudflare, or choose another address. Then run the setup command again. |
+| Every name from your site's name to the same name followed by `-9` is already in use. | Nothing was created. | **Act:** choose another site name, then run the setup command again. |
+| Cloudflare didn't approve setup's request. | Nothing was created. | **Act:** run the setup command again. On the Cloudflare page, select `API Tokens: Write`, and then select **Allow**. |
 
-Once this part finishes, the site is live and you're signed in. [Create your site](./create-your-site.md) shows what that looks like.
+## Fix a stop during the browser approvals
 
-## Connect your domain
+The following table lists the stops that happen while you approve requests in the browser tab, which setup limits to 30 minutes in all. A stop here keeps the Cloudflare approval and each GitHub step you finished.
 
-The following table lists where the domain steps can stop, what each stop means, and what to do.
-
-| Where you stopped | What it means | What to do |
+| What happened and why | What setup kept | What to do |
 | --- | --- | --- |
-| You declined to connect a domain | Nothing is wrong. The site keeps working at its `workers.dev` address. | **Act when you're ready:** run the command again. It asks again. |
-| The API token was refused | The pasted token is invalid, or it lacks a permission. | **Act:** run the command again. It opens the token page for a fresh token. |
-| Waiting for the nameserver switch | Your registrar still points the domain at its old nameservers, or the change is still spreading. This can take a few minutes to 48 hours. | **Wait:** run the command again in a few minutes. Nothing needs fixing. |
-| The domain points at a different Cloudflare account | An agency or a previous developer probably owns that account. | **Ask whoever controls that account:** they have to release the domain. [Own your domain](./own-your-domain.md#carry-over-existing-dns-records) covers the case. |
-| The domain is delegated but not answering | The certificate or the domain's own record hasn't finished spreading. | **Wait:** run the command again in a few minutes. The `workers.dev` address works the whole time. |
+| The 30-minute limit to approve the requests ran out, or you pressed Ctrl+C. Setup exits with code 2. | The completed approvals. | **Act:** run the setup command again to resume. |
+| The Cloudflare approval doesn't include the account the setup began in. | The completed steps. | **Act:** run the setup command again, select the same account as before, then select `API Tokens: Write` and **Allow**. |
+| GitHub says the App's name is taken. | The Cloudflare approval. | **Act:** change the name on GitHub's page. Setup uses the name you choose. |
+| Setup couldn't store a credential in the keyring. | The completed steps, and the GitHub App if setup had created it. | **Act:** unlock your keyring and run the setup command again. If setup names a GitHub App to delete, delete it first at the address setup prints. |
+| The GitHub App may still have access to all your repositories. Setup couldn't confirm that its access is limited to the new repository. | The App and the repository, and an installation that may reach every repository. | **Act:** remove the App's installation at [GitHub's installations page](https://github.com/settings/installations), then run the setup command again. When GitHub asks, select **Approve** to give the App access to the new repository only. |
+| A repository that an earlier run named exists but isn't private and empty, or you approved the GitHub install as a different account from the one that owns the App. Setup can't confirm that it created the repository. | The completed steps. | **Act:** delete the repository if you don't need it, or sign in to GitHub as the App's owner. Then run the setup command again. |
 
-## Turn on sign-in email
+## Fix a stop while setup builds the site
 
-The following table lists where the sign-in email steps can stop, what each stop means, and what to do.
+The following table lists the stops that happen after the summary, while setup creates the database, pushes the site, and runs the first deploy. The GitHub App and the repository exist by now, and the stop lists whatever else setup made.
 
-| Where you stopped | What it means | What to do |
+| What happened and why | What setup kept | What to do |
 | --- | --- | --- |
-| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run from a terminal asks again, whether or not Workers Builds is connected. For an unattended run, pass `--email` and `--yes`. A `--yes` run connects Builds whether or not it declined email. |
-| The account isn't on Workers Paid | The command stopped when it tried to onboard sending. | **Act:** turn on the plan in Cloudflare's dashboard, then run the command again. |
-| The sending records are still spreading | A test send before the records settle fails. This is normal. | **Wait:** run the command again in a few minutes. It doesn't repeat the onboarding. |
-| The test send failed for another reason | Cloudflare refused the send, or the daily limit was reached. | **Act, or wait:** the command prints the cause. Fix it or wait for the limit to reset, then run the command again. |
-
-## Connect to Workers Builds
-
-The following table lists where the Workers Builds steps can stop, what each stop means, and what to do.
-
-| Where you stopped | What it means | What to do |
-| --- | --- | --- |
-| You declined Workers Builds | Nothing is wrong, but a publish from the admin commits to GitHub and the live site doesn't change until you connect Builds or deploy by hand. | **Act when you're ready:** run the command again with `--connect`. |
-| The command says your repository has changes to `wrangler.jsonc` or `src/theme/cairn.config.ts` | Builds is connected, and the repository's copy of a file the command writes differs from your checkout beyond the values the command sets. Committing your copy would undo those edits, so the command committed nothing. | **Act:** run `git pull` in the site's folder, then run the command again. |
-| Cloudflare's Workers and Pages GitHub App isn't authorized yet | Cloudflare needs a one-time authorization before it can watch any repository. | **Act:** authorize it from Cloudflare's dashboard, then run the command again with `--connect`. |
-| Your repository isn't on Cloudflare's list | That app watches only repositories you add. | **Act:** add the repository on [GitHub's installations page](https://github.com/settings/installations), then run the command again with `--connect`. |
-| The config commit or the first build hasn't finished | The commit needs a sign-in click, or the build is still running. | **Act, or wait:** run the command again with `--connect`. It resumes where it stopped. |
-| A build failed | This needs a fix, not another run. | **Act:** the command prints the end of the build log and a link to the full log. Fix what it names, then run it again with `--connect`. |
-| The run stopped with `build-token-missing` | The run was unattended with `--yes`, and this Cloudflare account has no `cairn-build` deploy token registered. Nothing was registered, and the site still works. | **Act:** set `CAIRN_CF_BUILD_TOKEN` to a token with Workers Scripts, D1, and Workers R2 Storage edit permissions, then run the command again with `--connect --yes`. Or run it again without `--yes` to be asked for the token. |
-| The run stopped with `build-token-invalid` | Cloudflare rejected the Workers Builds deploy token, or reported it as not active, or you pasted the setup token at that prompt, which is too wide to hand to every build. It may be mistyped, expired, or revoked. Your saved setup token is kept. | **Act:** create a new `cairn-build` token with Workers Scripts, D1, and Workers R2 Storage edit permissions. Run the command again with `--connect` and paste it at `Paste your Workers Builds deploy token`. With `--yes`, set `CAIRN_CF_BUILD_TOKEN` to the new token instead. |
-| A Builds deploy failed on a missing permission | The `cairn-build` token lacks a permission the build needs, such as D1 or Workers R2 Storage. Running the command again doesn't prompt, because it reuses the registered token. | **Act:** in Cloudflare's dashboard, edit the token registered as `cairn-build` and add the missing permission at the edit level. Then push a commit or retry the build. |
-
-## Sign in again
-
-When the sign-in link the command opened has expired, or you return to a live site on a new day, get a fresh link:
-
-```
-npx create-cairn-site --dir <your-site-directory> --sign-in
-```
-
-The command writes a fresh sign-in link into your site's database and opens it, with no email involved. It works whether or not you've connected a domain. The link works for ten minutes, and the session it starts lasts 30 days. To sign in as a different address, add `--owner-email <you@example.com>` to the same command. If the command says your record has no saved Cloudflare account, run it again without `--sign-in` until it prints `Find your Cloudflare account`, then use `--sign-in` again.
+| Setup couldn't write the site into its folder, because the folder isn't writable. | The App and the repository. | **Act:** make the folder writable, then run the setup command again. |
+| The site's folder changed after setup wrote it, so setup can't build on it. | Everything setup created. | **Act:** undo your changes in that folder, then run the setup command again. |
+| A Worker, database, or storage bucket named for your site already exists, and setup can't confirm that it created it. | Everything setup created. | **Act:** delete that resource in Cloudflare if you don't need it, then run the setup command again. If you need it, start a new site with another name. |
+| The repository already holds commits that setup didn't make. | Everything setup created. | **Act:** remove those commits or delete the repository, then run the setup command again. |
+| Setup couldn't push the site to GitHub. | Everything setup created. | **Act:** check your internet connection, then run the setup command again. |
+| The first deploy failed in GitHub Actions, and setup names no cause. Setup can't read your Cloudflare plan, so an account without the Workers Paid plan, which every cairn site needs, shows up only here. | Everything setup created. | **Act, or ask a developer:** open the run at the address setup prints and read why it failed. If the account lacks Workers Paid, subscribe, then run the setup command again. Setup resumes at the first deploy, and a rerun pushes one empty commit to deploy again. |
+| Cloudflare no longer accepts the approval setup saved, which setup finds during a long step while it builds the site. | The completed steps. | **Act:** run the setup command again. On the Cloudflare page, select `API Tokens: Write`, and then select **Allow**. |
+| The first deploy didn't finish within 30 minutes. | Everything setup created. | **Wait or act:** open the Actions tab of your repository on GitHub to see whether the deploy is still running, then run the setup command again. |
+| The site didn't answer over HTTPS within 15 minutes. Cloudflare is still issuing the certificate. | Everything setup created. | **Wait:** run the setup command again in a few minutes. Setup resumes at connecting your domain. |
+| A request to Cloudflare or GitHub failed, or setup stopped on an unexpected error. | Everything setup created. | **Act:** check your internet connection, then run the setup command again. |
+| Setup couldn't save its record of the run. | Everything setup created. | **Act:** make sure your home folder is writable, then run the setup command again. |
 
 ## Start over
 
-The flag `--start-over` sets the saved progress aside and starts a fresh site in the same folder. It refuses once the site has resources it can't safely abandon: a live Cloudflare zone with your records copied into it, a Worker attached to your domain, or a Workers Builds connection. When it refuses, it names what to remove first, so it never silently discards a working setup.
+To begin a different site, run `cairn new` and choose **Start a new site**, or run `cairn new --new`. Setup never deletes what an abandoned run made. That run keeps its entries in your keyring, its GitHub App, and its repository until you remove them. [Credentials](./credentials.md#remove-what-an-unfinished-run-holds) lists what each unfinished run still holds and how to remove each part.
+
+## See also
+
+- [Create your site](./create-your-site.md) shows the setup from the start.
+- [Sign in again](./create-your-site.md#sign-in-again) covers signing in to the live site.
+- [Own your domain](./own-your-domain.md) covers the domain your site uses.
+- [Credentials](./credentials.md) covers what setup holds on your computer, and when it deletes each part.

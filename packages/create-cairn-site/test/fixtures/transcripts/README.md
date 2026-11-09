@@ -137,9 +137,29 @@ A name-only comparison against `~/.local/secrets` showed one name,
 `GITHUB_APP_PRIVATE_KEY_B64`, in `01-create-cairn-site.txt`. It is the secret upload's label, and
 no secret value appears in any fixture.
 
+## The cairn new captures
+
+Files `05` to `08` are real stdout from the `cairn` binary built from the pass branch
+(`go build ./cmd/cairn` in `tool/`), run with a scratch `XDG_STATE_HOME` so the registry is empty and
+no account is read. They are the commands that run with no browser and no account: the dry run in
+both forms, `cairn new status` with no unfinished setup, and the usage error a dry run without
+`--posture` prints (stdout and stderr merged for that one). Setup's interactive screens and its
+live steps need real accounts, so the pages describe them from the recorded fixtures under
+`tool/internal/` and the setup reference, and the release's real-account leg records them.
+
+| File | Command | Outcome |
+| --- | --- | --- |
+| `05-cairn-new-dry-run.txt` | `cairn new --dry-run --name "My Site" --host example.com --email me@example.com --posture decline --color never --width 100` | Exit 0, the derived names |
+| `06-cairn-new-dry-run-json.txt` | the same with `--json` and no colour or width flags | Exit 0, one `dryRun` payload |
+| `07-cairn-new-status-empty.txt` | `cairn new status --color never --width 100` | Exit 0, `No setups found.` |
+| `08-cairn-new-usage-error.txt` | `cairn new --dry-run --name "My Site" --host example.com --email me@example.com --color never` | Exit 3, the usage error |
+
 ## Deliberately unconsumed
 
 No documentation block quotes these; `check:transcripts` treats this list as their citation.
+
+- `01-create-cairn-site.txt`: the wizard's run, kept until P6 retires the wizard. The setup pages
+  describe `cairn new` and no longer quote it.
 
 ## Identifiers
 

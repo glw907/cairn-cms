@@ -395,6 +395,8 @@ describe('scanTree: failure modes', () => {
       [`${FIXTURES_DIR}/b.txt`]: 'b1\nb2\n',
       [`${FIXTURES_DIR}/c.txt`]: 'c1\nc2\n',
       [`${FIXTURES_DIR}/d.txt`]: 'd1\nd2\n',
+      [`${FIXTURES_DIR}/e.txt`]: 'e1\n',
+      [`${FIXTURES_DIR}/f.txt`]: 'f1\n',
       'docs/admin/create-your-site.md': [
         `<!-- transcript: ${FIXTURES_DIR}/a.txt -->`,
         '```',
@@ -422,10 +424,21 @@ describe('scanTree: failure modes', () => {
         'd2',
         '```',
       ].join('\n'),
+      'docs/admin/set-up-with-an-agent.md': [
+        `<!-- transcript: ${FIXTURES_DIR}/e.txt -->`,
+        '```',
+        'e1',
+        '```',
+        '',
+        `<!-- transcript: ${FIXTURES_DIR}/f.txt -->`,
+        '```',
+        'f1',
+        '```',
+      ].join('\n'),
     });
     const { violations, blocksChecked } = scanTree(root);
     expect(violations).toEqual([]);
-    expect(blocksChecked).toBe(4);
+    expect(blocksChecked).toBe(6);
   });
 
   // The recorded run is quoted by docs/admin alone. While it holds no page, its per-page floors and
@@ -444,7 +457,7 @@ describe('scanTree: failure modes', () => {
 
     it('restores both once docs/admin regains a page', () => {
       const root = buildTree({ ...fixtures, 'docs/admin/a-new-page.md': 'No transcript blocks.\n' });
-      expect(kindsOf(scanTree(root).violations).sort()).toEqual(['fixture-uncited', 'page-below-floor', 'page-below-floor']);
+      expect(kindsOf(scanTree(root).violations).sort()).toEqual(['fixture-uncited', 'page-below-floor', 'page-below-floor', 'page-below-floor']);
     });
 
     it('still checks a marked block outside docs/admin', () => {

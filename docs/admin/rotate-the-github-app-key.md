@@ -1,6 +1,6 @@
 # Rotate the GitHub App key
 
-Your site commits every save and publish through a GitHub App, and the App signs each request with a private key. The key never expires, so the one your site uses stays in service until you replace it. Rotate it when the key may have been exposed, when someone who held it leaves, or on a schedule you set. This page shows how to replace the key on a site that [`create-cairn-site`](./create-your-site.md) set up.
+Your site commits every save and publish through a GitHub App, and the App signs each request with a private key. The key never expires, so the one your site uses stays in service until you replace it. Rotate it when the key may have been exposed, when someone who held it leaves, or on a schedule you set. This page shows how to replace the key on a site that [`cairn new`](./create-your-site.md) set up.
 
 An App can hold several private keys at once, and a new key doesn't cancel the old one. That overlap lets you generate the new key beside the old one, push it to your site, and confirm it works before you delete the old key. Your site keeps publishing throughout.
 
@@ -10,7 +10,7 @@ Proving the new key takes at least 55 minutes. Your site reuses each short-lived
 
 You need the following:
 
-- A deployed site, set up by `create-cairn-site`, whose Worker (the part of your site that runs on Cloudflare) holds the key as `GITHUB_APP_PRIVATE_KEY_B64`.
+- A deployed site, set up by `cairn new`, whose Worker (the part of your site that runs on Cloudflare) holds the key as `GITHUB_APP_PRIVATE_KEY_B64`.
 - A GitHub account that can edit the App's settings. GitHub's [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps) describes the settings page.
 - Wrangler, Cloudflare's command-line tool, signed in through `npx wrangler login` to the Cloudflare account that holds the site's Worker, and a terminal in the site's folder.
 - A sign-in to the admin as an owner. The check in the verify steps publishes an entry.
@@ -31,7 +31,7 @@ Your site reads `GITHUB_APP_PRIVATE_KEY_B64` as the PEM file encoded in base64 o
 
 1. In the site's folder, run the command for your platform, replacing the path with the location of the new PEM file.
 
-   On Linux or macOS, this form gives the same encoding the setup command writes:
+   On Linux or macOS, this form gives the same encoding `cairn new` writes:
 
    ```bash
    node -e "process.stdout.write(require('fs').readFileSync('path/to/new-key.pem').toString('base64'))" | npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64

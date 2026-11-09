@@ -260,7 +260,7 @@ cannot: which sense of "the package" or "the tool" is meant.
 | The npm library a site imports from | the engine, in prose | Never the compound "cairn engine". The CLI's copy standard (`tool/docs/design/copy-standard.md`) fixes the same word for operators. |
 | The same, as an artifact | `@glw907/cairn-cms` where the reader types or reads it; the package for facts about the tarball, its files, install, and module resolution | "The package is ESM-only" is a package fact; "the engine renders the preview" is an engine fact. |
 | The Go CLI | the `cairn` CLI; a command always carries its verb: `cairn health`, `cairn adopt` | No bare "the CLI" (Google's word list: "Don't use CLI generically"; the docs name five CLIs). A bare `` `cairn` `` code span is an identifier prefix (the ambient `cairn` namespace, the `cairn/<concept>/<id>` holding branch), never the command. Google's code-in-text guidance: "use code font for the command and ordinary font for the name of the project or product." |
-| The scaffolder | `create-cairn-site` on first mention on a page, then the setup command | A code identifier is not a sentence subject twenty times on a non-developer page. |
+| The scaffolder | `cairn new` for the command, and `npm create cairn-site` for the launcher that starts it; the setup command after the first mention on a page | A code identifier is not a sentence subject twenty times on a non-developer page. |
 | Other npm bins | `cairn-audit`, `cairn-guidance`, `cairn-doctor`, always by name | |
 | The editing surface | the admin; `/admin` for the path | |
 | The editing surface, on the editor track | the editor names the product and the person; the admin appears only where a screen string or a developer cross-reference needs it | Geoff, 2026-10-31. In the developer tracks "the admin" is the surface, and in `docs/editors/` "the editor" names the product and the person who uses it, so the editor track's vocabulary and this table agree. |
@@ -405,7 +405,7 @@ opening, as the following anatomies state.
      <!-- vale Google.Quotes = YES -->
      that names the observable result. Checks the reader runs in order form a numbered list.
      One exception stands (Geoff, 2026-10-31): `admin/own-your-domain.md` keeps "You know it
-     worked when" on its three sections, because `github-slug-contract.test.ts` pins their
+     worked when" on its sections, because `github-slug-contract.test.ts` pins their
      slugs, so the slug contract outranks the heading rule there. Each body is a full sentence.
   5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md` or
      `admin/troubleshooting.md`) rather than restating recovery
@@ -478,8 +478,9 @@ engine-internal name. Every command shown is copyable as printed and traces to a
 run.
 
 **Arrival state.** Through the root README or word of mouth, deciding to create a site, or
-inheriting a running site someone else created; `create-cairn-site` is the setup spine, and
-the docs narrate and recover it, never replace it with hand-authoring.
+inheriting a running site someone else created; `cairn new` is the setup spine, started with
+`npm create cairn-site` or by an agent, and the docs narrate and recover it, never replace it
+with hand-authoring.
 
 **Success criterion.** The default site is live and healthy with zero code authored, and
 every failure the reader can hit ends in a named next step classified wait, act, or ask a
@@ -515,7 +516,7 @@ audience lands, and they carry the whole cairn story.
 
 - **Five routes, not four, in the first screenful.** The evaluator route comes first
   ("deciding whether cairn fits" → `docs/why-cairn.md`), then editor, admin, extender,
-  contributor, in that order. One copyable `create-cairn-site` command sits above the routes.
+  contributor, in that order. One copyable `npm create cairn-site` command sits above the routes.
   No Diátaxis citation appears anywhere, and the root README's positioning sections sit
   below the command and routes, for the same reason a pitch never leads.
 - **Primary persona: the seasoned developer serving an organization.** Most readers are

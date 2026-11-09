@@ -349,7 +349,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       raw = await backend.readFile(siteConfigPath(), backend.defaultBranch);
       if (raw === null) log.warn('config.missing', { scope: 'vocabulary', path: siteConfigPath() });
     } catch {
-      // An unreadable config degrades to an empty vocabulary; the first save writes a clean list.
+      // An unreadable config degrades to an empty vocabulary; a save refuses until the file exists.
       raw = null;
     }
     if (raw !== null) {

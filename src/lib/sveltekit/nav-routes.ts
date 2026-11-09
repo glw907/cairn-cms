@@ -94,7 +94,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
       // pre-src/site layout would otherwise lose its menu with no trace.
       if (raw === null) log.warn('config.missing', { scope: 'nav', path: runtime.siteConfigPath });
     } catch {
-      // An unreadable config degrades to an empty tree; the first save writes a clean menu.
+      // An unreadable config degrades to an empty tree; a save refuses until the file exists.
       raw = null;
     }
     if (raw !== null) {

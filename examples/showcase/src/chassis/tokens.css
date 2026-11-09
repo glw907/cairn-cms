@@ -84,8 +84,9 @@
 
    The scroll-cue role holds the image list `prose.css` paints behind a code block that scrolls
    sideways: a gradient that covers the block's end and a soft shadow at the viewport edge. `none`
-   turns the cue off. Its colors read the block's ground and the body ink, so one value serves
-   both color schemes. */
+   turns the cue off. Its colors read the code ground and the body ink, so one value serves both
+   color schemes. A custom property resolves its `var()` references where it is declared, so
+   `--cairn-code-bg` must be set at `:root` or `[data-theme]` for the cue to follow it. */
 @layer theme {
   :root,
   [data-theme] {

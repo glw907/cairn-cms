@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
@@ -178,6 +179,7 @@ func (r *run) createApp(ctx context.Context) error {
 	r.rec.Setup.AppSlug = app.Slug
 	r.rec.Setup.ClientID = app.ClientID
 	r.rec.Setup.AppOwner = app.OwnerLogin
+	r.rec.Setup.OwnerID = app.OwnerID
 	r.nameEntries(secrets.EntryAppKey, secrets.EntryAppClientSecret)
 	if err := r.save(); err != nil {
 		return err
@@ -298,11 +300,11 @@ func (r *run) exchange(ctx context.Context, cb loopback.Callback) (tok providers
 // walk the suffixes.
 func (r *run) createRepo(ctx context.Context) error {
 	gh := r.cfg.GitHub(r.user)
-	login, err := gh.UserLogin(ctx)
+	login, id, err := gh.User(ctx)
 	if err != nil {
 		return r.fail(ctx, err, "GitHub")
 	}
-	if login != r.app.OwnerLogin {
+	if !r.isOwner(login, id) {
 		return r.wrongAccount(login)
 	}
 	unknown := r.rec.Setup.Intents.Repo == r.names.Repository && r.rec.GitHub.Repo.ID == 0
@@ -328,12 +330,15 @@ func (r *run) createRepo(ctx context.Context) error {
 		if err != nil {
 			return r.fail(ctx, err, "GitHub")
 		}
-		if repo.Owner.Login != r.app.OwnerLogin {
+		if !r.isOwner(repo.Owner.Login, repo.Owner.ID) {
 			return r.repoElsewhere(repo)
 		}
 		r.repo = repo
 		r.rec.GitHub.Repo = record.GitHubRepo{ID: repo.ID, Owner: repo.Owner.Login, Repo: repo.Name, DefaultBranch: repo.DefaultBranch}
-		r.rec.Setup.OwnerID = repo.Owner.ID
+		// A zero id is GitHub naming no id, which must not erase the one the App's conversion gave.
+		if repo.Owner.ID != 0 {
+			r.rec.Setup.OwnerID = repo.Owner.ID
+		}
 		r.rec.Step = string(spine.StepRepoCreated)
 		return r.save()
 	}
@@ -352,7 +357,7 @@ func (r *run) adoptRepo(ctx context.Context, gh GitHubAPI) (providers.Repository
 		return providers.Repository{}, err
 	case repo == nil:
 		return providers.Repository{}, providers.ErrRepoNameTaken
-	case repo.Owner.Login != owner, !repo.Private:
+	case !r.isOwner(repo.Owner.Login, repo.Owner.ID), !repo.Private:
 		return providers.Repository{}, r.repoNotOurs(owner, name)
 	}
 	// GitHub answers a commit read of a repository with no commits with 409 "Git Repository is
@@ -391,6 +396,16 @@ func (r *run) wrongAccount(login string) *Failure {
 	return r.failure(ReasonNotOurs, "You approved the GitHub install as "+login+", not "+r.app.OwnerLogin+
 		", the account that owns the GitHub App "+r.app.Slug+".",
 		"Sign in to GitHub as "+r.app.OwnerLogin+", and then run cairn new again.", nil)
+}
+
+// isOwner reports whether the account with login and id is the App's owner. Ids compare when
+// both are known, since a login can be renamed and then taken by another account. Otherwise the
+// logins compare without regard to case, as GitHub's do.
+func (r *run) isOwner(login string, id int64) bool {
+	if id != 0 && r.app.OwnerID != 0 {
+		return id == r.app.OwnerID
+	}
+	return strings.EqualFold(login, r.app.OwnerLogin)
 }
 
 // installRepo runs approval 4: an install preselected to the new repository, confirmed by the
@@ -528,18 +543,39 @@ func (r *run) resumeSweep(ctx context.Context) error {
 	return r.checkKept(ctx, keep)
 }
 
-// dropApp is the stop for a recorded App setup can't act as. It drops the App from the record, so
-// the next run creates a new one, and says how to delete this one.
+// dropApp is the stop for a recorded App setup can't act as. It deletes the App's key and client
+// secret from the keyring, then drops the App from the record, so the next run creates a new one,
+// and says how to delete this one. A delete the keyring refuses stops with the record as it was,
+// so the next run tries the delete again.
 func (r *run) dropApp(reason Reason, happened string, err error) error {
 	slug := r.rec.Setup.AppSlug
+	if derr := r.cfg.Vault.DeleteEntries(r.appEntries()); derr != nil {
+		f := r.failure(ReasonKeyring, "Setup couldn't delete the keys of the GitHub App "+slug+" from the keyring.",
+			"Unlock the keyring, and then run cairn new again.", derr)
+		f.Left = "The keyring still holds the key and client secret of the GitHub App " + slug + "."
+		return f
+	}
 	r.app = providers.AppRecord{}
 	r.rec.Setup.IDs.AppID, r.rec.Setup.AppSlug, r.rec.Setup.ClientID, r.rec.Setup.AppOwner, r.rec.Setup.Intents.App = 0, "", "", "", ""
+	r.rec.Setup.OwnerID = 0
 	r.rec.Step = string(spine.StepSetupStarted)
 	if err := r.save(); err != nil {
 		return err
 	}
 	return r.failure(reason, happened,
 		"Delete the App at https://github.com/settings/apps/"+slug+", and then run cairn new again. Setup creates a new App.", err)
+}
+
+// appEntries returns the keyring entries the record names for the App's key and client secret.
+// An entry the record does not name was never written, since a name is recorded before its write.
+func (r *run) appEntries() []string {
+	var out []string
+	for _, k := range []secrets.EntryKind{secrets.EntryAppKey, secrets.EntryAppClientSecret} {
+		if name := r.cfg.Vault.Entry(k); slices.Contains(r.rec.Setup.KeyringEntries, name) {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 // errOverGrant reports that the recorded installation is gone: it reached more than the
@@ -616,7 +652,7 @@ func (r *run) resumeGitHub(ctx context.Context) error {
 		return f
 	}
 	r.app.ClientSecret = providers.NewCredential(secret)
-	r.app.OwnerLogin = r.rec.Setup.AppOwner
+	r.app.OwnerLogin, r.app.OwnerID = r.rec.Setup.AppOwner, r.rec.Setup.OwnerID
 	if r.app.OwnerLogin == "" {
 		r.app.OwnerLogin = r.rec.GitHub.Repo.Owner
 	}

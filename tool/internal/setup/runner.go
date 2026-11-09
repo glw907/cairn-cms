@@ -14,6 +14,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/loopback"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
@@ -60,7 +61,7 @@ type CloudflareAPI interface {
 // chosen when Config.GitHub builds it.
 type GitHubAPI interface {
 	ConvertManifest(ctx context.Context, code string) (providers.AppRecord, error)
-	UserLogin(ctx context.Context) (string, error)
+	User(ctx context.Context) (login string, id int64, err error)
 	CreateRepo(ctx context.Context, name string) (providers.Repository, error)
 	RepoNamed(ctx context.Context, owner, name string) (*providers.Repository, error)
 	AppInstallations(ctx context.Context) ([]providers.Installation, error)
@@ -167,6 +168,11 @@ type Config struct {
 	// refuses a nil Env, which would start git and npm with no PATH, HOME, or proxy settings.
 	GOOS string
 	Env  map[string]string
+	// GitConfigPairs are config pairs every git call setup makes carries after setup's own, through
+	// git-config(1)'s GIT_CONFIG_COUNT. They are for tests only: the end-to-end harness points
+	// github.com at a local bare repository with a url.<base>.insteadOf pair, and the production
+	// wiring never sets them. No config pair Env carries reaches git.
+	GitConfigPairs []childenv.Pair
 	// Resume, when set, continues that record: the run keeps its id, names, and approvals, and
 	// starts at the first step not done. Answers and RunID must be the record's.
 	Resume *Resume

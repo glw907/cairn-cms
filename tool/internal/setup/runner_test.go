@@ -11,20 +11,24 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/loopback"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
@@ -802,7 +806,7 @@ func TestAReconsentOnlyResumeStopsTheClock(t *testing.T) {
 // other than the App's owner stops the run before any installation reaches it.
 func TestARepositoryOnAnotherAccountStops(t *testing.T) {
 	w := newWorld(t)
-	w.gh.createOwner = "someone-else"
+	w.gh.createOwner, w.gh.createOwnerID = "someone-else", 7001
 	_, err := w.run(context.Background())
 	f := failureOf(t, err)
 	if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "someone-else") || !strings.Contains(f.Happened, "example-owner") ||
@@ -842,7 +846,7 @@ func TestAnotherAccountsApprovalCreatesNoRepository(t *testing.T) {
 	}
 	t.Run("a new run", func(t *testing.T) {
 		w := newWorld(t)
-		w.gh.userLogin = "someone-else"
+		w.gh.userLogin, w.gh.userID = "someone-else", 7001
 		_, err := w.run(context.Background())
 		assertStop(t, w, err)
 	})
@@ -851,7 +855,7 @@ func TestAnotherAccountsApprovalCreatesNoRepository(t *testing.T) {
 		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
 			t.Fatal("the first run was not stopped")
 		}
-		w.gh.userLogin = "someone-else"
+		w.gh.userLogin, w.gh.userID = "someone-else", 7001
 		w.gh.taken["example-site"] = true
 		_, err := w.resume()
 		assertStop(t, w, err)
@@ -896,6 +900,311 @@ func TestAnAppWithNoOwnerStops(t *testing.T) {
 			t.Errorf("record App %d, want the App dropped so the next run creates one", last.Setup.IDs.AppID)
 		}
 	})
+}
+
+// TestADroppedAppLeavesNoKeys pins that a resume that drops the recorded App deletes the App's
+// key and client secret from the keyring before the record forgets the App, and that a delete
+// the keyring refuses stops with the record as it was, so the next run can retry it.
+func TestADroppedAppLeavesNoKeys(t *testing.T) {
+	appEntries := func(w *world) []string {
+		return []string{w.vault.Entry(secrets.EntryAppKey), w.vault.Entry(secrets.EntryAppClientSecret)}
+	}
+	ownerless := func(t *testing.T) *world {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		for _, name := range appEntries(w) {
+			if _, ok := w.vault.entries[name]; !ok {
+				t.Fatalf("the first run left no %s to delete", name)
+			}
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.AppOwner = ""
+		w.saver.saves = append(w.saver.saves, rec)
+		return w
+	}
+	t.Run("the keys go before the record drops the App", func(t *testing.T) {
+		w := ownerless(t)
+		w.saver.onSave = func(rec record.Record) error {
+			if rec.Setup.IDs.AppID != 0 {
+				return nil
+			}
+			for _, name := range appEntries(w) {
+				if _, ok := w.vault.entries[name]; ok {
+					t.Errorf("the record dropped the App while the keyring held %s", name)
+				}
+			}
+			return nil
+		}
+		_, err := w.resume()
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		for _, name := range appEntries(w) {
+			if _, ok := w.vault.entries[name]; ok {
+				t.Errorf("the keyring still holds %s", name)
+			}
+		}
+		if last, _ := w.saver.last(); last.Setup.IDs.AppID != 0 || last.Setup.OwnerID != 0 {
+			t.Errorf("record App %d owner id %d, want the App and its owner dropped", last.Setup.IDs.AppID, last.Setup.OwnerID)
+		}
+	})
+	t.Run("a refused delete keeps the record", func(t *testing.T) {
+		w := ownerless(t)
+		before, _ := w.saver.last()
+		w.vault.deleteErr = secrets.ErrKeyringUnavailable
+		_, err := w.resume()
+		f := failureOf(t, err)
+		if f.Reason != ReasonKeyring || !strings.Contains(f.Happened, w.gh.app.Slug) || f.Do == "" || !strings.Contains(f.Left, w.gh.app.Slug) {
+			t.Errorf("failure = %+v, want the four-part keyring stop naming the App", f)
+		}
+		last, _ := w.saver.last()
+		if last.Setup.IDs.AppID != before.Setup.IDs.AppID || last.Setup.AppSlug != before.Setup.AppSlug || last.Setup.ClientID != before.Setup.ClientID {
+			t.Errorf("record App %d %q %q, want the App kept as %d %q %q", last.Setup.IDs.AppID, last.Setup.AppSlug, last.Setup.ClientID,
+				before.Setup.IDs.AppID, before.Setup.AppSlug, before.Setup.ClientID)
+		}
+	})
+}
+
+// TestTheOwnerChecksCompareAccountIDs pins that setup knows the App's owner by account id wherever
+// it holds one, so a login in other case is the same account and the same login under another
+// id is not. A record that holds no id falls back to the login, compared without regard to case
+// as GitHub compares logins.
+func TestTheOwnerChecksCompareAccountIDs(t *testing.T) {
+	t.Run("a login in other case is the owner", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userLogin = "Example-Owner"
+		if _, err := w.run(context.Background()); err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+	})
+	t.Run("the owner's login under another id is not the owner", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userID = 7001
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		if w.gh.creates["repo"] != 0 {
+			t.Errorf("repositories created %d, want none", w.gh.creates["repo"])
+		}
+	})
+	t.Run("a repository under the owner's login and another id is not the owner's", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.createOwnerID = 7001
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		if last, _ := w.saver.last(); last.GitHub.Repo.ID != 0 {
+			t.Errorf("record repository %+v, want none recorded", last.GitHub.Repo)
+		}
+	})
+	t.Run("a record with no owner id compares logins without case", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.OwnerID = 0
+		w.saver.saves = append(w.saver.saves, rec)
+		w.gh.userLogin = "EXAMPLE-OWNER"
+		if _, err := w.resume(); err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+	})
+}
+
+// TestARepositoryWithNoOwnerIDKeepsTheRecordedOne pins that a created repository whose owner
+// GitHub reports with no id leaves the App owner's id the record already holds.
+func TestARepositoryWithNoOwnerIDKeepsTheRecordedOne(t *testing.T) {
+	w := newWorld(t)
+	want := w.gh.app.OwnerID
+	if want == 0 {
+		t.Fatal("the fake App's owner has no id")
+	}
+	w.gh.repo.Owner.ID = 0
+	_, _ = w.run(context.Background())
+	for _, rec := range w.saver.saves {
+		if rec.GitHub.Repo.ID != 0 && rec.Setup.OwnerID != want {
+			t.Fatalf("a save with the repository recorded holds owner id %d, want %d", rec.Setup.OwnerID, want)
+		}
+	}
+	if last, _ := w.saver.last(); last.GitHub.Repo.ID == 0 {
+		t.Errorf("record repository %+v, want the repository recorded", last.GitHub.Repo)
+	}
+}
+
+// TestTheFolderGitConfigCannotLoosenThePush pins that setup's config pairs on the push outrank
+// the plain keys a resumed site folder's .git/config sets: the push reads certificate checks on
+// and no ssh command. A Config pair still lands after setup's, so the harness can point
+// github.com at a local remote. TestTheFolderProxyNeverCarriesThePush covers the proxy, which
+// git config --get cannot show, since git reads remote.origin.proxy over http.proxy.
+func TestTheFolderGitConfigCannotLoosenThePush(t *testing.T) {
+	marker := filepath.Join(t.TempDir(), "ssh-ran")
+	harness := childenv.Pair{Key: "url./harness/.insteadOf", Value: "https://github.com/"}
+	r := &run{
+		cfg: Config{
+			Env:            map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir(), "HTTPS_PROXY": "http://proxy.example.test:3128"},
+			GitConfigPairs: []childenv.Pair{harness},
+		},
+		hooks: t.TempDir(),
+	}
+	folder := t.TempDir()
+	ctx := context.Background()
+	gitIn := func(env []string, args ...string) string {
+		t.Helper()
+		out, err := runChild(ctx, folder, env, "git", args...)
+		if err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+		return out
+	}
+	gitIn(r.gitEnv(), "init", "--quiet")
+	gitIn(r.gitEnv(), "config", "http.sslVerify", "false")
+	gitIn(r.gitEnv(), "config", "core.sshCommand", "touch "+marker)
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	for _, tt := range []struct{ key, want string }{
+		{"http.sslVerify", "true"},
+		{"core.sshCommand", ""},
+		{harness.Key, harness.Value},
+	} {
+		if got := gitIn(env, "config", "--get", tt.key); got != tt.want {
+			t.Errorf("the push reads %s = %q, want %q", tt.key, got, tt.want)
+		}
+	}
+}
+
+// TestTheFolderProxyNeverCarriesThePush pins that the push reaches GitHub through the proxy the
+// environment names, and never through one a resumed site folder's .git/config names, as
+// http.proxy or as remote.origin.proxy, which git reads over http.proxy. A folder proxy that
+// also carries a planted certificate authority could otherwise read the push's token header.
+func TestTheFolderProxyNeverCarriesThePush(t *testing.T) {
+	envProxy, folderProxy := newConnectRecorder(t), newConnectRecorder(t)
+	r := &run{
+		cfg:   Config{Env: map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir(), "HTTPS_PROXY": envProxy.url}},
+		hooks: t.TempDir(),
+	}
+	folder := siteFolder(t, r, "https://github.com/owner/site.git",
+		childenv.Pair{Key: "http.proxy", Value: folderProxy.url}, childenv.Pair{Key: "remote.origin.proxy", Value: folderProxy.url})
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	if _, err := runChild(context.Background(), folder, env, "git", "push", "--quiet", "--no-verify", "origin", "HEAD:refs/heads/main"); err == nil {
+		t.Fatal("the push succeeded through proxies that refuse every tunnel")
+	}
+	if got := folderProxy.seen(); len(got) != 0 {
+		t.Errorf("the folder's proxy saw %q, want no request", got)
+	}
+	if got := envProxy.seen(); !slices.Contains(got, "CONNECT github.com:443") {
+		t.Errorf("the environment's proxy saw %q, want the push's tunnel to github.com", got)
+	}
+}
+
+// TestAFolderCredentialHelperNeverRunsOnThePush pins that a push GitHub answers with a 401 runs
+// no credential helper and no askpass program a resumed site folder's .git/config names, plain or
+// scoped to the remote's URL, since either would run as the owner while the push is in flight.
+func TestAFolderCredentialHelperNeverRunsOnThePush(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the helper markers are shell scripts; the config order under test is git's own and is the same on every platform")
+	}
+	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("WWW-Authenticate", `Basic realm="GitHub"`)
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	t.Cleanup(remote.Close)
+	r := &run{cfg: Config{Env: map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir()}}, hooks: t.TempDir()}
+	marks := t.TempDir()
+	script := func(name string) string {
+		t.Helper()
+		path := filepath.Join(marks, name+".sh")
+		body := "#!/bin/sh\necho ran >> '" + filepath.Join(marks, name+".ran") + "'\n"
+		if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	folder := siteFolder(t, r, remote.URL+"/owner/site.git",
+		childenv.Pair{Key: "credential.helper", Value: script("helper")},
+		childenv.Pair{Key: "credential." + remote.URL + ".helper", Value: script("scoped-helper")},
+		childenv.Pair{Key: "core.askPass", Value: script("askpass")})
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	if _, err := runChild(context.Background(), folder, env, "git", "push", "--quiet", "--no-verify", "origin", "HEAD:refs/heads/main"); err == nil {
+		t.Fatal("the push succeeded against a remote that answers every request with a 401")
+	}
+	for _, name := range []string{"helper", "scoped-helper", "askpass"} {
+		if _, err := os.Stat(filepath.Join(marks, name+".ran")); err == nil {
+			t.Errorf("the folder's %s ran on the push", name)
+		}
+	}
+}
+
+// siteFolder makes a git repository with one commit and origin at remote, with config set in its
+// own .git/config, the way a resumed site folder could carry it.
+func siteFolder(t *testing.T, r *run, remote string, config ...childenv.Pair) string {
+	t.Helper()
+	folder := t.TempDir()
+	steps := [][]string{
+		{"init", "--quiet"},
+		{"-c", "user.name=Site Owner", "-c", "user.email=owner@example.test", "commit", "--quiet", "--allow-empty", "-m", "site"},
+		{"remote", "add", "origin", remote},
+	}
+	for _, p := range config {
+		steps = append(steps, []string{"config", "--add", p.Key, p.Value})
+	}
+	for _, args := range steps {
+		if _, err := runChild(context.Background(), folder, r.gitEnv(), "git", args...); err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+	}
+	return folder
+}
+
+// connectRecorder is a proxy that refuses every request and records each one's method and
+// target, so a test sees which proxy git reached and for what.
+type connectRecorder struct {
+	url  string
+	mu   sync.Mutex
+	reqs []string
+}
+
+func newConnectRecorder(t *testing.T) *connectRecorder {
+	t.Helper()
+	c := &connectRecorder{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		c.mu.Lock()
+		c.reqs = append(c.reqs, req.Method+" "+req.RequestURI)
+		c.mu.Unlock()
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	t.Cleanup(srv.Close)
+	c.url = srv.URL
+	return c
+}
+
+func (c *connectRecorder) seen() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.Clone(c.reqs)
+}
+
+// TestInheritedGitConfigPairsNeverReachGit pins that the config pairs a git child reads come from
+// Config.GitConfigPairs alone: a pushInsteadOf pair the environment carries, which would send the
+// push to another folder, is dropped, and the push lands where the Config's pair points.
+func TestInheritedGitConfigPairsNeverReachGit(t *testing.T) {
+	w := newWorld(t)
+	decoy := t.TempDir()
+	w.cfg.Env["GIT_CONFIG_COUNT"] = "1"
+	w.cfg.Env["GIT_CONFIG_KEY_0"] = "url." + decoy + "/.pushInsteadOf"
+	w.cfg.Env["GIT_CONFIG_VALUE_0"] = "https://github.com/"
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !w.pushed() {
+		t.Error("the push never reached the remote the Config's pair names")
+	}
+	if entries, _ := os.ReadDir(decoy); len(entries) != 0 {
+		t.Errorf("the decoy folder holds %d entries, want the inherited pair never read", len(entries))
+	}
 }
 
 // TestANilEnvironmentIsRefused pins that a run given no environment stops before it does
@@ -1936,7 +2245,13 @@ func TestAKillAfterTheRepositoryCreate(t *testing.T) {
 			gitRun(t, dir, "commit", "--quiet", "--allow-empty", "-m", "someone else's work")
 			gitRun(t, dir, "push", "--quiet", filepath.Join(w.gh.remotes, "example-owner", "example-site.git"), "HEAD:refs/heads/main")
 		}},
-		{"a repository another account owns is refused", func(w *world) { w.gh.ownerOf["example-site"] = "someone-else" }},
+		{"a repository another account owns is refused", func(w *world) {
+			w.gh.ownerOf["example-site"] = "someone-else"
+			w.gh.ownerIDOf = map[string]int64{"example-site": 7001}
+		}},
+		{"a repository of the owner's login under another account id is refused", func(w *world) {
+			w.gh.ownerIDOf = map[string]int64{"example-site": 7001}
+		}},
 		{"a public repository is refused", func(w *world) { w.gh.public["example-site"] = true }},
 	}
 	for _, tc := range refused {

@@ -90,13 +90,18 @@ for the whole run.
 - `BROWSER` names a helper that walks the redirect chain instead of opening a
   window. The helper keeps the session cookie and sends the Fetch Metadata headers
   a browser sends, since the callbacks and `/next` refuse a request without them.
-- `GIT_CONFIG_COUNT` carries a `url.<local bare repo>.insteadOf https://github.com/`
-  pair, so a push to GitHub lands in a local bare repository. The git-config(1)
-  manual says: "If GIT_CONFIG_COUNT is set to a positive number, all environment
-  pairs GIT_CONFIG_KEY_<n> and GIT_CONFIG_VALUE_<n> up to that number will be
-  added ... The config pairs are zero-indexed." Setup appends its pairs after any
-  inherited count and raises the count to match, so an operator's own pairs
-  survive.
+- The harness passes a `url.<local bare repo>.insteadOf https://github.com/` pair
+  through the setup `Config`'s test-only `GitConfigPairs`, so a push to GitHub
+  lands in a local bare repository. Setup sends those pairs to git after its own,
+  through git's environment pairs. The git-config(1) manual says: "If
+  GIT_CONFIG_COUNT is set to a positive number, all environment pairs
+  GIT_CONFIG_KEY_<n> and GIT_CONFIG_VALUE_<n> up to that number will be added ...
+  The config pairs are zero-indexed." The code that reads the harness's pairs from
+  the environment lives only in `tool/cmd/cairn/new_e2e_hook.go`, a file built
+  under the `cairne2e` tag and on the hygiene allow-list in
+  `internal/hygiene/buildtags_test.go`, never in a production build. Setup itself
+  reads no pair from its environment, so a pair an operator's shell carries never
+  reaches git.
 - PATH stubs stand in for `node` (reporting v24) and `npm`.
 
 ### A new direct require
@@ -139,9 +144,14 @@ its `otherDirectRequires` gains the entry in the task that adds the require.
   carries no state, so such a page can spend it: the runner's code exchange then fails
   and the tab goes back to the install page.
 - Setup runs `npm install --ignore-scripts`, and every git call it makes points
-  `core.hooksPath` at an empty folder, turns `core.fsmonitor` off, drops each variable
-  that points git at another repository, config, or program, and pushes with
-  `--no-verify`. The template extractor refuses any `.git` path. Those run while
+  `core.hooksPath` at an empty folder, turns `core.fsmonitor` off, starts with no
+  inherited variable whose name begins `GIT_` and no `SSH_ASKPASS`, and pushes with
+  `--no-verify`. Each git call also sets `http.sslVerify` on, `core.sshCommand`
+  empty, and `http.proxy` to the proxy the environment names, so a resumed folder's
+  `.git/config` can't loosen the token-bearing push through those plain keys.
+  Setup's `git init` passes an empty `--template`, so no template folder's
+  config or attributes reach the repository. The template extractor refuses any
+  `.git` path. Those run while
   the keyring holds the Cloudflare grant and the GitHub App key, and a dependency's
   install script or a planted hook would run with the owner's account. The install
   scripts the showcase's lockfile marks (esbuild, workerd, and `@parcel/watcher`, with
@@ -159,6 +169,8 @@ its `otherDirectRequires` gains the entry in the task that adds the require.
 - The test build tag is the one place a keyring is faked. A release build that
   somehow set it would store credentials in a plain file, so the release leg must
   build without it.
-- The harness depends on Go's `SSL_CERT_FILE` handling and on `GIT_CONFIG_COUNT`,
-  so it runs on Linux only. macOS and Windows get the unit tests, not the
-  end-to-end cases.
+- The harness depends on Go's `SSL_CERT_FILE` handling, so it runs on Linux only.
+  macOS and Windows get the unit tests, not the end-to-end cases. Its git config
+  pairs reach setup through `Config.GitConfigPairs`, read from the environment only
+  by the `cairne2e`-tagged `tool/cmd/cairn/new_e2e_hook.go` on the hygiene
+  allow-list, never by a production build.

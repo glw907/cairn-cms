@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -324,6 +325,9 @@ func TestNoHookRunsInTheSiteFolder(t *testing.T) {
 		t.Fatalf("Write: %v", err)
 	}
 	marker := filepath.Join(t.TempDir(), "hook-ran")
+	if err := os.MkdirAll(filepath.Join(dir, ".git", "hooks"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	for _, name := range []string{"pre-commit", "post-commit", "reference-transaction"} {
 		hook := filepath.Join(dir, ".git", "hooks", name)
 		if err := os.WriteFile(hook, []byte("#!/bin/sh\ntouch '"+marker+"'\n"), 0o755); err != nil {
@@ -496,23 +500,76 @@ func TestANilEnvironmentIsRefused(t *testing.T) {
 }
 
 // TestGitStartsFromTheInjectedEnvironment pins that the scaffold's git reads Config.Env, not
-// the process's environment: a config pair only Env carries reaches git init.
+// the process's environment: a time zone only Env carries sets the commit's offset.
 func TestGitStartsFromTheInjectedEnvironment(t *testing.T) {
-	tmpl := t.TempDir()
-	if err := os.WriteFile(filepath.Join(tmpl, "from-env"), []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
+	if runtime.GOOS == "windows" {
+		t.Skip("Git for Windows does not promise to read a POSIX TZ")
 	}
+	t.Setenv("TZ", "UTC0")
 	env := testEnv()
-	env["GIT_CONFIG_COUNT"] = "1"
-	env["GIT_CONFIG_KEY_0"] = "init.templateDir"
-	env["GIT_CONFIG_VALUE_0"] = tmpl
+	env["TZ"] = "CRN-07"
 	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
 	dir := filepath.Join(t.TempDir(), "site")
 	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Env: env, Dir: dir}); err != nil {
 		t.Fatalf("Scaffold: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, ".git", "from-env")); err != nil {
-		t.Errorf("git init never read the template folder Env names: %v", err)
+	if got := gitOut(t, dir, "log", "-1", "--format=%ai"); !strings.HasSuffix(got, "+0700") {
+		t.Errorf("commit date = %q, want the +0700 offset of the TZ only Env carries", got)
+	}
+}
+
+// TestAnInheritedTemplateRunsNothing reproduces a GIT_TEMPLATE_DIR in the environment setup
+// starts from, naming a template whose config adds a clean filter and whose info/attributes
+// applies it to every file. Plain git in that environment runs the filter on add; the scaffold's
+// git must not.
+func TestAnInheritedTemplateRunsNothing(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the filter is a POSIX shell command")
+	}
+	marker := filepath.Join(t.TempDir(), "filter-ran")
+	tmpl := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(tmpl, "info"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpl, "config"), []byte("[filter \"cairn\"]\n\tclean = touch '"+marker+"'; cat\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpl, "info", "attributes"), []byte("* filter=cairn\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	control := t.TempDir()
+	if err := os.WriteFile(filepath.Join(control, "f"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GIT_TEMPLATE_DIR", tmpl)
+	gitOut(t, control, "init", "--quiet")
+	gitOut(t, control, "add", "--all")
+	if _, err := os.Stat(marker); err != nil {
+		t.Fatalf("plain git never ran the template's filter, so this test proves nothing: %v", err)
+	}
+	if err := os.Remove(marker); err != nil {
+		t.Fatal(err)
+	}
+
+	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
+	_, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Env: testEnv(), Dir: filepath.Join(t.TempDir(), "site")})
+	if _, serr := os.Stat(marker); serr == nil {
+		t.Error("the scaffold's git ran the filter the inherited template names")
+	}
+	if err != nil {
+		t.Errorf("Scaffold: %v", err)
+	}
+}
+
+// TestGitInitCopiesNoTemplate pins that the scaffold's git init reads no template folder at
+// all, git's default one included, whose hooks folder it would otherwise copy.
+func TestGitInitCopiesNoTemplate(t *testing.T) {
+	dir, _ := scaffoldOK(t, testSite())
+	for _, name := range []string{"hooks", "description"} {
+		if _, err := os.Stat(filepath.Join(dir, ".git", name)); err == nil {
+			t.Errorf(".git/%s exists, want git init to copy no template", name)
+		}
 	}
 }
 

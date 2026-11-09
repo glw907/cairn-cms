@@ -179,11 +179,11 @@ var renderDirectRequires = []string{
 // internal/doctor's site-config parse, ADR-0002's addendum), pflag (promoted from indirect
 // when cmd/cairn's flag-list test began walking the command tree's flag sets, which are
 // pflag values cobra hands back), and x/crypto, whose nacl/box seals the deploy secret for
-// GitHub's Actions secrets API, plus Bubble Tea v2 and teatest v2 for the terminal view and its
-// frame harness (ADR-0004). They are counted rather than named, because internal/secrets
+// GitHub's Actions secrets API, plus Bubble Tea v2, teatest v2, Huh v2 and Bubbles v2 for the
+// terminal view, its frame harness, its forms and its key-hint footers (ADR-0004). They are counted rather than named, because internal/secrets
 // confines one of those import paths to its file and that check reads every .go file in the
 // module as text, this one included.
-const otherDirectRequires = 9
+const otherDirectRequires = 11
 
 // TestRenderDirectRequiresArePinned holds ADR-0002's pin policy to its list, and the module
 // to its total. A fifth library taken for this package, or one of the four dropped, fails here

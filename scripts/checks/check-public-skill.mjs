@@ -50,6 +50,25 @@ export const PROSE_PAGES = ['headings-and-lead', 'links', 'lists', 'blockquote',
 const SKILL_DIR = 'skills/cairn-styling-public-pages';
 
 /**
+ * Command-line flags of the theme check and the theme viewer, which `checking-a-theme.md` shows.
+ * The token scan reads any `--name` as a custom property, so a flag the page documents is named
+ * here and skipped.
+ */
+const THEME_TOOL_FLAGS = new Set([
+  '--json',
+  '--rules',
+  '--catalog',
+  '--theme',
+  '--headless',
+  '--pages',
+  '--widths',
+  '--modes',
+  '--option',
+  '--viewport-only',
+  '--out',
+]);
+
+/**
  * One directive of the showcase registry.
  * @typedef {object} DirectiveDef
  * @property {string} name the directive's name
@@ -304,7 +323,7 @@ export function evaluate(ctx) {
     const tokens = namedTokens(text);
     tokenCount += tokens.length;
     for (const { token, line } of tokens) {
-      if (token.startsWith('--tw-') || ctx.resolvesToken(token)) continue;
+      if (token.startsWith('--tw-') || THEME_TOOL_FLAGS.has(token) || ctx.resolvesToken(token)) continue;
       problems.push(`${file}:${line} token ${token} resolves nowhere in the public resolution set`);
     }
   }

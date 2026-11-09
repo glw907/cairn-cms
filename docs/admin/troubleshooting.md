@@ -33,13 +33,13 @@ Filter by the event name that a section below gives you. The [log events table](
 2. Check the sign-in database: [Provision the auth store](./is-it-working.md#provision-the-auth-store).
 3. If only one person is affected, confirm their address is on the list on the **Editors** screen. [Invite editors](./invite-editors.md) shows the screen.
 
-The ordinary "check your inbox" message is the same whether or not the address is on the list, so it can't tell you which case you're in. Two other messages can. `You requested a link recently. Check your inbox, or wait a minute and try again.` and `We’re having trouble sending sign-in links right now. Please contact the site owner.` appear for an address that is on the list. The first one also appears for any address when the site sets a sign-in rate limit (`auth.rateLimit`) and the limit stops the request, so on such a site it doesn't prove the address is listed. If a person quotes the second one, the list isn't the problem. Move on to the sending domain and the sign-in database.
+The ordinary "check your inbox" message is the same whether or not the address is on the list, so it can't tell you which case you're in. Two other messages can. `You requested a link recently. Check your inbox, or wait a minute and try again.` and `We’re having trouble sending sign-in links right now. Please contact the site owner.` appear for an address that is on the list. The first one also appears for any address when the site limits how often links can be requested and the limit stops the request, so on such a site it doesn't prove the address is listed. If a person quotes the second one, the list isn't the problem. Move on to the sending domain and the sign-in database.
 
-A third message points somewhere else. `That sign-in link didn’t work` covers every failed link: one that expired, one that was already used, and one opened in a different browser from the one that asked. The page words them the same because one fix works for all of them. The browser mismatch happens when someone asks on a laptop and opens the mail on a phone, or when a mail app opens links in its own viewer. The fix is to request a new link and open it in the browser that asked. The redirect carries `no-pending-request` when the opening browser held no pending sign-in, and `expired` otherwise, even for a browser holding its own different request. It doesn't separate an expired link from a used one.
+A third message points somewhere else. `That sign-in link didn’t work` covers every failed link: one that expired, one that was already used, and one opened in a different browser from the one that asked. The page words them the same because one fix works for all of them. The browser mismatch happens when someone asks on a laptop and opens the mail on a phone, or when a mail app opens links in its own viewer. The fix is to request a new link and open it in the browser that asked. The logs don't separate an expired link from a used one.
 
-The logs stop at Cloudflare's acceptance. A link that Cloudflare accepted and then dropped or filtered looks like a success: an `auth.link.sent` record, which carries the ID Cloudflare returned, and no `auth.link.send_failed` after it. The site has no signal past that point. The default Cloudflare sender writes that record; a custom `send` logs for itself. If a person reports no link and the logs show one sent, ask them to check spam, and check the sending domain as the preceding list says.
+The logs stop at Cloudflare's acceptance. A link that Cloudflare accepted and then dropped or filtered looks like a success: an `auth.link.sent` record, which carries the ID Cloudflare returned, and no `auth.link.send_failed` after it. The site has no signal past that point. If a person reports no link and the logs show one sent, ask them to check spam, and check the sending domain as the preceding list says.
 
-An owner who is locked out requests a new link on the site's own sign-in page, as [Sign in again](./setup-recovery.md#sign-in-again) describes. If the email never arrives, a developer can add a recovery link directly in the `AUTH_DB` database. A row seeded that way confirms from any browser.
+An owner who is locked out requests a new link on the site's sign-in page, as [Sign in again](./create-your-site.md#sign-in-again) describes. If the email never arrives, a developer can sign you in from the sign-in database. The [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md) says how.
 
 **The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.sent`, `auth.link.send_failed`, and `auth.link.refused`.
 
@@ -47,7 +47,7 @@ An owner who is locked out requests a new link on the site's own sign-in page, a
 
 **What you see:** signing in, saving, or publishing fails at once with a refusal.
 
-**What it means:** the admin guard rejected the request before it reached the screen, almost always because of how the site is reached and not because of the content. Work through these in order:
+**What it means:** the site refused the request before it reached the screen, usually because the site is reached over plain HTTP or through a proxy. Work through these in order:
 
 1. [Force HTTPS at the edge](./is-it-working.md#force-https-at-the-edge).
 2. [Admin CSRF token rejected](./is-it-working.md#admin-csrf-token-rejected).
@@ -63,9 +63,9 @@ If every admin page, the sign-in page included, shows the same branded error, th
 
 **What it means:** a conflict means the entry changed on GitHub after the editor opened it, most often because two people edited it at once. Nothing is broken. The editor reviews the current version and saves again. A failure that names no conflict more often points at the GitHub App, so check [Install the GitHub App](./is-it-working.md#install-the-github-app). If publishing works and saves still fail, a developer has to look. The [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md) is where they start.
 
-The **Publish all** button appears only when something is waiting to publish. Its absence usually means nothing is pending, or that you're inside an entry, where the button never shows. If an editor has saved work that hasn't gone live and the button is still missing from the main screen, the site couldn't read GitHub to count what is pending, and it hid the button rather than guess. Check the App the same way.
+The **Publish all** button appears only when something is waiting to publish. Its absence usually means nothing is pending, or that you're inside an entry, where the button never shows. If an editor has saved work that hasn't gone live and the button is still missing from the main screen, the site couldn't read GitHub to count what is pending. It hid the button rather than guess. Check the App the same way.
 
-**The log events:** `commit.failed` for an ordinary save and `publish.failed` for a publish. Their `reason` field is `conflict` in the ordinary case. Otherwise their `error` field carries what GitHub said. A `github.unreachable` record with `scope: 'shell'` is the case where the missing button means something is wrong.
+**The log events:** `commit.failed` for an ordinary save and `publish.failed` for a publish. Their `reason` field is `conflict` in the ordinary case. Otherwise their `error` field carries what GitHub said. A `github.unreachable` record from the admin screens is the case where the missing button means something is wrong.
 
 ## A publish succeeds and the live site doesn't change
 
@@ -73,9 +73,9 @@ The **Publish all** button appears only when something is waiting to publish. It
 
 **What it means:** publishing commits to your GitHub repository, and a GitHub Actions job deploys each push. The commit worked, and the deploy didn't run or didn't finish. The site's logs don't record deploys, so this symptom has no log event. Work through these in order:
 
-1. Open the **Actions** tab of your repository on GitHub and look at the newest run. A failed run shows its failing step in the log. GitHub's own notification settings decide who is emailed about a failed run, and the admin doesn't show deploy status.
-2. If the newest run is missing, check whether the repository has used up its free Actions minutes. On GitHub's free plan, a private repository gets about 2,000 minutes a month, which covers roughly 650 deploys. Deploys stop until the month resets.
-3. Run `cairn health <site>`. For a site made by `cairn new`, the deploy check reads the latest deployment of your Worker. It fails when the Worker has never deployed, and otherwise it reports when the latest deployment was made. It doesn't compare that deployment with your newest commit, so a recent time doesn't prove that the latest publish went live. [Give cairn its credentials](./credentials.md) shows how to set up the CLI for it.
+1. Open the **Actions** tab of your repository on GitHub and look at the newest run. A failed run shows its failing step in the log. GitHub's notification settings decide who is emailed about a failed run, and the admin doesn't show deploy status.
+2. If the newest run is missing, check whether the repository has used up its free Actions minutes. [Deploys](./deploys.md#know-the-free-deploy-allowance) gives the allowance.
+3. If you've installed the `cairn` CLI and stored its tokens ([Give cairn its credentials](./credentials.md)), run `cairn health <site>`. For a site made by `cairn new`, the deploy check reads the latest deployment of your Worker. It fails when the Worker has never deployed, and otherwise it reports when the latest deployment was made. It doesn't compare that deployment with your newest commit, so a recent time doesn't prove that the latest publish went live.
 
 A run that fails on a build error in the site's code needs a developer.
 

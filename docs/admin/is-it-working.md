@@ -59,7 +59,7 @@ Workers Logs has no sink failed.
 
 The report prints a title for each check and never a condition id. This page files each check under its condition id, a name such as `config.bindings-missing`, because the id is how the rest of cairn's diagnostics refer to the same problem. A check's title changes with its result, so a passing line and a failing line word the same check differently. Each section heading names the remedy. The following table maps each title to its section.
 
-A site that `cairn new` built is already wired for the bindings, logging, origin, and admin-mount checks, so those fail only after someone changes the site's code. The dependency check can still fail later as packages drift, with nothing customized.
+A site that `cairn new` built starts with Workers Logs switched on and the `EMAIL`, `AUTH_DB`, and `MEDIA_BUCKET` bindings declared in its template, so the logging and bindings checks fail only after someone changes the site's configuration. The dependency check can still fail later as packages drift, with nothing customized.
 
 Apart from fetching the public `robots.txt`, `cairn doctor` never runs the checks that need a deployed site or a credential. `cairn health` runs two of them, for a site in cairn's registry, which `cairn new` adds a site to and `cairn adopt` adds any other to. No command runs the others yet. Each section says which case it is.
 

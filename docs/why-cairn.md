@@ -72,7 +72,7 @@ The content stays yours. Every entry is a markdown file in your repository and e
 
 ## What a site costs
 
-cairn is free, MIT-licensed code. A site's running cost is its Cloudflare account. The Workers Paid plan costs $5 a month and a cairn site needs it from its first deploy ([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of 2026-08-11). A domain name costs about $10 to $15 a year for the common endings, and setup needs one on your Cloudflare account, because Cloudflare sends sign-in email only from a domain you own. The database, the storage bucket, and the GitHub repository cost nothing at a small site's size. The admin guide's [Before you start](./admin/before-you-start.md) page gives the full list with its dates.
+cairn is free, MIT-licensed code. A site's running cost is its Cloudflare account. The Workers Paid plan costs $5 a month and a cairn site needs it from its first deploy ([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of 2026-08-11). A domain name costs about $10 to $15 a year for the common endings, and setup needs one on your Cloudflare account, because Cloudflare sends sign-in email only from a domain on your account. The database, the storage bucket, and the GitHub repository cost nothing at a small site's size. The admin guide's [Before you start](./admin/before-you-start.md) page gives the full list with its dates.
 
 ## Pages by reader
 

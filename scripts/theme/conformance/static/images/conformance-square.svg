@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600" role="img" aria-labelledby="t">
+  <title id="t">A square frame holding two nested squares</title>
+  <rect width="600" height="600" fill="#dfe6ea"/>
+  <rect x="90" y="90" width="420" height="420" fill="#a9b79a"/>
+  <rect x="180" y="180" width="240" height="240" fill="#7b746c"/>
+</svg>

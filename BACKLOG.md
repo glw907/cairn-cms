@@ -286,9 +286,6 @@
 - [ ] **#408** Warn an operator whose wizard record still holds a GitHub App's secrets in plaintext `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09)*
   The retired wizard kept the App's private key, client secret, webhook secret, and Cloudflare token in `~/.config/cairn/sites/*.json`. `cairn new` reads those records (`record.ExtraField` round-trips the keys opaquely and redacts them) but never scrubs or flags them, and the wizard's terminal-step scrub no longer runs. `MIGRATION-NOTES.md` tells the operator to delete the record. A `cairn doctor` or `cairn new status` warning with a scrub action would not depend on the operator reading the notes. Found by P6's security review. Ruled: ship the cleanup (Geoff, 2026-11-09, Approval Queue item 20261109T022112-3127080): `cairn` finds old wizard records and removes their secrets, not a migration note alone.
   Placement: engine batch; a `tool/` change, with the credentials page.
-- [ ] **#409** Test the Cloudflare client the release gate still uses, now copied under `scripts/gate/cloudflare/` `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09)*
-  P6 copied the wizard's `api.mjs` and `catalogue.mjs` to `scripts/gate/cloudflare/` byte for byte, because `scripts/gate/gate.mjs` and `legs.mjs` imported them from the deleted package, and the wizard's `api.test.mjs` and `catalogue.test.mjs` were deleted with it. The catalogue still says `npx create-cairn-site --dir ...`. The tooling brainstorm replaces the gate's legs; until then the copy has no tests.
-  Placement: handed to the tooling brainstorm.
 
 ## Low
 - [ ] **#420** `cairn new` run inside an agent's Linux sandbox waits on a setup tab the browser cannot reach `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09)*
@@ -385,6 +382,10 @@
 - **#185** Re-capture the setup transcript with a neutral scratch path and host: the fixtures retire with the wizard; the goldens replace them (Geoff, 2026-11-08, cairn-setup plan)
 
 ## Done
+- [x] **#409** Test the Cloudflare client the release gate still uses, now copied under `scripts/gate/cloudflare/` `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09 → 2026-11-09)*
+  P6 copied the wizard's `api.mjs` and `catalogue.mjs` to `scripts/gate/cloudflare/` byte for byte, because `scripts/gate/gate.mjs` and `legs.mjs` imported them from the deleted package, and the wizard's `api.test.mjs` and `catalogue.test.mjs` were deleted with it. The catalogue still says `npx create-cairn-site --dir ...`. The tooling brainstorm replaces the gate's legs; until then the copy has no tests.
+  Placement: handed to the tooling brainstorm.
+  Done: b0ae6d2b8: the gate's legs and `scripts/gate/cloudflare/` are deleted with their tests, and the new sweep and smoke call the Cloudflare API through their own tested client.
 - [x] **#379** Fix the theme checks' references to a `/styleguide` the scaffold lacks `#docs` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-07)*
   `skills/cairn-styling-public-pages/references/checking-a-theme.md:114` sends a theme author to `/styleguide`, while `templates/waymark/src/chassis/README.md:195` says the scaffold carries no such route (it is the showcase's) and `templates/waymark/src/routes/(site)/` has none. No page shows every directive under a theme. Fix: ship the route, or name the content page to check against instead and drop the references. Source: builder A, item 6 (checked against the 0.99 scaffold).
   done: 62e66dfb5, merged in PR #202 (a55cf548e): `checking-a-theme.md` now names the every-element post.

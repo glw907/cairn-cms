@@ -285,11 +285,20 @@ async function launch(siteDir, command, port) {
   child.stderr.on('data', (chunk) => (output += chunk));
   const stop = () => {
     if (child.pid === undefined || child.exitCode !== null) return;
-    try {
-      process.kill(-child.pid, 'SIGTERM');
-    } catch {
-      // The group is already gone.
-    }
+    const signal = (/** @type {NodeJS.Signals} */ name) => {
+      try {
+        process.kill(-(/** @type {number} */ (child.pid)), name);
+      } catch {
+        // The group is already gone.
+      }
+    };
+    signal('SIGTERM');
+    // A server that ignores SIGTERM, and a pipe it still holds open, would keep the parent process
+    // alive after its last test: a CI run hung on this for 15 minutes.
+    setTimeout(() => signal('SIGKILL'), 3000).unref();
+    child.stdout.destroy();
+    child.stderr.destroy();
+    child.unref();
   };
   process.once('exit', stop);
   const ready = /Local:|Ready on/;

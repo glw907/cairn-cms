@@ -242,6 +242,9 @@ describe('C4 personal data', () => {
     expect(hits('`@glw907/cairn-linux-x64`')).toEqual([]);
     expect(hits('see glw907/907-life')).toContain('C1:error');
     expect(hits('`@glw907/907-life-theme`')).toContain('C1:error');
+    expect(hits('`@glw907/cairn-cms-private`')).toContain('C1:error');
+    expect(hits('`@glw907/cairn-linux-x64-extra`')).toContain('C1:error');
+    expect(hits('`@glw907/cairn-cms-dev` and `@glw907/cairn-darwin-arm64`')).toEqual([]);
   });
 
   it('does not read a scoped package or a version pin as an email', () => {

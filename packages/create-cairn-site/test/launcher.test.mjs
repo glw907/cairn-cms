@@ -4,8 +4,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { gunzipSync } from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { binaryTarget, platformKey } from '../../../scripts/release/pack-platforms.mjs';
@@ -54,6 +55,47 @@ function runLauncher(project, args) {
       ? [process.execPath, [path.join(project, 'node_modules/create-cairn-site/bin.mjs'), ...args]]
       : [path.join(project, 'node_modules/.bin/create-cairn-site'), args];
   return spawnSync(bin[0], bin[1], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+/**
+ * Reads a gzipped tarball into a map of entry name to contents, so the tests need no `tar`
+ * binary (GNU tar reads `C:\` as a remote host on Windows).
+ */
+function readTarball(file) {
+  const tar = gunzipSync(readFileSync(file));
+  const entries = new Map();
+  for (let at = 0; at + 512 <= tar.length && tar[at] !== 0; ) {
+    const name = tar.toString('utf8', at, at + 100).replace(/\0.*$/s, '');
+    const size = parseInt(tar.toString('ascii', at + 124, at + 136).replace(/\0.*$/s, '').trim() || '0', 8);
+    const type = String.fromCharCode(tar[at + 156]);
+    if (type === '0' || type === '\0') entries.set(name, tar.subarray(at + 512, at + 512 + size));
+    at += 512 + Math.ceil(size / 512) * 512;
+  }
+  return entries;
+}
+
+/**
+ * Plants a stand-in platform package in a project: `nested` puts it inside the launcher's own
+ * `node_modules` instead of beside it. `script` is the sh program that stands in for the binary.
+ */
+function plant(project, { version = VERSION, script, nested = false }) {
+  const modules = nested ? path.join(project, 'node_modules/create-cairn-site/node_modules') : path.join(project, 'node_modules');
+  const pkgDir = path.join(modules, '@glw907', `cairn-${host}`);
+  mkdirSync(path.join(pkgDir, 'bin'), { recursive: true });
+  writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: `@glw907/cairn-${host}`, version }));
+  writeFileSync(path.join(pkgDir, 'bin/cairn'), `#!/bin/sh\n${script}\n`, { mode: 0o755 });
+}
+
+/** Starts the installed launcher, waits for `ready` on its stdout, signals it, and returns how it ended. */
+async function signalOnReady(project, signal) {
+  const child = spawn(path.join(project, 'node_modules/.bin/create-cairn-site'), [], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let out = '';
+  child.stdout.on('data', (d) => {
+    out += d;
+    if (out.includes('ready') && !child.killed) child.kill(signal);
+  });
+  const status = await new Promise((resolve) => child.on('exit', (code, sig) => resolve(sig ?? code)));
+  return { status, out };
 }
 
 test('the host platform is one the launcher ships', () => {
@@ -105,31 +147,30 @@ test('a missing platform package says how to install it', { skip: !host }, () =>
 test('a signal sent to the launcher reaches the binary, and its exit status comes back', { skip: !host || process.platform === 'win32' }, async () => {
   // A stand-in binary that traps SIGTERM the way `cairn new` does and exits 7 once it is stopped.
   const project = install(fixture.packed.launcher);
-  const pkgDir = path.join(project, 'node_modules/@glw907', `cairn-${host}`);
-  mkdirSync(path.join(pkgDir, 'bin'), { recursive: true });
-  writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: `@glw907/cairn-${host}`, version: VERSION }));
-  writeFileSync(
-    path.join(pkgDir, 'bin/cairn'),
-    '#!/bin/sh\ntrap \'echo stopped; exit 7\' TERM\necho ready\nwhile true; do sleep 0.1; done\n',
-    { mode: 0o755 },
-  );
-  const child = spawn(path.join(project, 'node_modules/.bin/create-cairn-site'), [], { stdio: ['ignore', 'pipe', 'pipe'] });
-  let out = '';
-  child.stdout.on('data', (d) => {
-    out += d;
-    if (out.includes('ready') && !child.killed) child.kill('SIGTERM');
-  });
-  const status = await new Promise((resolve) => child.on('exit', (code, signal) => resolve(signal ?? code)));
+  plant(project, { script: "trap 'echo stopped; exit 7' TERM\necho ready\nwhile true; do sleep 0.1; done" });
+  const { status, out } = await signalOnReady(project, 'SIGTERM');
   assert.equal(status, 7);
   assert.match(out, /stopped/);
 });
 
+test('a child that dies by a signal the launcher survives never reads as success', { skip: !host || process.platform === 'win32' }, () => {
+  const project = install(fixture.packed.launcher);
+  plant(project, { script: 'kill -PIPE $$' });
+  const run = runLauncher(project, []);
+  assert.equal(run.status, 141);
+});
+
+test('a platform package nested inside the launcher runs', { skip: !host || process.platform === 'win32' }, () => {
+  const project = install(fixture.packed.launcher);
+  plant(project, { nested: true, script: 'echo nested ok' });
+  const run = runLauncher(project, []);
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /nested ok/);
+});
+
 test('a platform package at another version is not run', { skip: !host || process.platform === 'win32' }, () => {
   const project = install(fixture.packed.launcher);
-  const pkgDir = path.join(project, 'node_modules/@glw907', `cairn-${host}`);
-  mkdirSync(path.join(pkgDir, 'bin'), { recursive: true });
-  writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: `@glw907/cairn-${host}`, version: '9.9.9' }));
-  writeFileSync(path.join(pkgDir, 'bin/cairn'), '#!/bin/sh\necho planted\n', { mode: 0o755 });
+  plant(project, { version: '9.9.9', script: 'echo planted' });
   const run = runLauncher(project, []);
   assert.notEqual(run.status, 0);
   assert.doesNotMatch(run.stdout, /planted/);
@@ -137,18 +178,12 @@ test('a platform package at another version is not run', { skip: !host || proces
 });
 
 test('the packed launcher holds only its entry, manifest, and README', { skip: !host }, () => {
-  const listing = execFileSync('tar', ['-tzf', fixture.packed.launcher], { encoding: 'utf8' })
-    .split('\n')
-    .filter(Boolean)
-    .map((l) => l.replace(/^package\//, ''))
-    .sort();
+  const listing = [...readTarball(fixture.packed.launcher).keys()].map((l) => l.replace(/^package\//, '')).sort();
   assert.deepEqual(listing, ['README.md', 'bin.mjs', 'package.json']);
 });
 
 test('the launcher pins all six platform packages at its own version', { skip: !host }, () => {
-  const manifest = JSON.parse(
-    execFileSync('tar', ['-xzOf', fixture.packed.launcher, 'package/package.json'], { encoding: 'utf8' }),
-  );
+  const manifest = JSON.parse(readTarball(fixture.packed.launcher).get('package/package.json').toString('utf8'));
   assert.equal(manifest.version, VERSION);
   assert.deepEqual(Object.keys(manifest.optionalDependencies).sort(), [
     '@glw907/cairn-darwin-arm64',
@@ -162,9 +197,9 @@ test('the launcher pins all six platform packages at its own version', { skip: !
 });
 
 test('a platform manifest names the os and cpu its binary was built for', { skip: !host }, () => {
-  const tarball = fixture.packed.platforms[host];
-  const manifest = JSON.parse(execFileSync('tar', ['-xzOf', tarball, 'package/package.json'], { encoding: 'utf8' }));
-  const header = execFileSync('tar', ['-xzOf', tarball, `package/bin/${exe}`], { maxBuffer: 1 << 28 }).subarray(0, 4096);
+  const entries = readTarball(fixture.packed.platforms[host]);
+  const manifest = JSON.parse(entries.get('package/package.json').toString('utf8'));
+  const header = entries.get(`package/bin/${exe}`).subarray(0, 4096);
   const target = binaryTarget(header);
   assert.deepEqual(manifest.os, [target.os]);
   assert.deepEqual(manifest.cpu, [target.cpu]);

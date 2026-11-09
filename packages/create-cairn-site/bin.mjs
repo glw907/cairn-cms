@@ -4,8 +4,9 @@
 // terminal. The binary is a separate package per platform (`@glw907/cairn-<os>-<cpu>`) that
 // the launcher lists as optional dependencies, so npm installs only the one that matches.
 import { spawn } from 'node:child_process';
-import { chmodSync } from 'node:fs';
+import { chmodSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,9 +30,22 @@ function findBinary() {
     const manifest = require(manifestPath);
     const platformDir = path.dirname(manifestPath);
     const launcherDir = path.dirname(fileURLToPath(import.meta.url));
-    const sameModules = path.dirname(path.dirname(platformDir)) === path.dirname(launcherDir);
-    if (manifest.name !== pkg || manifest.version !== version || !sameModules) return null;
-    return path.join(platformDir, 'bin', exe);
+    if (manifest.name !== pkg || manifest.version !== version) return null;
+    // The package sits beside the launcher (npm's hoisted layout, and pnpm's) or inside it (npm's
+    // nested layout). Compare real paths, since pnpm links both through its store.
+    const real = realpathSync(platformDir);
+    const where = [
+      path.join(path.dirname(launcherDir), scope, `cairn-${key}`),
+      path.join(launcherDir, 'node_modules', scope, `cairn-${key}`),
+    ];
+    const installedWithLauncher = where.some((candidate) => {
+      try {
+        return realpathSync(candidate) === real;
+      } catch {
+        return false;
+      }
+    });
+    return installedWithLauncher ? path.join(platformDir, 'bin', exe) : null;
   } catch {
     return null;
   }
@@ -55,11 +69,13 @@ if (!binary) {
  * Runs the binary and settles with its exit status. The launcher stays alive until the child
  * exits and forwards the signals a terminal or a harness sends it: `cairn new` traps SIGINT
  * and SIGTERM to stop gracefully, and a launcher that died first would orphan it mid-setup.
+ * On Windows the console already delivers Ctrl-C to the child, and `kill()` there ends it
+ * abruptly, so the launcher ignores SIGINT instead of forwarding it.
  */
 function run() {
   return new Promise((resolve) => {
     const child = spawn(binary, ['new', ...process.argv.slice(2)], { stdio: 'inherit' });
-    const forward = (signal) => child.kill(signal);
+    const forward = process.platform === 'win32' ? () => {} : (signal) => child.kill(signal);
     const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
     for (const s of signals) process.on(s, forward);
     child.on('error', (error) => resolve({ error }));
@@ -87,6 +103,9 @@ if (result.error) {
 if (result.signal) {
   process.removeAllListeners(result.signal);
   process.kill(process.pid, result.signal);
+  // Reached only when the signal does not end this process (SIGPIPE is ignored, SIGUSR1 opens
+  // the inspector): exit as a shell reports a signal death, never 0.
+  process.exit(128 + (os.constants.signals[result.signal] ?? 1));
 } else {
   process.exit(result.status ?? 1);
 }

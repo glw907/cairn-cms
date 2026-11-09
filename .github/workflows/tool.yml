@@ -50,6 +50,9 @@ on:
       - 'templates/waymark/migrations/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
@@ -71,8 +74,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           # The floor, not the patch. tool/go.mod's directive is 1.26.0, and setup-go
           # pins GOTOOLCHAIN=local to whatever it installs, so reading the file directly
@@ -117,8 +120,7 @@ jobs:
       - name: Show make version (Windows)
         if: runner.os == 'Windows'
         run: make --version
-      - uses: actions/setup-node@v7
-        if: runner.os == 'Linux'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
       - name: Fixture corpus hygiene (Linux)
@@ -131,12 +133,11 @@ jobs:
         if: runner.os == 'Linux'
         run: node --test "tool/scripts/record-fixtures/*.test.mjs"
       - run: make -C tool check
-      - name: Launcher suite (Linux)
+      - name: Launcher suite
         # test.yml ignores `tool/**`, so a tool-only change reaches the launcher's end-to-end
         # test only here. It builds this tree's binary, packs it with the launcher, installs both
         # into a temp project, and runs them, so a tag never publishes a launcher no test ran
         # against that binary.
-        if: runner.os == 'Linux'
         run: npm test -w packages/create-cairn-site
       - name: End-to-end harness (Linux)
         # The harness builds its binaries with the cairne2e tag itself and skips on every system
@@ -317,10 +318,11 @@ jobs:
           set -euo pipefail
           # The command takes one artifact, so the six are verified one at a time.
           for archive in dist/*.tar.gz dist/*.zip; do
-            gh attestation verify "$archive" --repo "${{ github.repository }}"
+            gh attestation verify "$archive" --repo "$REPO"
           done
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24

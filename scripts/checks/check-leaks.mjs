@@ -80,7 +80,7 @@ const RULES = [
   {
     cls: 'C1',
     tiers: PUBLIC_TIERS,
-    pattern: /(?<!@)glw907\/(?!cairn-cms\b)|@glw907\/(?!cairn-(?:cms|cms-dev|(?:darwin|linux|win32)-(?:x64|arm64))\b|cairn-<os>-<cpu>)/g,
+    pattern: /(?<!@)glw907\/(?!cairn-cms(?![\w-]))|@glw907\/(?!cairn-(?:cms|cms-dev|(?:darwin|linux|win32)-(?:x64|arm64))(?![\w-])|cairn-<os>-<cpu>)/g,
     label: 'a repository outside cairn-cms',
   },
   {

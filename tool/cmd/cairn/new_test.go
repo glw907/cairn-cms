@@ -112,20 +112,6 @@ func TestNewIsHiddenUntilItShips(t *testing.T) {
 	}
 }
 
-// TestNewModesReachTheAgentLaneSeam pins the seam the agent view fills.
-func TestNewModesReachTheAgentLaneSeam(t *testing.T) {
-	for _, args := range [][]string{
-		{"new", "--apply", "p.json"},
-		{"new", "--resume", "site-a1b2c3"},
-		{"new", "--plan", "p.json", "--name", "X", "--email", "a@b.co", "--posture", "invite"},
-	} {
-		_, stderr, code := runNewTree(t, args...)
-		if code != int(spine.VerdictUnknown) || !strings.Contains(stderr, "not implemented") {
-			t.Errorf("%v: code = %d, stderr = %q; want 3 and not implemented", args, code, stderr)
-		}
-	}
-}
-
 // TestProductionConfigWiresEveryClient builds the config the agent lane runs and checks each
 // seam the runner calls is filled, and that Register reaches the output scrub.
 func TestProductionConfigWiresEveryClient(t *testing.T) {

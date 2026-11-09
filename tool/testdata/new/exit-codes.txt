@@ -1,0 +1,6 @@
+Exit codes for cairn new:
+0  the run finished, the plan file was written, or the command only listed or printed
+1  setup stopped at a step; the run is saved, and cairn new --resume continues it
+2  setup stopped while waiting, after Ctrl+C or a passed time limit; cairn new --resume continues it
+3  a usage error: a flag or the plan file was refused
+A stream of events that does not end with a summary is unfinished.

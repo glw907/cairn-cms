@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schema/cairn-setup-event.schema.json",
+  "title": "cairn new event",
+  "description": "One line of the newline-delimited JSON stream `cairn new --plan`, `--apply`, and `--resume` write to stdout. A stream is finished only when its last line is a summary event. A line carries no token, code, key, or nonce.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "timestamp"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "kind": {
+      "type": "string",
+      "enum": ["step_started", "step_done", "step_failed", "waiting", "resumed", "summary"]
+    },
+    "timestamp": { "type": "string" },
+    "step": { "type": "string" },
+    "waiting": {
+      "type": "string",
+      "enum": ["approve-cloudflare", "approve-create-app", "approve-install-all", "approve-install-repo", "reconsent-cloudflare"]
+    },
+    "sentence": { "type": "string" },
+    "failure": {
+      "type": "object",
+      "required": ["step", "reason", "happened", "did", "do"],
+      "additionalProperties": false,
+      "properties": {
+        "step": { "type": "string" },
+        "reason": { "type": "string" },
+        "happened": { "type": "string" },
+        "did": { "type": "string" },
+        "left": { "type": "string" },
+        "do": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["siteName", "repository", "worker", "database", "bucket", "app", "folder", "zone", "addresses", "ownerEmail", "posture", "theme", "themeDescription", "zoneChosen"],
+      "additionalProperties": false,
+      "properties": {
+        "siteName": { "type": "string" },
+        "repository": { "type": "string" },
+        "worker": { "type": "string" },
+        "database": { "type": "string" },
+        "bucket": { "type": "string" },
+        "app": { "type": "string" },
+        "folder": { "type": "string" },
+        "zone": { "type": "string" },
+        "addresses": { "type": "array", "items": { "type": "string" } },
+        "ownerEmail": { "type": "string" },
+        "posture": { "type": "string", "enum": ["decline", "invite"] },
+        "theme": { "type": "string" },
+        "themeDescription": { "type": "string" },
+        "suffixReason": { "type": "string" },
+        "zoneChosen": { "type": "boolean" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "required": ["kind"], "properties": { "kind": { "enum": ["step_started", "step_done", "step_failed", "waiting"] } } },
+      "then": { "required": ["step"] }
+    },
+    {
+      "if": { "required": ["kind"], "properties": { "kind": { "const": "waiting" } } },
+      "then": { "required": ["waiting", "sentence"] }
+    },
+    {
+      "if": { "required": ["kind"], "properties": { "kind": { "const": "step_failed" } } },
+      "then": { "required": ["failure"] }
+    },
+    {
+      "if": { "required": ["kind"], "properties": { "kind": { "const": "summary" } } },
+      "then": { "required": ["summary"] }
+    }
+  ]
+}

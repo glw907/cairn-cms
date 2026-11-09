@@ -136,12 +136,29 @@ func FetchFrom(f *scaffold.Fetcher, tag string) func(ctx context.Context) (Templ
 		if err != nil {
 			return Template{}, err
 		}
-		themes, err := t.Catalog()
+		return templateOf(t)
+	}
+}
+
+// FetchRecorded returns a Config.FetchTemplate for a resume: it fetches the engine version and
+// integrity rec recorded, not the dist-tag's current version, so a resumed run builds from the
+// template it began with.
+func FetchRecorded(f *scaffold.Fetcher, rec record.Record) func(ctx context.Context) (Template, error) {
+	return func(ctx context.Context) (Template, error) {
+		t, err := f.FetchVersion(ctx, rec.Setup.EngineVersion, rec.Setup.EngineIntegrity)
 		if err != nil {
 			return Template{}, err
 		}
-		return Template{Version: t.Version, Integrity: t.Integrity, Themes: themes, Tree: t}, nil
+		return templateOf(t)
 	}
+}
+
+func templateOf(t *scaffold.Template) (Template, error) {
+	themes, err := t.Catalog()
+	if err != nil {
+		return Template{}, err
+	}
+	return Template{Version: t.Version, Integrity: t.Integrity, Themes: themes, Tree: t}, nil
 }
 
 // Resume names the unfinished record a run continues.
@@ -313,6 +330,11 @@ type run struct {
 	out         Done
 }
 
+// ErrPlanned is what a View's ConfirmSummary returns to end the run at the summary without
+// failing it. The run stops with its record resumable, the keyring entries kept, and no
+// step_failed event, so a later run resumes at the summary. Run returns it as is.
+var ErrPlanned = errors.New("setup: stopped at the summary to plan")
+
 // Run runs a setup from the opening to the done screen: the opening, the four approvals, the
 // summary and its one Enter, the eight watch steps, and the end, where the Cloudflare grant is
 // revoked and the run's keyring entries are deleted. With Config.Resume it starts at the first
@@ -337,6 +359,10 @@ func Run(ctx context.Context, cfg Config) (Result, error) {
 		}
 	}()
 	res, err := r.steps(ctx)
+	if errors.Is(err, ErrPlanned) {
+		r.keepKeys()
+		return Result{}, err
+	}
 	if err != nil {
 		f := r.fail(ctx, err, "")
 		r.keepKeys()

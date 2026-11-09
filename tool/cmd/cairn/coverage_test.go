@@ -68,6 +68,7 @@ func TestEveryActionCoverage(t *testing.T) {
 		"cairn auth check",
 		"cairn auth probe",
 		"cairn new",
+		"cairn new status",
 		"cairn agents",
 		"cairn completion",
 		"cairn help",
@@ -102,6 +103,8 @@ func TestEveryActionCoverage(t *testing.T) {
 	assertOwnFlags(t, byPath["cairn adopt list"], "json", "help")
 	assertOwnFlags(t, byPath["cairn auth check"], "json", "help")
 	assertOwnFlags(t, byPath["cairn new"], "name", "email", "posture", "account", "zone", "host", "site-theme", "plan", "apply", "resume", "new", "tag", "dry-run", "json", "help")
+
+	assertOwnFlags(t, byPath["cairn new status"], "help")
 
 	if byPath["cairn auth check"].Hidden {
 		t.Error("cairn auth check is Hidden; it must appear in --help")

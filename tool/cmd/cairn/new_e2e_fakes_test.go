@@ -380,6 +380,10 @@ func (w *e2eWorld) githubAPI(rw http.ResponseWriter, r *http.Request) {
 		owner := asMap(body["owner"])
 		owner["login"], owner["id"] = e2eOwner, e2eOwnerID
 		writeJSON(rw, http.StatusCreated, body)
+	case r.Method == http.MethodGet && path == "/user":
+		body := corpusBody(w.t, "github", "user_get.ok.200.json")
+		body["login"], body["id"] = e2eOwner, e2eOwnerID
+		writeJSON(rw, http.StatusOK, body)
 	case r.Method == http.MethodGet && path == "/user/installations":
 		list := w.installList()
 		writeJSON(rw, http.StatusOK, map[string]any{"total_count": len(list), "installations": list})

@@ -302,6 +302,43 @@ func TestCreateRepo(t *testing.T) {
 	})
 }
 
+func TestRepoNamed(t *testing.T) {
+	t.Run("found", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/repos/example-owner/example-site": fixtureReply(t, "repo_get.ok.200.json")})
+		repo, err := NewGitHub(NewCredential("utok"), rt).RepoNamed(context.Background(), "example-owner", "example-site")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo == nil || repo.ID != 998877 || repo.Owner.Login != "example-owner" || repo.DefaultBranch != "main" {
+			t.Errorf("repo = %+v", repo)
+		}
+		if rt.calls[0].auth != "Bearer utok" {
+			t.Errorf("auth = %q", rt.calls[0].auth)
+		}
+	})
+	t.Run("absent", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/repos/example-owner/example-site": fixtureReply(t, "not_found.default.404.json")})
+		repo, err := NewGitHub(NewCredential("utok"), rt).RepoNamed(context.Background(), "example-owner", "example-site")
+		if err != nil || repo != nil {
+			t.Errorf("RepoNamed = %+v, %v; want nil and no error", repo, err)
+		}
+	})
+	t.Run("another failure", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/repos/example-owner/example-site": fixtureReply(t, "app_installations.bad-credentials.401.json")})
+		if _, err := NewGitHub(NewCredential("utok"), rt).RepoNamed(context.Background(), "example-owner", "example-site"); httpStatusOf(err) != 401 {
+			t.Errorf("err = %v, want the 401", err)
+		}
+	})
+}
+
+// httpStatusOf is the status a GitHubError carries, or 0.
+func httpStatusOf(err error) int {
+	if ge, ok := errors.AsType[*GitHubError](err); ok {
+		return ge.Status
+	}
+	return 0
+}
+
 func TestAppRoutes(t *testing.T) {
 	jwt := NewCredential("the-jwt")
 	rt := routes(map[string]reply{

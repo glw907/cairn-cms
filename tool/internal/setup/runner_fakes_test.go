@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -130,6 +131,7 @@ func (f *fakeTab) push(r loopback.Route, step func(nonce string) (loopback.Callb
 }
 
 type fakeCFAuth struct {
+	clock      *clock
 	tokens     []providers.OAuthToken
 	err        error
 	refreshErr error
@@ -138,6 +140,9 @@ type fakeCFAuth struct {
 	issued     []providers.OAuthToken
 	refreshes  []string
 	revoked    []string
+	// issuedAt is when each access token was issued, so the Cloudflare fake refuses one past its
+	// hour the way Cloudflare does.
+	issuedAt map[string]time.Time
 }
 
 func (f *fakeCFAuth) Exchange(_ context.Context, code, verifier string) (*providers.OAuthToken, error) {
@@ -150,6 +155,7 @@ func (f *fakeCFAuth) Exchange(_ context.Context, code, verifier string) (*provid
 		f.tokens = f.tokens[1:]
 	}
 	f.issued = append(f.issued, tok)
+	f.issuedAt[tok.AccessToken] = f.clock.Now()
 	return &tok, nil
 }
 
@@ -168,6 +174,7 @@ func (f *fakeCFAuth) Refresh(ctx context.Context, refreshToken string) (*provide
 		Scope:        providers.CloudflareScopes,
 	}
 	f.issued = append(f.issued, tok)
+	f.issuedAt[tok.AccessToken] = f.clock.Now()
 	return &tok, nil
 }
 
@@ -176,12 +183,19 @@ func (f *fakeCFAuth) Revoke(_ context.Context, token string) error {
 	return f.revokeErr
 }
 
-// d1 is one fake database: its tables, and the auth rows the sign-in batch writes.
+// d1 is one fake database: its tables, the auth rows the sign-in batch writes, and the sessions
+// the engine's confirm leaves.
 type d1 struct {
-	uuid    string
-	tables  []string
-	editors map[string]string
-	tokens  map[string]tokenRow
+	uuid     string
+	tables   []string
+	editors  map[string]string
+	tokens   map[string]tokenRow
+	sessions []sessionRow
+}
+
+type sessionRow struct {
+	email   string
+	created int64
 }
 
 type tokenRow struct {
@@ -191,6 +205,7 @@ type tokenRow struct {
 
 type fakeCF struct {
 	clock    *clock
+	auth     *fakeCFAuth
 	accounts []providers.Account
 	email    string
 	active   []providers.Zone
@@ -220,13 +235,19 @@ type fakeCF struct {
 type cfClient struct {
 	f       *fakeCF
 	account string
+	token   string
 	t       *testing.T
 }
 
+// note logs call and fails it the way the client would: on an ended context, on the test's
+// error, or with Cloudflare's 401 for an access token past its hour.
 func (c cfClient) note(ctx context.Context, call string) error {
 	*c.f.log = append(*c.f.log, "cf:"+call)
 	if err := ctx.Err(); err != nil {
 		return err
+	}
+	if at, ok := c.f.auth.issuedAt[c.token]; ok && c.f.clock.Now().Sub(at) >= time.Hour {
+		return &providers.APIError{Status: 401, Code: 10000, Reason: providers.ReasonUnauthorized}
 	}
 	return c.f.err
 }
@@ -426,6 +447,20 @@ func (c cfClient) D1Query(ctx context.Context, uuid string, stmts []providers.D1
 			if _, ok := db.tokens[c.str(p, 0)]; ok {
 				res.Results = append(res.Results, json.RawMessage(`{"token_hash":"x"}`))
 			}
+		case sqlLatestSession:
+			latest := "null"
+			for _, s := range db.sessions {
+				if s.email == c.str(p, 0) {
+					latest = strconv.FormatInt(s.created, 10)
+				}
+			}
+			res.Results = append(res.Results, json.RawMessage(`{"latest":`+latest+`}`))
+		case sqlNewSession:
+			for _, s := range db.sessions {
+				if s.email == c.str(p, 0) && s.created > c.num(p, 1) {
+					res.Results = append(res.Results, json.RawMessage(`{"one":1}`))
+				}
+			}
 		default:
 			c.t.Errorf("unexpected SQL %q", st.SQL)
 		}
@@ -508,21 +543,30 @@ type install struct {
 }
 
 type fakeGH struct {
-	t          *testing.T
-	app        providers.AppRecord
-	repo       providers.Repository
-	convertErr error
-	deleteErr  error
-	secretErr  error
-	taken      map[string]bool
-	installs   []install
-	writes     int
-	creates    map[string]int
-	onCreate   func()
-	remotes    string
-	secrets    map[string]string
-	instTokens []providers.Credential
-	runFor     func(sha string) (providers.WorkflowRun, bool)
+	t *testing.T
+	// created names every repository CreateRepo made, which a second create of the name is
+	// refused for; ownerOf overrides the owner a read of the name reports.
+	created map[string]bool
+	ownerOf map[string]string
+	// afterCreate runs once the repository exists, before CreateRepo returns.
+	afterCreate func()
+	// secretOnEmpty reports, for each Actions secret stored, whether the repository then held no
+	// commits.
+	secretOnEmpty []bool
+	app           providers.AppRecord
+	repo          providers.Repository
+	convertErr    error
+	deleteErr     error
+	secretErr     error
+	taken         map[string]bool
+	installs      []install
+	writes        int
+	creates       map[string]int
+	onCreate      func()
+	remotes       string
+	secrets       map[string]string
+	instTokens    []providers.Credential
+	runFor        func(sha string) (providers.WorkflowRun, bool)
 	// deploy stands in for the deploy run's own effect: the Worker it creates.
 	deploy func(repo string)
 	log    *[]string
@@ -573,15 +617,45 @@ func (c ghClient) CreateRepo(ctx context.Context, name string) (providers.Reposi
 			return providers.Repository{}, err
 		}
 	}
-	if c.f.taken[name] {
+	if c.f.taken[name] || c.f.created[name] {
 		return providers.Repository{}, fmt.Errorf("test 422: %w", providers.ErrRepoNameTaken)
 	}
 	c.f.creates["repo"]++
-	r := c.f.repo
+	c.f.created[name] = true
+	r := c.f.repoNamed(name)
+	gitRun(c.f.t, "", "init", "--quiet", "--bare", "-b", r.DefaultBranch, filepath.Join(c.f.remotes, r.Owner.Login, name+".git"))
+	if c.f.afterCreate != nil {
+		c.f.afterCreate()
+		if err := ctx.Err(); err != nil {
+			return providers.Repository{}, err
+		}
+	}
+	return r, nil
+}
+
+func (f *fakeGH) repoNamed(name string) providers.Repository {
+	r := f.repo
 	r.Name = name
 	r.FullName = r.Owner.Login + "/" + name
-	gitRun(c.f.t, "", "init", "--quiet", "--bare", "-b", r.DefaultBranch, filepath.Join(c.f.remotes, r.Owner.Login, name+".git"))
-	return r, nil
+	return r
+}
+
+// RepoNamed reads a repository the run created, as GitHub's GET /repos/{owner}/{repo} does.
+func (c ghClient) RepoNamed(ctx context.Context, owner, name string) (*providers.Repository, error) {
+	if err := c.note(ctx, "repo:"+owner+"/"+name); err != nil {
+		return nil, err
+	}
+	if isJWT(c.cred) || c.cred.Reveal() == "" {
+		c.f.t.Error("RepoNamed ran without the user token")
+	}
+	if !c.f.created[name] || owner != c.f.repo.Owner.Login {
+		return nil, nil
+	}
+	r := c.f.repoNamed(name)
+	if o, ok := c.f.ownerOf[name]; ok {
+		r.Owner.Login = o
+	}
+	return &r, nil
 }
 
 func (c ghClient) AppInstallations(ctx context.Context) ([]providers.Installation, error) {
@@ -643,6 +717,9 @@ func (c ghClient) InstallationToken(ctx context.Context, id int64) (providers.Cr
 	if !isJWT(c.cred) {
 		c.f.t.Error("InstallationToken ran without the App JWT")
 	}
+	if !slices.ContainsFunc(c.f.installs, func(in install) bool { return in.ID == id }) {
+		return providers.Credential{}, time.Time{}, &providers.GitHubError{Status: 404, Reason: providers.ReasonNotFound}
+	}
 	// Built at run time: a token-shaped literal does not belong in source.
 	tok := providers.NewCredential("gh" + "s_" + strconv.FormatInt(id, 10) + strings.Repeat("k", 28) + strconv.Itoa(len(c.f.instTokens)))
 	c.f.instTokens = append(c.f.instTokens, tok)
@@ -672,21 +749,26 @@ func (c ghClient) InstallationRepositories(ctx context.Context) ([]int64, error)
 	return nil, &providers.GitHubError{Status: 401, Reason: providers.ReasonUnauthorized}
 }
 
-func (c ghClient) remote(owner, repo string) string {
-	return filepath.Join(c.f.remotes, owner, repo+".git")
-}
-
 func (c ghClient) HeadSHA(ctx context.Context, owner, repo, ref string) (string, error) {
 	if err := c.note(ctx, "head:"+ref); err != nil {
 		return "", err
 	}
-	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", "refs/heads/"+ref)
-	cmd.Dir = c.remote(owner, repo)
-	out, err := cmd.Output()
-	if err != nil {
+	sha, ok := c.f.remoteHead(owner, repo, ref)
+	if !ok {
 		return "", &providers.GitHubError{Status: 409, Message: "Git Repository is empty.", Reason: providers.ReasonUnknown}
 	}
-	return strings.TrimSpace(string(out)), nil
+	return sha, nil
+}
+
+// remoteHead reads ref in the remote standing in for owner/repo.
+func (f *fakeGH) remoteHead(owner, repo, ref string) (string, bool) {
+	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", "refs/heads/"+ref)
+	cmd.Dir = filepath.Join(f.remotes, owner, repo+".git")
+	out, err := cmd.Output()
+	if err != nil {
+		return "", false
+	}
+	return strings.TrimSpace(string(out)), true
 }
 
 func (c ghClient) SetActionsSecret(ctx context.Context, owner, repo, name, value string) error {
@@ -701,6 +783,8 @@ func (c ghClient) SetActionsSecret(ctx context.Context, owner, repo, name, value
 		c.f.secretErr = nil
 		return err
 	}
+	_, pushed := c.f.remoteHead(owner, repo, c.f.repo.DefaultBranch)
+	c.f.secretOnEmpty = append(c.f.secretOnEmpty, !pushed)
 	c.f.secrets[owner+"/"+repo+"/"+name] = value
 	return nil
 }
@@ -835,6 +919,8 @@ type fakeSaver struct {
 	saves []record.Record
 	id    string
 	err   error
+	// onSave sees each record Save is about to write; an error it returns fails the save.
+	onSave func(r record.Record) error
 }
 
 func (s *fakeSaver) SaveNew(slug string, r record.Record) (string, error) {
@@ -852,6 +938,11 @@ func (s *fakeSaver) Save(id string, r record.Record) error {
 	}
 	if id != s.id {
 		return fmt.Errorf("test: save to %s, want %s", id, s.id)
+	}
+	if s.onSave != nil {
+		if err := s.onSave(r); err != nil {
+			return err
+		}
 	}
 	s.saves = append(s.saves, r)
 	return nil
@@ -950,13 +1041,14 @@ func newWorld(t *testing.T) *world {
 	w.clock = &clock{now: time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)}
 	w.tab = &fakeTab{armed: map[loopback.Route]string{}, script: map[loopback.Route][]func(string) (loopback.Callback, error){}, log: &w.log}
 	tok := fixture[providers.OAuthToken](t, "cloudflare", "oauth_token.success.200.json")
-	w.cfAuth = &fakeCFAuth{tokens: []providers.OAuthToken{tok}}
+	w.cfAuth = &fakeCFAuth{clock: w.clock, tokens: []providers.OAuthToken{tok}, issuedAt: map[string]time.Time{}}
 	zones := cfResult[[]providers.Zone](t, "zones.list.200.json")
 	user := cfResult[struct {
 		Email string `json:"email"`
 	}](t, "user.get.200.json")
 	w.cf = &fakeCF{
 		clock:    w.clock,
+		auth:     w.cfAuth,
 		accounts: cfResult[[]providers.Account](t, "accounts.list.200.json"),
 		// The recorded address is scrubbed, so the world signs in as a valid one.
 		email:      strings.Replace(user.Email, "editor-redacted", "owner@example.test", 1),
@@ -1004,6 +1096,8 @@ func newWorld(t *testing.T) *world {
 		},
 		repo:     repo,
 		taken:    map[string]bool{},
+		created:  map[string]bool{},
+		ownerOf:  map[string]string{},
 		installs: []install{{ID: 5550001, AppID: foreignAppID, Selection: "all"}},
 		creates:  map[string]int{},
 		remotes:  t.TempDir(),
@@ -1061,7 +1155,7 @@ func newWorld(t *testing.T) *world {
 		CloudflareOAuth: w.cfAuth,
 		Cloudflare: func(accountID string, token providers.Credential) CloudflareAPI {
 			w.cf.bound = append(w.cf.bound, accountID)
-			return cfClient{f: w.cf, account: accountID, t: t}
+			return cfClient{f: w.cf, account: accountID, token: token.Reveal(), t: t}
 		},
 		GitHub:    func(cred providers.Credential) GitHubAPI { return ghClient{f: w.gh, cred: cred} },
 		GitHubWeb: w.web,
@@ -1074,16 +1168,35 @@ func newWorld(t *testing.T) *world {
 	return w
 }
 
-// stubNPM writes an npm that prints to both streams and saves its environment to envFile, and
-// returns its path.
+// failNPM replaces the world's npm with one that fails.
+func failNPM(t *testing.T, w *world) {
+	t.Helper()
+	writeNPM(t, w.npmEnv, 1)
+}
+
+// stubNPM writes an npm that prints to both streams, saves its environment to envFile, and
+// succeeds, and returns its path.
 func stubNPM(t *testing.T, envFile string) string {
+	t.Helper()
+	return writeNPM(t, envFile, 0)
+}
+
+// writeNPM writes the stub npm into a bin folder beside envFile and returns its path. Windows
+// runs no shell script, so there the stub is npm.cmd, which a PATH lookup of npm finds through
+// PATHEXT.
+func writeNPM(t *testing.T, envFile string, exit int) string {
 	t.Helper()
 	dir := filepath.Join(filepath.Dir(envFile), "bin")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
+	code := strconv.Itoa(exit)
 	bin := filepath.Join(dir, "npm")
-	script := "#!/bin/sh\necho npm-stub-stdout\necho npm-stub-stderr >&2\nenv > " + envFile + "\n"
+	script := "#!/bin/sh\necho npm-stub-stdout\necho npm-stub-stderr >&2\nenv > '" + envFile + "'\nexit " + code + "\n"
+	if runtime.GOOS == "windows" {
+		bin += ".cmd"
+		script = "@echo off\r\necho npm-stub-stdout\r\necho npm-stub-stderr 1>&2\r\nset > \"" + envFile + "\"\r\nexit /b " + code + "\r\n"
+	}
 	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -1127,8 +1240,17 @@ func (w *world) writeSite(ctx context.Context, cfg scaffold.Config) (scaffold.Re
 	return scaffold.Result{Dir: cfg.Dir, CommitSHA: gitRun(w.t, cfg.Dir, "rev-parse", "HEAD"), EngineVersion: w.template.Version}, nil
 }
 
-// finalizeSite is the second pass in miniature: the database id written and committed on the
-// first commit.
+// siteConfig is the site file that carries the GitHub App identity.
+const siteConfig = "src/theme/cairn.config.ts"
+
+// appLiteral is the createGithubApp call the scaffold's second pass writes for s.
+func appLiteral(s scaffold.Site) string {
+	return "createGithubApp({ owner: '" + s.Owner + "', repo: '" + s.Repo + "', branch: '" + s.DefaultBranch +
+		"', appId: '" + s.AppID + "', installationId: '" + s.InstallationID + "' })"
+}
+
+// finalizeSite is the second pass in miniature: the database id and the App identity written
+// and committed on the first commit.
 func (w *world) finalizeSite(ctx context.Context, cfg scaffold.FinalizeConfig) (string, error) {
 	w.log = append(w.log, "scaffold:finalize")
 	if err := ctx.Err(); err != nil {
@@ -1141,6 +1263,14 @@ func (w *world) finalizeSite(ctx context.Context, cfg scaffold.FinalizeConfig) (
 		return "", errors.New("test: no database id")
 	}
 	if err := os.WriteFile(filepath.Join(cfg.Dir, "wrangler.jsonc"), []byte(cfg.Site.DatabaseID+"\n"), 0o644); err != nil {
+		return "", err
+	}
+	config := filepath.Join(cfg.Dir, filepath.FromSlash(siteConfig))
+	if err := os.MkdirAll(filepath.Dir(config), 0o755); err != nil {
+		return "", err
+	}
+	src := "export const github = " + appLiteral(cfg.Site) + ";\n"
+	if err := os.WriteFile(config, []byte(src), 0o644); err != nil {
 		return "", err
 	}
 	gitRun(w.t, cfg.Dir, "add", "--all")
@@ -1164,11 +1294,28 @@ func (w *world) siteGet(ctx context.Context, rawURL string) (int, string, error)
 }
 
 // ownerUsesLink is the owner selecting Sign in on the confirm page the tab moved to: the engine
-// consumes the link's row.
+// consumes the link's row and then writes a session for its email (src/lib/sveltekit/auth-routes.ts).
 func (w *world) ownerUsesLink(link string) {
-	u := link[strings.Index(link, "token=")+len("token="):]
+	h := hashToken(link[strings.Index(link, "token=")+len("token="):])
 	for _, db := range w.cf.d1 {
-		delete(db.tokens, hashToken(u))
+		if row, ok := db.tokens[h]; ok {
+			delete(db.tokens, h)
+			db.sessions = append(db.sessions, sessionRow{email: row.email, created: w.clock.Now().UnixMilli()})
+		}
+	}
+}
+
+// ownerRequestsALink is the owner asking the live sign-in page for a link while the tab's link
+// is live: the engine's issueToken deletes every row of the email, the tab's included, and
+// writes no session.
+func (w *world) ownerRequestsALink(string) {
+	email := strings.ToLower(w.cf.email)
+	for _, db := range w.cf.d1 {
+		for h, row := range db.tokens {
+			if row.email == email {
+				delete(db.tokens, h)
+			}
+		}
 	}
 }
 

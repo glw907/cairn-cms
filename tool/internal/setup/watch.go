@@ -13,8 +13,17 @@ import (
 
 // watch runs the eight watch steps after the summary's Enter, skipping each one the record has
 // reached. Each step stores its intents and ids as it goes, and the record step that marks it
-// done is written once the whole step has passed.
+// done is written once the whole step has passed. A watch that begins past the first deploy
+// starts the background install the first deploy would have, unless the record says it ran. A
+// watch that begins past the commit step first brings the site's settings to the recorded
+// installation.
 func (r *run) watch(ctx context.Context) error {
+	if reached(r.rec.Step, spine.StepDeployed) {
+		r.startInstall()
+	}
+	if err := r.followInstallation(ctx); err != nil {
+		return err
+	}
 	steps := []struct {
 		id   string
 		done spine.Step
@@ -23,8 +32,8 @@ func (r *run) watch(ctx context.Context) error {
 		{StepScaffold, spine.StepScaffolded, r.scaffold},
 		{StepProvision, spine.StepResourcesCreated, r.provision},
 		{StepCommit, spine.StepCommitted, r.commit},
-		{StepPush, spine.StepPushed, r.push},
 		{StepDeployKey, spine.StepDeployKeyStored, r.deployKey},
+		{StepPush, spine.StepPushed, r.push},
 		{StepFirstDeploy, spine.StepDeployed, r.firstDeploy},
 		{StepDomains, spine.StepDomainLive, r.domains},
 		{StepSignIn, spine.StepLive, r.signIn},
@@ -41,6 +50,7 @@ func (r *run) watch(ctx context.Context) error {
 			return err
 		}
 		r.rec.Step = string(st.done)
+		r.noteInstall()
 		if err := r.save(); err != nil {
 			return err
 		}
@@ -157,8 +167,9 @@ func (r *run) provisionD1(ctx context.Context) error {
 	return r.save()
 }
 
-// sqlTables lists a database's own tables, leaving out SQLite's and D1's.
-const sqlTables = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'"
+// sqlTables lists a database's own tables, leaving out SQLite's and D1's. The prefixes are
+// compared exactly, since in a LIKE pattern "_" matches any one character.
+const sqlTables = "SELECT name FROM sqlite_master WHERE type = 'table' AND substr(name, 1, 7) <> 'sqlite_' AND substr(name, 1, 4) <> '_cf_'"
 
 func (r *run) d1Empty(ctx context.Context, uuid string) (bool, error) {
 	res, err := r.cf.D1Query(ctx, uuid, []providers.D1Statement{{SQL: sqlTables}})
@@ -180,11 +191,11 @@ func (r *run) provisionR2(ctx context.Context) error {
 		}
 		switch {
 		case s.IDs.R2Bucket != "" && b == nil:
-			return r.notOurs("storage bucket", name)
+			return r.bucketNotOurs(name)
 		case s.IDs.R2Bucket != "":
 			return nil
 		case b != nil:
-			return r.notOurs("storage bucket", name)
+			return r.bucketNotOurs(name)
 		}
 	}
 	s.Intents.R2Bucket = name
@@ -206,6 +217,14 @@ func (r *run) provisionR2(ctx context.Context) error {
 func (r *run) notOurs(kind, name string) *Failure {
 	return r.failure(ReasonNotOurs, "A "+kind+" named "+name+" already exists on your Cloudflare account, and setup can't confirm it's the one it created.",
 		"If you don't need it, delete the "+kind+" in Cloudflare, and then run cairn new again.", nil)
+}
+
+// bucketNotOurs is notOurs for the storage bucket, which says how to delete one: Cloudflare
+// deletes only an empty bucket.
+func (r *run) bucketNotOurs(name string) *Failure {
+	f := r.notOurs("storage bucket", name)
+	f.Do = "If you don't need it, open R2 Object Storage in the Cloudflare dashboard, delete the bucket's objects, and then delete the bucket. Then run cairn new again."
+	return f
 }
 
 // commit is watch step 3: the Worker, database, and GitHub App settings written over the first
@@ -244,7 +263,7 @@ func (r *run) installationToken(ctx context.Context) (providers.Credential, erro
 	return tok, nil
 }
 
-// push is watch step 4. A remote branch already at the recorded commit means an earlier run
+// push is watch step 5. A remote branch already at the recorded commit means an earlier run
 // pushed and stopped before recording it, so nothing is sent again. Otherwise the folder must
 // still be at the recorded commit and no Worker may hold the site's name, since the push starts
 // the first deploy.
@@ -284,8 +303,8 @@ func (r *run) pushCommit(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	env, header := pushEnv(r.cfg.Env, tok)
-	r.registerValue(header)
+	env, header, encoded := pushEnv(r.cfg.Env, tok)
+	r.registerValue(header, encoded)
 	ref := "HEAD:refs/heads/" + r.rec.GitHub.Repo.DefaultBranch
 	if _, err := runChild(ctx, r.rec.Setup.Folder, env, "git", "push", "--quiet", "origin", ref); err != nil {
 		return r.localFailure(ctx, ReasonPush, "Setup couldn't push the site to GitHub.",
@@ -306,9 +325,11 @@ func (r *run) ownFolder(ctx context.Context) error {
 		"Undo the new commits in that folder, and then run cairn new again.", err)
 }
 
-// deployKey is watch step 5. A run that stopped inside this step may have minted a key it never
-// stored, so every earlier key of the run is deleted, by its recorded id and by its run-named
-// name, before a new one is minted.
+// deployKey is watch step 4. It comes before the push because GitHub hands a workflow job the
+// repository's secrets when the job starts, so the deploy the push starts must find the key
+// already stored. A run that stopped inside this step may have minted a key it never stored, so
+// every earlier key of the run is deleted, by its recorded id and by its run-named name, before
+// a new one is minted.
 func (r *run) deployKey(ctx context.Context) error {
 	s := &r.rec.Setup
 	name := providers.DeployKeyName(r.cfg.RunID)
@@ -365,8 +386,8 @@ func (r *run) domains(ctx context.Context) error {
 			return r.failure(ReasonHTTPSTimeout, "The site didn't answer over HTTPS at "+r.host+" within 15 minutes.",
 				"Run cairn new again later. Setup resumes at connecting the domain.", nil)
 		}
-		if err := r.sleep(ctx, pollEvery); err != nil {
-			return r.fail(ctx, err, "")
+		if err := r.pause(ctx, pollEvery); err != nil {
+			return err
 		}
 	}
 	return nil

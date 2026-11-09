@@ -81,7 +81,7 @@ const SENTINEL_FILE = 'zz-fixture-sentinel.svelte';
  * The pages the template arm smoke-loads each build through. The emitted template ships no
  * `/styleguide`, which the showcase arm's spec exercises instead.
  */
-const PAGES = ['/', '/posts/the-reading-surface'];
+const PAGES = ['/', '/posts/every-element-on-this-site'];
 
 /** Every child process a run started that still runs, killed on exit. @type {Set<import('node:child_process').ChildProcess>} */
 const servers = new Set();

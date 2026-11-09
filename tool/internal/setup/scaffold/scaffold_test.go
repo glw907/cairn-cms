@@ -244,6 +244,66 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 	}
 }
 
+func TestUpdateInstallationCommitsTheSettingsAlone(t *testing.T) {
+	site := testSite()
+	dir, res := scaffoldOK(t, site)
+	base := res.CommitSHA
+	moved := site
+	moved.InstallationID = "848484"
+	for _, tc := range []struct {
+		site Site
+		want bool
+	}{{site, true}, {moved, false}} {
+		if got, err := NamesApp(t.Context(), dir, base, tc.site); err != nil || got != tc.want {
+			t.Errorf("NamesApp(installation %s) = %v, %v; want %v", tc.site.InstallationID, got, err, tc.want)
+		}
+	}
+
+	pkg := filepath.Join(dir, targets.PackageJSON)
+	if err := os.WriteFile(pkg, []byte(readFile(t, dir, targets.PackageJSON)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("mine\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	fin := FinalizeConfig{Dir: dir, Base: base, Site: moved, Commit: testCommit()}
+	first, err := UpdateInstallation(t.Context(), fin)
+	if err != nil {
+		t.Fatalf("UpdateInstallation: %v", err)
+	}
+	if got := gitOut(t, dir, "diff", "--name-only", "HEAD^", "HEAD"); got != targets.CairnConfig {
+		t.Errorf("the commit touches %q, want only %s", got, targets.CairnConfig)
+	}
+	if got := gitOut(t, dir, "log", "-1", "--format=%s"); got != InstallationMessage {
+		t.Errorf("the commit's message = %q", got)
+	}
+	if got, err := NamesApp(t.Context(), dir, first, moved); err != nil || !got {
+		t.Errorf("the commit does not name installation %s: %v", moved.InstallationID, err)
+	}
+	if got := gitOut(t, dir, "status", "--porcelain"); !strings.Contains(got, "M "+targets.PackageJSON) || !strings.Contains(got, "?? notes.txt") {
+		t.Errorf("the folder's other changes = %q, want them left in place", got)
+	}
+
+	later := moved
+	later.InstallationID = "959595"
+	fin.Site = later
+	second, err := UpdateInstallation(t.Context(), fin)
+	if err != nil {
+		t.Fatalf("UpdateInstallation over its own commit: %v", err)
+	}
+	if gitOut(t, dir, "rev-parse", "HEAD^") != base {
+		t.Error("a second update did not rewrite the settings commit on the base")
+	}
+	if got, err := NamesApp(t.Context(), dir, second, later); err != nil || !got {
+		t.Errorf("the rewritten commit does not name installation %s: %v", later.InstallationID, err)
+	}
+
+	gitOut(t, dir, "reset", "--quiet", "--hard", res.CommitSHA+"^")
+	if _, err := UpdateInstallation(t.Context(), fin); err == nil {
+		t.Error("UpdateInstallation accepted a folder whose HEAD is neither the base nor its child")
+	}
+}
+
 func gitOut(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)

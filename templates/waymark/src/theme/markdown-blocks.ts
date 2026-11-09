@@ -202,7 +202,7 @@ export const video = defineBlock({
 });
 
 // A single sentence pulled out of the flow and set large, styled by reusing the manual `.pullquote`
-// hook this site's writing guide already documents (see the-reading-surface.md), so the component and
+// hook this site's writing guide already documents, so the component and
 // the raw-HTML tip render identically. The quote is a required inline slot (a pull quote is one line,
 // not a paragraph); attribution is optional, since most pulled lines are the author's words.
 export const pullQuote = defineBlock({

@@ -1,3 +1,18 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+A new site now starts from a small standard content set in place of the showcase's trail demo. The
+template carries a home page, About, an author page, a Contact page with a placeholder address, six
+short how-to posts, and one post that shows every markdown element and each block once. Its one image
+ships with the site, so no page loads a picture from another host. The showcase keeps its own fixtures.
+The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/`.
+
+- **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
+- **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
+
+Consumers must: nothing.
+
 ## 0.99.0-rc.4
 
 Released 2026-11-07.

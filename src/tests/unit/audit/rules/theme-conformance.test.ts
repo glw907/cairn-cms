@@ -80,9 +80,14 @@ function run(tree: Tree, peers: PeerAccess = REAL_PEERS) {
   return createThemeConformance(peers).check(ctx);
 }
 
-/** The showcase's real theme and chassis files, laid out as a site holds them. */
+/**
+ * The showcase's real theme and chassis files, laid out as a site holds them, with the built
+ * `tokens/tokens.css` that Waymark's theme.css imports.
+ */
 function showcaseTree(): Tree {
-  const files: Record<string, string> = {};
+  const files: Record<string, string> = {
+    'src/theme/tokens/tokens.css': read('examples/showcase/src/theme/tokens/tokens.css'),
+  };
   for (const name of ['tokens.css', 'prose.css', 'composition.css']) {
     files[`src/chassis/${name}`] = read(`examples/showcase/src/chassis/${name}`);
   }

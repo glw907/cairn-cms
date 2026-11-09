@@ -511,3 +511,21 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     });
   });
 });
+
+describe('the theme check runs in the test job every release waits on', () => {
+  const steps = loadWorkflow('test.yml').jobs?.test?.steps ?? [];
+  const at = (run: string) => steps.findIndex((step) => step.run === run);
+  const showcaseInstall = steps.findIndex((step) => step.with?.command === 'npm ci --prefix examples/showcase');
+
+  it.each(['npm run test:theme', 'npm run check:theme -- --catalog'])('runs %s with no condition, after the showcase install', (run) => {
+    expect(showcaseInstall).toBeGreaterThanOrEqual(0);
+    expect(at(run), run).toBeGreaterThan(showcaseInstall);
+    expect(steps[at(run)]).not.toHaveProperty('if');
+  });
+
+  it('keeps ci-green waiting on the test check run for a candidate and a stable', () => {
+    const run = loadWorkflow('publish.yml').jobs?.['ci-green']?.steps?.map((step) => step.run ?? '').join('\n') ?? '';
+    expect(run).toContain('NAMES="test"');
+    expect(run).toContain('NAMES="test e2e"');
+  });
+});

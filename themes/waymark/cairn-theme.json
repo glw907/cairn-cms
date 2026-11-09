@@ -54,5 +54,9 @@
       ]
     }
   ],
-  "screenshots": []
+  "screenshots": [
+    { "path": "screenshots/home-light.png", "shows": "The home page in the light color mode at 1440 pixels wide" },
+    { "path": "screenshots/home-dark.png", "shows": "The home page in the dark color mode at 1440 pixels wide" },
+    { "path": "screenshots/home-mobile.png", "shows": "The home page in the light color mode at 390 pixels wide" }
+  ]
 }

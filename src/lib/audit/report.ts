@@ -28,9 +28,9 @@ function suppressedBlock(suppressed: Finding[]): string[] {
 }
 
 /**
- * What the theme rules measured: one line per rule and file naming its theme blocks, or `measured
- * nothing` when no theme sheet was read, so a clean run over an empty scope cannot pass for a clean
- * theme.
+ * What the theme rules measured: one line per rule and file naming its theme blocks, or the text
+ * "measured nothing" when no theme sheet was read, so a clean run over an empty scope cannot pass
+ * for a clean theme.
  */
 function measuredBlock(measured: Measured[]): string[] {
   const read = measured.filter((entry) => entry.themes.length > 0);

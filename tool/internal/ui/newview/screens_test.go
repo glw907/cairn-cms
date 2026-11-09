@@ -317,10 +317,16 @@ func frame(themes []scaffold.Theme, width int, drive func(*Model)) (string, *Mod
 func frameIn(dark bool, themes []scaffold.Theme, remote bool, width, height int, drive func(*Model)) (string, *Model) {
 	cfg := testConfig(dark, themes)
 	cfg.Remote = remote
+	m := driven(cfg, width, height, drive)
+	return m.View().Content, m
+}
+
+// driven is a root for cfg in a window width by height, driven to a screen.
+func driven(cfg Config, width, height int, drive func(*Model)) *Model {
 	m := New(cfg)
 	m.Update(tea.WindowSizeMsg{Width: width, Height: height})
 	drive(m)
-	return m.View().Content, m
+	return m
 }
 
 // TestScreenGoldens renders every screen at 80 and 60 columns in the light and the dark theme.

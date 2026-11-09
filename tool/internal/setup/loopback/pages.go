@@ -28,10 +28,11 @@ const (
 	pageManifest
 	pageScopeError
 	pageDone
+	pageConsent
 )
 
-// Page is what the tab finds at the root. Build one with RedirectPage, ManifestPage, WaitPage,
-// ScopeErrorPage, or DonePage, and pass it to Server.Show.
+// Page is what the tab finds at the root. Build one with RedirectPage, ConsentPage, ManifestPage,
+// WaitPage, ScopeErrorPage, or DonePage, and pass it to Server.Show.
 type Page struct {
 	kind     pageKind
 	url      string
@@ -45,12 +46,17 @@ func WaitPage() Page { return Page{kind: pageWait} }
 // RedirectPage sends the tab to url, which must be an https URL.
 func RedirectPage(url string) Page { return Page{kind: pageRedirect, url: url} }
 
+// ConsentPage shows consent.html, which tells the owner which permission to select before its
+// Continue to Cloudflare button goes on to url, an https URL. The page links /cloudflare/go rather
+// than url, so the authorize URL never sits in the page source.
+func ConsentPage(url string) Page { return Page{kind: pageConsent, url: url} }
+
 // ManifestPage posts manifest, the App manifest as JSON, to GitHub's new-App page with the state
 // nonce GitHubManifest is armed with. Show refuses it while that route is not armed.
 func ManifestPage(manifest string) Page { return Page{kind: pageManifest, manifest: manifest} }
 
-// ScopeErrorPage shows error.html, whose Try again button links retryURL, an https URL that asks
-// for consent again.
+// ScopeErrorPage shows error.html, whose Try again button goes on to retryURL, an https URL that
+// asks for consent again, through /cloudflare/go as ConsentPage's button does.
 func ScopeErrorPage(retryURL string) Page { return Page{kind: pageScopeError, url: retryURL} }
 
 // DonePage shows done.html, which polls /next for the sign-in URL. Showing it stops the chain's
@@ -60,7 +66,7 @@ func DonePage() Page { return Page{kind: pageDone} }
 // Show sets the page the tab finds at the root from now on. The waiting page reloads the root, so
 // the tab follows within a few seconds.
 func (s *Server) Show(p Page) error {
-	if p.kind == pageRedirect || p.kind == pageScopeError {
+	if p.kind == pageRedirect || p.kind == pageConsent || p.kind == pageScopeError {
 		if err := checkHTTPS(p.url); err != nil {
 			return err
 		}
@@ -122,6 +128,8 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 	switch p.kind {
 	case pageRedirect:
 		http.Redirect(w, r, p.url, http.StatusFound)
+	case pageConsent:
+		s.render(w, "consent.html", pageData{})
 	case pageManifest:
 		s.render(w, "github.html", pageData{State: state, Manifest: p.manifest})
 	case pageScopeError:
@@ -208,7 +216,7 @@ func (s *Server) pageRoute(kind pageKind, file string) http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		s.render(w, file, pageData{RetryURL: p.url})
+		s.render(w, file, pageData{})
 	}
 }
 
@@ -243,12 +251,36 @@ func (s *Server) serveNext(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(body)
 }
 
+// goCloudflare answers the consent and scope-error pages' button with a redirect to the authorize
+// URL the page was shown with. It answers only while one of those pages shows and approval 1's
+// callback is armed, and only to the session's navigation from this origin: the URL carries the
+// state nonce and the PKCE challenge, so another site's link, a script's fetch, or a request
+// without the cookie gets 404 and learns nothing.
+func (s *Server) goCloudflare(w http.ResponseWriter, r *http.Request) {
+	site, mode := r.Header.Get("Sec-Fetch-Site"), r.Header.Get("Sec-Fetch-Mode")
+	if !s.hasSession(r) || (site != "" && site != "same-origin") || (mode != "" && mode != "navigate") {
+		http.NotFound(w, r)
+		return
+	}
+	s.mu.Lock()
+	p := s.page
+	a := s.routes[CloudflareCallback]
+	s.mu.Unlock()
+	if (p.kind != pageConsent && p.kind != pageScopeError) || a == nil || !a.open {
+		http.NotFound(w, r)
+		return
+	}
+	// http.Redirect would also write the URL into an HTML body; the Location header alone is
+	// what the browser follows.
+	w.Header().Set("Location", p.url)
+	w.WriteHeader(http.StatusFound)
+}
+
 type pageData struct {
 	SiteName string
 	Nonce    string
 	State    string
 	Manifest string
-	RetryURL string
 }
 
 // render writes one embedded page under a Content-Security-Policy that runs only the script the

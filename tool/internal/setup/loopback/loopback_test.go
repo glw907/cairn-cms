@@ -589,7 +589,7 @@ func TestConsentPage(t *testing.T) {
 	for _, want := range []string{
 		"<title>Approve setup on Cloudflare</title>",
 		"On the Cloudflare page, select <strong>API Tokens: Write</strong>, and then select Allow.",
-		"Cloudflare leaves <strong>API Tokens: Write</strong> unselected, and setup needs it to create your site&#39;s deploy key.",
+		"Cloudflare leaves <strong>API Tokens: Write</strong> unselected, and setup needs it to create your site's deploy key.",
 		`href="/cloudflare/go"`,
 		"Continue to Cloudflare",
 		"cairn · Field Notes · approval 1 of 4",

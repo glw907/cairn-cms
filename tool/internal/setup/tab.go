@@ -15,10 +15,13 @@ const (
 	PageRedirect PageKind = iota
 	// PageManifest posts Manifest to GitHub's new-App page.
 	PageManifest
-	// PageScopeError shows error.html, whose Try again links URL.
+	// PageScopeError shows error.html, whose Try again goes on to URL.
 	PageScopeError
 	// PageDone shows done.html and stops the chain's clock.
 	PageDone
+	// PageConsent shows consent.html, the permission instruction whose Continue to Cloudflare
+	// button goes on to URL.
+	PageConsent
 )
 
 // Page is one page the runner shows in the tab. It mirrors loopback's page constructors in a
@@ -59,6 +62,8 @@ func (t loopbackTab) Show(p Page) error {
 	switch p.Kind {
 	case PageRedirect:
 		return t.Server.Show(loopback.RedirectPage(p.URL))
+	case PageConsent:
+		return t.Server.Show(loopback.ConsentPage(p.URL))
 	case PageManifest:
 		return t.Server.Show(loopback.ManifestPage(p.Manifest))
 	case PageScopeError:

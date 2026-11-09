@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Approve setup on Cloudflare</title>
+<style>
+  :root {
+    --ground: #fdfbf9; --text: #28231d; --muted: #615d57; --accent: #7246cf; --on-accent: #ffffff;
+    --callout-ground: #f3eefc; --callout-rule: #b9a3ec;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #221f1a; --text: #eae7e3; --muted: #a8a49e; --accent: #9d84ec; --on-accent: #1b1430;
+      --callout-ground: #2b2537; --callout-rule: #5f4f94;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--text);
+    font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 34rem; margin: 0 auto; padding: 5rem 1.5rem 4rem; }
+  .eyebrow { color: var(--muted); font-size: 0.875rem; margin: 0 0 2.5rem; }
+  h1 { font-size: 1.75rem; line-height: 1.25; font-weight: 600; margin: 0 0 1.5rem; }
+  p { margin: 0 0 1rem; }
+  .callout {
+    margin: 0 0 2rem; padding: 1.125rem 1.25rem; border: 1px solid var(--callout-rule);
+    border-radius: 0.5rem; background: var(--callout-ground);
+  }
+  .callout h2 { font-size: 1.0625rem; line-height: 1.4; font-weight: 600; margin: 0 0 0.5rem; }
+  .callout p:last-child { margin-bottom: 0; }
+  .button {
+    display: inline-block; margin-top: 0.5rem; padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem; background: var(--accent); color: var(--on-accent);
+    font: inherit; font-weight: 600; text-decoration: none; border: 0; cursor: pointer;
+  }
+  .button:hover { filter: brightness(1.08); }
+  .button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  @media (max-width: 30rem) { main { padding-top: 3rem; } h1 { font-size: 1.5rem; } .button { width: 100%; text-align: center; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">cairn · {{.SiteName}} · approval 1 of 4</p>
+  <h1>Approve setup on Cloudflare</h1>
+  <section class="callout" aria-labelledby="permission">
+    <h2 id="permission">Select API Tokens: Write</h2>
+    <p>On the Cloudflare page, select <strong>API Tokens: Write</strong>, and then select Allow.</p>
+    <p>Cloudflare leaves <strong>API Tokens: Write</strong> unselected, and setup needs it to create your site's deploy key.</p>
+  </section>
+  <a class="button" href="/cloudflare/go">Continue to Cloudflare</a>
+</main>
+</body>
+</html>

@@ -17,13 +17,14 @@ import (
 // installationsURL is where an owner removes an App installation by hand.
 const installationsURL = "https://github.com/settings/installations"
 
-// approveCloudflare runs approval 1: PKCE consent in the tab, the code exchange, the pair kept in
-// the keyring before either token is used, and the granted-scope check. A grant without the
+// approveCloudflare runs approval 1: the consent page, which names the permission Cloudflare
+// leaves unselected before it sends the tab on, PKCE consent on Cloudflare, the code exchange,
+// the pair kept in the keyring before either token is used, and the granted-scope check. A grant without the
 // scope that mints the deploy key shows error.html, whose Try again asks for consent afresh.
 // state is WaitCloudflare, or WaitCloudflareReconsent for a resume whose stored grant is spent.
 func (r *run) approveCloudflare(ctx context.Context, state WaitState) error {
 	r.start(StepApproveCloudflare)
-	page := PageRedirect
+	page := PageConsent
 	for {
 		verifier, challenge, err := providers.NewPKCE()
 		if err != nil {
@@ -47,7 +48,7 @@ func (r *run) approveCloudflare(ctx context.Context, state WaitState) error {
 		}
 		if cb.Error != "" {
 			return r.failure(ReasonDeclined, "The Cloudflare approval was declined.",
-				"Run cairn new again, and select Allow on the Cloudflare page.", nil)
+				"Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.", nil)
 		}
 		r.registerValue(cb.Code)
 		tok, err := r.cfg.CloudflareOAuth.Exchange(ctx, cb.Code, verifier)

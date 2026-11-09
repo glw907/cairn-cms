@@ -5,8 +5,9 @@
 // against a page that rebinds a hostname to 127.0.0.1. The root opens a session only for the
 // one-time key in URL, so another process on the machine, or another site's page in the owner's
 // browser, cannot take the cookie that gates the sign-in URL. A callback route answers only while
-// the runner has it armed, and only to the state nonce it was armed with; any other path answers
-// 404. The runner drives the tab through Show and learns of each approval through Wait, so the
+// the runner has it armed, and only to the state nonce it was armed with. /cloudflare/go hands the
+// Cloudflare authorize URL to the consent page's button only while that callback is armed, so the
+// URL never sits in a page's source. Any other path answers 404. The runner drives the tab through Show and learns of each approval through Wait, so the
 // browser is answered at once and the API work runs in the runner afterwards.
 //
 // Nothing here logs. The key, the nonces, the codes, the cookie, and the sign-in URL reach only
@@ -119,6 +120,7 @@ func New(cfg Config) (*Server, error) {
 		string(CloudflareCallback): s.callback(CloudflareCallback),
 		string(GitHubManifest):     s.callback(GitHubManifest),
 		string(GitHubCallback):     s.callback(GitHubCallback),
+		"/cloudflare/go":           s.goCloudflare,
 		"/next":                    s.serveNext,
 		"/done.html":               s.pageRoute(pageDone, "done.html"),
 		"/error.html":              s.pageRoute(pageScopeError, "error.html"),

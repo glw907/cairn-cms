@@ -162,6 +162,15 @@ const results = (body) => (Array.isArray(body?.result) ? body.result : []);
  */
 const envelope = (body, result) => ({ ...pick(body, ['success', 'errors', 'messages', 'result_info']), result });
 
+/** The made-up content a staged DNS record of each common type carries. */
+const DNS_CONTENT = /** @type {Record<string, string>} */ ({
+  A: '192.0.2.1',
+  AAAA: '2001:db8::1',
+  CNAME: `example-target.${TEST_ZONE}`,
+  MX: `mail.${TEST_ZONE}`,
+  TXT: 'example-txt-content',
+});
+
 /**
  * Each identity or inventory route's shape: the fields a decoder reads, with real names held and
  * replaced by synthetic ones. A route absent here is staged as the API sent it, then scrubbed.
@@ -191,6 +200,12 @@ const SHAPES = {
       };
     }));
   },
+  // A record's content and comment are replaced outright: a TXT record can carry anything.
+  'cloudflare/zone_dns_records': (body) => envelope(body, results(body).map((/** @type {any} */ record) => ({
+    ...pick(record, ['id', 'type', 'name', 'proxied', 'ttl']),
+    content: DNS_CONTENT[String(record?.type)] ?? 'example-record-content',
+    comment: 'example record comment',
+  }))),
   'cloudflare/workers_scripts': (body, s) => envelope(body, results(body).map((/** @type {any} */ script) => ({
     ...pick(script, ['tag', 'created_on', 'modified_on', 'handlers', 'has_assets', 'has_modules', 'usage_model', 'compatibility_date', 'last_deployed_from']),
     id: s.alias(script?.id, 'worker'),

@@ -2,13 +2,13 @@
 // touches the network beyond loopback or reads ~/.local/secrets.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { buildManifest, createCallbackWaiter, requireTestLogin } from './browser-adapter.mjs';
+import { buildManifest, createCallbackWaiter, requireTestLogin, withoutSignalListeners } from './browser-adapter.mjs';
 import { createCloudflare } from './clients.mjs';
 import { createGuards } from './guards.mjs';
 import { ledgerPath } from './ledger.mjs';
@@ -18,11 +18,13 @@ import { createRecorder } from './recorder.mjs';
 import { createScrubber, findLeaks, verifyStaged } from './scrub.mjs';
 import { cleanupRun, runRecording } from './run.mjs';
 import {
-  ACCOUNT, CLIENT_SECRET, EMAIL, ESTATE_WORKER, fakeBrowser, GH_INSTALL_TOKEN, GH_REFRESH_TOKEN, GH_USER_TOKEN, OAUTH_TOKEN,
+  ACCOUNT, CLIENT_SECRET, DNS_COMMENT, DNS_CONTENT, EMAIL, ESTATE_WORKER, fakeBrowser, GH_INSTALL_TOKEN, GH_REFRESH_TOKEN, GH_USER_TOKEN, OAUTH_TOKEN,
   PEM, PERSONAL, SHORT_WORKER, startFake, TOKEN_VALUE, ZONE,
 } from './fake-services.mjs';
 
 const TEST_TOKEN = 'test_account_token_0123456789';
+/** An estate database whose name the D1 name search also answers for run trun00008. */
+const NEAR_NAME = 'estate-cairn-rec-trun00008-db-copy';
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 
 /**
@@ -103,7 +105,8 @@ test('a run records each recordable route, scrubbed, and deletes everything it m
     const ledger = JSON.parse(readFileSync(ledgerFile, 'utf8'));
     assert.match(ledger.find((/** @type {{ kind: string }} */ e) => e.kind === 'cf-token').id, /^[0-9a-f]{32}$/);
     assert.deepEqual(Object.keys(ledger.find((/** @type {{ kind: string }} */ e) => e.kind === 'github-app')).sort(), ['id', 'kind', 'name', 'slug']);
-    assert.deepEqual(fake.state.mintBodies, [{ repositories: ['cairn-rec-trun00001-repo'] }], 'the installation token is scoped to the run repository');
+    assert.deepEqual(fake.state.mintBodies, [{ repositories: ['cairn-rec-trun00001-repo'], permissions: { secrets: 'write', metadata: 'read' } }], 'the installation token is scoped to the run repository and the secret write');
+    assert.deepEqual(fake.state.installRepos, ['cairn-rec-trun00001-repo'], 'the App is installed on the run repository alone');
   } finally {
     await fake.close();
   }
@@ -111,6 +114,7 @@ test('a run records each recordable route, scrubbed, and deletes everything it m
 
 test('identity and inventory bodies keep only their decoded fields, with no real name staged', async () => {
   const { fake, ctx } = await setup('trun00008');
+  fake.state.dbs.push({ uuid: '00000000-0000-4000-8000-0000000000ee', name: NEAR_NAME });
   try {
     const dir = await runRecording(ctx);
     assert.deepEqual(findLeaks(dir, [...Object.values(PERSONAL), ESTATE_WORKER, SHORT_WORKER]), []);
@@ -129,6 +133,11 @@ test('identity and inventory bodies keep only their decoded fields, with no real
     const scripts = staged(dir, 'cloudflare/workers_scripts.list.200.json').body.result;
     assert.deepEqual(scripts.map((/** @type {{ id: string }} */ s) => s.id), ['example-worker-1', 'example-worker-2']);
     assert.ok(scripts.every((/** @type {object} */ s) => !('routes' in s)), 'route patterns across every zone are dropped');
+    const record = staged(dir, 'cloudflare/zone_dns_records.list.200.json').body.result[0];
+    assert.deepEqual(Object.keys(record).sort(), ['comment', 'content', 'id', 'name', 'proxied', 'ttl', 'type']);
+    assert.deepEqual([record.content, record.comment], ['example-txt-content', 'example record comment'], 'a DNS record carries made-up content and comment');
+    assert.deepEqual(staged(dir, 'cloudflare/d1_database.name-check.200.json').body.result, [], 'the name check stages only a database with the run name');
+    assert.deepEqual(findLeaks(dir, [DNS_CONTENT, DNS_COMMENT, NEAR_NAME]), []);
   } finally {
     await fake.close();
   }
@@ -218,11 +227,10 @@ test('the scrubber replaces credential keys, held values, short names as tokens,
   assert.equal(scrubber.scrub('unheld-worker', 'service'), 'example-worker-1', 'a Worker key aliases a name nobody held');
 });
 
-test('a Cloudflare write off the test zone or the run resources is refused before the request is sent', async () => {
+test('a Cloudflare write that names no run resource is refused before the request is sent', async () => {
   const { fake } = await setup('trun00003');
   try {
     const guards = createGuards('trun00003');
-    guards.setZone(ZONE);
     const recorder = createRecorder({ dir: mkdtempSync(join(tmpdir(), 'record-g-')), runId: 'trun00003', scrubber: createScrubber() });
     const cf = createCloudflare({ base: fake.bases.cf, token: () => 't', guards, recorder });
     const other = '11111111111111111111111111111111';
@@ -232,22 +240,27 @@ test('a Cloudflare write off the test zone or the run resources is refused befor
     await assert.rejects(cf.request('POST', `/accounts/${ACCOUNT}/d1/database`, { body: { name: 'cairn-rec-trun00003-db-estate' } }), /Refused Cloudflare write/);
     await assert.rejects(cf.request('DELETE', `/accounts/${ACCOUNT}/r2/buckets/cairn-rec-trun00003-bucket2`), /Refused Cloudflare write/);
     await assert.rejects(cf.request('DELETE', `/accounts/${ACCOUNT}/d1/database/x${ZONE}`), /Refused Cloudflare write/);
+    // The run makes no zone write, and a run name in a body passes only a POST to its own create collection.
+    await assert.rejects(cf.request('POST', `/zones/${ZONE}/dns_records`, { body: { name: 'x' } }), /Refused Cloudflare write/);
+    await assert.rejects(cf.request('PUT', `/zones/${ZONE}/workers/routes/r1`, { body: { name: 'cairn-rec-trun00003-db' } }), /Refused Cloudflare write/);
+    await assert.rejects(cf.request('POST', `/accounts/${ACCOUNT}/workers/scripts`, { body: { name: 'cairn-rec-trun00003-db' } }), /Refused Cloudflare write/);
+    await assert.rejects(cf.request('PUT', `/accounts/${ACCOUNT}/d1/database`, { body: { name: 'cairn-rec-trun00003-db' } }), /Refused Cloudflare write/);
+    await assert.rejects(cf.request('POST', `/accounts/${ACCOUNT}/d1/database`, { body: { name: 'cairn-rec-trun00003-bucket' } }), /Refused Cloudflare write/);
+    await assert.rejects(cf.request('POST', '/user/tokens/verify', { body: { name: 'cairn-rec-trun00003-key' } }), /Refused Cloudflare write/);
     assert.equal(fake.state.requests, 0, 'no request reached the server');
     await cf.request('POST', `/accounts/${ACCOUNT}/d1/database`, { body: { name: 'cairn-rec-trun00003-db' } });
-    await cf.request('POST', `/zones/${ZONE}/dns_records`, { body: { name: 'x' } }).catch(() => {});
-    assert.equal(fake.state.requests, 2);
+    await cf.request('POST', `/accounts/${ACCOUNT}/r2/buckets`, { body: { name: 'cairn-rec-trun00003-bucket' } });
+    await cf.request('POST', '/user/tokens', { body: { name: 'cairn-rec-trun00003-key' } });
+    assert.equal(fake.state.requests, 3);
   } finally {
     await fake.close();
   }
 });
 
-test('a guard refuses an empty or malformed run id, zone id, or adopted id', () => {
+test('a guard refuses an empty or malformed run id or adopted id', () => {
   for (const runId of ['', 't', 'trun1', 'TRUN00001', 'trun-0001']) assert.throws(() => createGuards(runId), /run id/);
   const guards = createGuards('trun00003');
-  for (const id of ['', 'abc', 'x'.repeat(32)]) {
-    assert.throws(() => guards.setZone(id), /zone id/);
-    assert.throws(() => guards.adopt(id), /resource id/);
-  }
+  for (const id of ['', 'abc', 'x'.repeat(32)]) assert.throws(() => guards.adopt(id), /resource id/);
   guards.adopt('00000000-0000-4000-8000-000000000001');
   guards.adopt(ZONE);
 });
@@ -429,6 +442,138 @@ test('a cleanup that leaves a resource fails and names it', async () => {
   }
 });
 
+test('the run id and its sweep command are printed before the consent opens', async () => {
+  const { fake, ctx } = await setup('trun00022');
+  const lines = /** @type {string[]} */ ([]);
+  ctx.log = (line) => lines.push(line);
+  ctx.openBrowser = async (url) => {
+    lines.push('<consent>');
+    await fakeBrowser.open(url);
+  };
+  try {
+    await runRecording(ctx);
+    const at = lines.findIndex((line) => line.includes('Run trun00022') && line.includes('record.sh --cleanup trun00022'));
+    assert.ok(at >= 0 && at < lines.indexOf('<consent>'), lines.join('\n'));
+  } finally {
+    await fake.close();
+  }
+});
+
+/**
+ * A fetch that raises a signal in this process just as the bucket create is about to be sent.
+ * @param {number} times how many signals to raise
+ * @returns {typeof fetch}
+ */
+const signalAtBucketCreate = (times) => async (input, init) => {
+  if (String(input).endsWith('/r2/buckets') && init?.method === 'POST') for (let n = 0; n < times; n++) process.emit('SIGINT');
+  return fetch(input, init);
+};
+
+test('a SIGINT mid-run halts the recording, sweeps and revokes, then prints the sweep command', async () => {
+  const { fake, ctx } = await setup('trun00023');
+  const lines = /** @type {string[]} */ ([]);
+  ctx.log = (line) => lines.push(line);
+  ctx.fetcher = signalAtBucketCreate(1);
+  try {
+    await assert.rejects(runRecording(ctx), /interrupted by SIGINT/);
+    assert.ok(!fake.state.cfWrites.some((write) => write.startsWith('POST') && (write.endsWith('/r2/buckets') || write === 'POST /user/tokens')), 'no create reached the server after the signal');
+    assert.deepEqual([fake.state.dbs, fake.state.buckets], [[], []], 'the sweep deleted the database the run made');
+    assert.equal(fake.state.revoked, 1);
+    assert.match(/** @type {string} */ (lines.at(-1)), /If anything is left, run: record\.sh --cleanup trun00023$/);
+    assert.equal(process.listenerCount('SIGINT') + process.listenerCount('SIGTERM'), 0, 'the run removes its signal listeners');
+  } finally {
+    await fake.close();
+  }
+});
+
+test('a second SIGINT exits at once with the sweep command', async () => {
+  const { fake, ctx } = await setup('trun00028');
+  const lines = /** @type {string[]} */ ([]);
+  const exits = /** @type {number[]} */ ([]);
+  ctx.log = (line) => lines.push(line);
+  ctx.exit = (code) => exits.push(code);
+  ctx.fetcher = signalAtBucketCreate(2);
+  try {
+    await assert.rejects(runRecording(ctx), /interrupted by SIGINT/);
+    assert.deepEqual(exits, [130]);
+    assert.ok(lines.some((line) => /^SIGINT again: .*record\.sh --cleanup trun00028$/.test(line)), lines.join('\n'));
+  } finally {
+    await fake.close();
+  }
+});
+
+test('the browser launch leaves no SIGINT or SIGTERM listener of its own', async () => {
+  const mine = () => {};
+  process.on('SIGINT', mine);
+  try {
+    const launched = await withoutSignalListeners(async () => {
+      process.on('SIGINT', () => {});
+      process.on('SIGTERM', () => {});
+      return 'launched';
+    });
+    assert.equal(launched, 'launched');
+    assert.deepEqual(process.listeners('SIGINT'), [mine]);
+    assert.equal(process.listenerCount('SIGTERM'), 0);
+  } finally {
+    process.off('SIGINT', mine);
+  }
+});
+
+test('an installation that reaches every repository is refused before any user call or token', async () => {
+  const { stateDir, fake, ctx } = await setup('trun00024', { installSelection: 'all' });
+  try {
+    await assert.rejects(runRecording(ctx), /installation 77 reaches every repository/);
+    assert.deepEqual(fake.state.mintBodies, []);
+    assert.ok(!existsSync(join(stateDir, 'trun00024', 'github', 'user_installation_repositories.list.200.json')));
+    assert.deepEqual(fake.state.apps, [], 'the App was still swept');
+  } finally {
+    await fake.close();
+  }
+});
+
+test('the error a run throws is scrubbed of every held value', async () => {
+  const { fake, ctx } = await setup('trun00026');
+  ctx.fetcher = async (input, init) => {
+    if (String(input).endsWith('/workers/scripts')) throw new Error(`upstream echoed ${TEST_TOKEN} and ${OAUTH_TOKEN}`);
+    return fetch(input, init);
+  };
+  try {
+    await assert.rejects(runRecording(ctx), (error) => {
+      assert.ok(error instanceof Error);
+      assert.equal(error.message, 'upstream echoed <REDACTED> and <REDACTED>');
+      return true;
+    });
+  } finally {
+    await fake.close();
+  }
+});
+
+test('the state, ledger, and staging directories are made private, an existing one included', async () => {
+  const { stateDir, fake, ctx } = await setup('trun00027');
+  const ledgers = join(stateDir, 'ledgers');
+  for (const dir of [stateDir, ledgers, join(stateDir, 'trun00027'), join(stateDir, 'trun00027', 'cloudflare')]) {
+    mkdirSync(dir, { recursive: true });
+    chmodSync(dir, 0o755);
+  }
+  try {
+    const dir = await runRecording(ctx);
+    for (const path of [stateDir, ledgers, dir, join(dir, 'cloudflare'), join(dir, 'github')]) assert.equal(statSync(path).mode & 0o777, 0o700, path);
+  } finally {
+    await fake.close();
+  }
+});
+
+test('node prunes its environment to the allowed names before main runs', () => {
+  // A preload prints the names node holds as it exits, after record.mjs has started.
+  const report = 'process.on("exit", () => console.log(JSON.stringify(Object.keys(process.env).sort())))';
+  const result = spawnSync(process.execPath, ['--import', `data:text/javascript,${encodeURIComponent(report)}`, join(HERE, 'record.mjs')], {
+    env: { PATH: process.env.PATH, HOME: mkdtempSync(join(tmpdir(), 'record-env-')), 'weird-name': 'x', CLOUDFLARE_API_TOKEN: 'estate', DISPLAY: ':0' },
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 1, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout.trim().split('\n').at(-1) ?? '[]'), ['DISPLAY', 'HOME', 'PATH']);
+});
+
 test('--cleanup sweeps a crashed run from its ledger, paging the token list for a token with no id', async () => {
   const { stateDir, fake, ctx } = await setup('trun00007');
   try {
@@ -445,7 +590,12 @@ test('--cleanup sweeps a crashed run from its ledger, paging the token list for 
     fake.state.tokens.push({ id: 'c'.repeat(32), name: 'cairn-rec-trun00007-key', expires_on: '' });
     fake.state.repos.push('cairn-rec-trun00007-repo');
     fake.state.apps.push('cairn-rec-trun00007-app');
+    const original = join(stateDir, 'trun00007', 'cloudflare');
+    mkdirSync(original, { recursive: true });
+    writeFileSync(join(original, 'accounts.list.200.json'), '{}');
     const dir = await cleanupRun(ctx);
+    assert.equal(dir, join(stateDir, 'trun00007-cleanup'), 'the sweep stages into its own directory');
+    assert.deepEqual(readdirSync(join(stateDir, 'trun00007'), { recursive: true }).sort(), ['cloudflare', 'cloudflare/accounts.list.200.json'], 'the run corpus is untouched');
     assert.deepEqual([fake.state.dbs, fake.state.buckets, fake.state.repos, fake.state.apps], [[], [], [], []]);
     assert.equal(fake.state.tokens.length, 60, 'only the run token was deleted');
     assert.ok(!fake.state.tokens.some((t) => t.name === 'cairn-rec-trun00007-key'));
@@ -464,6 +614,22 @@ test('a sweep read that answers neither 200 nor 404 leaves the resource', async 
       { kind: 'repo', name: 'cairn-rec-trun00020-repo' },
     ]);
     await assert.rejects(cleanupRun(ctx), /Cleanup left 2 resource\(s\): r2 cairn-rec-trun00020-bucket, repo cairn-rec-trun00020-repo/);
+  } finally {
+    await fake.close();
+  }
+});
+
+test('--cleanup refuses a ledger entry whose slug is not its own App name, before any call', async () => {
+  const { stateDir, fake, ctx } = await setup('trun00025');
+  try {
+    for (const entry of [
+      { kind: 'github-app', name: 'cairn-rec-trun00025-app', slug: 'estate-app' },
+      { kind: 'repo', name: 'cairn-rec-trun00025-repo', slug: 'cairn-rec-trun00025-repo' },
+    ]) {
+      writeLedger(stateDir, 'trun00025', [entry]);
+      await assert.rejects(cleanupRun(ctx), /slug that is not its own name/);
+    }
+    assert.equal(fake.state.requests, 0);
   } finally {
     await fake.close();
   }

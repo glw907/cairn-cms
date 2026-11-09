@@ -27,6 +27,9 @@ export const PERSONAL = {
   nameServer: 'burt.ns.cloudflare.com',
   registrar: 'pdr ltd. d/b/a publicdomainreg',
 };
+/** A DNS record's real content and comment; neither may be staged. */
+export const DNS_CONTENT = 'google-site-verification=estate0123456789';
+export const DNS_COMMENT = 'estate registrar verification';
 export const TOKEN_VALUE = 'cfminted_tokenvalue_0123456789';
 export const OAUTH_TOKEN = 'cfoauth_accesstoken_0123456789';
 export const CLIENT_SECRET = 'app_client_secret_0123456789';
@@ -49,8 +52,9 @@ const tokenId = (n) => n.toString(16).padStart(32, 'a');
  * @property {string} [installAccount] the login an installation names as its account
  * @property {number} [revokeStatus] what the OAuth revoke answers
  * @property {boolean} [verifyError] a bucket or repository read answers 503
- * @property {boolean} [leakKey] the DNS list carries a personal-data field no shape removes
- * @property {string} [echo] a value the DNS list carries in a record's content
+ * @property {boolean} [leakKey] the D1 query body carries a personal-data field no shape removes
+ * @property {string} [echo] a value the D1 query body carries, on a route no shape reduces
+ * @property {'selected' | 'all'} [installSelection] the repository selection an installation answers
  * @property {number} [perPage] the token list's page size
  * @property {() => string | null} [ledgerFile] the ledger's path once the run has one
  */
@@ -58,7 +62,7 @@ const tokenId = (n) => n.toString(16).padStart(32, 'a');
 /** @param {FakeOptions} [options] */
 export async function startFake({
   identity = 'glw907-test', stubbornDb = false, stubbornApp = false, appOwner = 'glw907-test', installAccount = 'glw907-test',
-  revokeStatus = 200, verifyError = false, leakKey = false, echo = '', perPage = 20, ledgerFile = () => null,
+  revokeStatus = 200, verifyError = false, leakKey = false, echo = '', installSelection = 'selected', perPage = 20, ledgerFile = () => null,
 } = {}) {
   const state = {
     dbs: /** @type {{ uuid: string, name: string }[]} */ ([]),
@@ -70,6 +74,7 @@ export async function startFake({
     cfWrites: /** @type {string[]} */ ([]),
     ghWrites: /** @type {string[]} */ ([]),
     mintBodies: /** @type {unknown[]} */ ([]),
+    installRepos: /** @type {string[]} */ ([]),
     requests: 0,
     ledgerAtCreate: /** @type {boolean[]} */ ([]),
     revoked: 0,
@@ -127,7 +132,13 @@ export async function startFake({
         return send(200, { success: true, result: [zone(OTHER_ZONE, PERSONAL.otherZone), zone(ZONE, 'carin-test.org')], result_info: { page: 1, per_page: 20, total_pages: 1, count: 2, total_count: 2 } });
       }
       if (p === `/zones/${ZONE}/dns_records`) {
-        return send(200, { success: true, result: [{ id: 'r1', name: 'carin-test.org', type: 'TXT', content: echo || 'v=spf1 -all', ...(leakKey ? { telephone: 'x' } : {}) }] });
+        return send(200, {
+          success: true,
+          result: [{
+            id: 'r1', name: 'carin-test.org', type: 'TXT', content: DNS_CONTENT, comment: DNS_COMMENT, proxied: false, ttl: 1,
+            proxiable: false, settings: {}, meta: {}, tags: ['owner:estate'], created_on: '2026-01-01T00:00:00Z',
+          }],
+        });
       }
       if (p === `/zones/${ZONE}/workers/routes`) return send(200, { success: true, result: [{ id: 'rt1', pattern: 'carin-test.org/*', script: SHORT_WORKER }] });
       if (p === `/accounts/${ACCOUNT}/workers/domains`) {
@@ -147,7 +158,8 @@ export async function startFake({
         return send(200, { success: true, result: [{ id: 's1', state: 'Paid', price: 25, currency: 'USD', frequency: 'monthly', rate_plan: { id: 'pro', public_name: 'Pro Plan', scope: 'zone' }, zone: { id: OTHER_ZONE, name: PERSONAL.otherZone } }] });
       }
       if (p === `/accounts/${ACCOUNT}/d1/database` && method === 'GET') {
-        return send(200, { success: true, result: state.dbs.filter((d) => d.name === url.searchParams.get('name')) });
+        // The live docs call the name filter a search, so the fake takes its loosest reading: a substring match.
+        return send(200, { success: true, result: state.dbs.filter((d) => d.name.includes(url.searchParams.get('name') ?? '')) });
       }
       if (p === `/accounts/${ACCOUNT}/d1/database` && method === 'POST') {
         const { name } = json();
@@ -157,7 +169,7 @@ export async function startFake({
         return send(200, { success: true, result: db });
       }
       if ((m = p.match(/^\/accounts\/[0-9a-f]+\/d1\/database\/([^/]+)(\/query)?$/))) {
-        if (m[2]) return send(200, { success: true, result: [{ results: [{ n: 1 }] }] });
+        if (m[2]) return send(200, { success: true, result: [{ results: [{ n: 1, ...(echo ? { echo } : {}) }], ...(leakKey ? { telephone: 'x' } : {}) }] });
         if (!stubbornDb) state.dbs = state.dbs.filter((d) => d.uuid !== m[1]);
         return send(200, { success: true, result: {} });
       }
@@ -235,7 +247,7 @@ export async function startFake({
       if (p === '/user/installations') return send(200, { total_count: 1, installations: [{ id: 77 }] });
       if (p === '/user/installations/77/repositories') return send(200, { total_count: 1, repositories: [] });
       if (p === '/app/installations' && method === 'GET') return send(200, [{ id: 77 }]);
-      if (p === '/app/installations/77' && method === 'GET') return send(200, { id: 77, account: { login: installAccount } });
+      if (p === '/app/installations/77' && method === 'GET') return send(200, { id: 77, account: { login: installAccount }, repository_selection: installSelection });
       if (p === '/app/installations/77/access_tokens') {
         state.mintBodies.push(json());
         return send(201, { token: GH_INSTALL_TOKEN });
@@ -258,7 +270,10 @@ export async function startFake({
       state.apps.push(name);
       return { code: 'mcode' };
     },
-    installFlow: async (_slug, installState) => ({ installation_id: '77', state: installState }),
+    async installFlow(_slug, installState, repo) {
+      state.installRepos.push(repo);
+      return { installation_id: '77', state: installState };
+    },
     authorizeFlow: async () => ({ code: 'ucode', redirectUri: 'http://127.0.0.1:1/callback' }),
     async deleteApp(slug) {
       const had = state.apps.includes(slug);

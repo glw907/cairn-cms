@@ -21,6 +21,20 @@ export const LIVE_BASES = {
 /** The names a desktop opener needs to reach the session; `record.sh` passes these through when set. */
 export const SESSION_NAMES = ['DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'XDG_CURRENT_DESKTOP'];
 
+/** The test account's names, which `record.sh` reads from `~/.local/secrets`. */
+export const SECRET_NAMES = ['GITHUB_TEST_LOGIN', 'GITHUB_TEST_PASSWORD', 'GITHUB_TEST_TOTP_SECRET', 'GITHUB_TEST_TOKEN'];
+
+/**
+ * Delete every name but PATH, HOME, the test account's, and the session names from an environment,
+ * in place. `record.sh` unexports what bash can name, but a name bash cannot hold, such as
+ * `weird-name`, still reaches node; this runs first so no child node starts inherits one.
+ * @param {Record<string, string | undefined>} env the environment, `process.env` at startup
+ */
+export function pruneEnv(env) {
+  const allowed = new Set(['PATH', 'HOME', ...SECRET_NAMES, ...SESSION_NAMES]);
+  for (const name of Object.keys(env)) if (!allowed.has(name)) delete env[name];
+}
+
 /**
  * The opener's environment: PATH, HOME, and the session names, never a test-account secret.
  * @param {Record<string, string | undefined>} env the recorder's environment
@@ -54,7 +68,7 @@ export function openInBrowser(url, { env = process.env, spawner = spawn, log = (
  * @param {Record<string, string | undefined>} env the scrubbed environment
  */
 export async function main(argv, env) {
-  const missing = ['GITHUB_TEST_LOGIN', 'GITHUB_TEST_PASSWORD', 'GITHUB_TEST_TOTP_SECRET', 'GITHUB_TEST_TOKEN'].filter((name) => !env[name]);
+  const missing = SECRET_NAMES.filter((name) => !env[name]);
   if (missing.length > 0) throw new Error(`Missing ${missing.join(', ')}.`);
   if (env.GITHUB_TEST_LOGIN !== TEST_LOGIN) throw new Error(`Refused: GITHUB_TEST_LOGIN is not ${TEST_LOGIN}.`);
   const cleanupIndex = argv.indexOf('--cleanup');
@@ -77,6 +91,8 @@ export async function main(argv, env) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  pruneEnv(process.env);
+  // The run throws scrubbed messages; the checks before it name no secret value.
   main(process.argv.slice(2), process.env).catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);

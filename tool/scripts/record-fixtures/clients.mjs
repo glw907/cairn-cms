@@ -10,6 +10,7 @@ import { TIMEOUT_MS } from './recorder.mjs';
  * @property {string} [route] the corpus route slug; absent means the call is not recorded
  * @property {string} [caseName] the corpus case, `ok` when absent
  * @property {(json: any) => void} [hold] holds the values the body carries, before the body is scrubbed
+ * @property {(json: any) => unknown} [keep] reduces the body before it is staged; the caller still gets the whole body
  */
 
 /**
@@ -35,7 +36,7 @@ async function send({ fetcher, before, recorder, provider }, url, method, header
   const latencyMs = Math.round(performance.now() - started);
   const json = text ? JSON.parse(text) : null;
   options.hold?.(json);
-  if (options.route) recorder.record({ provider, route: options.route, caseName: options.caseName ?? 'ok', status: response.status, source, body: json, latencyMs });
+  if (options.route) recorder.record({ provider, route: options.route, caseName: options.caseName ?? 'ok', status: response.status, source, body: options.keep ? options.keep(json) : json, latencyMs });
   return { status: response.status, json };
 }
 

@@ -1,13 +1,13 @@
 // The recording run and the cleanup sweep. Both build one session: guards, ledger, scrubber,
 // stager, and the two clients, all against origins and a browser adapter the caller injects.
 import { createSign, randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { createGithub, createCloudflare } from './clients.mjs';
 import { createGuards, requireRunId, resourceName, TEST_LOGIN, TEST_ZONE } from './guards.mjs';
 import { ledgerPath, openLedger } from './ledger.mjs';
 import { consent, revoke } from './oauth.mjs';
-import { createRecorder, TIMEOUT_MS, writePrivate } from './recorder.mjs';
+import { createRecorder, makePrivateDir, TIMEOUT_MS, writePrivate } from './recorder.mjs';
 import { createScrubber, verifyStaged } from './scrub.mjs';
 
 /** How long the minted deploy key lives: long enough to verify and delete it, no longer. */
@@ -16,7 +16,7 @@ export const KEY_LIFETIME_MS = 15 * 60_000;
 /**
  * @typedef {object} Adapter the browser half, which drives github.com as the test account
  * @property {(manifest: object) => Promise<{ code: string }>} manifestFlow create an App from a manifest
- * @property {(slug: string, state: string) => Promise<{ installation_id: string, state: string | null }>} installFlow install it
+ * @property {(slug: string, state: string, repo: string) => Promise<{ installation_id: string, state: string | null }>} installFlow install it on the one run repository
  * @property {(options: { clientId: string, state: string }) => Promise<{ code: string, redirectUri: string }>} authorizeFlow authorize it as a user
  * @property {(slug: string) => Promise<'deleted' | 'absent'>} deleteApp delete the App through its settings page; `deleted` only once the settings page is gone
  * @property {(slug: string) => Promise<number>} appStatus the HTTP status of the App's settings page, read as the test account
@@ -26,7 +26,7 @@ export const KEY_LIFETIME_MS = 15 * 60_000;
 /**
  * @typedef {object} Context
  * @property {string} runId the run id; every resource name carries it
- * @property {string} stateDir the base directory: staging at `<runId>/`, ledgers at `ledgers/`
+ * @property {string} stateDir the base directory: a run stages at `<runId>/`, its cleanup at `<runId>-cleanup/`, ledgers at `ledgers/`
  * @property {{ cf: string, dash: string, ghApi: string, ghWeb: string }} bases the service origins
  * @property {string} clientId the registered Cloudflare OAuth client id
  * @property {string} testToken the test account's token
@@ -35,6 +35,8 @@ export const KEY_LIFETIME_MS = 15 * 60_000;
  * @property {() => Promise<Adapter>} makeAdapter builds the browser adapter, lazily
  * @property {typeof fetch} [fetcher]
  * @property {number} [port] the Cloudflare callback port
+ * @property {(line: string) => void} [log] the operator's terminal, `console.log` unless a test takes the lines
+ * @property {(code: number) => void} [exit] ends the process on a second signal, `process.exit` unless a test stands in
  */
 
 /** @typedef {{ kind: string, name: string, outcome: 'deleted' | 'absent' | 'left', error?: string }} Outcome */
@@ -50,23 +52,40 @@ function appJwt(appId, pem) {
 /** @param {unknown} error */
 const message = (error) => (error instanceof Error ? error.message : String(error));
 
-/** @param {Context} ctx */
-function openSession(ctx) {
+/**
+ * @param {Context} ctx
+ * @param {string} stagingName the staging directory's name under the state directory
+ */
+function openSession(ctx, stagingName) {
   requireRunId(ctx.runId);
-  const stagingDir = join(ctx.stateDir, ctx.runId);
-  mkdirSync(stagingDir, { recursive: true, mode: 0o700 });
+  makePrivateDir(ctx.stateDir);
+  const stagingDir = join(ctx.stateDir, stagingName);
+  makePrivateDir(stagingDir);
   const scrubber = createScrubber();
   const recorder = createRecorder({ dir: stagingDir, runId: ctx.runId, scrubber });
   const guards = createGuards(ctx.runId);
   const ledger = openLedger(join(ctx.stateDir, 'ledgers'), ctx.runId);
   const fetcher = ctx.fetcher ?? fetch;
+  // The recording's calls go through `haltable`, which a signal aborts, in flight or not yet sent.
+  // The sweep and the revoke use the plain fetch, so they still run after the halt.
+  const halt = new AbortController();
+  /** @type {typeof fetch} */
+  const haltable = async (input, init) => {
+    halt.signal.throwIfAborted();
+    return fetcher(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, halt.signal]) : halt.signal });
+  };
   let accessToken = '';
-  const cf = createCloudflare({ base: ctx.bases.cf, token: () => accessToken, guards, recorder, fetcher });
-  const gh = createGithub({ apiBase: ctx.bases.ghApi, webBase: ctx.bases.ghWeb, testToken: ctx.testToken, recorder, fetcher });
+  const token = () => accessToken;
+  const github = (/** @type {typeof fetch} */ through) => createGithub({ apiBase: ctx.bases.ghApi, webBase: ctx.bases.ghWeb, testToken: ctx.testToken, recorder, fetcher: through });
+  const cf = createCloudflare({ base: ctx.bases.cf, token, guards, recorder, fetcher: haltable });
+  const gh = github(haltable);
+  const sweeper = { cf: createCloudflare({ base: ctx.bases.cf, token, guards, recorder, fetcher }), gh: github(fetcher) };
   scrubber.hold(ctx.testToken);
   for (const needle of ctx.needles ?? []) scrubber.hold(needle);
   return {
-    stagingDir, scrubber, recorder, guards, ledger, cf, gh, fetcher,
+    stagingDir, scrubber, recorder, guards, ledger, cf, gh, sweeper, fetcher, haltable,
+    /** Abort every recording call, in flight or to come. */
+    halt: () => halt.abort(new Error('The run was interrupted.')),
     /** The run's GitHub Apps by slug, with the credentials a post-delete check signs with. @type {Map<string, { id: string, pem: string }>} */
     apps: new Map(),
     /** @param {string} token */
@@ -85,7 +104,7 @@ function openSession(ctx) {
  */
 async function findToken(session, name) {
   for (let page = 1; ; page++) {
-    const listed = await session.cf.request('GET', `/user/tokens?page=${page}&per_page=50`);
+    const listed = await session.sweeper.cf.request('GET', `/user/tokens?page=${page}&per_page=50`);
     if (listed.status !== 200) throw new Error(`GET /user/tokens answered ${listed.status}.`);
     const found = listed.json.result.find((/** @type {{ name: string }} */ t) => t.name === name);
     if (found) return found;
@@ -103,7 +122,8 @@ async function findToken(session, name) {
  * @returns {Promise<Outcome[]>}
  */
 async function sweep(ctx, session, adapter) {
-  const { cf, gh, guards } = session;
+  const { guards } = session;
+  const { cf, gh } = session.sweeper;
   /** @type {Outcome[]} */
   const results = [];
   const bearer = `Bearer ${ctx.testToken}`;
@@ -192,73 +212,117 @@ async function revokeAccess(ctx, session, accessToken, probes, failures) {
 }
 
 /**
- * Record every recordable route once, then clean up.
+ * @callback Work
+ * @param {ReturnType<typeof openSession>} session
+ * @param {Record<string, unknown>} probes
+ * @param {() => Promise<Adapter>} getAdapter
+ * @returns {Promise<void>}
+ */
+
+/**
+ * One session: print the sweep command, consent, do the work, then sweep, revoke, and stage. The
+ * first SIGINT or SIGTERM halts the work's calls and lets the sweep and the revoke run, then prints
+ * the sweep command again; a second signal exits at once.
  * @param {Context} ctx
+ * @param {string} stagingName the staging directory's name under the state directory
+ * @param {Work} work what runs between the consent and the sweep
  * @returns {Promise<string>} the staging directory
  */
-export async function runRecording(ctx) {
-  const session = openSession(ctx);
+async function runSession(ctx, stagingName, work) {
+  const session = openSession(ctx, stagingName);
+  const log = ctx.log ?? ((line) => console.log(line));
+  const exit = ctx.exit ?? ((code) => process.exit(code));
+  const sweepCommand = `record.sh --cleanup ${ctx.runId}`;
+  log(`Run ${ctx.runId}. If it stops before its own cleanup, sweep it with: ${sweepCommand}`);
   const probes = /** @type {Record<string, unknown>} */ ({});
   /** @type {Outcome[]} */
   let resources = [];
-  let adapter = /** @type {Adapter | null} */ (null);
-  const getAdapter = async () => (adapter ??= await ctx.makeAdapter());
+  /** @type {Promise<Adapter> | null} */
+  let adapter = null;
+  const getAdapter = () => (adapter ??= ctx.makeAdapter());
   /** @type {unknown[]} */
   const failures = [];
   let accessToken = '';
+  /** @type {string | null} */
+  let signalled = null;
+  /** @type {(error: Error) => void} */
+  let interrupt = () => {};
+  const interrupted = new Promise((_, reject) => {
+    interrupt = reject;
+  });
+  interrupted.catch(() => {});
+  const onSignal = (/** @type {'SIGINT' | 'SIGTERM'} */ signal) => {
+    if (signalled) {
+      log(`${signal} again: exiting before the sweep ends. Sweep the run with: ${sweepCommand}`);
+      exit(130);
+      return;
+    }
+    signalled = signal;
+    log(`${signal}: stopping the run, then sweeping it and revoking the Cloudflare access token.`);
+    interrupt(new Error(`The run was interrupted by ${signal}.`));
+    session.halt();
+  };
+  const onInt = () => onSignal('SIGINT');
+  const onTerm = () => onSignal('SIGTERM');
+  process.on('SIGINT', onInt);
+  process.on('SIGTERM', onTerm);
   try {
-    ({ accessToken } = await consent({ dashBase: ctx.bases.dash, clientId: ctx.clientId, openBrowser: ctx.openBrowser, port: ctx.port, fetcher: session.fetcher }));
-    session.setToken(accessToken);
-    await recordCloudflare(ctx, session, probes);
-    await recordGithub(ctx, session, probes, getAdapter);
-  } catch (error) {
-    failures.push(error);
-  }
-  try {
-    resources = await sweep(ctx, session, getAdapter);
-  } catch (error) {
-    failures.push(error);
+    try {
+      const working = (async () => {
+        ({ accessToken } = await consent({ dashBase: ctx.bases.dash, clientId: ctx.clientId, openBrowser: ctx.openBrowser, port: ctx.port, fetcher: session.haltable }));
+        session.setToken(accessToken);
+        await work(session, probes, getAdapter);
+      })();
+      await Promise.race([working, interrupted]);
+    } catch (error) {
+      failures.push(error);
+    }
+    try {
+      resources = await sweep(ctx, session, getAdapter);
+    } catch (error) {
+      failures.push(error);
+    } finally {
+      if (accessToken) await revokeAccess(ctx, session, accessToken, probes, failures);
+      // A failed launch was already reported where it was awaited; only a failed close is new.
+      if (adapter) await /** @type {Promise<Adapter>} */ (adapter).then((launched) => launched.close(), () => {}).catch((error) => failures.push(error));
+    }
+    if (signalled) log(`The sweep and the revoke ran after ${signalled}. If anything is left, run: ${sweepCommand}`);
   } finally {
-    if (accessToken) await revokeAccess(ctx, session, accessToken, probes, failures);
-    if (adapter) await /** @type {Adapter} */ (adapter).close().catch((error) => failures.push(error));
+    process.off('SIGINT', onInt);
+    process.off('SIGTERM', onTerm);
   }
   return finish(ctx, session, resources, probes, failures);
 }
 
 /**
- * Sweep a crashed run from its ledger. A run id with no ledger is refused before any consent.
+ * Record every recordable route once, then clean up.
  * @param {Context} ctx
- * @returns {Promise<string>} the staging directory
+ * @returns {Promise<string>} the staging directory, `<runId>/`
+ */
+export async function runRecording(ctx) {
+  return runSession(ctx, ctx.runId, async (session, probes, getAdapter) => {
+    await recordCloudflare(ctx, session, probes);
+    await recordGithub(ctx, session, probes, getAdapter);
+  });
+}
+
+/**
+ * Sweep a crashed run from its ledger. A run id with no ledger is refused before any consent. The
+ * sweep stages into its own directory, so a leak found there never removes the run's own corpus.
+ * @param {Context} ctx
+ * @returns {Promise<string>} the staging directory, `<runId>-cleanup/`
  */
 export async function cleanupRun(ctx) {
   requireRunId(ctx.runId);
   if (!existsSync(ledgerPath(join(ctx.stateDir, 'ledgers'), ctx.runId))) throw new Error(`No ledger exists for run ${ctx.runId}; there is nothing to sweep.`);
-  const session = openSession(ctx);
-  /** @type {Adapter | null} */
-  let adapter = null;
-  /** @type {Outcome[]} */
-  let resources = [];
-  const probes = /** @type {Record<string, unknown>} */ ({});
-  /** @type {unknown[]} */
-  const failures = [];
-  let accessToken = '';
-  try {
-    ({ accessToken } = await consent({ dashBase: ctx.bases.dash, clientId: ctx.clientId, openBrowser: ctx.openBrowser, port: ctx.port, fetcher: session.fetcher }));
-    session.setToken(accessToken);
-    resources = await sweep(ctx, session, async () => (adapter ??= await ctx.makeAdapter()));
-  } catch (error) {
-    failures.push(error);
-  } finally {
-    if (accessToken) await revokeAccess(ctx, session, accessToken, probes, failures);
-    if (adapter) await /** @type {Adapter} */ (adapter).close().catch((error) => failures.push(error));
-  }
-  return finish(ctx, session, resources, probes, failures);
+  return runSession(ctx, `${ctx.runId}-cleanup`, async () => {});
 }
 
 /**
  * Stage the bodies, write the scrubbed results file, and verify the staged corpus. Every failure
  * is reported together: the recording's, the revoke's, a leak (which removes everything staged),
- * and any resource the sweep left, with the command that sweeps it.
+ * and any resource the sweep left, with the command that sweeps it. Each message is scrubbed
+ * before it is thrown, since the terminal shows it.
  * @param {Context} ctx
  * @param {ReturnType<typeof openSession>} session
  * @param {Outcome[]} resources
@@ -280,8 +344,10 @@ function finish(ctx, session, resources, probes, failures) {
   }
   const left = resources.filter((r) => r.outcome === 'left');
   if (left.length > 0) errors.push(new Error(`Cleanup left ${left.length} resource(s): ${left.map((r) => `${r.kind} ${r.name}`).join(', ')}. Run record.sh --cleanup ${ctx.runId}.`));
-  if (errors.length === 1) throw errors[0];
-  if (errors.length > 1) throw new AggregateError(errors, errors.map(message).join('\n'));
+  // A fresh error carries only the scrubbed message: the original, as a cause, would carry the raw one.
+  const scrubbed = errors.map((error) => new Error(String(scrubber.scrub(message(error)))));
+  if (scrubbed.length === 1) throw scrubbed[0];
+  if (scrubbed.length > 1) throw new AggregateError(scrubbed, scrubbed.map(message).join('\n'));
   return stagingDir;
 }
 
@@ -309,7 +375,6 @@ async function recordCloudflare(ctx, session, probes) {
   if (!zone) throw new Error(`No active ${TEST_ZONE} zone on any account the consent reaches.`);
   scrubber.hold(accountId, '00000000000000000000000000000001');
   scrubber.hold(zone.id, '00000000000000000000000000000002');
-  guards.setZone(zone.id);
   // The scripts list first: every Worker name is a needle before any body that may name one.
   await cf.request('GET', `/accounts/${accountId}/workers/scripts`, {
     route: 'workers_scripts', caseName: 'list',
@@ -320,7 +385,12 @@ async function recordCloudflare(ctx, session, probes) {
   await cf.request('GET', `/zones/${zone.id}/workers/routes`, { route: 'zone_workers_routes', caseName: 'list' });
   const database = resourceName(runId, 'd1');
   const bucket = resourceName(runId, 'r2');
-  const sameDb = await cf.request('GET', `/accounts/${accountId}/d1/database?name=${database}`, { route: 'd1_database', caseName: 'name-check' });
+  // The list's `name` filter is documented as a search, not an exact match, so it can answer other
+  // databases; only an entry with the run's own name is staged.
+  const sameDb = await cf.request('GET', `/accounts/${accountId}/d1/database?name=${database}`, {
+    route: 'd1_database', caseName: 'name-check',
+    keep: (json) => ({ ...json, result: (Array.isArray(json?.result) ? json.result : []).filter((/** @type {{ name: string }} */ d) => d?.name === database) }),
+  });
   if (sameDb.status !== 200 || sameDb.json.result.some((/** @type {{ name: string }} */ d) => d.name === database)) throw new Error(`A D1 database named ${database} already exists, or the name check failed; nothing was created.`);
   const sameBucket = await cf.request('GET', `/accounts/${accountId}/r2/buckets/${bucket}`, { route: 'r2_bucket', caseName: 'name-check' });
   if (sameBucket.status !== 404) throw new Error(`An R2 bucket named ${bucket} already exists, or the name check failed; nothing was created.`);
@@ -390,9 +460,14 @@ async function recordGithub(ctx, session, probes, getAdapter) {
   if (app.owner?.login !== TEST_LOGIN) throw new Error(`Refused: the converted GitHub App is owned by another account, not ${TEST_LOGIN}.`);
 
   const installState = randomBytes(16).toString('hex');
-  const installed = await adapter.installFlow(app.slug, installState);
+  const installed = await adapter.installFlow(app.slug, installState, repo);
   probes.githubInstallCallbackState = installed.state === installState;
   if (!/^\d+$/.test(installed.installation_id)) throw new Error('The install callback carried a malformed installation id.');
+  // Checked before any user call, so a list of every test-account repository is never staged.
+  const jwt = `Bearer ${appJwt(String(app.id), app.pem)}`;
+  const installation = await gh.request('GET', `/app/installations/${installed.installation_id}`, { auth: jwt });
+  if (installation.status !== 200 || installation.json?.account?.login !== TEST_LOGIN) throw new Error(`Refused: installation ${installed.installation_id} is not on ${TEST_LOGIN}.`);
+  if (installation.json?.repository_selection !== 'selected') throw new Error(`Refused: installation ${installed.installation_id} reaches every repository, not only the selected run repository.`);
   const state = randomBytes(16).toString('hex');
   const authorized = await adapter.authorizeFlow({ clientId: app.client_id, state });
   const exchange = await gh.request('POST', '/login/oauth/access_token', {
@@ -405,12 +480,11 @@ async function recordGithub(ctx, session, probes, getAdapter) {
   await gh.request('GET', '/user/installations', { auth: user, route: 'user_installations', caseName: 'list' });
   await gh.request('GET', `/user/installations/${installed.installation_id}/repositories`, { auth: user, route: 'user_installation_repositories', caseName: 'list' });
 
-  const jwt = `Bearer ${appJwt(String(app.id), app.pem)}`;
   await gh.request('GET', '/app/installations', { auth: jwt, route: 'app_installations', caseName: 'list' });
-  const installation = await gh.request('GET', `/app/installations/${installed.installation_id}`, { auth: jwt });
-  if (installation.status !== 200 || installation.json?.account?.login !== TEST_LOGIN) throw new Error(`Refused: installation ${installed.installation_id} is not on ${TEST_LOGIN}.`);
+  // The token reads the secrets public key and writes one secret; it touches no contents.
   const minted = await gh.request('POST', `/app/installations/${installed.installation_id}/access_tokens`, {
-    auth: jwt, route: 'app_installation_access_tokens', caseName: 'created', body: { repositories: [repo] },
+    auth: jwt, route: 'app_installation_access_tokens', caseName: 'created',
+    body: { repositories: [repo], permissions: { secrets: 'write', metadata: 'read' } },
   });
   const scoped = `Bearer ${minted.json.token}`;
   const key = await gh.request('GET', `/repos/${owner}/${repo}/actions/secrets/public-key`, { auth: scoped, route: 'repo_actions_secrets_public_key', caseName: 'ok' });

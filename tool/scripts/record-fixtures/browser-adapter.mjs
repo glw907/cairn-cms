@@ -73,6 +73,32 @@ export function createCallbackWaiter() {
 }
 
 /**
+ * Run `launch`, then remove every SIGINT and SIGTERM listener it added. Playwright's SIGINT listener
+ * closes the browser and exits with 130, which would end the process before the run's own listener
+ * sweeps the App through that browser; the run closes the browser itself once the sweep is done.
+ * @template T
+ * @param {() => Promise<T>} launch
+ * @returns {Promise<T>}
+ */
+export async function withoutSignalListeners(launch) {
+  const signals = /** @type {const} */ (['SIGINT', 'SIGTERM']);
+  const before = new Map(signals.map((signal) => [signal, new Set(process.listeners(signal))]));
+  try {
+    return await launch();
+  } finally {
+    for (const signal of signals) {
+      for (const listener of process.listeners(signal)) if (!before.get(signal)?.has(listener)) process.off(signal, listener);
+    }
+  }
+}
+
+/** @param {number} ms */
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** @param {import('playwright').Locator} locator */
+const visible = (locator) => locator.first().isVisible().catch(() => false);
+
+/**
  * @param {{ env: Record<string, string | undefined>, stateDir: string, log: (line: string) => void }} options
  * @returns {Promise<import('./run.mjs').Adapter>}
  */
@@ -80,7 +106,8 @@ export async function createBrowserAdapter({ env, stateDir, log }) {
   const gate = await import('../../../scripts/gate/browser.mjs');
   const { totpFromEnv } = await import('../../../scripts/gate/totp.mjs');
   const creds = { login: /** @type {string} */ (env.GITHUB_TEST_LOGIN), password: /** @type {string} */ (env.GITHUB_TEST_PASSWORD), totp: () => totpFromEnv(env) };
-  const launched = await gate.launchBrowser({ statePath: join(stateDir, 'github-session.json') });
+  const launched = await withoutSignalListeners(() => gate.launchBrowser({ statePath: join(stateDir, 'github-session.json') }));
+  const evidenceDir = join(stateDir, 'evidence');
 
   /** @param {string} path a github.com path @returns {Promise<{ status: number, login: string | null }>} */
   async function read(path) {
@@ -134,12 +161,47 @@ export async function createBrowserAdapter({ env, stateDir, log }) {
     const arrived = waiter.expect(state, check);
     arrived.catch(() => {});
     try {
-      await gate.handleUrl(url, { github: launched.github, admin: launched.newAdminContext, creds, leg: 'record', evidenceDir: join(stateDir, 'evidence'), log });
+      await gate.handleUrl(url, { github: launched.github, admin: launched.newAdminContext, creds, leg: 'record', evidenceDir, log });
     } catch (error) {
       waiter.cancel();
       throw error;
     }
     return arrived;
+  }
+
+  /**
+   * Install the App on the one run repository: pick the account if GitHub asks, choose "Only select
+   * repositories", pick the run repository, and click Install. The gate's install step takes the
+   * default, every repository, so this drives the page itself with the same role-named controls.
+   * @param {import('playwright').Page} page the install page
+   * @param {string} repo the run repository's name
+   */
+  async function installOnRepo(page, repo) {
+    const evidence = { leg: 'record', dir: evidenceDir, kind: 'install', log };
+    const only = page.getByRole('radio', { name: /only select repositories/i });
+    const chooser = page.getByRole('link', { name: creds.login });
+    for (const deadline = Date.now() + 30_000; !(await visible(only));) {
+      if (Date.now() > deadline) await gate.failPage(page, evidence, 'the install page never offered "Only select repositories"');
+      if (await gate.answerAccountPrompts(page, creds)) continue;
+      if (await visible(chooser)) {
+        await chooser.first().click();
+        await page.waitForLoadState('load');
+        continue;
+      }
+      await sleep(250);
+    }
+    await only.first().check();
+    const fail = (/** @type {string} */ reason) => () => gate.failPage(page, evidence, reason);
+    await page.getByRole('button', { name: /select repositories/i }).first().click({ timeout: 10_000 }).catch(fail('the install page shows no repository picker'));
+    const search = page.getByRole('textbox', { name: /repositor/i }).or(page.getByPlaceholder(/repositor/i));
+    await search.first().fill(repo, { timeout: 10_000 }).catch(fail('the repository picker has no search field'));
+    const name = new RegExp(`(?:^|[/\\s])${repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9_.-])`);
+    const option = page.getByRole('option', { name }).or(page.getByRole('menuitemcheckbox', { name })).or(page.getByRole('checkbox', { name }));
+    await option.first().click({ timeout: 15_000 }).catch(fail('the repository picker never offered the run repository'));
+    const apply = page.getByRole('button', { name: /^(apply|done|save)$/i });
+    if (await visible(apply)) await apply.first().click();
+    else await page.keyboard.press('Escape');
+    if (!(await gate.clickControl(page, /^install/i, creds))) await gate.failPage(page, evidence, 'the install page lacks its Install control');
   }
 
   return {
@@ -149,9 +211,21 @@ export async function createBrowserAdapter({ env, stateDir, log }) {
       const query = await drive(`${origin}/manifest`, manifestState, (q) => CODE.test(q.get('code') ?? ''));
       return { code: /** @type {string} */ (query.get('code')) };
     },
-    async installFlow(slug, state) {
-      const query = await drive(`https://github.com/apps/${slug}/installations/new?state=${encodeURIComponent(state)}`, state, (q) => INSTALLATION_ID.test(q.get('installation_id') ?? ''));
-      return { installation_id: /** @type {string} */ (query.get('installation_id')), state: query.get('state') };
+    async installFlow(slug, state, repo) {
+      const arrived = waiter.expect(state, (q) => INSTALLATION_ID.test(q.get('installation_id') ?? ''));
+      arrived.catch(() => {});
+      const page = await launched.github.newPage();
+      try {
+        await page.goto(`https://github.com/apps/${slug}/installations/new?state=${encodeURIComponent(state)}`, { waitUntil: 'load' });
+        await installOnRepo(page, repo);
+        const query = await arrived;
+        return { installation_id: /** @type {string} */ (query.get('installation_id')), state: query.get('state') };
+      } catch (error) {
+        waiter.cancel();
+        throw error;
+      } finally {
+        await page.close().catch(() => {});
+      }
     },
     async authorizeFlow({ clientId, state }) {
       const url = new URL('https://github.com/login/oauth/authorize');

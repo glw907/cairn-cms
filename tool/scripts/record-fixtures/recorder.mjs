@@ -20,6 +20,16 @@ export function writePrivate(path, text) {
 }
 
 /**
+ * Make a directory the owner alone can enter. An existing directory has its mode fixed too, since
+ * `mkdir` leaves an existing directory's mode alone.
+ * @param {string} path
+ */
+export function makePrivateDir(path) {
+  mkdirSync(path, { recursive: true, mode: 0o700 });
+  chmodSync(path, 0o700);
+}
+
+/**
  * @typedef {{ provider: 'cloudflare' | 'github', route: string, caseName: string, status: number, source: string, body: unknown, latencyMs: number }} Entry
  */
 
@@ -51,7 +61,7 @@ export function createRecorder({ dir, runId, scrubber, today = new Date().toISOS
           },
           body: scrubber.scrub(shaped[index]),
         };
-        mkdirSync(join(dir, provider), { recursive: true, mode: 0o700 });
+        makePrivateDir(join(dir, provider));
         writePrivate(join(dir, provider, `${route}.${caseName}.${status}.json`), `${JSON.stringify(staged, null, 2)}\n`);
       });
     },

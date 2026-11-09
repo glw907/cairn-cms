@@ -1,9 +1,10 @@
 // The run's ledger: a 0600 file outside the repository. An entry is written before the create it
 // names, so a crash between the two still leaves the sweep something to find. Every write goes to
 // a temporary file renamed over the ledger, so a crash mid-write never leaves half a ledger.
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { NAME_SUFFIX, resourceName } from './guards.mjs';
+import { makePrivateDir } from './recorder.mjs';
 
 /**
  * @typedef {object} LedgerEntry
@@ -42,6 +43,10 @@ function checkEntry(entry, runId) {
       throw new Error(`The run ${runId} ledger's ${kind} entry carries a malformed ${field}.`);
     }
   }
+  // The sweep deletes an App by its slug, so a slug other than the run's own name is never trusted.
+  if (value.slug !== undefined && (kind !== 'github-app' || value.slug !== value.name)) {
+    throw new Error(`The run ${runId} ledger's ${kind} entry carries a slug that is not its own name.`);
+  }
   return /** @type {LedgerEntry} */ (value);
 }
 
@@ -52,7 +57,7 @@ function checkEntry(entry, runId) {
  * @returns {{ add: (entry: LedgerEntry) => void, update: (kind: LedgerEntry['kind'], fields: Partial<LedgerEntry>) => void, entries: () => LedgerEntry[] }}
  */
 export function openLedger(dir, runId) {
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  makePrivateDir(dir);
   const file = ledgerPath(dir, runId);
   /** @type {LedgerEntry[]} */
   const list = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).map((/** @type {unknown} */ entry) => checkEntry(entry, runId)) : [];

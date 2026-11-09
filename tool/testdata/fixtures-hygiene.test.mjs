@@ -1,4 +1,4 @@
-// Walks every file under fixtures/ and fails if one carries a real identifier: an email address
+// Walks every file under tool/testdata/fixtures/ and fails if one carries a real identifier: an email address
 // or the estate account id. The corpus is meant to travel with the Go tool (fixtures/README.md
 // names the trigger), so nothing in it may be a credential or an operator's identity, even
 // though every fixture is a real captured API response.
@@ -14,7 +14,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
-const FIXTURES_DIR = fileURLToPath(new URL('../fixtures', import.meta.url));
+const FIXTURES_DIR = fileURLToPath(new URL('./fixtures', import.meta.url));
 const EMAIL_PATTERN = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 const BANNED_ACCOUNT_ID = '120c269ad6d3dfbe6d63a0bb53758ca0';
 const EMAIL_EXEMPT_KEYS = new Set(['message_id']);
@@ -57,4 +57,31 @@ test('no fixture carries an email address or the estate account id', () => {
     }
   }
   assert.deepEqual(offenders, [], `fixture(s) carry a real identifier: ${offenders.join(', ')}`);
+});
+
+// The fields Cloudflare's GET /user carries about the person behind an account. The recorder reduces
+// that body to its decoded fields before staging; this holds the line for any body promoted here.
+const PERSONAL_KEYS = new Set(['first_name', 'last_name', 'telephone', 'zipcode', 'organizations']);
+
+/**
+ * Report whether a parsed JSON value carries a personal-data key anywhere beneath it.
+ * @param {unknown} value the value to search
+ * @returns {boolean} true when such a key is present
+ */
+function hasPersonalKey(value) {
+  if (Array.isArray(value)) return value.some(hasPersonalKey);
+  if (value && typeof value === 'object') {
+    return Object.entries(value).some(([entryKey, entryValue]) => PERSONAL_KEYS.has(entryKey) || hasPersonalKey(entryValue));
+  }
+  return false;
+}
+
+test('no fixture carries a personal-data field', () => {
+  const offenders = [];
+  for (const entry of readdirSync(FIXTURES_DIR, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+    const path = join(entry.parentPath, entry.name);
+    if (hasPersonalKey(JSON.parse(readFileSync(path, 'utf8')))) offenders.push(path);
+  }
+  assert.deepEqual(offenders, [], `fixture(s) carry a personal-data field: ${offenders.join(', ')}`);
 });

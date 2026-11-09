@@ -176,12 +176,13 @@ var renderDirectRequires = []string{
 
 // otherDirectRequires is how many direct requires the rest of the module carries: the CLI
 // framework, the keyring library, the two x/ packages, YAML (promoted from indirect for
-// internal/doctor's site-config parse, ADR-0002's addendum), and pflag (promoted from indirect
+// internal/doctor's site-config parse, ADR-0002's addendum), pflag (promoted from indirect
 // when cmd/cairn's flag-list test began walking the command tree's flag sets, which are
-// pflag values cobra hands back). They are counted rather than named, because internal/secrets
+// pflag values cobra hands back), and x/crypto, whose nacl/box seals the deploy secret for
+// GitHub's Actions secrets API. They are counted rather than named, because internal/secrets
 // confines one of those import paths to its file and that check reads every .go file in the
 // module as text, this one included.
-const otherDirectRequires = 6
+const otherDirectRequires = 7
 
 // TestRenderDirectRequiresArePinned holds ADR-0002's pin policy to its list, and the module
 // to its total. A fifth library taken for this package, or one of the four dropped, fails here

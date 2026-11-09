@@ -62,6 +62,9 @@ func orderedFields[T any](observedOrder []string, fields []field[T], t T, extra 
 			continue
 		}
 		if f, ok := fm[key]; ok {
+			if f.omitZero && observedOrder == nil && !f.nonZero(t) {
+				continue
+			}
 			raw, err := f.marshal(t)
 			if err != nil {
 				return nil, nil, fmt.Errorf("field %q: %w", key, err)

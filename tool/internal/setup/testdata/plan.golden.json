@@ -1,0 +1,111 @@
+{
+  "Names": {
+    "Base": "caf-nord-2",
+    "Repository": "caf-nord-2",
+    "Worker": "caf-nord-2",
+    "Database": "caf-nord-2-auth",
+    "Bucket": "caf-nord-2-media",
+    "App": "cairn-caf-nord",
+    "Folder": "./caf-nord-2"
+  },
+  "Addresses": [
+    "example.com",
+    "www.example.com"
+  ],
+  "Steps": [
+    {
+      "ID": "opening-checks",
+      "Label": "Check git, Node 24 or later, port 49152, the keyring, the template, and the folder",
+      "Actor": "tool",
+      "Provider": "npm"
+    },
+    {
+      "ID": "approve-cloudflare",
+      "Label": "Approve Cloudflare sign-in",
+      "Actor": "owner",
+      "Provider": "cloudflare"
+    },
+    {
+      "ID": "cloudflare-checks",
+      "Label": "Check accounts, zones, names, and the address",
+      "Actor": "tool",
+      "Provider": "cloudflare"
+    },
+    {
+      "ID": "approve-create-app",
+      "Label": "Create the GitHub App",
+      "Actor": "owner",
+      "Provider": "github"
+    },
+    {
+      "ID": "approve-install-all",
+      "Label": "Install and authorize the App on all repositories",
+      "Actor": "owner",
+      "Provider": "github"
+    },
+    {
+      "ID": "approve-install-repo",
+      "Label": "Approve, install, and authorize the App on the new repository only",
+      "Actor": "owner",
+      "Provider": "github"
+    },
+    {
+      "ID": "summary",
+      "Label": "Read the summary and press Enter",
+      "Actor": "owner",
+      "Provider": ""
+    },
+    {
+      "ID": "scaffold",
+      "Label": "Scaffold the site folder",
+      "Actor": "tool",
+      "Provider": ""
+    },
+    {
+      "ID": "provision",
+      "Label": "Create the D1 database, the R2 bucket, and the email sending subdomain",
+      "Actor": "tool",
+      "Provider": "cloudflare"
+    },
+    {
+      "ID": "commit",
+      "Label": "Write the config and commit locally",
+      "Actor": "tool",
+      "Provider": ""
+    },
+    {
+      "ID": "deploy-key",
+      "Label": "Mint the deploy key and store it as a repository secret",
+      "Actor": "tool",
+      "Provider": "cloudflare"
+    },
+    {
+      "ID": "push",
+      "Label": "Recheck the Worker name and push to GitHub",
+      "Actor": "tool",
+      "Provider": "github"
+    },
+    {
+      "ID": "first-deploy",
+      "Label": "Deploy for the first time and set the Worker secret",
+      "Actor": "tool",
+      "Provider": "github"
+    },
+    {
+      "ID": "domains",
+      "Label": "Attach the custom domains and wait for HTTPS",
+      "Actor": "tool",
+      "Provider": "cloudflare"
+    },
+    {
+      "ID": "sign-in",
+      "Label": "Check the sign-in row and redirect",
+      "Actor": "tool",
+      "Provider": "cloudflare"
+    }
+  ],
+  "OwnerEmail": "owner@example.com",
+  "Posture": "decline",
+  "Theme": "",
+  "AccountID": ""
+}

@@ -1,0 +1,2427 @@
+package setup
+
+import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
+	"context"
+	"crypto/sha512"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"slices"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/loopback"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/store"
+)
+
+// The production clients satisfy the seams the runner defines.
+var (
+	_ CloudflareAuth = (*providers.CloudflareOAuth)(nil)
+	_ CloudflareAPI  = (*providers.Cloudflare)(nil)
+	_ GitHubAPI      = (*providers.GitHub)(nil)
+	_ GitHubWeb      = (*providers.GitHubWeb)(nil)
+	_ Vault          = secrets.SetupStore{}
+	_ Saver          = (*store.Store)(nil)
+	_ Tab            = loopbackTab{}
+	_                = Config{WriteSite: scaffold.Write, FinalizeSite: scaffold.Finalize}
+)
+
+func TestAFullRunReachesDone(t *testing.T) {
+	w := newWorld(t)
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	wantWaits := []WaitState{WaitCloudflare, WaitCreateApp, WaitInstallAll, WaitInstallRepo}
+	if got := w.waits(); !slices.Equal(got, wantWaits) {
+		t.Errorf("waiting states = %v, want %v", got, wantWaits)
+	}
+	for _, e := range w.events {
+		if e.SchemaVersion != EventSchemaVersion || e.Kind == "" || e.Timestamp.IsZero() {
+			t.Errorf("event %+v lacks schemaVersion, kind, or timestamp", e)
+		}
+		if e.Kind == Waiting && e.Sentence != WaitSentence(e.Waiting, "Example Site", "example-site") {
+			t.Errorf("waiting %s sentence = %q", e.Waiting, e.Sentence)
+		}
+		if e.Kind == Resumed {
+			t.Error("a new run emitted resumed")
+		}
+	}
+	var done []string
+	for _, e := range w.events {
+		if e.Kind == StepDone {
+			done = append(done, e.Step)
+		}
+	}
+	wantDone := []string{StepOpeningChecks, StepApproveCloudflare, StepCloudflareChecks, StepApproveCreateApp, StepApproveInstall, StepApproveRepo,
+		StepScaffold, StepProvision, StepCommit, StepDeployKey, StepPush, StepFirstDeploy, StepDomains, StepSignIn}
+	if !slices.Equal(done, wantDone) {
+		t.Errorf("steps done = %v, want %v", done, wantDone)
+	}
+	// GitHub hands a job its secrets when the job starts, so the push that starts the first
+	// deploy must find the deploy key already stored.
+	if !slices.Equal(w.gh.secretOnEmpty, []bool{true}) {
+		t.Errorf("secret stored on an empty repository: %v, want once, before the push", w.gh.secretOnEmpty)
+	}
+	if !slices.ContainsFunc(w.events, func(e Event) bool { return e.Kind == SummaryKind && e.Summary != nil }) {
+		t.Error("no summary event")
+	}
+
+	s := res.Summary
+	if s.Repository != "example-site" || s.Database != "example-site-auth" || s.Bucket != "example-site-media" ||
+		s.Zone != "carin-test-5.org" || s.OwnerEmail != w.cf.email || s.Theme != "waymark" ||
+		s.ThemeDescription != "An intentionally neutral look that's easy to edit." || s.SuffixReason != "" {
+		t.Errorf("summary = %+v", s)
+	}
+	if want := []string{"carin-test-5.org", "www.carin-test-5.org"}; !slices.Equal(s.Addresses, want) {
+		t.Errorf("addresses = %v, want %v", s.Addresses, want)
+	}
+	if !w.tab.closed {
+		t.Error("the tab was left bound")
+	}
+	if len(w.view.opened) != 1 || w.view.opened[0] != tabURL {
+		t.Errorf("opened %v, want the tab URL once", w.view.opened)
+	}
+	ours := w.gh.ours()
+	if len(ours) != 1 || ours[0].ID != repoInstallID {
+		t.Errorf("our installations = %+v, want only the repository-scoped one", ours)
+	}
+	if !slices.ContainsFunc(w.gh.installs, func(in install) bool { return in.AppID == foreignAppID }) {
+		t.Error("another App's installation was deleted")
+	}
+
+	rec := res.Record
+	if rec.Step != string(spine.StepLive) || rec.Setup.RunID != "run7" || rec.Setup.IDs.AppID != w.gh.app.ID ||
+		rec.GitHub.InstallationID != repoInstallID || rec.GitHub.Repo.ID != w.gh.repo.ID || rec.GitHub.Repo.DefaultBranch != "main" ||
+		rec.Cloudflare.AccountID != w.cf.accounts[0].ID || rec.Setup.Folder != filepath.Join(w.cfg.Dir, "example-site") ||
+		rec.Setup.IDs.D1 != w.cf.d1["example-site-auth"].uuid || rec.Setup.IDs.R2Bucket != "example-site-media" ||
+		rec.Setup.IDs.DeployKeyID != "tok1" || rec.Setup.IDs.WorkerTag != "tag-0001" || rec.Cloudflare.WorkerName != "example-site" {
+		t.Errorf("record = %+v", rec)
+	}
+	if res.SiteID != w.saver.id {
+		t.Errorf("site id = %q, want %q", res.SiteID, w.saver.id)
+	}
+	assertCreatedOnce(t, w)
+	if got := remoteHead(t, w); got != rec.Setup.Commit {
+		t.Errorf("remote main = %s, want the recorded commit %s", got, rec.Setup.Commit)
+	}
+	if got := w.gh.secrets["example-owner/example-site/"+providers.DeploySecretName]; got != w.cf.keysMinted[0].Value.Reveal() {
+		t.Error("the Actions secret is not the deploy key")
+	}
+	if got := w.cf.secrets["example-site/"+workerKeySecret]; got == "" {
+		t.Error("the Worker never got the App key")
+	}
+	if w.cf.attached["carin-test-5.org"] != "example-site" || w.cf.attached["www.carin-test-5.org"] != "example-site" {
+		t.Errorf("custom domains = %v", w.cf.attached)
+	}
+	if res.Done.URL != "https://carin-test-5.org" || !res.Done.SignedIn || !res.Done.Emailed || res.Done.NoSignIn ||
+		res.Done.InstallFailed || res.Done.RevokeFailed || res.Done.KeysLeft || !res.Done.ScriptsSkipped {
+		t.Errorf("done = %+v", res.Done)
+	}
+
+	if left := w.vault.ofRun(); len(left) != 0 {
+		t.Errorf("keyring holds %v after done, want nothing", left)
+	}
+	if want := []string{w.cfAuth.tokens[0].AccessToken, w.cfAuth.tokens[0].RefreshToken}; !slices.Equal(w.cfAuth.revoked, want) {
+		t.Errorf("revoked %d tokens, want the access token and then the refresh token", len(w.cfAuth.revoked))
+	}
+	if last, _ := w.saver.last(); last.Setup.KeysKept || len(last.Setup.KeyringEntries) != 0 {
+		t.Errorf("record keeps keys %v, entries %v; want none", last.Setup.KeysKept, last.Setup.KeyringEntries)
+	}
+	assertRegisteredAndUnseen(t, w)
+}
+
+// TestARefusedRevokeIsReportedNotFatal pins that a revoke Cloudflare refuses still lets the run
+// finish and tries both tokens, and that the done screen reports a refusal only when the refresh
+// token's revoke fails: revoking the refresh token ends the grant (RFC 7009 2.1), so a refused
+// access-token revoke alone leaves nothing standing past the access token's hour.
+func TestARefusedRevokeIsReportedNotFatal(t *testing.T) {
+	refused := &providers.OAuthError{Status: 403, Code: "access_denied"}
+	tok := newWorld(t).cfAuth.tokens[0]
+	for _, tc := range []struct {
+		name   string
+		errFor map[string]error
+		want   bool
+	}{
+		{"both refused", map[string]error{tok.AccessToken: refused, tok.RefreshToken: refused}, true},
+		{"the refresh token refused", map[string]error{tok.RefreshToken: refused}, true},
+		{"the access token refused alone", map[string]error{tok.AccessToken: refused}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			w.cfAuth.revokeErrFor = tc.errFor
+			res, err := w.run(context.Background())
+			if err != nil {
+				t.Fatalf("Run: %v", err)
+			}
+			if res.Done.RevokeFailed != tc.want || len(w.cfAuth.revoked) != 2 {
+				t.Errorf("done %+v after %d revokes, want both tried and RevokeFailed %v", res.Done, len(w.cfAuth.revoked), tc.want)
+			}
+			if left := w.vault.ofRun(); len(left) != 0 {
+				t.Errorf("keyring holds %v, want the entries deleted anyway", left)
+			}
+		})
+	}
+}
+
+// assertCreatedOnce checks that each create the run makes happened exactly once across every run
+// of w.
+func assertCreatedOnce(t *testing.T, w *world) {
+	t.Helper()
+	for kind, n := range map[string]int{"app": w.gh.creates["app"], "repo": w.gh.creates["repo"],
+		"d1": w.cf.creates["d1"], "r2": w.cf.creates["r2"], "email": w.cf.creates["email"], "deploy-key": w.cf.creates["deploy-key"]} {
+		if n != 1 {
+			t.Errorf("%s created %d times, want once", kind, n)
+		}
+	}
+	waits := map[string]int{}
+	for _, l := range w.log {
+		if strings.HasPrefix(l, "wait:") {
+			waits[l]++
+		}
+	}
+	want := map[string]int{"wait:" + string(loopback.CloudflareCallback): 1, "wait:" + string(loopback.GitHubManifest): 1, "wait:" + string(loopback.GitHubCallback): 2}
+	for k, n := range want {
+		if waits[k] != n {
+			t.Errorf("%s ran %d times, want %d", k, waits[k], n)
+		}
+	}
+}
+
+// pushAuth is the base64 credential a push's basic auth header carries for an installation token.
+func pushAuth(c providers.Credential) string {
+	return base64.StdEncoding.EncodeToString([]byte("x-access-token:" + c.Reveal()))
+}
+
+// pushed reports whether the site's remote holds a branch.
+func (w *world) pushed() bool {
+	_, ok := w.gh.remoteHead("example-owner", "example-site", "main")
+	return ok
+}
+
+func remoteHead(t *testing.T, w *world) string {
+	t.Helper()
+	return gitRun(t, filepath.Join(w.gh.remotes, "example-owner", "example-site.git"), "rev-parse", "refs/heads/main")
+}
+
+// assertRegisteredAndUnseen checks that every credential the fakes issued reached the scrub and
+// that no event, record, failure, or child environment carries one, nor a code, nonce, or the
+// tab's key. The tab's /next answer and the email are the sign-in link's two destinations.
+func assertRegisteredAndUnseen(t *testing.T, w *world) {
+	t.Helper()
+	tok := w.cfAuth.tokens[0]
+	issued := []string{tok.AccessToken, tok.RefreshToken, w.gh.app.ClientSecret.Reveal(), w.gh.app.WebhookSecret.Reveal(), w.gh.app.PEM.Reveal()}
+	for _, o := range w.cfAuth.issued {
+		issued = append(issued, o.AccessToken, o.RefreshToken)
+	}
+	for _, c := range append(append([]providers.Credential{}, w.web.issued...), w.gh.instTokens...) {
+		issued = append(issued, c.Reveal())
+	}
+	for _, k := range w.cf.keysMinted {
+		issued = append(issued, k.Value.Reveal())
+	}
+	var registered []string
+	for _, c := range w.registered {
+		registered = append(registered, c.Reveal())
+	}
+	for _, v := range issued {
+		if !slices.Contains(registered, v) {
+			t.Errorf("a credential of %d bytes never reached the scrub", len(v))
+		}
+	}
+	if !slices.ContainsFunc(w.registered, isJWT) {
+		t.Error("no App JWT reached the scrub")
+	}
+	if w.pushed() && !slices.ContainsFunc(w.gh.instTokens, func(c providers.Credential) bool { return slices.Contains(registered, pushAuth(c)) }) {
+		t.Error("the push's base64 credential never reached the scrub on its own")
+	}
+
+	var needles []string
+	for _, v := range append(issued, registered...) {
+		for line := range strings.SplitSeq(v, "\n") {
+			if len(line) >= 8 && !strings.HasPrefix(line, "-----") {
+				needles = append(needles, line)
+			}
+		}
+	}
+	for _, c := range w.gh.instTokens {
+		needles = append(needles, pushAuth(c))
+	}
+	needles = append(needles, w.codes...)
+	needles = append(needles, w.cfAuth.verifiers...)
+	for _, n := range w.tab.armed {
+		needles = append(needles, n)
+	}
+	needles = append(needles, "one-time-tab-key", "inherited-gh-token-value", "inherited-cloudflare-token-value")
+
+	var hay []string
+	for _, e := range w.events {
+		b, _ := json.Marshal(e)
+		hay = append(hay, string(b))
+	}
+	for _, r := range w.saver.saves {
+		b, err := r.Marshal()
+		if err != nil {
+			t.Fatalf("marshal record: %v", err)
+		}
+		hay = append(hay, string(b))
+	}
+	if env, err := os.ReadFile(w.npmEnv); err == nil {
+		hay = append(hay, string(env))
+	}
+	for _, h := range hay {
+		for _, n := range needles {
+			if strings.Contains(h, n) {
+				t.Errorf("a secret value appears in %.80s...", h)
+			}
+		}
+	}
+}
+
+func TestOpeningChecksStopBeforeAnyWrite(t *testing.T) {
+	cases := []struct {
+		name  string
+		setup func(w *world)
+		want  Reason
+	}{
+		{"ssh session", func(w *world) { w.cfg.Env = map[string]string{"SSH_TTY": "/dev/pts/1", "DISPLAY": ":0"} }, ReasonRemote},
+		{"no display on linux", func(w *world) { w.cfg.Env = map[string]string{} }, ReasonRemote},
+		{"git missing", func(w *world) { w.gitErr = exec.ErrNotFound }, ReasonGitMissing},
+		{"node missing", func(w *world) { w.nodeErr = exec.ErrNotFound }, ReasonNodeMissing},
+		{"node below 24", func(w *world) { w.node = "v22.11.0" }, ReasonNodeOld},
+		{"port bound", func(w *world) { w.listenErr = &loopback.PortInUseError{Err: errors.New("bind")} }, ReasonPortInUse},
+		{"keyring locked", func(w *world) { w.vault.probeErr = secrets.ErrKeyringUnavailable }, ReasonKeyring},
+		{"template fetch fails", func(w *world) { w.fetchErr = errors.New("registry unreachable") }, ReasonTemplate},
+		{"folder not empty", func(w *world) {
+			dir := filepath.Join(w.cfg.Dir, "example-site")
+			if err := os.MkdirAll(dir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("x"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}, ReasonFolderNotEmpty},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			tc.setup(w)
+			_, err := w.run(context.Background())
+			f := failureOf(t, err)
+			if f.Reason != tc.want {
+				t.Fatalf("reason = %s, want %s", f.Reason, tc.want)
+			}
+			if f.Happened == "" || f.Did != nothingCreated || f.Do == "" {
+				t.Errorf("failure parts = %+v", f)
+			}
+			if w.gh.writes != 0 || w.vault.puts != 0 || len(w.saver.saves) != 0 || len(w.view.opened) != 0 {
+				t.Errorf("writes: github %d, keyring %d, record %d, browser opened %d; want none",
+					w.gh.writes, w.vault.puts, len(w.saver.saves), len(w.view.opened))
+			}
+			last := w.events[len(w.events)-1]
+			if last.Kind != StepFailed || last.Failure == nil || last.Failure.Reason != tc.want {
+				t.Errorf("last event = %+v, want step_failed with %s", last, tc.want)
+			}
+		})
+	}
+}
+
+func TestEmptyFolderPassesTheOpening(t *testing.T) {
+	w := newWorld(t)
+	if err := os.MkdirAll(filepath.Join(w.cfg.Dir, "example-site"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+}
+
+func TestCloudflareChecksStopBeforeAnyProviderWrite(t *testing.T) {
+	cases := []struct {
+		name  string
+		setup func(w *world)
+		want  Reason
+	}{
+		{"no account", func(w *world) { w.cf.accounts = nil }, ReasonNoAccount},
+		{"no zones", func(w *world) { w.cf.active, w.cf.all = nil, nil }, ReasonNoZones},
+		{"pending zone", func(w *world) {
+			w.cf.active = nil
+			w.cf.all = cfResult[[]providers.Zone](t, "zones.pending.200.json")
+		}, ReasonZonePending},
+		{"apex has records", func(w *world) {
+			w.cf.dns["carin-test-5.org"] = cfResult[[]providers.DNSRecord](t, "zone_dns_records.named.200.json")
+		}, ReasonAddressRecords},
+		{"www has records", func(w *world) {
+			w.cf.dns["www.carin-test-5.org"] = []providers.DNSRecord{{Name: "www.carin-test-5.org", Type: "CNAME"}}
+		}, ReasonAddressRecords},
+		{"custom domain on the address", func(w *world) {
+			w.cf.domains["carin-test-5.org"] = []providers.WorkerDomain{{Hostname: "carin-test-5.org", Service: "other"}}
+		}, ReasonAddressInUse},
+		{"route on the address", func(w *world) {
+			w.cf.routes = []providers.WorkerRoute{{ID: "r1", Pattern: "www.carin-test-5.org/*", Script: "other"}}
+		}, ReasonAddressInUse},
+		{"every suffix taken", func(w *world) {
+			w.cf.workers["example-site"] = "tag-other"
+			for _, s := range []string{"2", "3", "4", "5", "6", "7", "8", "9"} {
+				w.cf.r2["example-site-"+s+"-media"] = true
+			}
+		}, ReasonNamesTaken},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			tc.setup(w)
+			_, err := w.run(context.Background())
+			f := failureOf(t, err)
+			if f.Reason != tc.want {
+				t.Fatalf("reason = %s, want %s", f.Reason, tc.want)
+			}
+			if f.Happened == "" || f.Do == "" {
+				t.Errorf("failure parts = %+v", f)
+			}
+			if w.gh.writes != 0 || slices.ContainsFunc(w.log, func(s string) bool { return strings.HasPrefix(s, "gh:") }) {
+				t.Errorf("GitHub was called before the Cloudflare checks passed: %v", w.log)
+			}
+		})
+	}
+}
+
+// TestTheChecksNeverReadSubscriptions holds the live finding that the subscriptions route answers
+// the setup grant with a 403: the checks do not ask for the plan at all.
+func TestTheChecksNeverReadSubscriptions(t *testing.T) {
+	w := newWorld(t)
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if slices.Contains(w.log, "cf:subscriptions") {
+		t.Errorf("log %v reads the subscriptions route", w.log)
+	}
+}
+
+func TestATakenCloudflareNameTakesTheNextSuffix(t *testing.T) {
+	w := newWorld(t)
+	w.cf.d1["example-site-auth"] = &d1{uuid: "someone-elses-database"}
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if res.Summary.Repository != "example-site-2" || res.Summary.SuffixReason == "" {
+		t.Errorf("summary = %+v, want the -2 names with a reason", res.Summary)
+	}
+	if !slices.Contains(w.log, "gh:create:example-site-2") || !slices.Contains(w.log, "cf:create-d1:example-site-2-auth") {
+		t.Errorf("log %v lacks the -2 creates", w.log)
+	}
+}
+
+func TestQuestionsAppearOnlyForSeveralChoices(t *testing.T) {
+	t.Run("one of each asks nothing", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(context.Background()); err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if w.view.themeAsks+w.view.accountAsks+w.view.zones != 0 {
+			t.Errorf("asks: theme %d, account %d, zone %d; want none", w.view.themeAsks, w.view.accountAsks, w.view.zones)
+		}
+	})
+	t.Run("several of each asks each once", func(t *testing.T) {
+		w := newWorld(t)
+		w.template.Themes = append(w.template.Themes, scaffold.Theme{ID: "survey", Name: "Survey", Description: "A field-journal look."})
+		w.cf.accounts = append(w.cf.accounts, providers.Account{ID: "0000000000000000000000000000ex02", Name: "Second"})
+		w.cf.active = cfResult[[]providers.Zone](t, "zones.list.200.json")
+		w.view.theme, w.view.account, w.view.zone = "survey", "0000000000000000000000000000ex02", w.cf.active[1].ID
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if w.view.themeAsks != 1 || w.view.accountAsks != 1 || w.view.zones != 1 {
+			t.Errorf("asks: theme %d, account %d, zone %d; want one each", w.view.themeAsks, w.view.accountAsks, w.view.zones)
+		}
+		if res.Summary.Theme != "survey" || res.Summary.Zone != w.cf.active[1].Name || !res.Summary.ZoneChosen {
+			t.Errorf("summary = %+v", res.Summary)
+		}
+		if !slices.Contains(w.cf.bound, "0000000000000000000000000000ex02") || res.Record.Cloudflare.AccountID != "0000000000000000000000000000ex02" {
+			t.Errorf("clients bound to %v, record account %q", w.cf.bound, res.Record.Cloudflare.AccountID)
+		}
+	})
+}
+
+// TestTheCloudflareApprovalOpensOnTheConsentPage pins that the tab shows setup's own page, with
+// the permission instruction, before it sends the owner to Cloudflare.
+func TestTheCloudflareApprovalOpensOnTheConsentPage(t *testing.T) {
+	w := newWorld(t)
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if len(w.tab.shown) == 0 || w.tab.shown[0].Kind != PageConsent {
+		t.Fatalf("pages %+v, want approval 1 to open on the consent page", w.tab.shown)
+	}
+	u, err := url.Parse(w.tab.shown[0].URL)
+	if err != nil || u.Host != "dash.cloudflare.com" || u.Query().Get("state") == "" {
+		t.Errorf("the consent page continues to %q, want a Cloudflare authorize URL with state", w.tab.shown[0].URL)
+	}
+	if slices.ContainsFunc(w.tab.shown, func(p Page) bool { return p.Kind == PageRedirect && strings.Contains(p.URL, "dash.cloudflare.com") }) {
+		t.Error("the tab was sent straight to Cloudflare")
+	}
+}
+
+// TestTheCloudflareCopyNamesThePermission pins that every Cloudflare approval sentence names
+// the permission Cloudflare leaves unselected.
+func TestTheCloudflareCopyNamesThePermission(t *testing.T) {
+	const ruled = "On the Cloudflare page, select API Tokens: Write, and then select Allow. " +
+		"Cloudflare leaves API Tokens: Write unselected, and setup needs it to create your site's deploy key."
+	if got := WaitSentence(WaitCloudflare, "Example Site", "example-site"); got != ruled {
+		t.Errorf("WaitCloudflare sentence = %q, want %q", got, ruled)
+	}
+	if got := WaitSentence(WaitCloudflareReconsent, "Example Site", "example-site"); !strings.HasPrefix(got, "On the Cloudflare page, select API Tokens: Write, and then select Allow. ") {
+		t.Errorf("WaitCloudflareReconsent sentence = %q, want it to open with the permission instruction", got)
+	}
+
+	w := newWorld(t)
+	w.tab.script[loopback.CloudflareCallback] = []func(string) (loopback.Callback, error){
+		func(nonce string) (loopback.Callback, error) {
+			return loopback.Callback{State: nonce, Error: "access_denied"}, nil
+		},
+	}
+	_, err := w.run(context.Background())
+	if f := failureOf(t, err); f.Reason != ReasonDeclined || !strings.Contains(f.Do, "select API Tokens: Write, and then select Allow") {
+		t.Errorf("decline failure = %+v, want a fix that names API Tokens: Write", f)
+	}
+}
+
+func TestAGrantWithoutTheMintScopeAsksAgain(t *testing.T) {
+	w := newWorld(t)
+	missing := fixture[providers.OAuthToken](t, "cloudflare", "oauth_token.missing-scope.200.json")
+	full := w.cfAuth.tokens[0]
+	w.cfAuth.tokens = []providers.OAuthToken{missing, full}
+	w.tab.script[loopback.CloudflareCallback] = append(w.tab.script[loopback.CloudflareCallback], w.cloudflareApproves)
+
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	i := slices.IndexFunc(w.tab.shown, func(p Page) bool { return p.Kind == PageScopeError })
+	if i < 0 {
+		t.Fatalf("pages %+v never showed error.html", w.tab.shown)
+	}
+	retry, err := url.Parse(w.tab.shown[i].URL)
+	if err != nil || retry.Host != "dash.cloudflare.com" {
+		t.Fatalf("Try again links %q, want a Cloudflare authorize URL", w.tab.shown[i].URL)
+	}
+	if len(w.cfAuth.verifiers) != 2 || w.cfAuth.verifiers[0] == w.cfAuth.verifiers[1] {
+		t.Fatalf("verifiers = %d, want two distinct exchanges", len(w.cfAuth.verifiers))
+	}
+	if got := retry.Query().Get("code_challenge"); got != providers.PKCEChallenge(w.cfAuth.verifiers[1]) {
+		t.Error("Try again's challenge does not match the second exchange's verifier")
+	}
+	if retry.Query().Get("state") == "" {
+		t.Error("Try again carries no state")
+	}
+}
+
+func TestAFailedAllRepositoriesDeleteStopsInFourParts(t *testing.T) {
+	w := newWorld(t)
+	w.gh.deleteErr = errors.New("github 500")
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonInstallDelete {
+		t.Fatalf("reason = %s, want %s", f.Reason, ReasonInstallDelete)
+	}
+	if f.Happened == "" || f.Left == "" || f.Do == "" ||
+		!strings.Contains(f.Did, w.gh.app.Slug) || !strings.Contains(f.Did, "example-site") {
+		t.Errorf("failure = %+v, want four parts naming the App and the repository", f)
+	}
+	assertRegisteredAndUnseen(t, w)
+}
+
+func TestAKillLeavesNoOverGrant(t *testing.T) {
+	cases := []struct {
+		name  string
+		setup func(w *world, cancel context.CancelFunc)
+		want  Reason
+	}{
+		{"between the all-repositories callback and its delete", func(w *world, cancel context.CancelFunc) {
+			w.gh.onCreate = cancel
+		}, ReasonStopped},
+		{"inside the repository approval's loop", func(w *world, cancel context.CancelFunc) {
+			w.tab.script[loopback.GitHubCallback] = w.tab.script[loopback.GitHubCallback][:1]
+			w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+				w.gh.installs = append(w.gh.installs, install{ID: 5550020, AppID: w.gh.app.ID, Selection: "selected", Repos: []int64{w.gh.repo.ID, 4}})
+				return loopback.Callback{Code: w.code("approve"), InstallationID: "5550020", SetupAction: "install"}, nil
+			})
+			w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+				w.gh.installs = append(w.gh.installs, install{ID: 5550021, AppID: w.gh.app.ID, Selection: "all"})
+				cancel()
+				return loopback.Callback{}, context.Canceled
+			})
+		}, ReasonStopped},
+		{"at the 30-minute stop", func(w *world, cancel context.CancelFunc) {
+			w.tab.script[loopback.GitHubCallback] = w.tab.script[loopback.GitHubCallback][:1]
+			w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+				w.gh.installs = append(w.gh.installs, install{ID: 5550030, AppID: w.gh.app.ID, Selection: "all"})
+				return loopback.Callback{}, loopback.ErrChainTimeout
+			})
+		}, ReasonChainTimeout},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			tc.setup(w, cancel)
+			_, err := w.run(ctx)
+			f := failureOf(t, err)
+			if f.Reason != tc.want {
+				t.Fatalf("reason = %s, want %s", f.Reason, tc.want)
+			}
+			if ours := w.gh.ours(); len(ours) != 0 {
+				t.Errorf("installations left = %+v, want none", ours)
+			}
+			if !slices.ContainsFunc(w.gh.installs, func(in install) bool { return in.AppID == foreignAppID }) {
+				t.Error("another App's installation was deleted")
+			}
+			assertRegisteredAndUnseen(t, w)
+		})
+	}
+}
+
+func TestAResumeSweepsAnOverGrantFirst(t *testing.T) {
+	cases := []struct {
+		name     string
+		step     spine.Step
+		installs []install
+		wantLeft []int64
+		wantErr  error
+	}{
+		{"an all-repositories install is deleted", spine.StepRepoCreated,
+			[]install{{ID: allInstallID, Selection: "all"}}, nil, nil},
+		{"an unconfirmed install is deleted", spine.StepRepoCreated,
+			[]install{{ID: repoInstallID, Selection: "selected", Repos: []int64{998877}}}, nil, nil},
+		{"the confirmed install is kept", spine.StepInstalled,
+			[]install{{ID: repoInstallID, Selection: "selected", Repos: []int64{998877}}, {ID: allInstallID, Selection: "all"}}, []int64{repoInstallID}, nil},
+		{"the confirmed install is kept after the push", spine.StepPushed,
+			[]install{{ID: repoInstallID, Selection: "selected", Repos: []int64{998877}}}, []int64{repoInstallID}, nil},
+		{"a confirmed install that reaches more is deleted", spine.StepPushed,
+			[]install{{ID: repoInstallID, Selection: "selected", Repos: []int64{998877, 4}}}, nil, errOverGrant},
+		{"a confirmed install changed to all repositories is deleted", spine.StepPushed,
+			[]install{{ID: repoInstallID, Selection: "all", Repos: []int64{998877}}}, nil, errOverGrant},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			for _, in := range tc.installs {
+				in.AppID = w.gh.app.ID
+				w.gh.installs = append(w.gh.installs, in)
+			}
+			w.vault.entries[w.vault.Entry(secrets.EntryAppKey)] = w.gh.app.PEM.Reveal()
+			rec := record.Record{Step: string(tc.step)}
+			rec.Setup.RunID = "run7"
+			rec.Setup.IDs.AppID = w.gh.app.ID
+			rec.GitHub.InstallationID = repoInstallID
+			rec.GitHub.Repo.ID = 998877
+
+			if err := sweepOnResume(context.Background(), w.cfg, rec); !errors.Is(err, tc.wantErr) {
+				t.Fatalf("sweepOnResume: %v, want %v", err, tc.wantErr)
+			}
+			if len(w.log) == 0 || w.log[0] != "gh:list" {
+				t.Errorf("first GitHub act = %v, want the installation list", w.log)
+			}
+			var left []int64
+			for _, in := range w.gh.ours() {
+				left = append(left, in.ID)
+			}
+			if !slices.Equal(left, tc.wantLeft) {
+				t.Errorf("installations left = %v, want %v", left, tc.wantLeft)
+			}
+			if len(w.gh.installs)-len(left) != 1 {
+				t.Error("another App's installation was touched")
+			}
+			if !slices.ContainsFunc(w.registered, isJWT) {
+				t.Error("the sweep's JWT never reached the scrub")
+			}
+			if tc.wantLeft != nil && !slices.Contains(w.log, "gh:installation-repositories") {
+				t.Error("the kept installation's repositories were never listed")
+			}
+		})
+	}
+}
+
+// TestAResumeSweepsBeforeCloudflare pins that a resume deletes an all-repositories installation
+// before any Cloudflare step can stop it, and that a resume whose sweep cannot run says what
+// may still reach the owner's repositories.
+func TestAResumeSweepsBeforeCloudflare(t *testing.T) {
+	stopWithAnOverGrant := func(t *testing.T) *world {
+		t.Helper()
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		w.gh.installs = append(w.gh.installs, install{ID: allInstallID, AppID: w.gh.app.ID, Selection: "all"})
+		return w
+	}
+	t.Run("a declined reconsent still deletes the installation", func(t *testing.T) {
+		w := stopWithAnOverGrant(t)
+		w.cfAuth.refreshErr = &providers.OAuthError{Status: 400, Code: "invalid_grant"}
+		w.resumeFrom()
+		w.tab.push(loopback.CloudflareCallback, func(nonce string) (loopback.Callback, error) {
+			return loopback.Callback{Error: "access_denied", State: nonce}, nil
+		})
+		w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonDeclined {
+			t.Fatalf("failure = %+v, want the declined stop", f)
+		}
+		if ours := w.gh.ours(); len(ours) != 0 {
+			t.Errorf("installations left = %+v, want the all-repositories one deleted", ours)
+		}
+	})
+	for _, tc := range []struct {
+		name   string
+		block  func(w *world)
+		reason Reason
+	}{
+		{"a GitHub that cannot be reached", func(w *world) { w.gh.listErr = errors.New("dial tcp: i/o timeout") }, ReasonProvider},
+		{"a locked keyring", func(w *world) {
+			w.vault.valueErr = map[secrets.EntryKind]error{secrets.EntryAppKey: secrets.ErrKeyringUnavailable}
+		}, ReasonKeyring},
+	} {
+		t.Run("a sweep blocked by "+tc.name+" names the risk", func(t *testing.T) {
+			w := stopWithAnOverGrant(t)
+			tc.block(w)
+			_, err := w.resume()
+			f := failureOf(t, err)
+			if f.Reason != tc.reason {
+				t.Errorf("reason = %s, want %s", f.Reason, tc.reason)
+			}
+			if !strings.Contains(f.Left, "may still reach all your repositories") || !strings.Contains(f.Left, installationsURL) ||
+				!strings.Contains(f.Left, w.gh.app.Slug) {
+				t.Errorf("Left = %q, want the over-grant risk and where to remove it", f.Left)
+			}
+		})
+	}
+}
+
+// TestOnlyTheConfirmedInstallationIsRecorded pins that the installation id a callback carries,
+// which any page that reaches the route can choose, never reaches the record: only the id the
+// read-back confirms does.
+func TestOnlyTheConfirmedInstallationIsRecorded(t *testing.T) {
+	w := newWorld(t)
+	w.tab.script[loopback.GitHubCallback] = w.tab.script[loopback.GitHubCallback][:1]
+	w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+		w.gh.installs = append(w.gh.installs, install{ID: repoInstallID, AppID: w.gh.app.ID, Selection: "selected", Repos: []int64{w.gh.repo.ID}})
+		return loopback.Callback{Code: w.code("approve"), InstallationID: "4242", SetupAction: "install"}, nil
+	})
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	for _, r := range w.saver.saves {
+		if id := r.GitHub.InstallationID; id != 0 && id != repoInstallID {
+			t.Fatalf("a save recorded installation %d, want only the confirmed %d", id, repoInstallID)
+		}
+	}
+	if res.Record.GitHub.InstallationID != repoInstallID {
+		t.Errorf("record installation %d, want %d", res.Record.GitHub.InstallationID, repoInstallID)
+	}
+}
+
+// TestNoHookOrInstallScriptRunsWhileTheKeyringHoldsTheGrant pins that nothing the site folder or
+// its dependencies carry runs during setup: npm installs with its lifecycle scripts skipped, and
+// git runs no hook from the folder.
+func TestNoHookOrInstallScriptRunsWhileTheKeyringHoldsTheGrant(t *testing.T) {
+	w := newWorld(t)
+	marker := filepath.Join(t.TempDir(), "hook-ran")
+	w.cfg.WriteSite = func(ctx context.Context, cfg scaffold.Config) (scaffold.Result, error) {
+		res, err := w.writeSite(ctx, cfg)
+		if err != nil {
+			return res, err
+		}
+		hook := filepath.Join(res.Dir, ".git", "hooks", "pre-push")
+		if err := os.WriteFile(hook, []byte("#!/bin/sh\ntouch '"+marker+"'\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		return res, nil
+	}
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !w.pushed() {
+		t.Fatal("the run never pushed")
+	}
+	if _, err := os.Stat(marker); err == nil {
+		t.Error("the site folder's pre-push hook ran")
+	}
+	args, err := os.ReadFile(w.npmEnv + ".args")
+	if err != nil {
+		t.Fatalf("npm never ran: %v", err)
+	}
+	if !slices.Contains(strings.Fields(string(args)), "--ignore-scripts") {
+		t.Errorf("npm ran with %q, want --ignore-scripts", strings.TrimSpace(string(args)))
+	}
+}
+
+// TestAReconsentOnlyResumeStopsTheClock pins that a resume whose only approval is the Cloudflare
+// reconsent shows done.html before the watch, which stops the tab's 30-minute clock, so a long
+// watch still finds /next answering.
+func TestAReconsentOnlyResumeStopsTheClock(t *testing.T) {
+	w := newWorld(t)
+	_, _ = w.run(killAfter(w, StepProvision))
+	w.cfAuth.refreshErr = &providers.OAuthError{Status: 400, Code: "invalid_grant"}
+	w.resumeFrom()
+	w.tab.push(loopback.CloudflareCallback, w.cloudflareApproves)
+	w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+	start := len(w.log)
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("resume: %v", err)
+	}
+	log := w.log[start:]
+	done := slices.Index(log, "show:"+strconv.Itoa(int(PageDone)))
+	watch := slices.Index(log, "scaffold:finalize")
+	if done < 0 || watch < 0 || done > watch {
+		t.Errorf("log %v: want done.html shown before the watch's first step", log)
+	}
+}
+
+// TestARepositoryOnAnotherAccountStops pins that a repository GitHub creates under an account
+// other than the App's owner stops the run before any installation reaches it.
+func TestARepositoryOnAnotherAccountStops(t *testing.T) {
+	w := newWorld(t)
+	w.gh.createOwner, w.gh.createOwnerID = "someone-else", 7001
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "someone-else") || !strings.Contains(f.Happened, "example-owner") ||
+		!strings.Contains(f.Did, "someone-else/example-site") || f.Do == "" || f.Left == "" {
+		t.Errorf("failure = %+v, want the four-part stop naming both accounts", f)
+	}
+	if strings.Count(strings.Join(w.log, " "), "wait:"+string(loopback.GitHubCallback)) != 1 {
+		t.Errorf("log %v: want the stop before approval 4", w.log)
+	}
+	if last, _ := w.saver.last(); last.GitHub.Repo.ID != 0 {
+		t.Errorf("record repository %+v, want none recorded", last.GitHub.Repo)
+	}
+}
+
+// TestAnotherAccountsApprovalCreatesNoRepository pins that the user token is read back before
+// the repository create: approval 3 given while signed in to GitHub as an account other than the
+// App's owner stops the run with nothing created on that account, and a resume taken the same way
+// stops again rather than walking the name suffixes.
+func TestAnotherAccountsApprovalCreatesNoRepository(t *testing.T) {
+	assertStop := func(t *testing.T, w *world, err error) {
+		t.Helper()
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "someone-else") || !strings.Contains(f.Happened, "example-owner") ||
+			!strings.Contains(f.Happened, w.gh.app.Slug) || !strings.Contains(f.Did, w.gh.app.Slug) ||
+			!strings.Contains(f.Do, "example-owner") || f.Left == "" {
+			t.Errorf("failure = %+v, want the four-part stop naming both accounts", f)
+		}
+		if w.gh.creates["repo"] != 0 || slices.ContainsFunc(w.log, func(l string) bool { return strings.HasPrefix(l, "gh:create:") }) {
+			t.Errorf("log %v: want no repository create", w.log)
+		}
+		if slices.ContainsFunc(w.log, func(l string) bool { return strings.Contains(l, "example-site-2") }) {
+			t.Errorf("log %v: want no suffixed name tried", w.log)
+		}
+		if ours := w.gh.ours(); len(ours) != 0 {
+			t.Errorf("installations left = %+v, want the all-repositories one deleted", ours)
+		}
+	}
+	t.Run("a new run", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userLogin, w.gh.userID = "someone-else", 7001
+		_, err := w.run(context.Background())
+		assertStop(t, w, err)
+	})
+	t.Run("a resume", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		w.gh.userLogin, w.gh.userID = "someone-else", 7001
+		w.gh.taken["example-site"] = true
+		_, err := w.resume()
+		assertStop(t, w, err)
+	})
+}
+
+// TestAnAppWithNoOwnerStops pins that setup never acts for an App whose owning account it does
+// not know, since every later account check compares against that owner: a conversion that names
+// no owner stops before any install, and so does a resumed record that names none.
+func TestAnAppWithNoOwnerStops(t *testing.T) {
+	t.Run("at the conversion", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.app.OwnerLogin = ""
+		_, err := w.run(context.Background())
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, w.gh.app.Slug) ||
+			!strings.Contains(f.Did, "https://github.com/settings/apps/"+w.gh.app.Slug) || f.Do == "" {
+			t.Errorf("failure = %+v, want the four-part stop with the App to delete", f)
+		}
+		if slices.Contains(w.log, "wait:"+string(loopback.GitHubCallback)) {
+			t.Errorf("log %v: want the stop before approval 3", w.log)
+		}
+	})
+	t.Run("on a resume", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.AppOwner = ""
+		w.saver.saves = append(w.saver.saves, rec)
+		_, err := w.resume()
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, w.gh.app.Slug) ||
+			!strings.Contains(f.Do, "https://github.com/settings/apps/"+w.gh.app.Slug) || f.Did == "" {
+			t.Errorf("failure = %+v, want the four-part stop with the App to delete", f)
+		}
+		if w.gh.creates["repo"] != 0 || slices.Contains(w.log, "wait:"+string(loopback.GitHubCallback)) {
+			t.Errorf("log %v: want the stop before approval 3", w.log)
+		}
+		if last, _ := w.saver.last(); last.Setup.IDs.AppID != 0 {
+			t.Errorf("record App %d, want the App dropped so the next run creates one", last.Setup.IDs.AppID)
+		}
+	})
+}
+
+// TestADroppedAppLeavesNoKeys pins that a resume that drops the recorded App deletes the App's
+// key and client secret from the keyring before the record forgets the App, and that a delete
+// the keyring refuses stops with the record as it was, so the next run can retry it.
+func TestADroppedAppLeavesNoKeys(t *testing.T) {
+	appEntries := func(w *world) []string {
+		return []string{w.vault.Entry(secrets.EntryAppKey), w.vault.Entry(secrets.EntryAppClientSecret)}
+	}
+	ownerless := func(t *testing.T) *world {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		for _, name := range appEntries(w) {
+			if _, ok := w.vault.entries[name]; !ok {
+				t.Fatalf("the first run left no %s to delete", name)
+			}
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.AppOwner = ""
+		w.saver.saves = append(w.saver.saves, rec)
+		return w
+	}
+	t.Run("the keys go before the record drops the App", func(t *testing.T) {
+		w := ownerless(t)
+		w.saver.onSave = func(rec record.Record) error {
+			if rec.Setup.IDs.AppID != 0 {
+				return nil
+			}
+			for _, name := range appEntries(w) {
+				if _, ok := w.vault.entries[name]; ok {
+					t.Errorf("the record dropped the App while the keyring held %s", name)
+				}
+			}
+			return nil
+		}
+		_, err := w.resume()
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		for _, name := range appEntries(w) {
+			if _, ok := w.vault.entries[name]; ok {
+				t.Errorf("the keyring still holds %s", name)
+			}
+		}
+		if last, _ := w.saver.last(); last.Setup.IDs.AppID != 0 || last.Setup.OwnerID != 0 {
+			t.Errorf("record App %d owner id %d, want the App and its owner dropped", last.Setup.IDs.AppID, last.Setup.OwnerID)
+		}
+	})
+	t.Run("a refused delete keeps the record", func(t *testing.T) {
+		w := ownerless(t)
+		before, _ := w.saver.last()
+		w.vault.deleteErr = secrets.ErrKeyringUnavailable
+		_, err := w.resume()
+		f := failureOf(t, err)
+		if f.Reason != ReasonKeyring || !strings.Contains(f.Happened, w.gh.app.Slug) || f.Do == "" || !strings.Contains(f.Left, w.gh.app.Slug) {
+			t.Errorf("failure = %+v, want the four-part keyring stop naming the App", f)
+		}
+		last, _ := w.saver.last()
+		if last.Setup.IDs.AppID != before.Setup.IDs.AppID || last.Setup.AppSlug != before.Setup.AppSlug || last.Setup.ClientID != before.Setup.ClientID {
+			t.Errorf("record App %d %q %q, want the App kept as %d %q %q", last.Setup.IDs.AppID, last.Setup.AppSlug, last.Setup.ClientID,
+				before.Setup.IDs.AppID, before.Setup.AppSlug, before.Setup.ClientID)
+		}
+	})
+}
+
+// TestTheOwnerChecksCompareAccountIDs pins that setup knows the App's owner by account id wherever
+// it holds one, so a login in other case is the same account and the same login under another
+// id is not. A record that holds no id falls back to the login, compared without regard to case
+// as GitHub compares logins.
+func TestTheOwnerChecksCompareAccountIDs(t *testing.T) {
+	t.Run("a login in other case is the owner", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userLogin = "Example-Owner"
+		if _, err := w.run(context.Background()); err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+	})
+	t.Run("the owner's login under another id is not the owner", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userID = 7001
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		if w.gh.creates["repo"] != 0 {
+			t.Errorf("repositories created %d, want none", w.gh.creates["repo"])
+		}
+	})
+	t.Run("a repository under the owner's login and another id is not the owner's", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.createOwnerID = 7001
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		if last, _ := w.saver.last(); last.GitHub.Repo.ID != 0 {
+			t.Errorf("record repository %+v, want none recorded", last.GitHub.Repo)
+		}
+	})
+	t.Run("a record with no owner id compares logins without case", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.OwnerID = 0
+		w.saver.saves = append(w.saver.saves, rec)
+		w.gh.userLogin = "EXAMPLE-OWNER"
+		if _, err := w.resume(); err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+	})
+}
+
+// TestARepositoryWithNoOwnerIDKeepsTheRecordedOne pins that a created repository whose owner
+// GitHub reports with no id leaves the App owner's id the record already holds.
+func TestARepositoryWithNoOwnerIDKeepsTheRecordedOne(t *testing.T) {
+	w := newWorld(t)
+	want := w.gh.app.OwnerID
+	if want == 0 {
+		t.Fatal("the fake App's owner has no id")
+	}
+	w.gh.repo.Owner.ID = 0
+	_, _ = w.run(context.Background())
+	for _, rec := range w.saver.saves {
+		if rec.GitHub.Repo.ID != 0 && rec.Setup.OwnerID != want {
+			t.Fatalf("a save with the repository recorded holds owner id %d, want %d", rec.Setup.OwnerID, want)
+		}
+	}
+	if last, _ := w.saver.last(); last.GitHub.Repo.ID == 0 {
+		t.Errorf("record repository %+v, want the repository recorded", last.GitHub.Repo)
+	}
+}
+
+// TestTheFolderGitConfigCannotLoosenThePush pins that setup's config pairs on the push outrank
+// the plain keys a resumed site folder's .git/config sets: the push reads certificate checks on
+// and no ssh command. A Config pair still lands after setup's, so the harness can point
+// github.com at a local remote. TestTheFolderProxyNeverCarriesThePush covers the proxy, which
+// git config --get cannot show, since git reads remote.origin.proxy over http.proxy.
+func TestTheFolderGitConfigCannotLoosenThePush(t *testing.T) {
+	marker := filepath.Join(t.TempDir(), "ssh-ran")
+	harness := childenv.Pair{Key: "url./harness/.insteadOf", Value: "https://github.com/"}
+	r := &run{
+		cfg: Config{
+			Env:            map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir(), "HTTPS_PROXY": "http://proxy.example.test:3128"},
+			GitConfigPairs: []childenv.Pair{harness},
+		},
+		hooks: t.TempDir(),
+	}
+	folder := t.TempDir()
+	ctx := context.Background()
+	gitIn := func(env []string, args ...string) string {
+		t.Helper()
+		out, err := runChild(ctx, folder, env, "git", args...)
+		if err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+		return out
+	}
+	gitIn(r.gitEnv(), "init", "--quiet")
+	gitIn(r.gitEnv(), "config", "http.sslVerify", "false")
+	gitIn(r.gitEnv(), "config", "core.sshCommand", "touch "+marker)
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	for _, tt := range []struct{ key, want string }{
+		{"http.sslVerify", "true"},
+		{"core.sshCommand", ""},
+		{harness.Key, harness.Value},
+	} {
+		if got := gitIn(env, "config", "--get", tt.key); got != tt.want {
+			t.Errorf("the push reads %s = %q, want %q", tt.key, got, tt.want)
+		}
+	}
+}
+
+// TestTheFolderProxyNeverCarriesThePush pins that the push reaches GitHub through the proxy the
+// environment names, and never through one a resumed site folder's .git/config names, as
+// http.proxy or as remote.origin.proxy, which git reads over http.proxy. A folder proxy that
+// also carries a planted certificate authority could otherwise read the push's token header.
+func TestTheFolderProxyNeverCarriesThePush(t *testing.T) {
+	envProxy, folderProxy := newConnectRecorder(t), newConnectRecorder(t)
+	r := &run{
+		cfg:   Config{Env: map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir(), "HTTPS_PROXY": envProxy.url}},
+		hooks: t.TempDir(),
+	}
+	folder := siteFolder(t, r, "https://github.com/owner/site.git",
+		childenv.Pair{Key: "http.proxy", Value: folderProxy.url}, childenv.Pair{Key: "remote.origin.proxy", Value: folderProxy.url})
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	if _, err := runChild(context.Background(), folder, env, "git", "push", "--quiet", "--no-verify", "origin", "HEAD:refs/heads/main"); err == nil {
+		t.Fatal("the push succeeded through proxies that refuse every tunnel")
+	}
+	if got := folderProxy.seen(); len(got) != 0 {
+		t.Errorf("the folder's proxy saw %q, want no request", got)
+	}
+	if got := envProxy.seen(); !slices.Contains(got, "CONNECT github.com:443") {
+		t.Errorf("the environment's proxy saw %q, want the push's tunnel to github.com", got)
+	}
+}
+
+// TestAFolderCredentialHelperNeverRunsOnThePush pins that a push GitHub answers with a 401 runs
+// no credential helper and no askpass program a resumed site folder's .git/config names, plain or
+// scoped to the remote's URL, since either would run as the owner while the push is in flight.
+func TestAFolderCredentialHelperNeverRunsOnThePush(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the helper markers are shell scripts; the config order under test is git's own and is the same on every platform")
+	}
+	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("WWW-Authenticate", `Basic realm="GitHub"`)
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	t.Cleanup(remote.Close)
+	r := &run{cfg: Config{Env: map[string]string{"PATH": os.Getenv("PATH"), "HOME": t.TempDir()}}, hooks: t.TempDir()}
+	marks := t.TempDir()
+	script := func(name string) string {
+		t.Helper()
+		path := filepath.Join(marks, name+".sh")
+		body := "#!/bin/sh\necho ran >> '" + filepath.Join(marks, name+".ran") + "'\n"
+		if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	folder := siteFolder(t, r, remote.URL+"/owner/site.git",
+		childenv.Pair{Key: "credential.helper", Value: script("helper")},
+		childenv.Pair{Key: "credential." + remote.URL + ".helper", Value: script("scoped-helper")},
+		childenv.Pair{Key: "core.askPass", Value: script("askpass")})
+	env, _, _ := r.pushEnv(providers.NewCredential("test-installation-token"))
+	if _, err := runChild(context.Background(), folder, env, "git", "push", "--quiet", "--no-verify", "origin", "HEAD:refs/heads/main"); err == nil {
+		t.Fatal("the push succeeded against a remote that answers every request with a 401")
+	}
+	for _, name := range []string{"helper", "scoped-helper", "askpass"} {
+		if _, err := os.Stat(filepath.Join(marks, name+".ran")); err == nil {
+			t.Errorf("the folder's %s ran on the push", name)
+		}
+	}
+}
+
+// siteFolder makes a git repository with one commit and origin at remote, with config set in its
+// own .git/config, the way a resumed site folder could carry it.
+func siteFolder(t *testing.T, r *run, remote string, config ...childenv.Pair) string {
+	t.Helper()
+	folder := t.TempDir()
+	steps := [][]string{
+		{"init", "--quiet"},
+		{"-c", "user.name=Site Owner", "-c", "user.email=owner@example.test", "commit", "--quiet", "--allow-empty", "-m", "site"},
+		{"remote", "add", "origin", remote},
+	}
+	for _, p := range config {
+		steps = append(steps, []string{"config", "--add", p.Key, p.Value})
+	}
+	for _, args := range steps {
+		if _, err := runChild(context.Background(), folder, r.gitEnv(), "git", args...); err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+	}
+	return folder
+}
+
+// connectRecorder is a proxy that refuses every request and records each one's method and
+// target, so a test sees which proxy git reached and for what.
+type connectRecorder struct {
+	url  string
+	mu   sync.Mutex
+	reqs []string
+}
+
+func newConnectRecorder(t *testing.T) *connectRecorder {
+	t.Helper()
+	c := &connectRecorder{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		c.mu.Lock()
+		c.reqs = append(c.reqs, req.Method+" "+req.RequestURI)
+		c.mu.Unlock()
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	t.Cleanup(srv.Close)
+	c.url = srv.URL
+	return c
+}
+
+func (c *connectRecorder) seen() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.Clone(c.reqs)
+}
+
+// TestInheritedGitConfigPairsNeverReachGit pins that the config pairs a git child reads come from
+// Config.GitConfigPairs alone: a pushInsteadOf pair the environment carries, which would send the
+// push to another folder, is dropped, and the push lands where the Config's pair points.
+func TestInheritedGitConfigPairsNeverReachGit(t *testing.T) {
+	w := newWorld(t)
+	decoy := t.TempDir()
+	w.cfg.Env["GIT_CONFIG_COUNT"] = "1"
+	w.cfg.Env["GIT_CONFIG_KEY_0"] = "url." + decoy + "/.pushInsteadOf"
+	w.cfg.Env["GIT_CONFIG_VALUE_0"] = "https://github.com/"
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !w.pushed() {
+		t.Error("the push never reached the remote the Config's pair names")
+	}
+	if entries, _ := os.ReadDir(decoy); len(entries) != 0 {
+		t.Errorf("the decoy folder holds %d entries, want the inherited pair never read", len(entries))
+	}
+}
+
+// TestANilEnvironmentIsRefused pins that a run given no environment stops before it does
+// anything, since git and npm would start with no PATH, HOME, or proxy settings.
+func TestANilEnvironmentIsRefused(t *testing.T) {
+	w := newWorld(t)
+	w.cfg.Env = nil
+	if _, err := w.run(context.Background()); err == nil || !strings.Contains(err.Error(), "environment") {
+		t.Errorf("Run with a nil Env: err = %v, want a refusal naming the environment", err)
+	}
+	if len(w.log) != 0 || len(w.saver.saves) != 0 {
+		t.Errorf("log %v, %d saves; want nothing done", w.log, len(w.saver.saves))
+	}
+}
+
+func TestAResumeWithoutTheAppKeyGivesTheDeleteGuidance(t *testing.T) {
+	w := newWorld(t)
+	w.vault.putErr[secrets.EntryAppKey] = secrets.ErrKeyringUnavailable
+	if _, err := w.run(context.Background()); err == nil {
+		t.Fatal("the first run did not stop")
+	}
+	w.vault.putErr = map[secrets.EntryKind]error{}
+	_, err := w.resume()
+	f := failureOf(t, err)
+	if f.Reason != ReasonKeyringWrite || !strings.Contains(f.Do, "https://github.com/settings/apps/"+w.gh.app.Slug) {
+		t.Errorf("failure = %+v, want the delete-the-App guidance", f)
+	}
+	last, _ := w.saver.last()
+	if last.Setup.IDs.AppID != 0 || last.Step != string(spine.StepSetupStarted) {
+		t.Errorf("record App %d at %q, want the App dropped", last.Setup.IDs.AppID, last.Step)
+	}
+}
+
+func TestAPrivateNameClashRerunsTheCloudflareNameChecks(t *testing.T) {
+	cases := []struct {
+		name     string
+		cfTaken  string
+		wantRepo string
+	}{
+		{"the next suffix is free", "", "example-site-2"},
+		{"the next suffix is taken on Cloudflare", "example-site-2", "example-site-3"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			w.gh.taken["example-site"] = true
+			if tc.cfTaken != "" {
+				w.cf.workers[tc.cfTaken] = "tag-other"
+			}
+			res, err := w.run(context.Background())
+			if err != nil {
+				t.Fatalf("Run: %v", err)
+			}
+			clash := slices.Index(w.log, "gh:create:example-site")
+			recheck := slices.Index(w.log, "cf:worker:example-site-2")
+			if clash < 0 || recheck < clash {
+				t.Errorf("log %v: the Cloudflare checks for -2 did not run after the clash", w.log)
+			}
+			if res.Summary.Repository != tc.wantRepo || res.Summary.Database != tc.wantRepo+"-auth" ||
+				res.Record.GitHub.Repo.Repo != tc.wantRepo || res.Summary.SuffixReason == "" {
+				t.Errorf("summary = %+v, record repo %q", res.Summary, res.Record.GitHub.Repo.Repo)
+			}
+		})
+	}
+}
+
+func TestATakenAppNameUsesTheSlugGitHubReturns(t *testing.T) {
+	w := newWorld(t)
+	w.gh.app.Slug = "cairn-example-site-by-owner"
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	i := slices.IndexFunc(w.tab.shown, func(p Page) bool { return p.Kind == PageManifest })
+	var m providers.Manifest
+	if i < 0 || json.Unmarshal([]byte(w.tab.shown[i].Manifest), &m) != nil || m.Name != "cairn-example-site" {
+		t.Fatalf("manifest page = %+v, want the planned App name", w.tab.shown)
+	}
+	if !slices.ContainsFunc(w.tab.shown, func(p Page) bool {
+		return p.Kind == PageRedirect && p.URL == providers.InstallURL("cairn-example-site-by-owner")
+	}) {
+		t.Error("the install page was not built from the slug GitHub returned")
+	}
+	if res.Record.Setup.AppSlug != "cairn-example-site-by-owner" || res.Summary.App != "cairn-example-site-by-owner" {
+		t.Errorf("record slug %q, summary App %q", res.Record.Setup.AppSlug, res.Summary.App)
+	}
+}
+
+func TestAFailedAppKeyWriteNamesTheAppToDelete(t *testing.T) {
+	w := newWorld(t)
+	w.vault.putErr[secrets.EntryAppKey] = secrets.ErrKeyringUnavailable
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonKeyringWrite || !strings.Contains(f.Did, "https://github.com/settings/apps/"+w.gh.app.Slug) {
+		t.Errorf("failure = %+v, want a keyring failure linking the App's settings", f)
+	}
+	last, _ := w.saver.last()
+	if last.Setup.IDs.AppID != w.gh.app.ID || last.Step == string(spine.StepAppCreated) {
+		t.Errorf("record step %q, App id %d: want the id kept and the step not advanced", last.Step, last.Setup.IDs.AppID)
+	}
+}
+
+func TestAnInstallCodeThatFailsResendsTheTab(t *testing.T) {
+	w := newWorld(t)
+	w.web.errs = []error{providers.ErrBadVerificationCode}
+	cbs := w.tab.script[loopback.GitHubCallback]
+	w.tab.script[loopback.GitHubCallback] = append([]func(string) (loopback.Callback, error){w.installsAll}, cbs...)
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	installPages := 0
+	for _, p := range w.tab.shown {
+		if p.Kind == PageRedirect && p.URL == providers.InstallURL(w.gh.app.Slug) {
+			installPages++
+		}
+	}
+	if installPages != 2 {
+		t.Errorf("install page shown %d times, want 2", installPages)
+	}
+}
+
+func TestAnInstallExchangeThatFailsOtherwiseStops(t *testing.T) {
+	w := newWorld(t)
+	w.web.errs = []error{&providers.GitHubError{Status: 502, Reason: providers.ReasonUnknown}}
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonProvider || f.Happened != "A request to GitHub failed." || f.Do == "" {
+		t.Errorf("failure = %+v, want the four-part GitHub failure", f)
+	}
+	if n := slices.Index(w.log, "wait:"+string(loopback.GitHubCallback)); n < 0 || strings.Count(strings.Join(w.log, " "), "wait:"+string(loopback.GitHubCallback)) != 1 {
+		t.Errorf("the install page was sent again: %v", w.log)
+	}
+	assertRegisteredAndUnseen(t, w)
+}
+
+func TestAnOverGrantedRepositoryApprovalIsDeletedAndAskedAgain(t *testing.T) {
+	w := newWorld(t)
+	first := w.tab.script[loopback.GitHubCallback][:1]
+	w.tab.script[loopback.GitHubCallback] = append(first, func(string) (loopback.Callback, error) {
+		w.gh.installs = append(w.gh.installs, install{ID: 5550040, AppID: w.gh.app.ID, Selection: "all"})
+		return loopback.Callback{Code: w.code("approve"), InstallationID: "5550040", SetupAction: "install"}, nil
+	}, w.installsRepo)
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !slices.Contains(w.log, "gh:delete:5550040") || res.Record.GitHub.InstallationID != repoInstallID {
+		t.Errorf("log %v, record installation %d", w.log, res.Record.GitHub.InstallationID)
+	}
+}
+
+// killAfter cancels the run's context once step reports done, the way Ctrl+C lands between two
+// steps.
+func killAfter(w *world, step string) context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	w.t.Cleanup(cancel)
+	w.cfg.Emit = func(e Event) {
+		w.events = append(w.events, e)
+		if e.Kind == StepDone && e.Step == step {
+			cancel()
+		}
+	}
+	return ctx
+}
+
+// resume runs the world again from its last record, with events recorded and nothing killed.
+func (w *world) resume() (Result, error) {
+	w.resumeFrom()
+	w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+	return w.run(context.Background())
+}
+
+func TestAKillAfterEachStepResumesWithoutRepeating(t *testing.T) {
+	steps := []string{StepApproveCloudflare, StepCloudflareChecks, StepApproveCreateApp, StepApproveInstall, StepApproveRepo,
+		StepScaffold, StepProvision, StepCommit, StepDeployKey, StepPush, StepFirstDeploy, StepDomains}
+	for _, step := range steps {
+		t.Run(step, func(t *testing.T) {
+			w := newWorld(t)
+			_, err := w.run(killAfter(w, step))
+			if f := failureOf(t, err); f.Reason != ReasonStopped {
+				t.Fatalf("reason = %s, want %s", f.Reason, ReasonStopped)
+			}
+			last, _ := w.saver.last()
+			if !last.Setup.KeysKept || len(w.vault.ofRun()) == 0 {
+				t.Errorf("after Ctrl+C: KeysKept %v, keyring %v; want the entries kept and said so", last.Setup.KeysKept, w.vault.ofRun())
+			}
+			if len(w.cfAuth.revoked) != 0 {
+				t.Error("a stopped run revoked its grant")
+			}
+
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			if w.events[0].Kind != Resumed {
+				t.Errorf("first resumed event = %+v, want resumed", w.events[0])
+			}
+			if res.Record.Step != string(spine.StepLive) || !res.Done.Emailed {
+				t.Errorf("resumed run ended at %q, done %+v", res.Record.Step, res.Done)
+			}
+			assertCreatedOnce(t, w)
+			if got := remoteHead(t, w); got != res.Record.Setup.Commit {
+				t.Errorf("remote main = %s, want the recorded commit", got)
+			}
+			if left := w.vault.ofRun(); len(left) != 0 {
+				t.Errorf("keyring holds %v after done", left)
+			}
+			assertRegisteredAndUnseen(t, w)
+		})
+	}
+	t.Run(StepSignIn, func(t *testing.T) {
+		w := newWorld(t)
+		res, err := w.run(killAfter(w, StepSignIn))
+		if err != nil || res.Record.Step != string(spine.StepLive) {
+			t.Fatalf("a kill after the last step: %v at %q, want the run finished", err, res.Record.Step)
+		}
+	})
+}
+
+func TestAKillBetweenACreateAndItsRecordWrite(t *testing.T) {
+	// killInCreate cancels the run while the create of kind is in flight, so the resource exists
+	// and the record never got its id.
+	killInCreate := func(w *world, kind string) context.Context {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Cleanup(cancel)
+		w.cf.onCreate = func(k string) {
+			if k == kind {
+				cancel()
+			}
+		}
+		return ctx
+	}
+	t.Run("an empty database is adopted", func(t *testing.T) {
+		w := newWorld(t)
+		_, err := w.run(killInCreate(w, "d1"))
+		if f := failureOf(t, err); f.Reason != ReasonStopped {
+			t.Fatalf("reason = %s", f.Reason)
+		}
+		last, _ := w.saver.last()
+		if last.Setup.Intents.D1 != "example-site-auth" || last.Setup.IDs.D1 != "" {
+			t.Fatalf("record intent %q, id %q; want the intent and no id", last.Setup.Intents.D1, last.Setup.IDs.D1)
+		}
+		w.cf.onCreate = nil
+		res, err := w.resume()
+		if err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		if res.Record.Setup.IDs.D1 != w.cf.d1["example-site-auth"].uuid {
+			t.Errorf("record database %q, want the adopted one", res.Record.Setup.IDs.D1)
+		}
+		assertCreatedOnce(t, w)
+	})
+	t.Run("a database that holds tables is refused", func(t *testing.T) {
+		w := newWorld(t)
+		_, _ = w.run(killInCreate(w, "d1"))
+		w.cf.onCreate = nil
+		w.cf.d1["example-site-auth"].tables = []string{"posts"}
+		_, err := w.resume()
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "example-site-auth") {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+	})
+	t.Run("a database whose id differs from the record is refused", func(t *testing.T) {
+		w := newWorld(t)
+		_, _ = w.run(killAfter(w, StepProvision))
+		w.cf.d1["example-site-auth"].uuid = "0a1b2c3d-4e5f-4a6b-8c7d-replaced0000"
+		rec, _ := w.saver.last()
+		rec.Step = string(spine.StepScaffolded)
+		w.saver.saves = append(w.saver.saves, rec)
+		_, err := w.resume()
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		if w.cf.creates["d1"] != 1 {
+			t.Errorf("database created %d times, want once", w.cf.creates["d1"])
+		}
+	})
+	t.Run("a bucket with no recorded id is refused", func(t *testing.T) {
+		w := newWorld(t)
+		_, _ = w.run(killInCreate(w, "r2"))
+		w.cf.onCreate = nil
+		_, err := w.resume()
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "example-site-media") || !strings.Contains(f.Do, "R2 Object Storage") {
+			t.Errorf("failure = %+v, want the not-ours stop with how to delete a bucket", f)
+		}
+	})
+}
+
+func TestAResumeAtTheDeployKeyReplacesTheKey(t *testing.T) {
+	w := newWorld(t)
+	w.gh.secretErr = &providers.GitHubError{Status: 500, Reason: providers.ReasonUnknown}
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonProvider || f.Happened != "A request to GitHub failed." || f.Left == "" || f.Do == "" ||
+		!strings.Contains(f.Did, "deploy key") {
+		t.Fatalf("failure = %+v, want the four-part GitHub failure", f)
+	}
+	last, _ := w.saver.last()
+	if last.Setup.IDs.DeployKeyID != "tok1" || last.Step != string(spine.StepCommitted) || w.pushed() {
+		t.Fatalf("record key %q at %q, pushed %v; want the stop before the push", last.Setup.IDs.DeployKeyID, last.Step, w.pushed())
+	}
+
+	res, err := w.resume()
+	if err != nil {
+		t.Fatalf("resume: %v", err)
+	}
+	del := slices.Index(w.log, "cf:delete-token:tok1")
+	mint := slices.Index(w.log[del+1:], "cf:create-deploy-key:run7")
+	if del < 0 || mint < 0 {
+		t.Errorf("log %v: want tok1 deleted before the next mint", w.log)
+	}
+	if _, ok := w.cf.userTokens["tok1"]; ok || len(w.cf.userTokens) != 1 || res.Record.Setup.IDs.DeployKeyID != "tok2" {
+		t.Errorf("tokens left %v, record %q; want only tok2", w.cf.userTokens, res.Record.Setup.IDs.DeployKeyID)
+	}
+	if w.gh.secrets["example-owner/example-site/"+providers.DeploySecretName] != w.cf.keysMinted[1].Value.Reveal() {
+		t.Error("the Actions secret is not the second key")
+	}
+	assertRegisteredAndUnseen(t, w)
+}
+
+func TestASpentGrantRerunsApprovalOneAlone(t *testing.T) {
+	spend := func(w *world) {
+		w.cfAuth.refreshErr = &providers.OAuthError{Status: 400, Code: "invalid_grant"}
+	}
+	t.Run("the reconsent continues", func(t *testing.T) {
+		w := newWorld(t)
+		_, _ = w.run(killAfter(w, StepProvision))
+		spend(w)
+		w.resumeFrom()
+		w.tab.push(loopback.CloudflareCallback, w.cloudflareApproves)
+		w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+		if _, err := w.run(context.Background()); err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		if w.events[0].Kind != Resumed {
+			t.Errorf("first event %+v, want resumed", w.events[0])
+		}
+		if got := w.waits(); !slices.Equal(got, []WaitState{WaitCloudflareReconsent}) {
+			t.Errorf("waiting states = %v, want approval 1's reconsent alone", got)
+		}
+		if len(w.tab.shown) == 0 || w.tab.shown[0].Kind != PageConsent {
+			t.Errorf("pages %+v, want the reconsent to open on the consent page", w.tab.shown)
+		}
+		if w.gh.creates["app"] != 1 || len(w.cfAuth.verifiers) != 2 {
+			t.Errorf("apps %d, Cloudflare exchanges %d", w.gh.creates["app"], len(w.cfAuth.verifiers))
+		}
+	})
+	t.Run("a grant without the recorded account is refused", func(t *testing.T) {
+		w := newWorld(t)
+		_, _ = w.run(killAfter(w, StepProvision))
+		spend(w)
+		w.cf.accounts = []providers.Account{{ID: "0000000000000000000000000000ex99", Name: "Another"}}
+		w.resumeFrom()
+		w.tab.push(loopback.CloudflareCallback, w.cloudflareApproves)
+		w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonAccountMissing {
+			t.Errorf("failure = %+v, want the account-missing stop", f)
+		}
+		if w.cf.creates["d1"] != 1 || w.cf.creates["deploy-key"] != 0 {
+			t.Error("the refused grant reached a create")
+		}
+	})
+}
+
+func TestOneFailurePerProviderStopsResumably(t *testing.T) {
+	t.Run("Cloudflare", func(t *testing.T) {
+		w := newWorld(t)
+		w.cf.createErr["r2"] = errors.New("cloudflare 500")
+		_, err := w.run(context.Background())
+		f := failureOf(t, err)
+		if f.Reason != ReasonProvider || f.Step != StepProvision || f.Happened != "A request to Cloudflare failed." ||
+			!strings.Contains(f.Did, "example-site-auth") || f.Left == "" || f.Do == "" {
+			t.Fatalf("failure = %+v, want the four-part Cloudflare failure", f)
+		}
+		if last := w.events[len(w.events)-1]; last.Kind != StepFailed || last.Failure.Reason != ReasonProvider {
+			t.Errorf("last event = %+v", last)
+		}
+		assertRegisteredAndUnseen(t, w)
+		delete(w.cf.createErr, "r2")
+		if _, err := w.resume(); err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		assertCreatedOnce(t, w)
+	})
+	t.Run("npm", func(t *testing.T) {
+		w := newWorld(t)
+		_, _ = w.run(killAfter(w, StepCommit))
+		w.fetchErr = errors.New("registry unreachable")
+		before, _ := w.saver.last()
+		_, err := w.resume()
+		f := failureOf(t, err)
+		if f.Reason != ReasonTemplate || f.Happened == "" || f.Do == "" || f.Did == nothingCreated {
+			t.Fatalf("failure = %+v, want the four-part template failure", f)
+		}
+		if after, _ := w.saver.last(); after.Step != before.Step {
+			t.Errorf("record step %q, want %q kept", after.Step, before.Step)
+		}
+		w.fetchErr = nil
+		if _, err := w.resume(); err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		assertCreatedOnce(t, w)
+	})
+}
+
+func TestTheHTTPSWaitStopsAtFifteenMinutes(t *testing.T) {
+	w := newWorld(t)
+	w.siteLive = false
+	start := w.clock.Now()
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonHTTPSTimeout || f.Step != StepDomains {
+		t.Fatalf("failure = %+v, want the HTTPS timeout at the domain step", f)
+	}
+	if waited := w.clock.Now().Sub(start); waited < HTTPSLimit || waited > HTTPSLimit+pollEvery {
+		t.Errorf("waited %v on the clock, want the 15-minute limit", waited)
+	}
+	if last, _ := w.saver.last(); last.Step != string(spine.StepDeployed) {
+		t.Errorf("record step %q, want deployed", last.Step)
+	}
+
+	w.siteLive = true
+	if _, err := w.resume(); err != nil {
+		t.Fatalf("resume: %v", err)
+	}
+	i := slices.IndexFunc(w.events, func(e Event) bool {
+		return e.Kind == StepStarted && slices.Contains([]string{StepScaffold, StepProvision, StepCommit, StepPush, StepDeployKey, StepFirstDeploy, StepDomains}, e.Step)
+	})
+	if i < 0 || w.events[i].Step != StepDomains {
+		t.Errorf("the resume's watch began at event %d of %+v, want the domain step", i, w.events)
+	}
+}
+
+func TestASummaryAddressEditIsRechecked(t *testing.T) {
+	t.Run("an address in use is asked again", func(t *testing.T) {
+		w := newWorld(t)
+		w.cf.dns["blog.carin-test-5.org"] = []providers.DNSRecord{{Name: "blog.carin-test-5.org", Type: "A"}}
+		w.view.edits = []SummaryEdit{{OwnerEmail: w.cf.email, Host: "blog.carin-test-5.org"}}
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if !slices.Equal(w.view.problems, []string{"", problemAddress}) {
+			t.Errorf("summary problems = %q, want the address refusal once", w.view.problems)
+		}
+		if res.Record.Setup.Address != "carin-test-5.org" {
+			t.Errorf("record address %q, want the zone kept", res.Record.Setup.Address)
+		}
+	})
+	t.Run("a free subdomain is used", func(t *testing.T) {
+		w := newWorld(t)
+		w.view.edits = []SummaryEdit{{OwnerEmail: "Owner@Example.test", Host: "Blog.carin-test-5.org"}}
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if !slices.Contains(w.log, "cf:dns:blog.carin-test-5.org") || !slices.Contains(w.log, "cf:domains:blog.carin-test-5.org") {
+			t.Errorf("log %v: the edited address was never checked", w.log)
+		}
+		if res.Record.Setup.Address != "blog.carin-test-5.org" || res.Record.Setup.OwnerEmail != "Owner@Example.test" ||
+			len(w.cf.attached) != 1 || w.cf.attached["blog.carin-test-5.org"] == "" {
+			t.Errorf("record %q, %q; attached %v", res.Record.Setup.Address, res.Record.Setup.OwnerEmail, w.cf.attached)
+		}
+		if len(w.cf.sent) != 1 || w.cf.sent[0].From != "no-reply@blog.carin-test-5.org" {
+			t.Errorf("emails = %+v", w.cf.sent)
+		}
+	})
+	t.Run("an empty email is refused", func(t *testing.T) {
+		w := newWorld(t)
+		w.cf.email = ""
+		w.view.edits = []SummaryEdit{{OwnerEmail: "", Host: "carin-test-5.org"}, {OwnerEmail: "owner@example.test", Host: "carin-test-5.org"}}
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if !slices.Equal(w.view.problems, []string{problemEmail, problemEmail}) || res.Record.Setup.OwnerEmail != "owner@example.test" {
+			t.Errorf("summary problems = %q, email %q", w.view.problems, res.Record.Setup.OwnerEmail)
+		}
+	})
+}
+
+func TestTheSignInLink(t *testing.T) {
+	t.Run("a link used in the tab is followed by one email", func(t *testing.T) {
+		w := newWorld(t)
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if len(w.tab.nexts) != 1 || !strings.HasPrefix(w.tab.nexts[0], "https://carin-test-5.org/admin/auth/confirm?token=") {
+			t.Fatalf("tab nexts = %v, want one confirm link", w.tab.nexts)
+		}
+		if !res.Done.SignedIn || len(w.cf.sent) != 1 {
+			t.Fatalf("done %+v, emails %d", res.Done, len(w.cf.sent))
+		}
+		m := w.cf.sent[0]
+		if m.From != "no-reply@carin-test-5.org" || m.To != w.cf.email || strings.Contains(m.Text, w.tab.nexts[0]) {
+			t.Errorf("email = %+v", m)
+		}
+		rows := w.cf.d1["example-site-auth"].tokens
+		if len(rows) != 1 || w.cf.d1["example-site-auth"].editors[strings.ToLower(w.cf.email)] != "owner" {
+			t.Errorf("token rows %v, editors %v; want the emailed row and the owner", rows, w.cf.d1["example-site-auth"].editors)
+		}
+		token := regexp.MustCompile(`token=([A-Za-z0-9_-]{43})`).FindStringSubmatch(m.Text)
+		if token == nil {
+			t.Fatal("the email carries no sign-in link")
+		}
+		if _, ok := rows[hashToken(token[1])]; !ok {
+			t.Error("the emailed link is not the stored row")
+		}
+	})
+	t.Run("a link that expires is followed by one email", func(t *testing.T) {
+		w := newWorld(t)
+		w.tab.onNext = nil
+		start := w.clock.Now()
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if res.Done.SignedIn || !res.Done.Emailed || len(w.cf.sent) != 1 || len(w.tab.nexts) != 1 {
+			t.Errorf("done %+v, emails %d, nexts %d", res.Done, len(w.cf.sent), len(w.tab.nexts))
+		}
+		if w.clock.Now().Sub(start) < tokenTTL {
+			t.Error("the run sent the email before the tab's link expired")
+		}
+	})
+	t.Run("a link a new request swept is not a sign-in", func(t *testing.T) {
+		w := newWorld(t)
+		w.tab.onNext = w.ownerRequestsALink
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if res.Done.SignedIn || !res.Done.Emailed || len(w.cf.sent) != 1 {
+			t.Errorf("done %+v, emails %d; want no sign-in claimed and one email", res.Done, len(w.cf.sent))
+		}
+	})
+	t.Run("apply sends one email at once", func(t *testing.T) {
+		w := newWorld(t)
+		w.cfg.Apply = true
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if len(w.tab.nexts) != 0 || len(w.cf.sent) != 1 || res.Done.SignedIn {
+			t.Errorf("nexts %v, emails %d, done %+v", w.tab.nexts, len(w.cf.sent), res.Done)
+		}
+	})
+	t.Run("an editor table without the owner gets no token", func(t *testing.T) {
+		w := newWorld(t)
+		w.cf.onCreate = func(kind string) {
+			if kind == "email" {
+				for _, db := range w.cf.d1 {
+					db.editors = map[string]string{"someone@example.test": "owner"}
+				}
+			}
+		}
+		w.cfg.Apply = true
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		db := w.cf.d1["example-site-auth"]
+		if !res.Done.NoSignIn || len(db.tokens) != 0 || len(w.cf.sent) != 0 || len(db.editors) != 1 {
+			t.Errorf("done %+v, tokens %v, emails %d, editors %v", res.Done, db.tokens, len(w.cf.sent), db.editors)
+		}
+	})
+	t.Run("a failed send is not a stop", func(t *testing.T) {
+		w := newWorld(t)
+		w.cf.sendErr = errors.New("email 500")
+		res, err := w.run(context.Background())
+		if err != nil || res.Done.Emailed {
+			t.Errorf("Run: %v, done %+v", err, res.Done)
+		}
+	})
+}
+
+func TestAFailedFirstDeployIsPushedAgainOnResume(t *testing.T) {
+	w := newWorld(t)
+	var failed string
+	w.gh.runFor = func(sha string) (providers.WorkflowRun, bool) {
+		if failed == "" || sha == failed {
+			failed = sha
+			return providers.WorkflowRun{Status: "completed", Conclusion: "failure", URL: "https://example.test/actions/runs/1"}, true
+		}
+		return providers.WorkflowRun{Status: "completed", Conclusion: "success"}, true
+	}
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonDeployFailed || !strings.Contains(f.Do, "https://example.test/actions/runs/1") {
+		t.Fatalf("failure = %+v, want the deploy failure naming the run", f)
+	}
+	res, err := w.resume()
+	if err != nil {
+		t.Fatalf("resume: %v", err)
+	}
+	if res.Record.Setup.Commit == failed || remoteHead(t, w) != res.Record.Setup.Commit {
+		t.Errorf("record commit %s, remote %s; want a new commit pushed", res.Record.Setup.Commit, remoteHead(t, w))
+	}
+}
+
+// failFirstDeploy makes the deploy of the first commit it is asked about fail and a later
+// commit's succeed. GitHub has no run for a commit the remote never received, so neither has
+// the fake. It returns the failed commit.
+func failFirstDeploy(w *world) *string {
+	failed := new(string)
+	w.gh.runFor = func(sha string) (providers.WorkflowRun, bool) {
+		if *failed == "" || sha == *failed {
+			*failed = sha
+			return providers.WorkflowRun{Status: "completed", Conclusion: "failure", URL: "https://example.test/actions/runs/1"}, true
+		}
+		if head, _ := w.gh.remoteHead("example-owner", "example-site", "main"); head != sha {
+			return providers.WorkflowRun{}, false
+		}
+		return providers.WorkflowRun{Status: "completed", Conclusion: "success"}, true
+	}
+	return failed
+}
+
+func TestARedeployStoppedMidwayResumes(t *testing.T) {
+	cases := []struct {
+		name string
+		stop func(w *world, failed string, cancel context.CancelFunc)
+		want Reason
+	}{
+		{"between the empty commit and its record", func(w *world, failed string, _ context.CancelFunc) {
+			killed := false
+			w.saver.onSave = func(r record.Record) error {
+				if killed || r.Setup.Commit != failed {
+					killed = true
+					return errors.New("test: the run was killed")
+				}
+				return nil
+			}
+		}, ReasonRecord},
+		{"between the record and the push", func(w *world, failed string, cancel context.CancelFunc) {
+			w.saver.onSave = func(r record.Record) error {
+				if r.Setup.Commit != failed {
+					w.saver.onSave = nil
+					cancel()
+				}
+				return nil
+			}
+		}, ReasonStopped},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			failed := failFirstDeploy(w)
+			_, err := w.run(context.Background())
+			if f := failureOf(t, err); f.Reason != ReasonDeployFailed {
+				t.Fatalf("first run reason = %s, want %s", f.Reason, ReasonDeployFailed)
+			}
+
+			w.resumeFrom()
+			w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			tc.stop(w, *failed, cancel)
+			_, err = w.run(ctx)
+			if f := failureOf(t, err); f.Reason != tc.want {
+				t.Fatalf("stopped resume reason = %s, want %s", f.Reason, tc.want)
+			}
+
+			w.saver.onSave = nil
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			if res.Record.Step != string(spine.StepLive) || remoteHead(t, w) != res.Record.Setup.Commit {
+				t.Errorf("record at %q, commit %s, remote %s; want the redeploy pushed and live", res.Record.Step, res.Record.Setup.Commit, remoteHead(t, w))
+			}
+			if parent := gitRun(t, res.Record.Setup.Folder, "rev-parse", "HEAD^"); parent != *failed {
+				t.Errorf("the redeploy's parent is %s, want the failed commit %s: one empty commit, not two", parent, *failed)
+			}
+		})
+	}
+}
+
+func TestAResumeReinstallsAnOverGrantedInstallation(t *testing.T) {
+	const reinstallID = 5550003
+	cases := []struct {
+		name   string
+		change func(in *install)
+	}{
+		{"the selection changed to all repositories", func(in *install) { in.Selection = "all" }},
+		{"an extra repository was added", func(in *install) { in.Repos = append(in.Repos, 4) }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			if _, err := w.run(killAfter(w, StepPush)); err == nil {
+				t.Fatal("the first run was not stopped")
+			}
+			for i := range w.gh.installs {
+				if w.gh.installs[i].ID == repoInstallID {
+					tc.change(&w.gh.installs[i])
+				}
+			}
+			w.resumeFrom()
+			w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+				w.gh.installs = append(w.gh.installs, install{ID: reinstallID, AppID: w.gh.app.ID, Selection: "selected", Repos: []int64{w.gh.repo.ID}})
+				return loopback.Callback{Code: w.code("approve"), InstallationID: strconv.Itoa(reinstallID), SetupAction: "install"}, nil
+			})
+			w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+			before := len(w.saver.saves)
+			res, err := w.run(context.Background())
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			ours := w.gh.ours()
+			if len(ours) != 1 || ours[0].ID != reinstallID || ours[0].Selection != "selected" || !slices.Equal(ours[0].Repos, []int64{w.gh.repo.ID}) {
+				t.Errorf("our installations = %+v, want only the new one on the site's repository", ours)
+			}
+			if res.Record.Step != string(spine.StepLive) || res.Record.GitHub.InstallationID != reinstallID {
+				t.Errorf("record at %q, installation %d", res.Record.Step, res.Record.GitHub.InstallationID)
+			}
+			for _, r := range w.saver.saves[before:] {
+				if !reached(r.Step, spine.StepPushed) {
+					t.Fatalf("a save moved the record back to %q", r.Step)
+				}
+			}
+			if w.cf.creates["d1"] != 1 || w.gh.creates["repo"] != 1 || len(w.view.opened) != 1 {
+				t.Errorf("databases %d, repositories %d, browser opened %d; want the reinstall alone", w.cf.creates["d1"], w.gh.creates["repo"], len(w.view.opened))
+			}
+			assertRegisteredAndUnseen(t, w)
+		})
+	}
+}
+
+// newInstallID is the installation a resume's approval 4 makes after the sweep removed the
+// recorded one.
+const newInstallID = 5550004
+
+// installMessage is the message of the commit that writes a new installation into the site's
+// settings.
+const installMessage = "Update the GitHub App installation"
+
+// reinstallAfter runs w until step is done, widens the recorded installation to all
+// repositories, and sets w up to resume with approval 4 run again as newInstallID. It returns
+// the commit the record held at the stop. Each deploy run the fake is asked about is appended
+// to asked, and GitHub has no run for a commit the remote never received.
+func reinstallAfter(t *testing.T, w *world, step string, asked *[]string) string {
+	t.Helper()
+	w.gh.runFor = func(sha string) (providers.WorkflowRun, bool) {
+		*asked = append(*asked, sha)
+		if head, _ := w.gh.remoteHead("example-owner", "example-site", "main"); head != sha {
+			return providers.WorkflowRun{}, false
+		}
+		return providers.WorkflowRun{Status: "completed", Conclusion: "success"}, true
+	}
+	if _, err := w.run(killAfter(w, step)); err == nil {
+		t.Fatal("the first run was not stopped")
+	}
+	for i := range w.gh.installs {
+		if w.gh.installs[i].ID == repoInstallID {
+			w.gh.installs[i].Selection = "all"
+		}
+	}
+	w.resumeFrom()
+	w.tab.push(loopback.GitHubCallback, func(string) (loopback.Callback, error) {
+		w.gh.installs = append(w.gh.installs, install{ID: newInstallID, AppID: w.gh.app.ID, Selection: "selected", Repos: []int64{w.gh.repo.ID}})
+		return loopback.Callback{Code: w.code("approve"), InstallationID: strconv.Itoa(newInstallID), SetupAction: "install"}, nil
+	})
+	w.cfg.Emit = func(e Event) { w.events = append(w.events, e) }
+	return w.cfg.Resume.Record.Setup.Commit
+}
+
+// configAt reads the site's settings file at rev in the git repository at dir.
+func configAt(t *testing.T, dir, rev string) string {
+	t.Helper()
+	return gitRun(t, dir, "show", rev+":"+siteConfig)
+}
+
+// namesInstall reports whether a settings file's App identity names installation id.
+func namesInstall(config string, id int64) bool {
+	return strings.Contains(config, "installationId: '"+strconv.FormatInt(id, 10)+"' })")
+}
+
+// assertSettingsFollowTheReinstall checks a run that ended live after a reinstall past the commit
+// step: one settings commit on the commit the record held at the stop, the remote at the
+// recorded commit with the new installation in its settings, and that commit's deploy run read.
+func assertSettingsFollowTheReinstall(t *testing.T, w *world, res Result, before string, asked []string) {
+	t.Helper()
+	rec := res.Record
+	if rec.Step != string(spine.StepLive) || rec.GitHub.InstallationID != newInstallID {
+		t.Fatalf("record at %q, installation %d; want live on %d", rec.Step, rec.GitHub.InstallationID, newInstallID)
+	}
+	remote := filepath.Join(w.gh.remotes, "example-owner", "example-site.git")
+	if got := remoteHead(t, w); got != rec.Setup.Commit {
+		t.Errorf("remote main = %s, want the recorded commit %s", got, rec.Setup.Commit)
+	}
+	if cfg := configAt(t, remote, "main"); !namesInstall(cfg, newInstallID) || namesInstall(cfg, repoInstallID) {
+		t.Errorf("the remote's settings = %q, want the new installation %d", cfg, newInstallID)
+	}
+	var n int
+	for line := range strings.SplitSeq(gitRun(t, remote, "log", "--format=%s", "main"), "\n") {
+		if line == installMessage {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Errorf("the remote holds %d settings commits, want one", n)
+	}
+	if got := gitRun(t, remote, "rev-parse", "main^"); got != before {
+		t.Errorf("the settings commit's parent = %s, want the commit recorded at the stop %s", got, before)
+	}
+	if got := gitRun(t, remote, "log", "-1", "--format=%s", "main"); got != installMessage {
+		t.Errorf("the remote's last commit is %q, want %q", got, installMessage)
+	}
+	if !slices.Contains(asked, rec.Setup.Commit) {
+		t.Errorf("setup never read the deploy run of the settings commit %s", rec.Setup.Commit)
+	}
+	if ours := w.gh.ours(); len(ours) != 1 || ours[0].ID != newInstallID {
+		t.Errorf("our installations = %+v, want only the new one", ours)
+	}
+}
+
+func TestAReinstallPastTheCommitWritesTheNewInstallation(t *testing.T) {
+	t.Run("before the push", func(t *testing.T) {
+		w := newWorld(t)
+		var asked []string
+		before := reinstallAfter(t, w, StepCommit, &asked)
+		var atPush string
+		w.cfg.Emit = func(e Event) {
+			w.events = append(w.events, e)
+			if e.Kind == StepStarted && e.Step == StepPush {
+				atPush = configAt(t, w.cfg.Resume.Record.Setup.Folder, "HEAD")
+			}
+		}
+		res, err := w.run(context.Background())
+		if err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		if !namesInstall(atPush, newInstallID) {
+			t.Errorf("the settings the push sent = %q, want the new installation %d", atPush, newInstallID)
+		}
+		assertSettingsFollowTheReinstall(t, w, res, before, asked)
+	})
+	for _, step := range []string{StepPush, StepFirstDeploy} {
+		t.Run("after "+step, func(t *testing.T) {
+			w := newWorld(t)
+			var asked []string
+			before := reinstallAfter(t, w, step, &asked)
+			res, err := w.run(context.Background())
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			assertSettingsFollowTheReinstall(t, w, res, before, asked)
+		})
+	}
+}
+
+func TestAReinstallCommitStoppedMidwayResumes(t *testing.T) {
+	cases := []struct {
+		name string
+		step string
+		// stop arms the stop on the resumed run's saves; before is the commit the record held.
+		stop func(w *world, before string, cancel context.CancelFunc)
+		want Reason
+	}{
+		{"between the commit and its record, before the push", StepCommit, killAtRecord, ReasonRecord},
+		{"between the commit and its record, after the push", StepPush, killAtRecord, ReasonRecord},
+		{"between the commit and its record, after the deploy", StepFirstDeploy, killAtRecord, ReasonRecord},
+		{"between the record and the push, after the deploy", StepFirstDeploy, func(w *world, before string, cancel context.CancelFunc) {
+			w.saver.onSave = func(r record.Record) error {
+				if r.Setup.Commit != before {
+					w.saver.onSave = nil
+					cancel()
+				}
+				return nil
+			}
+		}, ReasonStopped},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			var asked []string
+			before := reinstallAfter(t, w, tc.step, &asked)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			tc.stop(w, before, cancel)
+			_, err := w.run(ctx)
+			if f := failureOf(t, err); f.Reason != tc.want {
+				t.Fatalf("stopped resume reason = %s, want %s", f.Reason, tc.want)
+			}
+
+			w.saver.onSave = nil
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			assertSettingsFollowTheReinstall(t, w, res, before, asked)
+			if got := gitRun(t, res.Record.Setup.Folder, "rev-parse", "HEAD^"); got != before {
+				t.Errorf("the folder's settings commit sits on %s, want %s: one commit, not two", got, before)
+			}
+		})
+	}
+}
+
+// killAtRecord fails the first save of a commit other than before, and every save after it, the
+// way a kill lands after a commit and before the record holds it.
+func killAtRecord(w *world, before string, _ context.CancelFunc) {
+	killed := false
+	w.saver.onSave = func(r record.Record) error {
+		if killed || r.Setup.Commit != before {
+			killed = true
+			return errors.New("test: the run was killed")
+		}
+		return nil
+	}
+}
+
+// TestTheGrantStaysFreshThroughTheFirstDeploy starts the first deploy 44 minutes after the
+// grant, under the step-start refresh, and lets the deploy run 20 minutes, past the access
+// token's hour.
+func TestTheGrantStaysFreshThroughTheFirstDeploy(t *testing.T) {
+	w := newWorld(t)
+	var started time.Time
+	w.cfg.Emit = func(e Event) {
+		w.events = append(w.events, e)
+		if e.Kind == StepStarted && e.Step == StepFirstDeploy {
+			<-w.clock.After(44 * time.Minute)
+			started = w.clock.Now()
+		}
+	}
+	w.gh.runFor = func(string) (providers.WorkflowRun, bool) {
+		if w.clock.Now().Sub(started) < 20*time.Minute {
+			return providers.WorkflowRun{Status: "in_progress"}, true
+		}
+		return providers.WorkflowRun{Status: "completed", Conclusion: "success"}, true
+	}
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if w.cf.secrets["example-site/"+workerKeySecret] == "" || res.Record.Step != string(spine.StepLive) {
+		t.Errorf("the Worker secret is unset, record at %q", res.Record.Step)
+	}
+}
+
+func TestAResumePastTheFirstDeployInstallsTheDependencies(t *testing.T) {
+	for _, step := range []string{StepFirstDeploy, StepDomains} {
+		t.Run(step, func(t *testing.T) {
+			w := newWorld(t)
+			failNPM(t, w)
+			if _, err := w.run(killAfter(w, step)); err == nil {
+				t.Fatal("the first run was not stopped")
+			}
+			if err := os.Remove(w.npmEnv); err != nil && !os.IsNotExist(err) {
+				t.Fatal(err)
+			}
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			if _, err := os.Stat(w.npmEnv); err != nil || !res.Done.InstallFailed {
+				t.Errorf("npm ran on the resume: %v; done %+v; want the install run and its failure reported", err == nil, res.Done)
+			}
+		})
+	}
+	t.Run("a recorded install is not run again", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepDomains)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.DepsInstalled = true
+		w.saver.saves = append(w.saver.saves, rec)
+		failNPM(t, w)
+		if err := os.Remove(w.npmEnv); err != nil && !os.IsNotExist(err) {
+			t.Fatal(err)
+		}
+		res, err := w.resume()
+		if err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		if _, err := os.Stat(w.npmEnv); err == nil || res.Done.InstallFailed || !res.Record.Setup.DepsInstalled {
+			t.Errorf("npm ran again: %v; done %+v, record installed %v", err == nil, res.Done, res.Record.Setup.DepsInstalled)
+		}
+		// The earlier run's install skipped the lifecycle scripts too.
+		if !res.Done.ScriptsSkipped {
+			t.Errorf("done %+v, want the skipped scripts reported", res.Done)
+		}
+	})
+	t.Run("a finished run records the install", func(t *testing.T) {
+		w := newWorld(t)
+		res, err := w.run(context.Background())
+		if err != nil || !res.Record.Setup.DepsInstalled {
+			t.Errorf("Run: %v, record installed %v; want the clean install recorded", err, res.Record.Setup.DepsInstalled)
+		}
+	})
+}
+
+func TestAKillAfterTheRepositoryCreate(t *testing.T) {
+	// killInCreate stops the run once GitHub has made the repository and before the record holds
+	// its id, which leaves the name as an intent.
+	killInCreate := func(w *world) {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Cleanup(cancel)
+		w.gh.afterCreate = func() {
+			w.gh.afterCreate = nil
+			cancel()
+		}
+		_, err := w.run(ctx)
+		if f := failureOf(t, err); f.Reason != ReasonStopped {
+			t.Fatalf("reason = %s, want %s", f.Reason, ReasonStopped)
+		}
+		last, _ := w.saver.last()
+		if last.Setup.Intents.Repo != "example-site" || last.GitHub.Repo.ID != 0 {
+			t.Fatalf("record intent %q, id %d; want the intent and no id", last.Setup.Intents.Repo, last.GitHub.Repo.ID)
+		}
+	}
+	t.Run("an empty repository is adopted", func(t *testing.T) {
+		w := newWorld(t)
+		killInCreate(w)
+		res, err := w.resume()
+		if err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		if res.Record.GitHub.Repo.Repo != "example-site" || res.Record.GitHub.Repo.ID != w.gh.repo.ID || res.Summary.SuffixReason != "" {
+			t.Errorf("record repository %+v, suffix reason %q; want the adopted one", res.Record.GitHub.Repo, res.Summary.SuffixReason)
+		}
+		if !slices.Contains(w.log, "gh:repo:example-owner/example-site") {
+			t.Errorf("log %v never read the repository by name", w.log)
+		}
+		if w.gh.creates["repo"] != 1 || w.gh.creates["app"] != 1 || w.cf.creates["d1"] != 1 {
+			t.Errorf("repositories %d, Apps %d, databases %d; want one each", w.gh.creates["repo"], w.gh.creates["app"], w.cf.creates["d1"])
+		}
+	})
+	refused := []struct {
+		name  string
+		setup func(w *world)
+	}{
+		{"a repository with commits is refused", func(w *world) {
+			dir := t.TempDir()
+			gitRun(t, dir, "init", "--quiet", "-b", "main")
+			gitRun(t, dir, "commit", "--quiet", "--allow-empty", "-m", "someone else's work")
+			gitRun(t, dir, "push", "--quiet", filepath.Join(w.gh.remotes, "example-owner", "example-site.git"), "HEAD:refs/heads/main")
+		}},
+		{"a repository another account owns is refused", func(w *world) {
+			w.gh.ownerOf["example-site"] = "someone-else"
+			w.gh.ownerIDOf = map[string]int64{"example-site": 7001}
+		}},
+		{"a repository of the owner's login under another account id is refused", func(w *world) {
+			w.gh.ownerIDOf = map[string]int64{"example-site": 7001}
+		}},
+		{"a public repository is refused", func(w *world) { w.gh.public["example-site"] = true }},
+	}
+	for _, tc := range refused {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			killInCreate(w)
+			tc.setup(w)
+			_, err := w.resume()
+			f := failureOf(t, err)
+			if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "example-site") || f.Do == "" {
+				t.Errorf("failure = %+v, want the not-ours stop naming the repository", f)
+			}
+			if w.gh.creates["repo"] != 1 {
+				t.Errorf("repositories created %d, want the one, with no suffixed repository left behind", w.gh.creates["repo"])
+			}
+		})
+	}
+}
+
+// TestTheTableReadMatchesNoNameByWildcard holds the empty-database read to exact prefixes: in a
+// LIKE pattern "_" matches any one character, so 'sqlite_%' or '_cf_%' would also hide a table
+// the site made and report a database empty.
+func TestTheTableReadMatchesNoNameByWildcard(t *testing.T) {
+	if regexp.MustCompile(`(?i)LIKE\s+'[^']*_`).MatchString(sqlTables) {
+		t.Errorf("sqlTables = %q, want no LIKE pattern holding a \"_\"", sqlTables)
+	}
+}
+
+func TestChildOutputNeverReachesTheTerminal(t *testing.T) {
+	w := newWorld(t)
+	outR, outW, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	errR, errW, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdout, stderr := os.Stdout, os.Stderr
+	os.Stdout, os.Stderr = outW, errW
+	_, runErr := w.run(context.Background())
+	os.Stdout, os.Stderr = stdout, stderr
+	_ = outW.Close()
+	_ = errW.Close()
+	printed, _ := io.ReadAll(io.MultiReader(outR, errR))
+	if runErr != nil {
+		t.Fatalf("Run: %v", runErr)
+	}
+	if len(printed) != 0 {
+		t.Errorf("the run printed %q", printed)
+	}
+	env, err := os.ReadFile(w.npmEnv)
+	if err != nil {
+		t.Fatalf("npm never ran: %v", err)
+	}
+	if strings.Contains(string(env), "GH_TOKEN") || strings.Contains(string(env), "CLOUDFLARE_API_TOKEN") {
+		t.Error("npm inherited a token variable")
+	}
+}
+
+func TestNodeMajor(t *testing.T) {
+	cases := []struct {
+		in   string
+		want int
+		ok   bool
+	}{
+		{"v24.1.0\n", 24, true},
+		{"v22.11.0", 22, true},
+		{"24.0.0", 24, true},
+		{"", 0, false},
+		{"node", 0, false},
+	}
+	for _, tc := range cases {
+		got, err := nodeMajor(tc.in)
+		if (err == nil) != tc.ok || got != tc.want {
+			t.Errorf("nodeMajor(%q) = %d, %v", tc.in, got, err)
+		}
+	}
+}
+
+// TestTheWorkerIntentIsRecordedBeforeThePush pins that the record names the Worker the first
+// deploy creates before the push that starts that deploy.
+func TestTheWorkerIntentIsRecordedBeforeThePush(t *testing.T) {
+	w := newWorld(t)
+	remote := filepath.Join(w.gh.remotes, "example-owner", "example-site.git")
+	recorded, pushed := false, false
+	w.saver.onSave = func(rec record.Record) error {
+		if recorded || rec.Setup.Intents.Worker == "" {
+			return nil
+		}
+		recorded = true
+		if rec.Setup.Intents.Worker != "example-site" {
+			t.Errorf("Worker intent = %q, want example-site", rec.Setup.Intents.Worker)
+		}
+		cmd := exec.Command("git", "--git-dir", remote, "rev-parse", "--verify", "--quiet", "HEAD")
+		pushed = cmd.Run() == nil
+		return nil
+	}
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !recorded || pushed {
+		t.Errorf("Worker intent recorded %v, after the push %v; want it recorded before the push", recorded, pushed)
+	}
+	if err := exec.Command("git", "--git-dir", remote, "rev-parse", "--verify", "--quiet", "HEAD").Run(); err != nil {
+		t.Errorf("the remote at %s holds no push after the run: %v", remote, err)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
+
+// TestFetchFromReadsTheTaggedTemplate pins that FetchFrom resolves the tag it is given and hands
+// back that version, its integrity, the catalog's themes, and the tree.
+func TestFetchFromReadsTheTaggedTemplate(t *testing.T) {
+	var gz bytes.Buffer
+	zw := gzip.NewWriter(&gz)
+	tw := tar.NewWriter(zw)
+	for name, body := range map[string]string{
+		"package/template/catalog.json":         `{"themes":[{"id":"waymark","name":"Waymark","path":"themes/waymark"}]}`,
+		"package/template/themes/waymark/a.txt": "a",
+	} {
+		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o644, Size: int64(len(body)), Typeflag: tar.TypeReg}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	tarball := gz.Bytes()
+	sum := sha512.Sum512(tarball)
+	integrity := "sha512-" + base64.StdEncoding.EncodeToString(sum[:])
+	const registry = "https://registry.npmjs.org/"
+	tarURL := registry + "engine-2.0.0-next.3.tgz"
+	doc, err := json.Marshal(map[string]any{
+		"dist-tags": map[string]string{"latest": "1.9.0", "next": "2.0.0-next.3"},
+		"versions": map[string]any{
+			"1.9.0":        map[string]any{"dist": map[string]string{"tarball": registry + "engine-1.9.0.tgz", "integrity": integrity}},
+			"2.0.0-next.3": map[string]any{"dist": map[string]string{"tarball": tarURL, "integrity": integrity}},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rt := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		body := doc
+		if req.URL.String() == tarURL {
+			body = tarball
+		}
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(body)), Request: req}, nil
+	})
+
+	got, err := FetchFrom(scaffold.NewFetcher(rt), "next")(t.Context())
+	if err != nil {
+		t.Fatalf("FetchFrom: %v", err)
+	}
+	if got.Version != "2.0.0-next.3" || got.Integrity != integrity || got.Tree == nil {
+		t.Errorf("template = %q, %q, tree %v; want the next tag's version and integrity with its tree", got.Version, got.Integrity, got.Tree != nil)
+	}
+	if len(got.Themes) != 1 || got.Themes[0].ID != "waymark" || got.Themes[0].Path != "themes/waymark" {
+		t.Errorf("themes = %+v, want the catalog's one theme", got.Themes)
+	}
+	if _, err := FetchFrom(scaffold.NewFetcher(rt), "beta")(t.Context()); err == nil {
+		t.Error("FetchFrom of a tag the registry lacks succeeded")
+	}
+}

@@ -1,7 +1,7 @@
 # Fixture corpus
 
-This directory holds the literal API response bodies `test/fake-cloudflare.mjs` and
-`test/fake-github.mjs` play back, extracted out of those two files so a second reader can load
+This directory holds the literal API response bodies `packages/create-cairn-site/test/fake-cloudflare.mjs` and
+`packages/create-cairn-site/test/fake-github.mjs` play back, extracted out of those two files so a second reader can load
 the same captured bodies by path. One file per captured body, named
 `<endpoint-slug>.<variant>.json`, grouped under `cloudflare/` or `github/`.
 
@@ -30,7 +30,7 @@ names that comment's file and line in the fake, and `note` says so.
 
 Nothing about this corpus assumes a JavaScript reader. `provenance` and `body` are plain JSON,
 so the `tool/` Go module's tests read these files directly off disk by path, the same way
-`test/fake-server.mjs`'s `loadFixture` helper does for the two Node fakes. A reader needs only
+`packages/create-cairn-site/test/fake-server.mjs`'s `loadFixture` helper does for the two Node fakes. A reader needs only
 `status` and `body`; `provenance` is documentation, not part of the request/response contract.
 
 ## No real identifiers
@@ -39,8 +39,9 @@ No fixture may carry a real editor's email address, a Cloudflare ray id, an acco
 id, or a worker name. Every body here is a real captured API response, but the identifiers in it
 are scratch or estate values scrubbed to the fake shapes the code already used before
 extraction (a scratch domain, a synthetic hex id), never a value that identifies a person or a
-production account. `test/fixtures-hygiene.test.mjs` gates this: it walks every file here and
-fails on an email-shaped string or the estate account id.
+production account. `tool/testdata/fixtures-hygiene.test.mjs` gates this: it walks every file here and
+fails on an email-shaped string, the estate account id, or a personal-data field (`first_name`,
+`last_name`, `telephone`, `zipcode`, `organizations`).
 
 One file is the exception to "a real captured API response":
 `cloudflare/observability-telemetry-query.ok.json` carries a live-recorded envelope around three
@@ -49,6 +50,11 @@ synthesized records, so one fixture covers three engine events and two levels. I
 `cloudflare/observability-telemetry-query.events.200.json` beside it is live all the way down, and
 so is `cloudflare/observability-telemetry-query.mixed-lines.200.json`, which carries both kinds of
 line a Worker writes: one cairn engine record and one bare `console.error` line.
+
+`github/test-only.app-credentials.json` is not an API response at all. The recorded manifest
+conversion scrubs its `pem` and secrets, so this file carries a TEST-ONLY RSA key and two distinct
+secret values for the tests that sign with the key or tell the secrets apart. Its name starts
+with `test-only` so it cannot be read as a recording.
 
 ## One recorded response per route
 
@@ -66,7 +72,9 @@ sent it, because those are the parts a fixture exists to pin.
 
 ## When this corpus moves
 
-The day the Go tool leaves this repository (its top-level module, its history), this
-corpus moves with it. The tool's tests are the reason the corpus exists as data rather than as
-inline JavaScript object literals: a Go test cannot import a `.mjs` module, and the two fakes
-already prove these bodies match the real platforms.
+The corpus lives under `tool/testdata/fixtures/`, inside the Go module, so it leaves the
+repository with the tool. The day the tool does, the two Node fakes in
+`packages/create-cairn-site/test/` lose their path to it and need a copy or a package of their
+own. The tool's tests are the reason the corpus exists as data rather than as inline JavaScript
+object literals: a Go test cannot import a `.mjs` module, and the two fakes already prove these
+bodies match the real platforms.

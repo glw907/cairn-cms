@@ -378,6 +378,31 @@ export function checkNoToolPathPacked(filePaths) {
   return { ok: true };
 }
 
+// The template tree `pack-engine-template.mjs` writes. The composed tree's `.gitignore` ships as
+// `gitignore` because npm's packlist drops the dotted name, so its absence means the script did
+// not run before the pack.
+const TEMPLATE_ENTRY_PATHS = [
+  'template/catalog.json',
+  'template/waymark/gitignore',
+  'template/waymark/.dev.vars.example'
+];
+
+/**
+ * Check a packed file list for the template catalog and the composed Waymark tree's floor entries.
+ * @param {string[]} filePaths the paths npm would include in the tarball
+ * @returns {{ ok: true } | { ok: false, error: string }}
+ */
+export function checkTemplatePacked(filePaths) {
+  const missing = TEMPLATE_ENTRY_PATHS.filter((path) => !filePaths.includes(path));
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      error: `the packed tarball is missing ${missing.join(', ')}; run scripts/build/pack-engine-template.mjs before npm pack, and keep "template" in package.json "files"`
+    };
+  }
+  return { ok: true };
+}
+
 // The generated export-signature snapshot. A consumer's agent reads it from node_modules to get the
 // exact signature of every export, so a tarball without it leaves the skill's pointer dangling.
 const API_SURFACE_PATH = 'scripts/checks/api-surface.md';
@@ -451,6 +476,13 @@ function main() {
   const claudeTreeResult = checkClaudeTreePacked(files);
   if (!claudeTreeResult.ok) {
     console.error(`check-package-files: ${claudeTreeResult.error}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const templateResult = checkTemplatePacked(files);
+  if (!templateResult.ok) {
+    console.error(`check-package-files: ${templateResult.error}`);
     process.exitCode = 1;
     return;
   }

@@ -10,9 +10,17 @@ import (
 	"testing"
 )
 
+// allowedBuildTags maps the one file permitted a //go:build line to the exact
+// line it must carry. ADR-0003 makes cairne2e the end-to-end binary's test tag,
+// and keyring_e2e.go is the file it compiles; a release build never sets it.
+var allowedBuildTags = map[string]string{
+	"internal/secrets/keyring_e2e.go": "//go:build cairne2e\n",
+}
+
 // TestNoBuildTags asserts no .go file under the tool module carries a
-// //go:build line. The module ships no platform-specific behavior gated by
-// build tags; GOOS filename suffixes are the only mechanism it uses.
+// //go:build line, apart from the test tag in allowedBuildTags. The module
+// ships no platform-specific behavior gated by build tags; GOOS filename
+// suffixes are the only mechanism it uses.
 func TestNoBuildTags(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -54,6 +62,11 @@ func TestNoBuildTags(t *testing.T) {
 			rel, relErr := filepath.Rel(root, path)
 			if relErr != nil {
 				rel = path
+			}
+			rel = filepath.ToSlash(rel)
+			if line, ok := allowedBuildTags[rel]; ok && strings.HasPrefix(string(data), line) &&
+				strings.Count(string(data), "//go:build") == 1 {
+				return nil
 			}
 			offenders = append(offenders, rel)
 		}

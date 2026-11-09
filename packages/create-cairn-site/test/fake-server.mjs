@@ -18,8 +18,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Read the captured body out of `fixtures/<provider>/<name>.json`, the corpus each fake plays its
- * responses back from (see `fixtures/README.md`). The file's `provenance` record is documentation
+ * Read the captured body out of `tool/testdata/fixtures/<provider>/<name>.json`, the corpus each fake plays its
+ * responses back from (see `tool/testdata/fixtures/README.md`). The file's `provenance` record is documentation
  * for a reader of the corpus, not part of the response, so it is not returned. The Go tool reads
  * the same files by path, so this stays a plain synchronous file read rather than a bundler
  * import: no build step sits between the corpus and either reader.
@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
  * @returns {any} the fixture's captured response body
  */
 export function loadFixture(provider, name) {
-  const path = fileURLToPath(new URL(`../fixtures/${provider}/${name}.json`, import.meta.url));
+  const path = fileURLToPath(new URL(`../../../tool/testdata/fixtures/${provider}/${name}.json`, import.meta.url));
   return JSON.parse(readFileSync(path, 'utf8')).body;
 }
 

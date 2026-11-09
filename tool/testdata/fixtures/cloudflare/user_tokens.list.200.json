@@ -1,0 +1,32 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/user/subresources/tokens/methods/list/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      {
+        "id": "00000000000000000000000000000t01",
+        "name": "cairn-deploy-run1",
+        "status": "active"
+      },
+      {
+        "id": "00000000000000000000000000000t02",
+        "name": "unrelated",
+        "status": "active"
+      }
+    ],
+    "result_info": {
+      "page": 1,
+      "per_page": 20,
+      "count": 2,
+      "total_count": 2,
+      "total_pages": 1
+    }
+  }
+}

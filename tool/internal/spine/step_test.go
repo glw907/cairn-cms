@@ -148,3 +148,16 @@ func TestTerminalStepSeams(t *testing.T) {
 		})
 	}
 }
+
+func TestSetupStepsAreDistinctFromWizardSteps(t *testing.T) {
+	seen := map[Step]bool{}
+	for _, s := range setupSteps {
+		if allSteps[s] {
+			t.Errorf("setup step %q is also a wizard step", s)
+		}
+		if seen[s] {
+			t.Errorf("setup step %q is listed twice", s)
+		}
+		seen[s] = true
+	}
+}

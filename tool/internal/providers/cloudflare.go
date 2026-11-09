@@ -46,7 +46,7 @@ type v4Error struct {
 // /accounts/{id}/workers/domains carrying per_page and total_count and no total_pages at all,
 // and /accounts/{id}/workers/scripts, /zones/{id}/settings, and the Email Sending subdomains
 // route carrying no result_info whatsoever. morePages reads whichever of them arrived; the
-// recorded bodies are in packages/create-cairn-site/fixtures/cloudflare.
+// recorded bodies are in tool/testdata/fixtures/cloudflare.
 type resultInfo struct {
 	TotalPages int `json:"total_pages"`
 	TotalCount int `json:"total_count"`
@@ -435,7 +435,7 @@ func (cf *Cloudflare) EmailSendingSubdomains(ctx context.Context, zoneID string)
 // ObservabilityResult is a Workers Logs telemetry query's "result" object. Its "events" member
 // is an object rather than an array, which a live capture on 2026-09-21 established and the
 // synthesized fixture this package used to decode did not
-// (packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.events.200.json).
+// (tool/testdata/fixtures/cloudflare/observability-telemetry-query.events.200.json).
 // "run" and "statistics" sit beside it and carry nothing a caller here reads.
 type ObservabilityResult struct {
 	// Events is the result's "events" object.

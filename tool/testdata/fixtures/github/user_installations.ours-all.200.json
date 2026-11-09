@@ -1,0 +1,33 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://docs.github.com/en/rest/apps/installations#list-app-installations-accessible-to-the-user-access-token",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "total_count": 2,
+    "installations": [
+      {
+        "id": 5550001,
+        "app_id": 15368,
+        "app_slug": "cloudflare-workers-and-pages",
+        "repository_selection": "all",
+        "account": {
+          "login": "example-owner",
+          "id": 4242
+        }
+      },
+      {
+        "id": 5550002,
+        "app_id": 1234567,
+        "app_slug": "cairn-example-site",
+        "repository_selection": "all",
+        "account": {
+          "login": "example-owner",
+          "id": 4242
+        }
+      }
+    ]
+  }
+}

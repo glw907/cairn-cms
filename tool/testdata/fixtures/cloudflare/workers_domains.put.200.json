@@ -1,0 +1,24 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/workers/subresources/domains/methods/update/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": {
+      "id": "0000000000000000000000000000ew02",
+      "cert_id": "00000000-0000-0000-0000-000000000002",
+      "enabled": true,
+      "environment": "production",
+      "hostname": "www.example.test",
+      "previews_enabled": false,
+      "service": "example-site",
+      "zone_id": "0000000000000000000000000000ez01",
+      "zone_name": "example.test"
+    }
+  }
+}

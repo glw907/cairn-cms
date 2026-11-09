@@ -1,0 +1,59 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "GET /user/installations",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "total_count": 1,
+    "installations": [
+      {
+        "id": 180017528,
+        "client_id": "Iv23liWZuFARiRUZ9QX8",
+        "account": {
+          "login": "<REDACTED>-test",
+          "id": 352097667,
+          "node_id": "U_kgDOFPyVgw",
+          "avatar_url": "https://avatars.githubusercontent.com/u/352097667?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/<REDACTED>-test",
+          "html_url": "https://github.com/<REDACTED>-test",
+          "followers_url": "https://api.github.com/users/<REDACTED>-test/followers",
+          "following_url": "https://api.github.com/users/<REDACTED>-test/following{/other_user}",
+          "gists_url": "https://api.github.com/users/<REDACTED>-test/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/<REDACTED>-test/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/<REDACTED>-test/subscriptions",
+          "organizations_url": "https://api.github.com/users/<REDACTED>-test/orgs",
+          "repos_url": "https://api.github.com/users/<REDACTED>-test/repos",
+          "events_url": "https://api.github.com/users/<REDACTED>-test/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/<REDACTED>-test/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "repository_selection": "selected",
+        "access_tokens_url": "https://api.github.com/app/installations/180017528/access_tokens",
+        "repositories_url": "https://api.github.com/installation/repositories",
+        "html_url": "https://github.com/settings/installations/180017528",
+        "app_id": 5674210,
+        "app_slug": "cairn-rec-tmw8khn73-app",
+        "target_id": 352097667,
+        "target_type": "User",
+        "permissions": {
+          "secrets": "write",
+          "contents": "write",
+          "metadata": "read"
+        },
+        "events": [],
+        "created_at": "2026-11-08T16:13:43.000-09:00",
+        "updated_at": "2026-11-08T16:13:45.000-09:00",
+        "single_file_name": null,
+        "has_multiple_single_files": false,
+        "single_file_paths": [],
+        "suspended_by": null,
+        "suspended_at": null
+      }
+    ]
+  }
+}

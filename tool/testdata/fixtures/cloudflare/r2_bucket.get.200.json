@@ -1,0 +1,19 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/r2/subresources/buckets/methods/get/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": {
+      "name": "example-media",
+      "creation_date": "2026-11-08T00:00:00.000Z",
+      "location": "ENAM",
+      "storage_class": "Standard"
+    }
+  }
+}

@@ -126,7 +126,7 @@ func clampSince(since time.Duration) time.Duration {
 // API's "string", "number", or "boolean". Every key cairn filters on ($metadata.service, event,
 // level) holds a string. A filter without it is refused: the endpoint answers HTTP 400 with a
 // ZodError naming the missing key, which is exactly what cairn sent until 2026-09-21
-// (packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.filter-rejected.400.json).
+// (tool/testdata/fixtures/cloudflare/observability-telemetry-query.filter-rejected.400.json).
 const filterType = "string"
 
 // filter is one leaf filter a caller adds to a telemetry query beyond the worker-name filter

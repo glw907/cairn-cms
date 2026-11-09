@@ -1,0 +1,19 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/user/subresources/tokens/methods/create/",
+    "status": 403,
+    "note": "pending live recording; the error code and message are the documented or remembered shape, not a capture"
+  },
+  "body": {
+    "success": false,
+    "errors": [
+      {
+        "code": 10000,
+        "message": "Authentication error"
+      }
+    ],
+    "messages": [],
+    "result": null
+  }
+}

@@ -118,6 +118,9 @@ type Record struct {
 	GitHub GitHub
 	// Cloudflare carries the record's Cloudflare identifiers.
 	Cloudflare Cloudflare
+	// Setup is the object `cairn new` writes. The zero value means the
+	// record has none.
+	Setup Setup
 	// Extra carries every top-level key this package does not type, in
 	// the order Parse observed them.
 	Extra []ExtraField

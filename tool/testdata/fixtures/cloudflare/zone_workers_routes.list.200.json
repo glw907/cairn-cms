@@ -1,0 +1,14 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "GET /zones/{id}/workers/routes",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": []
+  }
+}

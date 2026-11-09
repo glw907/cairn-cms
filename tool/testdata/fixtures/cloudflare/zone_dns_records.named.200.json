@@ -1,0 +1,49 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "GET /zones/{id}/dns_records?name=carin-test.org",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result_info": {
+      "page": 1,
+      "per_page": 100,
+      "count": 3,
+      "total_count": 3,
+      "total_pages": 1
+    },
+    "result": [
+      {
+        "id": "00000000000000000000000000000018",
+        "type": "MX",
+        "name": "carin-test.org",
+        "proxied": false,
+        "ttl": 1,
+        "content": "mail.carin-test.org",
+        "comment": "example record comment"
+      },
+      {
+        "id": "00000000000000000000000000000019",
+        "type": "MX",
+        "name": "carin-test.org",
+        "proxied": false,
+        "ttl": 1,
+        "content": "mail.carin-test.org",
+        "comment": "example record comment"
+      },
+      {
+        "id": "00000000000000000000000000000020",
+        "type": "TXT",
+        "name": "carin-test.org",
+        "proxied": false,
+        "ttl": 1,
+        "content": "example-txt-content",
+        "comment": "example record comment"
+      }
+    ]
+  }
+}

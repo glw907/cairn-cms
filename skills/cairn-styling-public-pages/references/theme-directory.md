@@ -76,8 +76,8 @@ theme's definition. The required names include `--cairn-eyebrow-case` and `--cai
 `node scripts/theme/build-tokens.mjs <themeDir>` validates the manifest, and validates
 `tokens/tokens.json` and `tokens/resolver.json` against the DTCG 2025.10 schema vendored in
 `schema/dtcg/2025.10/`. It then writes `tokens/tokens.css`, `options/<key>/<value>.css`, and
-`modes/light.css` and `modes/dark.css`. With `--check` it writes nothing and exits 1 when a built
-file is stale. The built files begin with a comment that says not to edit them. Where each token
+`modes/light.css` and `modes/dark.css`. Run as `node scripts/theme/build-tokens.mjs <themeDir> --check`, it
+writes nothing and exits 1 when a built file is stale. The built files begin with a comment that says not to edit them. Where each token
 lands is in `references/retheme-by-tokens.md`.
 
 ## The lay-in

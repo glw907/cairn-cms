@@ -20,26 +20,24 @@ the Go tool is `tool/v1.1.0`. The newest candidate is **`0.99.0-rc.4`** (cut com
 
 ## Immediate next action
 
-The cairn-setup run is under way: `cairn new` replaces the wizard over six passes (P1 to P6; P7, the
-cairn.pub docs pass, was dropped by Geoff on 2026-11-08), conducted unattended by
-`conductor-cairn-cms` (session `e82b126f`). The plan is
-`~/Projects/initiatives/cairn-setup/plans/2026-11-08-cairn-new-plan.md`.
+The cairn-setup run's six passes are merged on `main`, conducted unattended by `conductor-cairn-cms`
+(session `e82b126f`) under the plan's Decide 11 gates
+(`~/Projects/initiatives/cairn-setup/plans/2026-11-08-cairn-new-plan.md`). P7, the cairn.pub docs
+pass, was dropped by Geoff on 2026-11-08.
 
-- Merged: P4 (#202, the standard starter set), P1 (#201, merge `1f131f871`, the setup engine), 
-  P2 (#203, merge `3345cfccb`, the `cairn new` command and its agent lane), and P3 (#204, merge
-  `2cdae8485`, the terminal view; `cairn new` stays hidden until P6).
-  P1's security record is `~/Projects/initiatives/cairn-setup/reviews/p1-whole-branch-reviews.md`.
-- Merged: P5 (#205, merge `2665adbff`, the setup skill, plugin, and docs).
-- In flight: P6 (`cairn-cms-cairn-new-6`, PR #206, session `67d0fbaa`): the launcher and platform
-  packages, the tool release's npm publish, the wizard retired, the build scripts moved to
-  `scripts/build/`, and `cairn new` shown. The release gate waits on the tooling brainstorm; the
-  first publish of the six platform packages is an owner step (`cairn-releasing`, "The launcher and
+- Merged: P1 (#201, `1f131f871`, the setup engine), P2 (#203, `3345cfccb`, the command and its agent
+  lane), P3 (#204, `2cdae8485`, the terminal view), P4 (#202, `a55cf548e`, the standard starter
+  set), P5 (#205, `2665adbff`, the setup skill, plugin, and docs), and P6 (#206, `a9664caed`, the
+  launcher and platform packages, the tool release's npm publish, the wizard retired, and `cairn new`
+  shown). Review records are in `~/Projects/initiatives/cairn-setup/reviews/`.
+- No release is cut until the tooling gates in
+  `~/Projects/initiatives/cairn-setup/research/handoff-tooling.md` exist; the agent-driven runs come
+  first, then Geoff's human test build. The first tool tag also needs two GitHub settings and the
+  first publish of the six platform packages, both owner steps (`cairn-releasing`, "The launcher and
   its platform packages").
-- Next: P6 merges under Decide 11. The theme-garden
-  planner handed over G1 and G2 (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`);
-  G1 launches after P6 merges and its file:line re-check against `main`.
-- Geoff gets one record packet at P6's close. No release is cut until the tooling gates in
-  `~/Projects/initiatives/cairn-setup/research/handoff-tooling.md` exist.
+- Next: Geoff's record packet in the Approval Queue, which also carries the theme-garden plan
+  (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`). On its approval the
+  conductor re-checks the plan's citations against `main` and launches G1.
 
 ## Open decisions and watches
 

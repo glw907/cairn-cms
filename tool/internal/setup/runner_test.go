@@ -400,6 +400,49 @@ func TestQuestionsAppearOnlyForSeveralChoices(t *testing.T) {
 	})
 }
 
+// TestTheCloudflareApprovalOpensOnTheConsentPage pins that the tab shows setup's own page, with
+// the permission instruction, before it sends the owner to Cloudflare.
+func TestTheCloudflareApprovalOpensOnTheConsentPage(t *testing.T) {
+	w := newWorld(t)
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if len(w.tab.shown) == 0 || w.tab.shown[0].Kind != PageConsent {
+		t.Fatalf("pages %+v, want approval 1 to open on the consent page", w.tab.shown)
+	}
+	u, err := url.Parse(w.tab.shown[0].URL)
+	if err != nil || u.Host != "dash.cloudflare.com" || u.Query().Get("state") == "" {
+		t.Errorf("the consent page continues to %q, want a Cloudflare authorize URL with state", w.tab.shown[0].URL)
+	}
+	if slices.ContainsFunc(w.tab.shown, func(p Page) bool { return p.Kind == PageRedirect && strings.Contains(p.URL, "dash.cloudflare.com") }) {
+		t.Error("the tab was sent straight to Cloudflare")
+	}
+}
+
+// TestTheCloudflareCopyNamesThePermission pins that every Cloudflare approval sentence names
+// the permission Cloudflare leaves unselected.
+func TestTheCloudflareCopyNamesThePermission(t *testing.T) {
+	const ruled = "On the Cloudflare page, select API Tokens: Write, and then select Allow. " +
+		"Cloudflare leaves API Tokens: Write unselected, and setup needs it to create your site's deploy key."
+	if got := WaitSentence(WaitCloudflare, "Example Site", "example-site"); got != ruled {
+		t.Errorf("WaitCloudflare sentence = %q, want %q", got, ruled)
+	}
+	if got := WaitSentence(WaitCloudflareReconsent, "Example Site", "example-site"); !strings.HasPrefix(got, "On the Cloudflare page, select API Tokens: Write, and then select Allow. ") {
+		t.Errorf("WaitCloudflareReconsent sentence = %q, want it to open with the permission instruction", got)
+	}
+
+	w := newWorld(t)
+	w.tab.script[loopback.CloudflareCallback] = []func(string) (loopback.Callback, error){
+		func(nonce string) (loopback.Callback, error) {
+			return loopback.Callback{State: nonce, Error: "access_denied"}, nil
+		},
+	}
+	_, err := w.run(context.Background())
+	if f := failureOf(t, err); f.Reason != ReasonDeclined || !strings.Contains(f.Do, "select API Tokens: Write, and then select Allow") {
+		t.Errorf("decline failure = %+v, want a fix that names API Tokens: Write", f)
+	}
+}
+
 func TestAGrantWithoutTheMintScopeAsksAgain(t *testing.T) {
 	w := newWorld(t)
 	missing := fixture[providers.OAuthToken](t, "cloudflare", "oauth_token.missing-scope.200.json")
@@ -878,6 +921,9 @@ func TestASpentGrantRerunsApprovalOneAlone(t *testing.T) {
 		}
 		if got := w.waits(); !slices.Equal(got, []WaitState{WaitCloudflareReconsent}) {
 			t.Errorf("waiting states = %v, want approval 1's reconsent alone", got)
+		}
+		if len(w.tab.shown) == 0 || w.tab.shown[0].Kind != PageConsent {
+			t.Errorf("pages %+v, want the reconsent to open on the consent page", w.tab.shown)
 		}
 		if w.gh.creates["app"] != 1 || len(w.cfAuth.verifiers) != 2 {
 			t.Errorf("apps %d, Cloudflare exchanges %d", w.gh.creates["app"], len(w.cfAuth.verifiers))

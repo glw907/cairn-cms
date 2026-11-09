@@ -243,6 +243,7 @@ func TestPathsNobodyWaitsOnAnswer404(t *testing.T) {
 		"/done.html",
 		"/error.html",
 		"/next",
+		"/cloudflare/go",
 		"/favicon.ico",
 		"/cloudflare/callback/",
 		"//cloudflare/callback",
@@ -529,8 +530,14 @@ func TestRootPages(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("error.html: status %d", resp.StatusCode)
 	}
-	if !strings.Contains(body, `href="https://dash.cloudflare.com/oauth2/auth?a=1&amp;b=2"`) {
-		t.Errorf("error.html's Try again does not link the retry URL:\n%s", body)
+	if !strings.Contains(body, `href="/cloudflare/go"`) {
+		t.Errorf("error.html's Try again does not go through /cloudflare/go:\n%s", body)
+	}
+	if strings.Contains(body, "dash.cloudflare.com") {
+		t.Errorf("error.html carries the retry URL in its source:\n%s", body)
+	}
+	if !strings.Contains(body, "<strong>API Tokens: Write</strong>") {
+		t.Errorf("error.html does not set the permission name in bold:\n%s", body)
 	}
 	if !strings.Contains(body, "cairn · Field Notes · approval 1 of 4") {
 		t.Error("error.html does not name the site")
@@ -562,6 +569,157 @@ func TestRootPages(t *testing.T) {
 	}
 }
 
+const consentAuthorize = "https://dash.cloudflare.com/oauth2/auth?response_type=code&client_id=x&state=y&code_challenge=z"
+
+// TestConsentPage pins that the tab's first page for approval 1 is setup's own, carrying the
+// permission instruction, and that the authorize URL leaves the server only as the go route's
+// redirect.
+func TestConsentPage(t *testing.T) {
+	h := newHarness(t)
+	h.arm(CloudflareCallback)
+	if err := h.s.Show(ConsentPage(consentAuthorize)); err != nil {
+		t.Fatalf("Show consent: %v", err)
+	}
+	h.open()
+
+	resp, body := h.do(http.MethodGet, "/", browserHeaders("same-origin", "navigate"))
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("root with the consent page: status %d Location %q, want 200", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	for _, want := range []string{
+		"<title>Approve setup on Cloudflare</title>",
+		"On the Cloudflare page, select <strong>API Tokens: Write</strong>, and then select Allow.",
+		"Cloudflare leaves <strong>API Tokens: Write</strong> unselected, and setup needs it to create your site&#39;s deploy key.",
+		`href="/cloudflare/go"`,
+		"Continue to Cloudflare",
+		"cairn · Field Notes · approval 1 of 4",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("the consent page lacks %q:\n%s", want, body)
+		}
+	}
+	if i, j := strings.Index(body, "API Tokens: Write"), strings.Index(body, "Continue to Cloudflare"); i < 0 || j < i {
+		t.Error("the consent page's instruction does not come before its button")
+	}
+	if strings.Contains(body, "dash.cloudflare.com") || strings.Contains(body, "code_challenge") {
+		t.Errorf("the consent page carries the authorize URL in its source:\n%s", body)
+	}
+	if strings.Contains(body, `http-equiv="refresh"`) {
+		t.Error("the consent page reloads itself away from the instruction")
+	}
+
+	for _, c := range []struct {
+		name string
+		edit func(*http.Request)
+	}{
+		{"from the button", browserHeaders("same-origin", "navigate")},
+		{"with no Sec-Fetch headers", nil},
+	} {
+		resp, body := h.do(http.MethodGet, "/cloudflare/go", c.edit)
+		if resp.StatusCode != http.StatusFound || resp.Header.Get("Location") != consentAuthorize {
+			t.Errorf("go route %s: status %d Location %q, want 302 to the authorize URL", c.name, resp.StatusCode, resp.Header.Get("Location"))
+		}
+		if strings.Contains(body, "code_challenge") {
+			t.Errorf("go route %s echoes the authorize URL in its body", c.name)
+		}
+	}
+}
+
+// TestTheGoRouteAnswersOnlyTheOwnerWhileArmed pins that /cloudflare/go hands out the authorize
+// URL only to the session's own same-origin navigation, only while the consent or scope-error
+// page shows and approval 1's callback is armed.
+func TestTheGoRouteAnswersOnlyTheOwnerWhileArmed(t *testing.T) {
+	shown := func(h *harness) {
+		h.arm(CloudflareCallback)
+		if err := h.s.Show(ConsentPage(consentAuthorize)); err != nil {
+			h.t.Fatalf("Show consent: %v", err)
+		}
+		h.open()
+	}
+	tests := []struct {
+		name  string
+		setup func(h *harness)
+		anon  bool
+		edit  func(*http.Request)
+		want  int
+	}{
+		{"before any page", func(h *harness) { h.open() }, false, nil, http.StatusNotFound},
+		{"with the route unarmed", func(h *harness) {
+			if err := h.s.Show(ConsentPage(consentAuthorize)); err != nil {
+				h.t.Fatalf("Show consent: %v", err)
+			}
+			h.open()
+		}, false, nil, http.StatusNotFound},
+		{"on the redirect page", func(h *harness) {
+			h.arm(CloudflareCallback)
+			if err := h.s.Show(RedirectPage(consentAuthorize)); err != nil {
+				h.t.Fatalf("Show redirect: %v", err)
+			}
+			h.open()
+		}, false, nil, http.StatusNotFound},
+		{"after the callback landed", func(h *harness) {
+			nonce := h.arm(CloudflareCallback)
+			if err := h.s.Show(ConsentPage(consentAuthorize)); err != nil {
+				h.t.Fatalf("Show consent: %v", err)
+			}
+			h.open()
+			h.get("/cloudflare/callback?code=abc&state=" + nonce)
+		}, false, nil, http.StatusNotFound},
+		{"after done", func(h *harness) {
+			shown(h)
+			if err := h.s.Show(DonePage()); err != nil {
+				h.t.Fatalf("Show done: %v", err)
+			}
+		}, false, nil, http.StatusNotFound},
+		{"without the cookie", shown, true, nil, http.StatusNotFound},
+		{"from a cross-site link", shown, false, browserHeaders("cross-site", "navigate"), http.StatusNotFound},
+		{"from a same-site page", shown, false, browserHeaders("same-site", "navigate"), http.StatusNotFound},
+		{"typed or opened directly", shown, false, browserHeaders("none", "navigate"), http.StatusNotFound},
+		{"fetched by a same-origin script", shown, false, browserHeaders("same-origin", "cors"), http.StatusNotFound},
+		{"as a cross-site image", shown, false, browserHeaders("cross-site", "no-cors"), http.StatusNotFound},
+		{"under a rebound Host", shown, false, func(r *http.Request) { r.Host = "evil.example:" + r.URL.Port() }, http.StatusForbidden},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := newHarness(t)
+			tt.setup(h)
+			send := h.do
+			if tt.anon {
+				send = h.bare
+			}
+			resp, body := send(http.MethodGet, "/cloudflare/go", tt.edit)
+			if resp.StatusCode != tt.want {
+				t.Errorf("status %d, want %d", resp.StatusCode, tt.want)
+			}
+			if loc := resp.Header.Get("Location"); loc != "" || strings.Contains(body, "dash.cloudflare.com") {
+				t.Errorf("a refused request learned the authorize URL: Location %q", loc)
+			}
+		})
+	}
+
+	h := newHarness(t)
+	shown(h)
+	if resp, _ := h.do(http.MethodPost, "/cloudflare/go", nil); resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("POST /cloudflare/go: status %d, want 405", resp.StatusCode)
+	}
+}
+
+// TestTryAgainGoesThroughTheGoRoute pins that the scope-error page's button reaches the retry
+// URL through /cloudflare/go, so the page source never holds it.
+func TestTryAgainGoesThroughTheGoRoute(t *testing.T) {
+	h := newHarness(t)
+	h.open()
+	const retry = "https://dash.cloudflare.com/oauth2/auth?a=1&b=2"
+	h.arm(CloudflareCallback)
+	if err := h.s.Show(ScopeErrorPage(retry)); err != nil {
+		t.Fatalf("Show scope error: %v", err)
+	}
+	resp, _ := h.do(http.MethodGet, "/cloudflare/go", browserHeaders("same-origin", "navigate"))
+	if resp.StatusCode != http.StatusFound || resp.Header.Get("Location") != retry {
+		t.Fatalf("Try again: status %d Location %q, want 302 to the retry URL", resp.StatusCode, resp.Header.Get("Location"))
+	}
+}
+
 func TestShowRefusesAURLThatIsNotHTTPS(t *testing.T) {
 	h := newHarness(t)
 	for _, u := range []string{"http://dash.cloudflare.com/", "javascript:alert(1)", "/relative", "https://"} {
@@ -570,6 +728,9 @@ func TestShowRefusesAURLThatIsNotHTTPS(t *testing.T) {
 		}
 		if err := h.s.Show(ScopeErrorPage(u)); err == nil {
 			t.Errorf("Show(ScopeErrorPage(%q)) accepted it", u)
+		}
+		if err := h.s.Show(ConsentPage(u)); err == nil {
+			t.Errorf("Show(ConsentPage(%q)) accepted it", u)
 		}
 		if err := h.s.SetNext(u); err == nil {
 			t.Errorf("SetNext(%q) accepted it", u)
@@ -926,7 +1087,7 @@ func TestChainClock(t *testing.T) {
 			t.Errorf("the stop page %s reloads itself", name)
 		}
 	}
-	for _, target := range []string{"/next", "/done.html", "/error.html", "/nope"} {
+	for _, target := range []string{"/next", "/done.html", "/error.html", "/cloudflare/go", "/nope"} {
 		if resp, _ := h.get(target); resp.StatusCode != http.StatusNotFound {
 			t.Errorf("GET %s after the stop: status %d, want 404", target, resp.StatusCode)
 		}

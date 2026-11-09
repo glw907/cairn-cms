@@ -91,9 +91,11 @@ func TestGitCarriesOnlyTheGivenPairs(t *testing.T) {
 		"GIT_CONFIG_KEY_2=http.sslVerify", "GIT_CONFIG_VALUE_2=true",
 		"GIT_CONFIG_KEY_3=http.proxy", "GIT_CONFIG_VALUE_3=",
 		"GIT_CONFIG_KEY_4=core.sshCommand", "GIT_CONFIG_VALUE_4=",
-		"GIT_CONFIG_KEY_5=http.extraheader", "GIT_CONFIG_VALUE_5=x",
-		"GIT_CONFIG_KEY_6=url./r/.insteadOf", "GIT_CONFIG_VALUE_6=https://github.com/",
-		"GIT_CONFIG_COUNT=7",
+		"GIT_CONFIG_KEY_5=credential.helper", "GIT_CONFIG_VALUE_5=",
+		"GIT_CONFIG_KEY_6=core.askPass", "GIT_CONFIG_VALUE_6=",
+		"GIT_CONFIG_KEY_7=http.extraheader", "GIT_CONFIG_VALUE_7=x",
+		"GIT_CONFIG_KEY_8=url./r/.insteadOf", "GIT_CONFIG_VALUE_8=https://github.com/",
+		"GIT_CONFIG_COUNT=9",
 	}
 	got := Git(in, "/tmp/empty", Pair{"http.extraheader", "x"}, Pair{"url./r/.insteadOf", "https://github.com/"})
 	if !slices.Equal(got, want) {
@@ -101,9 +103,9 @@ func TestGitCarriesOnlyTheGivenPairs(t *testing.T) {
 	}
 }
 
-// TestGitProxiesAsTheEnvironmentSays pins that the http.proxy pair Git sets, which keeps a
-// repository's own proxy out, names the proxy git would read from the environment for an https
-// remote, so an owner behind a proxy still reaches GitHub.
+// TestGitProxiesAsTheEnvironmentSays pins that the http.proxy pair Git sets, which beats a plain
+// http.proxy in a repository's own config, names the proxy git would read from the environment
+// for an https remote, so an owner behind a proxy still reaches GitHub.
 func TestGitProxiesAsTheEnvironmentSays(t *testing.T) {
 	tests := []struct {
 		name string

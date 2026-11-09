@@ -6,7 +6,7 @@
 // installed. It needs the engine built (`npm run package` at the repo root).
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,8 @@ import { promisify } from 'node:util';
 import { expect, test } from 'vitest';
 import { emitTemplate, STARTER_OVERLAY_DIR } from '../../../scripts/build/emit-template.mjs';
 import { EXPECTED_STARTER_ROUTES } from '../../../scripts/build/starter-content.mjs';
+import { stripLayIn } from '../../../scripts/build/bake-template.mjs';
+import { layIn } from '../../../scripts/theme/lay-in.mjs';
 
 const showcase = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -39,6 +41,13 @@ test(
         devSpec: 'file:../../packages/cairn-cms-dev',
         starterOverlay: STARTER_OVERLAY_DIR,
       });
+      // A real template has its theme laid in and the lay-in stripped from its scripts, as the bake
+      // does; the emit alone copies the showcase's scripts, which call a file only cairn-cms has.
+      layIn(path.join(showcase, '../../themes/waymark'), to);
+      const packagePath = path.join(to, 'package.json');
+      const pkg = JSON.parse(await readFile(packagePath, 'utf8'));
+      stripLayIn(pkg);
+      await writeFile(packagePath, JSON.stringify(pkg, null, 2) + '\n');
       await symlink(path.join(showcase, 'node_modules'), path.join(to, 'node_modules'));
       await promisify(execFile)('npm', ['run', 'build'], { cwd: to, maxBuffer: 64 * 1024 * 1024 });
 

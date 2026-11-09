@@ -57,6 +57,7 @@ describe('the table', () => {
     ['scripts', 'wrangler.test.jsonc', 'wrangler.test.jsonc'],
     ['harness', '.claude/', '.claude/skills/cairn-writing-docs/evals/run.mjs'],
     ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
+    ['showcase', 'themes/', 'themes/waymark/theme.css'],
     ['showcase', 'templates/', 'templates/waymark/package.json'],
     ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
     ['engine', 'src/lib/', 'src/lib/log/index.ts'],

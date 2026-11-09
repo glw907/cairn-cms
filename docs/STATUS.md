@@ -39,7 +39,11 @@ pass, was dropped by Geoff on 2026-11-08.
   `20261109T022112-3127080`). G1 is in flight (`cairn-cms-theme-garden-1`, session `b467d134`), and
   the conductor merges G1 then G2 under the plan's gates
   (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`).
-- Next for cairn-setup: the tooling brainstorm (`handoff-tooling.md`), a fresh session with Geoff.
+- cairn-setup tooling: Geoff approved the setup tooling design on 2026-11-09
+  (`~/Projects/initiatives/cairn-setup/specs/2026-11-09-setup-tooling-design.md`). Its planner,
+  `cairn-cms-setup-tooling-plan` (session `06cc7ec5`), hands the plan to `conductor-cairn-cms` for
+  the next packet. Its passes touch `scripts/gate/`, `tool/`, `plugins/cairn/`, `.claude/skills/`, and
+  the workstation repo, none of theme-garden's paths.
 
 ## Open decisions and watches
 

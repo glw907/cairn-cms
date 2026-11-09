@@ -3,6 +3,10 @@ package setup
 import (
 	"context"
 	"errors"
+	"fmt"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
@@ -160,13 +164,199 @@ type Result struct {
 	Summary Summary
 }
 
-// Run runs the opening, the four approvals, and the summary. A stop returns a *Failure.
-func Run(ctx context.Context, cfg Config) (Result, error) {
-	return Result{}, errors.New("not implemented")
+// The runner's fixed limits.
+const (
+	// ProbeDeadline is how long the keyring probe waits on each call, long enough for an unlock
+	// prompt.
+	ProbeDeadline = 2 * time.Minute
+	// MinNodeMajor is the oldest Node major the site's toolchain supports.
+	MinNodeMajor = 24
+	// chainSlack pads each browser wait past the chain's limit. The loopback's own clock stops the
+	// chain at the limit once the tab opens; this deadline covers a tab that never opens.
+	chainSlack = 2 * time.Minute
+	// sweepTimeout bounds the over-grant sweep that runs after the run's own context has ended.
+	sweepTimeout = 30 * time.Second
+)
+
+// run is one run's state. It lives on one goroutine.
+type run struct {
+	cfg    Config
+	step   string
+	tab    Tab
+	siteID string
+	rec    record.Record
+
+	names        Names
+	suffix       int
+	suffixReason string
+	tmpl         Template
+	theme        scaffold.Theme
+
+	access     providers.Credential
+	account    providers.Account
+	email      string
+	cf         CloudflareAPI
+	zone       providers.Zone
+	zoneChosen bool
+	addresses  []string
+
+	app       providers.AppRecord
+	user      providers.Credential
+	repo      providers.Repository
+	confirmed int64
 }
 
-func nodeMajor(s string) (int, error) { return 0, errors.New("not implemented") }
+// Run runs the opening, the four approvals, and the summary, and returns at the summary for the
+// owner's one Enter. A stop returns a *Failure and emits it as step_failed. Run holds the
+// loopback port from the opening's bind until it returns.
+func Run(ctx context.Context, cfg Config) (Result, error) {
+	if _, err := deriveNames(cfg.Answers.SiteName, 0); err != nil {
+		return Result{}, err
+	}
+	if cfg.Answers.Posture != Decline && cfg.Answers.Posture != Invite {
+		return Result{}, errPosture
+	}
+	r := &run{cfg: cfg}
+	defer func() {
+		if r.tab != nil {
+			_ = r.tab.Close()
+		}
+	}()
+	res, err := r.steps(ctx)
+	if err != nil {
+		f := r.fail(ctx, err, "")
+		r.emit(Event{Kind: StepFailed, Step: f.Step, Failure: f})
+		return Result{}, f
+	}
+	return res, nil
+}
 
-func sweepOnResume(ctx context.Context, cfg Config, rec record.Record) error {
-	return errors.New("not implemented")
+func (r *run) steps(ctx context.Context) (Result, error) {
+	if err := r.opening(ctx); err != nil {
+		return Result{}, err
+	}
+	if err := r.approveCloudflare(ctx); err != nil {
+		return Result{}, err
+	}
+	if err := r.cloudflareChecks(ctx); err != nil {
+		return Result{}, err
+	}
+	if err := r.githubChain(ctx); err != nil {
+		return Result{}, err
+	}
+	return r.summary()
+}
+
+func (r *run) emit(e Event) {
+	e.SchemaVersion = EventSchemaVersion
+	e.Timestamp = r.cfg.Now()
+	r.cfg.Emit(e)
+}
+
+func (r *run) start(step string) {
+	r.step = step
+	r.emit(Event{Kind: StepStarted, Step: step})
+}
+
+func (r *run) done() {
+	r.emit(Event{Kind: StepDone, Step: r.step})
+}
+
+func (r *run) waiting(s WaitState) {
+	r.emit(Event{Kind: Waiting, Step: r.step, Waiting: s, Sentence: WaitSentence(s, r.cfg.Answers.SiteName, r.names.Repository)})
+}
+
+// register hands each credential to the output scrub before anything else sees it.
+func (r *run) register(cs ...providers.Credential) {
+	for _, c := range cs {
+		r.cfg.Register(c)
+	}
+}
+
+func (r *run) registerValue(vs ...string) {
+	for _, v := range vs {
+		r.cfg.Register(providers.NewCredential(v))
+	}
+}
+
+// save writes the record, drawing the site id on the first save.
+func (r *run) save() error {
+	r.rec.Setup.Folder = filepath.Join(r.cfg.Dir, r.names.Repository)
+	var err error
+	if r.siteID == "" {
+		r.siteID, err = r.cfg.Store.SaveNew(r.names.Base, r.rec)
+	} else {
+		err = r.cfg.Store.Save(r.siteID, r.rec)
+	}
+	if err != nil {
+		return r.failure(ReasonRecord, "Setup couldn't save its record of this run.",
+			"Check that your home folder is writable, and then run cairn new again.", err)
+	}
+	return nil
+}
+
+// await waits for one callback with a deadline, so a tab that never opens still ends the wait.
+func (r *run) await(ctx context.Context, route loopback.Route) (loopback.Callback, error) {
+	wctx, cancel := context.WithTimeout(ctx, loopback.ChainLimit+chainSlack)
+	defer cancel()
+	cb, err := r.tab.Wait(wctx, route)
+	if errors.Is(err, context.DeadlineExceeded) && ctx.Err() == nil {
+		err = loopback.ErrChainTimeout
+	}
+	return cb, err
+}
+
+// failure builds a stop at the current step, with what setup already did.
+func (r *run) failure(reason Reason, happened, do string, err error) *Failure {
+	f := &Failure{Step: r.step, Reason: reason, Happened: happened, Did: r.did(), Do: do, Err: err}
+	if f.Did != nothingCreated {
+		f.Left = "What setup created stays in place, and the next run resumes from it."
+	}
+	return f
+}
+
+// fail turns err into a Failure: an existing Failure passes through, the chain's limit and a
+// cancelled run get their own reasons, and anything else is a failed request to who, or an
+// unexpected stop when who is empty.
+func (r *run) fail(ctx context.Context, err error, who string) *Failure {
+	if f, ok := errors.AsType[*Failure](err); ok {
+		return f
+	}
+	switch {
+	case errors.Is(err, loopback.ErrChainTimeout):
+		return r.failure(ReasonChainTimeout, "The approvals passed the 30-minute limit.",
+			"Run cairn new again to resume.", err)
+	case ctx.Err() != nil:
+		return r.failure(ReasonStopped, "Setup stopped.", "To resume, run cairn new again.", err)
+	case who == "":
+		return r.failure(ReasonProvider, "Setup stopped on an unexpected error.", "Run cairn new again.", err)
+	}
+	return r.failure(ReasonProvider, "A request to "+who+" failed.",
+		"Check your internet connection, and then run cairn new again.", err)
+}
+
+// did is the "already did" part: what exists outside this computer because of the run.
+func (r *run) did() string {
+	var parts []string
+	if r.app.ID != 0 {
+		parts = append(parts, "Setup created the GitHub App "+r.app.Slug+".")
+	}
+	if r.repo.ID != 0 {
+		parts = append(parts, "Setup created the private repository "+r.repo.FullName+".")
+	}
+	if len(parts) == 0 {
+		return nothingCreated
+	}
+	return strings.Join(parts, " ")
+}
+
+// nodeMajor reads the major version out of `node --version` output such as "v24.1.0".
+func nodeMajor(s string) (int, error) {
+	v := strings.TrimPrefix(strings.TrimSpace(s), "v")
+	major, _, _ := strings.Cut(v, ".")
+	n, err := strconv.Atoi(major)
+	if err != nil {
+		return 0, fmt.Errorf("read the Node version from %q", s)
+	}
+	return n, nil
 }

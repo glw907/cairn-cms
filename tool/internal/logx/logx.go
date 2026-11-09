@@ -7,6 +7,8 @@ package logx
 import (
 	"bytes"
 	"io"
+	"strings"
+	"sync"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
@@ -29,9 +31,13 @@ const MinLength = 8
 // a row in cells does exactly that. Writes are buffered until a newline; Close flushes whatever
 // tail is left, scrubbed. A caller that never calls Close loses a trailing partial line.
 //
-// A credential carrying a newline is not matchable this way. None of the three cairn reads can:
-// they are bearer tokens an HTTP header has to hold.
+// A credential carrying a newline cannot be matched whole, so Register adds each of its lines as
+// a needle of its own: each body line of a PEM key is then redacted wherever it appears.
+//
+// A Writer is safe for concurrent use. Setup registers credentials from its runner while a view
+// writes from another goroutine, so one mutex guards the needles and the buffer.
 type Writer struct {
+	mu      sync.Mutex
 	w       io.Writer
 	needles [][]byte
 	skipped int
@@ -46,28 +52,44 @@ type Writer struct {
 func New(w io.Writer, scrub []providers.Credential) *Writer {
 	lw := &Writer{w: w}
 	for _, c := range scrub {
-		v := c.Reveal()
-		switch {
-		case v == "":
-		case len(v) < MinLength:
-			lw.skipped++
-		default:
-			lw.needles = append(lw.needles, []byte(v))
-		}
+		lw.add(c.Reveal())
 	}
 	return lw
 }
 
-// Register adds c to the credentials Writer redacts.
-func (w *Writer) Register(c providers.Credential) {}
+// Register adds c to what Writer redacts, from the next line written on. Setup calls it the
+// moment a credential arrives, since New takes its credentials once, before any command runs. A
+// value with newlines registers line by line, each line under the MinLength rule.
+func (w *Writer) Register(c providers.Credential) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	for line := range strings.SplitSeq(c.Reveal(), "\n") {
+		w.add(strings.TrimSuffix(line, "\r"))
+	}
+}
 
-// Skipped reports how many non-empty credentials were too short to match.
+// add registers one single-line value. The caller holds w.mu or is New.
+func (w *Writer) add(v string) {
+	switch {
+	case v == "":
+	case len(v) < MinLength:
+		w.skipped++
+	default:
+		w.needles = append(w.needles, []byte(v))
+	}
+}
+
+// Skipped reports how many non-empty credentials, or lines of one, were too short to match.
 func (w *Writer) Skipped() int {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	return w.skipped
 }
 
 // Write implements io.Writer, emitting every complete line p finishes and holding the rest.
 func (w *Writer) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	w.buf = append(w.buf, p...)
 	for {
 		i := bytes.IndexByte(w.buf, '\n')
@@ -87,6 +109,8 @@ func (w *Writer) Write(p []byte) (int, error) {
 // without a Flush the buffer holds it until after the read it was asking for and the operator
 // types blind. Ordinary output never calls it, which is what keeps the cross-line scrub whole.
 func (w *Writer) Flush() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	if len(w.buf) == 0 {
 		return nil
 	}
@@ -101,7 +125,7 @@ func (w *Writer) Close() error {
 	return w.Flush()
 }
 
-// clean returns line with every registered credential replaced.
+// clean returns line with every registered credential replaced. The caller holds w.mu.
 func (w *Writer) clean(line []byte) []byte {
 	for _, needle := range w.needles {
 		line = bytes.ReplaceAll(line, needle, []byte(redacted))

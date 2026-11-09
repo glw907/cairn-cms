@@ -18,6 +18,17 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/loopback"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/store"
+)
+
+// The production clients satisfy the seams the runner defines.
+var (
+	_ CloudflareAuth = (*providers.CloudflareOAuth)(nil)
+	_ CloudflareAPI  = (*providers.Cloudflare)(nil)
+	_ GitHubAPI      = (*providers.GitHub)(nil)
+	_ GitHubWeb      = (*providers.GitHubWeb)(nil)
+	_ Vault          = secrets.SetupStore{}
+	_ Saver          = (*store.Store)(nil)
 )
 
 func TestRunReachesTheSummaryAfterTheFourApprovals(t *testing.T) {

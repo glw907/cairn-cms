@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
 	"github.com/spf13/cobra"
@@ -33,7 +34,7 @@ type newFlags struct {
 type newInput struct {
 	answers setup.Answers
 	tag     string
-	// apply reports a run no browser shows the tab of, the agent lane's --apply.
+	// apply reports a run no browser shows the tab of, which is every agent-lane run that creates.
 	apply bool
 	// resume names the unfinished record a run continues.
 	resume *setup.Resume
@@ -45,6 +46,9 @@ var newModeFlags = []string{"plan", "apply", "dry-run", "resume"}
 // newAnswerFlags are the flags that answer a question; a run that takes its answers from a
 // plan or a record refuses them.
 var newAnswerFlags = []string{"name", "email", "posture", "account", "zone", "host", "site-theme"}
+
+// newResumeAnswerFlags are the answer flags --resume still takes: the choices a run can stop at.
+var newResumeAnswerFlags = []string{"account", "zone", "site-theme"}
 
 // newNewCmd builds cairn new. It is hidden until the command ships: it is absent from the root help and the completions.
 func newNewCmd(d deps) *cobra.Command {
@@ -109,8 +113,9 @@ func (f newFlags) validate(c *cobra.Command) error {
 		return nil
 	}
 	if set("apply") || set("resume") {
+		// A resume may answer a choice it stopped at; an apply takes them from the plan.
 		for _, a := range newAnswerFlags {
-			if set(a) {
+			if set(a) && (!set("resume") || !slices.Contains(newResumeAnswerFlags, a)) {
 				return newConflictError(modes[0], "--"+a)
 			}
 		}
@@ -138,15 +143,9 @@ func runNew(cmd *cobra.Command, d deps, f newFlags) error {
 	}
 	for _, m := range newModeFlags {
 		if cmd.Flags().Changed(m) {
-			return runAgentLane(cmd, d, f, m)
+			return runAgent(cmd, d, f, m)
 		}
 	}
 	_, err := fmt.Fprintln(cmd.OutOrStdout(), newAgentGuide+"\n\n"+newExitCodes)
 	return err
-}
-
-// runAgentLane is the seam the agent view fills: the terminal view will take the run instead
-// when stdin and stdout are terminals.
-func runAgentLane(cmd *cobra.Command, d deps, f newFlags, mode string) error {
-	return runAgent(cmd, d, f, mode)
 }

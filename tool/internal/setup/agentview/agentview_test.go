@@ -76,26 +76,42 @@ func TestChoicesComeFromFlagsOrNameTheMissingFlag(t *testing.T) {
 		t.Errorf("the view kept %d accounts and %d zones, want the listed options", len(v.Accounts), len(v.Zones))
 	}
 
-	empty := &View{}
-	for _, tc := range []struct {
-		flag string
-		call func() error
-		want []string
-	}{
-		{"--account", func() error { _, err := empty.ChooseAccount(ctx, accounts); return err }, []string{"acc1", "acc2"}},
-		{"--zone", func() error { _, err := empty.ChooseZone(ctx, zones); return err }, []string{"example.com", "example.org"}},
-		{"--site-theme", func() error { _, err := empty.ChooseTheme(ctx, themes); return err }, []string{"waymark", "plain"}},
-	} {
-		err := tc.call()
-		ue, ok := errors.AsType[*UsageError](err)
-		if !ok || !strings.Contains(ue.Error(), tc.flag) {
-			t.Fatalf("%s: err = %v, want a usage error naming it", tc.flag, err)
-		}
-		for _, w := range tc.want {
-			if !strings.Contains(ue.Error(), w) {
-				t.Errorf("%s: %q does not list option %s", tc.flag, ue.Error(), w)
+	// A plan leaves an unanswered account or zone open with its options listed; any other mode
+	// stops at the step, naming the flag.
+	open := &View{Mode: PlanMode}
+	if _, err := open.ChooseAccount(ctx, accounts); !errors.Is(err, setup.ErrOpenChoice) {
+		t.Errorf("plan ChooseAccount = %v, want ErrOpenChoice", err)
+	}
+	if _, err := open.ChooseZone(ctx, zones); !errors.Is(err, setup.ErrOpenChoice) {
+		t.Errorf("plan ChooseZone = %v, want ErrOpenChoice", err)
+	}
+	if len(open.Accounts) != 2 || len(open.Zones) != 2 {
+		t.Errorf("an open choice kept %d accounts and %d zones, want the options", len(open.Accounts), len(open.Zones))
+	}
+	for _, mode := range []Mode{ApplyMode, ResumeMode} {
+		stopped := &View{Mode: mode}
+		for _, tc := range []struct {
+			flag string
+			call func() error
+			want []string
+		}{
+			{"--account", func() error { _, err := stopped.ChooseAccount(ctx, accounts); return err }, []string{"acc1", "acc2"}},
+			{"--zone", func() error { _, err := stopped.ChooseZone(ctx, zones); return err }, []string{"example.com", "example.org"}},
+		} {
+			f, ok := errors.AsType[*setup.Failure](tc.call())
+			if !ok || f.Reason != setup.ReasonRefused || !strings.Contains(f.Do, tc.flag) {
+				t.Fatalf("mode %d %s: stop = %+v, want a refused failure whose next step names the flag", mode, tc.flag, f)
+			}
+			for _, w := range tc.want {
+				if !strings.Contains(f.Happened, w) {
+					t.Errorf("%s: %q does not list option %s", tc.flag, f.Happened, w)
+				}
 			}
 		}
+	}
+	ue, ok := errors.AsType[*UsageError](func() error { _, err := (&View{}).ChooseTheme(ctx, themes); return err }())
+	if !ok || !strings.Contains(ue.Error(), "--site-theme") || !strings.Contains(ue.Error(), "plain") {
+		t.Errorf("ChooseTheme with no flag = %v, want a usage error naming --site-theme and the catalog", ue)
 	}
 	if _, err := (&View{Zone: "nope.example"}).ChooseZone(ctx, zones); err == nil {
 		t.Error("a zone outside the list was accepted")
@@ -131,8 +147,8 @@ func TestConfirmSummaryByMode(t *testing.T) {
 	} {
 		v := &View{Mode: ApplyMode, Edit: tc.edit}
 		_, err := v.ConfirmSummary(ctx, s, "That address already points to another site.")
-		if ue, ok := errors.AsType[*UsageError](err); !ok || !strings.Contains(ue.Error(), tc.want) {
-			t.Errorf("%s: err = %v, want a usage error naming %s", tc.name, err, tc.want)
+		if f, ok := errors.AsType[*setup.Failure](err); !ok || f.Reason != setup.ReasonRefused || !strings.Contains(f.Happened, tc.want) {
+			t.Errorf("%s: err = %v, want a refused stop (not a usage error) naming %s", tc.name, err, tc.want)
 		}
 	}
 }
@@ -264,5 +280,69 @@ func TestCheckRefusesEditedClosedFieldsAndBadOpenOnes(t *testing.T) {
 	p.Address, p.OwnerEmail = "blog.example.com", "new@example.com"
 	if err := Check(p, rec); err != nil {
 		t.Errorf("the open fields edited to valid values: %v", err)
+	}
+
+	p = base
+	p.Address = ""
+	if err := Check(p, rec); err != nil || p.Edit().Host != "example.com" {
+		t.Errorf("an empty address: %v, host %q; want the zone", err, p.Edit().Host)
+	}
+
+	// The schema version is read before any closed field, so a plan from another cairn names it.
+	p = base
+	p.SchemaVersion, p.Repository = 2, "mine"
+	if err := Check(p, rec); err == nil || !strings.Contains(err.Error(), "schemaVersion") {
+		t.Errorf("a plan of another version: %v, want a refusal naming schemaVersion", err)
+	}
+}
+
+func TestCheckTakesAnOpenChoiceTheRecordNeverSettled(t *testing.T) {
+	rec := testRecord()
+	rec.Cloudflare = record.Cloudflare{}
+	rec.Domain, rec.Setup.Address, rec.Setup.OwnerEmail = "", "", ""
+	zones := []providers.Zone{{ID: "z1", Name: "example.com"}, {ID: "z2", Name: "example.org"}}
+	accounts := []providers.Account{{ID: "acc1", Name: "One"}, {ID: "acc2", Name: "Two"}}
+	p, err := PlanOf(rec, accounts, zones)
+	if err != nil || p.Account != "" || p.Zone != "" || len(p.Accounts) != 2 || len(p.Zones) != 2 {
+		t.Fatalf("PlanOf = %+v, %v; want the choices open with their options", p, err)
+	}
+	p.OwnerEmail = "owner@example.com"
+	if err := Check(p, rec); err == nil || !strings.Contains(err.Error(), "account") {
+		t.Errorf("an open plan: %v, want a refusal naming account", err)
+	}
+	p.Account = "acc2"
+	if err := Check(p, rec); err == nil || !strings.Contains(err.Error(), "zone") {
+		t.Errorf("an open zone: %v, want a refusal naming zone", err)
+	}
+	p.Zone = "example.org"
+	if err := Check(p, rec); err != nil {
+		t.Errorf("the choices made from the listed options: %v", err)
+	}
+	if p.Edit().Host != "example.org" {
+		t.Errorf("host = %q, want the chosen zone", p.Edit().Host)
+	}
+	p.Account = "acc9"
+	if err := Check(p, rec); err == nil {
+		t.Error("an account outside the listed options was accepted")
+	}
+}
+
+func TestWritePlanReplacesAFileOfAnotherModeThroughARename(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("file modes")
+	}
+	path := filepath.Join(t.TempDir(), "plan.json")
+	if err := os.WriteFile(path, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	p, _ := PlanOf(testRecord(), nil, nil)
+	if err := WritePlan(path, p); err != nil {
+		t.Fatal(err)
+	}
+	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0o600 {
+		t.Errorf("mode = %v, %v; want 0600", info.Mode(), err)
+	}
+	if left, _ := filepath.Glob(filepath.Join(filepath.Dir(path), ".plan-*")); len(left) != 0 {
+		t.Errorf("temporary files left: %v", left)
 	}
 }

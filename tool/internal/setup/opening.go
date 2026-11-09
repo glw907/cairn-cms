@@ -177,7 +177,15 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 			"Create a Cloudflare account, and then run cairn new again.", nil)
 	}
 	r.account = accounts[0]
-	if len(accounts) > 1 {
+	if kept := r.rec.Cloudflare.AccountID; kept != "" {
+		// A run that stopped at its zone choice already settled the account.
+		i := slices.IndexFunc(accounts, func(a providers.Account) bool { return a.ID == kept })
+		if i < 0 {
+			return r.failure(ReasonAccountMissing, "The Cloudflare approval doesn't reach the account this setup began in.",
+				"Run cairn new again, and on the Cloudflare page approve the same account as before.", nil)
+		}
+		r.account = accounts[i]
+	} else if len(accounts) > 1 {
 		id, err := r.cfg.View.ChooseAccount(ctx, accounts)
 		if err != nil {
 			return err
@@ -210,6 +218,13 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 	r.zone = zones[0]
 	if len(zones) > 1 {
 		id, err := r.cfg.View.ChooseZone(ctx, zones)
+		if errors.Is(err, ErrOpenChoice) {
+			// Keep the account the stop already settled, so the plan can name it.
+			r.rec.Cloudflare.AccountID = r.account.ID
+			if serr := r.save(); serr != nil {
+				return serr
+			}
+		}
 		if err != nil {
 			return err
 		}

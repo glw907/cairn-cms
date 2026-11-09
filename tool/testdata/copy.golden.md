@@ -165,7 +165,7 @@ auth check's whole output is identifiers (permission labels, credential variable
 - Continue an unfinished setup with cairn new --resume <id>.
 - Credentials:
 - Delete one credential's keyring entry
-- Events from cairn new --apply, one JSON object per line on stdout:
+- Events from cairn new --plan, --apply, and --resume, one JSON object per line on stdout:
   step_started, step_done  a step began or finished; step names it
   step_failed              a step stopped the run; failure holds the four-part reason
   waiting                  setup waits on the owner in a browser; waiting names the approval
@@ -175,9 +175,9 @@ Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
 approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.
 - Exit codes for cairn new:
 0  the run finished, the plan file was written, or the command only listed or printed
-1  setup stopped at a step; the run is saved, and cairn new --resume continues it
-2  setup stopped while waiting, after Ctrl+C or a passed time limit; cairn new --resume continues it
-3  a usage error: a flag or the plan file was refused
+1  setup stopped at a step, including a refusal found after the run began; the run is saved, and cairn new --resume continues it
+2  setup stopped: interrupted or timed out; cairn new --resume continues it
+3  a usage error: a flag or the plan file was refused before anything ran, and stdout is empty
 A stream of events that does not end with a summary is unfinished.
 - GitHub: skip, %s
 - List the Workers on the account that cairn could adopt
@@ -292,9 +292,12 @@ To check every site cairn knows, run: cairn health --json
 Plan. Answer every question with a flag. Setup waits on the owner for each browser
 approval, writes nothing to Cloudflare, and saves its plan to the file:
   cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
+A Cloudflare account or domain that no flag chose is left open. Setup stops there, exits 0
+with no summary event (an unfinished stream), and the plan lists the options.
 
 Apply. After the owner has reviewed the plan, create the site from it. The plan's open
-fields, the email and the address, may be edited first:
+fields, the account, the domain, the email, and the address, may be edited first; apply
+refuses a plan that leaves the account or the domain open, before anything runs:
   cairn new --apply plan.json
 
 Required with --plan and --dry-run:
@@ -314,7 +317,8 @@ Other flags:
   --new          start a new site instead of continuing an unfinished one
   --tag          the engine's npm dist-tag to build from (default latest)
 
-A usage error exits 3 and writes nothing to stdout. The exit codes follow.
+A usage error exits 3, before anything ran, and writes nothing to stdout. An unfinished run
+takes --account and --zone with --resume. The exit codes follow.
 - cairn new status
 - cairn sites
 - cairn sites list --json

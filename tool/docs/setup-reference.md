@@ -91,8 +91,8 @@ A `waiting` event carries one of these states:
 | Code | Meaning |
 | --- | --- |
 | 0 | the run finished, the plan file was written, or the command only listed or printed |
-| 1 | setup stopped at a step; the run is saved, and cairn new --resume continues it |
-| 2 | setup stopped while waiting, after Ctrl+C or a passed time limit; cairn new --resume continues it |
-| 3 | a usage error: a flag or the plan file was refused |
+| 1 | setup stopped at a step, including a refusal found after the run began; the run is saved, and cairn new --resume continues it |
+| 2 | setup stopped: interrupted or timed out; cairn new --resume continues it |
+| 3 | a usage error: a flag or the plan file was refused before anything ran, and stdout is empty |
 
 A stream of events that does not end with a summary is unfinished.

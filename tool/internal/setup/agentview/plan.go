@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
@@ -58,26 +59,36 @@ type Plan struct {
 // PlanOf builds the plan a run stopped at the summary has reached, from its record. accounts
 // and zones are the options the runner offered; each is listed only when there were several.
 func PlanOf(rec record.Record, accounts []providers.Account, zones []providers.Zone) (Plan, error) {
-	out, err := setup.Plan(setup.RecordedAnswers(rec))
+	a := setup.RecordedAnswers(rec)
+	names, err := setup.DeriveNames(rec.Name, a.Suffix)
 	if err != nil {
 		return Plan{}, err
+	}
+	// A run stopped at an open choice has no zone or address recorded yet.
+	var addrs []string
+	if a.Zone != "" && a.Host != "" {
+		out, err := setup.Plan(a)
+		if err != nil {
+			return Plan{}, err
+		}
+		addrs = out.Addresses
 	}
 	p := Plan{
 		SchemaVersion: PlanSchemaVersion,
 		RunID:         rec.Setup.RunID,
 		SiteName:      rec.Name,
-		Repository:    out.Names.Repository,
-		Worker:        out.Names.Worker,
-		Database:      out.Names.Database,
-		Bucket:        out.Names.Bucket,
-		App:           out.Names.App,
-		Folder:        out.Names.Folder,
-		Theme:         out.Theme,
-		Posture:       out.Posture,
-		Account:       out.AccountID,
+		Repository:    names.Repository,
+		Worker:        names.Worker,
+		Database:      names.Database,
+		Bucket:        names.Bucket,
+		App:           names.App,
+		Folder:        names.Folder,
+		Theme:         a.Theme,
+		Posture:       a.Posture,
+		Account:       a.AccountID,
 		Zone:          rec.Domain,
 		Address:       rec.Setup.Address,
-		Addresses:     out.Addresses,
+		Addresses:     addrs,
 		OwnerEmail:    rec.Setup.OwnerEmail,
 	}
 	// A taken App name is fixed by the owner on GitHub's page, so the record holds the slug.
@@ -97,17 +108,29 @@ func PlanOf(rec record.Record, accounts []providers.Account, zones []providers.Z
 	return p, nil
 }
 
-// WritePlan writes p to path, readable by its owner alone.
+// WritePlan writes p to path, readable by its owner alone. It writes a temporary file in the
+// same folder and renames it over path, so the plan is never at another mode or half written.
 func WritePlan(path string, p Plan) error {
 	data, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(path, append(data, '\n'), 0o600); err != nil {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".plan-*")
+	if err != nil {
 		return fmt.Errorf("write the plan: %w", err)
 	}
-	// WriteFile keeps the mode of a file that already existed.
-	return os.Chmod(path, 0o600)
+	_, werr := tmp.Write(append(data, '\n'))
+	if cerr := tmp.Close(); werr == nil {
+		werr = cerr
+	}
+	if werr == nil {
+		werr = os.Rename(tmp.Name(), path)
+	}
+	if werr != nil {
+		_ = os.Remove(tmp.Name())
+		return fmt.Errorf("write the plan: %w", werr)
+	}
+	return nil
 }
 
 // ReadPlan reads the plan file at path. A key the plan never has is refused by name.
@@ -135,6 +158,9 @@ func ReadPlan(path string) (Plan, error) {
 // recomputed from rec, never taken from the file. The open fields it does not refuse are what
 // --apply takes: the address and the email.
 func Check(p Plan, rec record.Record) error {
+	if p.SchemaVersion != PlanSchemaVersion {
+		return usage("cairn: the plan's schemaVersion is %d, and this cairn reads %d", p.SchemaVersion, PlanSchemaVersion)
+	}
 	want, err := PlanOf(rec, nil, nil)
 	if err != nil {
 		return err
@@ -153,9 +179,6 @@ func Check(p Plan, rec record.Record) error {
 			return usage("cairn: the plan's %s was changed. Only account, zone, address, and ownerEmail may be edited; run --plan again for a new plan", c.field)
 		}
 	}
-	if p.SchemaVersion != PlanSchemaVersion {
-		return usage("cairn: the plan's schemaVersion is %d, and this cairn reads %d", p.SchemaVersion, PlanSchemaVersion)
-	}
 	if err := openChoice("account", p.Account, want.Account, choiceIDs(p.Accounts)); err != nil {
 		return err
 	}
@@ -166,9 +189,9 @@ func Check(p Plan, rec record.Record) error {
 		return usage("cairn: the plan's ownerEmail must be one email address, such as owner@example.com")
 	}
 	if _, err := setup.Plan(setup.Answers{
-		SiteName: want.SiteName, OwnerEmail: p.OwnerEmail, Posture: want.Posture, Zone: p.Zone, Host: p.Address,
+		SiteName: want.SiteName, OwnerEmail: p.OwnerEmail, Posture: want.Posture, Zone: p.Zone, Host: p.address(),
 	}); err != nil {
-		return usage("cairn: the plan's address %q must be the zone %s or a subdomain of it", p.Address, p.Zone)
+		return usage("cairn: the plan's address %q must be the zone %s or a subdomain of it", p.address(), p.Zone)
 	}
 	return nil
 }
@@ -182,21 +205,32 @@ func choiceIDs(cs []Choice) []string {
 }
 
 // openChoice checks one open choice: it must be filled in, be one of the listed options when
-// the plan lists several, and be the one the record began with, since a run cannot move to
-// another account or zone after its approvals.
+// the plan lists several, and match the record when the record settled it, since a run cannot
+// move to another account or zone after its approvals. A record that has not settled it takes
+// any listed option.
 func openChoice(field, got, recorded string, options []string) error {
 	switch {
+	case got == "" && len(options) == 0:
+		return usage("cairn: the plan's %s is left open; name the Cloudflare %s to use", field, field)
 	case got == "":
 		return usage("cairn: the plan's %s is left open; choose one of its %ss", field, field)
 	case len(options) > 0 && !slices.Contains(options, got):
 		return usage("cairn: the plan's %s %q is not one of its listed options", field, got)
-	case got != recorded:
+	case recorded != "" && got != recorded:
 		return usage("cairn: the plan's %s %q is not the one this setup began with, %q; run --plan again to change it", field, got, recorded)
 	}
 	return nil
 }
 
+// address is the plan's address, or the zone when the plan left it for the zone to give.
+func (p Plan) address() string {
+	if p.Address == "" {
+		return p.Zone
+	}
+	return p.Address
+}
+
 // Edit returns the plan's open fields as the summary's two editable rows.
 func (p Plan) Edit() setup.SummaryEdit {
-	return setup.SummaryEdit{OwnerEmail: p.OwnerEmail, Host: p.Address}
+	return setup.SummaryEdit{OwnerEmail: p.OwnerEmail, Host: p.address()}
 }

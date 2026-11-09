@@ -283,18 +283,92 @@ func normalizedForGolden(stdout, runID string) string {
 	return strings.ReplaceAll(normalized(stdout), runID, "<run-id>")
 }
 
-func TestNewE2EPlanNamesAnOpenChoiceLeftOpen(t *testing.T) {
-	r := newE2ERun(t)
+// planLeftOpen runs --plan with no --zone, so the account's two domains are an open choice.
+func (r *e2eRun) planLeftOpen(t *testing.T) testharness.Result {
+	t.Helper()
 	r.flags = []string{"--name", "Example Site", "--email", "owner@example.com", "--posture", "decline"}
 	res := r.planRun()
-	if res.ExitCode != 3 {
-		t.Fatalf("exit code = %d, want 3\n%s", res.ExitCode, res.Stderr)
+	if res.ExitCode != 0 {
+		t.Fatalf("an open choice is no failure: exit %d, want 0\nstdout:\n%s\nstderr:\n%s", res.ExitCode, res.Stdout, res.Stderr)
 	}
-	if !strings.Contains(res.Stderr, "--zone") || !strings.Contains(res.Stderr, e2eZone) {
-		t.Errorf("stderr = %q, want it to name --zone and list the domains", res.Stderr)
+	return res
+}
+
+func TestNewE2EPlanLeavesAnOpenChoiceOpenAndApplyTakesItFromThePlan(t *testing.T) {
+	r := newE2ERun(t)
+	res := r.planLeftOpen(t)
+	events := stream(t, res.Stdout)
+	validateAgainstSchema(t, events)
+	if slices.Contains(kinds(events), "summary") || slices.Contains(kinds(events), "step_failed") {
+		t.Errorf("stream %v, want an unfinished one: no summary and no failure", kinds(events))
+	}
+	p, err := agentview.ReadPlan(r.plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Zone != "" || !slices.Contains(p.Zones, e2eZone) || len(p.Zones) < 2 || p.Account == "" {
+		t.Errorf("plan zone %q, zones %v, account %q; want the zone open with the account's domains listed", p.Zone, p.Zones, p.Account)
 	}
 	if bad := nonGETCloudflare(res); len(bad) != 0 {
 		t.Errorf("non-GET Cloudflare requests: %v", bad)
+	}
+	if status := r.status(); !strings.Contains(status, "unfinished") || !strings.Contains(status, "keyring entries: setup/") {
+		t.Errorf("status = %q, want the stopped record unfinished with its keyring entries", status)
+	}
+
+	// Left open, the plan is refused before anything runs.
+	refused := r.c.Run(r.bin, "new", "--apply", r.plan)
+	if refused.ExitCode != 3 || refused.Stdout != "" || !strings.Contains(refused.Stderr, "zone") {
+		t.Errorf("apply of an open plan: exit %d, stdout %q, stderr %q; want 3, empty, naming the zone", refused.ExitCode, refused.Stdout, refused.Stderr)
+	}
+
+	r.editPlan(t, func(p *agentview.Plan) { p.Zone = e2eZone })
+	r.c.BareRepo(e2eOwner, "example-site")
+	res = r.c.Run(r.bin, "new", "--apply", r.plan)
+	if res.ExitCode != 0 {
+		t.Fatalf("apply: exit %d\nstdout:\n%s\nstderr:\n%s", res.ExitCode, res.Stdout, res.Stderr)
+	}
+	events = stream(t, res.Stdout)
+	validateAgainstSchema(t, events)
+	if kinds(events)[len(events)-1] != "summary" {
+		t.Errorf("last event = %v, want the final summary", kinds(events)[len(events)-1])
+	}
+	// The stop kept the Cloudflare grant, so the apply never asks for that approval again.
+	if waits := waitStates(events); slices.Contains(waits, "approve-cloudflare") || slices.Contains(waits, "reconsent-cloudflare") {
+		t.Errorf("the apply asked for the Cloudflare approval again: %v", waits)
+	}
+	if len(r.w.d1Create) != 1 {
+		t.Errorf("databases created = %v, want one", r.w.d1Create)
+	}
+	if status := r.status(); !strings.Contains(status, "finished  step live") {
+		t.Errorf("status after the apply = %q", status)
+	}
+}
+
+func TestNewE2EResumeTakesTheChoiceFlag(t *testing.T) {
+	r := newE2ERun(t)
+	r.planLeftOpen(t)
+	id, _, _ := strings.Cut(strings.TrimSpace(r.status()), " ")
+	r.c.BareRepo(e2eOwner, "example-site")
+
+	res := r.c.Run(r.bin, "new", "--resume", id)
+	if res.ExitCode != 1 || !strings.Contains(res.Stderr, "--zone") {
+		t.Fatalf("resume with no answer: exit %d, stderr %q; want a stop at the step naming --zone", res.ExitCode, res.Stderr)
+	}
+	events := stream(t, res.Stdout)
+	if events[len(events)-1]["kind"] != "step_failed" {
+		t.Errorf("stream %v, want it to end in step_failed", kinds(events))
+	}
+
+	res = r.c.Run(r.bin, "new", "--resume", id, "--zone", e2eZone)
+	if res.ExitCode != 0 {
+		t.Fatalf("resume with --zone: exit %d\nstdout:\n%s\nstderr:\n%s", res.ExitCode, res.Stdout, res.Stderr)
+	}
+	if events = stream(t, res.Stdout); events[len(events)-1]["kind"] != "summary" {
+		t.Errorf("stream %v, want a final summary", kinds(events))
+	}
+	if len(r.w.d1Create) != 1 {
+		t.Errorf("databases created = %v, want one", r.w.d1Create)
 	}
 }
 
@@ -307,6 +381,17 @@ func stepsOf(events []map[string]any, kind string) []string {
 	for _, e := range events {
 		if e["kind"] == kind {
 			out = append(out, fmt.Sprint(e["step"]))
+		}
+	}
+	return out
+}
+
+// waitStates returns the waiting state of every waiting event, in stream order.
+func waitStates(events []map[string]any) []string {
+	var out []string
+	for _, e := range events {
+		if e["kind"] == "waiting" {
+			out = append(out, fmt.Sprint(e["waiting"]))
 		}
 	}
 	return out
@@ -416,15 +501,21 @@ func TestNewE2EApplyCreatesTheSiteFromTheEditedPlan(t *testing.T) {
 	newGolden(t, "events.apply.ndjson", normalized(res.Stdout))
 }
 
-func TestNewE2EApplyRefusesAnAddressThatAnotherSiteHolds(t *testing.T) {
+func TestNewE2EApplyRefusalFoundAfterTheRunBeganStopsAtAStep(t *testing.T) {
 	r := newE2ERun(t)
 	if res := r.planRun(); res.ExitCode != 0 {
 		t.Fatalf("plan: exit %d\n%s", res.ExitCode, res.Stderr)
 	}
 	r.editPlan(t, func(p *agentview.Plan) { p.Address = "taken." + e2eZone })
 	res := r.c.Run(r.bin, "new", "--apply", r.plan)
-	if res.ExitCode != 3 || !strings.Contains(res.Stderr, "address") {
-		t.Errorf("exit %d, stderr %q; want 3 naming the address", res.ExitCode, res.Stderr)
+	if res.ExitCode != 1 || !strings.Contains(res.Stderr, "address") {
+		t.Fatalf("exit %d, stderr %q; want 1 naming the address", res.ExitCode, res.Stderr)
+	}
+	events := stream(t, res.Stdout)
+	validateAgainstSchema(t, events)
+	last := events[len(events)-1]
+	if last["kind"] != "step_failed" || last["step"] != "summary" {
+		t.Errorf("last event = %v, want step_failed at the summary", last)
 	}
 	if bad := nonGETCloudflare(res); len(bad) != 0 {
 		t.Errorf("the refused apply sent %v", bad)

@@ -23,6 +23,12 @@ type UsageError struct {
 // Error implements the error interface.
 func (e *UsageError) Error() string { return e.Problem }
 
+// refusal is a stop the run reports as a step_failed: what the view could not answer, and what
+// the caller does about it.
+func refusal(happened, do string) *setup.Failure {
+	return &setup.Failure{Reason: setup.ReasonRefused, Happened: happened, Do: do}
+}
+
 func usage(format string, args ...any) *UsageError {
 	return &UsageError{Problem: fmt.Sprintf(format, args...)}
 }
@@ -61,7 +67,8 @@ type View struct {
 	Zones    []providers.Zone
 }
 
-// ChooseTheme returns the --site-theme value, or a usage error listing the catalog.
+// ChooseTheme returns the --site-theme value, or a usage error listing the catalog. It is asked
+// before the run holds a record, so an unanswered theme cannot be left open for a plan.
 func (v *View) ChooseTheme(_ context.Context, themes []scaffold.Theme) (string, error) {
 	if v.Theme == "" {
 		ids := make([]string, len(themes))
@@ -73,21 +80,26 @@ func (v *View) ChooseTheme(_ context.Context, themes []scaffold.Theme) (string, 
 	return v.Theme, nil
 }
 
-// ChooseAccount returns the --account value, or a usage error listing the accounts.
+// ChooseAccount returns the --account value. With none given, a plan leaves the choice open
+// and every other mode stops at the step, since it cannot ask.
 func (v *View) ChooseAccount(_ context.Context, accounts []providers.Account) (string, error) {
 	v.Accounts = accounts
-	if v.Account == "" || !slices.ContainsFunc(accounts, func(a providers.Account) bool { return a.ID == v.Account }) {
-		list := make([]string, len(accounts))
-		for i, a := range accounts {
-			list[i] = a.ID + " (" + a.Name + ")"
-		}
-		return "", usage("cairn: the Cloudflare sign-in lists several accounts. Give one with --account: %s", strings.Join(list, ", "))
+	if slices.ContainsFunc(accounts, func(a providers.Account) bool { return a.ID == v.Account }) {
+		return v.Account, nil
 	}
-	return v.Account, nil
+	if v.Mode == PlanMode && v.Account == "" {
+		return "", setup.ErrOpenChoice
+	}
+	list := make([]string, len(accounts))
+	for i, a := range accounts {
+		list[i] = a.ID + " (" + a.Name + ")"
+	}
+	return "", refusal("The Cloudflare sign-in lists several accounts, and none was chosen: "+strings.Join(list, ", ")+".",
+		"Run cairn new --resume with --account and one of them.")
 }
 
-// ChooseZone returns the id of the zone --zone names, by name or id, or a usage error listing
-// the zones.
+// ChooseZone returns the id of the zone --zone names, by name or id. With none given, a plan
+// leaves the choice open and every other mode stops at the step.
 func (v *View) ChooseZone(_ context.Context, zones []providers.Zone) (string, error) {
 	v.Zones = zones
 	for _, z := range zones {
@@ -95,11 +107,15 @@ func (v *View) ChooseZone(_ context.Context, zones []providers.Zone) (string, er
 			return z.ID, nil
 		}
 	}
+	if v.Mode == PlanMode && v.Zone == "" {
+		return "", setup.ErrOpenChoice
+	}
 	names := make([]string, len(zones))
 	for i, z := range zones {
 		names[i] = z.Name
 	}
-	return "", usage("cairn: the account has several active domains. Give one with --zone: %s", strings.Join(names, ", "))
+	return "", refusal("The account has several active domains, and none was chosen: "+strings.Join(names, ", ")+".",
+		"Run cairn new --resume with --zone and one of them.")
 }
 
 // openTimeout is how long OpenBrowser waits on a launcher before it counts the browser as open.
@@ -117,8 +133,8 @@ func (v *View) OpenBrowser(_ context.Context, url string) error {
 	return werr
 }
 
-// ConfirmSummary answers the summary by mode. A refusal in Apply mode is a usage error naming
-// the plan field, and in Resume mode a plain error, since neither can ask again.
+// ConfirmSummary answers the summary by mode. A refusal after the run began, in Apply or Resume
+// mode, is a plain error that stops the run at its step, since neither can ask again.
 func (v *View) ConfirmSummary(_ context.Context, s setup.Summary, problem string) (setup.SummaryEdit, error) {
 	switch v.Mode {
 	case PlanMode:
@@ -131,10 +147,11 @@ func (v *View) ConfirmSummary(_ context.Context, s setup.Summary, problem string
 		if !setup.ValidEmail(v.Edit.OwnerEmail) {
 			field = "ownerEmail"
 		}
-		return setup.SummaryEdit{}, usage("cairn: the plan's %s is refused: %s", field, problem)
+		return setup.SummaryEdit{}, refusal("Setup refused the plan's "+field+": "+problem,
+			"Fix the "+field+" in the plan file, and then run cairn new --apply again.")
 	}
 	if problem != "" {
-		return setup.SummaryEdit{}, fmt.Errorf("cairn: setup refused the summary: %s", problem)
+		return setup.SummaryEdit{}, refusal("Setup refused the summary: "+problem, "Run cairn new --plan again.")
 	}
 	return setup.SummaryEdit{OwnerEmail: s.OwnerEmail, Host: s.Addresses[0]}, nil
 }

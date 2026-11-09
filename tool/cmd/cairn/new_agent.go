@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -24,6 +23,11 @@ type agentRun struct {
 	f   newFlags
 	st  *store.Store
 	out *agentview.Writer
+	// held are the events before the opening's first step ends. A usage error found there is a
+	// refusal before anything ran, which leaves stdout empty, so they are written only once the
+	// run is past it or fails some other way.
+	held     []setup.Event
+	released bool
 }
 
 // runAgent runs one mode of cairn new for a caller with no terminal: --dry-run prints the names,
@@ -47,51 +51,6 @@ func runAgent(cmd *cobra.Command, d deps, f newFlags, mode string) error {
 	return a.resume()
 }
 
-// dryRunPayload is what --dry-run --json prints.
-type dryRunPayload struct {
-	SchemaVersion int           `json:"schemaVersion"`
-	Kind          string        `json:"kind"`
-	SiteName      string        `json:"siteName"`
-	Repository    string        `json:"repository"`
-	Worker        string        `json:"worker"`
-	Database      string        `json:"database"`
-	Bucket        string        `json:"bucket"`
-	App           string        `json:"app"`
-	Folder        string        `json:"folder"`
-	OwnerEmail    string        `json:"ownerEmail"`
-	Posture       setup.Posture `json:"posture"`
-}
-
-// runDryRun prints the names setup would use. It needs no registry, no network, and no approval.
-func runDryRun(cmd *cobra.Command, f newFlags) error {
-	if err := checkEmail(f.email); err != nil {
-		return err
-	}
-	n, err := setup.DeriveNames(f.name, 0)
-	if err != nil {
-		return newUsageError("cairn: --name: " + err.Error())
-	}
-	if !f.asJSON {
-		_, err := fmt.Fprintln(cmd.OutOrStdout(), fmt.Sprintf(tmplNewDryRun, f.name, n.Repository, n.Worker, n.Database, n.Bucket, n.App, n.Folder, f.email, f.posture))
-		return err
-	}
-	data, err := json.Marshal(dryRunPayload{
-		SchemaVersion: 1, Kind: "dryRun", SiteName: f.name, Repository: n.Repository, Worker: n.Worker,
-		Database: n.Database, Bucket: n.Bucket, App: n.App, Folder: n.Folder, OwnerEmail: f.email, Posture: setup.Posture(f.posture),
-	})
-	if err != nil {
-		return err
-	}
-	return writeJSONPayload(cmd.OutOrStdout(), data)
-}
-
-func checkEmail(email string) error {
-	if !setup.ValidEmail(email) {
-		return translated(errors.New(tmplNewBadEmail))
-	}
-	return nil
-}
-
 // unfinished lists the setup records a run could continue, by id.
 func (a *agentRun) unfinished() []store.Entry {
 	entries, _ := a.st.List()
@@ -110,8 +69,39 @@ func (a *agentRun) recordOf(runID string) (store.Entry, bool) {
 	return store.Entry{}, false
 }
 
+// emit is the run's event sink: it holds the opening's events, and shows a --host that the
+// plan means to write on the summary the stream carries.
+func (a *agentRun) emit(e setup.Event) {
+	if e.Kind == setup.SummaryKind && e.Summary != nil && a.f.host != "" {
+		sum := *e.Summary
+		out, err := setup.Plan(setup.Answers{SiteName: sum.SiteName, OwnerEmail: sum.OwnerEmail, Posture: sum.Posture, Zone: sum.Zone, Host: strings.ToLower(a.f.host)})
+		if err == nil {
+			sum.Addresses = out.Addresses
+		}
+		e.Summary = &sum
+	}
+	if a.released {
+		a.out.Emit(e)
+		return
+	}
+	a.held = append(a.held, e)
+	if e.Kind == setup.StepDone || e.Kind == setup.StepFailed {
+		a.release()
+	}
+}
+
+func (a *agentRun) release() {
+	a.released = true
+	for _, e := range a.held {
+		a.out.Emit(e)
+	}
+	a.held = nil
+}
+
 // plan runs the approvals with the flags as the answers and stops at the summary, then writes
-// the plan file. It refuses to start over an unfinished setup unless --new says to.
+// the plan file. A choice no flag answered stops the run where it is, and the plan file leaves
+// that choice open with its options listed. It refuses to start over an unfinished setup unless
+// --new says to.
 func (a *agentRun) plan() error {
 	if err := checkEmail(a.f.email); err != nil {
 		return err
@@ -135,14 +125,16 @@ func (a *agentRun) plan() error {
 		answers: setup.Answers{SiteName: a.f.name, OwnerEmail: a.f.email, Posture: setup.Posture(a.f.posture)},
 		tag:     a.f.tag,
 	}
-	cfg, err := productionConfig(a.d, in, view, a.out.Emit)
+	cfg, err := productionConfig(a.d, in, view, a.emit)
 	if err != nil {
 		return err
 	}
 	_, err = setup.Run(a.cmd.Context(), cfg)
-	if !errors.Is(err, setup.ErrPlanned) {
+	open := errors.Is(err, setup.ErrOpenChoice)
+	if !open && !errors.Is(err, setup.ErrPlanned) {
 		return a.finish(setup.Result{}, err)
 	}
+	a.release()
 	e, ok := a.recordOf(cfg.RunID)
 	if !ok {
 		return newNoRunForPlanError(cfg.RunID)
@@ -155,7 +147,12 @@ func (a *agentRun) plan() error {
 	if a.f.host != "" {
 		p.Address = strings.ToLower(a.f.host)
 	}
-	if err := agentview.Check(p, e.Record); err != nil {
+	if open {
+		// A zone the flags named before the account was open still stands in the plan.
+		if p.Zone == "" && len(p.Zones) == 0 {
+			p.Zone = a.f.zone
+		}
+	} else if err := agentview.Check(p, e.Record); err != nil {
 		return newUsageError(err.Error())
 	}
 	if err := agentview.WritePlan(a.f.plan, p); err != nil {
@@ -181,6 +178,7 @@ func (a *agentRun) apply() error {
 	}
 	view := a.view(agentview.ApplyMode)
 	view.Edit = p.Edit()
+	view.Account, view.Zone = p.Account, p.Zone
 	return a.runRecord(e, view, true)
 }
 
@@ -190,7 +188,11 @@ func (a *agentRun) resume() error {
 	if err != nil {
 		return newNoSetupError(a.f.resume)
 	}
-	return a.runRecord(store.Entry{ID: a.f.resume, Record: rec}, a.view(agentview.ResumeMode), false)
+	view := a.view(agentview.ResumeMode)
+	view.Theme, view.Account, view.Zone = a.f.siteTheme, a.f.account, a.f.zone
+	// A resume that runs approvals shows the owner a browser tab, but the agent never watches it,
+	// so the sign-in link goes by email as it does after --apply.
+	return a.runRecord(store.Entry{ID: a.f.resume, Record: rec}, view, true)
 }
 
 func (a *agentRun) runRecord(e store.Entry, view *agentview.View, apply bool) error {
@@ -200,7 +202,7 @@ func (a *agentRun) runRecord(e store.Entry, view *agentview.View, apply bool) er
 		apply:   apply,
 		resume:  &setup.Resume{SiteID: e.ID, Record: e.Record},
 	}
-	cfg, err := productionConfig(a.d, in, view, a.out.Emit)
+	cfg, err := productionConfig(a.d, in, view, a.emit)
 	if err != nil {
 		return err
 	}
@@ -215,6 +217,12 @@ func (a *agentRun) view(mode agentview.Mode) *agentview.View {
 // finish turns a run's end into the stream's last line and the exit code. A finished run ends the
 // stream with a summary, which a stream cut short never has.
 func (a *agentRun) finish(res setup.Result, err error) error {
+	ue, isUsage := errors.AsType[*agentview.UsageError](err)
+	if isUsage {
+		a.held = nil
+		return newUsageError(ue.Problem)
+	}
+	a.release()
 	if err == nil {
 		s := res.Summary
 		if s.SiteName == "" {
@@ -222,9 +230,6 @@ func (a *agentRun) finish(res setup.Result, err error) error {
 		}
 		a.out.Emit(setup.Event{SchemaVersion: setup.EventSchemaVersion, Kind: setup.SummaryKind, Timestamp: a.d.now(), Step: setup.StepSignIn, Summary: &s})
 		return a.out.Err()
-	}
-	if ue, ok := errors.AsType[*agentview.UsageError](err); ok {
-		return newUsageError(ue.Problem)
 	}
 	f, ok := errors.AsType[*setup.Failure](err)
 	if !ok {

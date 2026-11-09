@@ -32,8 +32,8 @@ every route. No `tool/v2.0.0` tag exists yet.
   runs from it, `--resume <id>` and `--new` choose between an unfinished run and a fresh one,
   `--dry-run --json` prints the plan with no network, and `--tag` picks the engine dist-tag. The
   run writes one JSON event per line (`schema/cairn-setup-event.schema.json`) with the waiting
-  states, ends with a `summary` event, and exits 0, 1 (stopped, resumable), 2 (stopped while
-  waiting), or 3 (usage). `cairn new status` lists each setup record, whether it finished, and
+  states, ends with a `summary` event, and exits 0, 1 (stopped, resumable), 2 (interrupted or timed out,
+  resumable), or 3 (usage, before anything ran). `cairn new status` lists each setup record, whether it finished, and
   what an unfinished run still holds. `make reference` writes the generated setup reference to
   `tool/docs/setup-reference.md`, and a test fails when the page and the code disagree. The
   setup contract joins `cairn help agents` once the command is shown. The

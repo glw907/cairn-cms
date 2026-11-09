@@ -6,8 +6,47 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
+
+// openView leaves the zone choice open the way the agent view does for --plan with no --zone.
+type openView struct{ *fakeView }
+
+func (openView) ChooseZone(context.Context, []providers.Zone) (string, error) {
+	return "", ErrOpenChoice
+}
+
+func TestAnOpenChoiceStopsTheRunCleanlyAndTheRecordResumesWithoutAnotherApproval(t *testing.T) {
+	w := newWorld(t)
+	w.cf.active = append(w.cf.active, providers.Zone{ID: "zone-two", Name: "example.org", Status: "active"})
+	w.cfg.View = openView{w.view}
+	_, err := w.run(context.Background())
+	if !errors.Is(err, ErrOpenChoice) {
+		t.Fatalf("Run error = %v, want ErrOpenChoice", err)
+	}
+	if slices.ContainsFunc(w.events, func(e Event) bool { return e.Kind == StepFailed }) {
+		t.Error("an open choice emitted step_failed")
+	}
+	rec, _ := w.saver.last()
+	if rec.Cloudflare.AccountID != w.cf.accounts[0].ID || rec.Cloudflare.ZoneID != "" || !rec.Setup.KeysKept || len(w.vault.ofRun()) == 0 {
+		t.Errorf("record account %q, zone %q, KeysKept %v, keyring %v; want the account kept, the zone open, and the run resumable",
+			rec.Cloudflare.AccountID, rec.Cloudflare.ZoneID, rec.Setup.KeysKept, w.vault.ofRun())
+	}
+
+	w.cfg.View = w.view
+	w.view.zone = "zone-two"
+	res, err := w.resume()
+	if err != nil || res.Record.Step != string(spine.StepLive) {
+		t.Fatalf("the record did not resume to live: %v at %q", err, res.Record.Step)
+	}
+	if res.Record.Domain != "example.org" {
+		t.Errorf("domain = %q, want the zone the resume chose", res.Record.Domain)
+	}
+	if slices.Contains(w.waits(), WaitCloudflare) {
+		t.Errorf("the resume asked for Cloudflare approval again: %v", w.waits())
+	}
+}
 
 // planView ends the run at the summary, the way the agent view does for --plan.
 type planView struct{ *fakeView }

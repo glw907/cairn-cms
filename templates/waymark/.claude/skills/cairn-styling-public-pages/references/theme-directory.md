@@ -35,7 +35,7 @@ The contract also allows these, and a theme needs one only when its files use it
 - `options/*/*.css`, the built sheets for each option value.
 - `components/**` and `directives/**`, which cover the island registry and a component's helpers. The registry is `directives/islands/registry.ts`, a map from directive name to component. The adapter registers it, and the root layout imports it directly so the client never loads the adapter.
 - `fonts/*.woff2`, the font files `fonts.css` names.
-- `screenshots/**`, which the lay-in leaves out of a site's copy.
+- `screenshots/**`, the catalog images the manifest names. The viewer's headless mode makes them, as [Checking a theme](checking-a-theme.md#the-viewer) shows, and the lay-in leaves them out of a site's copy.
 - `**/*.test.ts`, the theme's tests, which lay in with it.
 
 `theme-names.ts` is generated, not written by hand. A `.ts` or `.svelte` file in the theme imports a
@@ -57,7 +57,7 @@ is its schema, and the tokens build validates the manifest against it.
 | `colorModes` | Yes | The daisyUI theme name of the `light` block and of the `dark` block. |
 | `options` | Yes | Zero to four choices an owner makes. |
 | `fonts` | No | Each face, with its license, source, and files. |
-| `screenshots` | No | Each image, with its `path` and what it `shows`. |
+| `screenshots` | No | Each image, with its `path` and what it `shows`. A listed image that is missing fails the theme check's `paths-required` rule. |
 | `derivedFrom` | No | The design system the theme was built from, as a `repository` and a `commit`. |
 
 The names in `colorModes` have no other source: the build, the toggle, and the cookie regex all read
@@ -117,4 +117,4 @@ cairn-cms repository, `npm run theme:lay-in` lays `themes/waymark/` into `exampl
 
 - [Retheme by tokens](retheme-by-tokens.md) covers where each token lands and how to change a brand.
 - [Theme starter](theme-starter.md) holds a complete daisyUI block to start a theme from.
-- [Checking a theme](checking-a-theme.md) covers the audit rules that test a theme against the contract.
+- [Checking a theme](checking-a-theme.md) covers the theme check, which tests a theme against this contract. It also covers the viewer and the audit rules the check runs.

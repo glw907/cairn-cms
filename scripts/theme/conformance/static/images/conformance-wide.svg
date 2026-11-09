@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-labelledby="t">
+  <title id="t">A wide frame with a diagonal band across a pale field</title>
+  <rect width="1200" height="630" fill="#e6e1d6"/>
+  <path d="M0 630 L420 0 L620 0 L200 630 Z" fill="#8a9c7c"/>
+  <circle cx="930" cy="200" r="90" fill="#c9b79a"/>
+</svg>

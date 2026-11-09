@@ -11,7 +11,7 @@ function finding(tier: Finding['tier']): Finding {
 }
 
 function report(...tiers: Finding['tier'][]): AuditReport {
-  return { findings: tiers.map(finding), suppressed: [], filesScanned: 1, ruleIds: ['probe'] };
+  return { findings: tiers.map(finding), suppressed: [], filesScanned: 1, ruleIds: ['probe'], measured: [] };
 }
 
 describe('exitCodeFor', () => {

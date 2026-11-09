@@ -25,6 +25,7 @@ describe('scopeReport', () => {
     ],
     filesScanned: 42,
     ruleIds: ['motion-band', 'type-scale', 'gap-scale', 'stock-default-hazards', 'token-colors'],
+    measured: [],
   };
 
   it('keeps only the owned rule ids among the findings and the suppressed set', () => {
@@ -64,6 +65,7 @@ describe('scopeReport', () => {
       ],
       filesScanned: 50,
       ruleIds: ['no-uncompiled-class', 'type-scale', 'gap-scale'],
+      measured: [],
     };
     const scoped = scopeReport(single, ['no-uncompiled-class']);
     expect(scoped.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class']);

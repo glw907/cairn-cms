@@ -528,7 +528,7 @@ describe('static.scope restore form (a site keeping its own src/lib/components)'
 
 /** A report carrying the given findings, with everything else empty. */
 function reportOf(findings: Finding[], suppressed: Finding[] = []): AuditReport {
-  return { findings, suppressed, filesScanned: 1, ruleIds: ['type-scale'] };
+  return { findings, suppressed, filesScanned: 1, ruleIds: ['type-scale'], measured: [] };
 }
 
 const finding = (tier: 'error' | 'advisory'): Finding => ({
@@ -587,6 +587,24 @@ describe('formatReport', () => {
     expect(text).toContain('(x3)');
     expect(text.split('\n').filter((row) => row.includes('type-scale'))).toHaveLength(2);
     expect(text).not.toContain('(x1)');
+  });
+
+  it('lists each theme block a rule measured, with its file', () => {
+    const report = {
+      ...reportOf([]),
+      measured: [{ ruleId: 'theme-contrast', file: 'src/theme/theme.css', themes: ['acme', 'acme-night'] }],
+    };
+    const text = formatReport(report);
+    expect(text).toContain('theme-contrast');
+    expect(text).toContain('src/theme/theme.css');
+    expect(text).toContain('acme, acme-night');
+    expect(text).not.toContain('measured nothing');
+  });
+
+  it('says measured nothing when no theme sheet was read', () => {
+    expect(formatReport(reportOf([]))).toContain('measured nothing');
+    const empty = { ...reportOf([]), measured: [{ ruleId: 'theme-contrast', file: 'src/theme/theme.css', themes: [] }] };
+    expect(formatReport(empty)).toContain('measured nothing');
   });
 
   it('names the scan size and the rules that ran', () => {

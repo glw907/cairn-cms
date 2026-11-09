@@ -10,7 +10,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    # 35 minutes held until the theme garden's two steps joined the job (2026-11-09): the first run of
+    # `npm run test:theme` was cancelled at the limit, so the job now has 45.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -117,6 +119,12 @@ jobs:
       - run: npm --prefix examples/showcase run check:cairn
       - run: npm --prefix examples/showcase run test:unit
       - run: npm --prefix examples/showcase run format:check
+      # The theme garden's gate. Both steps run on every push and pull request, with no `if:`, because
+      # publish.yml's ci-green waits on this job's check run for every release, so a catalog theme that
+      # fails the check cannot cut. They need the showcase install (the viewer builds a copy of it), the
+      # packaged audit, and the Chromium the component project installed above.
+      - run: npm run test:theme
+      - run: npm run check:theme -- --catalog
       # The cairn-styling-public-pages skill's coverage gate: every public piece has a catalogue page, every snippet
       # class compiles in the showcase's public sheet, and every named token resolves. It compiles with
       # the showcase's own Tailwind, so it runs after the showcase install.

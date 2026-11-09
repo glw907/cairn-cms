@@ -1,0 +1,519 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "conformance-note",
+      "concept": "fragments",
+      "title": "Conformance note",
+      "permalink": "/fragments/conformance-note",
+      "excerpt": "This note is a fragment. It lives in one place and appears wherever a page includes it, so a theme must render it as part of the surrounding text.",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "conformance-rich-note",
+      "concept": "fragments",
+      "title": "Conformance rich note",
+      "permalink": "/fragments/conformance-rich-note",
+      "excerpt": "A fragment can hold more than one paragraph, a list, and emphasis. First point in the fragment. Second point in the fragment. A quote inside a fragment closes the note.",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "commonmark-blocks",
+      "concept": "pages",
+      "title": "CommonMark blocks",
+      "permalink": "/commonmark-blocks",
+      "excerpt": "This page is the block layer of the conformance set, written against the CommonMark 0.31.2 section list: thematic breaks, ATX headings, setext headings, indented code blocks, fenced code blocks, HTML…",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "commonmark-inlines",
+      "concept": "pages",
+      "title": "CommonMark inlines",
+      "permalink": "/commonmark-inlines",
+      "excerpt": "This page is the inline layer of the conformance set, written against the CommonMark 0.31.2 section list: backslash escapes, entity and numeric character references, code spans, emphasis and strong…",
+      "draft": false,
+      "links": [
+        {
+          "concept": "pages",
+          "id": "conformance-parent"
+        }
+      ]
+    },
+    {
+      "id": "conformance-child",
+      "concept": "pages",
+      "title": "Conformance child",
+      "permalink": "/conformance-child",
+      "excerpt": "This page is the child in the conformance set's one parent and child pair. Its parent page is the conformance parent.",
+      "draft": false,
+      "links": [
+        {
+          "concept": "pages",
+          "id": "conformance-parent"
+        }
+      ]
+    },
+    {
+      "id": "conformance-parent",
+      "concept": "pages",
+      "title": "Conformance parent",
+      "permalink": "/conformance-parent",
+      "excerpt": "This page is the parent in the conformance set's one parent and child pair. Its child page is the conformance child. A parent page usually opens a section, so a theme that draws a section trail or a…",
+      "draft": false,
+      "links": [
+        {
+          "concept": "pages",
+          "id": "conformance-child"
+        }
+      ]
+    },
+    {
+      "id": "directives",
+      "concept": "pages",
+      "title": "Directives",
+      "permalink": "/directives",
+      "excerpt": "This page is the directive layer of the conformance set: cairn's blocks, each shown empty, long, and nested inside another block. A theme styles the blocks, so each case checks a stress the everyday…",
+      "draft": false,
+      "links": [
+        {
+          "concept": "pages",
+          "id": "conformance-parent"
+        }
+      ],
+      "includes": [
+        "conformance-note",
+        "conformance-rich-note"
+      ]
+    },
+    {
+      "id": "gfm",
+      "concept": "pages",
+      "title": "GitHub Flavored Markdown",
+      "permalink": "/gfm",
+      "excerpt": "This page is the GFM layer of the conformance set: tables, task lists, strikethrough, extended autolinks, and footnotes. Tables | Left aligned | Centered | Right aligned | | :----------- | :------: |…",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "raw-html",
+      "concept": "pages",
+      "title": "Raw HTML",
+      "permalink": "/raw-html",
+      "excerpt": "This page is the raw HTML layer of the conformance set. The sanitizer keeps the benign tags an author types and strips the rest. Each section below shows a tag the sanitizer keeps; the last shows one…",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "2025-01-11-cold-start",
+      "concept": "posts",
+      "title": "Cold start",
+      "date": "2025-01-11",
+      "permalink": "/posts/cold-start",
+      "excerpt": "Filler post 1, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "layout"
+      ]
+    },
+    {
+      "id": "2025-02-08-icefall-watch",
+      "concept": "posts",
+      "title": "Icefall watch",
+      "date": "2025-02-08",
+      "permalink": "/posts/icefall-watch",
+      "excerpt": "Filler post 2, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "images",
+        "motion"
+      ]
+    },
+    {
+      "id": "2025-03-08-mud-season-begins",
+      "concept": "posts",
+      "title": "Mud season begins",
+      "date": "2025-03-08",
+      "permalink": "/posts/mud-season-begins",
+      "excerpt": "Filler post 3, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "performance",
+        "tables"
+      ]
+    },
+    {
+      "id": "2025-04-05-creek-crossing",
+      "concept": "posts",
+      "title": "Creek crossing",
+      "date": "2025-04-05",
+      "permalink": "/posts/creek-crossing",
+      "excerpt": "Filler post 4, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "layout",
+        "navigation"
+      ]
+    },
+    {
+      "id": "2025-05-03-wildflower-window",
+      "concept": "posts",
+      "title": "Wildflower window",
+      "date": "2025-05-03",
+      "permalink": "/posts/wildflower-window",
+      "excerpt": "Filler post 5, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "spacing"
+      ]
+    },
+    {
+      "id": "2025-05-31-new-boots-review",
+      "concept": "posts",
+      "title": "New boots review",
+      "date": "2025-05-31",
+      "permalink": "/posts/new-boots-review",
+      "excerpt": "Filler post 6, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "tables",
+        "typography"
+      ]
+    },
+    {
+      "id": "2025-06-28-solstice-loop",
+      "concept": "posts",
+      "title": "Solstice loop",
+      "date": "2025-06-28",
+      "permalink": "/posts/solstice-loop",
+      "excerpt": "Filler post 7, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "navigation",
+        "spacing"
+      ]
+    },
+    {
+      "id": "2025-07-26-afternoon-thunder",
+      "concept": "posts",
+      "title": "Afternoon thunder",
+      "date": "2025-07-26",
+      "permalink": "/posts/afternoon-thunder",
+      "excerpt": "Filler post 8, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "code",
+        "i18n"
+      ]
+    },
+    {
+      "id": "2025-08-23-low-water-route",
+      "concept": "posts",
+      "title": "Low water route",
+      "date": "2025-08-23",
+      "permalink": "/posts/low-water-route",
+      "excerpt": "Filler post 9, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "images"
+      ]
+    },
+    {
+      "id": "2025-09-20-first-color",
+      "concept": "posts",
+      "title": "First color",
+      "date": "2025-09-20",
+      "permalink": "/posts/first-color",
+      "excerpt": "Filler post 10, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "fragments",
+        "spacing"
+      ]
+    },
+    {
+      "id": "2025-10-18-hunting-season-notes",
+      "concept": "posts",
+      "title": "Hunting season notes",
+      "date": "2025-10-18",
+      "permalink": "/posts/hunting-season-notes",
+      "excerpt": "Filler post 11, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "code",
+        "color"
+      ]
+    },
+    {
+      "id": "2025-11-15-early-snow-gear",
+      "concept": "posts",
+      "title": "Early snow gear",
+      "date": "2025-11-15",
+      "permalink": "/posts/early-snow-gear",
+      "excerpt": "Filler post 12, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "accessibility",
+        "forms"
+      ]
+    },
+    {
+      "id": "2025-12-13-solstice-dark",
+      "concept": "posts",
+      "title": "Solstice dark",
+      "date": "2025-12-13",
+      "permalink": "/posts/solstice-dark",
+      "excerpt": "Filler post 13, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "i18n"
+      ]
+    },
+    {
+      "id": "2026-01-10-spring-thaw",
+      "concept": "posts",
+      "title": "Spring thaw",
+      "date": "2026-01-10",
+      "permalink": "/posts/spring-thaw",
+      "excerpt": "Filler post 14, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "color",
+        "performance"
+      ]
+    },
+    {
+      "id": "2026-02-07-boot-fit",
+      "concept": "posts",
+      "title": "Boot fit",
+      "date": "2026-02-07",
+      "permalink": "/posts/boot-fit",
+      "excerpt": "Filler post 15, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "forms",
+        "layout"
+      ]
+    },
+    {
+      "id": "2026-03-07-ridge-route",
+      "concept": "posts",
+      "title": "Ridge route",
+      "date": "2026-03-07",
+      "permalink": "/posts/ridge-route",
+      "excerpt": "Filler post 16, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "images",
+        "motion"
+      ]
+    },
+    {
+      "id": "2026-04-04-layering",
+      "concept": "posts",
+      "title": "Layering",
+      "date": "2026-04-04",
+      "permalink": "/posts/layering",
+      "excerpt": "Filler post 17, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "color"
+      ]
+    },
+    {
+      "id": "2026-05-02-first-frost",
+      "concept": "posts",
+      "title": "First frost",
+      "date": "2026-05-02",
+      "permalink": "/posts/first-frost",
+      "excerpt": "Filler post 18, written to pad the archive past two pages.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "layout",
+        "navigation"
+      ]
+    },
+    {
+      "id": "2026-10-01-long-title",
+      "concept": "posts",
+      "title": "A post title that runs on and on far beyond what any layout expects, so that the heading, the archive row, the feed entry, and the browser tab must all cope with a name this long",
+      "date": "2026-10-01",
+      "permalink": "/posts/long-title",
+      "excerpt": "A description that is also long, because a theme that wraps the title well should wrap the summary under it just as well, and the two together make the hardest card in the archive.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "layout",
+        "typography"
+      ]
+    },
+    {
+      "id": "2026-10-02-unbroken-strings",
+      "concept": "posts",
+      "title": "Unbroken strings",
+      "date": "2026-10-02",
+      "permalink": "/posts/unbroken-strings",
+      "excerpt": "Text with no break opportunity, which a layout must wrap, scroll, or clip on purpose.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "layout",
+        "typography"
+      ]
+    },
+    {
+      "id": "2026-10-04-many-topics",
+      "concept": "posts",
+      "title": "Many topics",
+      "date": "2026-10-04",
+      "permalink": "/posts/many-topics",
+      "excerpt": "One post with twelve topics, to test a tag list that wraps over several lines.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "accessibility",
+        "code",
+        "color",
+        "forms",
+        "images",
+        "layout",
+        "motion",
+        "navigation",
+        "performance",
+        "spacing",
+        "tables",
+        "typography"
+      ]
+    },
+    {
+      "id": "2026-10-05-hebrew",
+      "concept": "posts",
+      "title": "טקסט מימין לשמאל",
+      "date": "2026-10-05",
+      "permalink": "/posts/hebrew",
+      "excerpt": "פוסט בעברית, כדי לבדוק כיוון טקסט מימין לשמאל.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "rtl",
+        "typography"
+      ]
+    },
+    {
+      "id": "2026-10-06-arabic",
+      "concept": "posts",
+      "title": "نص من اليمين إلى اليسار",
+      "date": "2026-10-06",
+      "permalink": "/posts/arabic",
+      "excerpt": "مقال بالعربية لاختبار اتجاه النص من اليمين إلى اليسار.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "rtl",
+        "typography"
+      ]
+    },
+    {
+      "id": "2026-10-07-non-ascii-text",
+      "concept": "posts",
+      "title": "Café, naïve, Zürich, Łódź",
+      "date": "2026-10-07",
+      "permalink": "/posts/non-ascii-text",
+      "excerpt": "Accented Latin, Cyrillic, Greek, CJK, and emoji in one post.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "i18n",
+        "typography"
+      ]
+    },
+    {
+      "id": "2026-10-08-text-only",
+      "concept": "posts",
+      "title": "A post with no image",
+      "date": "2026-10-08",
+      "permalink": "/posts/text-only",
+      "excerpt": "No hero image and no image in the body.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "images"
+      ]
+    },
+    {
+      "id": "2026-10-09-image-only",
+      "concept": "posts",
+      "title": "A post that is only an image",
+      "date": "2026-10-09",
+      "permalink": "/posts/image-only",
+      "excerpt": "The body is one image and nothing else.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "images"
+      ]
+    },
+    {
+      "id": "2026-10-10-hero-image",
+      "concept": "posts",
+      "title": "A post with a hero image",
+      "date": "2026-10-10",
+      "permalink": "/posts/hero-image",
+      "excerpt": "A hero image with alt text and a caption, plus an inline image in the body.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "images"
+      ]
+    },
+    {
+      "id": "2026-10-11-with-a-fragment",
+      "concept": "posts",
+      "title": "A post that includes a fragment",
+      "date": "2026-10-11",
+      "permalink": "/posts/with-a-fragment",
+      "excerpt": "A post that places a reusable fragment in its text.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "fragments"
+      ],
+      "includes": [
+        "conformance-note"
+      ]
+    },
+    {
+      "id": "2026-10-12-draft-stays-hidden",
+      "concept": "posts",
+      "title": "A draft that stays hidden",
+      "date": "2026-10-12",
+      "permalink": "/posts/draft-stays-hidden",
+      "excerpt": "This post is a draft, so no public page, archive, or feed may show it.",
+      "draft": true,
+      "links": [],
+      "tags": [
+        "drafts"
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"net/http"
 	"slices"
 	"time"
 
@@ -17,12 +18,14 @@ const workerKeySecret = "GITHUB_APP_PRIVATE_KEY_B64"
 //
 // A run that finds the commit's deploy already failed, without having pushed it itself, is a
 // rerun after a stop at this step, so it pushes an empty commit once to deploy again: setup
-// holds no permission that reruns a workflow.
+// holds no permission that reruns a workflow. A rerun that finds no run for the recorded commit
+// checks once that the remote holds it, since a stop between recording that empty commit and
+// pushing it leaves a commit GitHub never received.
 func (r *run) firstDeploy(ctx context.Context) error {
 	r.startInstall()
 	g := r.rec.GitHub.Repo
 	deadline := r.cfg.Now().Add(DeployLimit)
-	retried := r.pushedHere
+	retried, checked := r.pushedHere, r.pushedHere
 	for {
 		tok, err := r.installationToken(ctx)
 		if err != nil {
@@ -31,6 +34,17 @@ func (r *run) firstDeploy(ctx context.Context) error {
 		run, found, err := r.cfg.GitHub(tok).WorkflowRunForCommit(ctx, g.Owner, g.Repo, r.rec.Setup.Commit)
 		if err != nil {
 			return r.fail(ctx, err, "GitHub")
+		}
+		if !found && !checked {
+			checked = true
+			pushed, err := r.pushIfBehind(ctx)
+			if err != nil {
+				return err
+			}
+			if pushed {
+				retried = true
+				continue
+			}
 		}
 		if found && run.Status == "completed" && run.Conclusion == "success" {
 			break
@@ -95,29 +109,78 @@ func (r *run) awaitWorker(ctx context.Context, deadline time.Time) error {
 	}
 }
 
+// redeployMessage is the message of the empty commit that deploys the site again.
+const redeployMessage = "Deploy the site again"
+
 // redeploy pushes an empty commit on top of the recorded one and records it, which starts a new
 // deploy run.
 func (r *run) redeploy(ctx context.Context) error {
-	if err := r.ownFolder(ctx); err != nil {
-		return err
-	}
-	id := r.commitIdentity("Deploy the site again")
-	env := append(gitEnv(r.cfg.Env),
-		"GIT_AUTHOR_NAME="+id.AuthorName, "GIT_AUTHOR_EMAIL="+id.AuthorEmail,
-		"GIT_COMMITTER_NAME="+id.AuthorName, "GIT_COMMITTER_EMAIL="+id.AuthorEmail)
-	dir := r.rec.Setup.Folder
-	if _, err := runChild(ctx, dir, env, "git", "commit", "--quiet", "--allow-empty", "--no-verify", "--no-gpg-sign", "-m", id.Message); err != nil {
-		return r.localFailure(ctx, ReasonPush, "Setup couldn't commit in "+dir+" to deploy again.", "Run cairn new again.", err)
-	}
-	sha, err := runChild(ctx, dir, gitEnv(r.cfg.Env), "git", "rev-parse", "HEAD")
+	sha, err := r.redeployCommit(ctx)
 	if err != nil {
-		return r.localFailure(ctx, ReasonPush, "Setup couldn't read the new commit in "+dir+".", "Run cairn new again.", err)
+		return err
 	}
 	r.rec.Setup.Commit = sha
 	if err := r.save(); err != nil {
 		return err
 	}
 	return r.pushCommit(ctx)
+}
+
+// redeployCommit returns the empty commit that deploys the site again. A folder whose HEAD is
+// already an empty redeploy commit on top of the recorded one is a run that stopped before
+// recording it, the rule scaffold.Finalize applies to the config commit, so that commit is used
+// rather than a second one.
+func (r *run) redeployCommit(ctx context.Context) (string, error) {
+	dir, env := r.rec.Setup.Folder, gitEnv(r.cfg.Env)
+	if head, err := runChild(ctx, dir, env, "git", "rev-parse", "HEAD"); err == nil && head != r.rec.Setup.Commit {
+		parent, perr := runChild(ctx, dir, env, "git", "rev-parse", "HEAD^")
+		msg, merr := runChild(ctx, dir, env, "git", "log", "-1", "--format=%B")
+		_, derr := runChild(ctx, dir, env, "git", "diff", "--quiet", "HEAD^", "HEAD")
+		if perr == nil && merr == nil && derr == nil && parent == r.rec.Setup.Commit && msg == redeployMessage {
+			return head, nil
+		}
+	}
+	if err := r.ownFolder(ctx); err != nil {
+		return "", err
+	}
+	id := r.commitIdentity(redeployMessage)
+	cenv := append(gitEnv(r.cfg.Env),
+		"GIT_AUTHOR_NAME="+id.AuthorName, "GIT_AUTHOR_EMAIL="+id.AuthorEmail,
+		"GIT_COMMITTER_NAME="+id.AuthorName, "GIT_COMMITTER_EMAIL="+id.AuthorEmail)
+	if _, err := runChild(ctx, dir, cenv, "git", "commit", "--quiet", "--allow-empty", "--no-verify", "--no-gpg-sign", "-m", id.Message); err != nil {
+		return "", r.localFailure(ctx, ReasonPush, "Setup couldn't commit in "+dir+" to deploy again.", "Run cairn new again.", err)
+	}
+	sha, err := runChild(ctx, dir, env, "git", "rev-parse", "HEAD")
+	if err != nil {
+		return "", r.localFailure(ctx, ReasonPush, "Setup couldn't read the new commit in "+dir+".", "Run cairn new again.", err)
+	}
+	return sha, nil
+}
+
+// pushIfBehind pushes the recorded commit when the remote branch is behind it and reports
+// whether it pushed. A remote that holds a commit the record does not lead from is not setup's.
+func (r *run) pushIfBehind(ctx context.Context) (bool, error) {
+	g := r.rec.GitHub.Repo
+	tok, err := r.installationToken(ctx)
+	if err != nil {
+		return false, err
+	}
+	head, err := r.cfg.GitHub(tok).HeadSHA(ctx, g.Owner, g.Repo, g.DefaultBranch)
+	switch status := httpStatus(err); {
+	case err == nil && head == r.rec.Setup.Commit:
+		return false, nil
+	case err == nil:
+		if _, err := runChild(ctx, r.rec.Setup.Folder, gitEnv(r.cfg.Env), "git", "merge-base", "--is-ancestor", head, r.rec.Setup.Commit); err != nil {
+			return false, r.localFailure(ctx, ReasonRemoteDiffers, "The repository "+g.Owner+"/"+g.Repo+" already holds commits setup didn't make.",
+				"Remove those commits, or delete the repository, and then run cairn new again.", err)
+		}
+	case status != http.StatusConflict && status != http.StatusNotFound:
+		return false, r.fail(ctx, err, "GitHub")
+	}
+	if err := r.ownFolder(ctx); err != nil {
+		return false, err
+	}
+	return true, r.pushCommit(ctx)
 }
 
 // deployFailure is the stop for a failed first deploy. It points at the run's page and names no

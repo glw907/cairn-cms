@@ -17,8 +17,21 @@ test('the engine tarball lists the template catalog and the composed Waymark tre
     maxBuffer: 64 * 1024 * 1024,
   });
   const packed = new Set(parsePackFilePaths(stdout));
-  for (const required of ['template/catalog.json', 'template/waymark/gitignore', 'template/waymark/.dev.vars.example']) {
+  for (const required of [
+    'template/catalog.json',
+    'template/waymark/gitignore',
+    'template/waymark/.dev.vars.example',
+    'template/waymark/.github/workflows/deploy.yml',
+    'template/waymark/.github/workflows/check.yml',
+  ]) {
     assert.ok(packed.has(required), `the packed tarball is missing ${required}`);
+  }
+  // Every theme the catalog offers is scaffolded as shipped, so each carries the deploy files.
+  const catalog = JSON.parse(readFileSync(path.join(root, 'template/catalog.json'), 'utf8'));
+  for (const theme of catalog.themes) {
+    for (const file of ['.github/workflows/deploy.yml', '.dev.vars.example']) {
+      assert.ok(packed.has(`template/${theme.path}/${file}`), `theme ${theme.id} lacks ${file}`);
+    }
   }
   assert.ok(!packed.has('template/waymark/.gitignore'));
   const lines = readFileSync(path.join(root, 'template/waymark/gitignore'), 'utf8').split('\n');

@@ -123,6 +123,9 @@ type Repository struct {
 	// DefaultBranch is the branch GitHub names the default. An empty repository has no branch
 	// yet, and the first push creates this one.
 	DefaultBranch string `json:"default_branch"`
+	// Private reports a repository only its owner and collaborators can see; a response that
+	// leaves the field off reads as not private.
+	Private bool `json:"private"`
 }
 
 // fieldError is one entry of GitHub's 422 "errors" array.

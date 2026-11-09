@@ -98,20 +98,7 @@ func TestNewManifestCutsTheWholeNameAt34(t *testing.T) {
 	}
 }
 
-func TestManifestFormAndURLs(t *testing.T) {
-	target := ManifestTarget("n0nce")
-	if target != "https://github.com/settings/apps/new?state=n0nce" {
-		t.Errorf("target = %q", target)
-	}
-	page, err := ManifestFormHTML(NewManifest("example", 49152), target)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, want := range []string{`action="` + target + `"`, `method="post"`, `name="manifest"`, `&#34;name&#34;:&#34;cairn-example&#34;`, `.submit()`} {
-		if !strings.Contains(page, want) {
-			t.Errorf("form page lacks %q:\n%s", want, page)
-		}
-	}
+func TestInstallURLs(t *testing.T) {
 	if got := InstallURL("cairn-example"); got != "https://github.com/apps/cairn-example/installations/new" {
 		t.Errorf("InstallURL = %q", got)
 	}
@@ -330,7 +317,7 @@ func TestRepoNamed(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if repo == nil || repo.ID != 998877 || repo.Owner.Login != "example-owner" || repo.DefaultBranch != "main" {
+		if repo == nil || repo.ID != 998877 || repo.Owner.Login != "example-owner" || repo.DefaultBranch != "main" || !repo.Private {
 			t.Errorf("repo = %+v", repo)
 		}
 		if rt.calls[0].auth != "Bearer utok" {

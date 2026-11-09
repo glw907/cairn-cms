@@ -20,14 +20,15 @@
 
 Waymark is cairn's public reading template, neutral by default: a humanist sans display face over a
 clean, hue-free paper. Read this before any work on the public theme:
-`examples/showcase/src/theme/theme.css` (the tokens and the re-skin recipe),
+`themes/waymark/tokens/tokens.json` (the token values, built into `tokens/tokens.css`) and
+`themes/waymark/theme.css` (the re-skin recipe and the hand-written rules),
 `examples/showcase/src/chassis/prose.css` (the reading surface), the `(site)` chrome components in
-`examples/showcase/src/theme/components/`, and the `/styleguide` route. It is written for an
+`themes/waymark/components/`, and the `/styleguide` route. It is written for an
 implementing agent, so it leads with the rules that are easy to break and not visible in the markup,
 then the tokens, the type, the recipes, the component model, the cairn theme opt-in identity layer, and
 the re-skin recipe.
 
-The live demo is `/styleguide`. The exhaustive oklch values live in `theme.css`, the single source. The
+The live demo is `/styleguide`. The exhaustive oklch values live in `tokens/tokens.json`, the single source; `tokens/tokens.css` is built from it. The
 design criteria and the settled-design appendix (the chosen faces, the values, the layouts, the
 carry-forwards) are in the design bar
 ([`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-06-25-cairn-b2-design-bar.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-06-25-cairn-b2-design-bar.md)),
@@ -102,7 +103,7 @@ the admin's type pairing, is out. Record: `https://github.com/glw907/cairn-cms/b
 
 ## Tokens
 
-The exhaustive oklch values are in `theme.css`; this is the structure.
+The exhaustive oklch values are in `tokens/tokens.json`; this is the structure.
 
 - **The DaisyUI role tokens** (the two `@plugin "daisyui/theme"` blocks): the `base-100/200/300` plus
   `base-content` ladder, a clean near-white to near-black progression with no hue tint; `primary` plus
@@ -270,7 +271,7 @@ A full cairn-theme restyle is therefore both: the token edit for the face and th
 
 ## The re-skin recipe (the committed N)
 
-One file (`theme.css`) owns the theme. The committed N is the brand-and-base headline (about fourteen
+One directory (`themes/waymark/`) holds the theme, and its token values are in `tokens/tokens.json`: edit a value there, then run `node scripts/theme/build-tokens.mjs themes/waymark`, which writes `tokens/tokens.css`. The committed N is the brand-and-base headline (about fourteen
 values, light and dark): rotate `--color-primary`'s hue (hold lightness and chroma for contrast-stable
 recolor), and edit the `base-100/200/300` ladder and `base-content`. Optionally swap the two `--font`
 tokens, retune the one type ratio, or the one space-scale step. A full status rebrand is more, because
@@ -394,8 +395,8 @@ measure it, rather than trusting the read.
 
 ## Pointers
 
-- The theme and the re-skin recipe: `examples/showcase/src/theme/theme.css`. The reading surface:
-  `examples/showcase/src/chassis/prose.css`. The chrome: `examples/showcase/src/theme/components/`.
+- The theme and the re-skin recipe: `themes/waymark/theme.css`. The reading surface:
+  `examples/showcase/src/chassis/prose.css`. The chrome: `themes/waymark/components/`.
 - The live demo: `/styleguide`. The criteria and the settled design: the design bar
   ([`2026-06-25-cairn-b2-design-bar.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-06-25-cairn-b2-design-bar.md)).
 - The gates: `scripts/checks/check-public-scope.mjs` (the audit's public-scope rules),

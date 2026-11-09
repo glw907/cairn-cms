@@ -20,25 +20,16 @@ the Go tool is `tool/v1.1.0`. The newest candidate is **`0.99.0-rc.4`** (cut com
 
 ## Immediate next action
 
-Geoff starts a fresh session with a brainstorm (`standards:brainstorming`) on how to work the new
-site-build issues. The inputs are the `## High` items in `BACKLOG.md`, all tagged
-`#initiative:907-rebuild`:
-
-- **#365**: a stated AI posture leaves `site-facts.json` stale, so the first deploy fails.
-- **#364**: the GitHub App's two browser steps.
-- **#363**: the no-browser path. Geoff's rule: "any copy and paste of urls required during the
-  setup process is a failure."
-- **#362**: the wizard as its own design session, held to the web admin's UI bar, collecting
-  everything up front.
-- **#366**: a fast setup test suite that would have caught these.
-- **#361**: theme choice at setup, the 907.life rerun's first need.
-- **#367**: a site can lock itself out of its own deploy after repeated failed attempts.
-
-#360 (agent-ready setup planning) and the builders' friction files
-(`~/Projects/initiatives/907-rebuild/plans/2026-11-08-friction-builder-{A,B}.md`) sit beside them.
-The 907.life rerun's prerequisites, per Geoff, are #361, #362, #364, #365, and #366. The
-rc.4 round's record is the ledger (`~/.local/state/cairn-agent-first/ledger.md`, entries dated
-2026-11-07).
+The cairn-setup run is under way: `cairn new` replaces the wizard over seven passes (P1 to P7),
+conducted unattended by `conductor-cairn-cms` (session `e82b126f`, launched 2026-11-08). The plan
+is `~/Projects/initiatives/cairn-setup/plans/2026-11-08-cairn-new-plan.md`, approved through three
+Approval Queue packets, and its pre-flight record sits beside it. The conductor launches P1
+(`cairn-cms-cairn-new-1`) and P7 (`cairn-pub-cairn-pub-docs-md`) first, merges P1, P2, P5, and P6
+itself under Decide 11, and updates this section after each merge. Geoff's one set point is
+recording session S1, about four hours into P1, which the run never waits on. The same conductor
+then runs the theme-garden initiative's sequence. The `## High` items the run clears are listed in
+the plan's backlog sweep; no release is cut until the tooling gates in
+`~/Projects/initiatives/cairn-setup/research/handoff-tooling.md` exist.
 
 ## Open decisions and watches
 

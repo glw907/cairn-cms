@@ -189,7 +189,9 @@ shape. **The release follows docs stage 5, and it is a `0.x` minor, the old "rel
 ruling ("Toward 1.0"), and no site rebuilds before the release, so the sites reach the release first
 and the beta follows their rebuilds. Engine passes land on `main` and never release. The sequence:
 run the whole pass sheet, and that release is the first; 907.life's rebuild drives the next release;
-each later site rebuild may drive its own. "The release" elsewhere in this file means that first
+each later site rebuild may drive its own. The sites rebuild in this order: 907.life, cairn.pub (a
+full redesign), ecxc.ski, then aksailingclub.org, with a cairn improvement round between each
+(Geoff, 2026-11-08). "The release" elsewhere in this file means that first
 release.
 
 What the old series carried, as it stands:

@@ -32,6 +32,14 @@
 
 ## Medium
 
+- [ ] **#388** The template's site config still describes the trail demo `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+  Found in the cairn-new-4 pass. The starter content no longer mentions trails, but `templates/waymark/src/theme/site.config.yaml` still carries the description "Trail reports and gear notes from the field." and the tag vocabulary `trail-reports`, `gear`, `weather`, `routes`, `season-notes`, and the `create-cairn-site` transcript fixture (`packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt`) lists the demo's routes. A new site's home page reads the description under its heading until setup replaces it.
+  Placement: cairn-setup P1 T1.9 (the substitution targets) owns the description; the vocabulary needs a ruling on a neutral starter set.
+
+- [ ] **#387** A markdown footnote renders a link to an id the page does not carry, which fails the prerender `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+  Found in the cairn-new-4 pass while drafting the every-element starter post. A post with `[^1]` and its definition builds a footnote link to `#user-content-fn-1`, and the page holds no element with that id, so the template's build fails with `prerender_missing_id`. The render pipeline runs `remark-gfm` (`src/lib/render/pipeline.ts:178`) and the sanitize step (`src/lib/render/sanitize-schema.ts`), and the mismatch points at one of them rewriting the id or the href but not both. Reproduce with one footnote in any post and `npm run build` in the showcase. The starter post omits footnotes until this is fixed.
+  Placement: engine batch; fix in `src/lib/render/`, with a render test for a footnote's link and id.
+
 - [ ] **#383** Show an admin a failed deploy, with what to do next `#feature` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   Placement: the cairn-setup design's admin view of a failed deploy; to be planned in the cairn-setup initiative.
 - [ ] **#384** Make `cairn health` check the deploy of a site deployed by Actions `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
@@ -245,20 +253,20 @@
   Placement: After the release.
 
 ## Low
-- [ ] **#387** Widen the `auth-data` map in `cairn-running-passes` to the rest of the setup chain's files `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+- [ ] **#389** Widen the `auth-data` map in `cairn-running-passes` to the rest of the setup chain's files `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   Decide 6 named `tool/internal/setup/{loopback,signin,runner}*` and the two OAuth provider files, but the runner was split into `approvals.go`, `watch.go`, `child.go`, and `deploy.go`, which hold the App key and secret storage, the over-grant sweep, the deploy-key mint, the push token, and the Worker secret. The provider write files (`cloudflare_write.go`, `github_write.go`) mint the deploy key and the installation token. A later fix to any of them gets no failing-test-first and no per-task security read. Source: P1 whole-branch diff review. A held-file scope call.
   Placement: after P1 merges, the conductor's call on the `cairn-running-passes` map (`tool/internal/setup/*.go` and the two provider write files).
-- [ ] **#388** Drop `ReasonWorkersPaid` and `CloudflareAPI.Subscriptions`, or give them a caller `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+- [ ] **#390** Drop `ReasonWorkersPaid` and `CloudflareAPI.Subscriptions`, or give them a caller `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   The live probe answered 403 on `GET /accounts/{id}/subscriptions`, so the opening no longer reads it, but the interface method, every fake's copy, and the failure reason remain. Placement: with the release's real-account leg (#366), which decides whether the first-deploy failure can ever name Workers Paid.
-- [ ] **#389** A push killed before its record save, followed by a reinstall, stops at `remote-differs` `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+- [ ] **#391** A push killed before its record save, followed by a reinstall, stops at `remote-differs` `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   A run pushed, was killed before recording `pushed`, and a later resume reinstalls the App: the config commit is a child of the recorded commit, and the push step accepts only an empty remote or one at the recorded commit. Needs the push step's rule to accept a remote at the recorded commit's parent chain. Small window; found by the T1.12 follow-up. Placement: the next setup engine pass.
-- [ ] **#390** The recorder creates its repository with `auto_init: true`, but setup creates it empty `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+- [ ] **#392** The recorder creates its repository with `auto_init: true`, but setup creates it empty `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   `tool/scripts/record-fixtures/run.mjs` makes the repository with `auto_init: true`, so the recorded Actions public-key and secret-PUT bodies came from a repository with a commit. Watch step 4 stores the deploy key before the first push, on an empty repository. Make the recorder match, and have the release's real-account leg (#366) confirm the two routes on a repository with no commits. Placement: with #366.
-- [ ] **#391** Re-scrub the `zones.list` fixture and record the keyring probe entry `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+- [ ] **#393** Re-scrub the `zones.list` fixture and record the keyring probe entry `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   `tool/testdata/fixtures/cloudflare/zones.list.200.json` (moved from main) keeps random-looking zone ids, the zone names `carin-test-2.org` and `carin-test-5.org`, and the account name; extend the hygiene test to fail on non-placeholder 32-hex ids and on zone names outside the test zone and `example-zone-N`. Separately, `setup/<run>/probe` is never named in the record, so an abandoned probe write leaves an orphan keyring entry. Source: P1 whole-branch security review, L-9 and L-11. Placement: the next setup engine pass.
-- [ ] **#392** Fold the scaffold's pinned npm client into `providers` `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+- [ ] **#394** Fold the scaffold's pinned npm client into `providers` `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   `tool/internal/setup/scaffold/fetch.go` builds a second host-pinned client because `providers.NPM` has no tarball download or dist-tag read. Two pins can drift. Placement: the next setup engine pass.
-- [ ] **#393** An R2 bucket made by a killed run cannot be adopted `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
+- [ ] **#395** An R2 bucket made by a killed run cannot be adopted `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   The REST API cannot list a bucket's objects (that needs the S3 API on another host with separate credentials), so a bucket with a recorded intent and no recorded id stops the resume with the four-part not-ours failure. The owner deletes the empty bucket and reruns. Acceptable; revisit if an owner meets it. Placement: wait for a report.
 - [ ] **#378** Add `--cairn-eyebrow-case` and a scroll-cue off switch to the chassis `#improvement` `#cairn-cms` `#initiative:907-rebuild` *(2026-11-07)* *(swept 2026-11-08)*
   Two chassis behaviors a theme cannot turn off through a role. (a) The home and archive eyebrows carry the `uppercase` utility in route markup (`templates/waymark/src/routes/(site)/+page.svelte:66,86`, `archive/[page]/+page.svelte:25`), and `tokens.css:44-45` says an eyebrow keeps it on purpose; `--cairn-heading-case` does not reach them, so a theme with no all-caps labels overrides the utility with an unlayered rule. (b) `prose.css` draws a gradient scroll-edge cue on `pre` and `.table-scroll` (`templates/waymark/src/chassis/prose.css:222-237`) with no `--cairn-*` role, so a gradient-free theme finds it only in a screenshot. Proposed: `--cairn-eyebrow-case` beside `--cairn-heading-case`, a `--cairn-scroll-cue` role, and a line on the prose-code and prose-tables pages. Needs a `cairn-judging-scope` check that each earns a role. Source: builder A, items 5 and 9.

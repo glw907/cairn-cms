@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -1170,23 +1171,32 @@ func newWorld(t *testing.T) *world {
 // failNPM replaces the world's npm with one that fails.
 func failNPM(t *testing.T, w *world) {
 	t.Helper()
-	bin := filepath.Join(filepath.Dir(w.npmEnv), "bin", "npm")
-	script := "#!/bin/sh\nenv > " + w.npmEnv + "\necho npm-stub-failed >&2\nexit 1\n"
-	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
+	writeNPM(t, w.npmEnv, 1)
 }
 
-// stubNPM writes an npm that prints to both streams and saves its environment to envFile, and
-// returns its path.
+// stubNPM writes an npm that prints to both streams, saves its environment to envFile, and
+// succeeds, and returns its path.
 func stubNPM(t *testing.T, envFile string) string {
+	t.Helper()
+	return writeNPM(t, envFile, 0)
+}
+
+// writeNPM writes the stub npm into a bin folder beside envFile and returns its path. Windows
+// runs no shell script, so there the stub is npm.cmd, which a PATH lookup of npm finds through
+// PATHEXT.
+func writeNPM(t *testing.T, envFile string, exit int) string {
 	t.Helper()
 	dir := filepath.Join(filepath.Dir(envFile), "bin")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
+	code := strconv.Itoa(exit)
 	bin := filepath.Join(dir, "npm")
-	script := "#!/bin/sh\necho npm-stub-stdout\necho npm-stub-stderr >&2\nenv > " + envFile + "\n"
+	script := "#!/bin/sh\necho npm-stub-stdout\necho npm-stub-stderr >&2\nenv > '" + envFile + "'\nexit " + code + "\n"
+	if runtime.GOOS == "windows" {
+		bin += ".cmd"
+		script = "@echo off\r\necho npm-stub-stdout\r\necho npm-stub-stderr 1>&2\r\nset > \"" + envFile + "\"\r\nexit /b " + code + "\r\n"
+	}
 	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}

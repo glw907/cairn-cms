@@ -312,6 +312,8 @@ type run struct {
 	install     sync.WaitGroup
 	installErr  error
 	installStop context.CancelFunc
+	// installEnd closes when the background install ends, after installErr is set.
+	installEnd <-chan struct{}
 	out         Done
 }
 
@@ -480,7 +482,6 @@ func (r *run) keepKeys() {
 // in memory and end with the process.
 func (r *run) finish(ctx context.Context) {
 	r.waitInstall()
-	r.out.InstallFailed = r.installErr != nil
 	r.out.URL = "https://" + r.host
 	// RFC 7009 2.1: revoking a refresh token "SHOULD also invalidate all access tokens based on the
 	// same authorization grant", and the access token lapses within the hour regardless.

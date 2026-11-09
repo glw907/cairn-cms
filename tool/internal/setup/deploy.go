@@ -190,21 +190,42 @@ func (r *run) deployFailure(runURL string) error {
 
 // startInstall runs `npm install` in the site folder in the background, so the owner's agent can
 // start work as soon as setup ends. Its output is captured and its failure is a next step on
-// the done screen, never a stop.
+// the done screen, never a stop. A folder the record says is installed is not installed again.
 func (r *run) startInstall() {
-	if r.installStop != nil {
+	if r.installStop != nil || r.rec.Setup.DepsInstalled {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	r.installStop = cancel
+	end := make(chan struct{})
+	r.installStop, r.installEnd = cancel, end
 	dir, env := r.rec.Setup.Folder, scrubbedEnv(r.cfg.Env)
 	r.install.Go(func() {
+		defer close(end)
 		_, r.installErr = runChild(ctx, dir, env, "npm", "install")
 	})
 }
 
-// waitInstall waits for the background install to end.
-func (r *run) waitInstall() { r.install.Wait() }
+// noteInstall records a background install that has already ended cleanly, so the next save
+// carries it. It never waits.
+func (r *run) noteInstall() {
+	if r.installEnd == nil {
+		return
+	}
+	select {
+	case <-r.installEnd:
+		if r.installErr == nil {
+			r.rec.Setup.DepsInstalled = true
+		}
+	default:
+	}
+}
+
+// waitInstall waits for the background install to end and records how it ended.
+func (r *run) waitInstall() {
+	r.install.Wait()
+	r.noteInstall()
+	r.out.InstallFailed = r.installErr != nil
+}
 
 // stopInstall ends a background install a stopped run leaves behind.
 func (r *run) stopInstall() {

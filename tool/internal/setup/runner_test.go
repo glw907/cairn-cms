@@ -1387,6 +1387,33 @@ func TestAResumePastTheFirstDeployInstallsTheDependencies(t *testing.T) {
 			}
 		})
 	}
+	t.Run("a recorded install is not run again", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepDomains)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.DepsInstalled = true
+		w.saver.saves = append(w.saver.saves, rec)
+		failNPM(t, w)
+		if err := os.Remove(w.npmEnv); err != nil && !os.IsNotExist(err) {
+			t.Fatal(err)
+		}
+		res, err := w.resume()
+		if err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+		if _, err := os.Stat(w.npmEnv); err == nil || res.Done.InstallFailed || !res.Record.Setup.DepsInstalled {
+			t.Errorf("npm ran again: %v; done %+v, record installed %v", err == nil, res.Done, res.Record.Setup.DepsInstalled)
+		}
+	})
+	t.Run("a finished run records the install", func(t *testing.T) {
+		w := newWorld(t)
+		res, err := w.run(context.Background())
+		if err != nil || !res.Record.Setup.DepsInstalled {
+			t.Errorf("Run: %v, record installed %v; want the clean install recorded", err, res.Record.Setup.DepsInstalled)
+		}
+	})
 }
 
 func TestAKillAfterTheRepositoryCreate(t *testing.T) {

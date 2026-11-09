@@ -13,8 +13,12 @@ import (
 
 // watch runs the eight watch steps after the summary's Enter, skipping each one the record has
 // reached. Each step stores its intents and ids as it goes, and the record step that marks it
-// done is written once the whole step has passed.
+// done is written once the whole step has passed. A watch that begins past the first deploy
+// starts the background install the first deploy would have, unless the record says it ran.
 func (r *run) watch(ctx context.Context) error {
+	if reached(r.rec.Step, spine.StepDeployed) {
+		r.startInstall()
+	}
 	steps := []struct {
 		id   string
 		done spine.Step
@@ -41,6 +45,7 @@ func (r *run) watch(ctx context.Context) error {
 			return err
 		}
 		r.rec.Step = string(st.done)
+		r.noteInstall()
 		if err := r.save(); err != nil {
 			return err
 		}

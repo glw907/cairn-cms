@@ -57,6 +57,7 @@ and commit the diff.
 - the DMARC record carries no p= policy
 - the GitHub token expires %s, in %d days
 - the Worker does not exist in this account
+- the Worker has no deployment
 - the Worker has no observability dataset
 - the Workers Builds connection is waiting to settle
 - the account has reached its daily send limit

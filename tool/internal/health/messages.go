@@ -136,6 +136,12 @@ func detailDeployBuildFailed() string {
 	return "the last build did not succeed"
 }
 
+// detailDeployNoDeployment renders the deploy check's verdict for a GitHub Actions site whose
+// Worker has no deployment.
+func detailDeployNoDeployment() string {
+	return "the Worker has no deployment"
+}
+
 // detailPublishNothingWaiting renders the publish-path check's quiet-state verdict: no open
 // edit branch, so nothing is waiting on an editor. The catalogue's row for this state words
 // it as an absence of observations ("no cairn branches or publish commits observed"), which
@@ -369,6 +375,7 @@ func Catalogue() []string {
 		detailDeployBuildsNotConnected(),
 		detailNoRepoRecorded(),
 		detailDeployBuildFailed(),
+		detailDeployNoDeployment(),
 		detailPublishNothingWaiting(),
 		tmplPublishStaleBranchSingular,
 		tmplPublishStaleBranchesPlural,

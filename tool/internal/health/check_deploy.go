@@ -186,6 +186,10 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	}
 	detail := deployDetail{WorkerExists: true}
 
+	if r.Setup.Deploys == record.SetupDeploys {
+		return actionsDeploy(ctx, worker.Name, detail, c)
+	}
+
 	triggers, err := c.CF.BuildsConnections(ctx, worker.Tag)
 	if err != nil {
 		return apiErrorOutcome(err)
@@ -231,5 +235,22 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	detail.Behind = detail.LastBuildSHA != "" && mainSHA != "" && detail.LastBuildSHA != mainSHA
 
 	detail.LastBuild = buildOK
+	return detail.outcome(spine.OK, "", "", "")
+}
+
+// actionsDeploy settles the deploy check for a site whose deploys run from GitHub Actions: there
+// is no Builds trigger to read, so the Worker's latest deployment is the evidence. A Worker with
+// none has never deployed, which is failing; the repository's branch position is not compared
+// because a deployment carries no commit.
+func actionsDeploy(ctx context.Context, name string, detail deployDetail, c Clients) spine.Outcome {
+	deployments, err := c.CF.WorkerDeployments(ctx, name)
+	if err != nil {
+		return apiErrorOutcome(err)
+	}
+	if len(deployments) == 0 {
+		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployNoDeployment())
+	}
+	detail.LastBuild = buildOK
+	detail.LastBuildAt = deployments[0].CreatedOn
 	return detail.outcome(spine.OK, "", "", "")
 }

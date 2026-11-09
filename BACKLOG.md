@@ -47,9 +47,6 @@
   Found in the cairn-new-4 pass. The starter content no longer mentions trails, but `templates/waymark/src/site/site.config.yaml` still carries the description "Trail reports and gear notes from the field." and the tag vocabulary `trail-reports`, `gear`, `weather`, `routes`, `season-notes`, and the `create-cairn-site` transcript fixture (`packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt`) lists the demo's routes. A new site's home page reads the description under its heading until setup replaces it.
   Placement: the description is done in cairn-setup P1 (the scaffold sets a neutral description, "A new site built with cairn."); the tag vocabulary and the transcript fixture still need a ruling on a neutral starter set.
 
-- [ ] **#387** A markdown footnote renders a link to an id the page does not carry, which fails the prerender `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-08)*
-  Found in the cairn-new-4 pass while drafting the every-element starter post. A post with `[^1]` and its definition builds a footnote link to `#user-content-fn-1`, and the page holds no element with that id, so the template's build fails with `prerender_missing_id`. The render pipeline runs `remark-gfm` (`src/lib/render/pipeline.ts:178`) and the sanitize step (`src/lib/render/sanitize-schema.ts`), and the mismatch points at one of them rewriting the id or the href but not both. Reproduce with one footnote in any post and `npm run build` in the showcase. The starter post omits footnotes until this is fixed.
-  Placement: engine batch; fix in `src/lib/render/`, with a render test for a footnote's link and id.
 
 - [ ] **#383** Show an admin a failed deploy, with what to do next `#feature` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   Placement: the cairn-setup design's admin view of a failed deploy; to be planned in the cairn-setup initiative.
@@ -381,6 +378,11 @@
 - **#185** Re-capture the setup transcript with a neutral scratch path and host: the fixtures retire with the wizard; the goldens replace them (Geoff, 2026-11-08, cairn-setup plan)
 
 ## Done
+
+- [x] **#387** A markdown footnote renders a link to an id the page does not carry, which fails the prerender `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-08 → 2026-11-09)*
+  Found in the cairn-new-4 pass while drafting the every-element starter post. A post with `[^1]` and its definition builds a footnote link to `#user-content-fn-1`, and the page holds no element with that id, so the template's build fails with `prerender_missing_id`. The render pipeline runs `remark-gfm` (`src/lib/render/pipeline.ts:178`) and the sanitize step (`src/lib/render/sanitize-schema.ts`), and the mismatch points at one of them rewriting the id or the href but not both. Reproduce with one footnote in any post and `npm run build` in the showcase. The starter post omits footnotes until this is fixed.
+  Placement: engine batch; fix in `src/lib/render/`, with a render test for a footnote's link and id.
+  Done: theme-garden-2 T2.1. `remark-rehype` takes an empty `clobberPrefix`, and `rehypeFootnoteLinks` prefixes the footnote reference and backref `href` after the sanitize step, so each link names its target id.
 - [x] **#379** Fix the theme checks' references to a `/styleguide` the scaffold lacks `#docs` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-07)*
   `skills/cairn-styling-public-pages/references/checking-a-theme.md:114` sends a theme author to `/styleguide`, while `templates/waymark/src/chassis/README.md:195` says the scaffold carries no such route (it is the showcase's) and `templates/waymark/src/routes/(site)/` has none. No page shows every directive under a theme. Fix: ship the route, or name the content page to check against instead and drop the references. Source: builder A, item 6 (checked against the 0.99 scaffold).
   done: 62e66dfb5, merged in PR #202 (a55cf548e): `checking-a-theme.md` now names the every-element post.

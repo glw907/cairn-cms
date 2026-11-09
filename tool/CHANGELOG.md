@@ -41,6 +41,21 @@ every route. No `tool/v2.0.0` tag exists yet.
 
   Consumers must: nothing.
 
+- **`cairn new`'s terminal view.** Run with no mode flag in a terminal, the command asks the
+  questions, shows the four approvals and the summary, and watches the eight steps inline, with no
+  alternate screen, in the Warm Stone palette at 80 and 60 columns in light and dark. A run that
+  stops shows the four-part failure and exits with the agent lane's codes. The view draws only typed
+  event fields, so no token, key, or sign-in link reaches a frame. A window under 50 columns or the
+  rows a step needs shows what it needs. The command stays hidden. Architecture: ADR-0004.
+
+  Consumers must: nothing.
+
+- **Fang themes `cairn --help`.** On a terminal with colour, help for every command is drawn in
+  the Warm Stone palette. A pipe, `NO_COLOR`, `TERM=dumb`, `cairn help agents`, and the man pages
+  keep Cobra's plain help, and errors stay plain.
+
+  Consumers must: nothing.
+
 - **`cairn health` reads a Worker's latest deployment for a site that deploys from GitHub
   Actions.** A site `cairn new` creates records `deploys: actions`, so its deploy check is OK with
   a deployment and Failing without one, where it read UNKNOWN before. A site on Workers Builds

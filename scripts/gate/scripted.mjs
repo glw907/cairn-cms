@@ -95,7 +95,10 @@ export class ScriptedError extends Error {
   }
 }
 
-/** The first line of a pane that has text. */
+/**
+ * The first line of a pane that has text.
+ * @param {string} pane the captured pane text
+ */
 function title(pane) {
   return pane.split('\n').map((l) => l.trim()).find((l) => l !== '') ?? '';
 }
@@ -126,7 +129,9 @@ export async function runScripted({ runDir, env, deps }) {
   const session = `cleanroom-${runId}-scripted`;
   const socket = path.join(env.HOME ?? os.homedir(), '.local', 'state', 'cleanroom', 'tmux-scripted.sock');
   const answers = { name: env.GATE_SITE_NAME || `Cairn gate ${runId}`, email: env.GATE_OWNER_EMAIL || DEFAULT_OWNER };
+  /** @param {...string} args */
   const tmux = (...args) => deps.tmux(['-S', socket, ...args]);
+  /** @param {...string} args */
   const send = (...args) => tmux('send-keys', '-t', session, ...args);
 
   const standIn = deps.startStandIn();
@@ -188,10 +193,17 @@ export async function runScripted({ runDir, env, deps }) {
   }
 }
 
-/** The real dependencies: execFile for tmux, spawn for the shell and the stand-in. */
+/**
+ * The real dependencies: execFile for tmux, spawn for the shell and the stand-in.
+ * @param {object} options
+ * @param {string} options.runDir the run directory
+ * @param {Record<string, string | undefined>} options.env the environment the children inherit
+ * @param {string} [options.shotDir] where per-screen screenshots go; none are taken when absent
+ * @returns {Promise<Deps>}
+ */
 async function realDeps({ runDir, env, shotDir }) {
   const log = await open(path.join(runDir, 'stand-in.log'), 'a', 0o600);
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  /** @type {Deps} */
   const deps = {
     tmux: async (args) => (await execFileAsync('tmux', args)).stdout,
     startShell: (args, shellEnv) => {
@@ -206,7 +218,7 @@ async function realDeps({ runDir, env, shotDir }) {
       return { kill: () => child.kill('SIGTERM') };
     },
     record: (event) => appendFile(path.join(runDir, 'scripted.jsonl'), `${JSON.stringify(event)}\n`),
-    sleep,
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     now: () => Date.now(),
   };
   if (shotDir) {

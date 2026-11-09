@@ -1,0 +1,2 @@
+cairn: --posture is required with --dry-run.
+Run `cairn new --help` for the flags

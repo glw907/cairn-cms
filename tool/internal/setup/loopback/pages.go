@@ -16,8 +16,8 @@ var pageFiles embed.FS
 
 var pages = template.Must(template.ParseFS(pageFiles, "pages/*.html"))
 
-// cookieName names the one cookie the server sets. It gates /next, the route that hands out the
-// sign-in URL.
+// cookieName names the one cookie the server sets, in trade for the key. It gates the root and
+// /next, the route that hands out the sign-in URL.
 const cookieName = "cairn_setup"
 
 type pageKind int
@@ -104,19 +104,14 @@ func checkHTTPS(rawURL string) error {
 	return nil
 }
 
+// root shows the current page to the request that carries the session cookie, and otherwise
+// trades the key for one.
 func (s *Server) root(w http.ResponseWriter, r *http.Request) {
-	s.mu.Lock()
-	if s.cookie == "" {
-		s.cookie = randomHex(32)
-		http.SetCookie(w, &http.Cookie{
-			Name:     cookieName,
-			Value:    s.cookie,
-			Path:     "/",
-			HttpOnly: true,
-			SameSite: http.SameSiteStrictMode,
-		})
-		s.startClock()
+	if !s.hasSession(r) {
+		s.openSession(w, r)
+		return
 	}
+	s.mu.Lock()
 	p := s.page
 	state := ""
 	if a := s.routes[GitHubManifest]; a != nil {
@@ -138,6 +133,71 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// openSession sets the session cookie, starts the chain's clock, and sends the tab to the bare
+// root, for the first request that brings the key from the owner's own navigation. A request
+// another site's page made is refused 403 and leaves the key unspent; one with no key, a wrong
+// key, or a spent key answers 404.
+func (s *Server) openSession(w http.ResponseWriter, r *http.Request) {
+	k := r.URL.Query().Get("k")
+	if k == "" {
+		http.NotFound(w, r)
+		return
+	}
+	if !ownerNavigation(r.Header) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	s.mu.Lock()
+	ok := !s.keyUsed && subtle.ConstantTimeCompare([]byte(k), []byte(s.key)) == 1
+	if ok {
+		s.keyUsed = true
+		s.cookie = randomHex(32)
+		s.startClock()
+	}
+	cookie := s.cookie
+	s.mu.Unlock()
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     cookieName,
+		Value:    cookie,
+		Path:     "/",
+		HttpOnly: true,
+		// Lax, because the tab comes back to the root from Cloudflare and GitHub through a
+		// redirect that their page started, and a browser sends a Strict cookie on none of those.
+		// /next makes up the difference by refusing any request another site started.
+		SameSite: http.SameSiteLaxMode,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// hasSession reports whether r carries the session cookie.
+func (s *Server) hasSession(r *http.Request) bool {
+	c, err := r.Cookie(cookieName)
+	if err != nil {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cookie != "" && subtle.ConstantTimeCompare([]byte(c.Value), []byte(s.cookie)) == 1
+}
+
+// ownerNavigation reports whether h fits the owner opening the URL. A browser marks an address
+// the opener launched or the owner typed with Sec-Fetch-Site none and Sec-Fetch-Mode navigate,
+// and marks another site's image, link, or script by what it is. A client that sends neither
+// header, such as curl, passes.
+func ownerNavigation(h http.Header) bool {
+	if site := h.Get("Sec-Fetch-Site"); site != "" && site != "none" && site != "same-origin" {
+		return false
+	}
+	if mode := h.Get("Sec-Fetch-Mode"); mode != "" && mode != "navigate" {
+		return false
+	}
+	return true
+}
+
 // pageRoute serves file only while kind is the page shown; any other time the path answers 404.
 func (s *Server) pageRoute(kind pageKind, file string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -152,12 +212,17 @@ func (s *Server) pageRoute(kind pageKind, file string) http.HandlerFunc {
 	}
 }
 
+// serveNext answers done.html's poll. The Lax cookie also rides a link on another site, so a
+// request whose Sec-Fetch-Site is anything but same-origin is refused and leaves the URL unserved.
 func (s *Server) serveNext(w http.ResponseWriter, r *http.Request) {
-	c, err := r.Cookie(cookieName)
+	site := r.Header.Get("Sec-Fetch-Site")
+	if !s.hasSession(r) || (site != "" && site != "same-origin") {
+		http.NotFound(w, r)
+		return
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if err != nil || s.cookie == "" || s.nextServed ||
-		subtle.ConstantTimeCompare([]byte(c.Value), []byte(s.cookie)) != 1 {
+	if s.nextServed {
 		http.NotFound(w, r)
 		return
 	}
@@ -189,6 +254,10 @@ type pageData struct {
 // render writes one embedded page under a Content-Security-Policy that runs only the script the
 // page carries, fetches only from this origin, and posts a form only to GitHub.
 func (s *Server) render(w http.ResponseWriter, file string, data pageData) {
+	s.renderStatus(w, http.StatusOK, file, data)
+}
+
+func (s *Server) renderStatus(w http.ResponseWriter, status int, file string, data pageData) {
 	data.SiteName = s.cfg.SiteName
 	data.Nonce = randomHex(16)
 	var buf bytes.Buffer
@@ -200,5 +269,6 @@ func (s *Server) render(w http.ResponseWriter, file string, data pageData) {
 	h.Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-"+
 		data.Nonce+"'; connect-src 'self'; form-action https://github.com; base-uri 'none'; frame-ancestors 'none'")
 	h.Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
 	_, _ = w.Write(buf.Bytes())
 }

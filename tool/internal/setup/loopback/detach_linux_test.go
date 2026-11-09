@@ -2,6 +2,7 @@ package loopback
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -9,6 +10,14 @@ import (
 	"testing"
 	"time"
 )
+
+func TestDetachSetsANewProcessGroup(t *testing.T) {
+	cmd := exec.Command("xdg-open")
+	detach(cmd)
+	if cmd.SysProcAttr == nil || !cmd.SysProcAttr.Setpgid {
+		t.Fatalf("SysProcAttr %+v, want Setpgid", cmd.SysProcAttr)
+	}
+}
 
 // TestPgrpHelperProcess is the launcher TestOpenRunsTheLauncherInItsOwnGroup runs, not a test of
 // its own: it writes its process group to the file LOOPBACK_PGRP_FILE names.

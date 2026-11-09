@@ -2,13 +2,15 @@
 //
 // The server listens on 127.0.0.1:49152 from New until Close, which is also what keeps setup to
 // one run at a time. Every request must name a loopback Host with that port, which is the defence
-// against a page that rebinds a hostname to 127.0.0.1. A callback route answers only while
+// against a page that rebinds a hostname to 127.0.0.1. The root opens a session only for the
+// one-time key in URL, so another process on the machine, or another site's page in the owner's
+// browser, cannot take the cookie that gates the sign-in URL. A callback route answers only while
 // the runner has it armed, and only to the state nonce it was armed with; any other path answers
 // 404. The runner drives the tab through Show and learns of each approval through Wait, so the
 // browser is answered at once and the API work runs in the runner afterwards.
 //
-// Nothing here logs. The nonces, the codes, the cookie, and the sign-in URL reach only the
-// browser and the runner.
+// Nothing here logs. The key, the nonces, the codes, the cookie, and the sign-in URL reach only
+// the browser and the runner.
 package loopback
 
 import (
@@ -59,6 +61,7 @@ type Server struct {
 	cfg      Config
 	srv      *http.Server
 	port     string
+	key      string
 	handlers map[string]http.HandlerFunc
 
 	closeOnce sync.Once
@@ -69,6 +72,7 @@ type Server struct {
 	mu           sync.Mutex
 	routes       map[Route]*arming
 	page         Page
+	keyUsed      bool
 	cookie       string
 	started      time.Time
 	clockStopped bool
@@ -104,6 +108,7 @@ func New(cfg Config) (*Server, error) {
 	s := &Server{
 		cfg:       cfg,
 		port:      port,
+		key:       randomHex(16),
 		closed:    make(chan struct{}),
 		expired:   make(chan struct{}),
 		stopClock: make(chan struct{}),
@@ -128,9 +133,12 @@ func New(cfg Config) (*Server, error) {
 	return s, nil
 }
 
-// URL is the address the opener sends the tab to, with no trailing slash.
+// URL is the address the opener sends the tab to: the root with the server's one-time key as its
+// query. The first owner navigation that brings the key gets the session cookie and starts the
+// chain's clock; the key opens nothing after that. URL carries a secret, so it goes only to the
+// opener and the fallback link, never to a log.
 func (s *Server) URL() string {
-	return "http://127.0.0.1:" + s.port
+	return "http://127.0.0.1:" + s.port + "/?k=" + s.key
 }
 
 // Close stops the server and frees the port.
@@ -155,6 +163,11 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	handler, ok := s.handlers[r.URL.Path]
+	if s.isExpired() && r.URL.Path == "/" {
+		// The waiting page reloads the root, so the tab shows why it stopped.
+		s.renderStatus(w, http.StatusGone, "stopped.html", pageData{})
+		return
+	}
 	if !ok || s.isExpired() {
 		http.NotFound(w, r)
 		return

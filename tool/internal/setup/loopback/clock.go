@@ -5,18 +5,19 @@ import (
 	"time"
 )
 
-// ChainLimit is how long the owner has for the approvals, from the moment the tab first opens
-// the root until done.html is shown.
+// ChainLimit is how long the owner has for the approvals, from the moment the tab first brings
+// the key until done.html is shown.
 const ChainLimit = 30 * time.Minute
 
 // CountdownFrom is how far into the chain the views start showing the time left.
 const CountdownFrom = 25 * time.Minute
 
-// ErrChainTimeout reports that the approvals passed ChainLimit. The server then answers 404 on
-// every path, Arm refuses, and Expired is closed, but the port stays bound until Close.
+// ErrChainTimeout reports that the approvals passed ChainLimit. The server then answers the root
+// with 410 and a page that says setup stopped, and every other path with 404. Arm refuses, and
+// Expired is closed, but the port stays bound until Close.
 var ErrChainTimeout = errors.New("approvals passed the 30-minute limit")
 
-// startClock starts the chain's clock at the first root request. The caller holds s.mu.
+// startClock starts the chain's clock when the key is spent. The caller holds s.mu.
 func (s *Server) startClock() {
 	s.started = s.cfg.Now()
 	limit := s.cfg.After(ChainLimit)

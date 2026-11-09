@@ -198,9 +198,17 @@ func TestHostAllowlist(t *testing.T) {
 		{"localhost with a trailing dot", "localhost.:" + port, http.StatusForbidden},
 		{"loopback as a subdomain", "127.0.0.1.nip.io:" + port, http.StatusForbidden},
 	}
+	// The client's jar files cookies by the Host a request names, so each request carries the
+	// session cookie by hand to reach the page behind the Host check.
+	session := h.client.Jar.Cookies(&url.URL{Scheme: "http", Host: "127.0.0.1:" + port})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, _ := h.do(http.MethodGet, "/", func(r *http.Request) { r.Host = tt.host })
+			resp, _ := h.bare(http.MethodGet, "/", func(r *http.Request) {
+				r.Host = tt.host
+				for _, c := range session {
+					r.AddCookie(c)
+				}
+			})
 			if resp.StatusCode != tt.want {
 				t.Errorf("Host %q: status %d, want %d", tt.host, resp.StatusCode, tt.want)
 			}

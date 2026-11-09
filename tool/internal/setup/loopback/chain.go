@@ -47,12 +47,22 @@ type arming struct {
 }
 
 var (
+	// The manifest code becomes a path segment of GitHub's conversion URL, where url.PathEscape
+	// leaves a dot alone, so its alphabet admits no dot and no code can read as . or .. The
+	// install code shares it.
+	githubCodeShape = regexp.MustCompile(`^[A-Za-z0-9_-]{1,512}$`)
 	// Cloudflare's OAuth server issues codes of the form prefix_key.signature, so the code
-	// alphabet admits a dot beside the URL-safe base64 characters.
-	codeShape   = regexp.MustCompile(`^[A-Za-z0-9._-]{1,512}$`)
-	digitsShape = regexp.MustCompile(`^[0-9]{1,20}$`)
-	wordShape   = regexp.MustCompile(`^[a-z_]{1,64}$`)
+	// alphabet admits a dot beside the URL-safe base64 characters. The code travels in a form
+	// body, and alnum keeps a code from being only dots and dashes.
+	cloudflareCodeShape = regexp.MustCompile(`^[A-Za-z0-9._-]{1,512}$`)
+	alnum               = regexp.MustCompile(`[A-Za-z0-9]`)
+	digitsShape         = regexp.MustCompile(`^[0-9]{1,20}$`)
+	wordShape           = regexp.MustCompile(`^[a-z_]{1,64}$`)
 )
+
+func cloudflareCode(code string) bool {
+	return cloudflareCodeShape.MatchString(code) && alnum.MatchString(code)
+}
 
 // Arm opens r for one callback and returns the state nonce the approval's URL must carry. Arming
 // a route again replaces its nonce, so a redirect carrying the old one is refused.
@@ -69,6 +79,10 @@ func (s *Server) Arm(r Route) (string, error) {
 
 // Wait blocks until the callback r was last armed for arrives, ctx ends, or the chain passes its
 // limit, which returns ErrChainTimeout. A callback that arrived before Wait was called is kept.
+//
+// The chain's clock starts only when the tab first brings the key in URL, so until then the limit
+// cannot end the wait. Pass a ctx with a deadline, or an owner who never opens the tab leaves
+// Wait blocked for good.
 func (s *Server) Wait(ctx context.Context, r Route) (Callback, error) {
 	s.mu.Lock()
 	a := s.routes[r]
@@ -139,13 +153,13 @@ func parseCallback(r Route, rawQuery string) (Callback, bool) {
 		if cb.Error != "" {
 			return cb, cb.Code == "" && wordShape.MatchString(cb.Error)
 		}
-		return cb, codeShape.MatchString(cb.Code)
+		return cb, cloudflareCode(cb.Code)
 	case GitHubManifest:
 		cb.InstallationID, cb.SetupAction, cb.Error = "", "", ""
-		return cb, codeShape.MatchString(cb.Code)
+		return cb, githubCodeShape.MatchString(cb.Code)
 	case GitHubCallback:
 		cb.Error = ""
-		return cb, codeShape.MatchString(cb.Code) &&
+		return cb, githubCodeShape.MatchString(cb.Code) &&
 			digitsShape.MatchString(cb.InstallationID) &&
 			wordShape.MatchString(cb.SetupAction)
 	}

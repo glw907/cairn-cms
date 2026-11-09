@@ -1,7 +1,7 @@
 # Configure media
 
 The one media setting is the R2 binding on the adapter's `media` block (`MediaConfig`,
-`src/theme/cairn.config.ts` on a scaffold): `bucketBinding: 'MEDIA_BUCKET'`. Content names an image
+`src/site/cairn.config.ts` on a scaffold): `bucketBinding: 'MEDIA_BUCKET'`. Content names an image
 by a `media:` reference; the resolver builds the URL from the asset's manifest row
 (`src/content/.cairn/media.json`), so no content edit follows a change here. A URL typed into raw
 HTML is not a reference and resolves to nothing.

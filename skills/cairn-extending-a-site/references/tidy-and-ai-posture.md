@@ -14,7 +14,7 @@ Tidy's settings live in two places. Put each setting in its own place:
 
 | Setting | Where |
 |---|---|
-| On/off, model, house conventions | `tidy` block of the committed site config (`src/theme/site.config.yaml` on a scaffold) |
+| On/off, model, house conventions | `tidy` block of the committed site config (`src/site/site.config.yaml` on a scaffold) |
 | Call deadline, custom client | `tidy` block of the `createCairnAdmin` call in the server module (`src/chassis/cairn.server.ts` on a scaffold) |
 | API key | Worker secret `ANTHROPIC_API_KEY` |
 
@@ -78,7 +78,7 @@ so a draft that shows no button on a site with `enabled: true` points at the key
 | `Tidy could not finish. Try again.` | `timeout`, `abort`, or `model` | Retry; raise `timeoutMs` for repeated timeouts |
 | `...changed more than the wording, so it was discarded...` | Structural check discarded the result | None; text unchanged |
 
-A save of the conventions answers 404 `Site config not found` when `src/theme/site.config.yaml`
+A save of the conventions answers 404 `Site config not found` when `src/site/site.config.yaml`
 holds no file, and 404 `Tidy is not enabled for this site` with tidy
 off. The save rewrites only `tidy.conventions`, so a comment inside that block is lost.
 
@@ -93,7 +93,7 @@ off. The save rewrites only `tidy.conventions`, so a comment inside that block i
    // src/routes/robots.txt/+server.ts
    import { buildRobotsResponse } from '@glw907/cairn-cms/delivery';
    import { siteMeta } from '#chassis/content.js';
-   import { cairn } from '#theme/cairn.config.js';
+   import { cairn } from '#site/cairn.config.js';
 
    export const prerender = true;
 

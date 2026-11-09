@@ -41,7 +41,7 @@ route's `load` and every form action wrapped in `createSectionAction` (an action
 ## Declare roles and the access map
 
 ```ts
-// src/theme/cairn.config.ts (the two members, beside the adapter's others)
+// src/site/cairn.config.ts (the two members, beside the adapter's others)
 import { defineAccess, defineRoles } from '@glw907/cairn-cms';
 
 export const roles = defineRoles({

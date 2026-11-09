@@ -101,6 +101,32 @@ plaintext on disk until the operator removes them by hand. `cairn new` stores th
 keyring and never writes them to a record, so delete a wizard record once its site is set up. The
 launcher and its six platform packages version with the Go tool, not the engine.
 
+A site's adapter, site config, and site stylesheets move out of the theme directory. A site that
+already exists makes these changes, in order:
+
+1. Move `cairn.config.ts`, `site-config.ts`, and `site.config.yaml` from `src/theme/` to `src/site/`,
+   and repoint every `#theme/cairn.config.js` and `#theme/site-config.js` import to `#site/...`. Keep
+   `cairn.config.ts` importing the theme's pieces (its icons, its stylesheets, its island registry)
+   through `#theme/*`.
+2. Add `"#site/*": "./src/site/*"` to the `imports` in `package.json`, and set `configModule` in
+   `vite.config.ts` to `/src/site/cairn.config.ts`.
+3. Create `src/site/theme-options.css` and `src/site/overrides.css`, and link them after the theme's
+   sheets: theme, site, theme-options, overrides, in that order. Link them in the layout, in the error
+   page, and in the adapter's preview `stylesheets`.
+4. Expect the engine to read only `src/site/site.config.yaml`. A site config left at the old path is
+   not read, and the nav, settings, and vocabulary loads log a `config.missing` warning naming the path.
+5. Move the directive pieces. The nine standard directives now live in the chassis, so the adapter
+   builds `blocks` with `composeBlocks(icons, renderers)`, a block only your site has is added to that
+   array, and the theme's old block module is gone. A theme's islands sit in
+   `src/theme/directives/islands/`.
+6. Swap an `uppercase` class on an eyebrow for the `eyebrow-case` utility, which reads
+   `--cairn-eyebrow-case`. The code block's scroll cue is the `--cairn-scroll-cue` role.
+7. If you seed a fake backend with `@glw907/cairn-cms-dev`, seed the site config at
+   `src/site/site.config.yaml`.
+
+Fonts are self-hosted from woff2 files in the theme, so a site can drop the three
+`@fontsource-variable` devDependencies.
+
 ## 0.99.0-rc.4
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,

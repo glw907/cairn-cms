@@ -16,8 +16,13 @@ Contents:
 
 ## Declare and register
 
-On a scaffold, blocks live in `src/theme/markdown-blocks.ts` and the adapter reads its exported
-`blocks` list. Adding one takes two edits there: the `defineBlock` call and an entry in `blocks`.
+On a scaffold, the nine standard directives (the callout, the banner, and the rest) belong to the
+chassis, in `src/chassis/directives/`, and the adapter builds its `blocks` array in
+`src/site/cairn.config.ts` as `composeBlocks(icons, renderers)`. A theme may replace how a standard
+directive renders through `src/theme/directives/renderers.ts`, which swaps a `build` and nothing else:
+it cannot add, drop, or rename a directive. A block only your site has is a `defineBlock` call in
+`src/site/`, added to that array beside the composed ones. Adding one takes two edits: the
+`defineBlock` call and an entry in `blocks`.
 A hand-built site passes the same array to `createRenderer({ blocks })` and `rendering.blocks`, and
 passes `rendering={cairn.rendering}` to `CairnAdmin` (no `blocks` in it, no **Insert block** button).
 The engine builds the registry from the array.
@@ -45,7 +50,7 @@ fails the whole render: the preview shows `The preview could not render this con
 page fails its build or answers 500. Handle every value an author can type.
 
 ```ts
-// src/theme/markdown-blocks.ts
+// src/site/countdown.ts
 import { defineBlock, fields } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 
@@ -66,8 +71,13 @@ export const countdown = defineBlock({
     return h('p', { className: ['countdown'] }, [h('strong', label), date ? ` ${date}` : '']);
   },
 });
+```
 
-export const blocks = [countdown];
+Then add it to the adapter's array in `src/site/cairn.config.ts`:
+
+<!-- snippet-check-skip: continues the scaffold's adapter module, which imports composeBlocks, icons, and renderers -->
+```ts
+const blocks = [...composeBlocks(icons, renderers), countdown];
 ```
 
 `ctx.attr(key)` returns the string or `undefined`; `ctx.attributes` carries typed values;
@@ -84,14 +94,14 @@ literal text; only `::include` is a leaf directive.
 
 ## Make it an island
 
-A scaffold already has the registry (`src/theme/islands/registry.ts`), the adapter's
+A scaffold already has the registry (`src/theme/directives/islands/registry.ts`), the adapter's
 `rendering.islands`, the root load's `hasIslands`, and the root layout's `hydrateIslands` call. Add
 three things and leave the layout, root load, and adapter alone:
 
-1. The live component in `src/theme/islands/`:
+1. The live component in `src/theme/directives/islands/`:
 
    ```svelte
-   <!-- src/theme/islands/Countdown.svelte -->
+   <!-- src/theme/directives/islands/Countdown.svelte -->
    <script lang="ts">
      interface Props {
        label?: string;

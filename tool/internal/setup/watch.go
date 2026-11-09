@@ -162,8 +162,9 @@ func (r *run) provisionD1(ctx context.Context) error {
 	return r.save()
 }
 
-// sqlTables lists a database's own tables, leaving out SQLite's and D1's.
-const sqlTables = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'"
+// sqlTables lists a database's own tables, leaving out SQLite's and D1's. The prefixes are
+// compared exactly, since in a LIKE pattern "_" matches any one character.
+const sqlTables = "SELECT name FROM sqlite_master WHERE type = 'table' AND substr(name, 1, 7) <> 'sqlite_' AND substr(name, 1, 4) <> '_cf_'"
 
 func (r *run) d1Empty(ctx context.Context, uuid string) (bool, error) {
 	res, err := r.cf.D1Query(ctx, uuid, []providers.D1Statement{{SQL: sqlTables}})
@@ -297,8 +298,8 @@ func (r *run) pushCommit(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	env, header := pushEnv(r.cfg.Env, tok)
-	r.registerValue(header)
+	env, header, encoded := pushEnv(r.cfg.Env, tok)
+	r.registerValue(header, encoded)
 	ref := "HEAD:refs/heads/" + r.rec.GitHub.Repo.DefaultBranch
 	if _, err := runChild(ctx, r.rec.Setup.Folder, env, "git", "push", "--quiet", "origin", ref); err != nil {
 		return r.localFailure(ctx, ReasonPush, "Setup couldn't push the site to GitHub.",

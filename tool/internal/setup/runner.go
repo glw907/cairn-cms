@@ -227,8 +227,8 @@ type Result struct {
 type Done struct {
 	// URL is the live site's address.
 	URL string
-	// SignedIn reports that a D1 read showed the tab's sign-in link used. Only then does the
-	// done screen say the owner is signed in.
+	// SignedIn reports that a D1 read showed a session for the owner written after the tab's
+	// sign-in link was issued. Only then does the done screen say the owner is signed in.
 	SignedIn bool
 	// Emailed reports that setup sent the sign-in email.
 	Emailed bool

@@ -446,6 +446,20 @@ func (c cfClient) D1Query(ctx context.Context, uuid string, stmts []providers.D1
 			if _, ok := db.tokens[c.str(p, 0)]; ok {
 				res.Results = append(res.Results, json.RawMessage(`{"token_hash":"x"}`))
 			}
+		case sqlLatestSession:
+			latest := "null"
+			for _, s := range db.sessions {
+				if s.email == c.str(p, 0) {
+					latest = strconv.FormatInt(s.created, 10)
+				}
+			}
+			res.Results = append(res.Results, json.RawMessage(`{"latest":`+latest+`}`))
+		case sqlNewSession:
+			for _, s := range db.sessions {
+				if s.email == c.str(p, 0) && s.created > c.num(p, 1) {
+					res.Results = append(res.Results, json.RawMessage(`{"one":1}`))
+				}
+			}
 		default:
 			c.t.Errorf("unexpected SQL %q", st.SQL)
 		}

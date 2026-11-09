@@ -6,7 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +32,16 @@ const (
 	sqlSweepTokens = "DELETE FROM magic_token WHERE email = ? OR expires_at <= ?"
 	sqlInsertToken = "INSERT INTO magic_token (token_hash, email, expires_at, created_at) SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM editor WHERE email = ?)"
 	sqlTokenLive   = "SELECT token_hash FROM magic_token WHERE token_hash = ?"
+)
+
+// The engine deletes a consumed row, and its issueToken deletes a live one when the owner asks
+// the sign-in page for a link, so a gone row alone does not show a sign-in. The confirm writes
+// a session for the email right after the consume (src/lib/sveltekit/auth-routes.ts), and that
+// session is the proof. Both reads compare D1's own created_at values, never this computer's
+// clock.
+const (
+	sqlLatestSession = "SELECT MAX(created_at) AS latest FROM session WHERE email = ?"
+	sqlNewSession    = "SELECT 1 AS one FROM session WHERE email = ? AND created_at > ?"
 )
 
 // newToken draws a sign-in token the way the engine's generateToken does: 32 random bytes in
@@ -80,8 +93,7 @@ func (r *run) issueLink(ctx context.Context) (link issued, ok bool, err error) {
 		expires: r.cfg.Now().Add(tokenTTL),
 	}
 	r.registerValue(token, link.url)
-	email := strings.ToLower(strings.TrimSpace(r.email))
-	res, err := r.cf.D1Query(ctx, r.rec.Setup.IDs.D1, signInBatch(email, link.hash, r.cfg.Now()))
+	res, err := r.cf.D1Query(ctx, r.rec.Setup.IDs.D1, signInBatch(r.ownerKey(), link.hash, r.cfg.Now()))
 	if err != nil {
 		return issued{}, false, r.fail(ctx, err, "Cloudflare")
 	}
@@ -89,8 +101,8 @@ func (r *run) issueLink(ctx context.Context) (link issued, ok bool, err error) {
 }
 
 // signIn is watch step 8. With the setup tab open in this run, the tab moves to a sign-in link
-// through its one /next answer, and the step watches the row until a D1 read shows it used or
-// it expires. Then, or at once when no tab shows the site, setup writes a second unbound row and
+// through its one /next answer, and the step watches until a D1 read shows the owner signed in
+// from it or it expires. Then, or at once when no tab shows the site, setup writes a second unbound row and
 // emails its link to the owner.
 func (r *run) signIn(ctx context.Context) error {
 	if r.opened && !r.cfg.Apply {
@@ -102,10 +114,14 @@ func (r *run) signIn(ctx context.Context) error {
 			r.out.NoSignIn = true
 			return nil
 		}
+		since, err := r.latestSession(ctx)
+		if err != nil {
+			return err
+		}
 		if err := r.tab.SetNext(link.url); err != nil {
 			return err
 		}
-		used, err := r.watchLink(ctx, link)
+		used, err := r.watchLink(ctx, link, since)
 		if err != nil {
 			return err
 		}
@@ -123,16 +139,54 @@ func (r *run) signIn(ctx context.Context) error {
 	return nil
 }
 
-// watchLink reads the link's row until it is gone, which means the link was used, or until the
-// link expires.
-func (r *run) watchLink(ctx context.Context, link issued) (used bool, err error) {
+// ownerKey is the owner's email as the editor and session tables store it.
+func (r *run) ownerKey() string { return strings.ToLower(strings.TrimSpace(r.email)) }
+
+// latestSession reads the created_at of the owner's newest session, 0 when there is none.
+func (r *run) latestSession(ctx context.Context) (int64, error) {
+	res, err := r.cf.D1Query(ctx, r.rec.Setup.IDs.D1, []providers.D1Statement{{SQL: sqlLatestSession, Params: []any{r.ownerKey()}}})
+	if err != nil {
+		return 0, r.fail(ctx, err, "Cloudflare")
+	}
+	var row struct {
+		Latest *int64 `json:"latest"`
+	}
+	if len(res) == 1 && len(res[0].Results) == 1 {
+		if err := json.Unmarshal(res[0].Results[0], &row); err != nil {
+			return 0, r.fail(ctx, err, "Cloudflare")
+		}
+	}
+	if row.Latest == nil {
+		return 0, nil
+	}
+	return *row.Latest, nil
+}
+
+// watchLink watches the link until a session for the owner newer than since shows it used, or
+// until it expires. A row gone with no new session on two reads running was swept by a request
+// on the sign-in page, not used; the second read covers the moment between the engine's
+// consume and its session write.
+func (r *run) watchLink(ctx context.Context, link issued, since int64) (used bool, err error) {
+	gone := false
 	for r.cfg.Now().Before(link.expires) {
-		res, err := r.cf.D1Query(ctx, r.rec.Setup.IDs.D1, []providers.D1Statement{{SQL: sqlTokenLive, Params: []any{link.hash}}})
+		res, err := r.cf.D1Query(ctx, r.rec.Setup.IDs.D1, []providers.D1Statement{
+			{SQL: sqlTokenLive, Params: []any{link.hash}},
+			{SQL: sqlNewSession, Params: []any{r.ownerKey(), since}},
+		})
 		if err != nil {
 			return false, r.fail(ctx, err, "Cloudflare")
 		}
-		if len(res) == 1 && len(res[0].Results) == 0 {
+		if len(res) != 2 {
+			return false, r.fail(ctx, errors.New("setup: the sign-in read returned "+strconv.Itoa(len(res))+" results, want 2"), "Cloudflare")
+		}
+		if len(res[1].Results) > 0 {
 			return true, nil
+		}
+		if len(res[0].Results) == 0 {
+			if gone {
+				return false, nil
+			}
+			gone = true
 		}
 		if err := r.pause(ctx, signInPoll); err != nil {
 			return false, err

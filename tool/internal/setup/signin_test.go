@@ -134,6 +134,16 @@ func TestTheSignInBatchMatchesTheMigrations(t *testing.T) {
 			}
 		}
 	}
+	for _, sql := range []string{sqlLatestSession, sqlNewSession} {
+		if !strings.Contains(sql, "FROM session ") {
+			t.Errorf("%q does not read the session table", sql)
+		}
+		for _, c := range []string{"email", "created_at"} {
+			if _, ok := tables["session"][c]; !ok || !strings.Contains(sql, c) {
+				t.Errorf("%q and the session table do not both carry %s", sql, c)
+			}
+		}
+	}
 
 	now := time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)
 	batch := signInBatch("owner@example.test", signInVector, now)

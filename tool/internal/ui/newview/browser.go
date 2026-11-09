@@ -193,7 +193,8 @@ func (b *browser) fallback(g Grid) string {
 		return margin + ink.Render(lead) + g.link(b.url, b.url)
 	}
 	out := []string{margin + ink.Render(strings.TrimSpace(lead))}
-	for piece := range strings.SplitSeq(ansi.Hardwrap(b.url, g.ContentWidth(), false), "\n") {
+	lines := (ansi.StringWidth(b.url) + g.ContentWidth() - 1) / g.ContentWidth()
+	for piece := range strings.SplitSeq(ansi.Hardwrap(b.url, (ansi.StringWidth(b.url)+lines-1)/lines, false), "\n") {
 		out = append(out, margin+g.link(piece, b.url))
 	}
 	return strings.Join(out, "\n")

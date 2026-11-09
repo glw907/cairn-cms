@@ -557,12 +557,14 @@ Name the check that entry holds
 - Setup also emailed a sign-in link to <email>.
 - Setup can't continue
 - Setup can't run over SSH
+- Setup couldn't end its access to your Cloudflare account. Remove cairn from the authorized applications in your Cloudflare profile.
 - Setup couldn't open your browser. Go to <url>
 - Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
 - Setup didn't send a sign-in link. This site already has editors, and <email> isn't one of them. Ask one of them to invite you in Admin > Editors.
 - Setup needs a domain on Cloudflare
 - Setup opens a tab in your browser. Approve these four requests in that tab.
 - Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser.
+- Setup skipped dependency install scripts. If a dependency needs its script, run npm rebuild in <folder>.
 - Setup stopped. Nothing was created.
 - Setup stopped. To resume, run cairn new again.
 - Setup took <time>.

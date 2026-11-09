@@ -38,11 +38,19 @@ func (g Grid) done(d setup.Done, s setup.Summary, took time.Duration) string {
 		}
 	}
 
+	var skipped, revoke string
+	if d.ScriptsSkipped {
+		skipped = g.Para(RoleText, fill(doneScriptsSkipped, "<folder>", s.Folder))
+	}
+	if d.RevokeFailed {
+		revoke = g.Para(RoleText, doneRevokeFailed)
+	}
+
 	host := strings.TrimPrefix(d.URL, "https://")
 	next := strings.Join([]string{
 		g.Cell(labelEdit, st.Text, g.link(host+"/admin", d.URL+"/admin")),
 		g.Cell(labelInvite, st.Text, st.Muted.Render(valueInvite)),
 		g.Cell(labelDocs, st.Text, g.link(linkDocs, urlDocs)),
 	}, "\n")
-	return Frame(live, body, next, g.Para(RoleMuted, fill(doneTook, "<time>", minutes(took))))
+	return Frame(live, body, skipped, revoke, next, g.Para(RoleMuted, fill(doneTook, "<time>", minutes(took))))
 }

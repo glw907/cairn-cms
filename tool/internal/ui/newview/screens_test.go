@@ -295,6 +295,9 @@ var screens = []struct {
 	{"failure-declined", oneTheme, false, failed(declined)},
 	{"done", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, Emailed: true})},
 	{"done-open", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", Emailed: true})},
+	{"done-scripts-skipped", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, ScriptsSkipped: true})},
+	{"done-revoke-failed", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, RevokeFailed: true})},
+	{"done-both-notices", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, Emailed: true, ScriptsSkipped: true, RevokeFailed: true})},
 	{"stop-nothing", oneTheme, false, func(m *Model) { send(m, enter, ctrlC) }},
 	{"stop-kept", oneTheme, false, func(m *Model) { watched(3)(m); send(m, ctrlC) }},
 }

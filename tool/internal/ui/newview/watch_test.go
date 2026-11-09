@@ -168,6 +168,38 @@ func TestFailureEmphasisAndLinks(t *testing.T) {
 	})
 }
 
+func TestDoneShowsEachNoticeOnlyWhenItsFlagIsSet(t *testing.T) {
+	const skipped = "Setup skipped dependency install scripts. If a dependency needs its script, run npm rebuild in /home/sam/sites/field-notes."
+	const revoke = "Setup couldn't end its access to your Cloudflare account. Remove cairn from the authorized applications in your Cloudflare profile."
+	tests := []struct {
+		name      string
+		done      setup.Done
+		want, not []string
+	}{
+		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "authorized applications"}},
+		{"scripts skipped", setup.Done{ScriptsSkipped: true}, []string{skipped}, []string{"authorized applications"}},
+		{"revoke failed", setup.Done{RevokeFailed: true}, []string{revoke}, []string{"npm rebuild"}},
+		{"both", setup.Done{ScriptsSkipped: true, RevokeFailed: true}, []string{skipped, revoke}, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.done.URL = "https://fieldnotes.example.com"
+			_, m := frame(oneTheme, 80, finished(tt.done))
+			got := flat(m)
+			for _, w := range tt.want {
+				if !strings.Contains(got, w) {
+					t.Errorf("done screen lacks %q:\n%s", w, got)
+				}
+			}
+			for _, n := range tt.not {
+				if strings.Contains(got, n) {
+					t.Errorf("done screen says %q:\n%s", n, got)
+				}
+			}
+		})
+	}
+}
+
 func TestDoneSaysSignedInOnlyWhenTheLinkWasUsed(t *testing.T) {
 	tests := []struct {
 		name      string

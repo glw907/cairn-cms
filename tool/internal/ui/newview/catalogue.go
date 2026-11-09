@@ -146,6 +146,9 @@ const (
 	labelDocs    = "Read the docs"
 	linkDocs     = "cairn.pub/docs"
 	doneTook     = "Setup took <time>."
+
+	doneScriptsSkipped = "Setup skipped dependency install scripts. If a dependency needs its script, run npm rebuild in <folder>."
+	doneRevokeFailed   = "Setup couldn't end its access to your Cloudflare account. Remove cairn from the authorized applications in your Cloudflare profile."
 )
 
 // The Ctrl+C lines.
@@ -212,7 +215,7 @@ func Catalogue() []string {
 		stepPush, whyPush, stepDeployKey, whyDeployKey, stepFirstDeploy, whyFirstDeploy, stepDomains, whyDomains,
 		stepSignIn, titleDeployFails, linkWorkers,
 		doneLive, doneSignedIn, doneEmailed, doneNoSignIn, labelEdit, labelInvite, valueInvite, labelDocs,
-		linkDocs, doneTook,
+		linkDocs, doneTook, doneScriptsSkipped, doneRevokeFailed,
 		stopNothing, stopResume,
 		windowBase, windowApprove, windowReview, windowChoose, windowSettings, windowDone, windowStopped,
 		verbStart, verbNext, verbOpen, verbChoose, verbBack, verbQuit, verbStop,

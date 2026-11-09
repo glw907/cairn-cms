@@ -1,0 +1,19 @@
+
+  Field Notes is live at https://fieldnotes.example.com
+
+  You're signed in to the admin in your browser.
+  Setup also emailed a sign-in link to sam@example.com.
+
+  Setup skipped dependency install scripts.
+  If a dependency needs its script, run npm
+  rebuild in /home/sam/sites/field-notes.
+
+  Setup couldn't end its access to your Cloudflare
+  account. Remove cairn from the authorized
+  applications in your Cloudflare profile.
+
+  Edit your site    fieldnotes.example.com/admin
+  Invite an editor  Admin > Editors
+  Read the docs     cairn.pub/docs
+
+  Setup took 8:12.

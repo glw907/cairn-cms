@@ -1,7 +1,7 @@
 {
   "provenance": {
     "captured": "2026-08-10",
-    "source": "packages/create-cairn-site/test/fake-github.mjs:372-377",
+    "source": "the retired Node fake fake-github.mjs:372-377",
     "status": 422,
     "note": "no per-body capture comment"
   },

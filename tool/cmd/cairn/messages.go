@@ -698,8 +698,7 @@ func translateError(err error) error {
 	return fallbackError(err)
 }
 
-// cairn new's Short, Example, and flag help. The command is Hidden until it ships, so none of
-// this reaches the root help yet. Every line is new to this table.
+// cairn new's Short, Example, and flag help. Every line is new to this table.
 const (
 	shortNew   = "Set up a new cairn site"
 	exampleNew = "cairn new --plan plan.json --name \"My Site\" --email me@example.com --posture decline"

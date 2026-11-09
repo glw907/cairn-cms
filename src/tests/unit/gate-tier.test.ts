@@ -338,12 +338,7 @@ describe('the component leg', () => {
 describe('the create-cairn-site leg', () => {
   const SUITE = 'npm test -w packages/create-cairn-site';
   // One path per trigger entry.
-  const scaffolding = [
-    'packages/create-cairn-site/src/prompts.mjs',
-    'examples/showcase/package.json',
-    'scripts/build/emit-template.mjs',
-    'package.json',
-  ];
+  const scaffolding = ['packages/create-cairn-site/bin.mjs', 'scripts/release/pack-platforms.mjs'];
 
   it('names a row for every trigger', () => {
     for (const glob of CREATE_CAIRN_SITE_TRIGGERS) {
@@ -359,6 +354,11 @@ describe('the create-cairn-site leg', () => {
 
   it('leaves the suite out for a library path', () => {
     expect(decideGate(['src/lib/foo/bar.ts']).gate).not.toContain(SUITE);
+  });
+
+  it('leaves the suite out for the showcase and the emitter, which the launcher no longer reads', () => {
+    expect(decideGate(['examples/showcase/package.json']).gate).not.toContain(SUITE);
+    expect(decideGate(['scripts/build/emit-template.mjs']).gate).not.toContain(SUITE);
   });
 });
 
@@ -460,7 +460,7 @@ describe('the e2e leg', () => {
 
 describe('decideGate', () => {
   it('orders the legs: package, static checks, node projects, component, scaffold suite, e2e', () => {
-    const gate = decideGate(['examples/showcase/src/routes/(site)/+page.svelte', 'src/lib/log/index.ts'], {
+    const gate = decideGate(['examples/showcase/src/routes/(site)/+page.svelte', 'src/lib/log/index.ts', 'packages/create-cairn-site/bin.mjs'], {
       selected: ['a.test.ts'],
     }).gate;
     const marks = [
@@ -643,8 +643,6 @@ const CI_EQUIVALENTS: Record<string, string[]> = {
     ['npm run test:node-projects'],
   'npm run test:component -- --reporter=default --reporter=github-actions --reporter=./scripts/ci/vitest-retry-reporter.mjs':
     ['npm run test:component -- --no-file-parallelism'],
-  // The same suite, reached by workspace flag instead of `--prefix`.
-  'npm --prefix packages/create-cairn-site test': ['npm test -w packages/create-cairn-site'],
   // CI builds once and calls these checks' scripts directly; the local gate runs each through its
   // npm script, which builds first.
   'node scripts/checks/check-audit-pack.mjs': ['npm run check:audit-pack'],
@@ -667,8 +665,6 @@ const CI_NOT_LOCAL: Record<string, string> = {
   'node scripts/ci/retries-notice.mjs "$RUNNER_TEMP/vitest-node-retries.json" "$RUNNER_TEMP/vitest-component-retries.json"':
     'annotates the CI run with the retried tests; the reports it reads exist only after a CI run',
   'name:Install Vale 3.23.0': 'installs Vale on the CI runner; the docs gate runs the workstation Vale',
-  'name:Bake the create-cairn-site template':
-    'bakes the gitignored template with an engine spec only CI can substitute; the workspace suite reads the baked copy on disk',
 };
 
 /**

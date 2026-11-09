@@ -12,7 +12,7 @@ func TestSiteConfigPath(t *testing.T) {
 }
 
 // TestValidateSiteConfigPathShape proves the four shape rules ported from
-// packages/create-cairn-site/src/substitute.mjs's verifySiteConfigPath, one rejected shape per
+// the retired wizard's verifySiteConfigPath, one rejected shape per
 // case, plus the committed value passing clean.
 func TestValidateSiteConfigPathShape(t *testing.T) {
 	tests := []struct {

@@ -238,6 +238,11 @@ describe('C4 personal data', () => {
     }
   });
 
+  it('reads a platform package under the @glw907 scope as the engine\'s own, not another repository', () => {
+    expect(hits('`@glw907/cairn-linux-x64`')).toEqual([]);
+    expect(hits('see glw907/907-life')).toContain('C1:error');
+  });
+
   it('does not read a scoped package or a version pin as an email', () => {
     expect(hits('npm i @glw907/cairn-cms@1.2.3 and cairn-cms@1.2.3')).toEqual([]);
   });
@@ -468,16 +473,13 @@ describe('runLeakCheck over a tree', () => {
     expect(runLeakCheck(leaked).findings.map((finding) => finding.cls)).toEqual(['C1']);
   });
 
-  it('scans the create-cairn-site package source at T2, and skips its test files', () => {
+  it('scans the create-cairn-site launcher and readme at T2', () => {
     const pkg = 'packages/create-cairn-site';
-    for (const path of [`${pkg}/bin.mjs`, `${pkg}/src/x.mjs`, `${pkg}/README.md`]) {
+    for (const path of [`${pkg}/bin.mjs`, `${pkg}/README.md`]) {
       const { findings } = runLeakCheck(tree({ [path]: 'Modeled on 907.life.\n' }));
       expect(findings.map((finding) => finding.cls), path).toEqual(['C1']);
     }
-    const tested = runLeakCheck(tree({ [`${pkg}/src/x.test.mjs`]: 'Modeled on 907.life.\n' }));
-    expect(tested.findings).toEqual([]);
-    expect(profileFor(`${pkg}/src/x.test.mjs`)).toBeNull();
-    expect(profileFor(`${pkg}/src/x.mjs`)).toEqual({ tier: 'T2', classes: ['C1', 'C2', 'C3', 'C4'], mode: 'whole' });
+    expect(profileFor(`${pkg}/bin.mjs`)).toEqual({ tier: 'T2', classes: ['C1', 'C2', 'C3', 'C4'], mode: 'whole' });
   });
 
   it('formats errors first and folds released-CHANGELOG warnings into one count line', () => {

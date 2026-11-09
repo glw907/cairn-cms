@@ -12,7 +12,7 @@ import (
 )
 
 // requestTimeout bounds every request this package makes. The Node CLI this ports from
-// (packages/create-cairn-site/src/cloudflare/api.mjs) sets no client timeout at all, so a
+// (the retired Node wizard) set no client timeout at all, so a
 // stalled TLS dial there can hang forever; the scheduled, unattended cairn run must never wait
 // on one dead connection for the rest of its life.
 const requestTimeout = 15 * time.Second

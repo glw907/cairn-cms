@@ -20,7 +20,7 @@ type Resolver interface {
 
 // AuthorityLookup asks nameserver directly for host's address records, bypassing the
 // ordinary recursive resolver and its negative cache: the read diagnoseUnreachable
-// (packages/create-cairn-site/src/cloudflare/hostname.mjs) performs to tell a record that
+// (as the retired Node wizard did) performs to tell a record that
 // already exists at the zone's authority from one that has not propagated there at all.
 // nameserver is a hostname, resolved to its own address before the direct query. A record that
 // does not exist at the authority may surface either way: as an error (a *net.DNSError with

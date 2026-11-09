@@ -125,7 +125,7 @@ func TestDoRefusesMismatchedHost(t *testing.T) {
 }
 
 // TestDoRetriesRateLimitedGET covers both Retry-After shapes the Node client's policy
-// (packages/create-cairn-site/src/cloudflare/api.mjs) handles: a numeric header, and no header at
+// handled: a numeric header, and no header at
 // all (the default wait), asserting exactly one retry in each case, and that a second
 // rate-limited response is not retried again.
 func TestDoRetriesRateLimitedGET(t *testing.T) {

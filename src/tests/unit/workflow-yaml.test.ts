@@ -133,8 +133,8 @@ describe('.github/ci-green.json classifies every workflow by trigger shape', () 
 
 describe('the test jobs keep their gates and report their retries', () => {
   const TEST_WORKFLOWS = ['test.yml', 'e2e.yml', 'design.yml'];
-  // The workflows that gate a pull_request; the ones above plus the create-site gate.
-  const PR_WORKFLOWS = [...TEST_WORKFLOWS, 'create-site.yml'];
+  // The workflows that gate a pull_request.
+  const PR_WORKFLOWS = TEST_WORKFLOWS;
   const TEST_STEP = /\bnpm\b[^\n]*\btest\b/;
   const stepsOf = (name: string): Step[] =>
     Object.values(loadWorkflow(name).jobs ?? {}).flatMap((job) => job.steps ?? []);
@@ -186,7 +186,7 @@ describe('the test jobs keep their gates and report their retries', () => {
     const chain = scripts.test.split('&&').map((part) => /^\s*npm run ([\w:-]+)\s*$/.exec(part)?.[1]);
     expect(chain.every((script) => script !== undefined)).toBe(true);
     const steps = stepsOf('test.yml').map((s) => s.run ?? '');
-    expect(steps.some((run) => /^npm test\b/m.test(run)), 'a bare npm test would skip the reporters').toBe(false);
+    expect(steps.some((run) => /^npm test(?! -w)\b/m.test(run)), 'a bare npm test would skip the reporters').toBe(false);
     const split = steps
       .map((run) => /^npm run (test:node-projects|test:component) -- (.+)$/m.exec(run))
       .filter((match): match is RegExpExecArray => match !== null);

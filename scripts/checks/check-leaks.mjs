@@ -80,7 +80,7 @@ const RULES = [
   {
     cls: 'C1',
     tiers: PUBLIC_TIERS,
-    pattern: /glw907\/(?!cairn-cms\b)/g,
+    pattern: /(?<!@)glw907\/(?!cairn-cms\b)/g,
     label: 'a repository outside cairn-cms',
   },
   {
@@ -152,8 +152,8 @@ const ID_TOKEN = /\b(?:\d{7,}|[0-9a-f]{20,})\b/gi;
  * @typedef {{ tier: 'T1' | 'T2' | 'T3', classes: string[], mode: 'whole' | 'tsdoc' | 'changelog' }} Profile
  */
 
-// The scaffold's `packages/create-cairn-site/template` is gitignored build output baked from the
-// showcase (whose chassis is scanned directly), so only the committed Waymark tree is a root.
+// The scaffold template is build output baked from the showcase (whose chassis is scanned
+// directly), so only the committed Waymark tree is a root.
 const TEMPLATE_ROOTS = ['templates/waymark'];
 const BINARY_EXTENSIONS = new Set([
   '.png',
@@ -221,9 +221,7 @@ export function profileFor(relPath) {
     return { tier: 'T2', classes: all, mode: 'whole' };
   }
   if (
-    /^packages\/create-cairn-site\/(?:bin\.mjs|README\.md|src\/.+\.mjs)$/.test(path) &&
-    !path.endsWith('.test.mjs')
-  ) {
+    /^packages\/create-cairn-site\/(?:bin\.mjs|README\.md)$/.test(path)) {
     return { tier: 'T2', classes: all, mode: 'whole' };
   }
   if (/^src\/lib\/.+\.(?:ts|svelte)$/.test(path)) {
@@ -499,7 +497,6 @@ export const SCAN_ROOTS = [
   'src/lib',
   'tool/cmd/cairn/messages.go',
   'packages/create-cairn-site/bin.mjs',
-  'packages/create-cairn-site/src',
   'packages/create-cairn-site/README.md',
   ...TEMPLATE_ROOTS,
 ];

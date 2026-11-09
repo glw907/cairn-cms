@@ -2,7 +2,7 @@
 // convention in https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-08-16-capture-pass.md). A page marks a quoted
 // transcript with `<!-- transcript: <fixture path> -->` immediately before a fenced block; this
 // gate resolves that marker against the named fixture under
-// packages/create-cairn-site/test/fixtures/transcripts/, replays both the block and the fixture
+// tool/testdata/transcripts/, replays both the block and the fixture
 // through the same pty-control-stream renderer, and fails on any mismatch, malformed marker, or
 // fixture the corpus neither quotes nor declares deliberately unconsumed. It also enforces two
 // per-page floors (a page cannot claim recorded proof with zero or one lightweight block) and
@@ -31,7 +31,7 @@ const INDEX_FILES = ['docs/why-cairn.md', 'docs/architecture.md'];
 
 const SKIP_DIRS = new Set(['__snapshots__', 'snapshots']);
 
-const FIXTURES_ROOT_REL = 'packages/create-cairn-site/test/fixtures/transcripts';
+const FIXTURES_ROOT_REL = 'tool/testdata/transcripts';
 
 // The directory whose pages quote the recorded run. The uncited-fixture rule holds only while it
 // holds any page.

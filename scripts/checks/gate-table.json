@@ -64,7 +64,6 @@
     "docs/admin/",
     "schema/",
     "examples/showcase/src/theme/site.config.yaml",
-    "packages/create-cairn-site/src/",
     "tool/testdata/fixtures/",
     "scripts/checks/shipped-anchors.json"
   ],

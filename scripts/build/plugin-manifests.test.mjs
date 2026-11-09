@@ -51,11 +51,14 @@ test('the cairn marketplace lists the one plugin that its manifest names', () =>
   assert.equal(marketplace.plugins[0].source, './plugins/cairn');
 });
 
-test('both readmes open with the agent setup section', () => {
-  for (const rel of ['README.md', 'packages/create-cairn-site/README.md']) {
-    const firstH2 = readFileSync(path.join(root, rel), 'utf8')
-      .split('\n')
-      .find((line) => line.startsWith('## '));
-    assert.equal(firstH2, '## Setting up with an agent', `${rel} opens with the wrong section`);
-  }
+test('the root readme opens with the agent setup section', () => {
+  const firstH2 = readFileSync(path.join(root, 'README.md'), 'utf8')
+    .split('\n')
+    .find((line) => line.startsWith('## '));
+  assert.equal(firstH2, '## Setting up with an agent', 'README.md opens with the wrong section');
+});
+
+test('the launcher readme points an agent at the agent setup page', () => {
+  const launcher = readFileSync(path.join(root, 'packages/create-cairn-site/README.md'), 'utf8');
+  assert.match(launcher, /docs\/admin\/set-up-with-an-agent\.md/);
 });

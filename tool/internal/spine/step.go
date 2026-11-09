@@ -5,9 +5,9 @@ package spine
 // never derives status from it; the detail view shows it as lifecycle position only.
 type Step string
 
-// The record-step constants: the 19 strings the Node CLI's chapter orchestrators
-// (packages/create-cairn-site/src/{scaffold,cloudflare/chapter,cloudflare/chapter2,
-// cloudflare/chapter3,github/chapter}.mjs) write to a site record's "step" field.
+// The record-step constants: the 19 strings the retired Node wizard's chapter orchestrators
+// wrote to a site record's "step" field. Records on disk still carry them, so the set stays
+// closed: step_test.go holds every constant registered.
 const (
 	StepScaffolded            Step = "scaffolded"
 	StepAppCreated            Step = "app-created"
@@ -30,7 +30,7 @@ const (
 	StepConfigReconciled      Step = "config-reconciled"
 )
 
-// allSteps backs parseStep and is replayed by step_test.go's literal scan.
+// allSteps backs parseStep and is checked against the declared constants by step_test.go.
 var allSteps = map[Step]bool{
 	StepScaffolded:            true,
 	StepAppCreated:            true,
@@ -54,7 +54,7 @@ var allSteps = map[Step]bool{
 }
 
 // The setup-only step constants: positions `cairn new` records that the Node wizard never
-// writes. They stay out of allSteps, which step_test.go holds equal to the wizard's set. A setup
+// writes. They stay out of allSteps, which holds the wizard's set. A setup
 // record reuses the wizard constants where the meaning is the same (app-created, repo-created,
 // pushed, deployed, live).
 const (
@@ -76,20 +76,19 @@ func parseStep(s string) (Step, bool) {
 }
 
 // terminalSteps names the cloudflare chapter's steps past which the pasted API token is
-// deleted, ported from TERMINAL_STEPS in
-// packages/create-cairn-site/src/cloudflare/chapter2.mjs.
+// deleted, ported from the retired wizard's TERMINAL_STEPS.
 func terminalSteps() []Step {
 	return []Step{StepEmailLive, StepPaidPlanDeclined}
 }
 
 // chapter3TerminalSteps names the cloudflare chapter's builds-finished steps, ported from
-// CHAPTER3_TERMINAL_STEPS in packages/create-cairn-site/src/cloudflare/chapter3.mjs.
+// the retired wizard's CHAPTER3_TERMINAL_STEPS.
 func chapter3TerminalSteps() []Step {
 	return []Step{StepBuildsLive, StepBuildsConnectDeclined}
 }
 
 // chapter3ResumableSteps names the cloudflare chapter's steps a resume can skip past, ported
-// from CHAPTER3_RESUMABLE_STEPS in packages/create-cairn-site/src/cloudflare/chapter3.mjs.
+// from the retired wizard's CHAPTER3_RESUMABLE_STEPS.
 func chapter3ResumableSteps() []Step {
 	return []Step{StepBuildsConnected, StepConfigReconciled}
 }

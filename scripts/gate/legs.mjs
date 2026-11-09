@@ -473,8 +473,8 @@ export function cliFailureMessage(result, capture, lines = 8) {
  * @property {(tag: string) => Promise<any[]>} listBuildsForWorker the Worker's builds
  */
 
-// A computed specifier keeps the type check from pulling the package's untyped source into this graph.
-const API_MODULE = new URL('../../packages/create-cairn-site/src/cloudflare/api.mjs', import.meta.url).href;
+// A computed specifier keeps the type check from pulling the untyped client source into this graph.
+const API_MODULE = new URL('./cloudflare/api.mjs', import.meta.url).href;
 
 /** @type {LegDeps['makeBuildsApi']} */
 async function makeBuildsApiDefault(options) {

@@ -20,7 +20,7 @@ The following list routes you to the right page for each situation.
 
 The following report comes from a run against a site just after its first deploy. Every line passed except one skip, which the sections after the report explain.
 
-<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/04-doctor-report.txt -->
+<!-- transcript: tool/testdata/transcripts/04-doctor-report.txt -->
 ```
 + cairn doctor .
 PASS  Wrangler bindings are declared: EMAIL and AUTH_DB are declared
@@ -45,7 +45,7 @@ A skip is neither a pass nor a failure. The one in the preceding report belongs 
 
 When a check fails, the report adds a block that names the problem and gives the link:
 
-<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/04b-doctor-report-failing.txt -->
+<!-- transcript: tool/testdata/transcripts/04b-doctor-report-failing.txt -->
 ```
 FAIL  Workers Logs has no sink: observability.enabled is not true
 [...]

@@ -1,0 +1,294 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { access, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import {
+  bake,
+  bakeForPacking,
+  assertInstallableSpec,
+  PRUNED_SCRIPTS,
+  PRUNED_DEV_DEPENDENCIES,
+  pruneShowcaseOnlyPackageFields,
+  rewriteDevScript,
+} from './bake-template.mjs';
+
+// The showcase's placeholder backend call, which `cairn new` rewrites in a pushed scaffold
+// (tool/internal/setup/scaffold/substitute.go pins the same text).
+const TEMPLATE_GITHUB_APP_LITERAL =
+  "createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' })";
+
+// Published specs, so a bake under test never depends on what the monorepo's versions
+// happen to be. The resolved defaults have their test below.
+const PUBLISHED_SPECS = { engineSpec: '^0.94.0', devSpec: '^0.1.0' };
+
+/**
+ * Make a temporary emit target that is removed when the test that asked for it finishes.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @returns {Promise<string>} the directory's absolute path
+ */
+async function tempTarget(t) {
+  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
+  t.after(() => rm(to, { recursive: true, force: true }));
+  return to;
+}
+
+test('bake emits the template with published-engine specs when both specs are given', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
+  assert.match(pkg.dependencies['@glw907/cairn-cms'], /^\^\d+\.\d+\.\d+$/);
+  assert.ok(!JSON.stringify(pkg).includes('file:'), 'no workspace-relative specs survive');
+});
+
+test('bake emits a real tree, not just a rewritten package.json', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  await access(path.join(to, 'package.json'));
+  await access(path.join(to, 'src'));
+  await access(path.join(to, 'wrangler.jsonc'));
+});
+
+// The rot gate: `cairn new` rewrites this exact literal in a pushed scaffold's cairn.config.ts.
+// Pinning it here means showcase drift that changes the backend line's shape fails this fast
+// bake test, rather than surfacing only inside a live setup run against real GitHub.
+test('the baked template\'s cairn.config.ts carries the exact createGithubApp(...) literal `cairn new` targets', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const config = await readFile(path.join(to, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.ok(
+    config.includes(TEMPLATE_GITHUB_APP_LITERAL),
+    `expected the baked cairn.config.ts to contain "${TEMPLATE_GITHUB_APP_LITERAL}"`,
+  );
+});
+
+// @glw907/cairn-cms-dev first published at the 0.95.0-rc.1 cut, so bake() now resolves a usable
+// default devSpec instead of refusing one. The refusal is still covered: assertInstallableSpec is
+// exercised directly below against a constructed 0.0.0, which tests the guard's contract rather
+// than a passing state of the repo's version files.
+test('bake with no overrides resolves installable default specs', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to });
+  const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
+  // A caret on a prerelease is admitted: the specs the bake resolves track the repo's
+  // versions, and a release line opens on an rc before its stable exists.
+  const INSTALLABLE = /^\^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+  assert.match(pkg.dependencies['@glw907/cairn-cms'], INSTALLABLE);
+  assert.match(pkg.devDependencies['@glw907/cairn-cms-dev'], INSTALLABLE);
+});
+
+test('an explicit file: devSpec throws naming the file: spec', async (t) => {
+  const to = await tempTarget(t);
+  await assert.rejects(
+    () => bake({ to, ...PUBLISHED_SPECS, devSpec: 'file:../whatever' }),
+    (err) => {
+      assert.match(err.message, /file:/);
+      return true;
+    },
+  );
+});
+
+// Regression: the unpublished-version check tested the spec as a substring, so `^10.0.0` and
+// `^20.0.0` both contained the literal "0.0.0" and failed a gate they should pass.
+test('a high major version is not mistaken for an unpublished 0.0.0', () => {
+  for (const spec of ['^10.0.0', '^20.0.0', '^1.0.0', '^0.94.0']) {
+    assert.doesNotThrow(() => assertInstallableSpec('@glw907/cairn-cms', spec), spec);
+  }
+  for (const spec of ['^0.0.0', '0.0.0', '^0.0.0-rc.1']) {
+    assert.throws(() => assertInstallableSpec('@glw907/cairn-cms-dev', spec), /0\.0\.0/, spec);
+  }
+});
+
+test('bake prunes showcase-only scripts and devDependencies, keeping the rest', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
+  for (const script of PRUNED_SCRIPTS) {
+    assert.ok(!(script in pkg.scripts), `expected ${script} to be pruned from scripts`);
+  }
+  for (const dep of PRUNED_DEV_DEPENDENCIES) {
+    assert.ok(!(dep in pkg.devDependencies), `expected ${dep} to be pruned from devDependencies`);
+  }
+  assert.ok('dev' in pkg.scripts);
+  assert.ok('build' in pkg.scripts);
+  assert.ok('check' in pkg.scripts);
+  assert.ok('cairn:manifest' in pkg.scripts);
+  assert.ok('format' in pkg.scripts);
+  assert.ok('format:check' in pkg.scripts);
+});
+
+// The showcase excludes .claude/ from the copy (its dev tooling stays out); the bake writes
+// its own .claude/ explicitly (the guidance tree), so the directory now exists but holds only
+// what writeGuidance wrote, never any showcase dev-tooling leftover.
+test('bake emits a tree with only the baked .claude guidance, and scripts/ holds exactly dev.mjs', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const claudeEntries = await readdir(path.join(to, '.claude'));
+  assert.deepEqual(claudeEntries.sort(), ['agents', 'cairn', 'skills']);
+  const scriptsEntries = await readdir(path.join(to, 'scripts'));
+  assert.deepEqual(scriptsEntries, ['dev.mjs']);
+});
+
+test('the dev shim names CAIRN_DEV_BACKEND', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const shim = await readFile(path.join(to, 'scripts', 'dev.mjs'), 'utf8');
+  assert.match(shim, /CAIRN_DEV_BACKEND/);
+});
+
+// The dev shim must also keep the admin sheet compiled while the site runs, since a scaffolded
+// site ships no build step that would otherwise refresh .cairn/admin.css.
+test('the dev shim spawns the tailwindcss watch compile beside the vite child and kills it on exit', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const shim = await readFile(path.join(to, 'scripts', 'dev.mjs'), 'utf8');
+  assert.match(shim, /@tailwindcss\/cli/);
+  assert.match(shim, /src\/admin\.css/);
+  assert.match(shim, /\.cairn\/admin\.css/);
+  assert.match(shim, /--watch/);
+  assert.match(shim, /tailwind\.kill\(\)/);
+});
+
+test('bake rewrites package.json.scripts.dev to run the shim', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
+  assert.equal(pkg.scripts.dev, 'node scripts/dev.mjs');
+});
+
+// The rot gate: rewriteDevScript must fail loud when the showcase's dev script is not the
+// exact string it expects to replace, rather than silently overwrite an unrelated command.
+test('rewriteDevScript throws naming an unexpected showcase dev script', () => {
+  const pkg = { scripts: { dev: 'vite dev --host' } };
+  assert.throws(
+    () => rewriteDevScript(pkg),
+    /expected the showcase dev script to be "vite dev", found "vite dev --host"/,
+  );
+});
+
+// Plain bake() (emit-template-dir.mjs's entry point) keeps the emitted .gitignore under its
+// real dot name: a committed template tree has no npm packlist to strip it, and the emitter's
+// overlay appends its `.dev.vars.example` negation onto that exact file (OVERLAY_MERGE_RULES).
+test('bake keeps the emitted .gitignore under its real name, covering the secret-bearing entries', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  await assert.rejects(
+    () => access(path.join(to, 'gitignore')),
+    'no dot-free gitignore should exist after plain bake()',
+  );
+  const gitignore = await readFile(path.join(to, '.gitignore'), 'utf8');
+  assert.match(gitignore, /\.dev\.vars/);
+  assert.match(gitignore, /\.wrangler/);
+});
+
+// The rot gate against npm's packlist: it drops any file literally named ".gitignore" from a
+// published tarball, so bakeForPacking (the release bake's entry point) must rename
+// the emitted copy to a dot-free name before packing; the Go scaffold step renames it back on the way out.
+test('bakeForPacking renames the emitted .gitignore to a dot-free "gitignore", covering the secret-bearing entries', async (t) => {
+  const to = await tempTarget(t);
+  await bakeForPacking({ to, ...PUBLISHED_SPECS });
+  await assert.rejects(
+    () => access(path.join(to, '.gitignore')),
+    'no dot-prefixed .gitignore should survive bakeForPacking',
+  );
+  const gitignore = await readFile(path.join(to, 'gitignore'), 'utf8');
+  assert.match(gitignore, /\.dev\.vars/);
+  assert.match(gitignore, /\.wrangler/);
+});
+
+test('bake writes a site README that is not the showcase README', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const readme = await readFile(path.join(to, 'README.md'), 'utf8');
+  assert.ok(!readme.includes('cairn showcase'));
+  assert.ok(!readme.includes('../../docs'));
+  assert.match(readme, /## Make it yours/);
+  assert.match(readme, /references\/make-it-yours\.md/);
+});
+
+// The scaffold's dev script now sets CAIRN_DEV_BACKEND at runtime (scripts/dev.mjs), so the
+// README teaches plain `npm run dev` and must never mention the variable or a PowerShell branch.
+test('the baked README teaches plain npm run dev and never mentions CAIRN_DEV_BACKEND', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const readme = await readFile(path.join(to, 'README.md'), 'utf8');
+  assert.match(readme, /npm run dev/);
+  assert.ok(!readme.includes('CAIRN_DEV_BACKEND'));
+  assert.ok(!readme.includes('$env:'));
+});
+
+// The rot gate: pruneShowcaseOnlyPackageFields must fail loud when the showcase drops or renames
+// one of the fields it expects to remove, rather than silently doing nothing.
+test('pruneShowcaseOnlyPackageFields throws naming a missing expected script', () => {
+  const pkg = {
+    scripts: {
+      dev: 'vite dev',
+      'test:e2e': 'playwright test',
+      'design:probe': 'node scripts/design-probe.mjs',
+    },
+    devDependencies: { '@playwright/test': '^1.60.0', '@axe-core/playwright': '^4.10.0' },
+  };
+  // pretest:e2e is missing from scripts.
+  assert.throws(() => pruneShowcaseOnlyPackageFields(pkg), /pretest:e2e/);
+});
+
+test('pruneShowcaseOnlyPackageFields throws naming a missing expected devDependency', () => {
+  const pkg = {
+    scripts: {
+      dev: 'vite dev',
+      'pretest:e2e': 'npm --prefix ../.. run package',
+      'test:e2e': 'playwright test',
+      'design:probe': 'node scripts/design-probe.mjs',
+    },
+    devDependencies: { '@playwright/test': '^1.60.0' },
+  };
+  // @axe-core/playwright is missing from devDependencies.
+  assert.throws(() => pruneShowcaseOnlyPackageFields(pkg), /@axe-core\/playwright/);
+});
+
+test('bake writes the guidance tree under .claude, VERSION equal to the resolved engine version', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  await access(path.join(to, '.claude', 'skills', 'cairn-building-admin-screens'));
+  await access(path.join(to, '.claude', 'agents', 'cairn-extension-reviewer.md'));
+  const fragment = await readFile(path.join(to, '.claude', 'cairn', 'CLAUDE.md'), 'utf8');
+  assert.ok(fragment.length > 0);
+  const version = await readFile(path.join(to, '.claude', 'cairn', 'VERSION'), 'utf8');
+  // engineSpec is "^0.94.0"; VERSION stamps the caret stripped.
+  assert.equal(version, '0.94.0');
+  const manifest = await readFile(path.join(to, '.claude', 'cairn', 'MANIFEST'), 'utf8');
+  assert.match(manifest, /\.claude\/cairn\/CLAUDE\.md/);
+});
+
+test("bake writes the template's root CLAUDE.md with the import line and a site section", async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const claudeMd = await readFile(path.join(to, 'CLAUDE.md'), 'utf8');
+  assert.match(claudeMd, /^@\.claude\/cairn\/CLAUDE\.md$/m);
+  assert.match(claudeMd, /# Your site/);
+  assert.match(claudeMd, /not `\$lib`/);
+  for (const alias of ['#theme/*', '#chassis/*', '#lib/*']) assert.ok(claudeMd.includes(alias), alias);
+  for (const dir of ['src/theme', 'src/chassis', 'src/routes', 'src/content']) assert.ok(claudeMd.includes(`\`${dir}\``), dir);
+  for (const command of ['npm run check`', 'npm run build`', 'npm run check:cairn`', 'npx cairn-manifest`']) {
+    assert.ok(claudeMd.includes(command), command);
+  }
+});
+
+test('bake excludes .claude from the site\'s Tailwind build', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const tokensPath = path.join(to, 'src', 'chassis', 'tokens.css');
+  const tokens = await readFile(tokensPath, 'utf8');
+  // Tailwind resolves the path against the stylesheet that carries the directive, so the line must
+  // land on the project-root .claude, not a .claude beside the stylesheet.
+  const excluded = /@source not "([^"]+)";/.exec(tokens)?.[1];
+  assert.ok(excluded, 'tokens.css carries an @source not line');
+  assert.equal(path.resolve(path.dirname(tokensPath), excluded), path.join(to, '.claude'));
+});
+
+test('the emitted gitignore ignores .claude/agent-memory/', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const gitignore = await readFile(path.join(to, '.gitignore'), 'utf8');
+  assert.match(gitignore, /\.claude\/agent-memory\//);
+});

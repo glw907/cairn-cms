@@ -174,15 +174,12 @@ export const FAST_LINE_1_LANE = '';
 const DIST_FREE_EXTRAS = new Set(['check:tellgrader', 'check:vale-rules']);
 
 /**
- * Repo-relative globs whose change reaches the create-cairn-site suite: the package itself, the
- * showcase its template is baked from, the emitter that bakes it, and the root package.json whose
- * versions the bake writes into the template.
+ * Repo-relative globs whose change reaches the create-cairn-site suite: the launcher package
+ * itself and the platform packer its test runs. The suite builds the Go tool, so it needs Go.
  */
 export const CREATE_CAIRN_SITE_TRIGGERS = [
   'packages/create-cairn-site/**',
-  'examples/showcase/**',
-  'scripts/build/emit-template*',
-  'package.json',
+  'scripts/release/pack-platforms*',
 ];
 
 // Test trees the component project never includes, so a change there reaches no component test.

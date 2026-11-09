@@ -2,6 +2,7 @@ package newview
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -173,8 +174,63 @@ func TestCursorSitsAtTheEndOfTheEdit(t *testing.T) {
 	}
 }
 
-// TestSummaryFitsTheWindowOrSaysWhatItNeeds pins the summary's height: 24 rows at 80 columns,
-// one more while the address edit's note shows, and 27 at 60 columns, where values and reasons wrap.
+// editsIn24 drives the summary whose names carry a suffix, its longest case, to each open edit.
+var editsIn24 = []struct {
+	name  string
+	drive func(*Model)
+}{
+	{"summary-edit-email", func(m *Model) { asked(chosen, "")(m); send(m, letter('e')) }},
+	{"summary-edit-address", func(m *Model) { asked(chosen, "")(m); send(m, letter('a')) }},
+	{"summary-address-taken", func(m *Model) {
+		asked(chosen, "")(m)
+		editAddress(m, "blog.samrivera.example.com")
+		send(m, enter)
+		asked(chosen, setup.ProblemAddress)(m)
+	}},
+}
+
+// TestSummaryEditsFitIn24Rows renders each open edit in an 80x24 and a 60x24 window, in the light
+// and the dark theme, and holds it to 24 rows and its golden.
+func TestSummaryEditsFitIn24Rows(t *testing.T) {
+	for _, sc := range editsIn24 {
+		for _, width := range []int{80, 60} {
+			name := fmt.Sprintf("%s-24x%d", sc.name, width)
+			t.Run(name, func(t *testing.T) {
+				light, _ := frameIn(false, twoThemes, false, width, 24, sc.drive)
+				dark, _ := frameIn(true, twoThemes, false, width, 24, sc.drive)
+				if light == dark {
+					t.Error("the light and dark frames carry the same bytes; the theme is not reaching the screen")
+				}
+				got := ansi.Strip(dark)
+				if l := ansi.Strip(light); l != got {
+					t.Errorf("light and dark differ in text:\nlight:\n%s\ndark:\n%s", l, got)
+				}
+				if strings.Contains(got, "This window is too small for setup.") {
+					t.Fatalf("the open edit does not fit a %dx24 window:\n%s", width, got)
+				}
+				lines := strings.Split(got, "\n")
+				if len(lines) > 24 {
+					t.Errorf("the open edit is %d rows at %d columns, want at most 24", len(lines), width)
+				}
+				for i, l := range lines {
+					if w := ansi.StringWidth(l); w > width {
+						t.Errorf("line %d is %d cells in a %d-wide window: %q", i, w, width, l)
+					}
+				}
+				path := filepath.Join("testdata", name+".golden")
+				if updating() {
+					writeGolden(t, path, got)
+				}
+				if want := readGolden(t, path); got != want {
+					t.Errorf("frame differs from %s:\n%s\nwant:\n%s", path, got, want)
+				}
+			})
+		}
+	}
+}
+
+// TestSummaryFitsTheWindowOrSaysWhatItNeeds pins the summary's height: 24 rows at 80 columns
+// and 27 at 60 columns, where values and reasons wrap, with an open edit fitting 24 at either.
 func TestSummaryFitsTheWindowOrSaysWhatItNeeds(t *testing.T) {
 	for _, tt := range []struct {
 		name          string
@@ -184,8 +240,9 @@ func TestSummaryFitsTheWindowOrSaysWhatItNeeds(t *testing.T) {
 	}{
 		{"80x24", 80, 24, nil, 0},
 		{"80x24 editing the email", 80, 24, []tea.Msg{letter('e')}, 0},
-		{"80x24 editing the address", 80, 24, []tea.Msg{letter('a')}, 25},
+		{"80x24 editing the address", 80, 24, []tea.Msg{letter('a')}, 0},
 		{"60x24", 60, 24, nil, 27},
+		{"60x24 editing the address", 60, 24, []tea.Msg{letter('a')}, 0},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			m, _ := summaryModel(tt.width, tt.height)

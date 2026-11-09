@@ -299,12 +299,10 @@ var screens = []struct {
 	{"stop-kept", oneTheme, false, func(m *Model) { watched(3)(m); send(m, ctrlC) }},
 }
 
-// tall gives a screen taller than 24 rows the window it needs: the summary at 60 columns, and at
-// 80 the address edit and the summary whose names carry a suffix and its reason.
+// tall gives a screen taller than 24 rows the window it needs: the closed summary at 60 columns,
+// and at 80 the closed summary whose names carry a suffix and its reason.
 var tall = map[string]int{
-	"summary-60": 30, "summary-chosen-60": 30, "summary-edit-email-60": 30,
-	"summary-edit-address-60": 30, "summary-address-taken-60": 30,
-	"summary-chosen-80": 30, "summary-edit-address-80": 30, "summary-address-taken-80": 30,
+	"summary-60": 30, "summary-chosen-60": 30, "summary-chosen-80": 30,
 }
 
 // frame drives a local root to a screen at width by 24 in the dark theme and returns the frame.

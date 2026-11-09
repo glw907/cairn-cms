@@ -2,9 +2,7 @@
   Review the settings for Field Notes
 
   Domain            fieldnotes.example.com
-                    the only domain on your account
   Address           fieldnotes.example.com and www.fieldnotes.example.com
-                    the bare domain and www, the default
   Sign-in email   > sam@example.com                                            
                     The admin sends your sign-in links to this address.
 
@@ -12,13 +10,10 @@
   Worker            field-notes
   Database          field-notes-auth
   Storage bucket    field-notes-media
-                    based on your site name
 
   Theme             Waymark
-                    An intentionally neutral look that's easy to edit.
   AI crawlers       Block AI training
 
   Deploys           GitHub Actions, each time you publish
-                    free for about 650 deploys a month · cairn.pub/deploys
 
   Enter save · Esc cancel

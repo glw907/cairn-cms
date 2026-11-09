@@ -191,21 +191,23 @@ func (m *summary) editRows(g Grid, label, note string) []string {
 	return out
 }
 
-// layout draws the screen for s and says on which line the open edit is, or -1.
+// layout draws the screen for s and says on which line the open edit is, or -1. An open edit
+// hides every other row's reason, so the screen fits a 24-row window with the edit's note showing.
 func (m *summary) layout(width int, s setup.Summary) (string, int) {
 	g := Grid{Styles: m.styles, Glyphs: m.glyphs, Width: width}
 	st := g.Styles
+	reasons := m.editing == fieldNone
 
-	domain := row{label: labelDomain, value: s.Zone, reason: reasonDomain}
-	if s.ZoneChosen {
-		domain.reason = ""
+	domain := row{label: labelDomain, value: s.Zone}
+	if reasons && !s.ZoneChosen {
+		domain.reason = reasonDomain
 	}
 	address := row{label: labelAddress, value: m.addresses(s)}
-	if m.host == s.Zone {
+	if reasons && m.host == s.Zone {
 		address.reason = reasonAddress
 	}
 	email := row{label: labelEmail, value: m.email}
-	if m.email == m.fromCloudflare {
+	if reasons && m.email == m.fromCloudflare {
 		email.reason = reasonEmail
 	}
 	switch m.editing {
@@ -222,25 +224,31 @@ func (m *summary) layout(width int, s setup.Summary) (string, int) {
 	} {
 		named = append(named, g.Cell(r[0], st.Muted, g.WrapValue(RoleText, r[1])...))
 	}
-	why := g.WrapValue(RoleMuted, reasonNames)
-	if s.SuffixReason != "" {
-		why = append(why, g.WrapValue(RoleMuted, s.SuffixReason)...)
-	}
-	for _, l := range why {
-		named = append(named, valPad+l)
+	if reasons {
+		why := g.WrapValue(RoleMuted, reasonNames)
+		if s.SuffixReason != "" {
+			why = append(why, g.WrapValue(RoleMuted, s.SuffixReason)...)
+		}
+		for _, l := range why {
+			named = append(named, valPad+l)
+		}
 	}
 
 	crawlers := optionBlock
 	if s.Posture == setup.Invite {
 		crawlers = optionAllow
 	}
-	look, _ := g.group([]row{
-		{label: labelTheme, value: m.themeName(s.Theme), reason: s.ThemeDescription},
-		{label: labelCrawlers, value: crawlers},
-	})
+	theme := row{label: labelTheme, value: m.themeName(s.Theme)}
+	if reasons {
+		theme.reason = s.ThemeDescription
+	}
+	look, _ := g.group([]row{theme, {label: labelCrawlers, value: crawlers}})
 
-	deploys := g.Cell(labelDeploys, st.Muted, append(g.WrapValue(RoleText, valueDeploys),
-		g.Pack(g.ValueWidth(), st.Muted.Render(reasonDeploys), g.link(linkDeploys, urlDeploys))...)...)
+	deploy := g.WrapValue(RoleText, valueDeploys)
+	if reasons {
+		deploy = append(deploy, g.Pack(g.ValueWidth(), st.Muted.Render(reasonDeploys), g.link(linkDeploys, urlDeploys))...)
+	}
+	deploys := g.Cell(labelDeploys, st.Muted, deploy...)
 
 	hints := []key.Binding{m.keys.SetUp, m.keys.EditEmail, m.keys.EditAddress, m.keys.Quit}
 	switch {

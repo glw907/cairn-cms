@@ -18,6 +18,8 @@ on:
       - 'src/lib/log/events.ts'
       # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
+      # the opening checks' failure messages point at this page's headings; anchors_test.go resolves them
+      - 'docs/admin/before-you-start.md'
       - 'scripts/checks/shipped-anchors.json'
       - 'scripts/checks/fixtures/consumers-must/**'
       - 'schema/**'
@@ -33,6 +35,8 @@ on:
       - 'src/lib/log/events.ts'
       # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
+      # the opening checks' failure messages point at this page's headings; anchors_test.go resolves them
+      - 'docs/admin/before-you-start.md'
       - 'scripts/checks/shipped-anchors.json'
       - 'scripts/checks/fixtures/consumers-must/**'
       - 'schema/**'

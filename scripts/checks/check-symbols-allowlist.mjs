@@ -35,7 +35,7 @@ export const ALLOWLIST = new Set([
   // Site-relative illustrative file paths: the conventional layout a worked example shows for a
   // reader's site, never a path in cairn's own repo, so the filesystem check correctly
   // never finds them here. `examples/showcase/` is this repo's OWN worked site and would carry
-  // its analogues at different paths (its adapter lives at `src/theme/cairn.config.ts`, not
+  // its analogues at different paths (its adapter lives at `src/site/cairn.config.ts`, not
   // `src/lib/cairn.config.ts`), which is why these are not resolved against it either.
   'file-path:src/app.d.ts', // a site's SvelteKit ambient-types file
   'file-path:src/app.html', // a site's SvelteKit app shell
@@ -48,7 +48,7 @@ export const ALLOWLIST = new Set([
   // One of three spots `cairn doctor` looks for a site config; cairn doctor looks there by
   // convention, so no repo carries the path and nothing can resolve it.
   'file-path:src/site.config.yaml',
-  'file-path:src/theme/site.config.yaml', // the scaffolded site's site-config file, the engine's fixed site-config path (templates/waymark/src/theme/site.config.yaml)
+  'file-path:src/site/site.config.yaml', // the scaffolded site's site-config file, the engine's fixed site-config path (templates/waymark/src/site/site.config.yaml)
   'file-path:src/content/.cairn/index.json', // a site's generated manifest, by convention
   'file-path:src/content/.cairn/media.json', // a site's generated media manifest, by convention
   'file-path:src/content/.cairn/site-facts.json', // a site's generated site-facts contract, by convention
@@ -57,7 +57,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/admin.css', // a site's admin-stylesheet entry file, by convention
   // Real paths in this repo's examples/showcase/ tree, cited without that prefix because the
   // prose describes the equivalent path in a reader's scaffolded site (the same convention
-  // `src/theme/cairn.config.ts` above already carries).
+  // `src/site/cairn.config.ts` above already carries).
   'file-path:src/params/md.ts', // examples/showcase/src/params/md.ts's convention path
   'file-path:src/chassis/README.md', // examples/showcase/src/chassis/README.md's convention path
   'file-path:src/routes/robots.txt', // examples/showcase/src/routes/robots.txt/+server.ts; the `+server.ts` filename splits the extractor's run at the `+`, leaving this bare directory-shaped remainder as its candidate

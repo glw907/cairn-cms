@@ -13,7 +13,7 @@
   // registry on the server, so a site with no registered islands never even requests the
   // hydration runtime or the registry module. Both dynamic imports name only the lean registry
   // module (`#theme/islands/registry.js`, a directive-name-to-component map with no other
-  // dependency), never the full site adapter (`#theme/cairn.config.js`), which also carries the
+  // dependency), never the full site adapter (`#site/cairn.config.js`), which also carries the
   // engine renderer, the icon set, and the committed media manifest: importing that client-side
   // would ship the whole adapter to every public page.
   afterNavigate(async () => {

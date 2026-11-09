@@ -16,7 +16,7 @@ const SCRATCH = join(homedir(), '.cache', 'cairn-dev-tests');
 const AUTHOR = { name: 'Ed Editor', email: 'ed@t' };
 const MANIFEST = 'src/content/.cairn/index.json';
 const MEDIA = 'src/content/.cairn/media.json';
-const CONFIG = 'src/theme/site.config.yaml';
+const CONFIG = 'src/site/site.config.yaml';
 
 const DISK: Record<string, string> = {
   'src/content/posts/2026-01-01-alpha.md': '---\ntitle: Alpha\n---\nAlpha body.\n',

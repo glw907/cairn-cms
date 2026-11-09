@@ -46,10 +46,10 @@ in without an email loop, and nothing you write there touches GitHub or sends re
 
 Work down this list once:
 
-- Set \`siteName\` and \`description\` in \`src/theme/site.config.yaml\`. The home page intro reads \`description\`.
-- Set \`publicOrigin\` in \`src/theme/cairn.config.ts\` to the address your site will live at.
+- Set \`siteName\` and \`description\` in \`src/site/site.config.yaml\`. The home page intro reads \`description\`.
+- Set \`publicOrigin\` in \`src/site/cairn.config.ts\` to the address your site will live at.
 - Replace the sample posts in \`src/content/posts\` and the pages in \`src/content/pages\` with your own.
-- Edit the menus and tags in \`src/theme/site.config.yaml\`.
+- Edit the menus and tags in \`src/site/site.config.yaml\`.
 - Run \`npx cairn-manifest\` after adding, removing, or renaming a content file.
 
 The full list is in \`.claude/skills/cairn-extending-a-site/references/make-it-yours.md\`.
@@ -165,9 +165,10 @@ Add your project-specific guidance here; \`cairn-guidance install\` only ever re
 
 ## Where things live
 
-Imports use the aliases in \`package.json\`: \`#theme/*\`, \`#chassis/*\`, and \`#lib/*\`, not \`$lib\`.
+Imports use the aliases in \`package.json\`: \`#site/*\`, \`#theme/*\`, \`#chassis/*\`, and \`#lib/*\`, not \`$lib\`.
 
-- \`src/theme\`: the site's config (\`site.config.yaml\`, \`cairn.config.ts\`), its components, and its look (\`theme.css\`).
+- \`src/site\`: the site's files (\`site.config.yaml\`, \`cairn.config.ts\`, \`theme-options.css\`, \`overrides.css\`). Edit these.
+- \`src/theme\`: the theme's components and look (\`theme.css\`), laid in from the theme you chose.
 - \`src/chassis\`: the public reading layer (tokens, prose styles, content readers, feeds). Change it last.
 - \`src/routes\`: the public pages and the mounted \`/admin\`.
 - \`src/content\`: your markdown, one folder per content type.

@@ -5,6 +5,7 @@
   "imports": {
     "#chassis/*": "./src/chassis/*",
     "#lib/*": "./src/lib/*",
+    "#site/*": "./src/site/*",
     "#theme/*": "./src/theme/*"
   },
   "scripts": {

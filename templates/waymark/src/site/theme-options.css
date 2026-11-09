@@ -1,0 +1,3 @@
+/* The site's theme options. Setup writes the chosen option sheets and the color-mode default here
+   by concatenation; an empty file means the theme's defaults. Linked after the theme's sheets and
+   before overrides.css. */

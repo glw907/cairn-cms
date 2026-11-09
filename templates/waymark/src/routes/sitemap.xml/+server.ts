@@ -5,7 +5,7 @@ import {
   buildSiteDescriptors,
 } from '@glw907/cairn-cms/delivery';
 import { site, siteMeta } from '#chassis/content.js';
-import { cairn } from '#theme/cairn.config.js';
+import { cairn } from '#site/cairn.config.js';
 
 export const prerender = true;
 

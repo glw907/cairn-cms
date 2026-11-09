@@ -8,7 +8,7 @@
 // client-bundle cost; the root layout's client script imports only the returned boolean,
 // never the registry module itself (see `#theme/islands/registry.js` for why importing the
 // registry client-side stays gated behind that flag rather than happening unconditionally).
-// `site-config.ts`, not `#theme/cairn.config.js`, is the import for the nav and the site name on
+// `site-config.ts`, not `#site/cairn.config.js`, is the import for the nav and the site name on
 // purpose: the full adapter also builds the renderer, the icon set, and the registered
 // components, none of which this load needs, and every non-prerendered request (`/admin/**`,
 // the runtime 404 path) pays this load's cost on every request.
@@ -16,7 +16,7 @@
 // still has exactly one source no matter which module reads it.
 import type { LayoutServerLoad } from './$types';
 import { siteIslands } from '#theme/islands/registry.js';
-import { primaryNav, footerNav, siteName } from '#theme/site-config.js';
+import { primaryNav, footerNav, siteName } from '#site/site-config.js';
 
 export const load: LayoutServerLoad = () => {
   return {

@@ -245,6 +245,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       try {
         const backend = ctx.resolveBackend(event);
         raw = await backend.readFile(siteConfigPath(), backend.defaultBranch);
+        if (raw === null) log.warn('config.missing', { scope: 'settings', path: siteConfigPath() });
         const committed = raw === null ? undefined : parseSiteConfig(raw).tidy?.conventions;
         // Absent or empty keeps the deployed values silently; anything else is validated, so a
         // hand-edited bad value (including a non-object) throws into the catch, logs, and falls back.
@@ -346,6 +347,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     let raw: string | null = null;
     try {
       raw = await backend.readFile(siteConfigPath(), backend.defaultBranch);
+      if (raw === null) log.warn('config.missing', { scope: 'vocabulary', path: siteConfigPath() });
     } catch {
       // An unreadable config degrades to an empty vocabulary; the first save writes a clean list.
       raw = null;

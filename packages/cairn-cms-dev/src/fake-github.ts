@@ -491,7 +491,7 @@ export function seedFragments(): void {
  * The site-config path the vocabulary route reads and commits. It mirrors the engine's default for
  * site-config path, which the route resolves through `runtime.siteConfigPath`.
  */
-const SEED_SITE_CONFIG_PATH = 'src/theme/site.config.yaml';
+const SEED_SITE_CONFIG_PATH = 'src/site/site.config.yaml';
 
 /**
  * The seeded vocabulary, exported so the spec asserts against the real slugs. `trail-reports` and

@@ -21,6 +21,7 @@ var eventVocabulary = []string{
 	"commit.failed",
 	"commit.reverted",
 	"config.invalid",
+	"config.missing",
 	"config.access_unmapped",
 	"content.field_behavior_failed",
 	"content.field_unmarked",

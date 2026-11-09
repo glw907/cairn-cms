@@ -13,15 +13,17 @@ import {
   type MediaConfig,
 } from '@glw907/cairn-cms';
 import { createMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
-import { siteIslands } from './islands/registry.js';
+import { siteIslands } from '#theme/islands/registry.js';
 import { proseTypography } from '#chassis/render.js';
-import { icons } from './icons.js';
-import { blocks } from './markdown-blocks.js';
+import { icons } from '#theme/icons.js';
+import { blocks } from '#theme/markdown-blocks.js';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
 // sheet must stay ?url-only; see the header comment in site.css.
-import themeCss from './theme.css?url';
-import siteCss from './site.css?url';
+import themeCss from '#theme/theme.css?url';
+import siteCss from '#theme/site.css?url';
+import themeOptionsCss from '#site/theme-options.css?url';
+import overridesCss from '#site/overrides.css?url';
 
 /**
  * The site's public origin as a literal: the feed, sitemap, robots.txt, and canonical links read
@@ -212,7 +214,10 @@ export const cairn = defineAdapter({
     // descendant rule between the two classes (site.css's figure-placement rules key off .site-main
     // alone; prose.css's typography keys off .prose alone), so naming both on one element reproduces
     // the real page's rendering exactly.
-    preview: { stylesheets: [themeCss, siteCss], containerClass: 'site-main prose' },
+    preview: {
+      stylesheets: [themeCss, siteCss, themeOptionsCss, overridesCss],
+      containerClass: 'site-main prose',
+    },
   },
 });
 

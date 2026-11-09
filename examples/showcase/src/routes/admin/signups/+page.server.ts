@@ -54,7 +54,7 @@ export const load: PageServerLoad = async (event) => {
 // binding, so no action re-implements a gate the engine already owns.
 //
 // It is fail-closed on every call: the site's access
-// declaration (the adapter's `access` member in src/theme/cairn.config.ts) must carry a rule
+// declaration (the adapter's `access` member in src/site/cairn.config.ts) must carry a rule
 // admitting the session for this route, or the action refuses with a 403 it never explains to the
 // browser, and a route no hook attached the map to refuses with a 500. ownerOnly stacks on top of that map check for the destructive
 // action, never in place of it.

@@ -33,15 +33,16 @@ type siteConfigOutcome struct {
 	Reason string
 }
 
-// siteConfigPaths returns the four candidate paths a site's site.config.yaml can live at, in lookup
-// order: the canonical path from siteConfigPath, then the three legacy locations older production
-// sites still use.
+// siteConfigPaths returns the five candidate paths a site's site.config.yaml can live at, in lookup
+// order: the canonical path from siteConfigPath, then the four legacy locations older sites still
+// use, src/theme/ among them (the canonical path before the site-owned directory moved to src/site/).
 func siteConfigPaths() []string {
 	return []string{
 		siteConfigPath(),
 		"site.config.yaml",
 		"src/lib/site.config.yaml",
 		"src/site.config.yaml",
+		"src/theme/site.config.yaml",
 	}
 }
 

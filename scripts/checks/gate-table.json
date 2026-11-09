@@ -63,7 +63,7 @@
     "scripts/checks/fixtures/consumers-must/cases.json",
     "docs/admin/",
     "schema/",
-    "examples/showcase/src/theme/site.config.yaml",
+    "examples/showcase/src/site/site.config.yaml",
     "tool/testdata/fixtures/",
     "scripts/checks/shipped-anchors.json"
   ],

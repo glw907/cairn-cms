@@ -287,7 +287,7 @@ test("content: 'empty' serves an in-memory repo with no entries and a site confi
   const backend = event.locals.cairnBackend;
 
   expect(await backend.readEntries('src/content/posts', 'main')).toEqual([]);
-  expect(await backend.readFile('src/theme/site.config.yaml', 'main')).toMatch(/^siteName: \S/);
+  expect(await backend.readFile('src/site/site.config.yaml', 'main')).toMatch(/^siteName: \S/);
 
   // A second build (a Vite dev re-run of hooks.server.ts) must not move main's head.
   const head = await backend.branchHead('main');

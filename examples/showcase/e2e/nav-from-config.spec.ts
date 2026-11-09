@@ -9,7 +9,7 @@ import { parseSiteConfig, readMenu } from '@glw907/cairn-cms';
 // A hardcoded header can only pass this test by coincidence of matching content; a menu entry
 // added to the YAML with nothing else changed proves the wiring (see the plan's red-state note).
 
-const configPath = fileURLToPath(new URL('../src/theme/site.config.yaml', import.meta.url));
+const configPath = fileURLToPath(new URL('../src/site/site.config.yaml', import.meta.url));
 
 test('the public header renders every top-level entry declared in menus.primary, in order', async ({
   page,

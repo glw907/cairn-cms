@@ -172,7 +172,7 @@ export interface SenderConfig {
 }
 
 /**
- * A menu in the site-config YAML (the scaffold's `src/theme/site.config.yaml`) that this site's nav
+ * A menu in the site-config YAML (the scaffold's `src/site/site.config.yaml`) that this site's nav
  *  editor manages.
  * @public
  */
@@ -453,7 +453,7 @@ export interface CairnRuntime {
   navMenu?: NavMenuConfig;
   /**
    * The repo-relative path of the site-config YAML the nav editor, Settings, and Tags read and
-   *  write, fixed at compose to the scaffold's `src/theme/site.config.yaml`.
+   *  write, fixed at compose to the scaffold's `src/site/site.config.yaml`.
    */
   siteConfigPath: string;
   /**

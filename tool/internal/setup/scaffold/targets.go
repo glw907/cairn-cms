@@ -19,8 +19,8 @@ var targets = struct {
 	Gitignore        string
 }{
 	PackageJSON:      "package.json",
-	SiteConfig:       "src/theme/site.config.yaml",
-	CairnConfig:      "src/theme/cairn.config.ts",
+	SiteConfig:       "src/site/site.config.yaml",
+	CairnConfig:      "src/site/cairn.config.ts",
 	Wrangler:         "wrangler.jsonc",
 	Deploy:           ".github/workflows/deploy.yml",
 	SiteFacts:        "src/content/.cairn/site-facts.json",

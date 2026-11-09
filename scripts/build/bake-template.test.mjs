@@ -55,7 +55,7 @@ test('bake emits a real tree, not just a rewritten package.json', async (t) => {
 test('the baked template\'s cairn.config.ts carries the exact createGithubApp(...) literal `cairn new` targets', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
-  const config = await readFile(path.join(to, 'src/theme/cairn.config.ts'), 'utf8');
+  const config = await readFile(path.join(to, 'src/site/cairn.config.ts'), 'utf8');
   assert.ok(
     config.includes(TEMPLATE_GITHUB_APP_LITERAL),
     `expected the baked cairn.config.ts to contain "${TEMPLATE_GITHUB_APP_LITERAL}"`,

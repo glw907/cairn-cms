@@ -13,6 +13,8 @@
   import { page } from '$app/state';
   import themeCss from '#theme/theme.css?url';
   import siteCss from '#theme/site.css?url';
+  import themeOptionsCss from '#site/theme-options.css?url';
+  import overridesCss from '#site/overrides.css?url';
   import SiteHeader from '#theme/components/SiteHeader.svelte';
   import SiteFooter from '#theme/components/SiteFooter.svelte';
 </script>
@@ -20,6 +22,8 @@
 <svelte:head>
   <link rel="stylesheet" href={themeCss} />
   <link rel="stylesheet" href={siteCss} />
+  <link rel="stylesheet" href={themeOptionsCss} />
+  <link rel="stylesheet" href={overridesCss} />
   <title>{page.status} · {page.data.siteName ?? 'Site'}</title>
 </svelte:head>
 

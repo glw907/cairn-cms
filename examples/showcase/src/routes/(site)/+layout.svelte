@@ -20,6 +20,8 @@ no-op under its failure condition; see the comments above `onNavigate` and
   import { afterNavigate, beforeNavigate, onNavigate } from '$app/navigation';
   import themeCss from '#theme/theme.css?url';
   import siteCss from '#theme/site.css?url';
+  import themeOptionsCss from '#site/theme-options.css?url';
+  import overridesCss from '#site/overrides.css?url';
   import SiteHeader from '#theme/components/SiteHeader.svelte';
   import SiteFooter from '#theme/components/SiteFooter.svelte';
   let { children } = $props();
@@ -66,6 +68,8 @@ no-op under its failure condition; see the comments above `onNavigate` and
 <svelte:head>
   <link rel="stylesheet" href={themeCss} />
   <link rel="stylesheet" href={siteCss} />
+  <link rel="stylesheet" href={themeOptionsCss} />
+  <link rel="stylesheet" href={overridesCss} />
 </svelte:head>
 
 <div class="cairn-site-shell site-shell bg-base-100 font-body text-base-content">

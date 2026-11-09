@@ -185,7 +185,8 @@ export function stepRows(events) {
     if (!event.step) continue;
     if (event.kind === 'step_started' && !open.has(event.step)) {
       const actor = PROVIDER_STEPS.includes(event.step) ? 'provider-wait' : OWNER_STEPS.includes(event.step) ? 'owner' : 'tool';
-      const row = { step: event.step, actor: /** @type {const} */ (actor), started: event.at, ended: event.at, minutes: 0, result: 'open' };
+      /** @type {StepRow} */
+      const row = { step: event.step, actor: /** @type {'tool' | 'owner' | 'provider-wait'} */ (actor), started: event.at, ended: event.at, minutes: 0, result: 'open' };
       open.set(event.step, row);
       rows.push(row);
     } else if ((event.kind === 'step_done' || event.kind === 'step_failed') && open.has(event.step)) {
@@ -266,12 +267,14 @@ export function flailingNotes(lines, prompts) {
     for (const block of entry.blocks) {
       if (block?.type === 'tool_use') {
         if (block.name === 'Bash' && typeof block.input?.command === 'string') {
+          /** @type {{ command: string, lines: number[] }} */
           const held = uses.get(block.id) ?? { command: block.input.command, lines: [] };
           held.lines.push(entry.index);
           uses.set(block.id, held);
         }
         const target = block.input?.file_path ?? block.input?.url;
         if ((block.name === 'Read' || block.name === 'WebFetch') && typeof target === 'string') {
+          /** @type {{ target: string, lines: number[] }} */
           const held = reads.get(target) ?? { target, lines: [] };
           held.lines.push(entry.index);
           reads.set(target, held);
@@ -461,7 +464,7 @@ export async function grade({ runDir, deps, end }) {
     const first = [...(list.workflow_runs ?? [])].filter((run) => run.name === 'deploy').sort((a, b) => ms(a.created_at) - ms(b.created_at))[0];
     if (!first) throw new Error('the repository has no deploy run');
     const jobs = await github(`/actions/runs/${first.id}/jobs`);
-    for (const step of (jobs.jobs ?? []).flatMap((job) => job.steps ?? [])) {
+    for (const step of (jobs.jobs ?? []).flatMap((/** @type {any} */ job) => job.steps ?? [])) {
       for (const [phase, pattern] of Object.entries(DEPLOY_PHASES)) {
         if (pattern.test(step.name) && step.started_at && step.completed_at) phases[phase] = (phases[phase] ?? 0) + minutesBetween(ms(step.started_at), ms(step.completed_at));
       }
@@ -524,7 +527,7 @@ export async function grade({ runDir, deps, end }) {
   }
   const sum = (/** @type {string} */ actor) => Math.round(table.filter((row) => row.actor === actor).reduce((acc, row) => acc + row.minutes, 0) * 10) / 10;
   const providerWait = timingSource === 'setup events' ? sum('provider-wait') : null;
-  const agentMinutes = timingSource === 'setup events' && total !== null ? Math.max(0, Math.round((total - providerWait - sum('owner') - sum('tool')) * 10) / 10) : null;
+  const agentMinutes = timingSource === 'setup events' && total !== null ? Math.max(0, Math.round((total - (providerWait ?? 0) - sum('owner') - sum('tool')) * 10) / 10) : null;
   const domains = rows.find((row) => row.step === 'domains' && row.result === 'done');
   const httpsMinutes = domains ? domains.minutes : null;
   /** @type {string[]} */

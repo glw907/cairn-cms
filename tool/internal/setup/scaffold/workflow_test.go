@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"go.yaml.in/yaml/v3"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
-// deploySecret is the repository secret the deploy workflow reads the Cloudflare token from.
-//
-// WATCH: T1.7 adds the exported constant for this name in providers; replace this copy with
-// it when that lands, so the workflow and the call that seals the secret share one name.
-const deploySecret = "CLOUDFLARE_API_TOKEN"
+// deploySecret is the repository secret the deploy workflow reads the Cloudflare token from. It
+// is the name setup seals the deploy key under, so a rename there fails this test.
+const deploySecret = providers.DeploySecretName
 
 type workflow struct {
 	On          map[string]any `yaml:"on"`

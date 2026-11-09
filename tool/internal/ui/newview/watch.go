@@ -17,13 +17,15 @@ type watchStep struct {
 	id, label, why string
 }
 
-// watchSteps are the runner's eight watch steps, in the order it runs them.
+// watchSteps are the runner's eight watch steps, in the order it runs them. The order must match
+// the runner's, since a started step marks every step above it done: the deploy key is stored
+// before the push, because the deploy the push starts reads it.
 var watchSteps = []watchStep{
 	{setup.StepScaffold, stepScaffold, whyScaffold},
 	{setup.StepProvision, stepProvision, whyProvision},
 	{setup.StepCommit, stepCommit, whyCommit},
-	{setup.StepPush, stepPush, whyPush},
 	{setup.StepDeployKey, stepDeployKey, whyDeployKey},
+	{setup.StepPush, stepPush, whyPush},
 	{setup.StepFirstDeploy, stepFirstDeploy, whyFirstDeploy},
 	{setup.StepDomains, stepDomains, whyDomains},
 	{setup.StepSignIn, stepSignIn, setup.LineSignInStep},

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"slices"
@@ -85,18 +86,41 @@ func runTerminal(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 		GOOS:   runtime.GOOS,
 		Env:    env,
 	})
-	p := tea.NewProgram(m, tea.WithOutput(d.stdout))
+	p := newProgram(m, d.stdout)
 	l.send = p.Send
 	if len(runs) > 0 {
 		go l.offerResume(ctx, runs)
 	}
-	_, runErr := p.Run()
 	stop := setup.ReasonStopped
 	if remote {
 		stop = setup.ReasonRemote
 	}
+	return l.drive(p, cancel, stop)
+}
+
+// newProgram is the lane's program over m, drawing to out. Bubble Tea turns an external SIGINT
+// into an InterruptMsg, which ends Run with ErrInterrupted and no final frame; the filter hands it
+// to the model as Ctrl+C instead, so a signal stops the run the way the key does and the stop
+// line is drawn.
+func newProgram(m tea.Model, out io.Writer, opts ...tea.ProgramOption) *tea.Program {
+	return tea.NewProgram(m, append([]tea.ProgramOption{tea.WithOutput(out), tea.WithFilter(interruptAsStop)}, opts...)...)
+}
+
+// interruptAsStop is the program's filter: an InterruptMsg becomes the Ctrl+C key press, and
+// every other message passes unchanged.
+func interruptAsStop(_ tea.Model, msg tea.Msg) tea.Msg {
+	if _, ok := msg.(tea.InterruptMsg); ok {
+		return tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl}
+	}
+	return msg
+}
+
+// drive runs p to its end and returns the lane's exit. An interrupt that still ends Run is a
+// stop, so it exits with finish's code, as the agent lane does on the same signal.
+func (l *terminalLane) drive(p *tea.Program, cancel context.CancelFunc, stop setup.Reason) error {
+	_, runErr := p.Run()
 	err := l.finish(cancel, stop)
-	if runErr != nil {
+	if runErr != nil && !errors.Is(runErr, tea.ErrInterrupted) {
 		return runErr
 	}
 	return err

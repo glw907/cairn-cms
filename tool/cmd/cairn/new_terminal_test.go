@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"reflect"
@@ -11,6 +12,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/colorprofile"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
@@ -186,7 +188,7 @@ func scriptedRun(saw *laneSaw, fail *setup.Failure) func(context.Context, setup.
 		if saw.edit, err = cfg.View.ConfirmSummary(ctx, s, ""); err != nil {
 			return stopped(err)
 		}
-		for _, step := range []string{setup.StepScaffold, setup.StepProvision, setup.StepCommit, setup.StepPush, setup.StepDeployKey, setup.StepFirstDeploy, setup.StepDomains, setup.StepSignIn} {
+		for _, step := range []string{setup.StepScaffold, setup.StepProvision, setup.StepCommit, setup.StepDeployKey, setup.StepPush, setup.StepFirstDeploy, setup.StepDomains, setup.StepSignIn} {
 			emit(setup.Event{Kind: setup.StepStarted, Step: step})
 			if fail != nil && step == fail.Step {
 				return setup.Result{}, stop(fail)
@@ -277,6 +279,37 @@ func TestTerminalLaneCtrlCStopsTheRunWithTheStopCode(t *testing.T) {
 	}
 	if code := laneCode(early.l.finish(early.cancel, setup.ReasonRemote)); code != 1 {
 		t.Errorf("the SSH stop exits %d, want 1", code)
+	}
+}
+
+// TestTerminalLaneInterruptStopsWithTheStopCode sends a real program the InterruptMsg Bubble Tea
+// makes of an external SIGINT. The lane's program draws the stop line and exits 2; a program
+// without the filter still exits 2, since an interrupted Run is a stop.
+func TestTerminalLaneInterruptStopsWithTheStopCode(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		filtered bool
+	}{
+		{"the lane's program", true},
+		{"a program without the filter", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ld := newLaneDriver(t, scriptedRun(&laneSaw{}, nil))
+			var out bytes.Buffer
+			opts := []tea.ProgramOption{tea.WithInput(nil), tea.WithWindowSize(100, 50)}
+			p := tea.NewProgram(ld.m, append(opts, tea.WithOutput(&out))...)
+			if tc.filtered {
+				p = newProgram(ld.m, &out, opts...)
+			}
+			go p.Send(tea.InterruptMsg{})
+			err := ld.l.drive(p, ld.cancel, setup.ReasonStopped)
+			if code := laneCode(err); code != 2 {
+				t.Errorf("an interrupted run exits %d (%v), want 2", code, err)
+			}
+			if tc.filtered && !strings.Contains(ansi.Strip(out.String()), "Setup stopped. Nothing was created.") {
+				t.Errorf("the interrupted program drew no stop line:\n%q", ansi.Strip(out.String()))
+			}
+		})
 	}
 }
 

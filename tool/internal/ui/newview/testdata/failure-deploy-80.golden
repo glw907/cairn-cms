@@ -4,8 +4,8 @@
   ● Write the site files
   ● Set up the database, storage bucket, and email
   ● Commit the site
-  ● Push the site to GitHub
   ● Store the deploy key in GitHub
+  ● Push the site to GitHub
   ■ Run the first deploy
   ○ Connect fieldnotes.example.com
   ○ Sign in to the admin

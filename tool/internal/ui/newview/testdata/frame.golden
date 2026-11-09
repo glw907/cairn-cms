@@ -4,8 +4,8 @@
   [38;2;124;205;142m●[m [38;2;168;164;158mWrite the site files[m
   [38;2;124;205;142m●[m [38;2;168;164;158mSet up the database, storage bucket, and email[m
   [38;2;168;164;158m○[m [38;2;168;164;158mCommit the site[m
-  [38;2;168;164;158m○[m [38;2;168;164;158mPush the site to GitHub[m
   [38;2;168;164;158m○[m [38;2;168;164;158mStore the deploy key in GitHub[m
+  [38;2;168;164;158m○[m [38;2;168;164;158mPush the site to GitHub[m
   [38;2;168;164;158m○[m [38;2;168;164;158mRun the first deploy[m
   [38;2;168;164;158m○[m [38;2;168;164;158mConnect fieldnotes.example.com[m
   [38;2;168;164;158m○[m [38;2;168;164;158mSign in to the admin[m

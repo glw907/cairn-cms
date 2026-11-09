@@ -84,8 +84,29 @@ func TestAResumedWatchMarksTheSkippedStepsDone(t *testing.T) {
 	_, m := frame(oneTheme, 80, func(m *Model) {
 		send(m, at(setup.StepStarted, setup.StepPush, 0))
 	})
-	if got := m.watch.DoneCount(); got != 3 {
-		t.Errorf("%d steps done after a resume at the push, want the 3 before it", got)
+	if got := m.watch.DoneCount(); got != 4 {
+		t.Errorf("%d steps done after a resume at the push, want the 4 before it", got)
+	}
+}
+
+func TestNoStepShowsDoneBeforeItsOwnDoneEvent(t *testing.T) {
+	// The order setup's watch runs its steps in, from run.watch in internal/setup/watch.go.
+	order := []string{setup.StepScaffold, setup.StepProvision, setup.StepCommit, setup.StepDeployKey,
+		setup.StepPush, setup.StepFirstDeploy, setup.StepDomains, setup.StepSignIn}
+	_, m := frame(oneTheme, 80, func(m *Model) {
+		s := fieldNotes
+		send(m, setup.Event{Kind: setup.SummaryKind, Step: setup.StepSummary, Summary: &s})
+	})
+	finished := map[string]bool{}
+	for i, step := range order {
+		send(m, at(setup.StepStarted, step, time.Duration(i)*time.Minute))
+		for j, ws := range watchSteps {
+			if m.watch.states[j] == stateDone && !finished[ws.id] {
+				t.Errorf("after %s started, %s shows done before its step_done", step, ws.id)
+			}
+		}
+		send(m, at(setup.StepDone, step, time.Duration(i)*time.Minute+30*time.Second))
+		finished[step] = true
 	}
 }
 

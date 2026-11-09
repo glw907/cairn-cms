@@ -24,14 +24,15 @@ The module takes the Charm v2 stack for the view, pinned exactly in `go.mod`:
   record, at the pseudo-version `v2.0.0-20261101151554-27ecf3e4d454` because the
   module publishes no tags. It resolved and built against Bubble Tea v2.1.1.
 - `charm.land/huh/v2 v2.0.3` for the owner's questions, `charm.land/bubbles/v2
-  v2.2.1` for its components, and `charm.land/fang/v2` for the command's
-  presentation. Each is recorded here and added by the task that first imports it,
-  so no require sits in `go.mod` unused.
+  v2.2.1` for its components, and `charm.land/fang/v2 v2.0.1` for the command's
+  presentation. Each was recorded here and added by the change that first imported
+  it, so no require sat in `go.mod` unused.
 
 `internal/render` keeps importing no Bubble Tea, as ADR-0002 states, and its
-purity test still holds the `render*` lists. The two requires added now count in
-`otherDirectRequires`, since they belong to the module and not to `render`. A later
-bump goes through the `dependency-upgrade` skill.
+purity test still holds the `render*` lists. The five view requires, Bubble Tea,
+teatest, Huh, Bubbles, and Fang, count in `otherDirectRequires`, which now holds
+12, since they belong to the module and not to `render`. A later bump goes through
+the `dependency-upgrade` skill.
 
 The standing fallback: if teatest v2 stops building against the pinned Bubble Tea,
 the harness goldens the root model's `View()` output through `x/exp/golden`
@@ -64,6 +65,14 @@ guarantee itself. It renders only typed event fields, never a string a provider
 returned, and `setup.Event` carries no token, code, key, or nonce
 (ADR-0003's never-printed list). A frame grep, run over every golden frame the
 harness records, proves no registered credential appears in one.
+
+One secret is drawn on purpose. The browser screen's fallback line prints the
+loopback tab's address, and that address carries the server's one-time key as
+`?k=...` (`internal/ui/newview/browser.go`). `internal/setup/loopback/loopback.go`
+sends the address only to the opener and to this fallback link, so an owner whose
+browser did not open can still reach the tab. The key opens the tab once and
+nothing after that. The terminal lane's frame grep expects the address in a frame
+and holds every other planted credential out of all of them.
 
 ### The frame harness
 

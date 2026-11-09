@@ -185,11 +185,11 @@ func (r *run) provisionR2(ctx context.Context) error {
 		}
 		switch {
 		case s.IDs.R2Bucket != "" && b == nil:
-			return r.notOurs("storage bucket", name)
+			return r.bucketNotOurs(name)
 		case s.IDs.R2Bucket != "":
 			return nil
 		case b != nil:
-			return r.notOurs("storage bucket", name)
+			return r.bucketNotOurs(name)
 		}
 	}
 	s.Intents.R2Bucket = name
@@ -211,6 +211,14 @@ func (r *run) provisionR2(ctx context.Context) error {
 func (r *run) notOurs(kind, name string) *Failure {
 	return r.failure(ReasonNotOurs, "A "+kind+" named "+name+" already exists on your Cloudflare account, and setup can't confirm it's the one it created.",
 		"If you don't need it, delete the "+kind+" in Cloudflare, and then run cairn new again.", nil)
+}
+
+// bucketNotOurs is notOurs for the storage bucket, which says how to delete one: Cloudflare
+// deletes only an empty bucket.
+func (r *run) bucketNotOurs(name string) *Failure {
+	f := r.notOurs("storage bucket", name)
+	f.Do = "If you don't need it, open R2 Object Storage in the Cloudflare dashboard, delete the bucket's objects, and then delete the bucket. Then run cairn new again."
+	return f
 }
 
 // commit is watch step 3: the Worker, database, and GitHub App settings written over the first

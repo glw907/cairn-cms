@@ -891,8 +891,8 @@ func TestAKillBetweenACreateAndItsRecordWrite(t *testing.T) {
 		_, _ = w.run(killInCreate(w, "r2"))
 		w.cf.onCreate = nil
 		_, err := w.resume()
-		if f := failureOf(t, err); f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "example-site-media") {
-			t.Errorf("failure = %+v, want the not-ours stop", f)
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "example-site-media") || !strings.Contains(f.Do, "R2 Object Storage") {
+			t.Errorf("failure = %+v, want the not-ours stop with how to delete a bucket", f)
 		}
 	})
 }

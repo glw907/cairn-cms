@@ -161,6 +161,20 @@ func (gh *GitHub) CreateRepo(ctx context.Context, name string) (Repository, erro
 	return repo, nil
 }
 
+// RepoNamed reads owner/name through GET /repos/{owner}/{repo}. A repository that does not
+// exist, or that the credential cannot see, returns nil and no error.
+func (gh *GitHub) RepoNamed(ctx context.Context, owner, name string) (*Repository, error) {
+	var repo Repository
+	err := gh.getJSON(ctx, "/repos/"+url.PathEscape(owner)+"/"+url.PathEscape(name), &repo)
+	if ge, ok := errors.AsType[*GitHubError](err); ok && ge.Status == http.StatusNotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &repo, nil
+}
+
 // SealSecret encrypts value for GitHub's Actions secrets API: a libsodium sealed box to
 // publicKey, the repository public key as GitHub serves it (base64 of 32 bytes). The result is
 // the base64 encrypted_value the PUT carries.

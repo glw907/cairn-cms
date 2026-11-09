@@ -60,6 +60,7 @@ type CloudflareAPI interface {
 type GitHubAPI interface {
 	ConvertManifest(ctx context.Context, code string) (providers.AppRecord, error)
 	CreateRepo(ctx context.Context, name string) (providers.Repository, error)
+	RepoNamed(ctx context.Context, owner, name string) (*providers.Repository, error)
 	AppInstallations(ctx context.Context) ([]providers.Installation, error)
 	DeleteInstallation(ctx context.Context, id int64) error
 	ReadBackInstallation(ctx context.Context, appID, repoID int64) (providers.ReadBack, error)

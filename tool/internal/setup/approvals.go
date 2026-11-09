@@ -165,6 +165,7 @@ func (r *run) createApp(ctx context.Context) error {
 	r.rec.Setup.IDs.AppID = app.ID
 	r.rec.Setup.AppSlug = app.Slug
 	r.rec.Setup.ClientID = app.ClientID
+	r.rec.Setup.AppOwner = app.OwnerLogin
 	r.nameEntries(secrets.EntryAppKey, secrets.EntryAppClientSecret)
 	if err := r.save(); err != nil {
 		return err
@@ -280,15 +281,22 @@ func (r *run) exchange(ctx context.Context, cb loopback.Callback) (tok providers
 // repository can be without showing to any read, moves all four names to the next suffix and
 // reruns the Cloudflare name checks for it. That refusal is the only clash check for the
 // repository: spec 3's unauthenticated public-name read before approval 3 needs the owner's
-// login, which setup learns only with the user token this approval issues.
+// login, which setup learns only with the user token this approval issues. An earlier run may
+// have created the repository and stopped before recording it. So when the refused name is the
+// record's intent and no repository is recorded, setup reads it before taking a suffix.
 func (r *run) createRepo(ctx context.Context) error {
 	gh := r.cfg.GitHub(r.user)
+	unknown := r.rec.Setup.Intents.Repo == r.names.Repository && r.rec.GitHub.Repo.ID == 0
 	for {
 		r.rec.Setup.Intents.Repo = r.names.Repository
 		if err := r.save(); err != nil {
 			return err
 		}
 		repo, err := gh.CreateRepo(ctx, r.names.Repository)
+		if errors.Is(err, providers.ErrRepoNameTaken) && unknown {
+			unknown = false
+			repo, err = r.adoptRepo(ctx, gh)
+		}
 		if errors.Is(err, providers.ErrRepoNameTaken) {
 			if r.suffixReason == "" {
 				r.suffixReason = "A repository named " + r.names.Repository + " already exists on your GitHub account."
@@ -307,6 +315,39 @@ func (r *run) createRepo(ctx context.Context) error {
 		r.rec.Step = string(spine.StepRepoCreated)
 		return r.save()
 	}
+}
+
+// adoptRepo reads the repository of the recorded intent's name and returns it when the App's
+// owner holds it and it has no commits, which is what a create that landed before a stop leaves.
+// A repository the read cannot see falls back to the taken-name suffix; any other is not
+// setup's, and a suffix would leave the earlier run's repository behind, so the run stops.
+func (r *run) adoptRepo(ctx context.Context, gh GitHubAPI) (providers.Repository, error) {
+	owner, name := r.app.OwnerLogin, r.names.Repository
+	repo, err := gh.RepoNamed(ctx, owner, name)
+	switch {
+	case err != nil:
+		return providers.Repository{}, err
+	case repo == nil:
+		return providers.Repository{}, providers.ErrRepoNameTaken
+	case repo.Owner.Login != owner:
+		return providers.Repository{}, r.repoNotOurs(owner, name)
+	}
+	// GitHub answers a commit read of a repository with no commits with 409 "Git Repository is
+	// empty."
+	_, err = gh.HeadSHA(ctx, owner, name, repo.DefaultBranch)
+	switch status := httpStatus(err); {
+	case status == http.StatusConflict:
+		return *repo, nil
+	case err == nil, status == http.StatusNotFound:
+		return providers.Repository{}, r.repoNotOurs(owner, name)
+	}
+	return providers.Repository{}, err
+}
+
+// repoNotOurs is the stop for a repository of setup's name that setup can't show it created.
+func (r *run) repoNotOurs(owner, name string) *Failure {
+	return r.failure(ReasonNotOurs, "A repository named "+owner+"/"+name+" already exists on your GitHub account, and setup can't confirm it's the one it created.",
+		"If you don't need it, delete it under Settings on the repository's GitHub page, and then run cairn new again.", nil)
 }
 
 // installRepo runs approval 4: an install preselected to the new repository, confirmed by the
@@ -502,7 +543,7 @@ func (r *run) resumeGitHub(ctx context.Context) error {
 	case errors.Is(err, errAppKeyLost):
 		slug := r.rec.Setup.AppSlug
 		r.app = providers.AppRecord{}
-		r.rec.Setup.IDs.AppID, r.rec.Setup.AppSlug, r.rec.Setup.ClientID, r.rec.Setup.Intents.App = 0, "", "", ""
+		r.rec.Setup.IDs.AppID, r.rec.Setup.AppSlug, r.rec.Setup.ClientID, r.rec.Setup.AppOwner, r.rec.Setup.Intents.App = 0, "", "", "", ""
 		r.rec.Step = string(spine.StepSetupStarted)
 		if err := r.save(); err != nil {
 			return err
@@ -517,7 +558,10 @@ func (r *run) resumeGitHub(ctx context.Context) error {
 		return r.fail(ctx, err, "GitHub")
 	}
 	r.app.ClientSecret = providers.NewCredential(secret)
-	r.app.OwnerLogin = r.rec.GitHub.Repo.Owner
+	r.app.OwnerLogin = r.rec.Setup.AppOwner
+	if r.app.OwnerLogin == "" {
+		r.app.OwnerLogin = r.rec.GitHub.Repo.Owner
+	}
 	r.register(r.app.ClientSecret)
 	if g := r.rec.GitHub.Repo; g.ID != 0 {
 		r.repo = providers.Repository{ID: g.ID, Name: g.Repo, FullName: g.Owner + "/" + g.Repo, DefaultBranch: g.DefaultBranch}

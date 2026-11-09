@@ -42,9 +42,18 @@ pass, was dropped by Geoff on 2026-11-08.
   (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`).
 - cairn-setup tooling: Geoff approved the setup tooling design on 2026-11-09
   (`~/Projects/initiatives/cairn-setup/specs/2026-11-09-setup-tooling-design.md`). Its planner,
-  `cairn-cms-setup-tooling-plan` (session `06cc7ec5`), hands the plan to `conductor-cairn-cms` for
-  the next packet. Its passes touch `scripts/gate/`, `tool/`, `plugins/cairn/`, `.claude/skills/`, and
-  the workstation repo, none of theme-garden's paths.
+  `cairn-cms-setup-tooling-plan` (session `06cc7ec5`), handed the plan to `conductor-cairn-cms`.
+  Packet A (Approval Queue item `20261109T122948-4007611`) was approved with every ruling as
+  recommended; Geoff then reversed S-3 at the sitting, since the Console org held no credit, so the
+  clean room uses a subscription token (`CLAUDE_CLEANROOM_OAUTH_TOKEN`). Pre-flight items 1 to 6 are
+  done and checked: the six platform packages are published at `1.1.0-2973-gefc71f361` and bound to
+  `tool.yml`, the wizard is deprecated below 1.0.0, the Cloudflare token and the Claude token are in
+  the store, the grant is live (`839312a` in workstation), and the `cleanroom` user is uid 945. The
+  owner steps needed #209 (tool.yml attests the npm tarballs; the dry run's path) and four script
+  fixes in initiatives. Item 7's probe runs as `cairn-cms-setup-tooling-probe` (session `a15ed84e`).
+  Item 8, 2026-11-09 13:3x: the one open PR is #208 (theme-garden-2), and none of its files is
+  under pass 2's paths (`scripts/gate/`, `tool/`, `plugins/cairn/`, the two held skills,
+  `gate-table.json`, `gate-publish.spec.ts`, `set-up-with-an-agent.md`); no other live branch.
 
 ## Open decisions and watches
 

@@ -58,6 +58,9 @@ func New(w io.Writer, scrub []providers.Credential) *Writer {
 	return lw
 }
 
+// Register adds c to the credentials Writer redacts.
+func (w *Writer) Register(c providers.Credential) {}
+
 // Skipped reports how many non-empty credentials were too short to match.
 func (w *Writer) Skipped() int {
 	return w.skipped

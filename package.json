@@ -72,6 +72,7 @@
     "check:dev-package": "node scripts/checks/check-dev-package.mjs",
     "check:consumers": "npm run package && node scripts/checks/check-consumers.mjs",
     "prepare": "npm run package && npm run theme:lay-in",
+    "theme:view": "node scripts/theme/viewer.mjs",
     "theme:lay-in": "node scripts/theme/lay-in.mjs themes/waymark examples/showcase",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p src/tests/types/tsconfig.json",
     "check:close": "node scripts/checks/close-prebuilt.mjs",

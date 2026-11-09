@@ -302,7 +302,15 @@ async function launch(siteDir, command, port) {
     // Only a server this child started is probed, so a listener another process holds on the port
     // is never mistaken for it. The home page answers 200 once the server has settled after its
     // first dependency pass; before that it can answer 500 or refuse the connection.
-    if (ready.test(output) && (await answers(url))) return { url, stop };
+    if (ready.test(output) && (await answers(url))) {
+      return {
+        url,
+        stop: () => {
+          process.removeListener('exit', stop);
+          stop();
+        },
+      };
+    }
     await new Promise((done) => setTimeout(done, 300));
   }
   stop();

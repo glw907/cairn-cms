@@ -131,6 +131,22 @@ const CASES = [
     'audit',
     (dir) => write(dir, 'theme.css', read(dir, 'theme.css').replace('@import "./tokens/tokens.css";\n', '')),
   ],
+  ['tokens.json is not JSON', 'tokens-schema', (dir) => write(dir, 'tokens/tokens.json', '{')],
+  ['resolver.json is not JSON', 'tokens-schema', (dir) => write(dir, 'tokens/resolver.json', '{')],
+  [
+    'two faces, each under 400 KB, total more than 400 KB',
+    'fonts',
+    (dir) => {
+      write(dir, 'fonts/second-wght-normal.woff2', 'x'.repeat(250 * 1024));
+      write(dir, 'fonts/third-wght-normal.woff2', 'x'.repeat(250 * 1024));
+      editJson(dir, 'cairn-theme.json', (m) => {
+        m.fonts.push(
+          { name: 'Second', license: 'OFL-1.1', source: 'https://example.com/second', files: ['fonts/second-wght-normal.woff2'] },
+          { name: 'Third', license: 'OFL-1.1', source: 'https://example.com/third', files: ['fonts/third-wght-normal.woff2'] },
+        );
+      });
+    },
+  ],
   ['a .ttf font is added', 'fonts', (dir) => write(dir, 'fonts/extra.ttf', 'x')],
   ['a font has no license', 'fonts', (dir) => write(dir, 'fonts/orphan-wght-normal.woff2', 'x')],
   [

@@ -74,6 +74,11 @@ export const STATIC_RULES = {
   },
 
   'tokens-schema'({ dir }) {
+    // An absent file is `paths-required`'s to report; a file that is there and is not JSON is this rule's.
+    const unreadable = ['tokens/tokens.json', 'tokens/resolver.json']
+      .filter((rel) => existsSync(path.join(dir, rel)) && readJson(dir, rel) === null)
+      .map((rel) => ({ file: rel, message: 'the file is not JSON' }));
+    if (unreadable.length) return unreadable;
     const tokens = readJson(dir, 'tokens/tokens.json');
     const resolver = readJson(dir, 'tokens/resolver.json');
     if (!tokens || !resolver) return [];
@@ -201,10 +206,11 @@ export const STATIC_RULES = {
         failures.push({ file: MANIFEST, message: `font "${font.name}" has no SPDX license` });
       }
     }
-    for (const [name, files] of pairings(fonts)) {
-      const bytes = files.reduce((sum, rel) => sum + (existsSync(path.join(dir, rel)) ? statSync(path.join(dir, rel)).size : 0), 0);
-      if (bytes > FONT_PAIRING_LIMIT) failures.push({ file: 'fonts', message: `font "${name}" is ${Math.ceil(bytes / 1024)} KB, over the 400 KB limit` });
-    }
+    // The manifest has no option that selects fonts, so the theme's faces are one pairing.
+    const bytes = fonts
+      .flatMap((font) => font.files ?? [])
+      .reduce((sum, rel) => sum + (existsSync(path.join(dir, rel)) ? statSync(path.join(dir, rel)).size : 0), 0);
+    if (bytes > FONT_PAIRING_LIMIT) failures.push({ file: 'fonts', message: `the fonts total ${Math.ceil(bytes / 1024)} KB, over the 400 KB limit for a pairing` });
     return failures;
   },
 
@@ -263,15 +269,6 @@ export const STATIC_RULES = {
  */
 function isExternal(url) {
   return /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(url.trim());
-}
-
-/**
- * Each manifest font with the files of its pairing, keyed by name.
- * @param {{ name: string, files?: string[] }[]} fonts
- * @returns {[string, string[]][]}
- */
-function pairings(fonts) {
-  return fonts.map((font) => [font.name, font.files ?? []]);
 }
 
 /**

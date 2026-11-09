@@ -83,7 +83,9 @@ export function catalogThemes(file = path.join(ROOT, 'templates/catalog.json')) 
       problems.push(`catalog theme "${entry.id}" has source "${entry.source}", which this check cannot read from a clone`);
       continue;
     }
-    const dir = path.join(ROOT, 'themes', entry.path);
+    // The viewer reads the same directory: a catalog theme lives at themes/<id>. The entry's `path`
+    // names the theme's template, not its source.
+    const dir = path.join(ROOT, 'themes', entry.id);
     if (existsSync(dir)) dirs.push({ id: entry.id, dir });
     else problems.push(`catalog theme "${entry.id}": ${path.relative(ROOT, dir)} is missing`);
   }

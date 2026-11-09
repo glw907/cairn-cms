@@ -34,7 +34,7 @@ answers to `fonts`, not to `paths-unlisted`.
 |---|---|
 | `manifest-schema` | `cairn-theme.json` is missing, is not JSON, or breaks `schema/cairn-theme-1.schema.json`. |
 | `contract-version` | The manifest's `contract` is not the version the check reads. |
-| `tokens-schema` | `tokens/tokens.json` or `tokens/resolver.json` breaks the DTCG 2025.10 schema, or the resolver cannot resolve. |
+| `tokens-schema` | `tokens/tokens.json` or `tokens/resolver.json` is not JSON, breaks the DTCG 2025.10 schema, or the resolver cannot resolve. |
 | `resolver-options` | A resolver modifier has no manifest option, an option has no modifier, or an option's values and the modifier's contexts differ. |
 | `paths-required` | A path the contract requires, or a file the manifest names, is missing. |
 | `paths-unlisted` | A file sits at a path the contract does not list. Files under `fonts/` belong to the `fonts` rule. |
@@ -43,7 +43,7 @@ answers to `fonts`, not to `paths-unlisted`.
 | `render` | The build fails, a page returns a status other than 200 (the 404 pages excepted), a page logs a console error, or no page runs. The run covers every standard and conformance page, under each option value, in both color modes, at 1440 pixels. |
 | `directive-styled` | A class in `src/chassis/directives/classes.json` is styled by no sheet the theme loads. The report names the sheet that styles each class. |
 | `audit` | `cairn-audit`'s `theme-contrast`, `theme-conformance`, or `public-literals` rule reports a finding, or the run measured no theme block. |
-| `fonts` | A file under `fonts/` other than `fonts.css` is not woff2, or no manifest font names it. A font has no SPDX license, or its files total more than 400 KB. |
+| `fonts` | A file under `fonts/` other than `fonts.css` is not woff2, or no manifest font names it. A font has no SPDX license, or the theme's fonts total more than 400 KB. |
 | `external-host` | A CSS `url()` or `@import`, or a component's `src` or `href`, names a URL with a scheme or `//`. |
 
 Only `render` builds a site, and it is the slow rule. While you edit, run the other rules with `--rules`.

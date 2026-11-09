@@ -1,11 +1,10 @@
 // The viewer's interactive mode: `vite dev` on the scratch site, a control server beside it, and a
 // watcher that copies edits from the theme directory across. An edit to a token source reruns the
 // tokens build first, so the generated sheets follow.
-import { spawnSync } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, rmSync, watch } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { checkTheme } from '../check.mjs';
 import { layIn } from '../lay-in.mjs';
 import { renderControl } from './control.mjs';
 import { answers, catalogThemes, chooseOptions, composeSite, freePort, listRoutes, readManifest, resolveTheme, startSite, writeOptions } from './site.mjs';
@@ -119,8 +118,21 @@ export async function startInteractive({ root, theme, endpoints = {} }) {
   const registry = {
     'GET /api/state': () => state(),
     // The theme check on the loaded theme. A `rules` field limits the run; the answer is the check's
-    // `--json` document.
-    'POST /api/check': (ctx, body) => checkTheme(ctx.theme.dir, { rules: body.rules ? body.rules.split(',') : undefined }),
+    // `--json` document. It runs as a child process: the audit and render rules make showcase copies,
+    // and a copy made in this process would delete the scratch site this viewer is serving. The check
+    // exits 1 on a failing verdict, which is a valid answer.
+    'POST /api/check': async (ctx, body) => {
+      const args = [path.join(ctx.root, 'scripts/theme/check.mjs'), ctx.theme.dir, '--json'];
+      if (body.rules) args.push('--rules', body.rules);
+      const result = await new Promise((done) => {
+        execFile(process.execPath, args, { maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => done({ error, stdout, stderr }));
+      });
+      try {
+        return JSON.parse(result.stdout);
+      } catch {
+        throw new Error(`the check did not answer: ${result.stderr || result.error?.message || 'no output'}`);
+      }
+    },
     ...endpoints,
   };
 
@@ -145,6 +157,7 @@ export async function startInteractive({ root, theme, endpoints = {} }) {
       writeSheet();
     },
     '/api/mode': (/** @type {Record<string, string>} */ body) => {
+      if (!Object.keys(readManifest(context.theme.dir).colorModes).includes(body.mode)) throw new Error(`no color mode "${body.mode}"`);
       context.mode = body.mode;
       writeSheet();
     },

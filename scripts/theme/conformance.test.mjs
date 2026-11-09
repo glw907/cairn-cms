@@ -231,7 +231,10 @@ test('no content or asset file of the set appears under templates/ or the starte
     ...(await walk(STATIC)).map((f) => `static/${f}`),
   ];
   assert.ok(files.length > 0);
-  const homes = [path.join(REPO, 'templates'), path.join(REPO, 'scripts/build/starter-overlay')];
+  // Each template is a directory under templates/ (templates/waymark), laid out as a site is.
+  const templates = (await readdir(path.join(REPO, 'templates'), { withFileTypes: true })).filter((e) => e.isDirectory());
+  assert.ok(templates.length > 0, 'templates/ holds at least one template to check against');
+  const homes = [...templates.map((e) => path.join(REPO, 'templates', e.name)), path.join(REPO, 'scripts/build/starter-overlay')];
   const collisions = [];
   for (const home of homes) for (const f of files) if (existsSync(path.join(home, f))) collisions.push(`${path.basename(home)}/${f}`);
   assert.deepEqual(collisions, []);

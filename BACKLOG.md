@@ -45,6 +45,9 @@
 - [ ] **#418** `rehypeSlug` runs after the sanitize step, so a heading id is unprefixed and can collide with a footnote id `#improvement` `#cairn-cms` *(2026-11-09)*
   A heading titled `user-content-fn-1` slugs to the id of the footnote definition. The author can only hijack their own page, and an unprefixed id also creates a `window[id]` named property. Fix: slug before the sanitize step, or give slug ids the sanitize prefix. Found by the web-auth-security read of theme-garden G2's T2.1 (`src/lib/render/pipeline.ts`).
   Placement: with the next `src/lib/render/` change; needs its own scope call.
+- [ ] **#419** Measure a font pairing an option selects, once a theme has one `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The theme check's `fonts` rule sums every manifest font as the theme's one pairing, because no manifest option selects fonts yet. A theme that offers a font option needs the 400 KB limit measured per pairing. Found by G2's whole-branch review.
+  Placement: with the first theme that ships a font option.
 - [ ] **#410** Ship the tokens build to a scaffolded site, or keep `tokens.json` out of the scaffold `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The lay-in copies a theme's `tokens/tokens.json` and `resolver.json` into a scaffolded site's `src/theme/tokens/`, but `scripts/theme/build-tokens.mjs` ships only in this repository, so a site developer retunes `src/theme/tokens/tokens.css` by hand and `tokens.json` drifts from it. Found in theme-garden pass G1 (register-check on `retheme-by-tokens.md`). Decide whether the build ships in the template or the scaffold leaves `tokens.json` out.
   Placement: engine batch, with the theme-garden setup pass (design step 4).

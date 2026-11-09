@@ -196,10 +196,16 @@ func New(cfg Config) *Model {
 // starts nothing, since the runner's requests and events arrive as messages.
 func (m *Model) Init() tea.Cmd {
 	if m.phase.final() {
-		return tea.Quit
+		// A quit at once leaves the terminal's replies to Bubble Tea's startup queries unread, and
+		// the terminal echoes them under the frame as text.
+		return tea.Tick(initQuitDelay, func(time.Time) tea.Msg { return tea.QuitMsg{} })
 	}
 	return nil
 }
+
+// initQuitDelay is how long a model that opens on a final frame waits before it quits, so the
+// terminal's answers to the program's startup queries arrive while the program still reads input.
+const initQuitDelay = 200 * time.Millisecond
 
 // Update applies a window size, a key, a runner request, or a setup.Event to the model. The
 // message that brings a final frame on screen also quits the program: Bubble Tea flushes the

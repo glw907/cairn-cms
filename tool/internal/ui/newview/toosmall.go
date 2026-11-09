@@ -1,9 +1,6 @@
 package newview
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // The smallest window setup draws in. MinRows is the floor every interactive screen asks for, a
 // leading blank line included; a screen taller than it at the window's width asks for every row
@@ -27,9 +24,10 @@ func (g Grid) TooSmall(height, rows int) string {
 	if height < rows {
 		need = append(need, fmt.Sprintf("This step needs %d rows. This window has %d.", rows, height))
 	}
-	return Frame(
-		g.lines(g.Styles.Title.Render, "This window is too small for setup.", g.ContentWidth(), margin),
-		g.lines(g.Styles.Text.Render, strings.Join(need, " "), g.ContentWidth(), margin),
-		g.lines(g.Styles.Muted.Render, "Make the window larger to continue.", g.ContentWidth(), margin),
-	)
+	blocks := []string{g.lines(g.Styles.Title.Render, "This window is too small for setup.", g.ContentWidth(), margin)}
+	for _, n := range need {
+		blocks = append(blocks, g.lines(g.Styles.Text.Render, n, g.ContentWidth(), margin))
+	}
+	blocks = append(blocks, g.lines(g.Styles.Muted.Render, "Make the window larger to continue.", g.ContentWidth(), margin))
+	return Frame(blocks...)
 }

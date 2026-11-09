@@ -230,7 +230,7 @@ func TestSummaryEditsFitIn24Rows(t *testing.T) {
 }
 
 // TestSummaryFitsTheWindowOrSaysWhatItNeeds pins the summary's height: 24 rows at 80 columns
-// and 27 at 60 columns, where values and reasons wrap, with an open edit fitting 24 at either.
+// and 28 at 60 columns, where values and reasons wrap, with an open edit fitting 24 at either.
 func TestSummaryFitsTheWindowOrSaysWhatItNeeds(t *testing.T) {
 	for _, tt := range []struct {
 		name          string
@@ -241,7 +241,7 @@ func TestSummaryFitsTheWindowOrSaysWhatItNeeds(t *testing.T) {
 		{"80x24", 80, 24, nil, 0},
 		{"80x24 editing the email", 80, 24, []tea.Msg{letter('e')}, 0},
 		{"80x24 editing the address", 80, 24, []tea.Msg{letter('a')}, 0},
-		{"60x24", 60, 24, nil, 27},
+		{"60x24", 60, 24, nil, 28},
 		{"60x24 editing the address", 60, 24, []tea.Msg{letter('a')}, 0},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

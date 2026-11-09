@@ -44,3 +44,22 @@ func TestFooterUsesTheASCIISeparator(t *testing.T) {
 		t.Errorf("footer = %q", got)
 	}
 }
+
+func TestFooterBreaksBetweenHintsAtTheMeasure(t *testing.T) {
+	g := testGrid(60)
+	hints := []key.Binding{
+		key.NewBinding(key.WithKeys("enter"), key.WithHelp("Enter", "set up")),
+		key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit email")),
+		key.NewBinding(key.WithKeys("a"), key.WithHelp("a", "edit address")),
+		key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("Ctrl+C", "quit")),
+	}
+	got := ansi.Strip(g.Footer(hints...))
+	if want := "  Enter set up · e edit email · a edit address\n  Ctrl+C quit"; got != want {
+		t.Errorf("footer = %q, want %q", got, want)
+	}
+	for line := range strings.SplitSeq(got, "\n") {
+		if w := ansi.StringWidth(line); w > g.Width-3 {
+			t.Errorf("footer line %q is %d wide; it must end before the window's last column", line, w)
+		}
+	}
+}

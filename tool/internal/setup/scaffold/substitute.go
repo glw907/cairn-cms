@@ -53,8 +53,9 @@ var (
 )
 
 // validate refuses any value that could break out of the literal it is written into, before a
-// file is touched.
-func (s Site) validate() error {
+// file is touched. The database id is checked only when needDB is set, since the first pass runs
+// before the database exists.
+func (s Site) validate(needDB bool) error {
 	checks := []struct {
 		field string
 		value string
@@ -75,6 +76,9 @@ func (s Site) validate() error {
 		{"InstallationID", s.InstallationID, digitsRE},
 	}
 	for _, c := range checks {
+		if c.field == "DatabaseID" && !needDB {
+			continue
+		}
 		if !c.re.MatchString(c.value) {
 			return fmt.Errorf("scaffold: site %s %q is not usable in the files", c.field, c.value)
 		}
@@ -88,18 +92,17 @@ func (s Site) validate() error {
 	return nil
 }
 
-// substitute applies every edit to the site tree at dir. Each edit names its file and the anchor
-// it could not find, so a template that moved fails here, not in the site's first build.
-func substitute(dir string, s Site, engineVersion string) error {
-	steps := []func(string, Site, string) error{
-		editPackageJSON,
-		editSiteConfig,
-		editCairnConfig,
-		editWrangler,
-		editDeploy,
-		editSiteFacts,
-		restoreGitignore,
-	}
+// The two passes of edits. The first needs only what the approvals and the summary settled; the
+// second writes the settings that name the Cloudflare resources, which exist only after the
+// first pass has run.
+var (
+	firstPass  = []func(string, Site, string) error{editPackageJSON, editSiteConfig, editDeploy, editSiteFacts, restoreGitignore}
+	secondPass = []func(string, Site, string) error{editCairnConfig, editWrangler}
+)
+
+// substitute applies steps to the site tree at dir. Each edit names its file and the anchor it
+// could not find, so a template that moved fails here, not in the site's first build.
+func substitute(dir string, s Site, engineVersion string, steps []func(string, Site, string) error) error {
 	for _, step := range steps {
 		if err := step(dir, s, engineVersion); err != nil {
 			return err

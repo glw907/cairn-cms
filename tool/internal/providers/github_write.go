@@ -120,6 +120,9 @@ type Repository struct {
 		Login string `json:"login"`
 		ID    int64  `json:"id"`
 	} `json:"owner"`
+	// DefaultBranch is the branch GitHub names the default. An empty repository has no branch
+	// yet, and the first push creates this one.
+	DefaultBranch string `json:"default_branch"`
 }
 
 // fieldError is one entry of GitHub's 422 "errors" array.
@@ -199,6 +202,31 @@ func (gh *GitHub) SetActionsSecret(ctx context.Context, owner, repo, name, value
 		KeyID          string `json:"key_id"`
 	}{EncryptedValue: sealed, KeyID: key.KeyID}
 	return gh.call(ctx, http.MethodPut, base+"/"+url.PathEscape(name), put, nil)
+}
+
+// InstallationRepositories returns the ids of every repository the calling installation can
+// reach, through GET /installation/repositories walked in pages of 100. The credential must be
+// that installation's token, which is how a resumed run checks an installation the App JWT
+// alone cannot list the repositories of.
+func (gh *GitHub) InstallationRepositories(ctx context.Context) ([]int64, error) {
+	var ids []int64
+	for page := 1; page <= maxPages; page++ {
+		var out struct {
+			Repositories []struct {
+				ID int64 `json:"id"`
+			} `json:"repositories"`
+		}
+		if err := gh.getJSON(ctx, fmt.Sprintf("/installation/repositories?per_page=%d&page=%d", pageSize, page), &out); err != nil {
+			return nil, err
+		}
+		for _, r := range out.Repositories {
+			ids = append(ids, r.ID)
+		}
+		if len(out.Repositories) < pageSize {
+			break
+		}
+	}
+	return ids, nil
 }
 
 // WorkflowRun is the state of one Actions run, the facts setup reports for a pushed commit.

@@ -21,10 +21,12 @@ import (
 const maxSuffix = 9
 
 // opening runs the checks that need no account. Each one fails before setup writes anything,
-// the record included.
+// the record included. A resume keeps its record and its names, accepts its own folder, and
+// refuses a template other than the one the run began with.
 func (r *run) opening(ctx context.Context) error {
 	r.start(StepOpeningChecks)
-	r.names, _ = deriveNames(r.cfg.Answers.SiteName, 0)
+	r.suffix = r.recordedSuffix()
+	r.names, _ = deriveNames(r.cfg.Answers.SiteName, r.suffix)
 	if loopback.Remote(r.cfg.GOOS, r.cfg.Env) {
 		return r.failure(ReasonRemote, "Setup can't run over SSH or without a display.",
 			"Run cairn new in a terminal on the computer where you use your browser.", nil)
@@ -64,6 +66,9 @@ func (r *run) opening(ctx context.Context) error {
 		return r.failure(ReasonTemplate, "Setup couldn't download the site template from npm.",
 			"Check your internet connection, and then run cairn new again.", err)
 	}
+	if r.resumed {
+		return r.resumeOpening()
+	}
 	if r.folderBusy(r.names) {
 		return r.failure(ReasonFolderNotEmpty, "The folder "+r.names.Repository+" already exists here and isn't empty.",
 			"Move or rename that folder, or run cairn new from another folder.", nil)
@@ -98,10 +103,55 @@ func (r *run) opening(ctx context.Context) error {
 	return nil
 }
 
-// folderBusy reports whether the site folder for n exists and holds anything. A missing or empty
-// folder is free; anything unreadable counts as busy.
+// resumeOpening finishes a resume's opening: the template must be the recorded version, the
+// theme the recorded one, and the folder free until the scaffold has written it.
+func (r *run) resumeOpening() error {
+	s := r.rec.Setup
+	if r.tmpl.Version != s.EngineVersion || r.tmpl.Integrity != s.EngineIntegrity {
+		return r.failure(ReasonTemplate, "The site template setup downloaded isn't the version this setup began with, "+s.EngineVersion+".",
+			"Run cairn new again. If this keeps happening, the version may have been withdrawn from npm.", nil)
+	}
+	i := slices.IndexFunc(r.tmpl.Themes, func(t scaffold.Theme) bool { return t.ID == s.ThemeID })
+	if i < 0 {
+		return r.failure(ReasonTemplate, "The site template no longer offers the theme "+s.ThemeID+".",
+			"Run cairn new again.", nil)
+	}
+	r.theme = r.tmpl.Themes[i]
+	if !reached(r.rec.Step, spine.StepScaffolded) && s.Folder != "" && busy(s.Folder) {
+		return r.failure(ReasonFolderNotEmpty, "The folder "+s.Folder+" isn't empty, and setup hasn't written the site there yet.",
+			"Move or rename that folder, and then run cairn new again.", nil)
+	}
+	r.done()
+	return nil
+}
+
+// recordedSuffix is the taken-name suffix a resumed record's repository name carries, and 0 for
+// a new run or a record with no repository name yet.
+func (r *run) recordedSuffix() int {
+	name := r.rec.GitHub.Repo.Repo
+	if name == "" {
+		name = r.rec.Setup.Intents.Repo
+	}
+	if name == "" {
+		return 0
+	}
+	for s := 0; s <= maxSuffix; s = nextSuffix(s) {
+		if n, err := deriveNames(r.cfg.Answers.SiteName, s); err == nil && n.Repository == name {
+			return s
+		}
+	}
+	return 0
+}
+
+// folderBusy reports whether the site folder for n exists and holds anything.
 func (r *run) folderBusy(n Names) bool {
-	entries, err := os.ReadDir(filepath.Join(r.cfg.Dir, n.Repository))
+	return busy(filepath.Join(r.cfg.Dir, n.Repository))
+}
+
+// busy reports whether dir exists and holds anything. A missing or empty folder is free;
+// anything unreadable counts as busy.
+func busy(dir string) bool {
+	entries, err := os.ReadDir(dir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return false
 	}
@@ -136,6 +186,7 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 	if r.email, err = user.UserEmail(ctx); err != nil {
 		return r.fail(ctx, err, "Cloudflare")
 	}
+	r.email = strings.TrimSpace(r.email)
 	r.cf = r.cfg.Cloudflare(r.account.ID, r.access)
 
 	zones, err := r.cf.ActiveZones(ctx)
@@ -159,8 +210,9 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		}
 		r.zone, r.zoneChosen = zones[i], true
 	}
-	r.addresses, _ = addresses(r.zone.Name, r.zone.Name)
-	if err := r.checkAddress(ctx); err != nil {
+	r.host = r.zone.Name
+	r.addresses, _ = addresses(r.zone.Name, r.host)
+	if err := r.checkAddress(ctx, ""); err != nil {
 		return err
 	}
 	if err := r.freeNames(ctx, 0); err != nil {
@@ -193,13 +245,22 @@ func (r *run) noActiveZone(ctx context.Context) error {
 }
 
 // checkAddress refuses an address that already answers for something: a DNS record, a Worker
-// custom domain, or a Worker route on any of its hosts.
-func (r *run) checkAddress(ctx context.Context) error {
+// custom domain, or a Worker route on any of its hosts. A custom domain already attached to
+// worker, the site's own Worker, is the site's, along with the DNS record Cloudflare made for
+// it; worker is empty before the site has a Worker.
+func (r *run) checkAddress(ctx context.Context, worker string) error {
 	inUse := func(host string) error {
 		return r.failure(ReasonAddressInUse, "A Worker already serves "+host+".",
 			"Remove that Worker's custom domain or route in Cloudflare, and then run cairn new again.", nil)
 	}
 	for _, host := range r.addresses {
+		domains, err := r.cf.WorkerDomainsFor(ctx, host)
+		if err != nil {
+			return r.fail(ctx, err, "Cloudflare")
+		}
+		if worker != "" && slices.ContainsFunc(domains, func(d providers.WorkerDomain) bool { return d.Service == worker }) {
+			continue
+		}
 		recs, err := r.cf.DNSRecordsNamed(ctx, r.zone.ID, host)
 		if err != nil {
 			return r.fail(ctx, err, "Cloudflare")
@@ -207,10 +268,6 @@ func (r *run) checkAddress(ctx context.Context) error {
 		if len(recs) > 0 {
 			return r.failure(ReasonAddressRecords, "That address already points to another site: "+host+" has DNS records.",
 				"Remove its DNS records in Cloudflare, and then run cairn new again.", nil)
-		}
-		domains, err := r.cf.WorkerDomainsFor(ctx, host)
-		if err != nil {
-			return r.fail(ctx, err, "Cloudflare")
 		}
 		if len(domains) > 0 {
 			return inUse(host)
@@ -222,7 +279,7 @@ func (r *run) checkAddress(ctx context.Context) error {
 	}
 	for _, rt := range routes {
 		for _, host := range r.addresses {
-			if routeCovers(rt.Pattern, host) {
+			if routeCovers(rt.Pattern, host) && (worker == "" || rt.Script != worker) {
 				return inUse(host)
 			}
 		}

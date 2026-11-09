@@ -54,24 +54,34 @@ func git(ctx context.Context, dir string, extra []string, args ...string) (strin
 // the fixed identity, and returns the commit's SHA. User and system git config are ignored, so
 // a signing or hooks setting on the owner's machine cannot stop or alter the commit.
 func initRepository(ctx context.Context, dir, branch, originURL string, c Commit) (string, error) {
-	isolate := []string{"GIT_CONFIG_GLOBAL=" + os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0"}
-	identity := append(isolate,
+	isolate := isolated()
+	if _, err := git(ctx, dir, isolate, "init", "--quiet", "-b", branch); err != nil {
+		return "", err
+	}
+	if _, err := git(ctx, dir, isolate, "remote", "add", "origin", originURL); err != nil {
+		return "", err
+	}
+	return commitAll(ctx, dir, c)
+}
+
+// isolated is the environment that keeps the owner's user and system git config out of every
+// call, and keeps git from prompting.
+func isolated() []string {
+	return []string{"GIT_CONFIG_GLOBAL=" + os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0"}
+}
+
+// commitAll stages everything in dir, commits it with c's fixed identity, and returns the SHA.
+func commitAll(ctx context.Context, dir string, c Commit) (string, error) {
+	isolate := isolated()
+	identity := append(isolated(),
 		"GIT_AUTHOR_NAME="+c.AuthorName, "GIT_AUTHOR_EMAIL="+c.AuthorEmail,
 		"GIT_COMMITTER_NAME="+c.AuthorName, "GIT_COMMITTER_EMAIL="+c.AuthorEmail,
 	)
-	steps := []struct {
-		env  []string
-		args []string
-	}{
-		{isolate, []string{"init", "--quiet", "-b", branch}},
-		{isolate, []string{"remote", "add", "origin", originURL}},
-		{isolate, []string{"add", "--all"}},
-		{identity, []string{"commit", "--quiet", "--no-verify", "--no-gpg-sign", "-m", c.Message}},
+	if _, err := git(ctx, dir, isolate, "add", "--all"); err != nil {
+		return "", err
 	}
-	for _, st := range steps {
-		if _, err := git(ctx, dir, st.env, st.args...); err != nil {
-			return "", err
-		}
+	if _, err := git(ctx, dir, identity, "commit", "--quiet", "--no-verify", "--no-gpg-sign", "-m", c.Message); err != nil {
+		return "", err
 	}
 	return git(ctx, dir, isolate, "rev-parse", "HEAD")
 }

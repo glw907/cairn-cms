@@ -37,6 +37,9 @@ type Tab interface {
 	Arm(r loopback.Route) (string, error)
 	Wait(ctx context.Context, r loopback.Route) (loopback.Callback, error)
 	Show(p Page) error
+	// SetNext hands done.html the https URL to move the tab to. The tab's /next route gives it
+	// out once, the only place the sign-in link leaves the process but the email.
+	SetNext(rawURL string) error
 	Close() error
 }
 

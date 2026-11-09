@@ -4,7 +4,7 @@ package setup
 // it are for the owner.
 type Reason string
 
-// The reasons a run stops before the summary.
+// The reasons a run stops.
 const (
 	ReasonRemote         Reason = "remote"
 	ReasonGitMissing     Reason = "git-missing"
@@ -28,6 +28,17 @@ const (
 	ReasonStopped        Reason = "stopped"
 	ReasonProvider       Reason = "provider"
 	ReasonRecord         Reason = "record"
+	ReasonGrantSpent     Reason = "cloudflare-grant-spent"
+	ReasonAccountMissing Reason = "account-missing"
+	ReasonNotOurs        Reason = "resource-not-ours"
+	ReasonFolderNotOurs  Reason = "folder-not-ours"
+	ReasonScaffold       Reason = "scaffold"
+	ReasonWorkerExists   Reason = "worker-exists"
+	ReasonRemoteDiffers  Reason = "remote-differs"
+	ReasonPush           Reason = "push"
+	ReasonDeployFailed   Reason = "deploy-failed"
+	ReasonDeployTimeout  Reason = "deploy-timeout"
+	ReasonHTTPSTimeout   Reason = "https-timeout"
 )
 
 // Failure is a stop in four parts: what happened, what setup already did, what is left, and

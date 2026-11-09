@@ -20,28 +20,27 @@ const installationsURL = "https://github.com/settings/installations"
 // approveCloudflare runs approval 1: PKCE consent in the tab, the code exchange, the pair kept in
 // the keyring before either token is used, and the granted-scope check. A grant without the
 // scope that mints the deploy key shows error.html, whose Try again asks for consent afresh.
-func (r *run) approveCloudflare(ctx context.Context) error {
+// state is WaitCloudflare, or WaitCloudflareReconsent for a resume whose stored grant is spent.
+func (r *run) approveCloudflare(ctx context.Context, state WaitState) error {
 	r.start(StepApproveCloudflare)
 	page := PageRedirect
-	for opened := false; ; opened = true {
+	for {
 		verifier, challenge, err := providers.NewPKCE()
 		if err != nil {
 			return err
 		}
 		r.registerValue(verifier)
-		state, err := r.tab.Arm(loopback.CloudflareCallback)
+		nonce, err := r.tab.Arm(loopback.CloudflareCallback)
 		if err != nil {
 			return r.fail(ctx, err, "")
 		}
-		if err := r.tab.Show(Page{Kind: page, URL: providers.AuthorizeURL(state, challenge)}); err != nil {
+		if err := r.tab.Show(Page{Kind: page, URL: providers.AuthorizeURL(nonce, challenge)}); err != nil {
 			return err
 		}
-		if !opened {
-			if err := r.cfg.View.OpenBrowser(ctx, r.tab.URL()); err != nil {
-				return r.fail(ctx, err, "")
-			}
+		if err := r.ensureOpen(ctx); err != nil {
+			return err
 		}
-		r.waiting(WaitCloudflare)
+		r.waiting(state)
 		cb, err := r.await(ctx, loopback.CloudflareCallback)
 		if err != nil {
 			return r.fail(ctx, err, "")
@@ -55,12 +54,10 @@ func (r *run) approveCloudflare(ctx context.Context) error {
 		if err != nil {
 			return r.fail(ctx, err, "Cloudflare")
 		}
-		r.registerValue(tok.AccessToken, tok.RefreshToken)
 		if err := r.keepPair(tok); err != nil {
 			return err
 		}
 		if tok.MissingScope(providers.MintScope) == "" {
-			r.access = providers.NewCredential(tok.AccessToken)
 			r.done()
 			return nil
 		}
@@ -68,16 +65,22 @@ func (r *run) approveCloudflare(ctx context.Context) error {
 	}
 }
 
-// keepPair names the pair's two entries in the record, then stores the pair, so a write that
-// lands late is still one the record can reach.
+// keepPair registers a new pair with the scrub, names its two entries in the record, and stores
+// it before either token is used, so a write that lands late is still one the record can reach.
 func (r *run) keepPair(tok *providers.OAuthToken) error {
+	r.registerValue(tok.AccessToken, tok.RefreshToken)
 	r.nameEntries(secrets.EntryCloudflareRefresh, secrets.EntryCloudflareAccess)
 	if err := r.save(); err != nil {
 		return err
 	}
-	if err := r.cfg.Vault.PutPair(secrets.OAuthPair{Access: tok.AccessToken, Refresh: tok.RefreshToken}); err != nil {
+	pair := secrets.OAuthPair{Access: tok.AccessToken, Refresh: tok.RefreshToken}
+	if err := r.cfg.Vault.PutPair(pair); err != nil {
 		return r.failure(ReasonKeyringWrite, "Setup couldn't store the Cloudflare approval in the keyring.",
 			"Unlock the keyring, and then run cairn new again.", err)
+	}
+	r.pair, r.access, r.grantAt = pair, providers.NewCredential(tok.AccessToken), r.cfg.Now()
+	if r.account.ID != "" {
+		r.cf = r.cfg.Cloudflare(r.account.ID, r.access)
 	}
 	return nil
 }
@@ -91,9 +94,10 @@ func (r *run) nameEntries(kinds ...secrets.EntryKind) {
 	}
 }
 
-// githubChain runs approvals 2 to 4. Whatever ends it early, an error, a cancelled context, or
-// the 30-minute stop, the sweep then deletes every installation the read-back has not
-// confirmed, on a context of its own since the run's may be done.
+// githubChain runs whichever of approvals 2 to 4 the record has not reached. Whatever ends it
+// early, an error, a cancelled context, or the 30-minute stop, the sweep then deletes every
+// installation the read-back has not confirmed, on a context of its own since the run's may be
+// done.
 func (r *run) githubChain(ctx context.Context) (err error) {
 	defer func() {
 		if err == nil || r.app.ID == 0 {
@@ -107,11 +111,15 @@ func (r *run) githubChain(ctx context.Context) (err error) {
 			err = f
 		}
 	}()
-	if err := r.createApp(ctx); err != nil {
-		return err
+	if !reached(r.rec.Step, spine.StepAppCreated) {
+		if err := r.createApp(ctx); err != nil {
+			return err
+		}
 	}
-	if err := r.installAll(ctx); err != nil {
-		return err
+	if !reached(r.rec.Step, spine.StepRepoCreated) {
+		if err := r.installAll(ctx); err != nil {
+			return err
+		}
 	}
 	return r.installRepo(ctx)
 }
@@ -135,6 +143,9 @@ func (r *run) createApp(ctx context.Context) error {
 		return err
 	}
 	if err := r.tab.Show(Page{Kind: PageManifest, Manifest: string(manifest)}); err != nil {
+		return err
+	}
+	if err := r.ensureOpen(ctx); err != nil {
 		return err
 	}
 	r.waiting(WaitCreateApp)
@@ -181,8 +192,8 @@ func (r *run) appKeyFailure(err error) *Failure {
 
 // installAll runs approval 3: the owner installs the App on all repositories, the user token
 // creates the private repository, and the sweep deletes the all-repositories installation. A
-// callback whose code does not exchange sends the tab back to the install page, since a callback
-// without state can come from another page.
+// callback whose code GitHub calls wrong or expired sends the tab back to the install page,
+// since a callback without state can come from another page.
 func (r *run) installAll(ctx context.Context) error {
 	r.start(StepApproveInstall)
 	if err := r.sweep(ctx, 0); err != nil {
@@ -231,6 +242,9 @@ func (r *run) installCallback(ctx context.Context, url string, state WaitState) 
 	if err := r.tab.Show(Page{Kind: PageRedirect, URL: url}); err != nil {
 		return loopback.Callback{}, err
 	}
+	if err := r.ensureOpen(ctx); err != nil {
+		return loopback.Callback{}, err
+	}
 	r.waiting(state)
 	cb, err := r.await(ctx, loopback.GitHubCallback)
 	if err != nil {
@@ -245,15 +259,16 @@ func (r *run) installCallback(ctx context.Context, url string, state WaitState) 
 	return cb, r.save()
 }
 
-// exchange trades an install callback's code for the user token. A code that does not exchange
-// reports ok false and no error, so the caller resends the tab.
+// exchange trades an install callback's code for the user token. Only a code GitHub calls wrong
+// or expired, which is what a callback another page consumed first looks like, reports ok false
+// so the caller resends the tab; any other failure stops the run.
 func (r *run) exchange(ctx context.Context, cb loopback.Callback) (tok providers.Credential, ok bool, err error) {
 	tok, err = r.cfg.GitHubWeb.ExchangeCode(ctx, r.app.ClientID, r.app.ClientSecret, cb.Code, "")
-	if err != nil {
-		if ctx.Err() != nil {
-			return providers.Credential{}, false, r.fail(ctx, err, "")
-		}
+	if errors.Is(err, providers.ErrBadVerificationCode) && ctx.Err() == nil {
 		return providers.Credential{}, false, nil
+	}
+	if err != nil {
+		return providers.Credential{}, false, r.fail(ctx, err, "GitHub")
 	}
 	r.register(tok)
 	return tok, true, nil
@@ -261,7 +276,9 @@ func (r *run) exchange(ctx context.Context, cb loopback.Callback) (tok providers
 
 // createRepo creates the private repository. A name GitHub refuses as taken, which a private
 // repository can be without showing to any read, moves all four names to the next suffix and
-// reruns the Cloudflare name checks for it.
+// reruns the Cloudflare name checks for it. That refusal is the only clash check for the
+// repository: spec 3's unauthenticated public-name read before approval 3 needs the owner's
+// login, which setup learns only with the user token this approval issues.
 func (r *run) createRepo(ctx context.Context) error {
 	gh := r.cfg.GitHub(r.user)
 	for {
@@ -283,7 +300,8 @@ func (r *run) createRepo(ctx context.Context) error {
 			return r.fail(ctx, err, "GitHub")
 		}
 		r.repo = repo
-		r.rec.GitHub.Repo = record.GitHubRepo{ID: repo.ID, Owner: repo.Owner.Login, Repo: repo.Name}
+		r.rec.GitHub.Repo = record.GitHubRepo{ID: repo.ID, Owner: repo.Owner.Login, Repo: repo.Name, DefaultBranch: repo.DefaultBranch}
+		r.rec.Setup.OwnerID = repo.Owner.ID
 		r.rec.Step = string(spine.StepRepoCreated)
 		return r.save()
 	}
@@ -308,6 +326,9 @@ func (r *run) installRepo(ctx context.Context) error {
 			continue
 		}
 		rb, err := r.cfg.GitHub(tok).ReadBackInstallation(ctx, r.app.ID, r.repo.ID)
+		// Asking again is safe: a private App has at most one installation per owner, so the
+		// owner's next approval replaces whatever this one left, and the deferred sweep deletes
+		// anything unconfirmed when the chain exits.
 		if errors.Is(err, providers.ErrInstallationNotFound) {
 			continue
 		}
@@ -378,57 +399,123 @@ func (r *run) sweep(ctx context.Context, keep int64) error {
 	return errors.Join(errs...)
 }
 
+// errAppKeyLost reports a record that holds an App whose key never reached the keyring.
+var errAppKeyLost = errors.New("setup: the GitHub App's key is not in the keyring")
+
 // sweepOnResume is a resumed run's first GitHub act for a record that holds an App id: it reads
 // the App key back from the keyring and sweeps every installation but the one the record
-// confirmed at step installed.
+// confirmed, which it keeps at every step from installed on and only while that installation
+// reaches exactly the recorded repository.
 func sweepOnResume(ctx context.Context, cfg Config, rec record.Record) error {
-	pem, err := cfg.Vault.Value(secrets.EntryAppKey)
+	r := &run{cfg: cfg, rec: rec}
+	return r.resumeSweep(ctx)
+}
+
+func (r *run) resumeSweep(ctx context.Context) error {
+	pem, err := r.cfg.Vault.Value(secrets.EntryAppKey)
+	if errors.Is(err, secrets.ErrNotFound) {
+		return errAppKeyLost
+	}
 	if err != nil {
 		return err
 	}
-	r := &run{cfg: cfg, rec: rec}
-	r.app = providers.AppRecord{ID: rec.Setup.IDs.AppID, Slug: rec.Setup.AppSlug, PEM: providers.NewCredential(pem)}
+	r.app.ID, r.app.Slug, r.app.ClientID = r.rec.Setup.IDs.AppID, r.rec.Setup.AppSlug, r.rec.Setup.ClientID
+	r.app.PEM = providers.NewCredential(pem)
 	r.register(r.app.PEM)
 	var keep int64
-	if rec.Step == string(spine.StepInstalled) {
-		keep = rec.GitHub.InstallationID
+	if reached(r.rec.Step, spine.StepInstalled) {
+		keep = r.rec.GitHub.InstallationID
 	}
-	return r.sweep(ctx, keep)
+	if err := r.sweep(ctx, keep); err != nil {
+		return err
+	}
+	if keep == 0 {
+		return nil
+	}
+	return r.checkKept(ctx, keep)
 }
 
-// summary draws up the plan for the answers and emits it for the owner's review.
-func (r *run) summary() (Result, error) {
-	r.step = StepSummary
-	out, err := Plan(Answers{
-		SiteName:   r.cfg.Answers.SiteName,
-		OwnerEmail: r.email,
-		Posture:    r.cfg.Answers.Posture,
-		Zone:       r.zone.Name,
-		Host:       r.zone.Name,
-		Theme:      r.theme.ID,
-		AccountID:  r.account.ID,
-		Suffix:     r.suffix,
-	})
+// errOverGrant reports a kept installation that reaches more than the recorded repository.
+var errOverGrant = errors.New("setup: the App's installation reaches more than the site's repository")
+
+// checkKept lists what the kept installation reaches through its own token, the one view of
+// its repositories the App has, and deletes it unless the list is exactly the recorded
+// repository.
+func (r *run) checkKept(ctx context.Context, id int64) error {
+	gh, err := r.appClient()
 	if err != nil {
-		return Result{}, err
+		return err
 	}
-	s := Summary{
-		SiteName:         r.cfg.Answers.SiteName,
-		Repository:       out.Names.Repository,
-		Worker:           out.Names.Worker,
-		Database:         out.Names.Database,
-		Bucket:           out.Names.Bucket,
-		App:              r.app.Slug,
-		Folder:           out.Names.Folder,
-		Zone:             r.zone.Name,
-		Addresses:        out.Addresses,
-		OwnerEmail:       r.email,
-		Posture:          r.cfg.Answers.Posture,
-		Theme:            r.theme.ID,
-		ThemeDescription: r.theme.Description,
-		SuffixReason:     r.suffixReason,
-		ZoneChosen:       r.zoneChosen,
+	tok, _, err := gh.InstallationToken(ctx, id)
+	if err != nil {
+		return err
 	}
-	r.emit(Event{Kind: SummaryKind, Step: StepSummary, Summary: &s})
-	return Result{SiteID: r.siteID, Record: r.rec, Outline: out, Summary: s}, nil
+	r.register(tok)
+	repos, err := r.cfg.GitHub(tok).InstallationRepositories(ctx)
+	if err != nil {
+		return err
+	}
+	if len(repos) == 1 && repos[0] == r.rec.GitHub.Repo.ID {
+		return nil
+	}
+	if err := gh.DeleteInstallation(ctx, id); err != nil {
+		return errors.Join(errOverGrant, err)
+	}
+	return errOverGrant
+}
+
+// resumeGitHub sweeps a resumed run's installations, then reads the App's client secret back,
+// so the approvals and the watch act as the App the record names. A record whose App key never
+// reached the keyring drops the App, since setup cannot act as it, and stops with the way to
+// delete it.
+func (r *run) resumeGitHub(ctx context.Context) error {
+	err := r.resumeSweep(ctx)
+	var secret string
+	if err == nil {
+		secret, err = r.cfg.Vault.Value(secrets.EntryAppClientSecret)
+		if errors.Is(err, secrets.ErrNotFound) {
+			err = errAppKeyLost
+		}
+	}
+	switch {
+	case errors.Is(err, errAppKeyLost):
+		slug := r.rec.Setup.AppSlug
+		r.app = providers.AppRecord{}
+		r.rec.Setup.IDs.AppID, r.rec.Setup.AppSlug, r.rec.Setup.ClientID, r.rec.Setup.Intents.App = 0, "", "", ""
+		r.rec.Step = string(spine.StepSetupStarted)
+		if err := r.save(); err != nil {
+			return err
+		}
+		f := r.failure(ReasonKeyringWrite, "The keyring doesn't hold the key of the GitHub App "+slug+", so setup can't use that App.",
+			"Delete the App at https://github.com/settings/apps/"+slug+", and then run cairn new again. Setup creates a new App.", err)
+		return f
+	case errors.Is(err, errOverGrant):
+		r.rec.GitHub.InstallationID = 0
+		r.rec.Step = string(spine.StepRepoCreated)
+		_ = r.save()
+		return r.failure(ReasonInstallDelete, "The GitHub App's installation reached more than the "+r.rec.GitHub.Repo.Repo+" repository, so setup removed it.",
+			"Run cairn new again, and approve access to "+r.rec.GitHub.Repo.Repo+" only.", err)
+	case errors.Is(err, secrets.ErrKeyringUnavailable):
+		return r.failure(ReasonKeyring, "Setup couldn't read the GitHub App's keys from the keyring.",
+			"Unlock the keyring, and then run cairn new again.", err)
+	case err != nil:
+		return r.fail(ctx, err, "GitHub")
+	}
+	r.app.ClientSecret = providers.NewCredential(secret)
+	r.app.OwnerLogin = r.rec.GitHub.Repo.Owner
+	r.register(r.app.ClientSecret)
+	if g := r.rec.GitHub.Repo; g.ID != 0 {
+		r.repo = providers.Repository{ID: g.ID, Name: g.Repo, FullName: g.Owner + "/" + g.Repo, DefaultBranch: g.DefaultBranch}
+		r.repo.Owner.Login, r.repo.Owner.ID = g.Owner, r.rec.Setup.OwnerID
+	}
+	if reached(r.rec.Step, spine.StepInstalled) {
+		r.confirmed = r.rec.GitHub.InstallationID
+	}
+	// Both keys in the keyring finish approval 2, even when the run stopped before the record's
+	// step said so; creating the App again would leave this one behind.
+	if !reached(r.rec.Step, spine.StepAppCreated) {
+		r.rec.Step = string(spine.StepAppCreated)
+		return r.save()
+	}
+	return nil
 }

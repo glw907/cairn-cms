@@ -58,6 +58,9 @@ type Setup struct {
 	// AppSlug and ClientID identify the GitHub App; its key and client secret are keyring entries.
 	AppSlug  string
 	ClientID string
+	// OwnerID is the GitHub user id of the repository's owner, which the repository-only install
+	// page preselects. A resume at that approval has no other way to learn it.
+	OwnerID int64
 	// EngineVersion and EngineIntegrity are the resolved engine package's version and integrity.
 	EngineVersion   string
 	EngineIntegrity string
@@ -100,6 +103,7 @@ var setupFields = []field[Setup]{
 	scalarField("ids", func(s *Setup) *SetupIDs { return &s.IDs }),
 	scalarField("appSlug", func(s *Setup) *string { return &s.AppSlug }),
 	scalarField("clientId", func(s *Setup) *string { return &s.ClientID }),
+	scalarField("ownerId", func(s *Setup) *int64 { return &s.OwnerID }),
 	scalarField("engineVersion", func(s *Setup) *string { return &s.EngineVersion }),
 	scalarField("engineIntegrity", func(s *Setup) *string { return &s.EngineIntegrity }),
 	scalarField("folder", func(s *Setup) *string { return &s.Folder }),

@@ -60,10 +60,14 @@ var allSteps = map[Step]bool{
 const (
 	StepSetupStarted     Step = "setup-started"
 	StepResourcesCreated Step = "resources-created"
+	// StepCommitted means the site's settings are written and committed in the local folder.
+	StepCommitted Step = "committed"
+	// StepDeployKeyStored means the deploy key is minted and stored as a repository secret.
+	StepDeployKeyStored Step = "deploy-key-stored"
 )
 
 // setupSteps backs step_test.go's check that no setup-only step collides with a wizard step.
-var setupSteps = []Step{StepSetupStarted, StepResourcesCreated}
+var setupSteps = []Step{StepSetupStarted, StepResourcesCreated, StepCommitted, StepDeployKeyStored}
 
 // parseStep reports the Step matching s and whether s is one of the known record-step constants.
 func parseStep(s string) (Step, bool) {

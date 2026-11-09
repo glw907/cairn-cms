@@ -11,6 +11,11 @@ bash scripts/gate/run-gate.sh --smoke
 bash scripts/gate/run-gate.sh sweep
 bash scripts/gate/run-gate.sh sweep --check-scopes
 bash scripts/gate/run-gate.sh sweep --apply
+bash scripts/gate/run-gate.sh probe
+bash scripts/gate/run-gate.sh naive --conductor-transcript <path>
+bash scripts/gate/run-gate.sh scripted
+bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget]
+bash scripts/gate/run-gate.sh shell <name> [-c <command>]
 ```
 
 `run-gate.sh` is the one entry. It sources `~/.local/secrets`, makes a run directory
@@ -29,6 +34,74 @@ run refuses at once, names that line, and says whether the holder's process is a
 dies with the script, so a killed run frees it even if a child lives on. When the run ends,
 however it ends, the script writes its final status to `<run dir>/exit`. Read that file to learn
 how a backgrounded run finished.
+
+## The runs
+
+`probe`, `naive`, and `scripted` start a run in the clean room and return at once, printing the run
+id, the tmux session, and the run directory. Watch with a Monitor, never `run_in_background`. The
+run id is `YYMMDDHHMM` in UTC, so the owner card's site name is `Cairn gate <run id>`, and setup's
+derived names follow: the repository and Worker `cairn-gate-<run id>` (with a `-<2-9>` suffix when a
+name is taken), `-auth`, `-media`, and the App `cairn-cairn-gate-<run id>`. A run id whose directory
+exists is refused.
+
+`naive` runs `cleanroom init <run id>`, writes `harness.json` beside the run (the leg, the commit
+this checkout is at, the engine and launcher versions the `gate` dist-tag resolves to, and the
+harness's start time), starts the stand-in in tmux session `cleanroom-<run id>-stand-in`, and starts
+`cleanroom run` with the goal sentence, the setup token and the Claude credential by name,
+`npm_config_tag=gate`, and the caps. The stand-in's names go through a 0600 hand-off file it
+sources and removes, so no value sits in argv; the Cloudflare token never reaches it. `scripted`
+starts the same stand-in and then `scripted.mjs` as session `cleanroom-<run id>`. `probe` runs
+`cleanroom init probe --fresh --discard` and `cleanroom probe probe` with the generic command list.
+Neither `naive` nor `scripted` takes an EXIT teardown, since the run goes on after they return.
+
+### What refuses a start
+
+`naive`, `scripted`, `probe`, and `sweep --apply` refuse, naming what they found, while a
+`cleanroom-*` tmux session is live on either socket, a ledger row reads `running`, or a process of
+the clean room's user is alive. `naive` also refuses:
+
+- while the sweep's dry run lists any target, any old-gate name, or any address record (it never
+  deletes);
+- a sixth naive run (every ledger row named for a run id counts, except a scripted one);
+- when the remaining budget is under $5. The cap is the lower of $20 and $100 less the spend so far:
+  every ledger row (a `running` row at its full cap), probe sessions included, plus `cleanroom cost`
+  of the transcript passed as `--conductor-transcript`;
+- when the stowed template's `sha256` differs from the last passing row in
+  `/var/tmp/cleanroom/probes.jsonl`.
+
+## The grader and the record
+
+`grade <run dir>` writes `run-record.json` and `run-record.md` in the run directory from the
+transcript, `stand-in.jsonl`, `state.json`, `harness.json`, the registry record and npx cache in the
+clean home, `cairn new status`, the new repository's `package.json` and first deploy's job steps, the
+mailbox, and the live site. It copies the JSON to `~/.local/state/cairn-gate/proving/<run id>.json`
+and diffs each step against the last record there. `cleanroom scan` then runs over both files, and a
+match rewrites the record without its content and fails it. The home's keyrings are deleted last.
+
+A read that fails is a failed check, and the record lists each by name. The outcome is `pass`, or
+`fail` with `cost`, `time`, `stall`, `page`, `budget`, or `other`; a version unlike the candidate's
+is `other: wrong candidate`. The four end-state checks are live, owner signed in, sign-in mail in
+the mailbox, and installed versions equal to the candidate's, each with an evidence line.
+
+The deploy phases come from the first `deploy` workflow run's job steps: install is a step named for
+`npm install`, build is `npm run check` and `npm run build`, and deploy is the two `wrangler`
+steps. The HTTPS wait is the `domains` step's minutes in setup's events. Provider waits are the
+`first-deploy` and `domains` steps, and the agent's minutes are what remains of the goal-to-signed-in
+time after setup's own steps. A missing source, phase, or HTTPS time fails the timing check and the
+run as `other`. Permission prompts are read from the session log, and the flailing notes (a command
+that failed three times, a file read three times, a doc question put to the owner, three prompts)
+are cues for the conductor, each with the lines read.
+
+## The release rule
+
+The release body's `## Gate` table has one row per leg, `naive`, `scripted`, and `owner`, each with
+the cairn-cms commit, the engine version, the tool version, the verdict, and the run id.
+`verdict.mjs` exits 0 only with one `pass` row per leg: `scripted` at the release's own commit, and
+`naive` and `owner` at commits with no change under a rerun path up to it. It reads each diff through
+`gh api repos/glw907/cairn-cms/compare/<row commit>...<release commit>` and fails closed on a compare
+that lists 300 files or more. `node scripts/gate/record.mjs carry --version <v> --from <commit>
+--to <commit>` copies the `naive` and `owner` rows forward only across a diff that touches none of
+the rerun paths, which `RERUN_PATHS` in `record.mjs` names.
 
 ## The smoke
 
@@ -65,7 +138,8 @@ record with the domain. The zone's Email Sending records are never candidates. R
 
 | File | Role |
 |---|---|
-| `run-gate.sh` | The entry: secrets, run directory, allowlisted environment. |
+| `run-gate.sh` | The entry: secrets, run directory, allowlisted environment, and the `probe`, `naive`, `scripted`, `grade`, and `shell` forms. |
+| `grade.mjs` | Reads a finished run and writes its record. |
 | `gate.mjs` | The smoke, the browser session, and the command line. |
 | `sweep.mjs` | Lists, deletes, and probes, over the Cloudflare and GitHub APIs. |
 | `mail.mjs` | Reads the gate mailbox over JMAP; a method error throws. |
@@ -74,8 +148,8 @@ record with the domain. The zone's Email Sending records are never candidates. R
 | `totp.mjs` | RFC 6238 codes for the machine account's sign-in. |
 | `fetch-check.mjs` | Polls a live URL for a marker, or proves a page stayed unchanged. |
 | `resolve.mjs` | Finds the test domain's authoritative address, for a resolver that caches a negative answer. |
-| `record.mjs` | Writes the `## Gate` table to the release body, or to a rehearsal file. |
-| `verdict.mjs` | Reads that table and exits 0 only when each leg has one `pass` row under one run id. |
+| `record.mjs` | Writes the `## Gate` table to the release body, or to a rehearsal file, and carries rows forward. |
+| `verdict.mjs` | Reads that table and exits 0 only when each leg has one `pass` row at a commit that holds. |
 
 ## The browser
 

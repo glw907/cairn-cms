@@ -286,6 +286,9 @@
   Placement: engine batch; a `tool/` change, with the credentials page.
 
 ## Low
+- [ ] **#421** Name the token run's steps by the credential `cairn new` uses `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09)*
+  With `CAIRN_CF_SETUP_TOKEN` set, the plan's step labels `approve-cloudflare` ("Approve Cloudflare sign-in") and `deploy-key` ("Mint the deploy key and store it as a repository secret") in `tool/internal/setup/steps.go` still describe the OAuth path, though the done event and summary carry `credential: token`. A fix makes `steps()` depend on the credential, which touches the plan golden, the agent schema, and the event stream. Found by T2.1 and T2.2 of setup-tooling-2.
+  Placement: the next pass that changes the plan's step list; the agent reads `credential` on the done event meanwhile.
 - [ ] **#420** `cairn new` run inside an agent's Linux sandbox waits on a setup tab the browser cannot reach `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09)*
   Setup serves its approval tab on a loopback port; an agent's sandbox can start `cairn new` while the owner's browser cannot reach that port, so setup waits for a click that never comes. The cause is known from the sandboxing page, and no product check names it yet.
   Placement: the setup skill and the agent page say to run it as one bare command outside the sandbox (T2.7); a product check that names the cause waits on a run that meets it.

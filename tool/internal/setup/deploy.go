@@ -74,16 +74,13 @@ func (r *run) firstDeploy(ctx context.Context) error {
 	return nil
 }
 
-// waitUntil sleeps one poll, or stops the step once deadline has passed.
+// waitUntil pauses one poll, or stops the step once deadline has passed.
 func (r *run) waitUntil(ctx context.Context, deadline time.Time) error {
 	if !r.cfg.Now().Before(deadline) {
 		return r.failure(ReasonDeployTimeout, "The first deploy didn't finish within 30 minutes.",
 			"Check the Actions tab of your repository on GitHub, and then run cairn new again. Setup resumes at the first deploy.", nil)
 	}
-	if err := r.sleep(ctx, pollEvery); err != nil {
-		return r.fail(ctx, err, "")
-	}
-	return nil
+	return r.pause(ctx, pollEvery)
 }
 
 // awaitWorker waits for the deploy's Worker to appear and records its tag. A recorded tag that

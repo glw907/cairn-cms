@@ -367,8 +367,8 @@ func (r *run) domains(ctx context.Context) error {
 			return r.failure(ReasonHTTPSTimeout, "The site didn't answer over HTTPS at "+r.host+" within 15 minutes.",
 				"Run cairn new again later. Setup resumes at connecting the domain.", nil)
 		}
-		if err := r.sleep(ctx, pollEvery); err != nil {
-			return r.fail(ctx, err, "")
+		if err := r.pause(ctx, pollEvery); err != nil {
+			return err
 		}
 	}
 	return nil

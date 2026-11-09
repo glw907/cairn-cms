@@ -253,7 +253,9 @@ const (
 	MinNodeMajor = 24
 	// HTTPSLimit is how long the domain step waits for the site to answer over HTTPS.
 	HTTPSLimit = 15 * time.Minute
-	// DeployLimit is how long the first deploy may take, run and Worker together.
+	// DeployLimit is how long the first deploy may take, the Actions run and the Worker's
+	// appearance together. The design's limits table sets no bound for this step, so this one is
+	// the implementer's.
 	DeployLimit = 30 * time.Minute
 	// chainSlack pads each browser wait past the chain's limit. The loopback's own clock stops the
 	// chain at the limit once the tab opens; this deadline covers a tab that never opens.
@@ -506,6 +508,15 @@ func (r *run) sleep(ctx context.Context, d time.Duration) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+// pause waits one poll of d and then refreshes the Cloudflare grant once it has aged, so a long
+// wait inside a step never reaches a Cloudflare call on a lapsed access token.
+func (r *run) pause(ctx context.Context, d time.Duration) error {
+	if err := r.sleep(ctx, d); err != nil {
+		return r.fail(ctx, err, "")
+	}
+	return r.freshGrant(ctx)
 }
 
 // await waits for one callback with a deadline, so a tab that never opens still ends the wait.

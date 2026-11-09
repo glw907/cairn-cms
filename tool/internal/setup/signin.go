@@ -134,8 +134,8 @@ func (r *run) watchLink(ctx context.Context, link issued) (used bool, err error)
 		if len(res) == 1 && len(res[0].Results) == 0 {
 			return true, nil
 		}
-		if err := r.sleep(ctx, signInPoll); err != nil {
-			return false, r.fail(ctx, err, "")
+		if err := r.pause(ctx, signInPoll); err != nil {
+			return false, err
 		}
 	}
 	return false, nil

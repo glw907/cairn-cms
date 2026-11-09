@@ -137,7 +137,10 @@ type fakeCFAuth struct {
 	err        error
 	refreshErr error
 	revokeErr  error
-	verifiers  []string
+	// revokeErrFor, when it names a token, is the error that token's revoke returns in place of
+	// revokeErr.
+	revokeErrFor map[string]error
+	verifiers    []string
 	issued     []providers.OAuthToken
 	refreshes  []string
 	revoked    []string
@@ -181,6 +184,9 @@ func (f *fakeCFAuth) Refresh(ctx context.Context, refreshToken string) (*provide
 
 func (f *fakeCFAuth) Revoke(_ context.Context, token string) error {
 	f.revoked = append(f.revoked, token)
+	if err, ok := f.revokeErrFor[token]; ok {
+		return err
+	}
 	return f.revokeErr
 }
 
@@ -553,6 +559,9 @@ type fakeGH struct {
 	// owner CreateRepo reports.
 	public      map[string]bool
 	createOwner string
+	// userLogin, when set, is the account the user token belongs to; otherwise it is the App's
+	// owner.
+	userLogin string
 	// afterCreate runs once the repository exists, before CreateRepo returns.
 	afterCreate func()
 	// secretOnEmpty reports, for each Actions secret stored, whether the repository then held no
@@ -640,6 +649,20 @@ func (c ghClient) CreateRepo(ctx context.Context, name string) (providers.Reposi
 		}
 	}
 	return r, nil
+}
+
+// UserLogin reports the account the user token belongs to, as GitHub's GET /user does.
+func (c ghClient) UserLogin(ctx context.Context) (string, error) {
+	if err := c.note(ctx, "user"); err != nil {
+		return "", err
+	}
+	if isJWT(c.cred) || isInstallationToken(c.cred) || c.cred.Reveal() == "" {
+		c.f.t.Error("UserLogin ran without the user token")
+	}
+	if c.f.userLogin != "" {
+		return c.f.userLogin, nil
+	}
+	return c.f.app.OwnerLogin, nil
 }
 
 func (f *fakeGH) repoNamed(name string) providers.Repository {

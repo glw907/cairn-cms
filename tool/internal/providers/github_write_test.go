@@ -339,6 +339,31 @@ func TestRepoNamed(t *testing.T) {
 	})
 }
 
+func TestUserLogin(t *testing.T) {
+	t.Run("signed in", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/user": fixtureReply(t, "user_get.ok.200.json")})
+		login, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background())
+		if err != nil || login != "example-owner" {
+			t.Errorf("UserLogin = %q, %v; want example-owner", login, err)
+		}
+		if rt.calls[0].auth != "Bearer utok" {
+			t.Errorf("auth = %q", rt.calls[0].auth)
+		}
+	})
+	t.Run("refused", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/user": fixtureReply(t, "app_installations.bad-credentials.401.json")})
+		if _, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background()); httpStatusOf(err) != 401 {
+			t.Errorf("err = %v, want the 401", err)
+		}
+	})
+	t.Run("no login", func(t *testing.T) {
+		rt := routes(map[string]reply{"GET api.github.com/user": {200, []byte(`{"id":1}`)}})
+		if login, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background()); err == nil {
+			t.Errorf("UserLogin = %q with no error, want a body without a login refused", login)
+		}
+	})
+}
+
 // httpStatusOf is the status a GitHubError carries, or 0.
 func httpStatusOf(err error) int {
 	if ge, ok := errors.AsType[*GitHubError](err); ok {

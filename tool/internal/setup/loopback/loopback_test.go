@@ -505,9 +505,9 @@ func TestCallbackBeforeWaitIsKept(t *testing.T) {
 }
 
 // TestCallbacksNeedTheSession pins that a callback answers only the browser holding the session
-// cookie: a request without it, whether another process or another site's top-level navigation,
-// is refused, leaves the route armed, and delivers nothing, and a replay after the real callback
-// finds the route closed.
+// cookie: a request without it, whether another process or a browser that never opened the tab,
+// is refused with a page that says where to finish, leaves the route armed, and delivers nothing,
+// and a replay after the real callback finds the route closed.
 func TestCallbacksNeedTheSession(t *testing.T) {
 	routes := []struct {
 		route Route
@@ -529,11 +529,19 @@ func TestCallbacksNeedTheSession(t *testing.T) {
 				edit func(*http.Request)
 			}{
 				{"no Sec-Fetch headers", nil},
-				{"a cross-site navigation", browserHeaders("cross-site", "navigate")},
+				{"a provider's redirect in a browser without the cookie", browserHeaders("cross-site", "navigate")},
 			} {
-				resp, _ := h.bare(http.MethodGet, target, c.edit)
+				resp, body := h.bare(http.MethodGet, target, c.edit)
 				if resp.StatusCode != http.StatusForbidden {
 					t.Errorf("without the cookie from %s: status %d, want 403", c.name, resp.StatusCode)
+				}
+				if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") ||
+					!strings.Contains(body, "This browser did not start setup. Finish the approval in the browser tab that setup opened, or open the provider's link in that browser.") ||
+					!strings.Contains(body, "cairn · Field Notes") {
+					t.Errorf("without the cookie from %s: want the other-browser page, got %q\n%s", c.name, resp.Header.Get("Content-Type"), body)
+				}
+				if strings.Contains(body, nonce) || strings.Contains(body, "code=") {
+					t.Errorf("the other-browser page echoes the request:\n%s", body)
 				}
 				if cb, ok := h.delivered(rt.route); ok {
 					t.Fatalf("a callback without the cookie reached the runner: %+v", cb)
@@ -623,7 +631,10 @@ func TestRootPages(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("done.html: status %d", resp.StatusCode)
 	}
-	for _, want := range []string{"Approvals complete", "set up Field Notes", "fetch('/next'"} {
+	// A 404 from /next means the session is spent or gone, so the page sends the owner to the
+	// terminal rather than polling on in silence.
+	for _, want := range []string{"Approvals complete", "set up Field Notes", "fetch('/next'",
+		"Check your terminal: setup shows what to do next.", "r.status === 404"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("done.html lacks %q", want)
 		}
@@ -708,21 +719,23 @@ func TestTheGoRouteAnswersOnlyTheOwnerWhileArmed(t *testing.T) {
 		anon  bool
 		edit  func(*http.Request)
 		want  int
+		// explained reports that the refusal carries the page asking for a current browser.
+		explained bool
 	}{
-		{"before any page", func(h *harness) { h.open() }, false, nil, http.StatusNotFound},
+		{"before any page", func(h *harness) { h.open() }, false, nil, http.StatusNotFound, false},
 		{"with the route unarmed", func(h *harness) {
 			if err := h.s.Show(ConsentPage(consentAuthorize)); err != nil {
 				h.t.Fatalf("Show consent: %v", err)
 			}
 			h.open()
-		}, false, nil, http.StatusNotFound},
+		}, false, nil, http.StatusNotFound, false},
 		{"on the redirect page", func(h *harness) {
 			h.arm(CloudflareCallback)
 			if err := h.s.Show(RedirectPage(consentAuthorize)); err != nil {
 				h.t.Fatalf("Show redirect: %v", err)
 			}
 			h.open()
-		}, false, nil, http.StatusNotFound},
+		}, false, nil, http.StatusNotFound, false},
 		{"after the callback landed", func(h *harness) {
 			nonce := h.arm(CloudflareCallback)
 			if err := h.s.Show(ConsentPage(consentAuthorize)); err != nil {
@@ -730,23 +743,25 @@ func TestTheGoRouteAnswersOnlyTheOwnerWhileArmed(t *testing.T) {
 			}
 			h.open()
 			h.get("/cloudflare/callback?code=abc&state=" + nonce)
-		}, false, nil, http.StatusNotFound},
+		}, false, nil, http.StatusNotFound, false},
 		{"after done", func(h *harness) {
 			shown(h)
 			if err := h.s.Show(DonePage()); err != nil {
 				h.t.Fatalf("Show done: %v", err)
 			}
-		}, false, nil, http.StatusNotFound},
-		{"without the cookie", shown, true, nil, http.StatusNotFound},
-		{"from a cross-site link", shown, false, browserHeaders("cross-site", "navigate"), http.StatusNotFound},
-		{"from a same-site page", shown, false, browserHeaders("same-site", "navigate"), http.StatusNotFound},
-		// A tool replaying the cookie sends no Fetch Metadata, so the headers must be present.
-		{"with no Sec-Fetch headers", shown, false, nil, http.StatusNotFound},
-		{"with no Sec-Fetch-Mode", shown, false, func(r *http.Request) { r.Header.Set("Sec-Fetch-Site", "same-origin") }, http.StatusNotFound},
-		{"with no Sec-Fetch-Site", shown, false, func(r *http.Request) { r.Header.Set("Sec-Fetch-Mode", "navigate") }, http.StatusNotFound},
-		{"fetched by a same-origin script", shown, false, browserHeaders("same-origin", "cors"), http.StatusNotFound},
-		{"as a cross-site image", shown, false, browserHeaders("cross-site", "no-cors"), http.StatusNotFound},
-		{"under a rebound Host", shown, false, func(r *http.Request) { r.Host = "evil.example:" + r.URL.Port() }, http.StatusForbidden},
+		}, false, nil, http.StatusNotFound, false},
+		{"without the cookie", shown, true, nil, http.StatusNotFound, false},
+		{"from a cross-site link", shown, false, browserHeaders("cross-site", "navigate"), http.StatusNotFound, false},
+		{"from a same-site page", shown, false, browserHeaders("same-site", "navigate"), http.StatusNotFound, false},
+		// A tool replaying the cookie sends no Fetch Metadata, so the headers must be present. An
+		// older browser or a privacy extension sends none either, so that refusal says what to use.
+		{"with no Sec-Fetch headers", shown, false, nil, http.StatusNotFound, true},
+		{"with no Sec-Fetch-Mode", shown, false, func(r *http.Request) { r.Header.Set("Sec-Fetch-Site", "same-origin") }, http.StatusNotFound, true},
+		{"with no Sec-Fetch-Site", shown, false, func(r *http.Request) { r.Header.Set("Sec-Fetch-Mode", "navigate") }, http.StatusNotFound, true},
+		{"fetched by a same-origin script", shown, false, browserHeaders("same-origin", "cors"), http.StatusNotFound, false},
+		{"fetched with no Sec-Fetch-Site", shown, false, func(r *http.Request) { r.Header.Set("Sec-Fetch-Mode", "cors") }, http.StatusNotFound, false},
+		{"as a cross-site image", shown, false, browserHeaders("cross-site", "no-cors"), http.StatusNotFound, false},
+		{"under a rebound Host", shown, false, func(r *http.Request) { r.Host = "evil.example:" + r.URL.Port() }, http.StatusForbidden, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -762,6 +777,10 @@ func TestTheGoRouteAnswersOnlyTheOwnerWhileArmed(t *testing.T) {
 			}
 			if loc := resp.Header.Get("Location"); loc != "" || strings.Contains(body, "dash.cloudflare.com") {
 				t.Errorf("a refused request learned the authorize URL: Location %q", loc)
+			}
+			const oldBrowser = "This browser does not send the information setup needs to keep your approval safe. Use a current Chrome, Edge, Firefox, or Safari."
+			if got := strings.Contains(body, oldBrowser); got != tt.explained {
+				t.Errorf("the refusal carries the current-browser page: %v, want %v\n%s", got, tt.explained, body)
 			}
 		})
 	}
@@ -1065,8 +1084,9 @@ func TestNext(t *testing.T) {
 		}},
 		{"a same-origin navigation", browserHeaders("same-origin", "navigate", withCookie(cookie.Value))},
 	} {
-		if resp, _ := h.bare(http.MethodGet, "/next", c.edit); resp.StatusCode != http.StatusNotFound {
-			t.Errorf("next with the cookie and %s: status %d, want 404", c.name, resp.StatusCode)
+		// done.html reads only the status, so a refusal here carries no page.
+		if resp, body := h.bare(http.MethodGet, "/next", c.edit); resp.StatusCode != http.StatusNotFound || strings.Contains(body, "<html") {
+			t.Errorf("next with the cookie and %s: status %d, want a bare 404\n%s", c.name, resp.StatusCode, body)
 		}
 	}
 	resp, body := h.bare(http.MethodGet, "/next", poll)

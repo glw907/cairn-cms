@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"slices"
 	"strings"
@@ -33,11 +34,14 @@ func TestNewTokenIsTheEngineShape(t *testing.T) {
 	}
 }
 
-// migrationColumns reads the engine's migrations into each table's columns, with whether the
+// engineMigrations is the engine's migrations folder.
+var engineMigrations = filepath.Join("..", "..", "..", "migrations")
+
+// migrationColumns reads the migrations in dir into each table's columns, with whether the
 // column is NOT NULL without a default, following the CREATE, ADD COLUMN, and RENAME statements.
-func migrationColumns(t *testing.T) map[string]map[string]bool {
+func migrationColumns(t *testing.T, dir string) map[string]map[string]bool {
 	t.Helper()
-	files, err := filepath.Glob(filepath.Join("..", "..", "..", "migrations", "*.sql"))
+	files, err := filepath.Glob(filepath.Join(dir, "*.sql"))
 	if err != nil || len(files) == 0 {
 		t.Fatalf("no migrations found: %v", err)
 	}
@@ -53,7 +57,7 @@ func migrationColumns(t *testing.T) map[string]map[string]bool {
 			t.Fatal(err)
 		}
 		var lines []string
-		for l := range strings.SplitSeq(string(b), "\n") {
+		for l := range strings.SplitSeq(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n") {
 			if !strings.HasPrefix(strings.TrimSpace(l), "--") {
 				lines = append(lines, l)
 			}
@@ -98,8 +102,31 @@ func migrationColumns(t *testing.T) map[string]map[string]bool {
 	return tables
 }
 
+// TestMigrationColumnsReadsCRLF holds the parser to a Windows checkout, which can turn the
+// migrations' line endings into CRLF.
+func TestMigrationColumnsReadsCRLF(t *testing.T) {
+	files, err := filepath.Glob(filepath.Join(engineMigrations, "*.sql"))
+	if err != nil || len(files) == 0 {
+		t.Fatalf("no migrations found: %v", err)
+	}
+	dir := t.TempDir()
+	for _, f := range files {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		crlf := strings.ReplaceAll(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n", "\r\n")
+		if err := os.WriteFile(filepath.Join(dir, filepath.Base(f)), []byte(crlf), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got, want := migrationColumns(t, dir), migrationColumns(t, engineMigrations); !reflect.DeepEqual(got, want) {
+		t.Errorf("CRLF migrations read as %v, want %v", got, want)
+	}
+}
+
 func TestTheSignInBatchMatchesTheMigrations(t *testing.T) {
-	tables := migrationColumns(t)
+	tables := migrationColumns(t, engineMigrations)
 	insert := regexp.MustCompile(`INSERT INTO (\w+) \(([^)]*)\)`)
 	for _, sql := range []string{sqlInsertOwner, sqlInsertToken} {
 		m := insert.FindStringSubmatch(sql)

@@ -6,7 +6,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import postcss from 'postcss';
 import { repoRoot } from '../repo-root.mjs';
-import { buildTheme, validateManifest, validateTokens } from './build-tokens.mjs';
+import { buildTheme, orphanedOptionSheets, validateManifest, validateTokens } from './build-tokens.mjs';
 import { CONTRACT, declaredByMode, filesUnder, globRegExp, picksOf } from './theme-contract.mjs';
 import { layIn } from './lay-in.mjs';
 import { makeShowcaseCopy } from '../lab/theme-fixture-copy.mjs';
@@ -140,9 +140,11 @@ export const STATIC_RULES = {
     } catch {
       return [];
     }
-    return Object.entries(outputs)
+    const stale = Object.entries(outputs)
       .filter(([rel, text]) => !existsSync(path.join(dir, rel)) || readFileSync(path.join(dir, rel), 'utf8') !== text)
       .map(([rel]) => ({ file: rel, message: 'the built file is stale: run scripts/theme/build-tokens.mjs' }));
+    const orphaned = orphanedOptionSheets(dir, outputs).map((rel) => ({ file: rel, message: 'no option value builds this sheet: delete it' }));
+    return [...stale, ...orphaned];
   },
 
   'tokens-required'({ dir, manifest }) {

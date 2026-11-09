@@ -33,12 +33,18 @@
 - [ ] **#413** Chassis roles hold only at `:root`, so a nested `[data-theme]` subtree falls back to the chassis defaults `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The same limit already held for `--cairn-caption-tracking`; the scroll cue resolves `--cairn-code-bg` at `:root`, and the role comment says so. Found by G1's whole-branch review (PR #207).
   Placement: when a theme or site needs a nested theme scope.
-- [ ] **#414** `build-tokens.mjs --check` misses an `options/<key>/<value>.css` left behind after its option value is removed `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
-  Found by G1's whole-branch review (PR #207). The check should fail on an orphaned option sheet.
-  Placement: with G2's theme check, or the next tokens-build change.
 - [ ] **#415** Test the lay-in's overlap check on a symlinked theme directory `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The check compares real paths since G1's review, but no test covers a symlinked theme. Found by G1's whole-branch review (PR #207).
   Placement: with the next `scripts/theme/lay-in.mjs` change.
+- [ ] **#416** Retire the showcase's `/styleguide` route once the viewer's directives page carries its checks `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The viewer's conformance pages show every directive under any theme, so `/styleguide` is a second home for the same job. It still holds 10 of the 51 port baselines (`site-visual.spec.ts`), the equivalence spec's focus pages, the only axe run over every directive (`e2e/styleguide.spec.ts`, run by `design.yml`), and a primary-menu entry in `site.config.yaml`. Retire it in this order: port the axe run to the viewer's directives page, move the 10 baselines, then delete the route. Found in theme-garden pass G2 (plan "Calls settled here").
+  Placement: a theme-garden pass after G3, or the next showcase pass.
+- [ ] **#417** Make the theme viewer usable by a theme designer outside the house `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The viewer needs a clone of this repository and runs on a showcase copy. A designer with no clone should run it from the published package, or from a clone, with one docs page and no house-only path (Geoff, 2026-11-09; the design says the viewer "may be used later" by outsiders). Decide what ships (the conformance set, the viewer scripts, and Chromium as a peer), and how the viewer finds the engine when the package is the only install. It already needs no Cloudflare account. Found in theme-garden pass G2.
+  Placement: before the first outside theme is accepted into the catalog.
+- [ ] **#418** `rehypeSlug` runs after the sanitize step, so a heading id is unprefixed and can collide with a footnote id `#improvement` `#cairn-cms` *(2026-11-09)*
+  A heading titled `user-content-fn-1` slugs to the id of the footnote definition. The author can only hijack their own page, and an unprefixed id also creates a `window[id]` named property. Fix: slug before the sanitize step, or give slug ids the sanitize prefix. Found by the web-auth-security read of theme-garden G2's T2.1 (`src/lib/render/pipeline.ts`).
+  Placement: with the next `src/lib/render/` change; needs its own scope call.
 - [ ] **#410** Ship the tokens build to a scaffolded site, or keep `tokens.json` out of the scaffold `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The lay-in copies a theme's `tokens/tokens.json` and `resolver.json` into a scaffolded site's `src/theme/tokens/`, but `scripts/theme/build-tokens.mjs` ships only in this repository, so a site developer retunes `src/theme/tokens/tokens.css` by hand and `tokens.json` drifts from it. Found in theme-garden pass G1 (register-check on `retheme-by-tokens.md`). Decide whether the build ships in the template or the scaffold leaves `tokens.json` out.
   Placement: engine batch, with the theme-garden setup pass (design step 4).
@@ -378,6 +384,8 @@
 - **#185** Re-capture the setup transcript with a neutral scratch path and host: the fixtures retire with the wizard; the goldens replace them (Geoff, 2026-11-08, cairn-setup plan)
 
 ## Done
+- [x] **#414** `build-tokens.mjs --check` misses an `options/<key>/<value>.css` left behind after its option value is removed `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  Found by G1's whole-branch review (PR #207). Done in theme-garden G2: `--check` exits 1 on an orphaned option sheet, and the theme check's `tokens-stale` rule fails on one.
 
 - [x] **#387** A markdown footnote renders a link to an id the page does not carry, which fails the prerender `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-08 → 2026-11-09)*
   Found in the cairn-new-4 pass while drafting the every-element starter post. A post with `[^1]` and its definition builds a footnote link to `#user-content-fn-1`, and the page holds no element with that id, so the template's build fails with `prerender_missing_id`. The render pipeline runs `remark-gfm` (`src/lib/render/pipeline.ts:178`) and the sanitize step (`src/lib/render/sanitize-schema.ts`), and the mismatch points at one of them rewriting the id or the href but not both. Reproduce with one footnote in any post and `npm run build` in the showcase. The starter post omits footnotes until this is fixed.

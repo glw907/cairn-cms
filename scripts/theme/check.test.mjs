@@ -92,6 +92,11 @@ const CASES = [
     (dir) => editJson(dir, 'tokens/tokens.json', (t) => { t.base['text-step-0'] = { $value: 'clamp(1rem, 0.5rem + 1vw, 1.25rem)' }; }),
   ],
   [
+    'an option sheet is left behind after its value was removed (#414)',
+    'tokens-stale',
+    (dir) => write(dir, 'options/accent/moss.css', read(dir, 'options/accent/tide.css')),
+  ],
+  [
     'a required token is missing in dark',
     'tokens-required',
     async (dir) => {

@@ -39,7 +39,7 @@
 // each value as a private `--cairn-opt-<name>-<mode>` property. The mode sheet reads those private
 // properties for every token an option changes, with the base value as the fallback, so the pinned
 // state shows the chosen option's value for that mode and no option sheet changes nothing.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -421,6 +421,22 @@ export async function buildTheme(themeDir) {
   return outputs;
 }
 
+/**
+ * The option sheets a theme directory holds that the build no longer writes, such as the sheet of an
+ * option value that was removed.
+ * @param {string} themeDir
+ * @param {Record<string, string>} outputs the build's files, keyed by path relative to the theme directory
+ * @returns {string[]} the orphaned sheets, as paths relative to the theme directory
+ */
+export function orphanedOptionSheets(themeDir, outputs) {
+  const dir = path.join(themeDir, 'options');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.css'))
+    .map((entry) => path.relative(themeDir, path.join(entry.parentPath, entry.name)).split(path.sep).join('/'))
+    .filter((rel) => !(rel in outputs));
+}
+
 async function main(args) {
   const check = args.includes('--check');
   const [dir] = args.filter((a) => !a.startsWith('--'));
@@ -445,6 +461,12 @@ async function main(args) {
     else {
       await mkdir(path.dirname(file), { recursive: true });
       await writeFile(file, text);
+    }
+  }
+  if (check) {
+    for (const rel of orphanedOptionSheets(path.resolve(dir), outputs)) {
+      stale++;
+      console.error(`orphaned: ${rel} (no option value builds it)`);
     }
   }
   if (check && stale) {

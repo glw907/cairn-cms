@@ -105,7 +105,7 @@ func runTree(parent context.Context, d deps, out, errOut io.Writer, args []strin
 	cmd.SetErr(errOut)
 	cmd.SetArgs(args)
 
-	err := cmd.ExecuteContext(ctx)
+	err := executeThemed(ctx, d, cmd)
 	if err == nil {
 		return int(spine.VerdictOK)
 	}

@@ -338,6 +338,22 @@ func (gh *GitHub) ReadBackInstallation(ctx context.Context, appID, repoID int64)
 	return result, nil
 }
 
+// UserLogin returns the login of the account the credential acts for, through GET /user. The
+// credential must be the user token. A body without a login is an error, so a caller comparing
+// accounts never compares against an empty name.
+func (gh *GitHub) UserLogin(ctx context.Context) (string, error) {
+	var out struct {
+		Login string `json:"login"`
+	}
+	if err := gh.getJSON(ctx, "/user", &out); err != nil {
+		return "", err
+	}
+	if out.Login == "" {
+		return "", errors.New("github: the signed-in user has no login")
+	}
+	return out.Login, nil
+}
+
 // findUserInstallation walks GET /user/installations for the one installation of appID.
 func (gh *GitHub) findUserInstallation(ctx context.Context, appID int64) (Installation, error) {
 	for page := 1; page <= maxPages; page++ {

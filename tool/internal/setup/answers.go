@@ -43,4 +43,5 @@ var (
 	errPosture = errors.New("posture must be decline or invite")
 	errHost    = errors.New("address is not the zone or a subdomain of it")
 	errSuffix  = errors.New("suffix must be 0 or at least 2")
+	errNoEnv   = errors.New("no environment for git and npm (set Config.Env to the process's environment by name)")
 )

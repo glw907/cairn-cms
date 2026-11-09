@@ -60,6 +60,7 @@ type CloudflareAPI interface {
 // chosen when Config.GitHub builds it.
 type GitHubAPI interface {
 	ConvertManifest(ctx context.Context, code string) (providers.AppRecord, error)
+	UserLogin(ctx context.Context) (string, error)
 	CreateRepo(ctx context.Context, name string) (providers.Repository, error)
 	RepoNamed(ctx context.Context, owner, name string) (*providers.Repository, error)
 	AppInstallations(ctx context.Context) ([]providers.Installation, error)
@@ -180,7 +181,8 @@ type Config struct {
 	// Dir is the absolute directory setup runs in; the site folder is made inside it.
 	Dir string
 	// GOOS and Env feed the remote-session check: a runtime.GOOS value and the environment by
-	// name. Env is also the environment git and npm start from, minus every token variable.
+	// name. Env is also the environment git and npm start from, minus every token variable. Run
+	// refuses a nil Env, which would start git and npm with no PATH, HOME, or proxy settings.
 	GOOS string
 	Env  map[string]string
 	// Resume, when set, continues that record: the run keeps its id, names, and approvals, and
@@ -257,8 +259,16 @@ type Done struct {
 	// InstallFailed reports that `npm install` failed in the site folder, a next step for the
 	// done screen.
 	InstallFailed bool
-	// RevokeFailed reports that Cloudflare refused to revoke setup's grant. The keyring entries
-	// are deleted either way.
+	// ScriptsSkipped reports that setup installed the site's dependencies with
+	// `npm install --ignore-scripts`, in this run or an earlier one, so no dependency's install
+	// script ran. The done screen tells the owner to run `npm rebuild` if a dependency needs its
+	// script.
+	ScriptsSkipped bool
+	// RevokeFailed reports that Cloudflare refused to revoke the grant's refresh token. A refused
+	// access-token revoke alone is not reported: with the refresh token revoked no new access
+	// token can be minted, RFC 7009 2.1 says the server should end the access token with it, and
+	// the access token lapses within its hour regardless. The keyring entries are deleted either
+	// way.
 	RevokeFailed bool
 	// KeysLeft reports that a keyring entry could not be deleted.
 	KeysLeft bool
@@ -363,6 +373,9 @@ func Run(ctx context.Context, cfg Config) (Result, error) {
 	}
 	if cfg.Answers.Posture != Decline && cfg.Answers.Posture != Invite {
 		return Result{}, errPosture
+	}
+	if cfg.Env == nil {
+		return Result{}, errNoEnv
 	}
 	r := &run{cfg: cfg}
 	if cfg.Resume != nil {
@@ -527,18 +540,22 @@ func (r *run) keepKeys() {
 
 // finish ends a run that reached the sign-in: it revokes the Cloudflare grant's access and
 // refresh tokens and deletes every keyring entry the record names, then records that none is
-// kept. A refused revoke of either token is reported on the done screen, never a stop, and the
-// entries go either way. The GitHub tokens live only in memory and end with the process.
+// kept. A refused refresh-token revoke is reported on the done screen, never a stop, and the
+// entries go either way.
+//
+// The GitHub tokens are never persisted, but they do not end with the process. The installation
+// token stays valid up to its hour, and the user-to-server token up to the 8 hours GitHub gives
+// an App's user token; setup holds no call that revokes either one.
 func (r *run) finish(ctx context.Context) {
 	r.waitInstall()
 	r.out.URL = "https://" + r.host
 	// RFC 7009 2.1 says revoking a refresh token "SHOULD" also invalidate the grant's access
 	// tokens, which is not a must, so the access token is revoked separately, first, while the
-	// grant still stands.
-	for _, tok := range []string{r.pair.Access, r.pair.Refresh} {
-		if err := r.cfg.CloudflareOAuth.Revoke(ctx, tok); err != nil {
-			r.out.RevokeFailed = true
-		}
+	// grant still stands. Only the refresh token's revoke is reported, since once it is revoked
+	// the grant mints no new access token; no event carries the access token's.
+	_ = r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Access)
+	if err := r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Refresh); err != nil {
+		r.out.RevokeFailed = true
 	}
 	if err := r.cfg.Vault.DeleteEntries(r.rec.Setup.KeyringEntries); err != nil {
 		r.out.KeysLeft = true

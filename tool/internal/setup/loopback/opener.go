@@ -70,12 +70,14 @@ func Launcher(goos string, env map[string]string, url string) []string {
 // Open runs argv, a command line from Launcher, with its standard streams on the null device. A
 // text-mode browser then can neither read nor draw on the owner's terminal. The launcher runs in a
 // process group of its own, so Ctrl+C in setup's terminal never reaches a browser it started. Its
-// environment is setup's without any variable whose name ends in _TOKEN, _SECRET, or _PASSWORD,
-// so a browser it starts inherits no credential the owner's shell holds.
+// environment is childenv.ScrubSecrets of setup's, so a browser it starts inherits no credential
+// the owner's shell holds.
 //
 // The URL, and the one-time key it carries, is an argument to the launcher, so another process
-// of the owner's can read it in the process list while the launcher runs. That exposure is
-// residual: the key opens the session once, and the owner's browser spends it first.
+// of the owner's can read it in the process list. When the launcher starts a fresh browser
+// process rather than handing the URL to a running one, the URL stays in that browser's argv for
+// as long as the browser runs, well past setup. That exposure is residual: the key opens the
+// session once, and the owner's browser spends it first.
 //
 // An empty argv, a missing launcher, or one that exits non-zero returns an error that names the
 // launcher by its base name and quotes nothing else from argv, so never the URL; the view shows it

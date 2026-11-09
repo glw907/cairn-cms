@@ -110,7 +110,9 @@ its `otherDirectRequires` gains the entry in the task that adds the require.
 
 - The spec's public-name check before approval 3 is not built. It needs the owner's
   login, which setup learns only from the user token approval 3 issues, so the 422 on
-  create is the only clash check for the repository.
+  create is the only clash check for the repository. Before the create, setup reads
+  `GET /user` with that token and stops unless its account is the App's owner, so a
+  token from another account creates nothing and walks no suffixes.
 - R2 adoption is not possible through the REST API, which offers no read of a
   bucket's objects. A bucket intent with no recorded id stops with the not-ours
   failure, which says how to delete the bucket.
@@ -131,9 +133,15 @@ its `otherDirectRequires` gains the entry in the task that adds the require.
   scoped to a port, so a process on the same machine that can observe the browser's
   localhost traffic, or collect the cookie on another port and forge a browser's
   headers, is out of scope. A tool that replays the cookie without Fetch Metadata is
-  refused.
+  refused. The Lax cookie keeps out other processes and other sites' subresource
+  requests, but a browser sends it on a hostile page's top-level navigation. The state
+  nonce stops that on the Cloudflare and manifest callbacks. The install callback
+  carries no state, so such a page can spend it: the runner's code exchange then fails
+  and the tab goes back to the install page.
 - Setup runs `npm install --ignore-scripts`, and every git call it makes points
-  `core.hooksPath` at an empty folder and pushes with `--no-verify`. Those run while
+  `core.hooksPath` at an empty folder, turns `core.fsmonitor` off, drops each variable
+  that points git at another repository, config, or program, and pushes with
+  `--no-verify`. The template extractor refuses any `.git` path. Those run while
   the keyring holds the Cloudflare grant and the GitHub App key, and a dependency's
   install script or a planted hook would run with the owner's account. The install
   scripts the showcase's lockfile marks (esbuild, workerd, and `@parcel/watcher`, with

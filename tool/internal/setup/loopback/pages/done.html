@@ -49,13 +49,18 @@
     <li><span class="num">3</span><span>GitHub: Install &amp; Authorize</span></li>
     <li><span class="num">4</span><span>GitHub: Approve</span></li>
   </ol>
-  <p class="quiet">Keep this tab open. When setup finishes, your site opens here and you're signed in.</p>
+  <p class="quiet" id="waiting">Keep this tab open. When setup finishes, your site opens here and you're signed in.</p>
+  <p class="quiet" id="lost" hidden>Check your terminal: setup shows what to do next.</p>
 </main>
 <script nonce="{{.Nonce}}">
   (function poll() {
     fetch('/next', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
       if (r.status === 200) { return r.json().then(function (b) { location.replace(b.url); }); }
-      if (r.status === 204) { setTimeout(poll, 2000); }
+      if (r.status === 204) { setTimeout(poll, 2000); return; }
+      if (r.status === 404) {
+        document.getElementById('waiting').hidden = true;
+        document.getElementById('lost').hidden = false;
+      }
     }, function () { setTimeout(poll, 5000); });
   })();
 </script>

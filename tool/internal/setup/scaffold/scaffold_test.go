@@ -474,6 +474,27 @@ func TestScaffoldRefusesANonEmptyFolderAndBadValues(t *testing.T) {
 	}
 }
 
+// TestANilEnvironmentIsRefused pins that a scaffold given no environment stops before git runs
+// and leaves nothing behind, rather than running git with no PATH, HOME, or proxy settings.
+func TestANilEnvironmentIsRefused(t *testing.T) {
+	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
+	dir := filepath.Join(t.TempDir(), "site")
+	if _, err := Scaffold(t.Context(), Config{Template: tpl, Site: testSite(), Commit: testCommit(), Dir: dir}); err == nil || !strings.Contains(err.Error(), "environment") {
+		t.Errorf("Scaffold with a nil Env: err = %v, want a refusal naming the environment", err)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Errorf("Scaffold with a nil Env left %s behind", dir)
+	}
+	early := testSite()
+	early.DatabaseID = ""
+	if _, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Dir: dir}); err == nil {
+		t.Error("Write accepted a nil Env")
+	}
+	if _, err := Finalize(t.Context(), FinalizeConfig{Dir: t.TempDir(), Base: "abc", Site: testSite(), Commit: testCommit()}); err == nil || !strings.Contains(err.Error(), "environment") {
+		t.Errorf("Finalize with a nil Env: err = %v, want a refusal naming the environment", err)
+	}
+}
+
 // TestGitStartsFromTheInjectedEnvironment pins that the scaffold's git reads Config.Env, not
 // the process's environment: a config pair only Env carries reaches git init.
 func TestGitStartsFromTheInjectedEnvironment(t *testing.T) {

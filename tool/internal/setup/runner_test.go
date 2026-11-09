@@ -133,7 +133,7 @@ func TestAFullRunReachesDone(t *testing.T) {
 		t.Errorf("custom domains = %v", w.cf.attached)
 	}
 	if res.Done.URL != "https://carin-test-5.org" || !res.Done.SignedIn || !res.Done.Emailed || res.Done.NoSignIn ||
-		res.Done.InstallFailed || res.Done.RevokeFailed || res.Done.KeysLeft {
+		res.Done.InstallFailed || res.Done.RevokeFailed || res.Done.KeysLeft || !res.Done.ScriptsSkipped {
 		t.Errorf("done = %+v", res.Done)
 	}
 
@@ -150,19 +150,35 @@ func TestAFullRunReachesDone(t *testing.T) {
 }
 
 // TestARefusedRevokeIsReportedNotFatal pins that a revoke Cloudflare refuses still lets the run
-// finish, tries both tokens, and is said on the done screen.
+// finish and tries both tokens, and that the done screen reports a refusal only when the refresh
+// token's revoke fails: revoking the refresh token ends the grant (RFC 7009 2.1), so a refused
+// access-token revoke alone leaves nothing standing past the access token's hour.
 func TestARefusedRevokeIsReportedNotFatal(t *testing.T) {
-	w := newWorld(t)
-	w.cfAuth.revokeErr = &providers.OAuthError{Status: 403, Code: "access_denied"}
-	res, err := w.run(context.Background())
-	if err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if !res.Done.RevokeFailed || len(w.cfAuth.revoked) != 2 {
-		t.Errorf("done %+v after %d revokes, want both tried and the refusal reported", res.Done, len(w.cfAuth.revoked))
-	}
-	if left := w.vault.ofRun(); len(left) != 0 {
-		t.Errorf("keyring holds %v, want the entries deleted anyway", left)
+	refused := &providers.OAuthError{Status: 403, Code: "access_denied"}
+	tok := newWorld(t).cfAuth.tokens[0]
+	for _, tc := range []struct {
+		name   string
+		errFor map[string]error
+		want   bool
+	}{
+		{"both refused", map[string]error{tok.AccessToken: refused, tok.RefreshToken: refused}, true},
+		{"the refresh token refused", map[string]error{tok.RefreshToken: refused}, true},
+		{"the access token refused alone", map[string]error{tok.AccessToken: refused}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newWorld(t)
+			w.cfAuth.revokeErrFor = tc.errFor
+			res, err := w.run(context.Background())
+			if err != nil {
+				t.Fatalf("Run: %v", err)
+			}
+			if res.Done.RevokeFailed != tc.want || len(w.cfAuth.revoked) != 2 {
+				t.Errorf("done %+v after %d revokes, want both tried and RevokeFailed %v", res.Done, len(w.cfAuth.revoked), tc.want)
+			}
+			if left := w.vault.ofRun(); len(left) != 0 {
+				t.Errorf("keyring holds %v, want the entries deleted anyway", left)
+			}
+		})
 	}
 }
 
@@ -798,6 +814,100 @@ func TestARepositoryOnAnotherAccountStops(t *testing.T) {
 	}
 	if last, _ := w.saver.last(); last.GitHub.Repo.ID != 0 {
 		t.Errorf("record repository %+v, want none recorded", last.GitHub.Repo)
+	}
+}
+
+// TestAnotherAccountsApprovalCreatesNoRepository pins that the user token is read back before
+// the repository create: approval 3 given while signed in to GitHub as an account other than the
+// App's owner stops the run with nothing created on that account, and a resume taken the same way
+// stops again rather than walking the name suffixes.
+func TestAnotherAccountsApprovalCreatesNoRepository(t *testing.T) {
+	assertStop := func(t *testing.T, w *world, err error) {
+		t.Helper()
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "someone-else") || !strings.Contains(f.Happened, "example-owner") ||
+			!strings.Contains(f.Happened, w.gh.app.Slug) || !strings.Contains(f.Did, w.gh.app.Slug) ||
+			!strings.Contains(f.Do, "example-owner") || f.Left == "" {
+			t.Errorf("failure = %+v, want the four-part stop naming both accounts", f)
+		}
+		if w.gh.creates["repo"] != 0 || slices.ContainsFunc(w.log, func(l string) bool { return strings.HasPrefix(l, "gh:create:") }) {
+			t.Errorf("log %v: want no repository create", w.log)
+		}
+		if slices.ContainsFunc(w.log, func(l string) bool { return strings.Contains(l, "example-site-2") }) {
+			t.Errorf("log %v: want no suffixed name tried", w.log)
+		}
+		if ours := w.gh.ours(); len(ours) != 0 {
+			t.Errorf("installations left = %+v, want the all-repositories one deleted", ours)
+		}
+	}
+	t.Run("a new run", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userLogin = "someone-else"
+		_, err := w.run(context.Background())
+		assertStop(t, w, err)
+	})
+	t.Run("a resume", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		w.gh.userLogin = "someone-else"
+		w.gh.taken["example-site"] = true
+		_, err := w.resume()
+		assertStop(t, w, err)
+	})
+}
+
+// TestAnAppWithNoOwnerStops pins that setup never acts for an App whose owning account it does
+// not know, since every later account check compares against that owner: a conversion that names
+// no owner stops before any install, and so does a resumed record that names none.
+func TestAnAppWithNoOwnerStops(t *testing.T) {
+	t.Run("at the conversion", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.app.OwnerLogin = ""
+		_, err := w.run(context.Background())
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, w.gh.app.Slug) ||
+			!strings.Contains(f.Did, "https://github.com/settings/apps/"+w.gh.app.Slug) || f.Do == "" {
+			t.Errorf("failure = %+v, want the four-part stop with the App to delete", f)
+		}
+		if slices.Contains(w.log, "wait:"+string(loopback.GitHubCallback)) {
+			t.Errorf("log %v: want the stop before approval 3", w.log)
+		}
+	})
+	t.Run("on a resume", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.AppOwner = ""
+		w.saver.saves = append(w.saver.saves, rec)
+		_, err := w.resume()
+		f := failureOf(t, err)
+		if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, w.gh.app.Slug) ||
+			!strings.Contains(f.Do, "https://github.com/settings/apps/"+w.gh.app.Slug) || f.Did == "" {
+			t.Errorf("failure = %+v, want the four-part stop with the App to delete", f)
+		}
+		if w.gh.creates["repo"] != 0 || slices.Contains(w.log, "wait:"+string(loopback.GitHubCallback)) {
+			t.Errorf("log %v: want the stop before approval 3", w.log)
+		}
+		if last, _ := w.saver.last(); last.Setup.IDs.AppID != 0 {
+			t.Errorf("record App %d, want the App dropped so the next run creates one", last.Setup.IDs.AppID)
+		}
+	})
+}
+
+// TestANilEnvironmentIsRefused pins that a run given no environment stops before it does
+// anything, since git and npm would start with no PATH, HOME, or proxy settings.
+func TestANilEnvironmentIsRefused(t *testing.T) {
+	w := newWorld(t)
+	w.cfg.Env = nil
+	if _, err := w.run(context.Background()); err == nil || !strings.Contains(err.Error(), "environment") {
+		t.Errorf("Run with a nil Env: err = %v, want a refusal naming the environment", err)
+	}
+	if len(w.log) != 0 || len(w.saver.saves) != 0 {
+		t.Errorf("log %v, %d saves; want nothing done", w.log, len(w.saver.saves))
 	}
 }
 
@@ -1765,6 +1875,10 @@ func TestAResumePastTheFirstDeployInstallsTheDependencies(t *testing.T) {
 		}
 		if _, err := os.Stat(w.npmEnv); err == nil || res.Done.InstallFailed || !res.Record.Setup.DepsInstalled {
 			t.Errorf("npm ran again: %v; done %+v, record installed %v", err == nil, res.Done, res.Record.Setup.DepsInstalled)
+		}
+		// The earlier run's install skipped the lifecycle scripts too.
+		if !res.Done.ScriptsSkipped {
+			t.Errorf("done %+v, want the skipped scripts reported", res.Done)
 		}
 	})
 	t.Run("a finished run records the install", func(t *testing.T) {

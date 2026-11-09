@@ -3,6 +3,7 @@ package scaffold
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -18,11 +19,17 @@ type Commit struct {
 	Message     string
 }
 
+var errNoEnv = errors.New("scaffold: no environment for git; set Env, as the process's environment by name")
+
 // git runs git in dir from env, scrubbed of credentials, plus extra, capturing both output
 // streams. The owner's user and system git config are ignored, so a signing setting on the
 // owner's machine cannot stop or alter a commit, and core.hooksPath is a fresh empty folder, so
-// no hook in dir runs. Nothing git prints reaches the terminal; a failure carries its stderr.
+// no hook in dir runs. Nothing git prints reaches the terminal; a failure carries its stderr. A
+// nil env is refused: git would start without PATH, HOME, or the owner's proxy settings.
 func git(ctx context.Context, env map[string]string, dir string, extra []string, args ...string) (string, error) {
+	if env == nil {
+		return "", errNoEnv
+	}
 	hooks, err := os.MkdirTemp("", "cairn-no-hooks-")
 	if err != nil {
 		return "", fmt.Errorf("scaffold: make an empty hooks folder: %w", err)

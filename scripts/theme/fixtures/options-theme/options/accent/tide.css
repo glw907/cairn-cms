@@ -1,0 +1,21 @@
+/* The "tide" value of the "accent" option. Built from the theme's tokens by scripts/theme/build-tokens.mjs. Do not edit. */
+:where(:root),:root:has(input.theme-controller[value="opts"]:checked),[data-theme="opts"] {
+  --color-accent: oklch(50% 0.12 200);
+  --color-accent-content: oklch(99% 0.01 200);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-accent: oklch(75% 0.1 195);
+    --color-accent-content: oklch(22% 0.03 195);
+  }
+}
+:root:has(input.theme-controller[value="opts-dark"]:checked),[data-theme="opts-dark"] {
+  --color-accent: oklch(75% 0.1 195);
+  --color-accent-content: oklch(22% 0.03 195);
+}
+:root {
+  --cairn-opt-color-accent-light: oklch(50% 0.12 200);
+  --cairn-opt-color-accent-content-light: oklch(99% 0.01 200);
+  --cairn-opt-color-accent-dark: oklch(75% 0.1 195);
+  --cairn-opt-color-accent-content-dark: oklch(22% 0.03 195);
+}

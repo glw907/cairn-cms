@@ -1,9 +1,8 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 import postcss from 'postcss';
 import tailwind from '@tailwindcss/postcss';
@@ -23,7 +22,9 @@ async function readJson(file) {
 /** @type {string} */
 let work;
 before(async () => {
-  work = await mkdtemp(path.join(tmpdir(), 'cairn-build-tokens-'));
+  // Inside node_modules so the compile resolves tailwindcss and daisyui from the repository.
+  await mkdir(path.join(ROOT, 'node_modules/.cache'), { recursive: true });
+  work = await mkdtemp(path.join(ROOT, 'node_modules/.cache/cairn-build-tokens-'));
 });
 after(async () => {
   await rm(work, { recursive: true, force: true });
@@ -305,6 +306,10 @@ test('option and mode sheets read the right values in every state', async (t) =>
       `${value} + light pin, dark cookie`,
     );
   }
+
+  // The pin holds when the mode sheet comes first in the concatenation too.
+  const reversed = await open('both-reversed', ['modes/light.css', 'options/accent/tide.css']);
+  assert.equal((await read(reversed, { scheme: 'dark' }, '--color-accent'))['--color-accent'], ACCENT.tide.light);
 
   // The fixture's site.css banner rule reads the built tokens.
   const banner = await open('banner', []);

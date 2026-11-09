@@ -1,0 +1,15 @@
+/* The dark default: a visitor with no theme cookie sees the dark block, and the cookie still wins. Built from the theme's tokens by scripts/theme/build-tokens.mjs. Do not edit. */
+html:root:not([data-theme]) {
+  color-scheme: dark;
+  --color-base-100: oklch(24% 0 0);
+  --color-base-200: oklch(20% 0 0);
+  --color-base-content: oklch(92% 0 0);
+  --color-primary: oklch(74% 0.1 248);
+  --color-primary-content: oklch(22% 0.03 248);
+  --color-accent: var(--cairn-opt-color-accent-dark, oklch(76% 0.08 235));
+  --color-accent-content: var(--cairn-opt-color-accent-content-dark, oklch(22% 0.03 235));
+  --color-info: oklch(70% 0.1 235);
+  --cairn-info-ink: oklch(80% 0.1 235);
+  --radius-box: 0.5rem;
+  --depth: 0;
+}

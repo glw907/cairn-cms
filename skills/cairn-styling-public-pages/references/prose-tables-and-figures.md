@@ -15,7 +15,7 @@ Rendered markup:
 
 Reads:
 
-- The sheet styles `table-scroll` with `display: block` and `overflow-x: auto`, the pair that makes a wide table scroll. `prose.css` adds the edge shading and the focus outline.
+- The sheet styles `table-scroll` with `display: block` and `overflow-x: auto`, the pair that makes a wide table scroll. `prose.css` adds the edge shading and the focus outline. That shading is its own rule: the `--cairn-scroll-cue` role, which `none` turns off, drives the code block's cue and never the table's.
 - Table text reads `--text-step--1`. Rules read `--color-base-300` under the header and `--color-card-border` between rows. Even rows tint `--color-base-200`.
 - Placement classes `cairn-place-center`, `cairn-place-wide`, and `cairn-place-full` are the theme's to style. The figure directive page describes them.
 

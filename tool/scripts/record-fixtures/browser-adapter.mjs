@@ -148,21 +148,20 @@ export function showsRepo(text, owner, repo) {
  * @returns {Promise<void>}
  */
 export async function pickRepository(page, { owner, repo, search, fail, waitMs = 15_000, pollMs = 250 }) {
-  /** @type {import('playwright').ElementHandle | null} */
-  let option = null;
-  for (const deadline = Date.now() + waitMs; !option;) {
+  // The picker can re-render when the search response lands, so a handle found before that is
+  // stale: a failed click goes back to looking until the deadline instead of escaping the evidence.
+  let clicked = false;
+  for (const deadline = Date.now() + waitMs; !clicked;) {
     for (const handle of await page.locator('button, [role="button"]').elementHandles()) {
       if (!(await handle.isVisible().catch(() => false))) continue;
-      if (isRepoOption(await handle.innerText().catch(() => ''), owner, repo)) {
-        option = handle;
-        break;
-      }
+      if (!isRepoOption(await handle.innerText().catch(() => ''), owner, repo)) continue;
+      clicked = await handle.click().then(() => true, () => false);
+      break;
     }
-    if (option) break;
+    if (clicked) break;
     if (Date.now() > deadline) return fail('the repository picker never offered the run repository');
     await sleep(pollMs);
   }
-  await option.click();
   await page.keyboard.press('Escape');
   const install = page.getByRole('button', { name: /^install$/i });
   for (const deadline = Date.now() + waitMs; ;) {

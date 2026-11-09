@@ -801,6 +801,37 @@ test('the picker fails closed when only a sibling or another owner is offered', 
   assert.deepEqual(events, [], 'nothing is clicked');
 });
 
+test('a stale option handle is looked up again and a click that never works fails with evidence', async () => {
+  const stale = fakeInstallPage([`${OWNER}/${REPO} no description`]);
+  const realLocator = stale.page.locator.bind(stale.page);
+  let scans = 0;
+  stale.page.locator = (/** @type {string} */ selector) => {
+    const found = realLocator(selector);
+    if (selector === 'body') return found;
+    return {
+      elementHandles: async () => {
+        const handles = await found.elementHandles();
+        scans += 1;
+        if (scans === 1) return handles.map((/** @type {any} */ h) => ({ ...h, click: async () => { throw new Error('Element is not attached to the DOM'); } }));
+        return handles;
+      },
+    };
+  };
+  await pickRepository(stale.page, { owner: OWNER, repo: REPO, search: stale.search, fail: failWith, waitMs: 200, pollMs: 5 });
+  assert.equal(stale.events.filter((e) => e.startsWith('click ')).length, 1, 'the second look clicks once');
+
+  const broken = fakeInstallPage([`${OWNER}/${REPO} no description`]);
+  const brokenLocator = broken.page.locator.bind(broken.page);
+  broken.page.locator = (/** @type {string} */ selector) => {
+    const found = brokenLocator(selector);
+    if (selector === 'body') return found;
+    return {
+      elementHandles: async () => (await found.elementHandles()).map((/** @type {any} */ h) => ({ ...h, click: async () => { throw new Error('detached'); } })),
+    };
+  };
+  await assert.rejects(pickRepository(broken.page, { owner: OWNER, repo: REPO, search: broken.search, fail: failWith, waitMs: 30, pollMs: 5 }), /never offered the run repository/);
+});
+
 test('the picker fails closed when the page never shows the repository selected', async () => {
   const { page, search } = fakeInstallPage([`${OWNER}/${REPO} no description`], { selectionShows: false });
   await assert.rejects(pickRepository(page, { owner: OWNER, repo: REPO, search, fail: failWith, waitMs: 30, pollMs: 5 }), /never showed as selected/);

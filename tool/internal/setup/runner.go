@@ -379,7 +379,7 @@ func (r *run) steps(ctx context.Context) (Result, error) {
 
 // approvals runs the four approvals and the account checks, skipping each one the record shows
 // done. A resumed run whose record holds an App sweeps its installations before any other
-// GitHub call.
+// GitHub call, and runs approval 4 again when that leaves no installation recorded.
 func (r *run) approvals(ctx context.Context) error {
 	if err := r.cloudflare(ctx); err != nil {
 		return err
@@ -389,7 +389,7 @@ func (r *run) approvals(ctx context.Context) error {
 			return err
 		}
 	}
-	if reached(r.rec.Step, spine.StepInstalled) {
+	if reached(r.rec.Step, spine.StepInstalled) && r.rec.GitHub.InstallationID != 0 {
 		return nil
 	}
 	return r.githubChain(ctx)

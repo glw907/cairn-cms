@@ -29,7 +29,7 @@ describe('runFastLane', () => {
       run: (line: string) => (ran.push(line), 0),
     });
     expect(code).toBe(0);
-    expect(ran).toEqual(['leg one', 'leg two']);
+    expect(ran).toEqual(['npm run theme:lay-in', 'leg one', 'leg two']);
   });
 
   it('stops at the first failing leg and returns its exit code', () => {
@@ -39,7 +39,7 @@ describe('runFastLane', () => {
       run: (line: string) => (ran.push(line), line === 'leg one' ? 3 : 0),
     });
     expect(code).toBe(3);
-    expect(ran).toEqual(['leg one']);
+    expect(ran).toEqual(['npm run theme:lay-in', 'leg one']);
   });
 
   it('returns non-zero without running anything when the classifier prints nothing', () => {

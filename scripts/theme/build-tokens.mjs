@@ -6,7 +6,8 @@
 // It validates cairn-theme.json against the manifest schema, and tokens/tokens.json and
 // tokens/resolver.json against the vendored DTCG 2025.10 schema, then writes
 //
-//   tokens/tokens.css          the two daisyUI theme blocks, the `@theme` scale, and `:root` tokens
+//   tokens/tokens.css          the two daisyUI theme blocks, the `@theme` scale, and the unlayered
+//                              `:root` and dark rules
 //   options/<key>/<value>.css  the custom properties one option value changes
 //   modes/light.css            the no-cookie default pinned to light
 //   modes/dark.css             the no-cookie default pinned to dark
@@ -21,6 +22,14 @@
 // contexts are the option's values. An option context holds a `light` and a `dark` group, the
 // values that option value sets in each block. Sources are a `$ref` into tokens.json
 // (`tokens.json#/color/light`) or an inline group.
+//
+// Where a mode token lands. A mode token goes in its daisyUI block unless the block cannot carry
+// it: a value with a comma does not survive the plugin's option parser, and a token marked
+// `"$extensions": { "pub.cairn": { "unlayered": true } }` must beat a layered value, which a
+// daisyUI block (emitted into `@layer base`) cannot. Such a token is written unlayered in both
+// modes, its light value on `:root` and its dark value under the same two selectors daisyUI gives
+// its dark block: the system preference, guarded by `:root:not([data-theme])` so a visitor's choice
+// wins, and the explicit `:root[data-theme="<dark name>"]`.
 //
 // How an option sheet composes with a mode sheet. A mode sheet pins what a visitor with no cookie
 // sees: its rule sits on `:root:not([data-theme])`, which the page shell leaves bare until a cookie
@@ -46,8 +55,8 @@ const MANIFEST_SCHEMA_URL = 'https://cairn.pub/schemas/cairn-theme/1.json';
 
 const DTCG_BASE = 'https://www.designtokens.org/schemas/2025.10/';
 
-/** Generic font families the output never quotes. */
-const GENERIC_FAMILIES = new Set(['serif', 'sans-serif', 'monospace', 'system-ui', 'ui-monospace']);
+/** A font family name that is one CSS identifier, such as `Roboto` or `-apple-system`, which the output leaves unquoted. */
+const IDENTIFIER_FAMILY = /^-?[A-Za-z_][\w-]*$/;
 
 /** The Tailwind theme namespaces: a base token under one of these goes in `@theme`, so Tailwind generates its utilities. */
 const THEME_NAMESPACES = /^(font|text|spacing|leading|tracking|container|color|radius|shadow|ease|animate|breakpoint|blur|aspect)-/;
@@ -253,7 +262,7 @@ function valueCss(token) {
     case 'color':
       return colorCss(value);
     case 'fontFamily':
-      return (Array.isArray(value) ? value : [value]).map((f) => (GENERIC_FAMILIES.has(f) ? f : `"${f}"`)).join(', ');
+      return (Array.isArray(value) ? value : [value]).map((f) => (IDENTIFIER_FAMILY.test(f) ? f : `"${f}"`)).join(', ');
     case 'cubicBezier':
       return `cubic-bezier(${value.join(', ')})`;
     case 'dimension':
@@ -285,16 +294,39 @@ function daisyBlock({ name, mode, tokens }) {
   );
 }
 
+/** Whether a mode token must be written unlayered rather than in its daisyUI block. */
+const unlayered = (token) => valueCss(token).includes(',') || token.$extensions?.['pub.cairn']?.unlayered === true;
+
+/** Splits the two modes into the tokens their daisyUI blocks carry and the ones written unlayered. */
+function splitModes(modes) {
+  const names = new Set(
+    ['light', 'dark'].flatMap((m) => Object.entries(modes[m]).filter(([, token]) => unlayered(token)).map(([name]) => name)),
+  );
+  const pick = (map, keep) => Object.fromEntries(Object.entries(map).filter(([name]) => names.has(name) === keep));
+  return {
+    blocks: { light: pick(modes.light, false), dark: pick(modes.dark, false) },
+    loose: { light: pick(modes.light, true), dark: pick(modes.dark, true) },
+  };
+}
+
 function tokensCss(manifest, { base, modes }) {
   const themed = Object.fromEntries(Object.entries(base).filter(([name]) => THEME_NAMESPACES.test(name)));
   const plain = Object.fromEntries(Object.entries(base).filter(([name]) => !THEME_NAMESPACES.test(name)));
+  const { blocks, loose } = splitModes(modes);
+  const root = { ...plain, ...loose.light };
   const parts = [
-    header('The daisyUI theme blocks, the `@theme` scale, and the root tokens.'),
-    daisyBlock({ name: manifest.colorModes.light, mode: 'light', tokens: modes.light }),
-    daisyBlock({ name: manifest.colorModes.dark, mode: 'dark', tokens: modes.dark }),
+    header('The daisyUI theme blocks, the `@theme` scale, and the unlayered root and dark rules.'),
+    daisyBlock({ name: manifest.colorModes.light, mode: 'light', tokens: blocks.light }),
+    daisyBlock({ name: manifest.colorModes.dark, mode: 'dark', tokens: blocks.dark }),
   ];
   if (Object.keys(themed).length) parts.push(`@theme {\n${declarations(themed, '  ')}\n}\n`);
-  if (Object.keys(plain).length) parts.push(`:root {\n${declarations(plain, '  ')}\n}\n`);
+  if (Object.keys(root).length) parts.push(`:root {\n${declarations(root, '  ')}\n}\n`);
+  if (Object.keys(loose.dark).length) {
+    parts.push(
+      `@media (prefers-color-scheme: dark) {\n  :root:not([data-theme]) {\n${declarations(loose.dark, '    ')}\n  }\n}\n`,
+      `:root[data-theme="${manifest.colorModes.dark}"] {\n${declarations(loose.dark, '  ')}\n}\n`,
+    );
+  }
   return parts.join('\n');
 }
 
@@ -333,12 +365,21 @@ function optionCss(manifest, key, value, { light, dark }) {
   return header(`The "${value}" value of the "${key}" option.`) + body.join('');
 }
 
-function modeCss(mode, { modes, options }) {
+function modeCss(mode, { base: shared, modes, options }) {
   const optioned = new Set();
   for (const values of Object.values(options)) {
     for (const group of Object.values(values)) for (const name of Object.keys(group[mode])) optioned.add(name);
   }
-  const base = modes[mode];
+  // A shared token the other mode overrides unlayered (such as a card border that only the dark
+  // mode restates) is pinned back to its shared value, or the other mode's system-preference rule
+  // would show through the pin.
+  const other = modes[mode === 'light' ? 'dark' : 'light'];
+  const restored = Object.fromEntries(
+    Object.keys(other)
+      .filter((name) => !(name in modes[mode]) && name in shared)
+      .map((name) => [name, shared[name]]),
+  );
+  const base = { ...modes[mode], ...restored };
   const lines = Object.entries(base).map(
     ([name, token]) =>
       `  --${name}: ${optioned.has(name) ? `var(${privateName(name, mode)}, ${valueCss(token)})` : valueCss(token)};`,

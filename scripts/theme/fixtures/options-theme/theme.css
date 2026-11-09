@@ -1,0 +1,14 @@
+/* The fixture theme's base sheet, in Waymark's shape: the chassis, the one face, the built token
+   values, then one hand-written rule. Laid into a site, the chassis import resolves to the site's
+   src/chassis/. */
+@import "../chassis/tokens.css";
+@import "./fonts/fonts.css";
+@import "./tokens/tokens.css";
+
+@layer utilities {
+  @layer site-theme {
+    .btn-outline {
+      --btn-border: var(--btn-color, color-mix(in oklab, var(--color-base-content) 22%, transparent));
+    }
+  }
+}

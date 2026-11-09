@@ -1,0 +1,9 @@
+/* The fixture theme's one face, a single Fontsource subset of Source Code Pro (OFL-1.1). */
+@font-face {
+  font-family: "Source Code Pro Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 900;
+  src: url(./source-code-pro-greek-ext-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+1F00-1FFF;
+}

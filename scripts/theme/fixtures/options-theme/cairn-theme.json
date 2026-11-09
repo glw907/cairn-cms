@@ -19,6 +19,13 @@
       "default": "ember"
     }
   ],
-  "fonts": [],
+  "fonts": [
+    {
+      "name": "Source Code Pro",
+      "license": "OFL-1.1",
+      "source": "https://fontsource.org/fonts/source-code-pro",
+      "files": ["fonts/source-code-pro-greek-ext-wght-normal.woff2"]
+    }
+  ],
   "screenshots": []
 }

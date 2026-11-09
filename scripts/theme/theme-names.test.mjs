@@ -64,8 +64,8 @@ test("Waymark's manifest names the two themes the generator is fed", async () =>
   assert.deepEqual(manifest.colorModes, WAYMARK);
 });
 
-test("Waymark's names match the two daisyUI theme blocks in its stylesheet", async () => {
-  const css = (await readFile(path.join(SHOWCASE, '../../themes/waymark/theme.css'), 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
+test("Waymark's names match the two daisyUI theme blocks in its built tokens sheet", async () => {
+  const css = (await readFile(path.join(SHOWCASE, '../../themes/waymark/tokens/tokens.css'), 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
   const names = [...css.matchAll(/@plugin\s+"daisyui\/theme"\s*\{[^}]*?\bname:\s*"([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(names.sort(), [WAYMARK.light, WAYMARK.dark].sort());
 });

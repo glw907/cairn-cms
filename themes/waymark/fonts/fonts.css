@@ -1,5 +1,5 @@
 /* Waymark's three faces, self-hosted from Fontsource's variable packages (OFL-1.1). Each family
-   registers as "<Name> Variable"; theme.css's --font-* tokens name them. */
+   registers as "<Name> Variable"; the font-* tokens in tokens/tokens.json name them. */
 /* figtree-latin-ext-wght-normal */
 @font-face {
   font-family: "Figtree Variable";

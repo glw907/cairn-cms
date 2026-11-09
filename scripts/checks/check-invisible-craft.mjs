@@ -77,14 +77,19 @@ export const ADMIN_SCOPE = [
 ];
 /**
  * Standalone CSS files this gate's CSS-family rules scan, beyond a component's scoped
- * `<style>` block. `theme.css` is Waymark's palette declaration site (the achromatic
- * `--color-base-*` ladder and the `--cairn-shadow` color-mix blacks are the point, not a hazard),
- * so `main` also passes it as a declared palette site (`static.paletteFiles`), which excludes it
- * from `token-colors` while every other CSS-family rule still scans it. `cairn-admin.css` lies
- * under `ADMIN_SCOPE`, so the three motion rules read it too; `theme.css` does not, so they do
- * not, while `gap-scale`, `token-colors`, and `motion-band` keep reading both.
+ * `<style>` block. Waymark's palette declaration site is `theme.css` with the token sheet it
+ * imports, `tokens/tokens.css`, built from the theme's tokens (the achromatic `--color-base-*`
+ * ladder and the `--cairn-shadow` color-mix blacks are the point, not a hazard), so `main` also
+ * passes both as declared palette sites (`static.paletteFiles`), which excludes them from
+ * `token-colors` while every other CSS-family rule still scans them. `cairn-admin.css` lies under
+ * `ADMIN_SCOPE`, so the three motion rules read it too; the theme sheets do not, so they do not,
+ * while `gap-scale`, `token-colors`, and `motion-band` keep reading all three.
  */
-export const CSS_FILES = ['examples/showcase/src/theme/theme.css', 'src/lib/admin/cairn-admin.css'];
+export const CSS_FILES = [
+  'examples/showcase/src/theme/theme.css',
+  'examples/showcase/src/theme/tokens/tokens.css',
+  'src/lib/admin/cairn-admin.css',
+];
 
 async function main() {
   try {

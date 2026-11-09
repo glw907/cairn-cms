@@ -2,7 +2,9 @@
 // role values re-skins the whole surface and AA still holds, the field's only complete and gated
 // re-skin recipe. Three theme cases run through the same `theme-contrast` measurement the live gate
 // runs (`check:public-tokens`), read from the packaged audit in dist/audit, over the showcase's real
-// import chain with the rewritten theme.css read in place of the file on disk:
+// import chain with a rewritten sheet read in place of the file on disk. Waymark's two daisyUI theme
+// blocks are built into src/theme/tokens/tokens.css, which theme.css imports, so the first two cases
+// rewrite that sheet:
 //
 //   1. The hue rotation. It rotates the `--color-primary` hue by a large amount in BOTH daisyUI theme
 //      blocks (holding lightness and chroma, the contrast-stable recolor rule) and asserts every
@@ -29,6 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/theme/theme.css');
+const TOKENS_CSS = resolve(ROOT, 'examples/showcase/src/theme/tokens/tokens.css');
 const FIXTURE_CSS = resolve(ROOT, 'scripts/lab/theme-fixture/theme.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
 const SHOWCASE = resolve(ROOT, 'examples/showcase');
@@ -52,7 +55,7 @@ const HUE_ROTATION = 120;
  * lever of the re-skin recipe; `--color-primary-content` and every other token are untouched, which is
  * exactly the recipe's promise. The regex matches `--color-primary:` (never `--color-primary-content:`,
  * which has more characters before the colon) and rewrites the third oklch term.
- * @param {string} css the contents of theme.css
+ * @param {string} css the contents of tokens/tokens.css
  * @returns {{ rewritten: string, edits: number }}
  */
 function rotatePrimaryHue(css) {
@@ -106,7 +109,7 @@ function checkProseSecondSource() {
 /**
  * Delete Waymark's four hand-tuned status inks from both daisyUI theme blocks, so each falls back to
  * the engine's derived default.
- * @param {string} css the contents of theme.css
+ * @param {string} css the contents of tokens/tokens.css
  * @returns {{ rewritten: string, edits: number }}
  */
 function stripInks(css) {
@@ -119,15 +122,16 @@ function stripInks(css) {
 }
 
 /**
- * Measure theme-contrast over the showcase's import chain with `themeCss` read in place of
- * theme.css, through the packaged audit.
+ * Measure theme-contrast over the showcase's import chain with `css` read in place of the file at
+ * `target`, through the packaged audit.
  * @param {any} audit the packaged audit's barrel
- * @param {string} themeCss
+ * @param {string} target the absolute path of the sheet to replace
+ * @param {string} css
  */
-function measure(audit, themeCss) {
+function measure(audit, target, css) {
   const fs = {
     /** @param {string} path */
-    readText: (path) => (path === THEME_CSS ? themeCss : audit.nodeChainFs.readText(path)),
+    readText: (path) => (path === target ? css : audit.nodeChainFs.readText(path)),
   };
   const chain = audit.loadImportChain(SHOWCASE, ['src/theme/theme.css'], fs);
   const { themes } = audit.loadDaisyThemeKeys(SHOWCASE, audit.nodePeers);
@@ -162,7 +166,7 @@ function reportCase(label, measurement, printTable, formatContrastTable) {
 async function main() {
   let failed = false;
   const audit = await import('../../dist/audit/index.js');
-  const original = readFileSync(THEME_CSS, 'utf8');
+  const original = readFileSync(TOKENS_CSS, 'utf8');
 
   // 1. The hue rotation.
   const rotated = rotatePrimaryHue(original);
@@ -171,7 +175,7 @@ async function main() {
     console.error(`Re-skin fixture: FAIL (expected to rotate the accent in both the light and dark block, edited ${rotated.edits}).`);
     failed = true;
   }
-  if (!reportCase('Re-skin contrast (hue rotation)', measure(audit, rotated.rewritten), false, audit.formatContrastTable)) failed = true;
+  if (!reportCase('Re-skin contrast (hue rotation)', measure(audit, TOKENS_CSS, rotated.rewritten), false, audit.formatContrastTable)) failed = true;
 
   // 2. The stripped inks.
   const stripped = stripInks(original);
@@ -181,11 +185,11 @@ async function main() {
     console.error(`Re-skin fixture: FAIL (expected four ink overrides in each of the two blocks, stripped ${stripped.edits}).`);
     failed = true;
   }
-  if (!reportCase('Re-skin contrast (stripped inks)', measure(audit, stripped.rewritten), true, audit.formatContrastTable)) failed = true;
+  if (!reportCase('Re-skin contrast (stripped inks)', measure(audit, TOKENS_CSS, stripped.rewritten), true, audit.formatContrastTable)) failed = true;
 
   // 3. The fixture theme.
   console.log('');
-  if (!reportCase('Re-skin contrast (fixture theme)', measure(audit, readFileSync(FIXTURE_CSS, 'utf8')), false, audit.formatContrastTable)) failed = true;
+  if (!reportCase('Re-skin contrast (fixture theme)', measure(audit, THEME_CSS, readFileSync(FIXTURE_CSS, 'utf8')), false, audit.formatContrastTable)) failed = true;
 
   // 4. Prove the prose surface has no second colour source.
   const proseViolations = checkProseSecondSource();

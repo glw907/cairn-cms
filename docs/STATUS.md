@@ -35,9 +35,11 @@ pass, was dropped by Geoff on 2026-11-08.
   first, then Geoff's human test build. The first tool tag also needs two GitHub settings and the
   first publish of the six platform packages, both owner steps (`cairn-releasing`, "The launcher and
   its platform packages").
-- Next: Geoff's record packet in the Approval Queue (item `20261109T022112-3127080`), which also carries the theme-garden plan
-  (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`). On its approval the
-  conductor re-checks the plan's citations against `main` and launches G1.
+- theme-garden: Geoff approved the plan and ruled Decide G-1 yes (2026-11-09, Approval Queue item
+  `20261109T022112-3127080`). G1 is in flight (`cairn-cms-theme-garden-1`, session `b467d134`), and
+  the conductor merges G1 then G2 under the plan's gates
+  (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`).
+- Next for cairn-setup: the tooling brainstorm (`handoff-tooling.md`), a fresh session with Geoff.
 
 ## Open decisions and watches
 

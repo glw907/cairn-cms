@@ -8,7 +8,7 @@
 // process that no longer runs is deleted before a new one is made.
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { stripLayIn } from '../build/bake-template.mjs';
+import { stripLayIn } from '../build/strip-lay-in.mjs';
 import { layIn } from '../theme/lay-in.mjs';
 
 /** The directory-name prefix every copy carries, matched by `.gitignore`. */

@@ -12,7 +12,12 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { generateThemeNames } from './theme-names.mjs';
 
-/** True when `inner` is `outer` or sits below it. */
+/**
+ * True when `inner` is `outer` or sits below it.
+ * @param {string} outer
+ * @param {string} inner
+ * @returns {boolean}
+ */
 function within(outer, inner) {
   const rel = path.relative(outer, inner);
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
@@ -55,7 +60,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   try {
     layIn(themeDir, siteDir);
   } catch (error) {
-    console.error(error.message);
+    console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

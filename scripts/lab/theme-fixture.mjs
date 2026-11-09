@@ -51,7 +51,7 @@ import { parseArgs } from 'node:util';
 import { chromium } from 'playwright';
 import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
-import { stripLayIn } from '../build/bake-template.mjs';
+import { stripLayIn } from '../build/strip-lay-in.mjs';
 import { layIn } from '../theme/lay-in.mjs';
 import { makeShowcaseCopy } from './theme-fixture-copy.mjs';
 

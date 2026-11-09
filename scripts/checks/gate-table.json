@@ -272,6 +272,7 @@
           "prose-table.spec.ts",
           "reading-surface-edge-cases.spec.ts",
           "theme-toggle.spec.ts",
+          "chassis-roles.spec.ts",
           "tag-filter.spec.ts",
           "styleguide.spec.ts",
           "islands.spec.ts",

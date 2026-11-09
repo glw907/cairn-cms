@@ -158,7 +158,7 @@ func TestGitKeepsNoInheritedGitVariable(t *testing.T) {
 	for _, want := range []string{
 		"HOME=/home/x", "HTTPS_PROXY=http://proxy.example.test:3128", "PATH=/usr/bin",
 		"GIT_CONFIG_GLOBAL=" + os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0", "GIT_TRACE_REDACT=1",
-		"GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/tmp/empty", "GIT_CONFIG_COUNT=5",
+		"GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/tmp/empty", "GIT_CONFIG_COUNT=7",
 	} {
 		if !slices.Contains(got, want) {
 			t.Errorf("Git = %q, want %q in it", got, want)

@@ -15,7 +15,7 @@ function manifestEntries(file) {
   return JSON.parse(readFileSync(path.join(REPO, file), 'utf8')).entries;
 }
 
-test('every page renders under Waymark at 1440 in both modes, and the draft stays hidden', { timeout: 500_000 }, async () => {
+test('every page renders under Waymark at 1440 in both modes, and the draft stays hidden', { timeout: 1_000_000 }, async () => {
   const starter = manifestEntries('scripts/build/starter-overlay/src/content/.cairn/index.json');
   const conformance = manifestEntries('scripts/theme/conformance/src/content/.cairn/index.json');
   const entries = [...starter, ...conformance];

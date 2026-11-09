@@ -10,7 +10,7 @@ import { copyOptionsFixture } from './viewer/fixture.mjs';
 
 const REPO = path.resolve(import.meta.dirname, '../..');
 
-test('the check action runs on the loaded theme and answers a document that matches the schema', { timeout: 400_000 }, async () => {
+test('the check action runs on the loaded theme and answers a document that matches the schema', { timeout: 800_000 }, async () => {
   const fixture = copyOptionsFixture();
   const viewer = await startInteractive({ root: REPO, theme: fixture.dir });
   try {

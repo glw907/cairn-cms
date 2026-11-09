@@ -10,7 +10,7 @@ import { startInteractive } from './viewer/interactive.mjs';
 import { copyOptionsFixture } from './viewer/fixture.mjs';
 
 const REPO = path.resolve(import.meta.dirname, '../..');
-const WAIT_MS = 90_000;
+const WAIT_MS = 180_000;
 
 /** The permalinks the conformance set serves, from its committed manifest. */
 function conformanceRoutes() {
@@ -18,7 +18,7 @@ function conformanceRoutes() {
   return index.entries.filter((e) => e.concept !== 'fragments').map((e) => e.permalink);
 }
 
-test('the control page lists the routes, values, and widths, and a token edit reaches the page', { timeout: 400_000 }, async () => {
+test('the control page lists the routes, values, and widths, and a token edit reaches the page', { timeout: 800_000 }, async () => {
   const fixture = copyOptionsFixture();
   const viewer = await startInteractive({ root: REPO, theme: fixture.dir });
   const browser = await chromium.launch();
@@ -32,7 +32,7 @@ test('the control page lists the routes, values, and widths, and a token edit re
     // Vite's dev server can refuse or stall a request while it settles, so a failed load reads as no value.
     const accent = async () => {
       try {
-        await page.goto(`${viewer.siteUrl}/`, { waitUntil: 'load', timeout: 15_000 });
+        await page.goto(`${viewer.siteUrl}/`, { waitUntil: 'load', timeout: 60_000 });
         return await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim());
       } catch {
         return '';

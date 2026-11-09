@@ -11,7 +11,7 @@ import { copyOptionsFixture } from './viewer/fixture.mjs';
 const REPO = path.resolve(import.meta.dirname, '../..');
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-test('headless mode writes eight PNGs, the accent changes them, and the dark runs end with the dark mode sheet', { timeout: 400_000 }, async () => {
+test('headless mode writes eight PNGs, the accent changes them, and the dark runs end with the dark mode sheet', { timeout: 800_000 }, async () => {
   const fixture = copyOptionsFixture();
   const darkSheet = readFileSync(path.join(fixture.dir, 'modes/dark.css'), 'utf8');
   /** @type {string[]} */

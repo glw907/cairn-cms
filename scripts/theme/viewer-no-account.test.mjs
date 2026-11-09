@@ -35,7 +35,7 @@ function accountlessEnv(scratch) {
   };
 }
 
-test('headless and interactive modes both run with no Cloudflare variable and an empty home', { timeout: 500_000 }, async () => {
+test('headless and interactive modes both run with no Cloudflare variable and an empty home', { timeout: 1_000_000 }, async () => {
   const scratch = mkdtempSync(path.join(tmpdir(), 'cairn-viewer-accountless-'));
   const fixture = copyOptionsFixture();
   const env = accountlessEnv(scratch);

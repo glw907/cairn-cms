@@ -302,7 +302,7 @@ async function launch(siteDir, command, port) {
   };
   process.once('exit', stop);
   const ready = /Local:|Ready on/;
-  const deadline = Date.now() + 120_000;
+  const deadline = Date.now() + 360_000;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       const message = `viewer: ${command} server exited early (${child.exitCode}):\n${output}`;
@@ -323,7 +323,7 @@ async function launch(siteDir, command, port) {
     await new Promise((done) => setTimeout(done, 300));
   }
   stop();
-  throw new Error(`viewer: ${command} server did not answer on ${url} within 120s:\n${output}`);
+  throw new Error(`viewer: ${command} server did not answer on ${url} within 360s:\n${output}`);
 }
 
 /**

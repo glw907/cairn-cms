@@ -100,9 +100,35 @@ func (g Grid) Para(r Role, text string) string {
 // Title is a bold title at the margin.
 func (g Grid) Title(s string) string { return margin + g.Styles.Title.Render(s) }
 
-// Detail is the current item's sentence, muted, directly under the item at column 4.
+// Detail is the current item's sentence, muted, directly under the item at column 4, with the
+// permission name in bold wherever it appears.
 func (g Grid) Detail(text string) string {
-	return g.lines(g.Styles.Muted.Render, text, g.ContentWidth()-(ColList-ColMargin), listPad)
+	ls := g.emphasized(g.Styles.Muted, text, g.ContentWidth()-(ColList-ColMargin))
+	for i, l := range ls {
+		ls[i] = listPad + l
+	}
+	return strings.Join(ls, "\n")
+}
+
+// emphasized balances text to w and styles each line in ink, with the permission name the
+// Cloudflare approval asks for in bold wherever it appears. The name's spaces do not break, so it
+// never splits across two lines.
+func (g Grid) emphasized(ink lipgloss.Style, text string, w int) []string {
+	held := strings.ReplaceAll(permissionName, " ", " ")
+	ls := Balance(strings.ReplaceAll(text, permissionName, held), w)
+	for i, l := range ls {
+		var sb strings.Builder
+		for j, part := range strings.Split(l, held) {
+			if j > 0 {
+				sb.WriteString(g.Styles.Title.Render(permissionName))
+			}
+			if part != "" {
+				sb.WriteString(ink.Render(part))
+			}
+		}
+		ls[i] = sb.String()
+	}
+	return ls
 }
 
 // Mark is one row of a mark list: a one-cell mark at column 2, one space, text at column 4.

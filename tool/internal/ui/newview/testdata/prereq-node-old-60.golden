@@ -1,0 +1,9 @@
+
+  Setup can't continue
+
+  What happened     Setup needs Node.js 24 or later.
+                    This computer has Node.js 22.
+  Already done      Nothing was created.
+  What to do        Install Node.js 24 or later,
+                    and then run cairn new again.
+                    cairn.pub/start

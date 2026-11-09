@@ -1,0 +1,7 @@
+
+  Setup can't continue
+
+  What happened     Cloudflare didn't approve setup's request.
+  Already done      Nothing was created.
+  What to do        Run cairn new again. On the Cloudflare page,
+                    select API Tokens: Write, and then select Allow.

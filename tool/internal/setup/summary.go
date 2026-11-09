@@ -7,11 +7,16 @@ import (
 	"strings"
 )
 
-// The summary's two refusals, from the copy deck's summary section.
+// The problems ConfirmSummary is called with, from the copy deck's summary section. A view
+// matches ProblemEmail to reopen the email row and treats any other problem as the address's.
 const (
-	problemEmail   = "Enter a valid email address."
-	problemAddress = "That address already points to another site. Choose another address, or remove its DNS records in Cloudflare first."
-	problemHost    = "Use the bare domain, or a subdomain such as blog.<zone>. A subdomain gets no www."
+	// ProblemEmail refuses an email that is not one bare address.
+	ProblemEmail = "Enter a valid email address."
+	// ProblemAddress refuses an address that already serves another site.
+	ProblemAddress = "That address already points to another site. Choose another address, or remove its DNS records in Cloudflare first."
+	// ProblemHost refuses an address outside the zone; <zone> takes the zone's name. It is also
+	// the address edit's note.
+	ProblemHost = "Use the bare domain, or a subdomain such as blog.<zone>. A subdomain gets no www."
 )
 
 // summary shows every derived value for the owner's one Enter and takes the two editable rows
@@ -26,7 +31,7 @@ func (r *run) summary(ctx context.Context) (Summary, error) {
 	r.addresses, _ = addresses(r.zone.Name, r.host)
 	problem := ""
 	if !validEmail(r.email) {
-		problem = problemEmail
+		problem = ProblemEmail
 	}
 	for {
 		s := r.summaryOf()
@@ -37,14 +42,14 @@ func (r *run) summary(ctx context.Context) (Summary, error) {
 		}
 		email, host := strings.TrimSpace(edit.OwnerEmail), strings.ToLower(strings.TrimSpace(edit.Host))
 		if !validEmail(email) {
-			problem = problemEmail
+			problem = ProblemEmail
 			continue
 		}
 		r.email = email
 		if host != r.host {
 			addrs, err := addresses(r.zone.Name, host)
 			if err != nil {
-				problem = strings.ReplaceAll(problemHost, "<zone>", r.zone.Name)
+				problem = strings.ReplaceAll(ProblemHost, "<zone>", r.zone.Name)
 				continue
 			}
 			prev, prevAddrs := r.host, r.addresses
@@ -52,7 +57,7 @@ func (r *run) summary(ctx context.Context) (Summary, error) {
 			if err := r.checkAddress(ctx, ""); err != nil {
 				if f, ok := errors.AsType[*Failure](err); ok && (f.Reason == ReasonAddressRecords || f.Reason == ReasonAddressInUse) {
 					r.host, r.addresses = prev, prevAddrs
-					problem = problemAddress
+					problem = ProblemAddress
 					continue
 				}
 				return Summary{}, err

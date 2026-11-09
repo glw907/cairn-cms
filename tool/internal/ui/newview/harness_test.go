@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/charmbracelet/x/exp/teatest/v2"
 
@@ -18,17 +19,22 @@ func updating() bool {
 	return f != nil && f.Value.String() == "true"
 }
 
-// fixtureStream is a short run: two steps finish, a third starts after a wait on the owner.
+// fixtureStream is a short watch: the summary's names, then two steps start and finish. The
+// program runs the spinner and the clock for real, so the stream ends with no step running, and
+// its times lie past any clock tick, which only moves the clock forward.
 func fixtureStream() []setup.Event {
 	v := setup.EventSchemaVersion
+	s := fieldNotes
+	start := time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
+	ev := func(kind setup.EventKind, step string, d time.Duration) setup.Event {
+		return setup.Event{SchemaVersion: v, Kind: kind, Step: step, Timestamp: start.Add(d)}
+	}
 	return []setup.Event{
-		{SchemaVersion: v, Kind: setup.StepStarted, Step: "cloudflare-auth"},
-		{SchemaVersion: v, Kind: setup.Waiting, Step: "cloudflare-auth", Waiting: setup.WaitCloudflare,
-			Sentence: setup.WaitSentence(setup.WaitCloudflare, "demo", "demo-site")},
-		{SchemaVersion: v, Kind: setup.StepDone, Step: "cloudflare-auth"},
-		{SchemaVersion: v, Kind: setup.StepStarted, Step: "create-repo"},
-		{SchemaVersion: v, Kind: setup.StepDone, Step: "create-repo"},
-		{SchemaVersion: v, Kind: setup.StepStarted, Step: "push-site"},
+		{SchemaVersion: v, Kind: setup.SummaryKind, Step: setup.StepSummary, Summary: &s, Timestamp: start},
+		ev(setup.StepStarted, setup.StepScaffold, 0),
+		ev(setup.StepDone, setup.StepScaffold, 30*time.Second),
+		ev(setup.StepStarted, setup.StepProvision, 30*time.Second),
+		ev(setup.StepDone, setup.StepProvision, 75*time.Second),
 	}
 }
 
@@ -77,7 +83,9 @@ func TestReplayMatchesFrameGolden(t *testing.T) {
 func TestReplayDroppingAnEventChangesTheFrame(t *testing.T) {
 	want := readGolden(t, filepath.Join("testdata", "frame.golden"))
 	events := fixtureStream()
-	dropped := append(events[:4:4], events[5:]...)
+	// The last event is the one no later event implies: a start marks the steps before it done,
+	// as a resume needs.
+	dropped := events[:len(events)-1]
 	if got := replay(t, dropped); got == want {
 		t.Error("frame is unchanged after dropping an event; the harness cannot see a lost event")
 	}

@@ -439,6 +439,7 @@ Name the check that entry holds
 - Delete that Worker or rename it in Cloudflare, and then run cairn new again.
 - Delete the GitHub App at <url>. Then unlock the keyring and run cairn new again.
 - Enter a name that has at least one number or one letter from A to Z.
+- Enter a valid email address.
 - Every name from <repo> to <repo>-9 is already in use.
 - Finish or stop the other setup, and then run cairn new again.
 - If GitHub says the name is taken, change it on that page. Setup uses the name you choose.
@@ -476,6 +477,7 @@ Name the check that entry holds
 - Setup needs Node.js 24 or later. This computer has Node.js <n>.
 - Setup stopped.
 - Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.
+- That address already points to another site. Choose another address, or remove its DNS records in Cloudflare first.
 - The 30-minute limit to approve the requests ran out.
 - The Cloudflare approval doesn't include the account that setup started with.
 - The GitHub App <app> may still have access to all your repositories.
@@ -490,6 +492,7 @@ Name the check that entry holds
 - To resume, run cairn new again.
 - Undo your changes in that folder, and then run cairn new again.
 - Unlock or set up the keyring, and then run cairn new again.
+- Use the bare domain, or a subdomain such as blog.<zone>. A subdomain gets no www.
 - Wait a few minutes, and then run cairn new again. Setup resumes at the Connect <domain> step.
 - Wait until Cloudflare shows the domain as active, and then run cairn new again.
 - Your Cloudflare account has no domains. The admin sends sign-in links by email, and Cloudflare sends email only from a domain on your account.
@@ -498,13 +501,17 @@ Name the check that entry holds
 
 ## newview
 
+- <host> and <www>
 - <n> accounts on your Cloudflare sign-in
 - <n> domains on your Cloudflare account
+- <name> is live at <url>
 - <time> left to approve
 - AI crawlers
 - About your site
 - Account
 - Add a domain you own
+- Address
+- Admin > Editors
 - Allow AI training
 - Already done
 - Approve each request in the setup tab. The next request opens in the same tab.
@@ -514,23 +521,40 @@ Name the check that entry holds
 - Choose a domain
 - Choose an account
 - Choose whether AI companies can use your content to train their models. This setting doesn't affect search engines.
+- Cloudflare is issuing the site's HTTPS certificate. This can take up to 15 minutes.
 - Cloudflare: Allow
+- Commit the site
+- Connect <host>
+- Create the database, storage bucket, and email
+- Database
+- Deploys
 - Design
 - Domain
+- Edit your site
 - Enter a name that has at least one number or one letter from A to Z.
+- GitHub Actions deploys your site each time someone publishes. The first deploy takes a few minutes.
+- GitHub Actions uses this key to deploy to Cloudflare. Only workflows in <repo> can read the key.
+- GitHub Actions, each time you publish
 - GitHub: Approve
 - GitHub: Create
 - GitHub: Install & Authorize
 - How your site looks to readers.
 - If no tab opened, go to <url>
 - If the countdown reaches 0:00, run cairn new again to resume.
+- Invite an editor
 - Left in place
 - Nothing was created.
+- Push the site to GitHub
+- Read the docs
 - Register a domain
 - Repository
 - Resume setup
+- Review the settings for <name>
+- Run the first deploy
 - Set up a cairn site
+- Setting up <name>
 - Setup
+- Setup also emailed a sign-in link to <email>.
 - Setup can't continue
 - Setup can't run over SSH
 - Setup couldn't open your browser. Go to <url>
@@ -539,20 +563,57 @@ Name the check that entry holds
 - Setup needs a domain on Cloudflare
 - Setup opens a tab in your browser. Approve these four requests in that tab.
 - Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser.
+- Setup sent no sign-in link, because the site already has editors and <email> isn't one of them.
+- Setup stopped. Nothing was created.
+- Setup stopped. To resume, run cairn new again.
+- Setup took <time>.
+- Setup writes your site into <folder> on this computer.
+- Setup writes your site's settings and makes its first commit in <folder>.
 - Shown at the top of every page.
+- Sign in to the admin
+- Sign-in email
 - Site name
 - Start a new site
+- Storage bucket
+- Store the deploy key in GitHub
+- The admin sends your sign-in links to this address.
+- The admin stores sign-ins and settings in the database and uploads in the storage bucket. Cloudflare sends the admin's sign-in links from <host>.
+- The first deploy failed
 - Theme
 - To resume, run cairn new again.
 - What happened
 - What to do
+- Worker
+- Workers pricing
+- Write the site files
 - You approve four requests in your browser.
+- You can leave this running. When your site is live, setup emails a sign-in link to <email>.
 - You need a domain on Cloudflare and the Workers Paid plan.
+- You're signed in to the admin in your browser.
+- Your site's code and content are stored in <repo>.
+- approve in your browser (<n> of <total>)
 - back
+- based on your site name
+- cairn new
+- cairn.pub/deploys
+- cairn.pub/docs
 - cairn.pub/start
+- cancel
 - choose
+- done
+- edit address
+- edit email
+- free for about 650 deploys a month
+- from your Cloudflare account
 - next
 - open your browser
 - quit
+- review
+- save
+- set up
+- setting up
 - start
 - stop
+- stopped
+- the bare domain and www, the default
+- the only domain on your account

@@ -89,15 +89,95 @@ const (
 	optionNew   = "Start a new site"
 )
 
+// The summary. The address edit's note is setup.ProblemHost, and its refusals are setup's.
+const (
+	titleSummary   = "Review the settings for <name>"
+	labelAddress   = "Address"
+	labelEmail     = "Sign-in email"
+	labelWorker    = "Worker"
+	labelDatabase  = "Database"
+	labelBucket    = "Storage bucket"
+	labelDeploys   = "Deploys"
+	reasonDomain   = "the only domain on your account"
+	reasonAddress  = "the bare domain and www, the default"
+	reasonEmail    = "from your Cloudflare account"
+	reasonNames    = "based on your site name"
+	valueAddresses = "<host> and <www>"
+	valueDeploys   = "GitHub Actions, each time you publish"
+	reasonDeploys  = "free for about 650 deploys a month"
+	linkDeploys    = "cairn.pub/deploys"
+	noteEmail      = "The admin sends your sign-in links to this address."
+)
+
+// The watch. Each step's label and the sentence shown while it runs; <folder>, <host>, and
+// <repo> take the summary's names. The sign-in step's sentence is setup.LineSignInStep.
+const (
+	titleWatch = "Setting up <name>"
+	watchLeave = "You can leave this running. When your site is live, setup emails a sign-in link to <email>."
+
+	stepScaffold     = "Write the site files"
+	whyScaffold      = "Setup writes your site into <folder> on this computer."
+	stepProvision    = "Create the database, storage bucket, and email"
+	whyProvision     = "The admin stores sign-ins and settings in the database and uploads in the storage bucket. Cloudflare sends the admin's sign-in links from <host>."
+	stepCommit       = "Commit the site"
+	whyCommit        = "Setup writes your site's settings and makes its first commit in <folder>."
+	stepPush         = "Push the site to GitHub"
+	whyPush          = "Your site's code and content are stored in <repo>."
+	stepDeployKey    = "Store the deploy key in GitHub"
+	whyDeployKey     = "GitHub Actions uses this key to deploy to Cloudflare. Only workflows in <repo> can read the key."
+	stepFirstDeploy  = "Run the first deploy"
+	whyFirstDeploy   = "GitHub Actions deploys your site each time someone publishes. The first deploy takes a few minutes."
+	stepDomains      = "Connect <host>"
+	whyDomains       = "Cloudflare is issuing the site's HTTPS certificate. This can take up to 15 minutes."
+	stepSignIn       = "Sign in to the admin"
+	titleDeployFails = "The first deploy failed"
+	linkWorkers      = "Workers pricing"
+)
+
+// The done screen.
+const (
+	doneLive     = "<name> is live at <url>"
+	doneSignedIn = "You're signed in to the admin in your browser."
+	doneEmailed  = "Setup also emailed a sign-in link to <email>."
+	doneNoSignIn = "Setup sent no sign-in link, because the site already has editors and <email> isn't one of them."
+	labelEdit    = "Edit your site"
+	labelInvite  = "Invite an editor"
+	valueInvite  = "Admin > Editors"
+	labelDocs    = "Read the docs"
+	linkDocs     = "cairn.pub/docs"
+	doneTook     = "Setup took <time>."
+)
+
+// The Ctrl+C lines.
+const (
+	stopNothing = "Setup stopped. Nothing was created."
+	stopResume  = "Setup stopped. To resume, run cairn new again."
+)
+
+// The window titles: the base, then what the window wants from the owner after a separator.
+const (
+	windowBase     = "cairn new"
+	windowApprove  = "approve in your browser (<n> of <total>)"
+	windowReview   = "review"
+	windowSettings = "setting up"
+	windowDone     = "done"
+	windowStopped  = "stopped"
+)
+
 // The footer verbs.
 const (
-	verbStart  = "start"
-	verbNext   = "next"
-	verbOpen   = "open your browser"
-	verbChoose = "choose"
-	verbBack   = "back"
-	verbQuit   = "quit"
-	verbStop   = "stop"
+	verbStart       = "start"
+	verbNext        = "next"
+	verbOpen        = "open your browser"
+	verbChoose      = "choose"
+	verbBack        = "back"
+	verbQuit        = "quit"
+	verbStop        = "stop"
+	verbSetUp       = "set up"
+	verbEditEmail   = "edit email"
+	verbEditAddress = "edit address"
+	verbSave        = "save"
+	verbCancel      = "cancel"
 )
 
 // Where the screens link.
@@ -105,6 +185,9 @@ const (
 	urlStart    = "https://cairn.pub/start"
 	urlRegister = "https://developers.cloudflare.com/registrar/get-started/register-domain/"
 	urlMove     = "https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/"
+	urlDeploys  = "https://cairn.pub/deploys"
+	urlDocs     = "https://cairn.pub/docs"
+	urlWorkers  = "https://dash.cloudflare.com/?to=/:account/workers/plans"
 )
 
 // Catalogue returns every string the view's copy carries, for the copy golden.
@@ -121,6 +204,17 @@ func Catalogue() []string {
 		linkRegister, linkMove, linkStart,
 		titleDomain, labelDomain, descDomain, titleAccount, labelAccount, descAccount,
 		titleResume, labelResume, descResume, optionNew,
+		titleSummary, labelAddress, labelEmail, labelWorker, labelDatabase, labelBucket, labelDeploys,
+		reasonDomain, reasonAddress, reasonEmail, reasonNames, valueAddresses, valueDeploys, reasonDeploys,
+		linkDeploys, noteEmail,
+		titleWatch, watchLeave, stepScaffold, whyScaffold, stepProvision, whyProvision, stepCommit, whyCommit,
+		stepPush, whyPush, stepDeployKey, whyDeployKey, stepFirstDeploy, whyFirstDeploy, stepDomains, whyDomains,
+		stepSignIn, titleDeployFails, linkWorkers,
+		doneLive, doneSignedIn, doneEmailed, doneNoSignIn, labelEdit, labelInvite, valueInvite, labelDocs,
+		linkDocs, doneTook,
+		stopNothing, stopResume,
+		windowBase, windowApprove, windowReview, windowSettings, windowDone, windowStopped,
 		verbStart, verbNext, verbOpen, verbChoose, verbBack, verbQuit, verbStop,
+		verbSetUp, verbEditEmail, verbEditAddress, verbSave, verbCancel,
 	}
 }

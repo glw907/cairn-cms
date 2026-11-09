@@ -1,0 +1,22 @@
+
+  The first deploy failed
+
+  ● Write the site files
+  ● Create the database, storage bucket, and email
+  ● Commit the site
+  ● Push the site to GitHub
+  ● Store the deploy key in GitHub
+  ■ Run the first deploy
+  ○ Connect fieldnotes.example.com
+  ○ Sign in to the admin
+
+  What happened     Cloudflare rejected the first deploy from
+                    GitHub Actions. Your Cloudflare account doesn't
+                    have the Workers Paid plan. Every cairn site
+                    needs it. The plan costs $5 a month.
+  Already done      The completed steps above are kept.
+  Left in place     What setup created stays in place,
+                    and the next run resumes from it.
+  What to do        Subscribe to Workers Paid, and then run cairn
+                    new again. Setup resumes at the first deploy.
+                    Workers pricing

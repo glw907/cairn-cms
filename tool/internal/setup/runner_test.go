@@ -1025,7 +1025,7 @@ func TestASummaryAddressEditIsRechecked(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Run: %v", err)
 		}
-		if !slices.Equal(w.view.problems, []string{"", problemAddress}) {
+		if !slices.Equal(w.view.problems, []string{"", ProblemAddress}) {
 			t.Errorf("summary problems = %q, want the address refusal once", w.view.problems)
 		}
 		if res.Record.Setup.Address != "carin-test-5.org" {
@@ -1058,7 +1058,7 @@ func TestASummaryAddressEditIsRechecked(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Run: %v", err)
 		}
-		if !slices.Equal(w.view.problems, []string{problemEmail, problemEmail}) || res.Record.Setup.OwnerEmail != "owner@example.test" {
+		if !slices.Equal(w.view.problems, []string{ProblemEmail, ProblemEmail}) || res.Record.Setup.OwnerEmail != "owner@example.test" {
 			t.Errorf("summary problems = %q, email %q", w.view.problems, res.Record.Setup.OwnerEmail)
 		}
 	})

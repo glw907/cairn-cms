@@ -39,7 +39,7 @@ func TestTooSmallGoldens(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ansi.Strip(testGrid(tt.width).TooSmall(tt.height))
+			got := ansi.Strip(testGrid(tt.width).TooSmall(tt.height, MinRows))
 			flat := strings.Join(strings.Fields(got), " ")
 			for _, s := range tt.mustName {
 				if !strings.Contains(flat, s) {

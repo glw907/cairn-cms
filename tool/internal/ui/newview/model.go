@@ -9,12 +9,13 @@
 package newview
 
 import (
-	"strings"
+	"strconv"
 	"time"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
@@ -22,7 +23,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/store"
 )
 
-// stepState is where one step stands in the frame.
+// stepState is where one watch step stands; the zero value is a step not yet started.
 type stepState string
 
 const (
@@ -41,8 +42,21 @@ const (
 	phaseBrowser
 	phaseChoose
 	phasePrereq
+	phaseSummary
 	phaseWatch
+	phaseFailure
+	phaseDone
+	phaseStopped
 )
+
+// final reports whether p is a final frame, one that stays in scrollback with no footer.
+func (p phase) final() bool {
+	switch p {
+	case phaseSSH, phasePrereq, phaseFailure, phaseDone, phaseStopped:
+		return true
+	}
+	return false
+}
 
 // Config is what the view needs from the command that runs it.
 type Config struct {
@@ -94,10 +108,20 @@ type ChooseResumeMsg struct {
 // minutes, when loopback's Countdown says the views show it.
 type CountdownMsg struct{ Left time.Duration }
 
+// ConfirmSummaryMsg shows the summary for the owner's one Enter, as setup's View.ConfirmSummary
+// asks for it. The view sends the two editable rows on Reply when the owner presses Enter. Problem
+// is empty on the first ask; on a later one it is setup's refusal, which reopens the row it names.
+type ConfirmSummaryMsg struct {
+	Summary setup.Summary
+	Problem string
+	Reply   chan<- setup.SummaryEdit
+}
+
 // keys holds every binding the screens hint at. Enter has a binding per verb, since the footer
 // names what it does on each screen.
 type keys struct {
 	Start, Next, Open, Choose, Back, Quit, Stop key.Binding
+	SetUp, Save, EditEmail, EditAddress, Cancel key.Binding
 }
 
 func newKeys(g Glyphs) keys {
@@ -105,13 +129,18 @@ func newKeys(g Glyphs) keys {
 		return key.NewBinding(key.WithKeys("enter"), key.WithHelp("Enter", verb))
 	}
 	return keys{
-		Start:  enter(verbStart),
-		Next:   enter(verbNext),
-		Open:   enter(verbOpen),
-		Choose: key.NewBinding(key.WithKeys("up", "down"), key.WithHelp(g.Arrows, verbChoose)),
-		Back:   key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("Shift+Tab", verbBack)),
-		Quit:   key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("Ctrl+C", verbQuit)),
-		Stop:   key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("Ctrl+C", verbStop)),
+		Start:       enter(verbStart),
+		Next:        enter(verbNext),
+		Open:        enter(verbOpen),
+		Choose:      key.NewBinding(key.WithKeys("up", "down"), key.WithHelp(g.Arrows, verbChoose)),
+		Back:        key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("Shift+Tab", verbBack)),
+		Quit:        key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("Ctrl+C", verbQuit)),
+		Stop:        key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("Ctrl+C", verbStop)),
+		SetUp:       enter(verbSetUp),
+		Save:        enter(verbSave),
+		EditEmail:   key.NewBinding(key.WithKeys("e"), key.WithHelp("e", verbEditEmail)),
+		EditAddress: key.NewBinding(key.WithKeys("a"), key.WithHelp("a", verbEditAddress)),
+		Cancel:      key.NewBinding(key.WithKeys("esc"), key.WithHelp("Esc", verbCancel)),
 	}
 }
 
@@ -127,25 +156,32 @@ type Model struct {
 	questions *questions
 	browser   *browser
 	choice    *choice
-	// openReply and chooseReply answer the runner's pending request.
-	openReply   chan<- error
-	chooseReply chan<- string
-	failure     setup.Failure
+	summary   *summary
+	watch     *watch
+	// openReply, chooseReply, and summaryReply answer the runner's pending request.
+	openReply    chan<- error
+	chooseReply  chan<- string
+	summaryReply chan<- setup.SummaryEdit
+	failure      setup.Failure
+	done         setup.Done
 
-	order    []string
-	states   map[string]stepState
-	sentence string
+	// sum is the run's names, from the summary setup sent; the watch and done screens read them.
+	sum setup.Summary
+	// created reports that the run has made something a rerun resumes from, for the Ctrl+C line.
+	created bool
 }
 
 // New returns a Model on the welcome screen, or on the SSH stop for a remote session.
 func New(cfg Config) *Model {
 	k := newKeys(cfg.Glyphs)
+	ascii := cfg.Glyphs == GlyphsFor(true)
 	m := &Model{
 		cfg:       cfg,
 		keys:      k,
-		states:    map[string]stepState{},
 		questions: newQuestions(cfg.Styles, cfg.Glyphs, k, cfg.Themes),
-		browser:   newBrowser(cfg.Styles, cfg.Glyphs, k, cfg.Glyphs == GlyphsFor(true)),
+		browser:   newBrowser(cfg.Styles, cfg.Glyphs, k, ascii),
+		summary:   newSummary(cfg.Styles, cfg.Glyphs, k, cfg.Themes),
+		watch:     newWatch(cfg.Styles, cfg.Glyphs, k, ascii),
 	}
 	if cfg.Remote {
 		m.phase = phaseSSH
@@ -165,8 +201,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		return m, m.key(msg)
 	case setup.Event:
-		m.apply(msg)
+		return m, m.apply(msg)
+	case ConfirmSummaryMsg:
+		m.sum, m.summaryReply, m.phase, m.created = msg.Summary, msg.Reply, phaseSummary, true
+		return m, m.summary.Ask(msg.Summary, msg.Problem, m.width)
+	case DoneMsg:
+		m.done, m.phase = msg.Done, phaseDone
 		return m, nil
+	case clockMsg:
+		m.watch.Tick(time.Time(msg))
+		if m.phase != phaseWatch {
+			return m, nil
+		}
+		return m, tickClock()
 	case OpenBrowserMsg:
 		m.browser.Arm(msg.URL)
 		m.openReply = msg.Reply
@@ -187,7 +234,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case spinner.TickMsg:
-		return m, m.browser.Spin(msg)
+		return m, tea.Batch(m.browser.Spin(msg), m.watch.Spin(msg))
 	}
 	return m, m.forward(msg)
 }
@@ -205,9 +252,19 @@ func (m *Model) resize() tea.Cmd {
 
 func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 	if key.Matches(msg, m.keys.Quit) {
+		// A final frame already says how the run ended, so it stays.
+		if !m.phase.final() {
+			m.phase = phaseStopped
+		}
 		return tea.Quit
 	}
 	switch m.phase {
+	case phaseSummary:
+		cmd, confirmed := m.summary.Key(msg, m.width)
+		if confirmed {
+			return replyEdit(m.summaryReply, m.summary.Edit())
+		}
+		return cmd
 	case phaseWelcome:
 		if key.Matches(msg, m.keys.Start) {
 			m.phase = phaseQuestions
@@ -268,58 +325,122 @@ func answer(reply chan<- string, v string) tea.Cmd {
 	}
 }
 
-func (m *Model) apply(ev setup.Event) {
+// replyEdit sends the summary's rows on reply from a command, since the runner may not be
+// receiving yet.
+func replyEdit(reply chan<- setup.SummaryEdit, e setup.SummaryEdit) tea.Cmd {
+	if reply == nil {
+		return nil
+	}
+	return func() tea.Msg {
+		reply <- e
+		return nil
+	}
+}
+
+func (m *Model) apply(ev setup.Event) tea.Cmd {
+	i := watchIndex(ev.Step)
 	switch ev.Kind {
 	case setup.StepStarted:
-		m.set(ev.Step, stateRunning)
-		m.sentence = ""
-	case setup.StepDone:
-		m.set(ev.Step, stateDone)
-		m.sentence = ""
-	case setup.StepFailed:
-		m.set(ev.Step, stateFailed)
-		switch {
-		case ev.Failure != nil && ev.Failure.Reason == setup.ReasonRemote:
-			m.phase = phaseSSH
-		case prerequisite(ev.Failure):
-			m.failure, m.phase = *ev.Failure, phasePrereq
+		if i < 0 {
+			return nil
 		}
+		m.created = true
+		cmd := m.watch.Start(i, ev.Timestamp)
+		if m.phase == phaseWatch {
+			return cmd
+		}
+		m.phase = phaseWatch
+		return tea.Batch(cmd, tickClock())
+	case setup.StepDone:
+		if i >= 0 {
+			m.watch.Set(i, stateDone, ev.Timestamp)
+		}
+	case setup.StepFailed:
+		if i >= 0 {
+			m.watch.Set(i, stateFailed, ev.Timestamp)
+		}
+		m.fail(ev.Failure)
 	case setup.Waiting:
-		m.sentence = ev.Sentence
 		m.browser.Wait(ev.Waiting, ev.Sentence)
+		// Approval 3 waits once the GitHub App exists.
+		if ev.Waiting == setup.WaitInstallAll || ev.Waiting == setup.WaitInstallRepo {
+			m.created = true
+		}
 		if m.phase != phaseWatch {
 			m.phase = phaseBrowser
 		}
+	case setup.Resumed:
+		m.created = true
+	case setup.SummaryKind:
+		if ev.Summary != nil {
+			m.sum = *ev.Summary
+		}
+	}
+	return nil
+}
+
+// fail shows the screen for a stop: the SSH stop, the prerequisite failure, the Ctrl+C line for a
+// stopped run, or the four-part failure.
+func (m *Model) fail(f *setup.Failure) {
+	switch {
+	case f == nil:
+		m.phase = phaseFailure
+	case f.Reason == setup.ReasonRemote:
+		m.phase = phaseSSH
+	case prerequisite(f):
+		m.failure, m.phase = *f, phasePrereq
+	case f.Reason == setup.ReasonStopped:
+		m.created = m.created || f.Did != nothingCreated
+		m.phase = phaseStopped
+	default:
+		m.failure, m.phase = *f, phaseFailure
 	}
 }
 
-func (m *Model) set(step string, s stepState) {
-	if _, seen := m.states[step]; !seen {
-		m.order = append(m.order, step)
-	}
-	m.states[step] = s
-}
-
-// View renders the phase's screen, or the too-small screen in a window under the minimum. A
-// final frame is drawn whatever the size and ends on a newline, so it stays in scrollback and
-// the shell prompt starts below it.
+// View renders the phase's screen, with the window title and the terminal's progress indicator
+// for the phase, and the cursor while a summary edit is open.
 func (m *Model) View() tea.View {
-	return tea.NewView(m.render())
+	content, fits := m.render()
+	v := tea.NewView(content)
+	v.WindowTitle = m.windowTitle()
+	v.ProgressBar = m.progress()
+	if m.phase == phaseSummary && fits {
+		v.Cursor = m.summary.Cursor(m.width, m.sum)
+	}
+	return v
 }
 
-func (m *Model) render() string {
+// render draws the phase's screen and reports whether it fits; in a window too small for it, the
+// too-small screen. A final frame is drawn whatever the size and ends on a newline, so it stays
+// in scrollback and the shell prompt starts below it.
+func (m *Model) render() (string, bool) {
 	g := Grid{Styles: m.cfg.Styles, Glyphs: m.cfg.Glyphs, Width: m.width}
 	switch m.phase {
 	case phaseSSH:
-		return g.sshStop() + "\n"
+		return g.sshStop() + "\n", true
 	case phasePrereq:
-		return g.prereq(m.failure) + "\n"
-	case phaseWatch:
-		return m.steps()
+		return g.prereq(m.failure) + "\n", true
+	case phaseFailure:
+		list := ""
+		if m.watch.Started() {
+			list = m.watch.list(g, m.sum)
+		}
+		return g.failure(m.failure, list) + "\n", true
+	case phaseDone:
+		return g.done(m.done, m.sum, m.watch.Elapsed()) + "\n", true
+	case phaseStopped:
+		return g.stopped(m.created) + "\n", true
 	}
-	if !Fits(m.width, m.height) {
-		return g.TooSmall(m.height)
+	content := m.screen(g)
+	rows := max(MinRows, lipgloss.Height(content))
+	if !Fits(m.width, m.height) || m.height < rows {
+		return g.TooSmall(m.height, rows), false
 	}
+	return content, true
+}
+
+// screen draws an interactive phase's screen.
+func (m *Model) screen(g Grid) string {
 	switch m.phase {
 	case phaseQuestions:
 		return m.questions.Render(m.width)
@@ -327,18 +448,51 @@ func (m *Model) render() string {
 		return m.browser.Render(m.width)
 	case phaseChoose:
 		return m.choice.Render(m.width)
+	case phaseSummary:
+		return m.summary.Render(m.width, m.sum)
+	case phaseWatch:
+		return m.watch.Render(m.width, m.sum)
 	}
 	return g.welcome(g.Footer(m.keys.Start, m.keys.Quit))
 }
 
-// steps renders one line per step, then the waiting sentence when there is one.
-func (m *Model) steps() string {
-	var b strings.Builder
-	for _, step := range m.order {
-		b.WriteString(step + ": " + string(m.states[step]) + "\n")
+// windowTitle names what the window wants from the owner, so the window list or tab bar says
+// whether to come back to it.
+func (m *Model) windowTitle() string {
+	what := ""
+	switch {
+	case m.phase == phaseBrowser && m.browser.opened:
+		what = fill(windowApprove, "<n>", strconv.Itoa(m.browser.current+1), "<total>", strconv.Itoa(len(approvals)))
+	case m.phase == phaseChoose || m.phase == phaseSummary:
+		what = windowReview
+	case m.phase == phaseWatch:
+		what = windowSettings
+	case m.phase == phaseDone:
+		what = windowDone
+	case m.phase.final():
+		what = windowStopped
 	}
-	if m.sentence != "" {
-		b.WriteString("\n" + m.sentence + "\n")
+	if what == "" {
+		return windowBase
 	}
-	return b.String()
+	return windowBase + " " + m.cfg.Glyphs.Sep + " " + what
+}
+
+// progress drives the terminal's progress indicator: busy while the owner approves in the
+// browser, the share of watch steps done during the run, and the error state on a stop.
+func (m *Model) progress() *tea.ProgressBar {
+	share := m.watch.DoneCount() * 100 / len(watchSteps)
+	switch m.phase {
+	case phaseBrowser:
+		if m.browser.opened {
+			return tea.NewProgressBar(tea.ProgressBarIndeterminate, 0)
+		}
+	case phaseWatch:
+		return tea.NewProgressBar(tea.ProgressBarDefault, share)
+	case phaseDone:
+		return tea.NewProgressBar(tea.ProgressBarDefault, 100)
+	case phaseFailure, phasePrereq:
+		return tea.NewProgressBar(tea.ProgressBarError, share)
+	}
+	return nil
 }

@@ -50,6 +50,12 @@ type browser struct {
 }
 
 func newBrowser(s Styles, g Glyphs, k keys, ascii bool) *browser {
+	return &browser{styles: s, glyphs: g, keys: k, spin: newSpinner(s, ascii)}
+}
+
+// newSpinner is the running mark the browser and the watch screens share in look; each screen
+// holds its own, so their ticks never cross.
+func newSpinner(s Styles, ascii bool) spinner.Model {
 	// The full eight-dot braille frames: the six-dot set all but vanished in screenshots.
 	sp := spinner.New(spinner.WithSpinner(spinner.Spinner{
 		Frames: []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"},
@@ -59,7 +65,7 @@ func newBrowser(s Styles, g Glyphs, k keys, ascii bool) *browser {
 		sp = spinner.New(spinner.WithSpinner(spinner.Line))
 	}
 	sp.Style = s.Accent
-	return &browser{styles: s, glyphs: g, keys: k, spin: sp}
+	return sp
 }
 
 // Arm records the tab's address, so Enter can open it.
@@ -149,33 +155,13 @@ func (b *browser) list(g Grid) string {
 		case b.opened && i == b.current:
 			out = append(out, Mark(b.spin.View(), s.Text.Render(site+": ")+s.Title.Render(button)))
 			if b.sentence != "" {
-				out = append(out, b.detail(g, b.sentence))
+				out = append(out, g.Detail(b.sentence))
 			}
 		default:
 			out = append(out, Mark(s.Muted.Render(g.Glyphs.Pending), quiet))
 		}
 	}
 	return strings.Join(out, "\n")
-}
-
-// detail is the current request's sentence under it, muted, with the permission name in bold
-// wherever it appears. The name's spaces do not break, so it never splits across two lines.
-func (b *browser) detail(g Grid, text string) string {
-	held := strings.ReplaceAll(permissionName, " ", " ")
-	ls := Balance(strings.ReplaceAll(text, permissionName, held), g.ContentWidth()-(ColList-ColMargin))
-	for i, l := range ls {
-		var sb strings.Builder
-		for j, part := range strings.Split(l, held) {
-			if j > 0 {
-				sb.WriteString(g.Styles.Title.Render(permissionName))
-			}
-			if part != "" {
-				sb.WriteString(g.Styles.Muted.Render(part))
-			}
-		}
-		ls[i] = listPad + sb.String()
-	}
-	return strings.Join(ls, "\n")
 }
 
 // clock is the countdown line: the time left in bold, in the warning ink in the last minute.

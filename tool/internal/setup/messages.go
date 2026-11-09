@@ -218,12 +218,12 @@ const (
 	// LineSlugNoLetters is the site-name error for a name that yields no repository name, such
 	// as one written only in another script.
 	LineSlugNoLetters = "Enter a name that has at least one number or one letter from A to Z."
-	// lineSignInStep replaces the watch sentence for the sign-in step, since the confirm page
+	// LineSignInStep replaces the watch sentence for the sign-in step, since the confirm page
 	// takes one more click.
-	lineSignInStep = "Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Sign in there."
-	// lineDoneOpen replaces the done screen's signed-in sentence when the setup tab's link was
+	LineSignInStep = "Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Sign in there."
+	// LineDoneOpen replaces the done screen's signed-in sentence when the setup tab's link was
 	// not consumed.
-	lineDoneOpen = "Your site is open in the setup tab. Select Sign in there, or use the link in your email."
+	LineDoneOpen = "Your site is open in the setup tab. Select Sign in there, or use the link in your email."
 	// linePageFooter is the done page's footer, which names the click.
 	linePageFooter = "Keep this tab open. When setup finishes, your site opens here. Select Sign in to open the admin."
 	// lineLinkExpired is the sign-in email's line for a link that has expired.
@@ -239,7 +239,8 @@ func Catalogue() []string {
 	for _, e := range entries {
 		out = append(out, e.Happened, e.Did, e.Left, e.Do)
 	}
-	out = append(out, LineSlugNoLetters, lineSignInStep, lineDoneOpen, linePageFooter, lineLinkExpired, lineAppNameTaken)
+	out = append(out, LineSlugNoLetters, LineSignInStep, LineDoneOpen, linePageFooter, lineLinkExpired, lineAppNameTaken,
+		ProblemEmail, ProblemAddress, ProblemHost)
 	return slices.DeleteFunc(out, func(s string) bool { return s == "" })
 }
 

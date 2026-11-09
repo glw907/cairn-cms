@@ -27,6 +27,18 @@
 
 ## Medium
 
+- [ ] **#412** An option sheet that changes an unlayered token's light value loses to `tokens.css` with no color-mode cookie `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The option rule sits on `:where(:root)` and the unlayered token on `:root`, so `tokens.css` wins when no cookie pins a mode. Waymark and the options fixture do not hit it, but a theme option that changes a CTA, shadow, or card-border value would. Found by G1's whole-branch review (PR #207, "Known and not done").
+  Placement: before a catalog theme ships an option over an unlayered token; G2's viewer options are a natural place to catch it.
+- [ ] **#413** Chassis roles hold only at `:root`, so a nested `[data-theme]` subtree falls back to the chassis defaults `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The same limit already held for `--cairn-caption-tracking`; the scroll cue resolves `--cairn-code-bg` at `:root`, and the role comment says so. Found by G1's whole-branch review (PR #207).
+  Placement: when a theme or site needs a nested theme scope.
+- [ ] **#414** `build-tokens.mjs --check` misses an `options/<key>/<value>.css` left behind after its option value is removed `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  Found by G1's whole-branch review (PR #207). The check should fail on an orphaned option sheet.
+  Placement: with G2's theme check, or the next tokens-build change.
+- [ ] **#415** Test the lay-in's overlap check on a symlinked theme directory `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The check compares real paths since G1's review, but no test covers a symlinked theme. Found by G1's whole-branch review (PR #207).
+  Placement: with the next `scripts/theme/lay-in.mjs` change.
 - [ ] **#410** Ship the tokens build to a scaffolded site, or keep `tokens.json` out of the scaffold `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The lay-in copies a theme's `tokens/tokens.json` and `resolver.json` into a scaffolded site's `src/theme/tokens/`, but `scripts/theme/build-tokens.mjs` ships only in this repository, so a site developer retunes `src/theme/tokens/tokens.css` by hand and `tokens.json` drifts from it. Found in theme-garden pass G1 (register-check on `retheme-by-tokens.md`). Decide whether the build ships in the template or the scaffold leaves `tokens.json` out.
   Placement: engine batch, with the theme-garden setup pass (design step 4).

@@ -1,0 +1,9 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "spike-cloudflare-oauth.md \"Not confirmed\": revoke answered 403 from Python urllib; body not captured",
+    "status": 403,
+    "note": "pending live recording; the error code and message are the documented or remembered shape, not a capture"
+  },
+  "body": {}
+}

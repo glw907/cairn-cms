@@ -7,3 +7,8 @@
 # regex character class instead of escape sequences, so git's binary heuristic treats every
 # diff against that blob as binary. Force a textual diff so later fixes stay reviewable.
 src/lib/sveltekit/content-routes-media-shared.ts diff
+
+# The setup scaffold tests pack these trees as a template tarball and match anchors by exact text,
+# so a Windows checkout must not turn their line endings into CRLF.
+templates/** text=auto eol=lf
+scripts/build/setup-overlay/** text=auto eol=lf

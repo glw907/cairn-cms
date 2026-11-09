@@ -65,7 +65,7 @@
     "schema/",
     "examples/showcase/src/theme/site.config.yaml",
     "packages/create-cairn-site/src/",
-    "packages/create-cairn-site/fixtures/",
+    "tool/testdata/fixtures/",
     "scripts/checks/shipped-anchors.json"
   ],
   "scriptsTestOnly": [

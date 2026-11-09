@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Continue to GitHub</title>
+<style>
+  :root {
+    --ground: #fdfbf9; --text: #28231d; --muted: #615d57; --accent: #7246cf; --on-accent: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --ground: #221f1a; --text: #eae7e3; --muted: #a8a49e; --accent: #9d84ec; --on-accent: #1b1430; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--text);
+    font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 34rem; margin: 0 auto; padding: 5rem 1.5rem 4rem; }
+  .eyebrow { color: var(--muted); font-size: 0.875rem; margin: 0 0 2.5rem; }
+  h1 { font-size: 1.75rem; line-height: 1.25; font-weight: 600; margin: 0 0 1rem; }
+  p { margin: 0 0 1rem; }
+  .lead { font-size: 1.0625rem; }
+  .button {
+    display: inline-block; margin-top: 0.5rem; padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem; background: var(--accent); color: var(--on-accent);
+    font: inherit; font-weight: 600; text-decoration: none; border: 0; cursor: pointer;
+  }
+  .button:hover { filter: brightness(1.08); }
+  .button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  @media (max-width: 30rem) { main { padding-top: 3rem; } h1 { font-size: 1.5rem; } .button { width: 100%; text-align: center; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">cairn · {{.SiteName}} · approval 2 of 4</p>
+  <h1>Continue to GitHub</h1>
+  <p class="lead">GitHub asks you to create the App for {{.SiteName}}.</p>
+  <form method="post" action="https://github.com/settings/apps/new?state={{.State}}" id="manifest">
+    <input type="hidden" name="manifest" value="{{.Manifest}}">
+    <button class="button" type="submit">Continue to GitHub</button>
+  </form>
+</main>
+<script nonce="{{.Nonce}}">document.getElementById('manifest').submit();</script>
+</body>
+</html>

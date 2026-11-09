@@ -11,7 +11,7 @@ import (
 )
 
 // Every getPaginated caller is covered here against a body recorded from the live API on
-// 2026-09-21, one per route, because a hand-written fixture is what let the defect through: the
+// 2026-09-21 (workers/scripts re-recorded on 2026-11-09), one per route, because a hand-written fixture is what let the defect through: the
 // old fixtures all carried a total_pages, the field the walk read, and three of the six real
 // routes do not send one at all. The routes and what each proves:
 //

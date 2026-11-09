@@ -2,6 +2,7 @@ package logx
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -133,6 +134,8 @@ func TestOnlyLogxRevealsACredential(t *testing.T) {
 	allowed := map[string]bool{
 		filepath.Join("internal", "providers", "cred.go"): true,
 		filepath.Join("internal", "logx", "logx.go"):      true,
+		// Setup hands a provider's credential to the keyring, which stores strings.
+		filepath.Join("internal", "setup", "keep.go"): true,
 	}
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(d.Name(), ".go") || strings.HasSuffix(d.Name(), "_test.go") {
@@ -203,5 +206,74 @@ func TestFlushStillScrubsTheTail(t *testing.T) {
 	}
 	if strings.Contains(out.String(), token) {
 		t.Errorf("flushed tail %q still carries the credential", out.String())
+	}
+}
+
+// TestRegisterRedactsACredentialThatArrivesLater covers setup's case: a credential that exists
+// only after the streams were wrapped is redacted from the next line on.
+func TestRegisterRedactsACredentialThatArrivesLater(t *testing.T) {
+	var out bytes.Buffer
+	w := New(&out, nil)
+	w.Register(providers.NewCredential(token))
+	if _, err := w.Write([]byte("issued " + token + "\n")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if strings.Contains(out.String(), token) || !strings.Contains(out.String(), redacted) {
+		t.Errorf("output %q, want the late credential redacted", out.String())
+	}
+}
+
+// TestRegisterSplitsAPEMIntoLines covers the key a GitHub App conversion returns: the scrub
+// matches within a line, so each line of a multi-line value is its own needle. The key is the
+// corpus's committed test-only key, since the recorded conversion scrubs its pem.
+func TestRegisterSplitsAPEMIntoLines(t *testing.T) {
+	_, body, err := providers.Corpus("github", "test-only.app-credentials.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var conv struct {
+		PEM string `json:"pem"`
+	}
+	if err := json.Unmarshal(body, &conv); err != nil || !strings.Contains(conv.PEM, "\n") {
+		t.Fatalf("decode the corpus key: %v", err)
+	}
+	var out bytes.Buffer
+	w := New(&out, nil)
+	w.Register(providers.NewCredential(conv.PEM))
+	if _, err := w.Write([]byte("key:\n" + conv.PEM)); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	for line := range strings.SplitSeq(conv.PEM, "\n") {
+		if len(line) >= MinLength && strings.Contains(out.String(), line) {
+			t.Errorf("output still carries the key line %.12s...", line)
+		}
+	}
+}
+
+// TestRegisterIsSafeBesideAConcurrentWrite is the race the mutex exists for: a view writes from
+// its own goroutine while the runner registers. Run under go test -race.
+func TestRegisterIsSafeBesideAConcurrentWrite(t *testing.T) {
+	var out bytes.Buffer
+	w := New(&out, nil)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for range 200 {
+			_, _ = w.Write([]byte("frame " + token + "\n"))
+		}
+	}()
+	for i := range 200 {
+		w.Register(providers.NewCredential(token + strings.Repeat("x", i%3)))
+	}
+	<-done
+	if _, err := w.Write([]byte("after " + token + "\n")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if got := lines[len(lines)-1]; strings.Contains(got, token) {
+		t.Errorf("last line %q still carries the credential", got)
 	}
 }

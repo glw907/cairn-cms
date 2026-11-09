@@ -26,6 +26,9 @@ type field[T any] struct {
 	parse   func(t *T, raw json.RawMessage) error
 	marshal func(t T) (json.RawMessage, error)
 	nonZero func(t T) bool
+	// omitZero drops the key from a Marshal of a directly built value while the field is zero,
+	// for an optional object that should not appear as an empty shell on a record without it.
+	omitZero bool
 }
 
 // keysOf returns fields' keys, in table order.
@@ -93,6 +96,12 @@ func objectField[T, V any, PV interface {
 	}
 }
 
+// omitZero marks f as one Marshal leaves out while its value is zero.
+func omitZero[T any](f field[T]) field[T] {
+	f.omitZero = true
+	return f
+}
+
 // recordFields is Record's single-source table: name, step, domain, schemaVersion, and adopted
 // decode and encode directly, while github and cloudflare delegate to the nested objects' own
 // tables.
@@ -104,6 +113,7 @@ var recordFields = []field[Record]{
 	scalarField("adopted", func(r *Record) *bool { return &r.Adopted }),
 	objectField("github", githubFields, func(r *Record) *GitHub { return &r.GitHub }),
 	objectField("cloudflare", cloudflareFields, func(r *Record) *Cloudflare { return &r.Cloudflare }),
+	omitZero(objectField("setup", setupFields, func(r *Record) *Setup { return &r.Setup })),
 }
 
 // githubFields is recordFields's counterpart for GitHub.

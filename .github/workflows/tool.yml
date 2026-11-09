@@ -14,7 +14,6 @@ on:
       - 'tool/**'
       - '.github/workflows/tool.yml'
       - 'packages/create-cairn-site/src/**'
-      - 'packages/create-cairn-site/fixtures/**'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
       # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
@@ -30,7 +29,6 @@ on:
       - 'tool/**'
       - '.github/workflows/tool.yml'
       - 'packages/create-cairn-site/src/**'
-      - 'packages/create-cairn-site/fixtures/**'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
       # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
@@ -109,6 +107,19 @@ jobs:
       - name: Show make version (Windows)
         if: runner.os == 'Windows'
         run: make --version
+      - uses: actions/setup-node@v7
+        if: runner.os == 'Linux'
+        with:
+          node-version: 24
+      - name: Fixture corpus hygiene (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          npm ci
+          node --test tool/testdata/fixtures-hygiene.test.mjs
+      - name: Fixture recorder tests (Linux)
+        # Run against a local fake server; no live service and no secrets are touched.
+        if: runner.os == 'Linux'
+        run: node --test "tool/scripts/record-fixtures/*.test.mjs"
       - run: make -C tool check
       - name: Verbose store package tests (Windows)
         # make test runs go test ./... with no -v, so a skipped test (the symlink tests above

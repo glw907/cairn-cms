@@ -1,0 +1,12 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "RFC 6749 section 5.2 error response",
+    "status": 400,
+    "note": "pending live recording"
+  },
+  "body": {
+    "error": "invalid_grant",
+    "error_description": "The provided authorization grant is invalid, expired, or revoked."
+  }
+}

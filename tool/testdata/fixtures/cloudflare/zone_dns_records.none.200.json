@@ -1,0 +1,21 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/dns/subresources/records/methods/list/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [],
+    "result_info": {
+      "page": 1,
+      "per_page": 100,
+      "count": 0,
+      "total_count": 0,
+      "total_pages": 0
+    }
+  }
+}

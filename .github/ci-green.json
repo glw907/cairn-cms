@@ -6,6 +6,7 @@
     ".github/workflows/test.yml"
   ],
   "judgedWhenPresent": [
+    ".github/workflows/setup-matrix.yml",
     ".github/workflows/tool-conditions.yml",
     ".github/workflows/tool.yml"
   ],

@@ -1,0 +1,27 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/list/",
+    "status": 200,
+    "note": "pending live recording"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      {
+        "uuid": "00000000-0000-0000-0000-0000000000d1",
+        "name": "example-db",
+        "created_at": "2026-11-08T00:00:00.000Z",
+        "version": "production"
+      }
+    ],
+    "result_info": {
+      "page": 1,
+      "per_page": 10,
+      "count": 1,
+      "total_count": 1
+    }
+  }
+}

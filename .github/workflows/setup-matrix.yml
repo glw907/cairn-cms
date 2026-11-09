@@ -1,0 +1,154 @@
+name: setup-matrix
+
+# The answer matrix for `cairn new`'s scaffold. Each case scaffolds a site through the Go
+# scaffold (the TestHarnessScaffold entry point) from a packed engine tarball, then proves the
+# site installs, type-checks, regenerates its committed manifest with no drift, and builds. The
+# cases cover every answer that changes a file: both AI crawler answers, a bare and a subdomain
+# address, and a name that needs a slug.
+#
+# The scaffold pins the exact engine version, which no registry serves from a branch, so the
+# harness reads the packed tarball through the fetch's RoundTripper seam, and each site's two
+# engine dependencies are then rewritten to `file:` tarballs, the create-site.yml pattern.
+#
+# The manifest step is `cairn-manifest` followed by a diff of src/content against the scaffold's
+# commit: the bin has no check flag, and a stale site-facts.json (BACKLOG #365) is exactly a
+# difference between the committed file and the regenerated one. `npm run build` fails on the same
+# staleness, which is the second line.
+
+on:
+  push:
+    branches: [main, rebuild]
+    paths:
+      - 'tool/**'
+      - 'examples/showcase/**'
+      - 'templates/**'
+      - 'scripts/build/**'
+      - 'src/lib/vite/**'
+      - 'package.json'
+      - '.github/workflows/setup-matrix.yml'
+  pull_request:
+    paths:
+      - 'tool/**'
+      - 'examples/showcase/**'
+      - 'templates/**'
+      - 'scripts/build/**'
+      - 'src/lib/vite/**'
+      - 'package.json'
+      - '.github/workflows/setup-matrix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workflows:
+    # The two workflows every scaffolded site ships, checked as files: they are not under
+    # .github/workflows here, so the repo's own actionlint run never sees them.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: tool/go.mod
+          cache: false
+      - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 scripts/build/setup-overlay/.github/workflows/deploy.yml scripts/build/setup-overlay/.github/workflows/check.yml
+
+  matrix:
+    name: matrix (${{ matrix.case }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: decline-apex
+            name: Plain Site
+            posture: decline
+            host: example.test
+          - case: invite-apex
+            name: Plain Site
+            posture: invite
+            host: example.test
+          - case: decline-subdomain-slug
+            name: 'My Café: The Site!'
+            posture: decline
+            host: blog.example.test
+          - case: invite-subdomain-slug
+            name: 'My Café: The Site!'
+            posture: invite
+            host: blog.example.test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: tool/go.mod
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci
+          clean: node_modules
+      - run: npm run package
+      - name: Pack the engine with its template, and the dev backend
+        id: pack
+        # The template tree must exist before the engine pack, and --ignore-scripts keeps the
+        # pack from rebuilding the package.
+        run: |
+          node scripts/build/pack-engine-template.mjs
+          mkdir -p "$RUNNER_TEMP/pack"
+          ENGINE_TGZ="$RUNNER_TEMP/pack/$(npm pack --ignore-scripts --silent --pack-destination "$RUNNER_TEMP/pack" | tail -n1)"
+          DEV_TGZ="$RUNNER_TEMP/pack/$(npm pack --ignore-scripts --silent --pack-destination "$RUNNER_TEMP/pack" ./packages/cairn-cms-dev | tail -n1)"
+          {
+            echo "engine=$ENGINE_TGZ"
+            echo "dev=$DEV_TGZ"
+            echo "version=$(node -p "require('./package.json').version")"
+          } >> "$GITHUB_OUTPUT"
+      - name: Scaffold the site
+        working-directory: tool
+        env:
+          CAIRN_SCAFFOLD_TARBALL: ${{ steps.pack.outputs.engine }}
+          CAIRN_SCAFFOLD_VERSION: ${{ steps.pack.outputs.version }}
+          CAIRN_SCAFFOLD_OUT: ${{ runner.temp }}/site
+          CAIRN_SCAFFOLD_NAME: ${{ matrix.name }}
+          CAIRN_SCAFFOLD_POSTURE: ${{ matrix.posture }}
+          CAIRN_SCAFFOLD_ZONE: example.test
+          CAIRN_SCAFFOLD_HOST: ${{ matrix.host }}
+        run: go test -count=1 -run '^TestHarnessScaffold$' ./internal/setup/scaffold
+      - name: Point the site at the packed tarballs
+        env:
+          ENGINE: ${{ steps.pack.outputs.engine }}
+          DEV: ${{ steps.pack.outputs.dev }}
+          SITE: ${{ runner.temp }}/site
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const file = process.env.SITE + "/package.json";
+            const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
+            pkg.dependencies["@glw907/cairn-cms"] = "file:" + process.env.ENGINE;
+            pkg.devDependencies["@glw907/cairn-cms-dev"] = "file:" + process.env.DEV;
+            fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + "\n");
+          '
+      - name: Install
+        working-directory: ${{ runner.temp }}/site
+        run: npm install
+      - name: Type-check
+        working-directory: ${{ runner.temp }}/site
+        run: npm run check
+      - name: Regenerate the manifest and fail on any drift from the scaffold's commit
+        working-directory: ${{ runner.temp }}/site
+        run: |
+          npx cairn-manifest
+          git diff --exit-code -- src/content
+      - name: Assert the posture reached the committed site facts
+        working-directory: ${{ runner.temp }}/site
+        env:
+          POSTURE: ${{ matrix.posture }}
+        run: |
+          grep -q "\"aiPosture\": \"$POSTURE\"" src/content/.cairn/site-facts.json
+      - name: Build
+        working-directory: ${{ runner.temp }}/site
+        run: npm run build

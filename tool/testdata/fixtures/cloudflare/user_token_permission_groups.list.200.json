@@ -1,0 +1,4227 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "GET /user/tokens/permission_groups",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "result": [
+      {
+        "id": "00000000000000000000000000000025",
+        "name": "AI Audit Read",
+        "description": "Grants access to reading AI Audit",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000026",
+        "name": "AI Audit Write",
+        "description": "Grants access to reading and editing AI Audit",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000027",
+        "name": "AI Gateway Metadata Read",
+        "description": "Grants read access to AI Gateway configuration without access to provider config secrets",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000028",
+        "name": "AI Gateway Read",
+        "description": "Grants access to reading AI Gateways",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000029",
+        "name": "AI Gateway Run",
+        "description": "Grants access to run AI Gateways",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000030",
+        "name": "AI Gateway Write",
+        "description": "Grants access to reading and editing AI Gateways",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000031",
+        "name": "AI Search Index Engine",
+        "description": "Grants access to run AI Search Index Engine",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000032",
+        "name": "AI Search Metadata Read",
+        "description": "Grants read access to AI Search configuration and metadata without access to search results or indexed content.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000033",
+        "name": "AI Search Read",
+        "description": "Grants access to reading data from AI Search",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000034",
+        "name": "AI Search Run",
+        "description": "Grants access to run AI Search",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000035",
+        "name": "AI Search Write",
+        "description": "Grants access to reading and writing data from AI Search",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000036",
+        "name": "API Tokens Read",
+        "description": "Grants read access to user's API Tokens",
+        "scopes": [
+          "com.cloudflare.api.user"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000037",
+        "name": "API Tokens Write",
+        "description": "Grants write access to user's API Tokens",
+        "scopes": [
+          "com.cloudflare.api.user"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000038",
+        "name": "Access: Apps Read",
+        "description": "Can read Cloudflare Access applications",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000039",
+        "name": "Access: Apps Revoke",
+        "description": "Can revoke Cloudflare Access application tokens",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000040",
+        "name": "Access: Apps Write",
+        "description": "Can read and edit Cloudflare Access applications",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000041",
+        "name": "Access: Apps and Policies Read",
+        "description": "Grants read access to Cloudflare Access zone resources",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000042",
+        "name": "Access: Apps and Policies Read",
+        "description": "Can read Cloudflare Access applications and policies",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000043",
+        "name": "Access: Apps and Policies Revoke",
+        "description": "Grants ability to revoke all tokens to Cloudflare Access zone resources",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000044",
+        "name": "Access: Apps and Policies Revoke",
+        "description": "Can revoke Cloudflare Access application tokens",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000045",
+        "name": "Access: Apps and Policies Write",
+        "description": "Grants write access to Cloudflare Access zone resources",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000046",
+        "name": "Access: Apps and Policies Write",
+        "description": "Can read and edit Cloudflare Access applications and policies",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000047",
+        "name": "Access: Audit Logs Read",
+        "description": "Can read Cloudflare Access audit logs",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000048",
+        "name": "Access: Custom Pages Read",
+        "description": "Can read Cloudflare Access Custom Pages",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000049",
+        "name": "Access: Custom Pages Write",
+        "description": "Can read and edit Cloudflare Access Custom Pages",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000050",
+        "name": "Access: Device Posture Read",
+        "description": "Can read Cloudflare Access Device Posture",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000051",
+        "name": "Access: Device Posture Write",
+        "description": "Can read and edit Cloudflare Access Device Posture",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000052",
+        "name": "Access: Groups Read",
+        "description": "Can read Cloudflare Access group resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000053",
+        "name": "Access: Groups Write",
+        "description": "Can read and edit Cloudflare Access group resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000054",
+        "name": "Access: Identity Providers Read",
+        "description": "Can read Cloudflare Access identity provider resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000055",
+        "name": "Access: Identity Providers Write",
+        "description": "Can read and edit Cloudflare Access identity provider resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000056",
+        "name": "Access: Keys Read",
+        "description": "Can read Cloudflare Access keys",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000057",
+        "name": "Access: Keys Write",
+        "description": "Can read and edit Cloudflare Access keys",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000058",
+        "name": "Access: Mutual TLS Certificates Read",
+        "description": "Can read Cloudflare Access mTLS certificates",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000059",
+        "name": "Access: Mutual TLS Certificates Write",
+        "description": "Can read and edit Cloudflare Access mTLS certificates",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000060",
+        "name": "Access: Organizations Read",
+        "description": "Can read Cloudflare Access organization resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000061",
+        "name": "Access: Organizations Revoke",
+        "description": "Can revoke user sessions of organizations",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000062",
+        "name": "Access: Organizations Write",
+        "description": "Can read and edit Cloudflare Access organization resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000063",
+        "name": "Access: Organizations, Identity Providers, and Groups Read",
+        "description": "Can read Cloudflare Access account resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000064",
+        "name": "Access: Organizations, Identity Providers, and Groups Revoke",
+        "description": "Can revoke user sessions to Cloudflare Access account resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000065",
+        "name": "Access: Organizations, Identity Providers, and Groups Write",
+        "description": "Can read and edit Cloudflare Access account resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000066",
+        "name": "Access: Policies Read",
+        "description": "Can read Cloudflare Access policies",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000067",
+        "name": "Access: Policies Write",
+        "description": "Can read and edit Cloudflare Access policies",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000068",
+        "name": "Access: Policy Test Read",
+        "description": "Can read Cloudflare Access Policy Tests",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000069",
+        "name": "Access: Policy Test Write",
+        "description": "Can read and edit Cloudflare Access Policy Tests",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000070",
+        "name": "Access: SAML Certificates Read",
+        "description": "Can read Cloudflare Access SAML certificates",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000071",
+        "name": "Access: SAML Certificates Write",
+        "description": "Can read and edit Cloudflare Access SAML certificates",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000072",
+        "name": "Access: SCIM Logs Read",
+        "description": "Can read SCIM audit logs",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000073",
+        "name": "Access: SCIM Population Read",
+        "description": "Can read Cloudflare Access SCIM Populations",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000074",
+        "name": "Access: SCIM Population Write",
+        "description": "Can read and edit Cloudflare Access SCIM Populations",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000075",
+        "name": "Access: SSH Auditing Read",
+        "description": "Can read Cloudflare Access SSH certificate authorities (CAs)",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000076",
+        "name": "Access: SSH Auditing Write",
+        "description": "Can read and edit Cloudflare Access SSH certificate authorities (CAs)",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000077",
+        "name": "Access: Service Tokens Read",
+        "description": "Can read Cloudflare Access Service Tokens",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000078",
+        "name": "Access: Service Tokens Write",
+        "description": "Can read and edit Cloudflare Access Service Tokens",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000079",
+        "name": "Access: Tags Read",
+        "description": "Can read Cloudflare Access tags",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000080",
+        "name": "Access: Tags Write",
+        "description": "Can read and edit Cloudflare Access tags",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000081",
+        "name": "Access: Users Read",
+        "description": "Can read Cloudflare Access user resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000082",
+        "name": "Access: Users Write",
+        "description": "Can read and edit Cloudflare Access user resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000083",
+        "name": "Account API Gateway",
+        "description": "Grants full access to API-Gateway Management (including API Shield) across the whole account",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000084",
+        "name": "Account API Gateway Read",
+        "description": "Grants read access to API-Gateway Management (including API Shield) across the whole account",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000085",
+        "name": "Account API Tokens Read",
+        "description": "Grants read access to account API Tokens",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000086",
+        "name": "Account API Tokens Write",
+        "description": "Grants write access to account API Tokens",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000087",
+        "name": "Account Abuse Protection PII Read",
+        "description": "Grants read access to Account Abuse Protection PII data",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000088",
+        "name": "Account Analytics Read",
+        "description": "Grants read access to analytics",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000089",
+        "name": "Account Custom Asset Read",
+        "description": "Grants read access to account custom assets",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000090",
+        "name": "Account Custom Asset Write",
+        "description": "Grants write access to account custom assets",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000091",
+        "name": "Account Custom Error Rules Read",
+        "description": "Grants read access to account custom error rules",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000092",
+        "name": "Account Custom Error Rules Write",
+        "description": "Grants write access to account custom error rules",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000093",
+        "name": "Account Custom Pages Read",
+        "description": "Grants read access to account custom pages",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000094",
+        "name": "Account Custom Pages Write",
+        "description": "Grants write access to account custom pages",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000095",
+        "name": "Account DNS Settings Read",
+        "description": "Grants read access to Account DNS Settings",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000096",
+        "name": "Account DNS Settings Write",
+        "description": "Grants write access to Account DNS Settings",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000097",
+        "name": "Account Firewall Access Rules Read",
+        "description": "Grants read access to account firewall access rules",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000098",
+        "name": "Account Firewall Access Rules Write",
+        "description": "Grants write access to account firewall access rules",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000099",
+        "name": "Account Rule Lists Read",
+        "description": "Grants read access to Rule Lists",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000100",
+        "name": "Account Rule Lists Write",
+        "description": "Grants write access to Rule Lists",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000101",
+        "name": "Account Rulesets Read",
+        "description": "Grants read access to Account Rulesets",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000102",
+        "name": "Account Rulesets Write",
+        "description": "Grants write access to Account Rulesets",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000103",
+        "name": "Account Security Center Insights Read",
+        "description": "Grants read access to Security Center Insights",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000104",
+        "name": "Account Security Center Insights Write",
+        "description": "Grants write access to Security Center Insights",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000105",
+        "name": "Account Security Insights Partner Integrations Read",
+        "description": "Grants read access to Security Insights partner integration assets and settings",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000106",
+        "name": "Account Security Insights Partner Integrations Write",
+        "description": "Grants write access to Security Insights partner integration assets and settings",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000107",
+        "name": "Account Settings Read",
+        "description": "Grants read access to Account resources, account membership, and account level features",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000108",
+        "name": "Account Settings Write",
+        "description": "Grants write access to Account resources, account membership, and account level features",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000109",
+        "name": "Account WAF Read",
+        "description": "Grants read access to Account WAF",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000110",
+        "name": "Account WAF Write",
+        "description": "grants write access to account waf",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000111",
+        "name": "Account Waiting Rooms Read",
+        "description": "Grants read access to Waiting Rooms\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000112",
+        "name": "Account: SSL and Certificates Read",
+        "description": "Grants read access to SSL MTLS certificates or Certificate Store",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000113",
+        "name": "Account: SSL and Certificates Write",
+        "description": "Grants read and write access to SSL MTLS certificates or Certificate Store",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000114",
+        "name": "Address Maps Read",
+        "description": "Grants read access to Address Maps",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000115",
+        "name": "Address Maps Write",
+        "description": "Grants write access to Address Maps",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000116",
+        "name": "Agent Memory Write",
+        "description": "Grants write access to Agent Memory",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000117",
+        "name": "Agents Gateway Read",
+        "description": "Grants access to reading Agents Gateway",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000118",
+        "name": "Agents Gateway Run",
+        "description": "Grants access to running Agents Gateway",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000119",
+        "name": "Agents Gateway Write",
+        "description": "Grants access to reading and editing Agents Gateway",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000120",
+        "name": "Allow Request Tracer Read",
+        "description": "Allows read access to request tracer API",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000121",
+        "name": "Analytics Read",
+        "description": "Grants read access to analytics",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000122",
+        "name": "Application Security Reports Read",
+        "description": "Can read Application Security Reports",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000123",
+        "name": "Apps Write",
+        "description": "Grants full access to Cloudflare Apps",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000124",
+        "name": "Artifacts Read",
+        "description": "Grants read access to Artifacts",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "other",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000125",
+        "name": "Artifacts Write",
+        "description": "Grants read and write access to Artifacts",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "other",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000126",
+        "name": "Audit Logs Read",
+        "description": "Grants read access to Audit Logs",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000127",
+        "name": "Auto Rag Read",
+        "description": "Grants access to reading data from Auto Rag",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000128",
+        "name": "Auto Rag Write",
+        "description": "Grants access to reading and writing data from Auto Rag",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000129",
+        "name": "Auto Rag Write Run Engine",
+        "description": "Grants access to run Auto RAG engine",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000130",
+        "name": "Billing Read",
+        "description": "Grants read access to billing profile, subscriptions, usage data and access to fetch invoices and entitlements",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000131",
+        "name": "Billing Write",
+        "description": "Grants write access to billing profile, subscriptions, and access to fetch invoices and entitlements",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000132",
+        "name": "Bot Management Feedback Report Read",
+        "description": "Grants read access to BOT Management Feedback Reports",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000133",
+        "name": "Bot Management Feedback Report Write",
+        "description": "Grants write access to BOT Management Feedback Reports",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000134",
+        "name": "Bot Management Read",
+        "description": "Grants read access to BOT Management",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000135",
+        "name": "Bot Management Write",
+        "description": "Grants write access to BOT Management",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000136",
+        "name": "Browser Run Read",
+        "description": "Grants read access to Browser Run API",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000137",
+        "name": "Browser Run Write",
+        "description": "Grants write access to Browser Run API",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000138",
+        "name": "CASB Read",
+        "description": "Grants read access to Cloudflare CASB",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000139",
+        "name": "CASB Write",
+        "description": "Grants write access to Cloudflare CASB",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000140",
+        "name": "CF Agents Read",
+        "description": "Grants read access to CF Agents",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000141",
+        "name": "CF Agents Write",
+        "description": "Grants write access to CF Agents",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000142",
+        "name": "Cache Purge",
+        "description": "Grants access to purge cache",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000143",
+        "name": "Cache Settings Read",
+        "description": "Grants read access to cache settings phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000144",
+        "name": "Cache Settings Write",
+        "description": "Grants write access to cache settings phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000145",
+        "name": "Calls Read",
+        "description": "Grants read access to Calls configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000146",
+        "name": "Calls Write",
+        "description": "Grants read/write access to Calls configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000147",
+        "name": "China Network Steering Read",
+        "description": "Grants read access to China Network Steering",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000148",
+        "name": "China Network Steering Write",
+        "description": "Grants write access to China Network Steering",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000149",
+        "name": "Cloud Connector Read",
+        "description": "Grants read access to Cloud Connector",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000150",
+        "name": "Cloud Connector Write",
+        "description": "Grants write access to Cloud Connector",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000151",
+        "name": "Cloud Email Security: Read",
+        "description": "Grants read access to Cloudflare Cloud Email Security",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000152",
+        "name": "Cloud Email Security: Write",
+        "description": "Grants write access to Cloudflare Cloud Email Security",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000153",
+        "name": "Cloud Workload Security Deployment",
+        "description": "Grants deployment targets access to deployment bundles and metrics ingestion in an account.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000154",
+        "name": "Cloud Workload Security Read",
+        "description": "Grants read access to Cloud Workload Security resources.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000155",
+        "name": "Cloud Workload Security Write",
+        "description": "Grants read and write access to Cloud Workload Security resources.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000156",
+        "name": "Cloudchamber Read",
+        "description": "Grants read access to Cloudchamber deployments",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000157",
+        "name": "Cloudchamber Write",
+        "description": "Grants write access to Cloudchamber deployments",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000158",
+        "name": "Cloudflare CDS Compute Account Read",
+        "description": "Grants read access to Cloudflare CDS compute account resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000159",
+        "name": "Cloudflare CDS Compute Account Write",
+        "description": "Grants write access to Cloudflare CDS compute account resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000160",
+        "name": "Cloudflare DEX Read",
+        "description": "Grants read access to Cloudflare DEX",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000161",
+        "name": "Cloudflare DEX Write",
+        "description": "Grants full access to Cloudflare DEX",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000162",
+        "name": "Cloudflare One Connector Monitoring: cloudflared",
+        "description": "Grants access to stream logs from cloudflared connectors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000163",
+        "name": "Cloudflare One Connector: WARP Read",
+        "description": "Grants read access to WARP Connectors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000164",
+        "name": "Cloudflare One Connector: WARP Write",
+        "description": "Grants write access to WARP Connectors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000165",
+        "name": "Cloudflare One Connector: cloudflared Read",
+        "description": "Grants read access to cloudflared connectors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000166",
+        "name": "Cloudflare One Connector: cloudflared Write",
+        "description": "Grants write access to cloudflared connectors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000167",
+        "name": "Cloudflare One Connectors Read",
+        "description": "Grants read access to Cloudflare One connectors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000168",
+        "name": "Cloudflare One Connectors Write",
+        "description": "Grants write access to Cloudflare One connectors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000169",
+        "name": "Cloudflare One Networks Read",
+        "description": "Grants read access to Cloudflare One routes, subnets, and virtual networks",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000170",
+        "name": "Cloudflare One Networks Write",
+        "description": "Grants write access to Cloudflare One routes, subnets, and virtual networks",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000171",
+        "name": "Cloudflare Tunnel Read",
+        "description": "Grants access to view Cloudflare Tunnels",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000172",
+        "name": "Cloudflare Tunnel Write",
+        "description": "Grants access to create and delete Cloudflare Tunnels",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000173",
+        "name": "Cloudflare Zero Trust Secure DNS Locations Write",
+        "description": "Grants access to create and edit secure DNS Locations only in teams (Zero Trust)",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000174",
+        "name": "Cloudforce One Read",
+        "description": "Grants read access to Cloudforce One",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000175",
+        "name": "Cloudforce One Write",
+        "description": "Grants read access to Cloudforce One",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000176",
+        "name": "Config Settings Read",
+        "description": "Grants read access to config settings phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000177",
+        "name": "Config Settings Write",
+        "description": "Grants write access to config settings phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000178",
+        "name": "Connectivity Directory Admin",
+        "description": "Can view, edit, create, and delete Connectivity Directory Services and Networks, including the ability to create Services that bind to Cloudflare Tunnel",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000179",
+        "name": "Connectivity Directory Bind",
+        "description": "Can read, list, and bind to Connectivity Directory services and networks, as well as read and list Cloudflare Tunnels",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000180",
+        "name": "Connectivity Directory Read",
+        "description": "Can view Connectivity Directory services, networks, and Cloudflare Tunnels",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000181",
+        "name": "Constellation Read",
+        "description": "Grants read access to Constellation configuration and models",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000182",
+        "name": "Constellation Write",
+        "description": "Grants write access to Constellation configuration and models",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000183",
+        "name": "Custom Errors Read",
+        "description": "Grants read access to custom errors phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000184",
+        "name": "Custom Errors Write",
+        "description": "Grants write access to custom errors phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000185",
+        "name": "Custom Pages Read",
+        "description": "Grants read access to custom pages",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000186",
+        "name": "Custom Pages Write",
+        "description": "Grants write access to custom pages",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000187",
+        "name": "D1 Metadata Read",
+        "description": "Grants read access to D1 configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000188",
+        "name": "D1 Read",
+        "description": "Grants read access to D1 configuration and SQL queries",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000189",
+        "name": "D1 Write",
+        "description": "Grants write access to D1 configuration and SQL queries",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000190",
+        "name": "DDoS Botnet Feed Read",
+        "description": "Grants read access to Botnet Feed reports",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000191",
+        "name": "DDoS Botnet Feed Write",
+        "description": "Grants write access to Botnet Feed configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000192",
+        "name": "DDoS Protection Read",
+        "description": "Grants read access to DDoS protection",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000193",
+        "name": "DDoS Protection Write",
+        "description": "Grants write access to DDoS protection",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000194",
+        "name": "DLS: Read",
+        "description": "Grants read access to Data Localization Suite regions, BYOIP prefix bindings, and regional hostnames",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000195",
+        "name": "DLS: Write",
+        "description": "Grants write access to BYOIP prefix bindings and regional hostnames, and read access to Data Localization Suite regions",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000196",
+        "name": "DNS Firewall Read",
+        "description": "Grants read access to DNS Firewall",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000197",
+        "name": "DNS Firewall Write",
+        "description": "Grants write access to DNS Firewall",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000198",
+        "name": "DNS Read",
+        "description": "Grants read access to DNS",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000199",
+        "name": "DNS View Read",
+        "description": "Grants read access to DNS Views",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000200",
+        "name": "DNS View Write",
+        "description": "Grants write access to DNS Views",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000201",
+        "name": "DNS Write",
+        "description": "Grants write access to DNS",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000202",
+        "name": "Disable ESC Read",
+        "description": "Grants read access to Cloudflare Disable ESC",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000203",
+        "name": "Disable ESC Read",
+        "description": "Grants read access to Cloudflare Disable ESC",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000204",
+        "name": "Disable ESC Write",
+        "description": "Grants write access to Cloudflare Disable ESC",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000205",
+        "name": "Disable ESC Write",
+        "description": "Grants write access to Cloudflare Disable ESC",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000206",
+        "name": "Domain API Gateway",
+        "description": "Grants full access to API-Gateway Management (including API Shield)",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000207",
+        "name": "Domain API Gateway Read",
+        "description": "Grants read access to API-Gateway Management (including API Shield)",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000208",
+        "name": "Domain Page Shield",
+        "description": "Grants write access to Page Shield",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000209",
+        "name": "Domain Page Shield Read",
+        "description": "Grants read access to Page Shield",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000210",
+        "name": "Dynamic URL Redirects Read",
+        "description": "Grants read access to Dynamic URL Redirect",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000211",
+        "name": "Dynamic URL Redirects Write",
+        "description": "Grants write access to Dynamic URL Redirect",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000212",
+        "name": "Email Routing Account Rules Read",
+        "description": "Grants read access to account-level Email Routing rules\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000213",
+        "name": "Email Routing Addresses Read",
+        "description": "Grants read access to Email Routing target addresses\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000214",
+        "name": "Email Routing Addresses Write",
+        "description": "Grants full access to Email Routing target addresses\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000215",
+        "name": "Email Routing Rules Read",
+        "description": "Grants read access to Email Routing rules\n",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000216",
+        "name": "Email Routing Rules Write",
+        "description": "Grants full access to Email Routing rules\n",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000217",
+        "name": "Email Routing Suppressions Read",
+        "description": "Grants read access to Email Routing target suppression\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000218",
+        "name": "Email Routing Suppressions Write",
+        "description": "Grants full access to Email Routing target suppressions\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000219",
+        "name": "Email Security DMARC Reports Read",
+        "description": "Grants read access to Email Security dmarc reports\n",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000220",
+        "name": "Email Security DMARC Reports Write",
+        "description": "Grants full access to Email Security dmarc reports\n",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000221",
+        "name": "Email Sending Read",
+        "description": "Grants access to reading data from Email Sending",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000222",
+        "name": "Email Sending Write",
+        "description": "Grants access to reading and writing data from Email Sending",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "email_and_messaging",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000223",
+        "name": "Field Extractors Read",
+        "description": "Grants read access to account field extractors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000224",
+        "name": "Field Extractors Write",
+        "description": "Grants read and edit access to account field extractors",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000225",
+        "name": "Firewall Services Read",
+        "description": "Grants read access to Firewall resources",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000226",
+        "name": "Firewall Services Write",
+        "description": "Grants write access to Firewall resources",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000227",
+        "name": "Firewall for AI Read",
+        "description": "Grants read access to Firewall for AI settings.",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000228",
+        "name": "Firewall for AI Write",
+        "description": "Grants full access to Firewall for AI settings.",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000229",
+        "name": "Flagship App Bind",
+        "description": "Grants permission to bind a Flagship app to Cloudflare Workers.",
+        "scopes": [
+          "com.cloudflare.api.account.flagship.app"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000230",
+        "name": "Flagship App Evaluate",
+        "description": "Grants access to evaluating flags in a single Flagship app.",
+        "scopes": [
+          "com.cloudflare.api.account.flagship.app"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000231",
+        "name": "Flagship App Read",
+        "description": "Grants read and evaluation access to a single Flagship app.",
+        "scopes": [
+          "com.cloudflare.api.account.flagship.app"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000232",
+        "name": "Flagship App Write",
+        "description": "Grants read, update, delete, and evaluate access to a single Flagship app.",
+        "scopes": [
+          "com.cloudflare.api.account.flagship.app"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000233",
+        "name": "Flagship Evaluate",
+        "description": "Grants access to evaluating Flagship flags",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000234",
+        "name": "Flagship Read",
+        "description": "Grants access to reading Flagship flags",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000235",
+        "name": "Flagship Write",
+        "description": "Grants access to reading and editing Flagship flags",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000236",
+        "name": "Fraud Detection Read",
+        "description": "Grants read access to Fraud Detection",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000237",
+        "name": "Fraud Detection Write",
+        "description": "Grants write access to Fraud Detection",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000238",
+        "name": "Fraud Events Write",
+        "description": "Grants write access to submit fraud detection events via the API",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000239",
+        "name": "Fraud Feedback Read",
+        "description": "Grants read access to fraud detection feedback",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000240",
+        "name": "Fraud Feedback Write",
+        "description": "Grants write access to submit fraud detection feedback",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000241",
+        "name": "HTTP Applications Read",
+        "description": "Grants read-only access to HTTP Applications",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000242",
+        "name": "HTTP Applications Write",
+        "description": "Grants full access to HTTP Applications",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000243",
+        "name": "HTTP DDoS Managed Ruleset Read",
+        "description": "Grants read access to HTTP DDoS Managed Ruleset",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000244",
+        "name": "HTTP DDoS Managed Ruleset Write",
+        "description": "Grants write access to HTTP DDoS Managed Ruleset",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000245",
+        "name": "Health Checks Read",
+        "description": "Grants read access to Health Checks",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000246",
+        "name": "Health Checks Write",
+        "description": "Grants write access to Health Checks",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000247",
+        "name": "Hyperdrive PlanetScale Setup",
+        "description": "Grants access to create Cloudflare-billed PlanetScale databases through Hyperdrive",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000248",
+        "name": "Hyperdrive Read",
+        "description": "Grants read access to Hyperdrive configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000249",
+        "name": "Hyperdrive Write",
+        "description": "Grants write access to Hyperdrive configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000250",
+        "name": "IOT Read",
+        "description": "Grants read access to IOT devices",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000251",
+        "name": "IOT Write",
+        "description": "Grants full access to IOT devices",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000252",
+        "name": "IP Prefixes: BGP On Demand Read",
+        "description": "Grants access to read ip prefix bgp configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000253",
+        "name": "IP Prefixes: BGP On Demand Write",
+        "description": "Grants access to read and change ip prefix bgp configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000254",
+        "name": "IP Prefixes: Read",
+        "description": "Grants access to read ip prefix settings",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000255",
+        "name": "IP Prefixes: Write",
+        "description": "Grants access to read/write ip prefix settings",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000256",
+        "name": "Images Metadata Read",
+        "description": "Grants read access to Images metadata and configuration without access to image content",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000257",
+        "name": "Images Read",
+        "description": "Grants read access to Images",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000258",
+        "name": "Images Write",
+        "description": "Grants write access to upload Images",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000259",
+        "name": "Individual Workers Admin",
+        "description": "Full access to a single Worker, including content, versions, deployments, previews, and delete.",
+        "scopes": [
+          "com.cloudflare.edge.worker.script"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000260",
+        "name": "Individual Workers Content Read-Only",
+        "description": "Grants read access to a single Cloudflare Worker resource.",
+        "scopes": [
+          "com.cloudflare.edge.worker.script"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000261",
+        "name": "Individual Workers Editor",
+        "description": "Grants write access to a single Cloudflare Worker resource.",
+        "scopes": [
+          "com.cloudflare.edge.worker.script"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000262",
+        "name": "Individual Workers Metadata Read-Only",
+        "description": "View metadata and settings for a single Worker without access to script source content.",
+        "scopes": [
+          "com.cloudflare.edge.worker.script"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000263",
+        "name": "Integration Write",
+        "description": "Grants write access to integrations",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000264",
+        "name": "Intel Read",
+        "description": "Grants read access to Intel API",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000265",
+        "name": "Intel Write",
+        "description": "Grants write access to Intel API",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000266",
+        "name": "K2 Config Read",
+        "description": "Grants access to view K2 stream configurations.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000267",
+        "name": "K2 Config Write",
+        "description": "Grants access to manage K2 stream configurations.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000268",
+        "name": "K2 Consume",
+        "description": "Grants access to consume records from K2 streams.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000269",
+        "name": "K2 Produce",
+        "description": "Grants access to produce records to K2 streams.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000270",
+        "name": "L4 DDoS Managed Ruleset Read",
+        "description": "Grants read access to L4 DDoS Managed Ruleset",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000271",
+        "name": "L4 DDoS Managed Ruleset Write",
+        "description": "Grants write access to L4 DDoS Managed Ruleset",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000272",
+        "name": "Load Balancers Account Read",
+        "description": "Grants read access to account load balancers and associated resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000273",
+        "name": "Load Balancers Account Write",
+        "description": "Grants write access to account load balancers and associated resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000274",
+        "name": "Load Balancers Read",
+        "description": "Grants read access to load balancers and associated resources",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000275",
+        "name": "Load Balancers Write",
+        "description": "Grants write access to load balancers and associated resources",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000276",
+        "name": "Load Balancing: Monitors and Pools Read",
+        "description": "Grants read access to account level load balancer resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000277",
+        "name": "Load Balancing: Monitors and Pools Write",
+        "description": "Grants write access to account level load balancer resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000278",
+        "name": "Logs Read",
+        "description": "Grants read access to logs and logpush jobs",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000279",
+        "name": "Logs Read",
+        "description": "Grants read access to logs and logpush jobs",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000280",
+        "name": "Logs Write",
+        "description": "Grants write access to logpush jobs",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000281",
+        "name": "Logs Write",
+        "description": "Grants write access to logpush jobs",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000282",
+        "name": "MCP Portals Read",
+        "description": "Grants access to reading MCP Portals",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000283",
+        "name": "MCP Portals Write",
+        "description": "Grants access to reading and editing MCP Portals",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000284",
+        "name": "Magic Firewall Packet Captures - Read PCAPs API",
+        "description": "Grants read access to Packet Captures",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000285",
+        "name": "Magic Firewall Packet Captures - Write PCAPs API",
+        "description": "Grants write access to Packet Captures",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000286",
+        "name": "Magic Firewall Read",
+        "description": "Grants read access to Magic Firewall",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000287",
+        "name": "Magic Firewall Write",
+        "description": "Grants write access to Magic Firewall",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000288",
+        "name": "Magic Network Monitoring Admin",
+        "description": "Grants admin access to MNM settings",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000289",
+        "name": "Magic Network Monitoring Config Read",
+        "description": "Grants read access to MNM config and rules",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000290",
+        "name": "Magic Network Monitoring Config Write",
+        "description": "Grants write access to MNM rules and update access to account settings",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000291",
+        "name": "Magic Transit Read",
+        "description": "Grants read access to Magic Transit",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000292",
+        "name": "Magic Transit Write",
+        "description": "Grants write access to Magic Transit",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000293",
+        "name": "Magic WAN Read",
+        "description": "Grants read access to Magic WAN",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000294",
+        "name": "Magic WAN Write",
+        "description": "Grants write access to Magic WAN",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000295",
+        "name": "Managed headers Read",
+        "description": "Grants read access to managed headers phases",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000296",
+        "name": "Managed headers Write",
+        "description": "Grants write access to managed headers phases",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000297",
+        "name": "Mass URL Redirects Read",
+        "description": "Grants read access to Mass URL Redirect",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000298",
+        "name": "Mass URL Redirects Write",
+        "description": "Grants write access to Mass URL Redirect",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000299",
+        "name": "Memberships Read",
+        "description": "Grants read access to a user's account memberships,",
+        "scopes": [
+          "com.cloudflare.api.user"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000300",
+        "name": "Memberships Write",
+        "description": "Grants write access to a user's account memberships",
+        "scopes": [
+          "com.cloudflare.api.user"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000301",
+        "name": "Messaging Edit",
+        "description": "Grants full read and write access to Messaging configuration and message content, plus permission to send and receive messages.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000302",
+        "name": "Messaging Metadata Read",
+        "description": "Grants read access to Messaging configuration and metadata without access to message content or session data.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000303",
+        "name": "Messaging Read",
+        "description": "Grants read access to Messaging configuration and message content.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000304",
+        "name": "MoQ Read",
+        "description": "Grants read access to MoQ relay configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000305",
+        "name": "MoQ Write",
+        "description": "Grants read/write access to MoQ relay configuration and access to MoQ Bench",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000306",
+        "name": "Network Quality Read",
+        "description": "Grants read access to Network Quality API.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000307",
+        "name": "Network Quality Write",
+        "description": "Grants access to manage Network Quality and issue Network Quality authorization tokens.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000308",
+        "name": "Notifications Read",
+        "description": "Grants read access to notifications",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000309",
+        "name": "Notifications Write",
+        "description": "Grants write access to Notifications",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000310",
+        "name": "OAuth Client Read",
+        "description": "Allows reading of OAuth clients",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000311",
+        "name": "OAuth Client Write",
+        "description": "Allows writing of OAuth clients",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000312",
+        "name": "Origin Read",
+        "description": "Grants read access to origin phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000313",
+        "name": "Origin Write",
+        "description": "Grants write access to origin phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000314",
+        "name": "Page Rules Read",
+        "description": "Grants read access to Page Rules",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000315",
+        "name": "Page Rules Write",
+        "description": "Grants write access to Page Rules",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000316",
+        "name": "Page Shield",
+        "description": "Grants write access to Page Shield",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000317",
+        "name": "Page Shield Read",
+        "description": "Grants read access to Page Shield across the whole account",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000318",
+        "name": "Page Shield Write",
+        "description": "Grants write access to Page Shield",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": null,
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000319",
+        "name": "Pages Metadata Read",
+        "description": "Grants read access to Cloudflare Pages metadata and configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000320",
+        "name": "Pages Read",
+        "description": "Grants read access to Cloudflare Pages",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000321",
+        "name": "Pages Write",
+        "description": "Grants write access to Cloudflare Pages",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000322",
+        "name": "Payments Gateway Read",
+        "description": "Grants read access to Payment Required rules",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000323",
+        "name": "Payments Gateway Write",
+        "description": "Grants write access to Payment Required rules",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000324",
+        "name": "Pipelines Read",
+        "description": "Grants read access to Cloudflare Pipelines",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000325",
+        "name": "Pipelines Send",
+        "description": "Grants access to Send Events to Cloudflare Pipelines",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000326",
+        "name": "Pipelines Write",
+        "description": "Grants write access to Cloudflare Pipelines",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000327",
+        "name": "Precursor Read",
+        "description": "Grants read access to Precursor",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000328",
+        "name": "Precursor Write",
+        "description": "Grants write access to Precursor",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000329",
+        "name": "Pubsub Configuration Read",
+        "description": "Grants read access to Pubsub Configurations\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000330",
+        "name": "Pubsub Configuration Write",
+        "description": "Grants full access to Pubsub Configurations\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000331",
+        "name": "Queues Metadata Read",
+        "description": "Grants read access to Cloudflare Queues configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000332",
+        "name": "Queues Read",
+        "description": "Grants read access to Cloudflare Queues",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000333",
+        "name": "Queues Write",
+        "description": "Grants write access to Cloudflare Queues",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000334",
+        "name": "Radar Read",
+        "description": "Grants access to reading Radar",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000335",
+        "name": "Realtime",
+        "description": "Grants read and write access to Realtime SFU, TURN, and RealtimeKit configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000336",
+        "name": "Realtime Admin",
+        "description": "Grants admin access to Realtime configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000337",
+        "name": "Realtime Read",
+        "description": "Grants read access to Realtime SFU, TURN, and RealtimeKit configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000338",
+        "name": "Registrar Domains Admin",
+        "description": "Grants admin access to Cloudflare Registrar domains",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000339",
+        "name": "Registrar Domains Read",
+        "description": "Grants read access to Cloudflare Registrar domains",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000340",
+        "name": "Registrar Sandbox Domains Admin",
+        "description": "Grants admin access to Cloudflare Registrar Sandbox domains",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000341",
+        "name": "Registrar Sandbox Domains Read",
+        "description": "Grants read access to Cloudflare Registrar Sandbox domains",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000342",
+        "name": "Resource Library Read",
+        "description": "Grants access to reading resource library applications",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000343",
+        "name": "Resource Library Write",
+        "description": "Grants access to reading and editing resource library",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000344",
+        "name": "Resource Sharing Read",
+        "description": "Grants access to reading resource shares",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "other",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000345",
+        "name": "Response Compression Read",
+        "description": "Grants read access to the response compression phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000346",
+        "name": "Response Compression Write",
+        "description": "Grants write access to the response compression phase",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000347",
+        "name": "Rule Policies Read",
+        "description": "Grants read access to Rule Policies",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": null,
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000348",
+        "name": "Rule Policies Write",
+        "description": "Grants write access to Rule Policies",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": null,
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000349",
+        "name": "SCIM Provisioning",
+        "description": "Grants membership permissions needed for SCIM provisioning",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000350",
+        "name": "SSL and Certificates Read",
+        "description": "Grants read access to SSL configuration and cert management",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000351",
+        "name": "SSL and Certificates Write",
+        "description": "Grants write access to SSL configuration and cert management",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "cache_and_performance",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000352",
+        "name": "SSO Connector Read",
+        "description": "Grants read access to Cloudflare SSO connectors\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000353",
+        "name": "SSO Connector Write",
+        "description": "Grants write access to Cloudflare SSO connectors\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000354",
+        "name": "Sanitize Read",
+        "description": "Grants read access to sanitization",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000355",
+        "name": "Sanitize Write",
+        "description": "Grants write access to sanitization",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000356",
+        "name": "Secrets Store Read",
+        "description": "Grants read access to Secrets Store",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000357",
+        "name": "Secrets Store Write",
+        "description": "Grants write access to Secrets Store",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000358",
+        "name": "Select Configuration Read",
+        "description": "Grants read access to select configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000359",
+        "name": "Select Configuration Write",
+        "description": "Grants write access to select configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000360",
+        "name": "Snippets Read",
+        "description": "Grants read access to Snippets",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000361",
+        "name": "Snippets Write",
+        "description": "Grants write access to Snippets",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000362",
+        "name": "Stream Metadata Read",
+        "description": "Grants read access to Cloudflare Stream metadata, excluding sensitive content such as caption files and live input secrets",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000363",
+        "name": "Stream Read",
+        "description": "Grants read access to Cloudflare Stream",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000364",
+        "name": "Stream Write",
+        "description": "Grants write access to Cloudflare Stream",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "media",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000365",
+        "name": "Tag Read",
+        "description": "Grants access to reading resource tags",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000366",
+        "name": "Tag Write",
+        "description": "Grants access to reading and editing resource tags",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000367",
+        "name": "Transform Rules Read",
+        "description": "Grants read access to transform rules",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000368",
+        "name": "Transform Rules Write",
+        "description": "Grants write access to transform rules",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000369",
+        "name": "Trust and Safety Read",
+        "description": "Grants access to read abuse reports and abuse actions",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000370",
+        "name": "Trust and Safety Write",
+        "description": "Grants access to interact with abuse reports and abuse actions",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000371",
+        "name": "Turnstile Sites Read",
+        "description": "Grants read access to Turnstile",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000372",
+        "name": "Turnstile Sites Write",
+        "description": "Grants write access to Turnstile",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000373",
+        "name": "URL Scanner Read",
+        "description": "Grants read access to URL Scanner API",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000374",
+        "name": "URL Scanner Write",
+        "description": "Grants write access to URL Scanner API",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000375",
+        "name": "User Details Read",
+        "description": "Grants read access to user details and user audit logs",
+        "scopes": [
+          "com.cloudflare.api.user"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000376",
+        "name": "User Details Write",
+        "description": "Grants write access to user details and read access to user audit logs",
+        "scopes": [
+          "com.cloudflare.api.user"
+        ],
+        "category": "account_and_billing",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000377",
+        "name": "Vectorize Read",
+        "description": "Grants read access to Vectorize configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000378",
+        "name": "Vectorize Write",
+        "description": "Grants write access to Vectorize configuration",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000379",
+        "name": "Waiting Rooms Read",
+        "description": "Grants read access to Waiting Rooms\n",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000380",
+        "name": "Waiting Rooms Write",
+        "description": "Grants write access to Waiting Rooms\n",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000381",
+        "name": "Web3 Hostnames Read",
+        "description": "Grants read access to Web3 Hostnames\n",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000382",
+        "name": "Web3 Hostnames Write",
+        "description": "Grants write access to Web3 Hostnames\n",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "network_services",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000383",
+        "name": "Websearch Metadata Read",
+        "description": "Grants read access to Cloudflare Websearch configuration and metadata without access to search results.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000384",
+        "name": "Websearch Read",
+        "description": "Grants access to reading data from Cloudflare Websearch",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000385",
+        "name": "Websearch Run",
+        "description": "Grants access to run Cloudflare Websearch queries",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000386",
+        "name": "Websearch Write",
+        "description": "Grants access to reading and writing data from Cloudflare Websearch",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000387",
+        "name": "Workers AI Metadata Read",
+        "description": "Grants read-only access to Workers AI metadata (model catalog, finetune list, tasks, authors) without access to inference or mutation endpoints.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000388",
+        "name": "Workers AI Read",
+        "description": "Grants access to invoke Workers AI models",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000389",
+        "name": "Workers AI Write",
+        "description": "Grants access to invoke Workers AI models and edit assets",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "ai_and_machine_learning",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000390",
+        "name": "Workers Admin",
+        "description": "Full create, read, update, and delete access to all Workers resources. Previously named Workers Scripts Write.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000391",
+        "name": "Workers CI Read",
+        "description": "Grants read access to Workers CI",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000392",
+        "name": "Workers CI Write",
+        "description": "Grants write access to Workers CI",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000393",
+        "name": "Workers Containers Read",
+        "description": "Grants read access to Workers Containers",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000394",
+        "name": "Workers Containers Write",
+        "description": "Grants write access to Workers Containers",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000395",
+        "name": "Workers Content Read-Only",
+        "description": "Grants read access to Cloudflare Workers scripts",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000396",
+        "name": "Workers Editor",
+        "description": "Read, update, and deploy Workers. Includes script content,\nsettings, versions, deployments, and previews. Cannot create\nor delete Workers — use Workers Admin for that. Routes and\nobservability require separate per-feature token roles.\n",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000397",
+        "name": "Workers KV Storage Metadata Read",
+        "description": "Grants read access to Workers KV configuration and analytics",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000398",
+        "name": "Workers KV Storage Read",
+        "description": "Grants read access to Cloudflare Workers KV Storage",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000399",
+        "name": "Workers KV Storage Write",
+        "description": "Grants write access to Cloudflare Workers KV Storage",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000400",
+        "name": "Workers Metadata Read-Only",
+        "description": "View Workers metadata, settings, and observability without access to script source content.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000401",
+        "name": "Workers Observability Read",
+        "description": "Grants read access to Cloudflare Workers Observability",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000402",
+        "name": "Workers Observability Telemetry Write",
+        "description": "Grants write access for Telemetry to Cloudflare Workers Observability",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000403",
+        "name": "Workers Observability Write",
+        "description": "Grants read and write access to Cloudflare Workers Observability",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000404",
+        "name": "Workers R2 Data Catalog Read",
+        "description": "Grants read access to Basin Catalog",
+        "scopes": [
+          "com.cloudflare.api.account",
+          "com.cloudflare.edge.r2.bucket"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000405",
+        "name": "Workers R2 Data Catalog Write",
+        "description": "Grants write access to Basin Catalog",
+        "scopes": [
+          "com.cloudflare.api.account",
+          "com.cloudflare.edge.r2.bucket"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000406",
+        "name": "Workers R2 SQL Read",
+        "description": "Grants access to read-only SQL queries against R2 Data Catalog",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000407",
+        "name": "Workers R2 Storage Bucket Item Read",
+        "description": "Grants read access to Cloudflare R2 Bucket Scoped Storage",
+        "scopes": [
+          "com.cloudflare.edge.r2.bucket"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000408",
+        "name": "Workers R2 Storage Bucket Item Write",
+        "description": "Grants write access to Cloudflare R2 Bucket Scoped Storage",
+        "scopes": [
+          "com.cloudflare.edge.r2.bucket"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000409",
+        "name": "Workers R2 Storage Metadata Read",
+        "description": "Grants read access to Cloudflare Workers R2 Storage metadata",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000410",
+        "name": "Workers R2 Storage Read",
+        "description": "Grants read access to Cloudflare R2 Storage",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000411",
+        "name": "Workers R2 Storage Write",
+        "description": "Grants write access to Cloudflare R2 Storage",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000412",
+        "name": "Workers Routes Read",
+        "description": "Grants read access for configuring Worker domains and routes",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000413",
+        "name": "Workers Routes Write",
+        "description": "Grants read and write access for configuring Worker domains and routes",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000414",
+        "name": "Workers Scripts Read",
+        "description": "Grants read access to Cloudflare Workers scripts",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000415",
+        "name": "Workers Scripts Write",
+        "description": "Grants write access to Cloudflare Workers scripts",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000416",
+        "name": "Workers Tail Read",
+        "description": "Grants `wrangler tail` read permissions",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "developer_platform",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000417",
+        "name": "Zaraz Admin",
+        "description": "Can edit and publish Zaraz settings.",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000418",
+        "name": "Zaraz Edit",
+        "description": "Can edit Zaraz settings.",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000419",
+        "name": "Zaraz Read",
+        "description": "Grants read access to Zaraz settings.",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000420",
+        "name": "Zero Trust Read",
+        "description": "Grants read access to Cloudflare Zero Trust resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000421",
+        "name": "Zero Trust Report",
+        "description": "Grants reporting access to Cloudflare Zero Trust",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000422",
+        "name": "Zero Trust Resilience Read",
+        "description": "Grants read access to Cloudflare Zero Trust Resilience resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000423",
+        "name": "Zero Trust Resilience Write",
+        "description": "Grants write access to Cloudflare Zero Trust Resilience resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000424",
+        "name": "Zero Trust Write",
+        "description": "Grants write access to Cloudflare Zero Trust resources",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000425",
+        "name": "Zero Trust: PII Read",
+        "description": "Grants read access to Cloudflare Zero Trust PII.",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000426",
+        "name": "Zero Trust: Seats Write",
+        "description": "Can read and edit the Zero Trust seats your organization can use (and be billed for)",
+        "scopes": [
+          "com.cloudflare.api.account"
+        ],
+        "category": "cloudflare_one_and_zero_trust",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000427",
+        "name": "Zone Custom Asset Read",
+        "description": "Grants read access to zone custom assets",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000428",
+        "name": "Zone Custom Asset Write",
+        "description": "Grants write access to zone custom assets",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000429",
+        "name": "Zone DNS Settings Read",
+        "description": "Grants read access to Zone DNS Settings",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000430",
+        "name": "Zone DNS Settings Write",
+        "description": "Grants write access to Zone DNS Settings",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000431",
+        "name": "Zone Observability Read",
+        "description": "Grants read access to Cloudflare Zone Observability",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000432",
+        "name": "Zone Observability Write",
+        "description": "Grants read and write access to Cloudflare Zone Observability",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "analytics_and_logs",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000433",
+        "name": "Zone Read",
+        "description": "Grants read access to zone management",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000434",
+        "name": "Zone Security Center Insights Read",
+        "description": "Grants read access to Zone Security Center Insights",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000435",
+        "name": "Zone Security Center Insights Write",
+        "description": "Grants write access to Zone Security Center Insights",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000436",
+        "name": "Zone Security Insights Partner Assets Read",
+        "description": "Grants read access to Security Insights partner-discovered assets for a zone",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000437",
+        "name": "Zone Settings Read",
+        "description": "Grants read access to zone settings",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000438",
+        "name": "Zone Settings Write",
+        "description": "Grants write access to zone settings",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000439",
+        "name": "Zone Transform Rules Read",
+        "description": "Grants read access to transform rules at zone level",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000440",
+        "name": "Zone Transform Rules Write",
+        "description": "Grants write access to transform rules at zone level",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "rules_and_configuration",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000441",
+        "name": "Zone Versioning Read",
+        "description": "Grants read-only access to Zone Versioning",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000442",
+        "name": "Zone Versioning Write",
+        "description": "Grants full access to Zone Versioning",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000443",
+        "name": "Zone WAF Read",
+        "description": "Grants read access to Zone WAF",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000444",
+        "name": "Zone WAF Write",
+        "description": "Grants write access to Zone WAF",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "app_security",
+        "is_selectable": true
+      },
+      {
+        "id": "00000000000000000000000000000445",
+        "name": "Zone Write",
+        "description": "Grants write access to zone management",
+        "scopes": [
+          "com.cloudflare.api.account.zone"
+        ],
+        "category": "dns_and_zones",
+        "is_selectable": true
+      }
+    ],
+    "success": true,
+    "errors": [],
+    "messages": []
+  }
+}

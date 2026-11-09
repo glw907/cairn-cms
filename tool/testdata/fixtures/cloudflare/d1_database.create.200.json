@@ -1,0 +1,26 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "POST /accounts/{id}/d1/database",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "result": {
+      "uuid": "5143f436-163b-4313-967c-7b478aa2bacd",
+      "name": "cairn-rec-tmw8khn73-db",
+      "created_at": "2026-11-09T01:13:27.723Z",
+      "version": "production",
+      "file_size": 8192,
+      "num_tables": 0,
+      "created_in_region": "WNAM",
+      "jurisdiction": null,
+      "read_replication": {
+        "mode": "disabled"
+      }
+    },
+    "errors": [],
+    "messages": [],
+    "success": true
+  }
+}

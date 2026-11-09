@@ -84,6 +84,7 @@
     "test:component": "node scripts/test/contained.mjs vitest run --project component",
     "emit-template": "node scripts/build/emit-template.mjs",
     "test:theme": "node --test scripts/theme/*.test.mjs",
+    "check:theme": "node scripts/theme/check.mjs",
     "test:emit":"node --test scripts/build/emit-template.test.mjs scripts/build/emit-template-dir.test.mjs scripts/build/bake-template.test.mjs scripts/build/starter-overlay.test.mjs scripts/build/pack-engine-template.test.mjs scripts/build/plugin-manifests.test.mjs scripts/theme/theme-names.test.mjs scripts/theme/build-tokens.test.mjs scripts/theme/contract.test.mjs scripts/theme/lay-in.test.mjs .claude/skills/cairn-writing-docs/evals/run.test.mjs .claude/skills/cairn-writing-docs/evals/run-site.test.mjs",
     "design:mockup-css": "npm run package && node scripts/build/build-mockup-css.mjs",
     "emit:template": "node scripts/build/emit-template-dir.mjs",

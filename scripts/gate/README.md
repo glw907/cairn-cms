@@ -50,7 +50,7 @@ harness's start time), starts the stand-in in tmux session `cleanroom-<run id>-s
 `cleanroom run` with the goal sentence, the setup token and the Claude credential by name,
 `npm_config_tag=gate`, and the caps. The stand-in's names go through a 0600 hand-off file it
 sources and removes, so no value sits in argv; the Cloudflare token never reaches it. `scripted`
-starts the same stand-in and then `scripted.mjs` as session `cleanroom-<run id>`. `probe` runs
+starts `scripted.mjs` as session `cleanroom-<run id>`, and that driver starts the stand-in itself. `probe` runs
 `cleanroom init probe --fresh --discard` and `cleanroom probe probe` with the generic command list.
 Neither `naive` nor `scripted` takes an EXIT teardown, since the run goes on after they return.
 

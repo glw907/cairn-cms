@@ -12,7 +12,7 @@ func TestScrubDropsEveryCredential(t *testing.T) {
 		"PATH": "/usr/bin", "HOME": "/home/x",
 		"CLOUDFLARE_API_TOKEN": "a", "GH_TOKEN": "b", "github_token": "c",
 		"CAIRN_CLOUDFLARE_TOKEN": "d", "CAIRN_GITHUB_TOKEN": "e", "cairn_other_token": "f",
-		"CLOUDFLARE_API_KEY": "h", "cf_api_key": "i", "CLOUDFLARE_EMAIL": "j",
+		"CLOUDFLARE_API_KEY": "h", "cf_api_key": "i", "CLOUDFLARE_EMAIL": "j", "CF_EMAIL": "k", "cf_api_token": "l",
 		"CAIRN_STATE_DIR": "/tmp/state", "TOKEN_COUNT": "3", "GIT_CONFIG_COUNT": "1", "NPM_TOKEN": "g",
 	}
 	want := []string{"CAIRN_STATE_DIR=/tmp/state", "GIT_CONFIG_COUNT=1", "HOME=/home/x", "NPM_TOKEN=g", "PATH=/usr/bin", "TOKEN_COUNT=3"}
@@ -29,62 +29,70 @@ func TestScrubSecretsDropsEveryTokenSecretAndPassword(t *testing.T) {
 		"OPENAI_API_KEY": "h", "cloudflare_api_key": "i", "GH_PAT": "j", "gcp_credentials": "k",
 		"AWS_SECRET_ACCESS_KEY": "l", "CLOUDFLARE_EMAIL": "m", "CF_API_KEY": "n",
 		"XKB_KEYMAP": "us", "KEY_REPEAT": "fast",
+		"MAPS_APIKEY": "o", "smtp_passwd": "p", "MAIL_PASS": "q", "REGISTRY_AUTH": "r", "CF_EMAIL": "s", "CF_API_TOKEN": "t",
+		"DATABASE_URL": "postgres://app:hunter2@db.example.test:5432/site", "MIRROR": "https://deploy@git.example.test/r",
+		"HOMEPAGE": "https://example.test/a@b", "SSH_AUTH_SOCK": "/run/agent", "PASSAGE": "x", "AUTHOR": "y",
 	}
-	want := []string{"DISPLAY=:0", "KEY_REPEAT=fast", "PATH=/usr/bin", "SECRETS_DIR=/s", "TOKEN_COUNT=3", "XKB_KEYMAP=us"}
+	want := []string{
+		"AUTHOR=y", "DISPLAY=:0", "HOMEPAGE=https://example.test/a@b", "KEY_REPEAT=fast", "PASSAGE=x", "PATH=/usr/bin",
+		"SECRETS_DIR=/s", "SSH_AUTH_SOCK=/run/agent", "TOKEN_COUNT=3", "XKB_KEYMAP=us",
+	}
 	if got := ScrubSecrets(in); !slices.Equal(got, want) {
 		t.Errorf("ScrubSecrets = %q, want %q", got, want)
 	}
 }
 
-func TestGitAddsItsPairsAfterTheInheritedOnes(t *testing.T) {
+// TestGitCarriesOnlyTheGivenPairs pins that the config pairs a git child reads are Git's own and
+// the ones its caller passes, in that order, and never the pairs the environment carries.
+func TestGitCarriesOnlyTheGivenPairs(t *testing.T) {
 	in := map[string]string{
 		"PATH": "/usr/bin", "GH_TOKEN": "b",
-		"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "url./r/.insteadOf", "GIT_CONFIG_VALUE_0": "https://github.com/",
+		"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "url./decoy/.insteadOf", "GIT_CONFIG_VALUE_0": "https://github.com/",
 	}
 	want := []string{
-		"GIT_CONFIG_KEY_0=url./r/.insteadOf", "GIT_CONFIG_VALUE_0=https://github.com/", "PATH=/usr/bin",
+		"PATH=/usr/bin",
 		"GIT_CONFIG_GLOBAL=" + os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0", "GIT_TRACE_REDACT=1",
-		"GIT_CONFIG_KEY_1=core.hooksPath", "GIT_CONFIG_VALUE_1=/tmp/empty",
-		"GIT_CONFIG_KEY_2=core.fsmonitor", "GIT_CONFIG_VALUE_2=false",
-		"GIT_CONFIG_KEY_3=http.extraheader", "GIT_CONFIG_VALUE_3=x",
+		"GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/tmp/empty",
+		"GIT_CONFIG_KEY_1=core.fsmonitor", "GIT_CONFIG_VALUE_1=false",
+		"GIT_CONFIG_KEY_2=http.extraheader", "GIT_CONFIG_VALUE_2=x",
+		"GIT_CONFIG_KEY_3=url./r/.insteadOf", "GIT_CONFIG_VALUE_3=https://github.com/",
 		"GIT_CONFIG_COUNT=4",
 	}
-	if got := Git(in, "/tmp/empty", "http.extraheader", "x"); !slices.Equal(got, want) {
+	got := Git(in, "/tmp/empty", Pair{"http.extraheader", "x"}, Pair{"url./r/.insteadOf", "https://github.com/"})
+	if !slices.Equal(got, want) {
 		t.Errorf("Git =\n%q\nwant\n%q", got, want)
-	}
-	for _, bad := range []string{"", "-1", "x"} {
-		got := Git(map[string]string{"GIT_CONFIG_COUNT": bad}, "/tmp/empty")
-		if !slices.Contains(got, "GIT_CONFIG_KEY_0=core.hooksPath") || got[len(got)-1] != "GIT_CONFIG_COUNT=2" {
-			t.Errorf("Git with GIT_CONFIG_COUNT %q = %q, want the hooks pair first and a count of 2", bad, got)
-		}
 	}
 }
 
-// TestGitDropsWhatRedirectsOrTracesGit pins that no inherited variable can point git at another
-// repository, config, helper, or program, or have it trace a request, while the harness's
-// GIT_CONFIG_KEY and GIT_CONFIG_VALUE pairs still reach it.
-func TestGitDropsWhatRedirectsOrTracesGit(t *testing.T) {
-	dropped := []string{
-		"GIT_CONFIG_PARAMETERS", "GIT_CONFIG", "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE",
-		"GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_EXEC_PATH", "GIT_SSH_COMMAND",
-		"GIT_ASKPASS", "GIT_TRACE", "GIT_TRACE_PACKET", "GIT_TRACE_CURL", "GIT_TRACE2_EVENT",
-		"git_trace_setup", "GIT_CURL_VERBOSE", "GIT_TRACE_REDACT",
+// TestGitKeepsNoInheritedGitVariable pins that every variable git reads by a GIT_ name, in any
+// case, and the SSH askpass helpers come only from Git itself: an inherited one could point git
+// at another repository, config, template, program, helper, or certificate, or have it trace a
+// request. The variables Git sets carry its own values, and the rest of env is kept.
+func TestGitKeepsNoInheritedGitVariable(t *testing.T) {
+	inherited := []string{
+		"GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_0", "GIT_CONFIG_VALUE_0", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG",
+		"GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM", "GIT_TERMINAL_PROMPT", "GIT_TRACE_REDACT",
+		"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_TEMPLATE_DIR", "git_template_dir",
+		"GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_EXEC_PATH", "GIT_SSH_COMMAND", "GIT_SSH",
+		"GIT_ASKPASS", "GIT_SSL_NO_VERIFY", "GIT_SSL_CAINFO", "GIT_ATTR_SOURCE", "GIT_NAMESPACE",
+		"GIT_REPLACE_REF_BASE", "GIT_TRACE", "GIT_TRACE2_EVENT", "git_trace_setup", "GIT_CURL_VERBOSE",
+		"GIT_AUTHOR_NAME", "SSH_ASKPASS", "ssh_askpass_require",
 	}
-	in := map[string]string{
-		"PATH": "/usr/bin", "GIT_CONFIG_COUNT": "1",
-		"GIT_CONFIG_KEY_0": "url./r/.insteadOf", "GIT_CONFIG_VALUE_0": "https://github.com/",
-	}
-	for _, name := range dropped {
-		in[name] = "0"
+	in := map[string]string{"PATH": "/usr/bin", "HOME": "/home/x", "HTTPS_PROXY": "http://proxy.example.test:3128"}
+	for _, name := range inherited {
+		in[name] = "inherited"
 	}
 	got := Git(in, "/tmp/empty")
 	for _, kv := range got {
-		name, _, _ := strings.Cut(kv, "=")
-		if slices.ContainsFunc(dropped, func(d string) bool { return strings.EqualFold(d, name) }) && kv != "GIT_TRACE_REDACT=1" {
-			t.Errorf("Git kept %q", kv)
+		if strings.HasSuffix(kv, "=inherited") {
+			t.Errorf("Git kept the inherited %q", kv)
 		}
 	}
-	for _, want := range []string{"GIT_TRACE_REDACT=1", "GIT_CONFIG_KEY_0=url./r/.insteadOf", "GIT_CONFIG_VALUE_0=https://github.com/", "PATH=/usr/bin"} {
+	for _, want := range []string{
+		"HOME=/home/x", "HTTPS_PROXY=http://proxy.example.test:3128", "PATH=/usr/bin",
+		"GIT_CONFIG_GLOBAL=" + os.DevNull, "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0", "GIT_TRACE_REDACT=1",
+		"GIT_CONFIG_KEY_0=core.hooksPath", "GIT_CONFIG_VALUE_0=/tmp/empty", "GIT_CONFIG_COUNT=2",
+	} {
 		if !slices.Contains(got, want) {
 			t.Errorf("Git = %q, want %q in it", got, want)
 		}

@@ -134,7 +134,7 @@ func TestConvertManifestDecodesTheConversion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ConvertManifest: %v", err)
 	}
-	if rec.ID != 5674210 || rec.Slug != "cairn-rec-tmw8khn73-app" || rec.OwnerLogin != "<REDACTED>-test" || rec.ClientID != "Iv23liWZuFARiRUZ9QX8" {
+	if rec.ID != 5674210 || rec.Slug != "cairn-rec-tmw8khn73-app" || rec.OwnerLogin != "<REDACTED>-test" || rec.OwnerID != 352097667 || rec.ClientID != "Iv23liWZuFARiRUZ9QX8" {
 		t.Errorf("record = %+v", rec)
 	}
 	// The recording scrubs each secret to the same placeholder, so these prove the three fields
@@ -339,12 +339,12 @@ func TestRepoNamed(t *testing.T) {
 	})
 }
 
-func TestUserLogin(t *testing.T) {
+func TestUser(t *testing.T) {
 	t.Run("signed in", func(t *testing.T) {
 		rt := routes(map[string]reply{"GET api.github.com/user": fixtureReply(t, "user_get.ok.200.json")})
-		login, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background())
-		if err != nil || login != "example-owner" {
-			t.Errorf("UserLogin = %q, %v; want example-owner", login, err)
+		login, id, err := NewGitHub(NewCredential("utok"), rt).User(context.Background())
+		if err != nil || login != "example-owner" || id != 4242 {
+			t.Errorf("User = %q, %d, %v; want example-owner and 4242", login, id, err)
 		}
 		if rt.calls[0].auth != "Bearer utok" {
 			t.Errorf("auth = %q", rt.calls[0].auth)
@@ -352,14 +352,14 @@ func TestUserLogin(t *testing.T) {
 	})
 	t.Run("refused", func(t *testing.T) {
 		rt := routes(map[string]reply{"GET api.github.com/user": fixtureReply(t, "app_installations.bad-credentials.401.json")})
-		if _, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background()); httpStatusOf(err) != 401 {
+		if _, _, err := NewGitHub(NewCredential("utok"), rt).User(context.Background()); httpStatusOf(err) != 401 {
 			t.Errorf("err = %v, want the 401", err)
 		}
 	})
 	t.Run("no login", func(t *testing.T) {
 		rt := routes(map[string]reply{"GET api.github.com/user": {200, []byte(`{"id":1}`)}})
-		if login, err := NewGitHub(NewCredential("utok"), rt).UserLogin(context.Background()); err == nil {
-			t.Errorf("UserLogin = %q with no error, want a body without a login refused", login)
+		if login, _, err := NewGitHub(NewCredential("utok"), rt).User(context.Background()); err == nil {
+			t.Errorf("User = %q with no error, want a body without a login refused", login)
 		}
 	})
 }

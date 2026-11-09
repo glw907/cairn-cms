@@ -802,7 +802,7 @@ func TestAReconsentOnlyResumeStopsTheClock(t *testing.T) {
 // other than the App's owner stops the run before any installation reaches it.
 func TestARepositoryOnAnotherAccountStops(t *testing.T) {
 	w := newWorld(t)
-	w.gh.createOwner = "someone-else"
+	w.gh.createOwner, w.gh.createOwnerID = "someone-else", 7001
 	_, err := w.run(context.Background())
 	f := failureOf(t, err)
 	if f.Reason != ReasonNotOurs || !strings.Contains(f.Happened, "someone-else") || !strings.Contains(f.Happened, "example-owner") ||
@@ -842,7 +842,7 @@ func TestAnotherAccountsApprovalCreatesNoRepository(t *testing.T) {
 	}
 	t.Run("a new run", func(t *testing.T) {
 		w := newWorld(t)
-		w.gh.userLogin = "someone-else"
+		w.gh.userLogin, w.gh.userID = "someone-else", 7001
 		_, err := w.run(context.Background())
 		assertStop(t, w, err)
 	})
@@ -851,7 +851,7 @@ func TestAnotherAccountsApprovalCreatesNoRepository(t *testing.T) {
 		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
 			t.Fatal("the first run was not stopped")
 		}
-		w.gh.userLogin = "someone-else"
+		w.gh.userLogin, w.gh.userID = "someone-else", 7001
 		w.gh.taken["example-site"] = true
 		_, err := w.resume()
 		assertStop(t, w, err)
@@ -896,6 +896,140 @@ func TestAnAppWithNoOwnerStops(t *testing.T) {
 			t.Errorf("record App %d, want the App dropped so the next run creates one", last.Setup.IDs.AppID)
 		}
 	})
+}
+
+// TestADroppedAppLeavesNoKeys pins that a resume that drops the recorded App deletes the App's
+// key and client secret from the keyring before the record forgets the App, and that a delete
+// the keyring refuses stops with the record as it was, so the next run can retry it.
+func TestADroppedAppLeavesNoKeys(t *testing.T) {
+	appEntries := func(w *world) []string {
+		return []string{w.vault.Entry(secrets.EntryAppKey), w.vault.Entry(secrets.EntryAppClientSecret)}
+	}
+	ownerless := func(t *testing.T) *world {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		for _, name := range appEntries(w) {
+			if _, ok := w.vault.entries[name]; !ok {
+				t.Fatalf("the first run left no %s to delete", name)
+			}
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.AppOwner = ""
+		w.saver.saves = append(w.saver.saves, rec)
+		return w
+	}
+	t.Run("the keys go before the record drops the App", func(t *testing.T) {
+		w := ownerless(t)
+		w.saver.onSave = func(rec record.Record) error {
+			if rec.Setup.IDs.AppID != 0 {
+				return nil
+			}
+			for _, name := range appEntries(w) {
+				if _, ok := w.vault.entries[name]; ok {
+					t.Errorf("the record dropped the App while the keyring held %s", name)
+				}
+			}
+			return nil
+		}
+		_, err := w.resume()
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		for _, name := range appEntries(w) {
+			if _, ok := w.vault.entries[name]; ok {
+				t.Errorf("the keyring still holds %s", name)
+			}
+		}
+		if last, _ := w.saver.last(); last.Setup.IDs.AppID != 0 {
+			t.Errorf("record App %d, want the App dropped", last.Setup.IDs.AppID)
+		}
+	})
+	t.Run("a refused delete keeps the record", func(t *testing.T) {
+		w := ownerless(t)
+		before, _ := w.saver.last()
+		w.vault.deleteErr = secrets.ErrKeyringUnavailable
+		_, err := w.resume()
+		f := failureOf(t, err)
+		if f.Reason != ReasonKeyring || !strings.Contains(f.Happened, w.gh.app.Slug) || f.Do == "" || !strings.Contains(f.Left, w.gh.app.Slug) {
+			t.Errorf("failure = %+v, want the four-part keyring stop naming the App", f)
+		}
+		last, _ := w.saver.last()
+		if last.Setup.IDs.AppID != before.Setup.IDs.AppID || last.Setup.AppSlug != before.Setup.AppSlug || last.Setup.ClientID != before.Setup.ClientID {
+			t.Errorf("record App %d %q %q, want the App kept as %d %q %q", last.Setup.IDs.AppID, last.Setup.AppSlug, last.Setup.ClientID,
+				before.Setup.IDs.AppID, before.Setup.AppSlug, before.Setup.ClientID)
+		}
+	})
+}
+
+// TestTheOwnerChecksCompareAccountIDs pins that setup knows the App's owner by account id wherever
+// it holds one, so a login in other case is the same account and the same login under another
+// id is not. A record that holds no id falls back to the login, compared without regard to case
+// as GitHub compares logins.
+func TestTheOwnerChecksCompareAccountIDs(t *testing.T) {
+	t.Run("a login in other case is the owner", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userLogin = "Example-Owner"
+		if _, err := w.run(context.Background()); err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+	})
+	t.Run("the owner's login under another id is not the owner", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.userID = 7001
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		if w.gh.creates["repo"] != 0 {
+			t.Errorf("repositories created %d, want none", w.gh.creates["repo"])
+		}
+	})
+	t.Run("a repository under the owner's login and another id is not the owner's", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.createOwnerID = 7001
+		_, err := w.run(context.Background())
+		if f := failureOf(t, err); f.Reason != ReasonNotOurs {
+			t.Errorf("failure = %+v, want the not-ours stop", f)
+		}
+		if last, _ := w.saver.last(); last.GitHub.Repo.ID != 0 {
+			t.Errorf("record repository %+v, want none recorded", last.GitHub.Repo)
+		}
+	})
+	t.Run("a record with no owner id compares logins without case", func(t *testing.T) {
+		w := newWorld(t)
+		if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+			t.Fatal("the first run was not stopped")
+		}
+		rec, _ := w.saver.last()
+		rec.Setup.OwnerID = 0
+		w.saver.saves = append(w.saver.saves, rec)
+		w.gh.userLogin = "EXAMPLE-OWNER"
+		if _, err := w.resume(); err != nil {
+			t.Fatalf("resume: %v", err)
+		}
+	})
+}
+
+// TestInheritedGitConfigPairsNeverReachGit pins that the config pairs a git child reads come from
+// Config.GitConfigPairs alone: a pushInsteadOf pair the environment carries, which would send the
+// push to another folder, is dropped, and the push lands where the Config's pair points.
+func TestInheritedGitConfigPairsNeverReachGit(t *testing.T) {
+	w := newWorld(t)
+	decoy := t.TempDir()
+	w.cfg.Env["GIT_CONFIG_COUNT"] = "1"
+	w.cfg.Env["GIT_CONFIG_KEY_0"] = "url." + decoy + "/.pushInsteadOf"
+	w.cfg.Env["GIT_CONFIG_VALUE_0"] = "https://github.com/"
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !w.pushed() {
+		t.Error("the push never reached the remote the Config's pair names")
+	}
+	if entries, _ := os.ReadDir(decoy); len(entries) != 0 {
+		t.Errorf("the decoy folder holds %d entries, want the inherited pair never read", len(entries))
+	}
 }
 
 // TestANilEnvironmentIsRefused pins that a run given no environment stops before it does
@@ -1936,7 +2070,13 @@ func TestAKillAfterTheRepositoryCreate(t *testing.T) {
 			gitRun(t, dir, "commit", "--quiet", "--allow-empty", "-m", "someone else's work")
 			gitRun(t, dir, "push", "--quiet", filepath.Join(w.gh.remotes, "example-owner", "example-site.git"), "HEAD:refs/heads/main")
 		}},
-		{"a repository another account owns is refused", func(w *world) { w.gh.ownerOf["example-site"] = "someone-else" }},
+		{"a repository another account owns is refused", func(w *world) {
+			w.gh.ownerOf["example-site"] = "someone-else"
+			w.gh.ownerIDOf = map[string]int64{"example-site": 7001}
+		}},
+		{"a repository of the owner's login under another account id is refused", func(w *world) {
+			w.gh.ownerIDOf = map[string]int64{"example-site": 7001}
+		}},
 		{"a public repository is refused", func(w *world) { w.gh.public["example-site"] = true }},
 	}
 	for _, tc := range refused {

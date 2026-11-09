@@ -169,15 +169,15 @@ func TestFailureEmphasisAndLinks(t *testing.T) {
 }
 
 func TestDoneShowsEachNoticeOnlyWhenItsFlagIsSet(t *testing.T) {
-	const skipped = "Setup skipped dependency install scripts. If a dependency needs its script, run npm rebuild in /home/sam/sites/field-notes."
-	const revoke = "Setup couldn't end its access to your Cloudflare account. Remove cairn from the authorized applications in your Cloudflare profile."
+	const skipped = "To protect your computer, setup didn't run dependency install scripts. If a dependency needs its script, go to /home/sam/sites/field-notes and run npm rebuild."
+	const revoke = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, go to Access Management > Connected Applications, and then revoke cairn."
 	tests := []struct {
 		name      string
 		done      setup.Done
 		want, not []string
 	}{
-		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "authorized applications"}},
-		{"scripts skipped", setup.Done{ScriptsSkipped: true}, []string{skipped}, []string{"authorized applications"}},
+		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "Connected Applications"}},
+		{"scripts skipped", setup.Done{ScriptsSkipped: true}, []string{skipped}, []string{"Connected Applications"}},
 		{"revoke failed", setup.Done{RevokeFailed: true}, []string{revoke}, []string{"npm rebuild"}},
 		{"both", setup.Done{ScriptsSkipped: true, RevokeFailed: true}, []string{skipped, revoke}, nil},
 	}

@@ -147,8 +147,8 @@ const (
 	linkDocs     = "cairn.pub/docs"
 	doneTook     = "Setup took <time>."
 
-	doneScriptsSkipped = "Setup skipped dependency install scripts. If a dependency needs its script, run npm rebuild in <folder>."
-	doneRevokeFailed   = "Setup couldn't end its access to your Cloudflare account. Remove cairn from the authorized applications in your Cloudflare profile."
+	doneScriptsSkipped = "To protect your computer, setup didn't run dependency install scripts. If a dependency needs its script, go to <folder> and run npm rebuild."
+	doneRevokeFailed   = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, go to Access Management > Connected Applications, and then revoke cairn."
 )
 
 // The Ctrl+C lines.

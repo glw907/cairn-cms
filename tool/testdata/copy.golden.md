@@ -557,14 +557,13 @@ Name the check that entry holds
 - Setup also emailed a sign-in link to <email>.
 - Setup can't continue
 - Setup can't run over SSH
-- Setup couldn't end its access to your Cloudflare account. Remove cairn from the authorized applications in your Cloudflare profile.
 - Setup couldn't open your browser. Go to <url>
+- Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, go to Access Management > Connected Applications, and then revoke cairn.
 - Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
 - Setup didn't send a sign-in link. This site already has editors, and <email> isn't one of them. Ask one of them to invite you in Admin > Editors.
 - Setup needs a domain on Cloudflare
 - Setup opens a tab in your browser. Approve these four requests in that tab.
 - Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser.
-- Setup skipped dependency install scripts. If a dependency needs its script, run npm rebuild in <folder>.
 - Setup stopped. Nothing was created.
 - Setup stopped. To resume, run cairn new again.
 - Setup took <time>.
@@ -581,6 +580,7 @@ Name the check that entry holds
 - The admin stores sign-ins and settings in the database. The storage bucket holds the images and files that editors upload. Cloudflare sends the admin's sign-in links from <domain>.
 - The first deploy failed
 - Theme
+- To protect your computer, setup didn't run dependency install scripts. If a dependency needs its script, go to <folder> and run npm rebuild.
 - To resume, run cairn new again.
 - What happened
 - What to do

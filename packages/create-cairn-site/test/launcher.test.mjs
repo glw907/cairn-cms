@@ -3,8 +3,8 @@
 // an account: both packages install from local tarballs, and the binary is built from `tool/`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, copyFileSync, readFileSync, readdirSync, rmSync, existsSync } from 'node:fs';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -100,6 +100,40 @@ test('a missing platform package says how to install it', { skip: !host }, () =>
   assert.equal(run.stdout, '');
   assert.ok(run.stderr.includes(`@glw907/cairn-${host}`), run.stderr);
   assert.match(run.stderr, /npm install/);
+});
+
+test('a signal sent to the launcher reaches the binary, and its exit status comes back', { skip: !host || process.platform === 'win32' }, async () => {
+  // A stand-in binary that traps SIGTERM the way `cairn new` does and exits 7 once it is stopped.
+  const project = install(fixture.packed.launcher);
+  const pkgDir = path.join(project, 'node_modules/@glw907', `cairn-${host}`);
+  mkdirSync(path.join(pkgDir, 'bin'), { recursive: true });
+  writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: `@glw907/cairn-${host}`, version: VERSION }));
+  writeFileSync(
+    path.join(pkgDir, 'bin/cairn'),
+    '#!/bin/sh\ntrap \'echo stopped; exit 7\' TERM\necho ready\nwhile true; do sleep 0.1; done\n',
+    { mode: 0o755 },
+  );
+  const child = spawn(path.join(project, 'node_modules/.bin/create-cairn-site'), [], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let out = '';
+  child.stdout.on('data', (d) => {
+    out += d;
+    if (out.includes('ready') && !child.killed) child.kill('SIGTERM');
+  });
+  const status = await new Promise((resolve) => child.on('exit', (code, signal) => resolve(signal ?? code)));
+  assert.equal(status, 7);
+  assert.match(out, /stopped/);
+});
+
+test('a platform package at another version is not run', { skip: !host || process.platform === 'win32' }, () => {
+  const project = install(fixture.packed.launcher);
+  const pkgDir = path.join(project, 'node_modules/@glw907', `cairn-${host}`);
+  mkdirSync(path.join(pkgDir, 'bin'), { recursive: true });
+  writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: `@glw907/cairn-${host}`, version: '9.9.9' }));
+  writeFileSync(path.join(pkgDir, 'bin/cairn'), '#!/bin/sh\necho planted\n', { mode: 0o755 });
+  const run = runLauncher(project, []);
+  assert.notEqual(run.status, 0);
+  assert.doesNotMatch(run.stdout, /planted/);
+  assert.ok(run.stderr.includes(`@glw907/cairn-${host}@${VERSION}`), run.stderr);
 });
 
 test('the packed launcher holds only its entry, manifest, and README', { skip: !host }, () => {

@@ -322,21 +322,37 @@ workflow with `gh run rerun <run-id> --failed`.
 with the Go tool and publish from `tool.yml`'s `publish-npm` job when a `tool/vX.Y.Z` tag is pushed: the
 release job packs them with `scripts/release/pack-platforms.mjs` at the tag's version, and `publish-npm`
 publishes the six platform packages first and the launcher last, with provenance, to `gate` for a
-prerelease and `latest` for a stable. A `workflow_dispatch` run packs and dry-runs without publishing.
+prerelease and `latest` for a stable. Only a push of a `tool/v*` tag publishes. A `workflow_dispatch`
+run, on a branch or on a tag ref, packs and dry-runs without publishing.
 
-The first publish of each of the seven packages is done by hand, because npm cannot bind a trusted
-publisher to a package that does not exist. Until the owner has done it, the job's publish fails on
-authorization. For each package, once:
+Four owner steps come before the first tool tag, and none can be done by the workflow:
 
-1. Pack with `node scripts/release/pack-platforms.mjs --version <x.y.z> --binaries <dir> --out <dir>`,
-   from binaries laid out `<os>-<cpu>/cairn` (`cairn.exe` on Windows), or take the tarballs from a
-   dispatch run's `npm-tarballs` artifact.
-2. Publish it with the owner's own npm login: `npm publish <tarball> --access public`.
-3. Bind its trusted publisher: `npm trust github <package> --repo glw907/cairn-cms --file tool.yml
-   --env npm-publish --allow-publish`.
+1. **Allow the tag in the `npm-publish` environment.** Its deployment policy allows tags matching `v*`
+   only, and `*` does not cross `/`, so `tool/v1.2.0` is refused at the gate after the GitHub Release is
+   already created. Add a second tag policy, `tool/v*`. Never widen it to `*`: that lets any branch
+   deploy to the environment that holds trusted publishing for the engine too. Prove it with one
+   prerelease tag before the real cut.
+2. **Protect the tags.** The `release-tags` ruleset covers `refs/tags/v*` only. Add `refs/tags/tool/v*`
+   (update and deletion rules), so a published version's tag cannot be moved or recreated.
+3. **Publish each new package once by hand**, because npm cannot bind a trusted publisher to a package
+   that does not exist. The six platform packages are new. `create-cairn-site` already exists, with its
+   trusted publisher bound to `publish.yml`, so it needs only the rebind in 3.3. For each package:
+   1. Pack with `node scripts/release/pack-platforms.mjs --version <x.y.z> --binaries <dir> --out <dir>`,
+      from binaries laid out `<os>-<cpu>/cairn` (`cairn.exe` on Windows), or take the tarballs from the
+      `npm-tarballs` artifact of a dispatch run on `main`, verified first with `gh attestation verify
+      <archive> --repo glw907/cairn-cms --source-ref refs/heads/main`.
+   2. Publish with the owner's npm login: `npm publish <tarball> --access public`.
+   3. Bind the trusted publisher: `npm trust github <package> --repo glw907/cairn-cms --file tool.yml
+      --env npm-publish --allow-publish`. The `--env` is load-bearing: `tool.yml`'s release job holds an
+      id-token for the attestation, and only the environment binding keeps it from publishing.
+4. **Retire the wizard's dist-tags.** After the first tool publish, `next` and `gate` still point at
+   `create-cairn-site@0.99.0-rc.4`, the wizard that writes the GitHub App's secrets to disk in plaintext.
+   Run `npm dist-tag rm create-cairn-site next` and `npm deprecate create-cairn-site@"<1.0.0" "Retired:
+   use the latest version, which installs the cairn tool."`.
 
 Do the six platform packages, then `create-cairn-site`. After that every tool tag publishes by itself, and
-the already-published guard lets a re-run recover a release that failed partway.
+the already-published guard lets a re-run recover a release that failed partway. A stable tool tag moves
+`latest` for all seven packages, so never tag an older stable after a newer one.
 
 ## 10. Judgment call: when something fails
 

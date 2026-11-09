@@ -48,9 +48,9 @@ func declaredConsts(t *testing.T, file, typeName string) []string {
 }
 
 // TestStepConstantsAreAllRegistered holds the record-step vocabulary closed: every Step constant
-// declared in step.go is a known step (allSteps) or a setup step, and nothing else is, so a step
-// added as a constant but left out of parseStep fails here instead of reading back as unknown
-// from a record on disk.
+// declared in step.go is a known step (allSteps) or a setup step, and nothing else is, so a
+// constant left out of both lists fails here instead of reading back as unknown from a record
+// on disk.
 func TestStepConstantsAreAllRegistered(t *testing.T) {
 	declared := declaredConsts(t, "step.go", "Step")
 

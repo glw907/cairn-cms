@@ -241,6 +241,7 @@ describe('C4 personal data', () => {
   it('reads a platform package under the @glw907 scope as the engine\'s own, not another repository', () => {
     expect(hits('`@glw907/cairn-linux-x64`')).toEqual([]);
     expect(hits('see glw907/907-life')).toContain('C1:error');
+    expect(hits('`@glw907/907-life-theme`')).toContain('C1:error');
   });
 
   it('does not read a scoped package or a version pin as an email', () => {

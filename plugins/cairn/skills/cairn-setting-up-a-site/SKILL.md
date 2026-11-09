@@ -13,6 +13,10 @@ description: Sets up a new cairn site with `cairn new`. Use when a person asks t
 2. Ask the person for the site's name, the owner's email address, and whether the site should decline or invite AI crawlers. Do not choose for them.
 3. Check the person has a GitHub account, a Cloudflare account, and Cloudflare's Workers Paid plan. The [before you start](https://github.com/glw907/cairn-cms/blob/main/docs/admin/before-you-start.md) page says what each costs.
 
+## How to run `cairn`
+
+Run `cairn` as one bare command, with no `cd`, redirect, pipe, or `$(...)`. A redirect to a file, a `cd`, or a command substitution such as `$(...)` keeps the whole call sandboxed ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)), and `cairn` must run outside an agent's sandbox, because it needs the person's browser and the keyring. Start it with the Bash tool's `run_in_background`, so you can relay each `waiting` sentence to the person while the run blocks.
+
 ## Attended: the person is at the keyboard
 
 Plan first, then apply.
@@ -25,7 +29,7 @@ Each `waiting` event carries a `sentence`. Show that sentence to the person as w
 
 ## Unattended
 
-An unattended run still needs the person for every browser approval. Start it only when the person will be at their browser. Write each event's `sentence` where they will see it, and treat a `waiting` event with no reply as a pause, not a failure.
+An unattended run still needs the person for the GitHub browser approvals. Start it only when the person will be at their browser. To skip the Cloudflare approval, the person puts a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Never take it as a flag, and never print it. Setup then uses the token for every Cloudflare call and stores it as the site's deploy key, `--email` is required, and a resume needs the variable again. The [set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md) page lists the token's permissions. Write each event's `sentence` where they will see it, and treat a `waiting` event with no reply as a pause, not a failure.
 
 ## Read the result
 

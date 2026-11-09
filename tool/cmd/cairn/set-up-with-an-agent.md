@@ -15,6 +15,21 @@ The `cairn` plugin for Claude Code holds a skill, `cairn-setting-up-a-site`, tha
 
 The plugin is optional. This page works without it. [Suggested plugins](./suggested-plugins.md) covers the other plugins a new site offers.
 
+## Run the command
+
+Run `cairn` as one bare command: no `cd`, no redirect, no pipe, and no `$(...)`. A redirect to a file, a `cd`, or a command substitution keeps the whole call in the agent's sandbox, and `cairn` can't run there, because it needs the owner's browser and the keyring ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). Start the command in the background, so you can read each `waiting` sentence to the owner while the run blocks. In Claude Code, that is the Bash tool's `run_in_background` option.
+
+## Use a Cloudflare token for an unattended run
+
+An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. With it set, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.
+
+Create the token as an account-owned token, with these permissions:
+
+- On the account: Workers Scripts Edit, D1 Edit, Workers R2 Storage Edit, Email Sending Edit, and Account Settings Read.
+- On the site's zone: Zone Read, DNS Edit, and Workers Routes Edit.
+
+Setup stores the token as the site's `CLOUDFLARE_API_TOKEN` Actions secret, which the deploy uses. It mints no token and revokes no Cloudflare approval. When you no longer want the site to deploy, revoke the token yourself. Because the token can't read the owner's email address, `--email` is required. A resume needs the variable set again. `CLOUDFLARE_API_TOKEN` in the environment never selects this mode. The `step_done` event for the first approval and the `summary` event carry `credential`, which is `token` for this run and `approval` otherwise.
+
 ## Preview the names
 
 A dry run prints the names setup would use and creates nothing. It needs `--name`, `--email`, and `--posture`, which is `decline` or `invite` and sets what the site does about AI crawlers. It reads no registry, makes no network call, and asks for no approval, so it is a safe first call.

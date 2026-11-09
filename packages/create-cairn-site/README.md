@@ -3,14 +3,26 @@
 Set up a [cairn](https://github.com/glw907/cairn-cms) site. This package is a launcher: it installs
 the prebuilt `cairn` command line tool for your platform and runs `cairn new`.
 
+## Setting up with an agent
+
+Install the cairn plugin in Claude Code, and ask it to set up a site:
+
+```
+claude plugin marketplace add glw907/cairn-cms
+claude plugin install cairn@cairn
+```
+
+The agent runs `cairn new`, shows you each step, and waits while you approve it in your browser. [Set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md) covers the whole run.
+
+## Usage
+
 ```
 npm create cairn-site
 ```
 
 `cairn new` asks a few questions in the terminal, then creates the site's repository, Cloudflare
 resources, and first deploy, and asks you to approve each step in your browser. Node.js 24 or later
-runs the launcher. [Set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md)
-covers the same run driven from a coding agent. Every flag goes through to `cairn new`:
+runs the launcher. Every flag goes through to `cairn new`:
 
 ```
 npm create cairn-site -- --name "My Site" --email me@example.com --posture decline --dry-run --json

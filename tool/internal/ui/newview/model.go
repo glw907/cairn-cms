@@ -64,8 +64,8 @@ type Config struct {
 	Styles Styles
 	// Glyphs is the mark tier; the ASCII tier also selects the ASCII spinner.
 	Glyphs Glyphs
-	// Themes is the template's catalog, in catalog order. It must not be empty; the theme
-	// question is asked only when it holds more than one theme.
+	// Themes is the template's catalog, in catalog order. It is empty only for a remote session,
+	// which asks nothing; the theme question is asked only when it holds more than one theme.
 	Themes []scaffold.Theme
 	// Remote opens on the SSH stop instead of the welcome screen.
 	Remote bool
@@ -98,7 +98,8 @@ type ChooseZoneMsg struct {
 }
 
 // ChooseResumeMsg asks whether to resume an unfinished setup or start a new site. The view
-// sends the chosen run's site id on Reply, or "" for a new site.
+// sends the chosen run's site id on Reply, or "" for a new site, which goes on to the welcome
+// screen and the questions.
 type ChooseResumeMsg struct {
 	Runs  []store.Entry
 	Reply chan<- string
@@ -169,6 +170,8 @@ type Model struct {
 	sum setup.Summary
 	// created reports that the run has made something a rerun resumes from, for the Ctrl+C line.
 	created bool
+	// resuming reports that the pending choice is the unfinished-setup one.
+	resuming bool
 }
 
 // New returns a Model on the welcome screen, or on the SSH stop for a remote session.
@@ -189,54 +192,74 @@ func New(cfg Config) *Model {
 	return m
 }
 
-// Init starts nothing: the runner's requests and events arrive as messages.
-func (m *Model) Init() tea.Cmd { return nil }
+// Init quits at once for a session that opens on a final frame, the SSH stop; otherwise it
+// starts nothing, since the runner's requests and events arrive as messages.
+func (m *Model) Init() tea.Cmd {
+	if m.phase.final() {
+		return tea.Quit
+	}
+	return nil
+}
 
-// Update applies a window size, a key, a runner request, or a setup.Event to the model.
+// Update applies a window size, a key, a runner request, or a setup.Event to the model. The
+// message that brings a final frame on screen also quits the program: Bubble Tea flushes the
+// last frame as it stops, and the frame ends on a newline, so it stays in scrollback with the
+// shell prompt below it.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	was := m.phase.final()
+	cmd := m.update(msg)
+	if !was && m.phase.final() {
+		return m, tea.Batch(cmd, tea.Quit)
+	}
+	return m, cmd
+}
+
+func (m *Model) update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		return m, m.resize()
+		return m.resize()
 	case tea.KeyPressMsg:
-		return m, m.key(msg)
+		return m.key(msg)
 	case setup.Event:
-		return m, m.apply(msg)
+		return m.apply(msg)
 	case ConfirmSummaryMsg:
 		m.sum, m.summaryReply, m.phase, m.created = msg.Summary, msg.Reply, phaseSummary, true
-		return m, m.summary.Ask(msg.Summary, msg.Problem, m.width)
+		return m.summary.Ask(msg.Summary, msg.Problem, m.width)
 	case DoneMsg:
 		m.done, m.phase = msg.Done, phaseDone
-		return m, nil
+		return nil
 	case clockMsg:
 		m.watch.Tick(time.Time(msg))
 		if m.phase != phaseWatch {
-			return m, nil
+			return nil
 		}
-		return m, tickClock()
+		return tickClock()
 	case OpenBrowserMsg:
 		m.browser.Arm(msg.URL)
 		m.openReply = msg.Reply
 		m.phase = phaseBrowser
-		return m, nil
+		return nil
 	case ChooseAccountMsg:
-		return m, m.ask(accountChoice(m.cfg.Styles, m.cfg.Glyphs, m.keys, msg.Accounts), msg.Reply)
+		return m.ask(accountChoice(m.cfg.Styles, m.cfg.Glyphs, m.keys, msg.Accounts), msg.Reply)
 	case ChooseZoneMsg:
-		return m, m.ask(zoneChoice(m.cfg.Styles, m.cfg.Glyphs, m.keys, msg.Zones), msg.Reply)
+		return m.ask(zoneChoice(m.cfg.Styles, m.cfg.Glyphs, m.keys, msg.Zones), msg.Reply)
 	case ChooseResumeMsg:
-		return m, m.ask(resumeChoice(m.cfg.Styles, m.cfg.Glyphs, m.keys, msg.Runs), msg.Reply)
+		cmd := m.ask(resumeChoice(m.cfg.Styles, m.cfg.Glyphs, m.keys, msg.Runs), msg.Reply)
+		m.resuming = true
+		return cmd
 	case CountdownMsg:
 		m.browser.Countdown(msg.Left)
-		return m, nil
+		return nil
 	case openedMsg:
 		if msg.err != nil {
 			m.browser.OpenFailed()
 		}
-		return m, nil
+		return nil
 	case spinner.TickMsg:
-		return m, tea.Batch(m.browser.Spin(msg), m.watch.Spin(msg))
+		return tea.Batch(m.browser.Spin(msg), m.watch.Spin(msg))
 	}
-	return m, m.forward(msg)
+	return m.forward(msg)
 }
 
 // resize rebuilds the active form, which Huh measures only when it is built.
@@ -303,6 +326,10 @@ func (m *Model) forward(msg tea.Msg) tea.Cmd {
 			return cmd
 		}
 		m.phase = phaseBrowser
+		if m.resuming && m.choice.Value() == "" {
+			m.phase = phaseWelcome
+		}
+		m.resuming = false
 		return tea.Batch(cmd, answer(m.chooseReply, m.choice.Value()))
 	}
 	return nil

@@ -22,7 +22,7 @@ func TestAUsageErrorBeforeTheOpeningEndsLeavesStdoutEmpty(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out strings.Builder
-			a := &agentRun{cmd: newNewCmd(mustDeps(t)), out: agentview.NewWriter(&out)}
+			a := &agentRun{cmd: newNewCmd(mustDeps(t), &rootFlags{}), out: agentview.NewWriter(&out)}
 			a.emit(setup.Event{Kind: setup.StepStarted, Step: setup.StepOpeningChecks})
 			if out.Len() != 0 {
 				t.Fatalf("the opening's first event reached stdout early: %q", out.String())
@@ -42,7 +42,7 @@ func TestAUsageErrorSetupWrapsIntoAStepFailedLeavesStdoutEmpty(t *testing.T) {
 	ue := &agentview.UsageError{Problem: "cairn: give --site-theme"}
 	f := &setup.Failure{Step: setup.StepOpeningChecks, Reason: setup.ReasonProvider, Happened: "stopped", Err: ue}
 	var out strings.Builder
-	a := &agentRun{cmd: newNewCmd(mustDeps(t)), out: agentview.NewWriter(&out)}
+	a := &agentRun{cmd: newNewCmd(mustDeps(t), &rootFlags{}), out: agentview.NewWriter(&out)}
 	a.emit(setup.Event{Kind: setup.StepStarted, Step: setup.StepOpeningChecks})
 	a.emit(setup.Event{Kind: setup.StepFailed, Step: f.Step, Failure: f})
 	err := a.finish(setup.Result{}, f)

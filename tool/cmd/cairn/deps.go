@@ -62,6 +62,9 @@ type deps struct {
 	// cmd.OutOrStdout, and the detection needs a file descriptor that an io.Writer cannot
 	// carry. main.go fills it; a test leaves it nil, which DetectProfile reads as a pipe.
 	stdout *os.File
+	// interactive reports whether stdin and stdout are both a terminal, which sends a mode-less
+	// cairn new to the terminal view. main fills it; a test leaves it nil, which reads as a pipe.
+	interactive func() bool
 	// exit ends the process with a monitoring-plugin verdict code. It is os.Exit in production,
 	// carried here so a test can observe the code and so os.Exit itself is named in main.go
 	// alone.

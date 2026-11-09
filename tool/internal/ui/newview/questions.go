@@ -37,7 +37,10 @@ type questions struct {
 }
 
 func newQuestions(s Styles, g Glyphs, k keys, themes []scaffold.Theme) *questions {
-	q := &questions{styles: s, glyphs: g, keys: k, themes: themes, theme: themes[0].ID, posture: setup.Decline}
+	q := &questions{styles: s, glyphs: g, keys: k, themes: themes, posture: setup.Decline}
+	if len(themes) > 0 {
+		q.theme = themes[0].ID
+	}
 	q.q = q.first()
 	return q
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/logx"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
@@ -22,6 +23,12 @@ import (
 // check each need the file descriptor. Nothing writes through it.
 func processStdout() *os.File {
 	return os.Stdout
+}
+
+// stdioTerminal reports whether stdin and stdout are both a terminal, deps.interactive in
+// production.
+func stdioTerminal() bool {
+	return render.IsTerminal(os.Stdin) && render.IsTerminal(os.Stdout)
 }
 
 // notifyContext returns a context cancelled on SIGINT or SIGTERM. Windows delivers neither the
@@ -68,6 +75,7 @@ func scrubTargets(d deps) []providers.Credential {
 func main() {
 	d := newDeps()
 	d.stdout = processStdout()
+	d.interactive = stdioTerminal
 
 	out, errOut, skipped, flush := scrubbedWriters(d)
 	d.scrubSkipped = skipped

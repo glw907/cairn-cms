@@ -457,15 +457,17 @@ func run(cmd tea.Cmd) []tea.Msg {
 
 func TestChoicesAnswerTheRunner(t *testing.T) {
 	tests := []struct {
-		name string
-		ask  func(chan<- string) tea.Msg
-		keys []tea.Msg
-		want string
+		name  string
+		ask   func(chan<- string) tea.Msg
+		keys  []tea.Msg
+		want  string
+		phase phase
 	}{
-		{"account", func(r chan<- string) tea.Msg { return ChooseAccountMsg{Accounts: twoAccounts, Reply: r} }, []tea.Msg{down, enter}, "a2"},
-		{"zone", func(r chan<- string) tea.Msg { return ChooseZoneMsg{Zones: fiveZones, Reply: r} }, []tea.Msg{down, down, enter}, "z3"},
-		{"resume", func(r chan<- string) tea.Msg { return ChooseResumeMsg{Runs: twoRuns, Reply: r} }, []tea.Msg{enter}, "field-notes-3f9a2c"},
-		{"new site", func(r chan<- string) tea.Msg { return ChooseResumeMsg{Runs: twoRuns, Reply: r} }, []tea.Msg{down, down, enter}, ""},
+		{"account", func(r chan<- string) tea.Msg { return ChooseAccountMsg{Accounts: twoAccounts, Reply: r} }, []tea.Msg{down, enter}, "a2", phaseBrowser},
+		{"zone", func(r chan<- string) tea.Msg { return ChooseZoneMsg{Zones: fiveZones, Reply: r} }, []tea.Msg{down, down, enter}, "z3", phaseBrowser},
+		{"resume", func(r chan<- string) tea.Msg { return ChooseResumeMsg{Runs: twoRuns, Reply: r} }, []tea.Msg{enter}, "field-notes-3f9a2c", phaseBrowser},
+		// A new site has no run yet, so it goes on to the welcome screen and the questions.
+		{"new site", func(r chan<- string) tea.Msg { return ChooseResumeMsg{Runs: twoRuns, Reply: r} }, []tea.Msg{down, down, enter}, "", phaseWelcome},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -481,8 +483,8 @@ func TestChoicesAnswerTheRunner(t *testing.T) {
 			default:
 				t.Fatal("the choice sent no reply")
 			}
-			if m.phase != phaseBrowser {
-				t.Errorf("phase after the choice = %v, want the browser screen", m.phase)
+			if m.phase != tt.phase {
+				t.Errorf("phase after the choice = %v, want %v", m.phase, tt.phase)
 			}
 		})
 	}

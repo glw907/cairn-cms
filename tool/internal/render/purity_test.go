@@ -225,7 +225,9 @@ func TestRenderDirectRequiresArePinned(t *testing.T) {
 // The list is longer than Task 20b-ii's criterion 16 enumerates, and the difference is recorded
 // rather than hidden: View and its constants, SelectBody, Env, Terminal, Glyphs, and Credential all
 // landed with the foundations and the first bodies, and the criterion's prose names only the
-// types it was adding to. Everything here is reachable from Render's input or its output.
+// types it was adding to. Everything here is reachable from Render's input or its output, but
+// IsTerminal: cairn new asks it of stdin to choose the terminal view, which keeps the module's
+// one term.IsTerminal call in profile.go.
 var exportedSurface = []string{
 	"Body", "BodyMany", "BodyPlain", "BodySingle",
 	"Credential",
@@ -233,6 +235,7 @@ var exportedSurface = []string{
 	"Env",
 	"Frame",
 	"GlyphSet", "Glyphs",
+	"IsTerminal",
 	"MarshalAdoptList", "MarshalAuthCheck", "MarshalLogs", "MarshalSite", "MarshalSiteLine", "MarshalSitesList",
 	"MarshalSummary",
 	"AdoptCandidate", "AuthCheckPermission",

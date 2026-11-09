@@ -51,9 +51,11 @@ func runAgent(cmd *cobra.Command, d deps, f newFlags, mode string) error {
 	return a.resume()
 }
 
-// unfinished lists the setup records a run could continue, by id.
-func (a *agentRun) unfinished() []store.Entry {
-	entries, _ := a.st.List()
+func (a *agentRun) unfinished() []store.Entry { return unfinishedIn(a.st) }
+
+// unfinishedIn lists the setup records in st a run could continue, by id.
+func unfinishedIn(st *store.Store) []store.Entry {
+	entries, _ := st.List()
 	candidates, _, _ := store.SelectResume(entries)
 	slices.SortFunc(candidates, func(x, y store.Entry) int { return strings.Compare(x.ID, y.ID) })
 	return candidates

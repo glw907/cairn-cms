@@ -59,10 +59,15 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 	}
 	env := environMap(os.Environ())
 	probe := providers.NewProbe(d.transport, d.resolver)
-	// A resume fetches the template version its record names, never the tag's current one.
-	fetch := setup.FetchFrom(scaffold.NewFetcher(d.transport), in.tag)
-	if in.resume != nil {
+	// A resume fetches the template version its record names, never the tag's current one. A run
+	// whose view already fetched the tag's template builds from that one.
+	fetch := tagFetch(d, in.tag)
+	switch {
+	case in.resume != nil:
 		fetch = setup.FetchRecorded(scaffold.NewFetcher(d.transport), in.resume.Record)
+	case in.template != nil:
+		t := *in.template
+		fetch = func(context.Context) (setup.Template, error) { return t, nil }
 	}
 
 	return setup.Config{
@@ -113,6 +118,11 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 		Emit:     emit,
 		Now:      d.now,
 	}, nil
+}
+
+// tagFetch is the template fetch of a new run: the engine's template at the dist-tag tag.
+func tagFetch(d deps, tag string) func(ctx context.Context) (setup.Template, error) {
+	return setup.FetchFrom(scaffold.NewFetcher(d.transport), tag)
 }
 
 // newRunID returns a fresh run id: 16 random hex digits, with no slash, so the run's keyring

@@ -394,6 +394,8 @@ Run `cairn auth set %s` to store one
 Run `cairn sites list` to see the sites cairn knows
 - cairn: no unfinished setup is named %s.
 Run `cairn new status` to list them
+- cairn: setup couldn't download the site template from npm: %v.
+Check your internet connection, and then run cairn new again.
 - cairn: several unfinished setups exist: %s.
 Continue one with --resume <id>, or start a new site with --new.
 Run `cairn new --help` for the flags

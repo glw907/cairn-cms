@@ -4,9 +4,11 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/exp/teatest/v2"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
@@ -56,6 +58,40 @@ func replay(t *testing.T, events []setup.Event) string {
 		t.Fatal("final model is not *Model")
 	}
 	return final.View().Content
+}
+
+// TestAFinalFrameEndsTheProgram runs a real program to each final frame and requires it to quit
+// by itself, with the final frame the last thing it wrote and the frame ending on a newline.
+func TestAFinalFrameEndsTheProgram(t *testing.T) {
+	f := workersPaid
+	for _, tc := range []struct {
+		name   string
+		remote bool
+		msgs   []tea.Msg
+		want   string
+	}{
+		{"failure", false, []tea.Msg{setup.Event{Kind: setup.StepFailed, Step: f.Step, Failure: &f}}, titleDeployFails},
+		{"done", false, []tea.Msg{DoneMsg{Done: setup.Done{URL: "https://fieldnotes.example.com"}}}, "fieldnotes.example.com/admin"},
+		{"ssh stop", true, nil, titleSSH},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := testConfig(true, oneTheme)
+			cfg.Remote = tc.remote
+			m := New(cfg)
+			tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(100, 40))
+			for _, msg := range tc.msgs {
+				tm.Send(msg)
+			}
+			final, ok := tm.FinalModel(t, teatest.WithFinalTimeout(5*time.Second)).(*Model)
+			if !ok || !final.phase.final() {
+				t.Fatalf("the program ended off a final frame: %+v", final)
+			}
+			content := final.View().Content
+			if !strings.HasSuffix(content, "\n") || !strings.Contains(content, tc.want) {
+				t.Errorf("final frame does not end on a newline or lacks %q:\n%s", tc.want, content)
+			}
+		})
+	}
 }
 
 func readGolden(t *testing.T, path string) string {

@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -25,8 +26,7 @@ const githubWebHost = "github.com"
 // githubWebBase is githubWebHost's root URL.
 const githubWebBase = "https://" + githubWebHost
 
-// manifestNameMax is how many characters of the site's base name the App name keeps after the
-// "cairn-" prefix.
+// manifestNameMax is GitHub's limit on an App name, prefix included.
 const manifestNameMax = 34
 
 // engineURL is the homepage and the placeholder webhook URL the manifest carries.
@@ -54,16 +54,16 @@ type ManifestHook struct {
 }
 
 // NewManifest builds the manifest for a site whose base name is base. The App is named
-// "cairn-" plus base cut to 34 characters. port is the loopback port: the install redirect
+// "cairn-" plus base, cut to GitHub's 34 characters with no trailing dash. port is the loopback port: the install redirect
 // uses the first callback URL verbatim, so that URL carries the real port.
 func NewManifest(base string, port int) Manifest {
-	name := []rune(base)
+	name := []rune("cairn-" + base)
 	if len(name) > manifestNameMax {
 		name = name[:manifestNameMax]
 	}
 	loopback := "http://127.0.0.1:" + strconv.Itoa(port)
 	return Manifest{
-		Name:                  "cairn-" + string(name),
+		Name:                  strings.TrimRight(string(name), "-"),
 		URL:                   engineURL,
 		RedirectURL:           loopback + "/github/manifest",
 		CallbackURLs:          []string{loopback + "/github/callback"},

@@ -85,10 +85,16 @@ func TestNewManifestMatchesTheSpecLiteral(t *testing.T) {
 	}
 }
 
-func TestNewManifestCutsTheBaseNameAt34(t *testing.T) {
-	m := NewManifest(strings.Repeat("a", 50), 1)
-	if want := "cairn-" + strings.Repeat("a", 34); m.Name != want {
-		t.Errorf("Name = %q, want %q", m.Name, want)
+func TestNewManifestCutsTheWholeNameAt34(t *testing.T) {
+	cases := []struct{ base, want string }{
+		{strings.Repeat("a", 50), "cairn-" + strings.Repeat("a", 28)},
+		{strings.Repeat("a", 27) + "-" + strings.Repeat("b", 10), "cairn-" + strings.Repeat("a", 27)},
+		{"example", "cairn-example"},
+	}
+	for _, c := range cases {
+		if got := NewManifest(c.base, 1).Name; got != c.want || len(got) > 34 {
+			t.Errorf("NewManifest(%q).Name = %q (%d), want %q", c.base, got, len(got), c.want)
+		}
 	}
 }
 

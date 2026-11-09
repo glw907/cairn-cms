@@ -495,3 +495,64 @@ Name the check that entry holds
 - Your Cloudflare account has no domains. The admin sends sign-in links by email, and Cloudflare sends email only from a domain on your account.
 - Your domain <domain> is still being added to Cloudflare.
 - Your site is open in the setup tab. Select Sign in there, or use the link in your email.
+
+## newview
+
+- <n> accounts on your Cloudflare sign-in
+- <n> domains on your Cloudflare account
+- <time> left to approve
+- AI crawlers
+- About your site
+- Account
+- Add a domain you own
+- Allow AI training
+- Already done
+- Approve each request in the setup tab. The next request opens in the same tab.
+- Approve setup in your browser
+- Before you start, read <link>.
+- Block AI training
+- Choose a domain
+- Choose an account
+- Choose whether AI companies can use your content to train their models. This setting doesn't affect search engines.
+- Cloudflare: Allow
+- Design
+- Domain
+- Enter a name with at least one letter from A to Z or a number.
+- GitHub: Approve
+- GitHub: Create
+- GitHub: Install & Authorize
+- How your site looks to readers.
+- If no tab opened, go to <url>
+- If the countdown reaches 0:00, run cairn new again to resume.
+- Left in place
+- Nothing was created.
+- Register a domain
+- Repository
+- Resume setup
+- Set up a cairn site
+- Setup
+- Setup can't continue
+- Setup can't run over SSH
+- Setup couldn't open your browser. Go to <url>
+- Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
+- Setup didn't finish on this computer. Resume a site, or start a new one.
+- Setup needs a domain on Cloudflare
+- Setup opens a tab in your browser. Approve these four requests in that tab.
+- Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser.
+- Shown at the top of every page.
+- Site name
+- Start a new site
+- Theme
+- To resume, run cairn new again.
+- What happened
+- What to do
+- You approve four requests in your browser.
+- You need a domain on Cloudflare and the Workers Paid plan.
+- back
+- cairn.pub/start
+- choose
+- next
+- open your browser
+- quit
+- start
+- stop

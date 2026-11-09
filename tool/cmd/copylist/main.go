@@ -27,6 +27,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/ui/newview"
 )
 
 // errNonLiteralConstValue is cairnCatalogue's named error for a package-level const whose value
@@ -75,6 +76,7 @@ func catalogues() []packageCatalogue {
 		{name: "cmd/cairn", entries: sortedUnique(cairn)},
 		{name: "doctor", entries: sortedUnique(doctor.Catalogue())},
 		{name: "setup", entries: sortedUnique(setup.Catalogue())},
+		{name: "newview", entries: sortedUnique(newview.Catalogue())},
 	}
 }
 

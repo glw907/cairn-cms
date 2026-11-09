@@ -32,11 +32,13 @@ func fixtureStream() []setup.Event {
 	}
 }
 
-// replay delivers events to a fresh Model through a teatest program and returns the
-// final frame.
+// replay delivers events to a Model past the summary through a teatest program and returns
+// the final frame.
 func replay(t *testing.T, events []setup.Event) string {
 	t.Helper()
-	tm := teatest.NewTestModel(t, New(), teatest.WithInitialTermSize(80, 24))
+	m := New(testConfig(true, twoThemes))
+	m.phase = phaseWatch
+	tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(80, 24))
 	for _, ev := range events {
 		tm.Send(ev)
 	}

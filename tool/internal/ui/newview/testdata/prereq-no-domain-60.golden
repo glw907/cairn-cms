@@ -1,0 +1,11 @@
+
+  Setup needs a domain on Cloudflare
+
+  What happened     Your Cloudflare account
+                    has no domains.
+  Already done      Nothing was created.
+  What to do        Register a domain with Cloudflare, or
+                    add a domain you already own to
+                    Cloudflare. Then run cairn new again.
+                    Register a domain
+                    Add a domain you own · cairn.pub/start

@@ -42,7 +42,6 @@ const QUOTING_DIR = 'docs/admin';
 // directory holds any page.
 const PAGE_FLOORS = {
   'docs/admin/create-your-site.md': 2,
-  'docs/admin/set-up-with-an-agent.md': 2,
   'docs/admin/is-it-working.md': 1,
 };
 

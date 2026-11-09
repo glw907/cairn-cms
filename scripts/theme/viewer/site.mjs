@@ -166,11 +166,16 @@ export function composeSite({ root, themeDir }) {
 }
 
 /**
- * The environment every child process gets: the caller's, with wrangler's metrics prompt off.
+ * The environment every child process gets: the caller's, with wrangler's metrics prompt off and
+ * `CI` removed. With `CI` set, `vite dev` on the scratch site prints its ready line and then never
+ * answers a request (reproduced on a clean checkout and on a GitHub runner, 2026-11-09), so the
+ * viewer runs its children as an interactive workstation session would.
  * @returns {NodeJS.ProcessEnv}
  */
 function childEnv() {
-  return { ...process.env, WRANGLER_SEND_METRICS: 'false' };
+  const env = { ...process.env, WRANGLER_SEND_METRICS: 'false' };
+  delete env.CI;
+  return env;
 }
 
 /**
@@ -302,7 +307,7 @@ async function launch(siteDir, command, port) {
   };
   process.once('exit', stop);
   const ready = /Local:|Ready on/;
-  const deadline = Date.now() + 360_000;
+  const deadline = Date.now() + 180_000;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       const message = `viewer: ${command} server exited early (${child.exitCode}):\n${output}`;
@@ -323,7 +328,7 @@ async function launch(siteDir, command, port) {
     await new Promise((done) => setTimeout(done, 300));
   }
   stop();
-  throw new Error(`viewer: ${command} server did not answer on ${url} within 360s:\n${output}`);
+  throw new Error(`viewer: ${command} server did not answer on ${url} within 180s:\n${output}`);
 }
 
 /**

@@ -36,8 +36,9 @@ pass, was dropped by Geoff on 2026-11-08.
   first publish of the six platform packages, both owner steps (`cairn-releasing`, "The launcher and
   its platform packages").
 - theme-garden: Geoff approved the plan and ruled Decide G-1 yes (2026-11-09, Approval Queue item
-  `20261109T022112-3127080`). G1 is in flight (`cairn-cms-theme-garden-1`, session `b467d134`), and
-  the conductor merges G1 then G2 under the plan's gates
+  `20261109T022112-3127080`). G1 merged (#207, `64cbe711d`, the theme contract and Waymark's port);
+  G2 is in flight (`cairn-cms-theme-garden-2`, session `a53cbbb8`, off `main`), and the conductor
+  merges it under the plan's gates
   (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`).
 - cairn-setup tooling: Geoff approved the setup tooling design on 2026-11-09
   (`~/Projects/initiatives/cairn-setup/specs/2026-11-09-setup-tooling-design.md`). Its planner,

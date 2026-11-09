@@ -247,6 +247,11 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		r.zone, r.zoneChosen = zones[i], true
 	}
 	r.host = r.zone.Name
+	if _, err := addresses(r.zone.Name, kept); kept != "" && err == nil {
+		// An address an open-choice stop kept stands when it fits the zone the resume chose, and
+		// it is the address the check below reads.
+		r.host = kept
+	}
 	r.addresses, _ = addresses(r.zone.Name, r.host)
 	if err := r.checkAddress(ctx, ""); err != nil {
 		return err
@@ -258,11 +263,7 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 	r.rec.Cloudflare.AccountID = r.account.ID
 	r.rec.Cloudflare.ZoneID = r.zone.ID
 	r.rec.Setup.OwnerEmail = r.email
-	r.rec.Setup.Address = r.zone.Name
-	if _, err := addresses(r.zone.Name, kept); kept != "" && err == nil {
-		// An address an open-choice stop kept stands when it fits the zone the resume chose.
-		r.rec.Setup.Address = kept
-	}
+	r.rec.Setup.Address = r.host
 	if err := r.save(); err != nil {
 		return err
 	}

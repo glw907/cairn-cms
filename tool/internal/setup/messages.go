@@ -35,27 +35,27 @@ const kept = "The completed steps above are kept."
 // entries is keyed by every Reason failure.go declares; messages_test.go enforces that.
 var entries = map[Reason]Entry{
 	ReasonRemote: {
-		Happened: "Setup can't run over SSH or without a display.",
+		Happened: "Setup can't run over SSH or without a display. Setup opens its approval pages in a browser on the computer where it runs.",
 		Did:      nothingCreated,
 		Do:       "Run cairn new in a terminal on the computer where you use your browser.",
 		Anchor:   anchorComputer,
 	},
 	ReasonGitMissing: {
-		Happened: "Setup can't find git on this computer.",
+		Happened: "Setup can't find Git on this computer.",
 		Did:      nothingCreated,
-		Do:       "Install git, and then run cairn new again.",
+		Do:       "Install Git, and then run cairn new again.",
 		Anchor:   anchorComputer,
 	},
 	ReasonNodeMissing: {
-		Happened: "Setup can't find Node on this computer.",
+		Happened: "Setup can't find Node.js on this computer.",
 		Did:      nothingCreated,
-		Do:       "Install Node 24 or later, and then run cairn new again.",
+		Do:       "Install Node.js 24 or later, and then run cairn new again.",
 		Anchor:   anchorComputer,
 	},
 	ReasonNodeOld: {
-		Happened: "Setup needs Node 24 or later. This computer has Node <n>.",
+		Happened: "Setup needs Node.js 24 or later. This computer has Node.js <n>.",
 		Did:      nothingCreated,
-		Do:       "Install Node 24 or later, and then run cairn new again.",
+		Do:       "Install Node.js 24 or later, and then run cairn new again.",
 		Anchor:   anchorComputer,
 	},
 	ReasonPortInUse: {
@@ -83,7 +83,7 @@ var entries = map[Reason]Entry{
 		Anchor:   anchorComputer,
 	},
 	ReasonNoAccount: {
-		Happened: "Your Cloudflare sign-in has no accounts.",
+		Happened: "Setup can't find a Cloudflare account for your sign-in.",
 		Did:      nothingCreated,
 		Do:       "Create a Cloudflare account, and then run cairn new again.",
 		Anchor:   anchorCloudflare,
@@ -106,14 +106,14 @@ var entries = map[Reason]Entry{
 		Do:       "Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.",
 	},
 	ReasonAddressRecords: {
-		Happened: "That address already points to another site: <host> has DNS records.",
+		Happened: "The address <host> already points to another site. It has DNS records in Cloudflare.",
 		Did:      nothingCreated,
-		Do:       "Remove its DNS records in Cloudflare, and then run cairn new again.",
+		Do:       "Remove the DNS records for <host> in Cloudflare, or choose another address. Then run cairn new again.",
 	},
 	ReasonAddressInUse: {
 		Happened: "A Worker already serves <host>.",
 		Did:      nothingCreated,
-		Do:       "Remove that Worker's custom domain or route in Cloudflare, and then run cairn new again.",
+		Do:       "Remove the custom domain or route for <host> from that Worker in Cloudflare, or choose another address. Then run cairn new again.",
 	},
 	ReasonNamesTaken: {
 		Happened: "Every name from <repo> to <repo>-9 is already in use.",
@@ -121,23 +121,23 @@ var entries = map[Reason]Entry{
 		Do:       "Choose another site name, and then run cairn new again.",
 	},
 	ReasonDeclined: {
-		Happened: "The Cloudflare approval was declined.",
+		Happened: "Cloudflare didn't approve setup's request.",
 		Did:      nothingCreated,
 		Do:       "Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.",
 	},
 	ReasonKeyringWrite: {
 		Happened: "Setup couldn't store a credential in the keyring.",
 		Did:      kept,
-		Do:       "Unlock the keyring, and then run cairn new again. If setup created a GitHub App, delete it first at <url>.",
+		Do:       "Delete the GitHub App at <url>. Then unlock the keyring and run cairn new again.",
 	},
 	ReasonInstallDelete: {
-		Happened: "Setup couldn't remove the GitHub App's access to all your repositories, or found that access reached more than <repo>.",
+		Happened: "The GitHub App <app> may still have access to all your repositories.",
 		Did:      kept,
-		Left:     "An installation of <app> may still reach all your repositories.",
-		Do:       "Remove the installation at <url>, and then run cairn new again. Approve access to <repo> only.",
+		Left:     "Setup couldn't confirm that the App's access is limited to <repo>.",
+		Do:       "Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve to give the App access to <repo> only.",
 	},
 	ReasonChainTimeout: {
-		Happened: "The approvals passed the 30-minute limit.",
+		Happened: "The 30-minute limit to approve the requests ran out.",
 		Did:      kept,
 		Do:       "Run cairn new again to resume.",
 	},
@@ -162,14 +162,14 @@ var entries = map[Reason]Entry{
 		Do:       "Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.",
 	},
 	ReasonAccountMissing: {
-		Happened: "The Cloudflare approval doesn't reach the account this setup began in.",
+		Happened: "The Cloudflare approval doesn't include the account that setup started with.",
 		Did:      kept,
-		Do:       "Run cairn new again, and on the Cloudflare page approve the same account as before.",
+		Do:       "Run cairn new again. On the Cloudflare page, select the same account as before, select API Tokens: Write, and then select Allow.",
 	},
 	ReasonNotOurs: {
-		Happened: "A <kind> named <name> already exists on your Cloudflare account, and setup can't confirm it's the one it created.",
+		Happened: "A <kind> named <name> already exists on your Cloudflare account. Setup can't confirm that it created this <kind>.",
 		Did:      kept,
-		Do:       "If you don't need it, delete the <kind> in Cloudflare. Then run cairn new again.",
+		Do:       "If you don't need it, delete the <kind> in Cloudflare. If you need it, choose another site name. Then run cairn new again.",
 	},
 	ReasonFolderNotOurs: {
 		Happened: "The folder <folder> changed after setup wrote the site there.",
@@ -199,17 +199,17 @@ var entries = map[Reason]Entry{
 	ReasonDeployFailed: {
 		Happened: "The first deploy failed in GitHub Actions.",
 		Did:      kept,
-		Do:       "Open the run at <url> to see what failed. Then run cairn new again, and setup resumes at the first deploy.",
+		Do:       "Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.",
 	},
 	ReasonDeployTimeout: {
 		Happened: "The first deploy didn't finish within 30 minutes.",
 		Did:      kept,
-		Do:       "Check the Actions tab of your repository on GitHub, and then run cairn new again. Setup resumes at the first deploy.",
+		Do:       "On GitHub, open the Actions tab of <repo> to see whether the deploy is still running. Then run cairn new again. Setup resumes at the first deploy.",
 	},
 	ReasonHTTPSTimeout: {
 		Happened: "The site didn't answer over HTTPS at <host> within 15 minutes.",
 		Did:      kept,
-		Do:       "Run cairn new again later. Setup resumes at connecting the domain.",
+		Do:       "Wait a few minutes, and then run cairn new again. Setup resumes at the Connect <domain> step.",
 	},
 }
 
@@ -217,7 +217,7 @@ var entries = map[Reason]Entry{
 const (
 	// lineSlugNoLetters is the site-name error for a name that yields no repository name, such
 	// as one written only in another script.
-	lineSlugNoLetters = "Enter a name with at least one letter from A to Z or a number."
+	lineSlugNoLetters = "Enter a name that has at least one number or one letter from A to Z."
 	// lineSignInStep replaces the watch sentence for the sign-in step, since the confirm page
 	// takes one more click.
 	lineSignInStep = "Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Sign in there."
@@ -230,7 +230,7 @@ const (
 	lineLinkExpired = "If the link has expired, request a new one on the sign-in page."
 	// lineAppNameTaken joins the Create waiting sentence for a GitHub App name another owner
 	// holds.
-	lineAppNameTaken = "If GitHub says the name is taken, change it on that page. Setup reads the name you choose."
+	lineAppNameTaken = "If GitHub says the name is taken, change it on that page. Setup uses the name you choose."
 )
 
 // Catalogue returns every string this table carries, for the copy golden.

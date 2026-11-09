@@ -424,61 +424,62 @@ Name the check that entry holds
 
 ## setup
 
-- A <kind> named <name> already exists on your Cloudflare account, and setup can't confirm it's the one it created.
+- A <kind> named <name> already exists on your Cloudflare account. Setup can't confirm that it created this <kind>.
 - A Worker already serves <host>.
 - A Worker named <name> appeared on your Cloudflare account while setup ran.
 - A request to <provider> failed, or setup stopped on an unexpected error.
-- An installation of <app> may still reach all your repositories.
 - Check that the folder is writable, and then run cairn new again.
 - Check that your home folder is writable, and then run cairn new again.
-- Check the Actions tab of your repository on GitHub, and then run cairn new again. Setup resumes at the first deploy.
 - Check your internet connection, and then run cairn new again.
 - Choose another site name, and then run cairn new again.
+- Cloudflare didn't approve setup's request.
 - Cloudflare no longer accepts setup's approval.
 - Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.
 - Create a Cloudflare account, and then run cairn new again.
 - Delete that Worker or rename it in Cloudflare, and then run cairn new again.
-- Enter a name with at least one letter from A to Z or a number.
+- Delete the GitHub App at <url>. Then unlock the keyring and run cairn new again.
+- Enter a name that has at least one number or one letter from A to Z.
 - Every name from <repo> to <repo>-9 is already in use.
 - Finish or stop the other setup, and then run cairn new again.
-- If GitHub says the name is taken, change it on that page. Setup reads the name you choose.
+- If GitHub says the name is taken, change it on that page. Setup uses the name you choose.
 - If the link has expired, request a new one on the sign-in page.
-- If you don't need it, delete the <kind> in Cloudflare. Then run cairn new again.
-- Install Node 24 or later, and then run cairn new again.
-- Install git, and then run cairn new again.
+- If you don't need it, delete the <kind> in Cloudflare. If you need it, choose another site name. Then run cairn new again.
+- Install Git, and then run cairn new again.
+- Install Node.js 24 or later, and then run cairn new again.
 - Keep this tab open. When setup finishes, your site opens here. Select Sign in to open the admin.
 - Move or rename that folder, or run cairn new from another folder.
 - Nothing was created.
-- Open the run at <url> to see what failed. Then run cairn new again, and setup resumes at the first deploy.
+- On GitHub, open the Actions tab of <repo> to see whether the deploy is still running. Then run cairn new again. Setup resumes at the first deploy.
+- Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.
 - Port 49152 is in use. Another setup may be running.
 - Register a domain with Cloudflare, or add a domain you already own to Cloudflare. Then run cairn new again.
-- Remove its DNS records in Cloudflare, and then run cairn new again.
-- Remove that Worker's custom domain or route in Cloudflare, and then run cairn new again.
-- Remove the installation at <url>, and then run cairn new again. Approve access to <repo> only.
+- Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve to give the App access to <repo> only.
+- Remove the DNS records for <host> in Cloudflare, or choose another address. Then run cairn new again.
+- Remove the custom domain or route for <host> from that Worker in Cloudflare, or choose another address. Then run cairn new again.
 - Remove those commits or delete the repository. Then run cairn new again.
-- Run cairn new again later. Setup resumes at connecting the domain.
 - Run cairn new again to resume.
-- Run cairn new again, and on the Cloudflare page approve the same account as before.
 - Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.
+- Run cairn new again. On the Cloudflare page, select the same account as before, select API Tokens: Write, and then select Allow.
 - Run cairn new in a terminal on the computer where you use your browser.
-- Setup can't find Node on this computer.
-- Setup can't find git on this computer.
-- Setup can't run over SSH or without a display.
+- Setup can't find Git on this computer.
+- Setup can't find Node.js on this computer.
+- Setup can't find a Cloudflare account for your sign-in.
+- Setup can't run over SSH or without a display. Setup opens its approval pages in a browser on the computer where it runs.
 - Setup can't use this computer's keyring.
+- Setup couldn't confirm that the App's access is limited to <repo>.
 - Setup couldn't get the site template from npm.
 - Setup couldn't push the site to GitHub.
-- Setup couldn't remove the GitHub App's access to all your repositories, or found that access reached more than <repo>.
 - Setup couldn't save its record of this run.
 - Setup couldn't store a credential in the keyring.
 - Setup couldn't write the site into <folder>.
 - Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Sign in there.
-- Setup needs Node 24 or later. This computer has Node <n>.
+- Setup needs Node.js 24 or later. This computer has Node.js <n>.
 - Setup stopped.
 - Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.
-- That address already points to another site: <host> has DNS records.
-- The Cloudflare approval doesn't reach the account this setup began in.
-- The Cloudflare approval was declined.
-- The approvals passed the 30-minute limit.
+- The 30-minute limit to approve the requests ran out.
+- The Cloudflare approval doesn't include the account that setup started with.
+- The GitHub App <app> may still have access to all your repositories.
+- The address <host> already points to another site. It has DNS records in Cloudflare.
 - The completed steps above are kept.
 - The first deploy didn't finish within 30 minutes.
 - The first deploy failed in GitHub Actions.
@@ -489,9 +490,8 @@ Name the check that entry holds
 - To resume, run cairn new again.
 - Undo your changes in that folder, and then run cairn new again.
 - Unlock or set up the keyring, and then run cairn new again.
-- Unlock the keyring, and then run cairn new again. If setup created a GitHub App, delete it first at <url>.
+- Wait a few minutes, and then run cairn new again. Setup resumes at the Connect <domain> step.
 - Wait until Cloudflare shows the domain as active, and then run cairn new again.
 - Your Cloudflare account has no domains. The admin sends sign-in links by email, and Cloudflare sends email only from a domain on your account.
-- Your Cloudflare sign-in has no accounts.
 - Your domain <domain> is still being added to Cloudflare.
 - Your site is open in the setup tab. Select Sign in there, or use the link in your email.

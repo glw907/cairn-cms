@@ -422,6 +422,51 @@ func TestQuestionsHandTheAnswersToStart(t *testing.T) {
 	}
 }
 
+// TestATokenRunAsksForTheOwnerEmail covers a run whose Cloudflare token cannot read the owner's
+// address: the email is asked after the other questions, refuses anything but one address, and
+// reaches Start with the answers.
+func TestATokenRunAsksForTheOwnerEmail(t *testing.T) {
+	var got []setup.Answers
+	cfg := testConfig(true, oneTheme)
+	cfg.AskEmail = true
+	cfg.Start = func(a setup.Answers) tea.Cmd { got = append(got, a); return nil }
+	m := driven(cfg, 80, 24, func(m *Model) {
+		send(m, enter)
+		typeText(m, "Field Notes")
+		send(m, enter, enter)
+	})
+	if !strings.Contains(ansi.Strip(m.View().Content), labelOwnerEmail) || len(got) != 0 {
+		t.Fatalf("after the crawler question: Start got %+v; frame:\n%s", got, ansi.Strip(m.View().Content))
+	}
+	typeText(m, "not an address")
+	send(m, enter)
+	if len(got) != 0 {
+		t.Fatalf("Start ran with an email that is no address: %+v", got)
+	}
+	send(m, tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl})
+	typeText(m, "sam@example.com")
+	send(m, enter)
+	want := setup.Answers{SiteName: "Field Notes", Posture: setup.Decline, OwnerEmail: "sam@example.com"}
+	if len(got) != 1 || got[0] != want {
+		t.Errorf("Start got %+v, want one call with %+v", got, want)
+	}
+}
+
+// TestATokenRunsSummaryClaimsNoCloudflareEmail: a token run's email is what the owner typed, so
+// the summary never says it came from the Cloudflare account.
+func TestATokenRunsSummaryClaimsNoCloudflareEmail(t *testing.T) {
+	s := fieldNotes
+	s.Credential = setup.CredentialToken
+	content, _ := frame(oneTheme, 100, asked(s, ""))
+	if strings.Contains(ansi.Strip(content), reasonEmail) {
+		t.Errorf("a token run's summary says the email came from Cloudflare:\n%s", ansi.Strip(content))
+	}
+	approval, _ := frame(oneTheme, 100, asked(fieldNotes, ""))
+	if !strings.Contains(ansi.Strip(approval), reasonEmail) {
+		t.Errorf("an approval run's summary lacks the email's reason, so the check above proves nothing:\n%s", ansi.Strip(approval))
+	}
+}
+
 func TestSiteNameNeedsALetterOrDigit(t *testing.T) {
 	started := false
 	cfg := testConfig(true, oneTheme)

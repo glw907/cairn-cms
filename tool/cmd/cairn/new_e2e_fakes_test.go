@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	crand "crypto/rand"
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
@@ -21,6 +22,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"golang.org/x/crypto/nacl/box"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
@@ -47,6 +50,13 @@ type e2eWorld struct {
 	custom  []byte
 	// secrets holds every value the world planted, for the leak grep.
 	secrets []string
+	// cfBearer is the one bearer the Cloudflare API accepts: the planted access token, or the
+	// planted setup token for a run that supplies one.
+	cfBearer string
+	// sealPub and sealPriv are the repository's Actions key pair, so the world can open what
+	// setup seals; sealed holds each stored secret's sealed value, by name.
+	sealPub, sealPriv *[32]byte
+	sealed            map[string]string
 }
 
 type e2eInstall struct {
@@ -85,9 +95,14 @@ func cfEmpty() map[string]any {
 func newE2EWorld(t *testing.T) (*e2eWorld, map[string]http.Handler) {
 	t.Helper()
 	creds := corpusBody(t, "github", "test-only.app-credentials.json")
-	w := &e2eWorld{t: t, repoName: "example-site"}
+	pub, priv, err := box.GenerateKey(crand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := &e2eWorld{t: t, repoName: "example-site", cfBearer: e2eCFAccess, sealPub: pub, sealPriv: priv, sealed: map[string]string{}}
 	w.secrets = []string{
 		e2eCFAccess, e2eCFRefresh, e2eCFCode, e2eManifestCode, e2eInstallCode, e2eGHUserToken, e2eGHInstToken, e2eDeployKey,
+		e2eCFSetupToken,
 		asStr(creds["client_secret"]), asStr(creds["webhook_secret"]),
 		// One distinctive line of the App's private key stands for the whole PEM.
 		strings.Split(asStr(creds["pem"]), "\n")[2],
@@ -150,7 +165,7 @@ var (
 
 // cloudflare fakes the Cloudflare API routes the opening's reads and the first watch steps call.
 func (w *e2eWorld) cloudflare(rw http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Authorization") != "Bearer "+e2eCFAccess {
+	if r.Header.Get("Authorization") != "Bearer "+w.cfBearer {
 		w.mu.Lock()
 		w.badAuth = append(w.badAuth, r.Method+" "+r.URL.Path)
 		w.mu.Unlock()
@@ -398,8 +413,17 @@ func (w *e2eWorld) githubAPI(rw http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(rw, http.StatusOK, map[string]any{"sha": strings.TrimSpace(string(out))})
 	case r.Method == http.MethodGet && strings.HasSuffix(path, "/actions/secrets/public-key"):
-		writeJSON(rw, http.StatusOK, corpusBody(w.t, "github", "repo_actions_secrets_public_key.ok.200.json"))
+		body := corpusBody(w.t, "github", "repo_actions_secrets_public_key.ok.200.json")
+		body["key"] = base64.StdEncoding.EncodeToString(w.sealPub[:])
+		writeJSON(rw, http.StatusOK, body)
 	case r.Method == http.MethodPut && strings.Contains(path, "/actions/secrets/"):
+		var req struct {
+			EncryptedValue string `json:"encrypted_value"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		w.mu.Lock()
+		w.sealed[path[strings.LastIndex(path, "/")+1:]] = req.EncryptedValue
+		w.mu.Unlock()
 		writeJSON(rw, http.StatusCreated, corpusBody(w.t, "github", "repo_actions_secret_put.ok.201.json"))
 	case r.Method == http.MethodGet && strings.HasSuffix(path, "/actions/runs"):
 		w.mu.Lock()
@@ -412,6 +436,23 @@ func (w *e2eWorld) githubAPI(rw http.ResponseWriter, r *http.Request) {
 		w.t.Logf("e2e: unfaked api.github.com route %s", r.Method+" "+r.URL.RequestURI())
 		http.NotFound(rw, r)
 	}
+}
+
+// opened returns the plaintext of the Actions secret name setup stored, opened with the
+// repository's private key, and false when none was stored or it does not open.
+func (w *e2eWorld) opened(name string) (string, bool) {
+	w.mu.Lock()
+	sealed, ok := w.sealed[name]
+	w.mu.Unlock()
+	if !ok {
+		return "", false
+	}
+	raw, err := base64.StdEncoding.DecodeString(sealed)
+	if err != nil {
+		return "", false
+	}
+	plain, ok := box.OpenAnonymous(nil, raw, w.sealPub, w.sealPriv)
+	return string(plain), ok
 }
 
 func (w *e2eWorld) installList() []map[string]any {

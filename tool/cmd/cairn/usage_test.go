@@ -360,12 +360,14 @@ func TestTheScrubSkipNoticeIsDisclosedOnceUnderVerbose(t *testing.T) {
 // TestTheAccountIDIsNotScrubbed holds the deliberate gap in the scrub's needle set. The account
 // id is an identifier the tool prints on purpose, in `adopt list` and in `auth probe`'s
 // output, so registering it would blank diagnostic text without protecting a secret. The line
-// below carries all three values through the chokepoint the process streams run on.
+// below carries the id and every token, the setup token included, through the chokepoint the
+// process streams run on.
 func TestTheAccountIDIsNotScrubbed(t *testing.T) {
 	const (
 		accountID = "sentinel-account-ccccccccdddddddd"
-		cfToken   = "sentinel-cf-value-aaaaaaaabbbbbbbb" // secret-guard-allow: a test sentinel
-		ghToken   = "sentinel-gh-value-eeeeeeeeffffffff" // secret-guard-allow: a test sentinel
+		cfToken   = "sentinel-cf-value-aaaaaaaabbbbbbbb"  // secret-guard-allow: a test sentinel
+		ghToken   = "sentinel-gh-value-eeeeeeeeffffffff"  // secret-guard-allow: a test sentinel
+		setupTok  = "sentinel-setup-value-gggggggghhhhhh" // secret-guard-allow: a test sentinel
 	)
 
 	d, _ := testDeps(t)
@@ -373,11 +375,12 @@ func TestTheAccountIDIsNotScrubbed(t *testing.T) {
 		varCFAccountID: accountID,
 		varCFReadToken: cfToken,
 		varGHReadToken: ghToken,
+		setupTokenVar:  setupTok,
 	})
 
 	var buf bytes.Buffer
 	w := logx.New(&buf, scrubTargets(d))
-	if _, err := w.Write([]byte("cairn: account " + accountID + " token " + cfToken + " " + ghToken + "\n")); err != nil {
+	if _, err := w.Write([]byte("cairn: account " + accountID + " token " + cfToken + " " + ghToken + " " + setupTok + "\n")); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if err := w.Close(); err != nil {
@@ -388,7 +391,7 @@ func TestTheAccountIDIsNotScrubbed(t *testing.T) {
 	if !strings.Contains(got, accountID) {
 		t.Errorf("the account id was redacted: %q", got)
 	}
-	for _, token := range []string{cfToken, ghToken} {
+	for _, token := range []string{cfToken, ghToken, setupTok} {
 		if strings.Contains(got, token) {
 			t.Errorf("output carries a token: %q", got)
 		}

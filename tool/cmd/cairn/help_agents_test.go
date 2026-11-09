@@ -153,7 +153,8 @@ func TestHealthHelpCarriesTheExitCodeBlock(t *testing.T) {
 
 // TestAgentsPageCarriesTheSetupContractWhenNewShows covers cairn new's visibility: a build where
 // the command is hidden gets the monitoring contract alone, and the shipped build carries the
-// plan and apply flow, the event kinds, the waiting states, and the exit codes.
+// plan and apply flow, the event kinds, the waiting states, the exit codes, and the setup token's
+// variable.
 func TestAgentsPageCarriesTheSetupContractWhenNewShows(t *testing.T) {
 	d, _ := testDeps(t)
 	out, _, err := execTree(t, d, "help", "agents")
@@ -167,7 +168,7 @@ func TestAgentsPageCarriesTheSetupContractWhenNewShows(t *testing.T) {
 	if !strings.HasPrefix(shown, agentsPage) {
 		t.Error("the page with cairn new shown does not start with the monitoring contract")
 	}
-	wants := []string{"cairn new --plan", "cairn new --apply", "--posture", "Exit codes for cairn new"}
+	wants := []string{"cairn new --plan", "cairn new --apply", "--posture", "Exit codes for cairn new", setupTokenVar}
 	for _, k := range []setup.EventKind{setup.StepStarted, setup.StepDone, setup.StepFailed, setup.Waiting, setup.Resumed, setup.SummaryKind} {
 		wants = append(wants, string(k))
 	}

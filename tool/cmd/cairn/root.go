@@ -257,6 +257,7 @@ func newRootCmd(d deps) *cobra.Command {
 		newLogsCmd(d, f),
 		newAdoptCmd(d, f),
 		newAuthCmd(d),
+		newNewCmd(d),
 		newAgentsCmd(),
 	)
 

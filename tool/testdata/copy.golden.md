@@ -176,6 +176,7 @@ Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 Precedence is CRITICAL, then UNKNOWN, then WARNING, then OK, which is not numeric order.
 Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.
+- Set up a new cairn site
 - Show which provider answers each credential variable
 - cairn adopt --worker my-site
 - cairn adopt list
@@ -249,6 +250,35 @@ the https and email checks that need a live, adopted site.
 
 To check every site cairn knows, run: cairn health --json
 - cairn logs my-site-a1b2c3 --since 24h
+- cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
+- cairn new sets up a site on Cloudflare and GitHub. An agent runs it in two steps.
+
+Plan. Answer every question with a flag. Setup waits on the owner for each browser
+approval, writes nothing to Cloudflare, and saves its plan to the file:
+  cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
+
+Apply. After the owner has reviewed the plan, create the site from it. The plan's open
+fields, the email and the address, may be edited first:
+  cairn new --apply plan.json
+
+Required with --plan and --dry-run:
+  --name         the site's name
+  --email        the first owner's email address
+  --posture      decline or invite, the site's AI-crawler stance
+
+Answers asked for only when there is more than one choice:
+  --account      the Cloudflare account id
+  --zone         the Cloudflare zone
+  --host         the site's address, the zone or a subdomain of it
+  --site-theme   the theme id
+
+Other flags:
+  --dry-run      print the names setup would use and create nothing; add --json for a payload
+  --resume       continue the unfinished setup with this site id
+  --new          start a new site instead of continuing an unfinished one
+  --tag          the engine's npm dist-tag to build from (default latest)
+
+A usage error exits 3 and writes nothing to stdout. cairn help agents lists the exit codes.
 - cairn sites
 - cairn sites list --json
 - cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them
@@ -256,6 +286,8 @@ To check every site cairn knows, run: cairn health --json
 Run `cairn --help` for the commands
 - cairn: %q is not a credential cairn stores.
 The names are %s
+- cairn: %s and %s cannot be used together.
+Run `cairn new --help` for the flags
 - cairn: %s crashed with a %s.
 This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: %s is empty.
@@ -263,6 +295,9 @@ Pipe a non-empty value: printf %%s "$v" | cairn auth set %s
 - cairn: %s is not a valid hold file.
 %v
 Write the file as a JSON array of entries, each carrying checkId and expires
+- cairn: %s is not implemented yet
+- cairn: %s is required with %s.
+Run `cairn new --help` for the flags
 - cairn: %v
 - cairn: %v.
 Run `%s --help` for usage
@@ -271,6 +306,8 @@ Use the check and an expiry date, for example deploy=2026-10-01
 - cairn: --ack-file %s not found.
 Use a file that exists, or drop --ack-file to use the registry's default
 - cairn: --color %q is not %s, %s, or %s
+- cairn: --posture takes decline or invite, not %q.
+Run `cairn new --help` for the flags
 - cairn: --since %q is not a duration.
 Use a whole number of minutes, hours, or days: 90m, 24h, 7d
 - cairn: --theme %q is not a theme cairn renders.
@@ -318,6 +355,8 @@ Run `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the dom
 Name the check that entry holds
 - cairn: this output carries identifiers and is not safe to paste in public.
 - columns to render at, instead of the terminal's width
+- continue the unfinished setup with this site id
+- create the site from a plan file
 - error records in the window that still report OK
 - hold one check until an expiry date: <check-id>=<YYYY-MM-DD>. Repeatable, and applies to that check on every site in a sweep.
 - lookback window for the error count: a whole number of m, h, or d
@@ -329,18 +368,30 @@ Name the check that entry holds
 - print the entries as JSON
 - print the identifiers a run otherwise withholds
 - print the listing as JSON
+- print the names setup would use and create nothing
 - print the permission report as JSON
 - print the report as JSON
 - print the version and exit
 - run `cairn auth check <site>` to confirm this permission
+- run the questions and approvals, write the plan to this file, and create nothing
+- start a new site instead of continuing an unfinished one
+- the Cloudflare account id, when the sign-in lists several
+- the Cloudflare zone to serve the site from, when the account has several
 - the OS keyring did not open
 - the Workers script to adopt
 - the domain the Worker serves, for a Worker with no Custom Domain
+- the engine's npm dist-tag to build the site from
+- the first owner's email address
 - the ground to render for: dark or light
 - the number of sites the registry is expected to hold
 - the repository the Worker deploys from, as owner/name
+- the site's address: the zone itself or a subdomain of it
+- the site's name; the repository, Worker, and database names derive from it
+- the theme id, when the template offers several
 - wall-clock budget for the whole run
+- what the site does about AI crawlers: decline or invite
 - when to colour the output: auto, always, or never
+- write the dry run as a JSON payload on stdout
 
 ## doctor
 
@@ -421,3 +472,9 @@ Name the check that entry holds
 - the resolved origin's /robots.txt did not return 200
 - the resolved public origin does not parse as an http or https URL
 - wrangler vars
+
+## setup
+
+- Enter a valid email address.
+- That address already points to another site. Choose another address, or remove its DNS records in Cloudflare first.
+- Use the bare domain, or a subdomain such as blog.<zone>. A subdomain gets no www.

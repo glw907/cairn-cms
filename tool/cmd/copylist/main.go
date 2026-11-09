@@ -25,6 +25,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
@@ -73,6 +74,7 @@ func catalogues() []packageCatalogue {
 		{name: "spine", entries: sortedUnique(spine.Catalogue())},
 		{name: "cmd/cairn", entries: sortedUnique(cairn)},
 		{name: "doctor", entries: sortedUnique(doctor.Catalogue())},
+		{name: "setup", entries: sortedUnique(setup.Catalogue())},
 	}
 }
 

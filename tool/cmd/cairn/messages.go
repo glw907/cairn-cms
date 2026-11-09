@@ -697,3 +697,89 @@ func translateError(err error) error {
 	}
 	return fallbackError(err)
 }
+
+// cairn new's Short, Example, and flag help. The command is Hidden until it ships, so none of
+// this reaches the root help yet. Every line is new to this table.
+const (
+	shortNew   = "Set up a new cairn site"
+	exampleNew = "cairn new --plan plan.json --name \"My Site\" --email me@example.com --posture decline"
+
+	flagNewNameHelp      = "the site's name; the repository, Worker, and database names derive from it"
+	flagNewEmailHelp     = "the first owner's email address"
+	flagNewPostureHelp   = "what the site does about AI crawlers: decline or invite"
+	flagNewAccountHelp   = "the Cloudflare account id, when the sign-in lists several"
+	flagNewZoneHelp      = "the Cloudflare zone to serve the site from, when the account has several"
+	flagNewHostHelp      = "the site's address: the zone itself or a subdomain of it"
+	flagNewSiteThemeHelp = "the theme id, when the template offers several"
+	flagNewPlanHelp      = "run the questions and approvals, write the plan to this file, and create nothing"
+	flagNewApplyHelp     = "create the site from a plan file"
+	flagNewResumeHelp    = "continue the unfinished setup with this site id"
+	flagNewNewHelp       = "start a new site instead of continuing an unfinished one"
+	flagNewTagHelp       = "the engine's npm dist-tag to build the site from"
+	flagNewDryRunHelp    = "print the names setup would use and create nothing"
+	flagNewJSONHelp      = "write the dry run as a JSON payload on stdout"
+)
+
+// tmplNewRequires is the refusal of a run that leaves out a flag its mode needs, or that gives
+// a flag only another flag allows. It names the missing flag and the one that needs it.
+const tmplNewRequires = "cairn: %s is required with %s.\nRun `cairn new --help` for the flags"
+
+// newRequiresError renders tmplNewRequires.
+func newRequiresError(missing, with string) error {
+	return translated(fmt.Errorf(tmplNewRequires, missing, with))
+}
+
+// tmplNewConflict is the refusal of two flags that cannot be given together. It names both.
+const tmplNewConflict = "cairn: %s and %s cannot be used together.\nRun `cairn new --help` for the flags"
+
+// newConflictError renders tmplNewConflict.
+func newConflictError(first, second string) error {
+	return translated(fmt.Errorf(tmplNewConflict, first, second))
+}
+
+// tmplNewBadPosture is the refusal of a --posture outside the two values setup writes.
+const tmplNewBadPosture = "cairn: --posture takes decline or invite, not %q.\nRun `cairn new --help` for the flags"
+
+// newBadPostureError renders tmplNewBadPosture.
+func newBadPostureError(value string) error {
+	return translated(fmt.Errorf(tmplNewBadPosture, value))
+}
+
+// tmplNewNotImplemented is the stop a mode reaches while its agent view is unbuilt.
+const tmplNewNotImplemented = "cairn: %s is not implemented yet"
+
+// newNotImplementedError renders tmplNewNotImplemented.
+func newNotImplementedError(flag string) error {
+	return translated(fmt.Errorf(tmplNewNotImplemented, flag))
+}
+
+// newAgentGuide is what cairn new prints when no flag names a mode: the flags, and how an agent
+// plans and then applies. The exit codes are cairn help agents'.
+const newAgentGuide = `cairn new sets up a site on Cloudflare and GitHub. An agent runs it in two steps.
+
+Plan. Answer every question with a flag. Setup waits on the owner for each browser
+approval, writes nothing to Cloudflare, and saves its plan to the file:
+  cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
+
+Apply. After the owner has reviewed the plan, create the site from it. The plan's open
+fields, the email and the address, may be edited first:
+  cairn new --apply plan.json
+
+Required with --plan and --dry-run:
+  --name         the site's name
+  --email        the first owner's email address
+  --posture      decline or invite, the site's AI-crawler stance
+
+Answers asked for only when there is more than one choice:
+  --account      the Cloudflare account id
+  --zone         the Cloudflare zone
+  --host         the site's address, the zone or a subdomain of it
+  --site-theme   the theme id
+
+Other flags:
+  --dry-run      print the names setup would use and create nothing; add --json for a payload
+  --resume       continue the unfinished setup with this site id
+  --new          start a new site instead of continuing an unfinished one
+  --tag          the engine's npm dist-tag to build from (default latest)
+
+A usage error exits 3 and writes nothing to stdout. cairn help agents lists the exit codes.`

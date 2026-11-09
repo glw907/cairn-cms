@@ -67,6 +67,7 @@ func TestEveryActionCoverage(t *testing.T) {
 		"cairn auth unset",
 		"cairn auth check",
 		"cairn auth probe",
+		"cairn new",
 		"cairn agents",
 		"cairn completion",
 		"cairn help",
@@ -100,6 +101,7 @@ func TestEveryActionCoverage(t *testing.T) {
 	// adopt list's --json is declared on the list subcommand itself, unlike sites list's.
 	assertOwnFlags(t, byPath["cairn adopt list"], "json", "help")
 	assertOwnFlags(t, byPath["cairn auth check"], "json", "help")
+	assertOwnFlags(t, byPath["cairn new"], "name", "email", "posture", "account", "zone", "host", "site-theme", "plan", "apply", "resume", "new", "tag", "dry-run", "json", "help")
 
 	if byPath["cairn auth check"].Hidden {
 		t.Error("cairn auth check is Hidden; it must appear in --help")

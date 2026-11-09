@@ -100,6 +100,47 @@ func TestHelperProcess(t *testing.T) {
 	case "linger":
 		time.Sleep(3 * time.Second)
 		os.Exit(0)
+	case "env":
+		_ = os.WriteFile(os.Getenv("LOOPBACK_ENV_FILE"), []byte(strings.Join(os.Environ(), "\n")), 0o600)
+		os.Exit(0)
+	}
+}
+
+// TestOpenHandsTheBrowserNoSecret pins that the launcher, and so the browser it starts, never
+// inherits a variable that holds a credential.
+func TestOpenHandsTheBrowserNoSecret(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "env")
+	t.Setenv("LOOPBACK_HELPER", "env")
+	t.Setenv("LOOPBACK_ENV_FILE", path)
+	t.Setenv("KEEP_ME", "kept")
+	secret := map[string]string{
+		"CLOUDFLARE_API_TOKEN":   "s1",
+		"GH_TOKEN":               "s2",
+		"GITHUB_TOKEN":           "s3",
+		"CAIRN_CLOUDFLARE_TOKEN": "s4",
+		"NPM_TOKEN":              "s5",
+		"AWS_SECRET":             "s6",
+		"DB_PASSWORD":            "s7",
+		"app_client_secret":      "s8",
+	}
+	for name, v := range secret {
+		t.Setenv(name, "value-"+v)
+	}
+	if err := Open(helperArgv(), 5*time.Second); err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("the launcher wrote no environment: %v", err)
+	}
+	env := string(data)
+	for name, v := range secret {
+		if strings.Contains(env, "value-"+v) {
+			t.Errorf("the launcher inherited %s", name)
+		}
+	}
+	if !strings.Contains(env, "KEEP_ME=kept") {
+		t.Error("the launcher lost a variable that holds no secret")
 	}
 }
 

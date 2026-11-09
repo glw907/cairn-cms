@@ -120,6 +120,27 @@ func TestManifestFormAndURLs(t *testing.T) {
 	}
 }
 
+// TestATransportErrorCarriesNoURL pins that a failed request's error keeps its cause and drops
+// the URL, which for the manifest conversion carries the one-time code in its path.
+func TestATransportErrorCarriesNoURL(t *testing.T) {
+	cause := errors.New("connection reset by peer")
+	rt := roundTripFunc(func(*http.Request) (*http.Response, error) { return nil, cause })
+	const code = "manifestc0de1234567"
+	_, err := NewGitHub(Credential{}, rt).ConvertManifest(context.Background(), code)
+	if err == nil {
+		t.Fatal("ConvertManifest succeeded through a failing transport")
+	}
+	if strings.Contains(err.Error(), code) || strings.Contains(err.Error(), "app-manifests") {
+		t.Errorf("error %q quotes the request URL", err)
+	}
+	if !errors.Is(err, cause) || !strings.Contains(err.Error(), cause.Error()) {
+		t.Errorf("error %q lost its cause", err)
+	}
+	if !strings.Contains(err.Error(), "Post") {
+		t.Errorf("error %q lost the request's method", err)
+	}
+}
+
 func TestConvertManifestDecodesTheConversion(t *testing.T) {
 	rt := routes(map[string]reply{"POST api.github.com/app-manifests/the-code/conversions": fixtureReply(t, "app_manifest_conversion.created.201.json")})
 	rec, err := NewGitHub(Credential{}, rt).ConvertManifest(context.Background(), "the-code")

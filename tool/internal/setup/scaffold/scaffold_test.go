@@ -39,13 +39,20 @@ func TestScaffoldWritesTheSite(t *testing.T) {
 	}
 
 	var cfg struct {
-		SiteName string `yaml:"siteName"`
+		SiteName    string `yaml:"siteName"`
+		Description string `yaml:"description"`
 	}
-	if err := yaml.Unmarshal([]byte(readFile(t, dir, "src/theme/site.config.yaml")), &cfg); err != nil {
+	siteConfig := readFile(t, dir, "src/theme/site.config.yaml")
+	if err := yaml.Unmarshal([]byte(siteConfig), &cfg); err != nil {
 		t.Fatalf("site.config.yaml does not parse: %v", err)
 	}
 	if cfg.SiteName != "My Café: The Site!" {
 		t.Errorf("siteName = %q", cfg.SiteName)
+	}
+	// The home page shows the description under its heading, so a new site carries a neutral
+	// line rather than the template's sample copy.
+	if cfg.Description != "A new site built with cairn." || strings.Contains(siteConfig, "Trail reports") {
+		t.Errorf("description = %q, want the neutral line and none of the template's", cfg.Description)
 	}
 
 	cairn := readFile(t, dir, "src/theme/cairn.config.ts")
@@ -304,6 +311,39 @@ func TestUpdateInstallationCommitsTheSettingsAlone(t *testing.T) {
 	}
 }
 
+// TestNoHookRunsInTheSiteFolder pins that a hook planted in the site folder never runs when a
+// later pass commits there.
+func TestNoHookRunsInTheSiteFolder(t *testing.T) {
+	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
+	dir := filepath.Join(t.TempDir(), "site")
+	site := testSite()
+	early := site
+	early.DatabaseID = ""
+	first, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Dir: dir})
+	if err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	marker := filepath.Join(t.TempDir(), "hook-ran")
+	for _, name := range []string{"pre-commit", "post-commit", "reference-transaction"} {
+		hook := filepath.Join(dir, ".git", "hooks", name)
+		if err := os.WriteFile(hook, []byte("#!/bin/sh\ntouch '"+marker+"'\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	second, err := Finalize(t.Context(), FinalizeConfig{Dir: first.Dir, Base: first.CommitSHA, Site: site, Commit: testCommit()})
+	if err != nil {
+		t.Fatalf("Finalize: %v", err)
+	}
+	moved := site
+	moved.InstallationID = "848484"
+	if _, err := UpdateInstallation(t.Context(), FinalizeConfig{Dir: dir, Base: second, Site: moved, Commit: testCommit()}); err != nil {
+		t.Fatalf("UpdateInstallation: %v", err)
+	}
+	if _, err := os.Stat(marker); err == nil {
+		t.Error("a hook in the site folder ran")
+	}
+}
+
 func gitOut(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
@@ -373,6 +413,7 @@ func TestEachAnchorOfAFileFailsWhenOnlyItIsMissing(t *testing.T) {
 		{targets.Wrangler, `"bucket_name": "cairn-showcase-media"`},
 		{targets.Wrangler, `"PUBLIC_ORIGIN"`},
 		{targets.PackageJSON, `"@glw907/cairn-cms": `},
+		{targets.SiteConfig, "description:"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.rel+" "+tt.drop, func(t *testing.T) {

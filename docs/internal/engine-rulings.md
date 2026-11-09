@@ -536,3 +536,10 @@ when the remediation pass lands.
 - **Verdict:** accept, reshaped where noted. Setup asking for the theme first, or taking `--theme`, is accepted: choosing which template `cairn new` copies belongs to the operator's tool, not the engine surface. A theme declaring its options in a manifest is accepted, reshaped: the manifest is static data that only `cairn new` reads, at scaffold time, and it never becomes a runtime API, an admin theme switcher, or an npm export. The free-form brand color prompt retires. The `app.html` cookie regex is accepted: it is generated from the theme's names, so a theme never edits a file outside its directory.
 - **Shape:** out of scope are a theme shipped as an npm dependency that updates in place, a marketplace for outside themes, and per-theme content or directives.
 - **Reopens on:** closed. Ratified with the theme-garden design (2026-11-08), which names no evidence that would reopen it; filed by theme-garden pass G1.
+
+## scope-verdict-setup-token: `cairn new` takes a Cloudflare token from one environment variable  (accept, 2026-11-09, setup-tooling-2)
+
+- **Verdict:** accept. A Cloudflare API token in `CAIRN_CF_SETUP_TOKEN` stands in for the Cloudflare approval. It belongs to the operator's tool, `cairn new`, and serves owners who run setup from CI.
+- **Shape:** the leanest form is one environment variable, with no flag, file, stored copy, or mint. Setup uses the supplied token for every Cloudflare call and stores it as the site's deploy key. That keeps the option free of token management: a token that could mint tokens could mint any token on the account, so setup asks for none.
+- **Reopens on:** a request for a second way to supply the token, or for setup to mint a narrower one.
+

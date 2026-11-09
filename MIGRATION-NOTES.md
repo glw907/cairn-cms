@@ -135,6 +135,10 @@ longer tracked, so edit `themes/waymark/` and lay it in again. A site that alrea
 (`schema/cairn-theme-contract-1.json`) yet, and `theme.css` imports the built tokens sheet
 in place of the two daisyUI blocks and the `@theme` scale it held.
 
+The release gate is rebuilt around three legs, and the setup docs describe a token option for
+`cairn new`: a Cloudflare API token in `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval.
+Consumers must: nothing.
+
 ## 0.99.0-rc.4
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,

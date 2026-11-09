@@ -56,11 +56,16 @@ func (Keyring) Name() string {
 	return "keyring"
 }
 
-// withDeadline runs f and gives up on it after keyringDeadline, answering
-// errKeyringUnavailable. f keeps running in its goroutine after a
+// withDeadline runs f under keyringDeadline, the bound every Keyring call takes.
+func withDeadline[T any](f func() (T, error)) (T, error) {
+	return withDeadlineOf(keyringDeadline, f)
+}
+
+// withDeadlineOf runs f and gives up on it after d, answering
+// ErrKeyringUnavailable. f keeps running in its goroutine after a
 // deadline miss: the underlying library takes no context, so a call blocked
 // on an unlock prompt can only be abandoned, never cancelled.
-func withDeadline[T any](f func() (T, error)) (T, error) {
+func withDeadlineOf[T any](d time.Duration, f func() (T, error)) (T, error) {
 	type result struct {
 		value T
 		err   error
@@ -71,7 +76,7 @@ func withDeadline[T any](f func() (T, error)) (T, error) {
 		done <- result{value: v, err: err}
 	}()
 
-	timer := time.NewTimer(keyringDeadline)
+	timer := time.NewTimer(d)
 	select {
 	case r := <-done:
 		timer.Stop()
@@ -87,8 +92,11 @@ func withDeadline[T any](f func() (T, error)) (T, error) {
 // answered and holds no such entry, and ErrKeyringUnavailable means the
 // keyring could not be consulted at all.
 func read(name string) (string, error) {
+	// Each call takes its func out of the package var before the goroutine starts: an abandoned
+	// call outlives its caller, and must not read a var a test has since restored.
+	get := keyringGet
 	v, err := withDeadline(func() (string, error) {
-		return keyringGet(service, name)
+		return get(service, name)
 	})
 	switch {
 	case err == nil:
@@ -138,8 +146,9 @@ func (Keyring) Status(name string) (present bool, err error) {
 // doc comment promises that no backend text reaches a caller, so a raw
 // backend error is never returned here either.
 func (Keyring) Set(name, value string) error {
+	set := keyringSet
 	_, err := withDeadline(func() (struct{}, error) {
-		return struct{}{}, keyringSet(service, name, value)
+		return struct{}{}, set(service, name, value)
 	})
 	if err != nil {
 		return ErrKeyringUnavailable
@@ -153,8 +162,9 @@ func (Keyring) Set(name, value string) error {
 // other failure, a deadline miss or a backend error, flattens to ErrKeyringUnavailable, the same
 // way Set's does.
 func (Keyring) Delete(name string) error {
+	del := keyringDelete
 	_, err := withDeadline(func() (struct{}, error) {
-		return struct{}{}, keyringDelete(service, name)
+		return struct{}{}, del(service, name)
 	})
 	switch {
 	case err == nil:

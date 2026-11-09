@@ -1,0 +1,48 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "POST /user/tokens",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "result": {
+      "id": "00000000000000000000000000000446",
+      "name": "cairn-rec-tmw8khn73-key",
+      "status": "active",
+      "issued_on": "2026-11-09T01:13:29Z",
+      "modified_on": "2026-11-09T01:13:29Z",
+      "last_used_on": null,
+      "expires_on": "2026-11-09T01:28:29Z",
+      "value": "<REDACTED>",
+      "policies": [
+        {
+          "id": "00000000000000000000000000000447",
+          "effect": "allow",
+          "resources": {
+            "com.cloudflare.api.account.00000000000000000000000000000001": "*"
+          },
+          "permission_groups": [
+            {
+              "id": "00000000000000000000000000000189",
+              "name": "D1 Write"
+            },
+            {
+              "id": "00000000000000000000000000000411",
+              "name": "Workers R2 Storage Write"
+            },
+            {
+              "id": "00000000000000000000000000000415",
+              "name": "Workers Scripts Write"
+            }
+          ]
+        }
+      ],
+      "token_prefix": "cfut",
+      "token_suffix": "6a17"
+    },
+    "success": true,
+    "errors": [],
+    "messages": []
+  }
+}

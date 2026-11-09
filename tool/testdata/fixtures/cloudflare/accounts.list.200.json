@@ -1,0 +1,28 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "GET /accounts",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result_info": {
+      "page": 1,
+      "per_page": 20,
+      "total_pages": 1,
+      "count": 1,
+      "total_count": 1
+    },
+    "result": [
+      {
+        "id": "00000000000000000000000000000001",
+        "type": "standard",
+        "created_on": "2025-10-28T02:11:50.175294Z",
+        "name": "example-account-1"
+      }
+    ]
+  }
+}

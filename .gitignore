@@ -1,5 +1,8 @@
 node_modules/
 dist/
+
+# the engine tarball's template tree, written by scripts/build/pack-engine-template.mjs
+/template/
 .svelte-kit/
 *.log
 .DS_Store

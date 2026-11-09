@@ -102,7 +102,7 @@ func TestClassifyReason(t *testing.T) {
 
 // TestReasonMappingFromCorpusFixtures drives the classification end to end, over a client whose
 // RoundTripper serves a real captured fixture, for every Reason the fixture corpus carries a
-// live-captured body for. The corpus's rule (packages/create-cairn-site/fixtures/README.md:
+// live-captured body for. The corpus's rule (tool/testdata/fixtures/README.md:
 // "every body here is a real captured API response") is why this is not all of classifyReason's
 // producible Reason values: the corpus never captured a plain 401, a generic 403, a rate limit,
 // or a 400/6003 token-invalid body, and inventing one to fill the gap would violate that rule, so

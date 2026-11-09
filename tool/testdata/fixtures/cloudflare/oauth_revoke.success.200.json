@@ -1,0 +1,9 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "RFC 7009 section 2.2: a 200 with an empty body",
+    "status": 200,
+    "note": "pending live recording; two live revoke probes on 2026-11-09 answered 200, which this status matches, but neither kept its body"
+  },
+  "body": {}
+}

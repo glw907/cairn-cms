@@ -1,0 +1,14 @@
+{
+  "provenance": {
+    "captured": "2026-11-09",
+    "source": "DELETE /accounts/{id}/d1/database/5143f436-163b-4313-967c-7b478aa2bacd",
+    "status": 200,
+    "note": "recorded from a live call by tool/scripts/record-fixtures, run tmw8khn73; identity and inventory bodies reduced to their decoded fields; credentials, emails, names, and identifiers scrubbed to placeholders"
+  },
+  "body": {
+    "result": null,
+    "errors": [],
+    "messages": [],
+    "success": true
+  }
+}

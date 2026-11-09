@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Approvals complete</title>
+<style>
+  :root {
+    --ground: #fdfbf9; --text: #28231d; --muted: #615d57; --rule: #c9c3bb;
+    --ok: #197037; --failing: #b71824; --accent: #7246cf; --on-accent: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #221f1a; --text: #eae7e3; --muted: #a8a49e; --rule: #4a443b;
+      --ok: #7ccd8e; --failing: #ff8e86; --accent: #9d84ec; --on-accent: #1b1430;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--text);
+    font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 34rem; margin: 0 auto; padding: 5rem 1.5rem 4rem; }
+  .eyebrow { color: var(--muted); font-size: 0.875rem; margin: 0 0 2.5rem; }
+  h1 { font-size: 1.75rem; line-height: 1.25; font-weight: 600; margin: 0 0 1rem; }
+  p { margin: 0 0 1rem; }
+  .lead { font-size: 1.0625rem; }
+  ol { list-style: none; padding: 0; margin: 2.5rem 0; border-top: 1px solid var(--rule); }
+  li {
+    display: flex; gap: 0.75rem; align-items: baseline;
+    padding: 0.75rem 0; border-bottom: 1px solid var(--rule);
+  }
+  .check { color: var(--ok); margin-right: 0.5rem; }
+  li { color: var(--muted); }
+  .num { color: var(--muted); width: 1rem; flex: none; font-variant-numeric: tabular-nums; }
+  .quiet { color: var(--muted); font-size: 0.9375rem; }
+  @media (max-width: 30rem) { main { padding-top: 3rem; } h1 { font-size: 1.5rem; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">cairn · {{.SiteName}}</p>
+  <h1><span class="check" aria-hidden="true">✓</span>Approvals complete</h1>
+  <p class="lead">Return to your terminal to review the settings and set up {{.SiteName}}.</p>
+  <ol aria-label="Approvals">
+    <li><span class="num">1</span><span>Cloudflare: Allow</span></li>
+    <li><span class="num">2</span><span>GitHub: Create</span></li>
+    <li><span class="num">3</span><span>GitHub: Install &amp; Authorize</span></li>
+    <li><span class="num">4</span><span>GitHub: Approve</span></li>
+  </ol>
+  <p class="quiet">Keep this tab open. When setup finishes, your site opens here and you're signed in.</p>
+</main>
+<script nonce="{{.Nonce}}">
+  (function poll() {
+    fetch('/next', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
+      if (r.status === 200) { return r.json().then(function (b) { location.replace(b.url); }); }
+      if (r.status === 204) { setTimeout(poll, 2000); }
+    }, function () { setTimeout(poll, 5000); });
+  })();
+</script>
+</body>
+</html>

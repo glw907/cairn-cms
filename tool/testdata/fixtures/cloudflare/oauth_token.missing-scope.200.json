@@ -1,0 +1,15 @@
+{
+  "provenance": {
+    "captured": "2026-11-08",
+    "source": "spike-cloudflare-oauth.md \"Consent\": an owner who skips the sensitive scope gets a token with no minting",
+    "status": 200,
+    "note": "pending live recording; the error code and message are the documented or remembered shape, not a capture"
+  },
+  "body": {
+    "access_token": "ACCESS_TOKEN_PLACEHOLDER",
+    "expires_in": 3600,
+    "refresh_token": "REFRESH_TOKEN_PLACEHOLDER",
+    "scope": "user-details.read account-settings.read zone.read dns.write workers-scripts.edit workers-routes.write d1.write workers-r2.write email-sending.write offline_access",
+    "token_type": "bearer"
+  }
+}

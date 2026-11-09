@@ -34,7 +34,7 @@ func (rt errorsEventsRoundTripper) RoundTrip(req *http.Request) (*http.Response,
 
 	// The nesting matches the live response: result.events is an object, and each event carries
 	// the record the Worker logged under "source"
-	// (packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.events.200.json).
+	// (tool/testdata/fixtures/cloudflare/observability-telemetry-query.events.200.json).
 	type rawEvent struct {
 		Source    json.RawMessage `json:"source"`
 		Timestamp int64           `json:"timestamp"`

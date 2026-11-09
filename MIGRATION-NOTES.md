@@ -94,6 +94,13 @@ A new site's template also carries a `.claude/settings.json` that offers the Sve
 daisyUI Claude Code plugins, and a `.mcp.json` for the Svelte MCP server. A site that already exists
 keeps its settings and is unaffected.
 
+`cairn new` replaces the JavaScript wizard, and `npm create cairn-site` now installs the prebuilt `cairn`
+binary and runs `cairn new` with it. A site the wizard made keeps working: nothing in a site changes.
+The wizard's setup records, kept under the operator's state directory, hold the GitHub App's secrets in
+plaintext on disk until the operator removes them by hand. `cairn new` stores them in the system
+keyring and never writes them to a record, so delete a wizard record once its site is set up. The
+launcher and its six platform packages version with the Go tool, not the engine.
+
 ## 0.99.0-rc.4
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,

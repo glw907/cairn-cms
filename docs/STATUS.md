@@ -29,8 +29,11 @@ cairn.pub docs pass, was dropped by Geoff on 2026-11-08), conducted unattended b
   P2 (#203, merge `3345cfccb`, the `cairn new` command and its agent lane), and P3 (#204, merge
   `2cdae8485`, the terminal view; `cairn new` stays hidden until P6).
   P1's security record is `~/Projects/initiatives/cairn-setup/reviews/p1-whole-branch-reviews.md`.
-- In flight: P5 (`cairn-cms-cairn-new-5`, session `e8eccfe6`), the setup skill, plugin, and docs.
-- Next: P6 stacks on P5's gated head, and P5 merges immediately before P6. The theme-garden
+- In flight: P6 (`cairn-cms-cairn-new-6`, PR #206, stacked on P5's gated head #205): the launcher and
+  platform packages, the tool release's npm publish, the wizard retired, and `cairn new` shown. The
+  release gate waits on the tooling brainstorm; the first publish of the six platform packages is an
+  owner step (`cairn-releasing`, "The launcher and its platform packages").
+- Next: the conductor merges #205 immediately before #206. The theme-garden
   planner handed over G1 and G2 (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`);
   G1 launches after P6 merges and its file:line re-check against `main`.
 - Geoff gets one record packet at P6's close. No release is cut until the tooling gates in

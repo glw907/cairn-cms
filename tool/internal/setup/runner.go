@@ -315,7 +315,7 @@ type run struct {
 	installStop context.CancelFunc
 	// installEnd closes when the background install ends, after installErr is set.
 	installEnd <-chan struct{}
-	out         Done
+	out        Done
 }
 
 // Run runs a setup from the opening to the done screen: the opening, the four approvals, the

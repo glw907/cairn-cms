@@ -78,8 +78,9 @@ func newWalker(path string) (*walker, error) {
 	}
 	w := &walker{log: f}
 	w.client = &http.Client{
-		Jar:     jar,
-		Timeout: 30 * time.Second,
+		Transport: &fetchMetadata{next: http.DefaultTransport},
+		Jar:       jar,
+		Timeout:   30 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 10 {
 				return errors.New("stopped after 10 redirects")
@@ -89,6 +90,36 @@ func newWalker(path string) (*walker, error) {
 		},
 	}
 	return w, nil
+}
+
+// fetchMetadata adds the Fetch Metadata headers a browser sends, which the setup tab checks
+// (internal/setup/loopback/pages.go): the first request is an address the owner opened (site
+// none), a later page request is a navigation, same-origin when it stays on the host of the
+// request before it and cross-site otherwise, and a request for /next is the done page's
+// fetch (same-origin, cors).
+type fetchMetadata struct {
+	next http.RoundTripper
+	last string
+}
+
+func (f *fetchMetadata) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	switch {
+	case req.URL.Path == "/next":
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		req.Header.Set("Sec-Fetch-Mode", "cors")
+	case f.last == "":
+		req.Header.Set("Sec-Fetch-Site", "none")
+		req.Header.Set("Sec-Fetch-Mode", "navigate")
+	case req.URL.Host == f.last:
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		req.Header.Set("Sec-Fetch-Mode", "navigate")
+	default:
+		req.Header.Set("Sec-Fetch-Site", "cross-site")
+		req.Header.Set("Sec-Fetch-Mode", "navigate")
+	}
+	f.last = req.URL.Host
+	return f.next.RoundTrip(req)
 }
 
 func (w *walker) note(line string) {

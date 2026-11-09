@@ -2,6 +2,7 @@ package testharness
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"errors"
 	"net/http"
@@ -12,7 +13,12 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
+
+// RunTimeout is how long a child may run before Run kills it and its process group. The longest
+// setup run the cases drive finishes in well under a minute; a child past this hangs.
+var RunTimeout = 3 * time.Minute
 
 // Config configures a Case.
 type Config struct {
@@ -142,7 +148,11 @@ func (c *Case) BareRepo(owner, repo string) string {
 // non-zero exit is a Result, not a test failure; a child that cannot start fails the test.
 func (c *Case) Run(bin string, args ...string) Result {
 	c.t.Helper()
-	cmd := exec.CommandContext(c.t.Context(), bin, args...)
+	ctx, cancel := context.WithTimeout(c.t.Context(), RunTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, bin, args...)
+	ownGroup(cmd)
+	cmd.WaitDelay = 5 * time.Second
 	cmd.Dir = c.Dir
 	cmd.Env = c.environ()
 	var stdout, stderr bytes.Buffer

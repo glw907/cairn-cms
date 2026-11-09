@@ -26,6 +26,9 @@ type Config struct {
 	Commit Commit
 	// Dir is the site folder. It must not exist, or be empty.
 	Dir string
+	// Env is the environment git starts from, by name. Every variable that holds a credential is
+	// dropped before git sees it.
+	Env map[string]string
 }
 
 // Result describes a written site.
@@ -50,6 +53,8 @@ type FinalizeConfig struct {
 	// Commit is the identity the second commit carries; its Message is ignored for
 	// ConfigMessage.
 	Commit Commit
+	// Env is the environment git starts from, as Config.Env.
+	Env map[string]string
 }
 
 // Scaffold writes the site into cfg.Dir in both passes and commits each locally on the
@@ -61,7 +66,7 @@ func Scaffold(ctx context.Context, cfg Config) (Result, error) {
 		return Result{}, err
 	}
 	return write(ctx, cfg, func(stage string) (string, error) {
-		return secondCommit(ctx, stage, cfg.Site, cfg.Commit)
+		return secondCommit(ctx, cfg.Env, stage, cfg.Site, cfg.Commit)
 	})
 }
 
@@ -83,16 +88,15 @@ func Finalize(ctx context.Context, cfg FinalizeConfig) (string, error) {
 	if err := cfg.Site.validate(true); err != nil {
 		return "", err
 	}
-	isolate := isolated()
-	if _, err := onBase(ctx, cfg.Dir, cfg.Base); err != nil {
+	if _, err := onBase(ctx, cfg.Env, cfg.Dir, cfg.Base); err != nil {
 		return "", err
 	}
-	if _, err := git(ctx, cfg.Dir, isolate, "reset", "--quiet", "--hard", cfg.Base); err != nil {
+	if _, err := git(ctx, cfg.Env, cfg.Dir, nil, "reset", "--quiet", "--hard", cfg.Base); err != nil {
 		return "", err
 	}
-	sha, err := secondCommit(ctx, cfg.Dir, cfg.Site, cfg.Commit)
+	sha, err := secondCommit(ctx, cfg.Env, cfg.Dir, cfg.Site, cfg.Commit)
 	if err != nil {
-		_, _ = git(ctx, cfg.Dir, isolate, "reset", "--quiet", "--hard", cfg.Base)
+		_, _ = git(ctx, cfg.Env, cfg.Dir, nil, "reset", "--quiet", "--hard", cfg.Base)
 		return "", err
 	}
 	return sha, nil
@@ -107,9 +111,9 @@ const InstallationMessage = "Update the GitHub App installation"
 func SettingsFile() string { return targets.CairnConfig }
 
 // NamesApp reports whether the site's settings at commit in dir hold s's GitHub App identity,
-// its installation id included.
-func NamesApp(ctx context.Context, dir, commit string, s Site) (bool, error) {
-	content, err := git(ctx, dir, isolated(), "show", commit+":"+targets.CairnConfig)
+// its installation id included. env is the environment git starts from, as Config.Env.
+func NamesApp(ctx context.Context, env map[string]string, dir, commit string, s Site) (bool, error) {
+	content, err := git(ctx, env, dir, nil, "show", commit+":"+targets.CairnConfig)
 	if err != nil {
 		return false, err
 	}
@@ -126,13 +130,12 @@ func UpdateInstallation(ctx context.Context, cfg FinalizeConfig) (string, error)
 	if err := cfg.Site.validate(true); err != nil {
 		return "", err
 	}
-	isolate := isolated()
-	head, err := onBase(ctx, cfg.Dir, cfg.Base)
+	head, err := onBase(ctx, cfg.Env, cfg.Dir, cfg.Base)
 	if err != nil {
 		return "", err
 	}
 	if head != cfg.Base {
-		if _, err := git(ctx, cfg.Dir, isolate, "reset", "--quiet", "--hard", cfg.Base); err != nil {
+		if _, err := git(ctx, cfg.Env, cfg.Dir, nil, "reset", "--quiet", "--hard", cfg.Base); err != nil {
 			return "", err
 		}
 	}
@@ -141,10 +144,10 @@ func UpdateInstallation(ctx context.Context, cfg FinalizeConfig) (string, error)
 	var sha string
 	err = editInstallation(cfg.Dir, cfg.Site)
 	if err == nil {
-		sha, err = commitFile(ctx, cfg.Dir, targets.CairnConfig, c)
+		sha, err = commitFile(ctx, cfg.Env, cfg.Dir, targets.CairnConfig, c)
 	}
 	if err != nil {
-		_, _ = git(ctx, cfg.Dir, isolate, "checkout", "--quiet", "HEAD", "--", targets.CairnConfig)
+		_, _ = git(ctx, cfg.Env, cfg.Dir, nil, "checkout", "--quiet", "HEAD", "--", targets.CairnConfig)
 		return "", err
 	}
 	return sha, nil
@@ -152,14 +155,13 @@ func UpdateInstallation(ctx context.Context, cfg FinalizeConfig) (string, error)
 
 // onBase returns the folder's HEAD when it is base or a commit whose parent is base: a pass that
 // committed before its caller could record it.
-func onBase(ctx context.Context, dir, base string) (string, error) {
-	isolate := isolated()
-	head, err := git(ctx, dir, isolate, "rev-parse", "HEAD")
+func onBase(ctx context.Context, env map[string]string, dir, base string) (string, error) {
+	head, err := git(ctx, env, dir, nil, "rev-parse", "HEAD")
 	if err != nil {
 		return "", err
 	}
 	if head != base {
-		parent, err := git(ctx, dir, isolate, "rev-parse", "HEAD^")
+		parent, err := git(ctx, env, dir, nil, "rev-parse", "HEAD^")
 		if err != nil || parent != base {
 			return "", fmt.Errorf("scaffold: %s is not at the commit %s", dir, base)
 		}
@@ -209,7 +211,7 @@ func write(ctx context.Context, cfg Config, more func(stage string) (string, err
 		return Result{}, err
 	}
 	origin := "https://github.com/" + cfg.Site.Owner + "/" + cfg.Site.Repo + ".git"
-	sha, err := initRepository(ctx, stage, cfg.Site.DefaultBranch, origin, cfg.Commit)
+	sha, err := initRepository(ctx, cfg.Env, stage, cfg.Site.DefaultBranch, origin, cfg.Commit)
 	if err != nil {
 		return Result{}, err
 	}
@@ -230,12 +232,12 @@ func write(ctx context.Context, cfg Config, more func(stage string) (string, err
 
 // secondCommit applies the second pass's edits in dir and commits them. None of them reads the
 // engine version, which the first pass already pinned.
-func secondCommit(ctx context.Context, dir string, s Site, c Commit) (string, error) {
+func secondCommit(ctx context.Context, env map[string]string, dir string, s Site, c Commit) (string, error) {
 	if err := substitute(dir, s, "", secondPass); err != nil {
 		return "", err
 	}
 	c.Message = ConfigMessage
-	return commitAll(ctx, dir, c)
+	return commitAll(ctx, env, dir, c)
 }
 
 // requireFree accepts a path that does not exist or is an empty directory.

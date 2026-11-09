@@ -104,6 +104,7 @@ func (r *run) scaffold(ctx context.Context) error {
 		Site:     r.site(),
 		Commit:   r.commitIdentity("Create the site from the " + r.theme.Name + " template"),
 		Dir:      r.rec.Setup.Folder,
+		Env:      r.cfg.Env,
 	})
 	if err != nil {
 		return r.localFailure(ctx, ReasonScaffold, "Setup couldn't write the site into "+r.rec.Setup.Folder+".",
@@ -235,6 +236,7 @@ func (r *run) commit(ctx context.Context) error {
 		Base:   r.rec.Setup.Commit,
 		Site:   r.site(),
 		Commit: r.commitIdentity(scaffold.ConfigMessage),
+		Env:    r.cfg.Env,
 	})
 	if err != nil {
 		return r.localFailure(ctx, ReasonFolderNotOurs, "Setup couldn't write the site's settings in "+r.rec.Setup.Folder+". The folder changed after setup wrote it.",
@@ -294,19 +296,25 @@ func (r *run) push(ctx context.Context) error {
 		return r.failure(ReasonWorkerExists, "A Worker named "+r.names.Worker+" appeared on your Cloudflare account while setup ran.",
 			"Delete that Worker or rename it in Cloudflare, and then run cairn new again.", nil)
 	}
+	// The push starts the first deploy, which creates the Worker.
+	r.rec.Setup.Intents.Worker = r.names.Worker
+	if err := r.save(); err != nil {
+		return err
+	}
 	return r.pushCommit(ctx)
 }
 
-// pushCommit pushes the folder's HEAD to the default branch as the installation.
+// pushCommit pushes the folder's HEAD to the default branch as the installation. The push runs
+// no hook: a pre-push hook would run with the installation token in its environment.
 func (r *run) pushCommit(ctx context.Context) error {
 	tok, err := r.installationToken(ctx)
 	if err != nil {
 		return err
 	}
-	env, header, encoded := pushEnv(r.cfg.Env, tok)
+	env, header, encoded := r.pushEnv(tok)
 	r.registerValue(header, encoded)
 	ref := "HEAD:refs/heads/" + r.rec.GitHub.Repo.DefaultBranch
-	if _, err := runChild(ctx, r.rec.Setup.Folder, env, "git", "push", "--quiet", "origin", ref); err != nil {
+	if _, err := runChild(ctx, r.rec.Setup.Folder, env, "git", "push", "--quiet", "--no-verify", "origin", ref); err != nil {
 		return r.localFailure(ctx, ReasonPush, "Setup couldn't push the site to GitHub.",
 			"Check your internet connection, and then run cairn new again.", err)
 	}
@@ -317,7 +325,7 @@ func (r *run) pushCommit(ctx context.Context) error {
 // ownFolder confirms the folder's HEAD is the commit the record holds, the one test of whether
 // the folder is still setup's.
 func (r *run) ownFolder(ctx context.Context) error {
-	head, err := runChild(ctx, r.rec.Setup.Folder, gitEnv(r.cfg.Env), "git", "rev-parse", "HEAD")
+	head, err := runChild(ctx, r.rec.Setup.Folder, r.gitEnv(), "git", "rev-parse", "HEAD")
 	if err == nil && head == r.rec.Setup.Commit {
 		return nil
 	}

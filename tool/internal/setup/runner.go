@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -281,6 +282,9 @@ type run struct {
 	rec     record.Record
 	resumed bool
 	opened  bool
+	// hooks is the empty folder every git call takes as core.hooksPath, made by the opening and
+	// removed when the run returns.
+	hooks string
 
 	names        Names
 	suffix       int
@@ -340,6 +344,9 @@ func Run(ctx context.Context, cfg Config) (Result, error) {
 		if r.tab != nil {
 			_ = r.tab.Close()
 		}
+		if r.hooks != "" {
+			_ = os.RemoveAll(r.hooks)
+		}
 	}()
 	res, err := r.steps(ctx)
 	if err != nil {
@@ -383,21 +390,29 @@ func (r *run) steps(ctx context.Context) (Result, error) {
 }
 
 // approvals runs the four approvals and the account checks, skipping each one the record shows
-// done. A resumed run whose record holds an App sweeps its installations before any other
-// GitHub call, and runs approval 4 again when that leaves no installation recorded.
+// done. A resumed run whose record holds an App sweeps its installations first, before any
+// Cloudflare step can stop the run and leave an installation that reaches all the owner's
+// repositories in place; the sweep needs only the App key and the record. Approval 4 runs again
+// when the sweep leaves no installation recorded. Once the run's approvals are done, the tab
+// shows done.html, which stops its clock for the watch.
 func (r *run) approvals(ctx context.Context) error {
-	if err := r.cloudflare(ctx); err != nil {
-		return err
-	}
 	if r.resumed && r.rec.Setup.IDs.AppID != 0 {
 		if err := r.resumeGitHub(ctx); err != nil {
 			return err
 		}
 	}
-	if reached(r.rec.Step, spine.StepInstalled) && r.rec.GitHub.InstallationID != 0 {
+	if err := r.cloudflare(ctx); err != nil {
+		return err
+	}
+	if !reached(r.rec.Step, spine.StepInstalled) || r.rec.GitHub.InstallationID == 0 {
+		if err := r.githubChain(ctx); err != nil {
+			return err
+		}
+	}
+	if !r.opened {
 		return nil
 	}
-	return r.githubChain(ctx)
+	return r.tab.Show(Page{Kind: PageDone})
 }
 
 func (r *run) emit(e Event) {
@@ -477,17 +492,20 @@ func (r *run) keepKeys() {
 	_ = r.cfg.Store.Save(r.siteID, r.rec)
 }
 
-// finish ends a run that reached the sign-in: it revokes the Cloudflare grant and deletes every
-// keyring entry the record names, then records that none is kept. A refused revoke is reported
-// on the done screen, never a stop, and the entries go either way. The GitHub tokens live only
-// in memory and end with the process.
+// finish ends a run that reached the sign-in: it revokes the Cloudflare grant's access and
+// refresh tokens and deletes every keyring entry the record names, then records that none is
+// kept. A refused revoke of either token is reported on the done screen, never a stop, and the
+// entries go either way. The GitHub tokens live only in memory and end with the process.
 func (r *run) finish(ctx context.Context) {
 	r.waitInstall()
 	r.out.URL = "https://" + r.host
-	// RFC 7009 2.1: revoking a refresh token "SHOULD also invalidate all access tokens based on the
-	// same authorization grant", and the access token lapses within the hour regardless.
-	if err := r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Refresh); err != nil {
-		r.out.RevokeFailed = true
+	// RFC 7009 2.1 says revoking a refresh token "SHOULD" also invalidate the grant's access
+	// tokens, which is not a must, so the access token is revoked separately, first, while the
+	// grant still stands.
+	for _, tok := range []string{r.pair.Access, r.pair.Refresh} {
+		if err := r.cfg.CloudflareOAuth.Revoke(ctx, tok); err != nil {
+			r.out.RevokeFailed = true
+		}
 	}
 	if err := r.cfg.Vault.DeleteEntries(r.rec.Setup.KeyringEntries); err != nil {
 		r.out.KeysLeft = true

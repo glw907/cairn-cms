@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/setup/childenv"
 )
 
 // repoRoot is the cairn-cms checkout the tests read the real template from.
@@ -211,12 +213,18 @@ func testCommit() Commit {
 	return Commit{AuthorName: "Cairn Setup", AuthorEmail: "setup@cairn.invalid", Message: "Create the site"}
 }
 
+// testEnv is the environment a test hands the scaffold's git: the test process's environment,
+// as setup hands it the owner's.
+func testEnv() map[string]string {
+	return childenv.Map(os.Environ())
+}
+
 // scaffoldOK scaffolds the real template into a fresh folder and returns it.
 func scaffoldOK(t *testing.T, site Site) (string, Result) {
 	t.Helper()
 	tpl := fetchOK(t, tarballOf(t, templateFiles(t)))
 	dir := filepath.Join(t.TempDir(), "site")
-	res, err := Scaffold(t.Context(), Config{Template: tpl, Site: site, Commit: testCommit(), Dir: dir})
+	res, err := Scaffold(t.Context(), Config{Template: tpl, Site: site, Commit: testCommit(), Env: testEnv(), Dir: dir})
 	if err != nil {
 		t.Fatalf("Scaffold: %v", err)
 	}

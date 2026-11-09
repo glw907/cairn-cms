@@ -176,13 +176,25 @@ func editPackageJSON(dir string, s Site, engineVersion string) error {
 	})
 }
 
-var topDescriptionRE = regexp.MustCompile(`(?m)^description:`)
+// neutralDescription is the description a new site starts with. The home page shows it under
+// its heading, so it says nothing the owner did not write but that the site is new.
+const neutralDescription = "A new site built with cairn."
 
-// editSiteConfig writes the site name. The template carries its own description key; a second
-// top-level one, which every YAML parser rejects, fails here rather than in the first build.
+var (
+	topDescriptionRE  = regexp.MustCompile(`(?m)^description:`)
+	descriptionLineRE = regexp.MustCompile(`(?m)^description:.*$`)
+)
+
+// editSiteConfig writes the site name and replaces the template's sample description with
+// neutralDescription. A second top-level description key, which every YAML parser rejects,
+// fails here rather than in the first build.
 func editSiteConfig(dir string, s Site, _ string) error {
 	return edit(dir, targets.SiteConfig, func(c string) (string, error) {
 		c, err := replaceExact(c, "siteName: Waymark", "siteName: "+quote(s.Name), targets.SiteConfig)
+		if err != nil {
+			return "", err
+		}
+		c, err = replacePattern(c, descriptionLineRE, "description: "+quote(neutralDescription), targets.SiteConfig)
 		if err != nil {
 			return "", err
 		}

@@ -1,11 +1,16 @@
 package setup
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -1895,5 +1900,99 @@ func TestNodeMajor(t *testing.T) {
 		if (err == nil) != tc.ok || got != tc.want {
 			t.Errorf("nodeMajor(%q) = %d, %v", tc.in, got, err)
 		}
+	}
+}
+
+// TestTheWorkerIntentIsRecordedBeforeThePush pins that the record names the Worker the first
+// deploy creates before the push that starts that deploy.
+func TestTheWorkerIntentIsRecordedBeforeThePush(t *testing.T) {
+	w := newWorld(t)
+	remote := filepath.Join(w.gh.remotes, "example-owner", "example-site.git")
+	recorded, pushed := false, false
+	w.saver.onSave = func(rec record.Record) error {
+		if recorded || rec.Setup.Intents.Worker == "" {
+			return nil
+		}
+		recorded = true
+		if rec.Setup.Intents.Worker != "example-site" {
+			t.Errorf("Worker intent = %q, want example-site", rec.Setup.Intents.Worker)
+		}
+		cmd := exec.Command("git", "--git-dir", remote, "rev-parse", "--verify", "--quiet", "HEAD")
+		pushed = cmd.Run() == nil
+		return nil
+	}
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !recorded || pushed {
+		t.Errorf("Worker intent recorded %v, after the push %v; want it recorded before the push", recorded, pushed)
+	}
+	if err := exec.Command("git", "--git-dir", remote, "rev-parse", "--verify", "--quiet", "HEAD").Run(); err != nil {
+		t.Errorf("the remote at %s holds no push after the run: %v", remote, err)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
+
+// TestFetchFromReadsTheTaggedTemplate pins that FetchFrom resolves the tag it is given and hands
+// back that version, its integrity, the catalog's themes, and the tree.
+func TestFetchFromReadsTheTaggedTemplate(t *testing.T) {
+	var gz bytes.Buffer
+	zw := gzip.NewWriter(&gz)
+	tw := tar.NewWriter(zw)
+	for name, body := range map[string]string{
+		"package/template/catalog.json":         `{"themes":[{"id":"waymark","name":"Waymark","path":"themes/waymark"}]}`,
+		"package/template/themes/waymark/a.txt": "a",
+	} {
+		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o644, Size: int64(len(body)), Typeflag: tar.TypeReg}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	tarball := gz.Bytes()
+	sum := sha512.Sum512(tarball)
+	integrity := "sha512-" + base64.StdEncoding.EncodeToString(sum[:])
+	const registry = "https://registry.npmjs.org/"
+	tarURL := registry + "engine-2.0.0-next.3.tgz"
+	doc, err := json.Marshal(map[string]any{
+		"dist-tags": map[string]string{"latest": "1.9.0", "next": "2.0.0-next.3"},
+		"versions": map[string]any{
+			"1.9.0":        map[string]any{"dist": map[string]string{"tarball": registry + "engine-1.9.0.tgz", "integrity": integrity}},
+			"2.0.0-next.3": map[string]any{"dist": map[string]string{"tarball": tarURL, "integrity": integrity}},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rt := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		body := doc
+		if req.URL.String() == tarURL {
+			body = tarball
+		}
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(body)), Request: req}, nil
+	})
+
+	got, err := FetchFrom(scaffold.NewFetcher(rt), "next")(t.Context())
+	if err != nil {
+		t.Fatalf("FetchFrom: %v", err)
+	}
+	if got.Version != "2.0.0-next.3" || got.Integrity != integrity || got.Tree == nil {
+		t.Errorf("template = %q, %q, tree %v; want the next tag's version and integrity with its tree", got.Version, got.Integrity, got.Tree != nil)
+	}
+	if len(got.Themes) != 1 || got.Themes[0].ID != "waymark" || got.Themes[0].Path != "themes/waymark" {
+		t.Errorf("themes = %+v, want the catalog's one theme", got.Themes)
+	}
+	if _, err := FetchFrom(scaffold.NewFetcher(rt), "beta")(t.Context()); err == nil {
+		t.Error("FetchFrom of a tag the registry lacks succeeded")
 	}
 }

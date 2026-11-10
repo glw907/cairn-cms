@@ -12,7 +12,7 @@ import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
 import rehypeSanitize from 'rehype-sanitize';
 import { VFile } from 'vfile';
-import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard, rehypeTaskListA11y } from './sanitize-schema.js';
+import { buildSanitizeSchema, rehypeAnchorRel, rehypeFootnoteLinks, rehypeSinkGuard, rehypeTaskListA11y } from './sanitize-schema.js';
 import { rehypeCairnHighlight } from './highlight.js';
 import { rehypeTableScroll } from './table-scroll.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
@@ -148,6 +148,9 @@ export function createRenderer(config: RendererConfig = {}): Renderer {
   const rehypePlugins: PluggableList = [
     rehypeRaw,
     [rehypeSanitize, buildSanitizeSchema(registry)],
+    // remark-rehype runs with an empty clobberPrefix (below), so the sanitize step prefixes the ids
+    // alone; this step prefixes the footnote hrefs to match.
+    rehypeFootnoteLinks,
     [rehypeDispatch, registry],
     rehypeSlug,
     // Name each GFM task-list checkbox from its item text. It runs after the sanitize floor (which
@@ -177,7 +180,7 @@ export function createRenderer(config: RendererConfig = {}): Renderer {
       .use(remarkParse)
       .use(remarkGfm)
       .use(remarkPlugins)
-      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(remarkRehype, { allowDangerousHtml: true, clobberPrefix: '' })
       .use(rehypePlugins)
       .use(extraRehype)
       .use(rehypeStringify);

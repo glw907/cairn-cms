@@ -57,6 +57,26 @@ export function buildSanitizeSchema(registry: BlockRegistry): Schema {
 }
 
 /**
+ * Prefix the in-page `href` of each footnote reference and backref with the sanitize schema's
+ * `clobberPrefix`. The sanitize step prefixes every `id` (its `clobber` list) but never an `href`,
+ * so the pipeline asks `remark-rehype` for an empty prefix and this step makes the links match the
+ * prefixed ids. It touches only `a[data-footnote-ref]` and `a[data-footnote-backref]`, so an
+ * author's raw `<a href="#fn-1">` keeps its value. Runs right after the sanitize step.
+ */
+export function rehypeFootnoteLinks() {
+  const prefix = defaultSchema.clobberPrefix ?? '';
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element) => {
+      if (node.tagName !== 'a') return;
+      const props = node.properties ?? {};
+      if (props.dataFootnoteRef === undefined && props.dataFootnoteBackref === undefined) return;
+      const href = props.href;
+      if (typeof href === 'string' && href.startsWith('#')) props.href = `#${prefix}${href.slice(1)}`;
+    });
+  };
+}
+
+/**
  * Force a `rel` value on every target="_blank" anchor, to prevent reverse-tabnabbing.
  * hast-util-sanitize runs no per-node hook, so this small transform carries the behavior the old
  * DOMPurify preview pass enforced, now on the delivered output as well. The value is the renderer's

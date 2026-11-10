@@ -17,3 +17,8 @@
 .banner-message {
   margin: 0;
 }
+
+/* Paints the accent, so the fixture's accent option changes a pixel on every page. */
+body {
+  border-top: 1rem solid var(--color-accent);
+}

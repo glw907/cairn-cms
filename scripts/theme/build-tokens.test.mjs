@@ -137,6 +137,15 @@ test('--check exits 1 after a token edit and 0 after a rebuild', async () => {
   assert.equal(build(dir, '--check').status, 0);
 });
 
+test('--check exits 1 on an option sheet no option value builds (#414)', async () => {
+  const dir = await copyFixture('orphan');
+  assert.equal(build(dir).status, 0);
+  await writeFile(path.join(dir, 'options/accent/moss.css'), '/* left behind */\n');
+  const result = build(dir, '--check');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /orphaned: options\/accent\/moss\.css/);
+});
+
 test('the committed fixture build is current', () => {
   const result = build(FIXTURE, '--check');
   assert.equal(result.status, 0, result.stderr);

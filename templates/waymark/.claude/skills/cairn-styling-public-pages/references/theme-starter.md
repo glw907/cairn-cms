@@ -68,4 +68,4 @@ Both daisyUI blocks are the theme's to write, since the chassis declares none. W
 
 - [Retheme by tokens](retheme-by-tokens.md) covers where each token lands.
 - [What a theme directory holds](theme-directory.md) covers the contract and the build.
-- [Checking a theme](checking-a-theme.md) covers the audit rules.
+- [Checking a theme](checking-a-theme.md) covers the theme check, the viewer that renders a theme under each option and width, and the audit rules.

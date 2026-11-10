@@ -2,7 +2,7 @@
 // total. Plain text, no ANSI color, so the output reads the same in a terminal and a CI log.
 // Suppressions are printed even when the count is zero, because a build that passes by suppression
 // is a disguised failure and the number is what makes that visible.
-import type { AuditReport, Finding } from './types.js';
+import type { AuditReport, Finding, Measured } from './types.js';
 
 function counted(total: number, one: string, many = `${one}s`): string {
   return `${total} ${total === 1 ? one : many}`;
@@ -27,6 +27,17 @@ function suppressedBlock(suppressed: Finding[]): string[] {
   return [...counts].map(([text, count]) => `  ${text}${count > 1 ? `  (x${count})` : ''}`);
 }
 
+/**
+ * What the theme rules measured: one line per rule and file naming its theme blocks, or the text
+ * "measured nothing" when no theme sheet was read, so a clean run over an empty scope cannot pass
+ * for a clean theme.
+ */
+function measuredBlock(measured: Measured[]): string[] {
+  const read = measured.filter((entry) => entry.themes.length > 0);
+  if (read.length === 0) return ['Measured: measured nothing'];
+  return ['Measured:', ...read.map((entry) => `  ${entry.ruleId}  ${entry.file}  ${entry.themes.join(', ')}`)];
+}
+
 /** Render a report for a terminal or a CI log. */
 export function formatReport(report: AuditReport): string {
   const lines = report.findings.map(line);
@@ -40,6 +51,7 @@ export function formatReport(report: AuditReport): string {
       ...report.unreadImports.map((entry) => `  ${entry.file}: ${entry.specifier} (${entry.reason})`)
     );
   }
+  lines.push('', ...measuredBlock(report.measured));
   const errors = report.findings.filter((finding) => finding.tier === 'error').length;
   const advisories = report.findings.length - errors;
   lines.push(

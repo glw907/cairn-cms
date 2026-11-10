@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schema/cairn-theme-check.schema.json",
+  "title": "cairn theme check payload",
+  "description": "One theme directory's verdict, as written by `scripts/theme/check.mjs --json`. A failure names the file, the rule that raised it, and a message. `notes` carries what a passing rule measured, such as the sheet that styled each directive class.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "theme", "dir", "verdict", "rules", "failures", "notes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "kind": { "type": "string", "const": "theme-check" },
+    "theme": { "type": "string", "description": "The manifest's id, or the directory name when the manifest is unreadable." },
+    "dir": { "type": "string" },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "rules": {
+      "type": "array",
+      "description": "The ids of the rules that ran.",
+      "items": { "type": "string" }
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "rule", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string" },
+          "rule": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "rule": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}

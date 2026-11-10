@@ -119,6 +119,8 @@ const CI_CHECKS = [
   'npm --prefix examples/showcase run format:check',
   'npm run check:public-skill',
   'npm run check:tool-heuristics',
+  'npm run test:theme',
+  'npm run check:theme -- --catalog',
 ].join(' && ');
 const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && ${CI_CHECKS} && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';

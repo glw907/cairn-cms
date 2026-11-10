@@ -139,6 +139,16 @@ The release gate is rebuilt around three legs, and the setup docs describe a tok
 `cairn new`: a Cloudflare API token in `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval.
 Consumers must: nothing.
 
+A footnote link used to name an id the page lacked, and a prerender could fail with
+`prerender_missing_id`. The fix needs nothing from the site. A site with its own rehype step that reads
+the `href` of `a[data-footnote-ref]` or `a[data-footnote-backref]` should check that step: each `href`
+now carries the sanitize step's `user-content-` prefix exactly once.
+
+`cairn-audit` prints what it measured. `AuditReport` has a required `measured` list, so code that
+builds an `AuditReport` by hand adds `measured: []`, and a custom rule may add a `measured` method to
+list the files and theme blocks it read. The text report prints a `Measured:` block before its summary lines, or `measured
+nothing` when no theme sheet was read.
+
 ## 0.99.0-rc.4
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,

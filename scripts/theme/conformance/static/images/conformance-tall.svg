@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 900" width="400" height="900" role="img" aria-labelledby="t">
+  <title id="t">A tall frame with a vertical stack of five bars</title>
+  <rect width="400" height="900" fill="#f1ebe0"/>
+  <rect x="60" y="80" width="280" height="90" fill="#6b655e"/>
+  <rect x="80" y="220" width="240" height="90" fill="#938b81"/>
+  <rect x="100" y="360" width="200" height="90" fill="#7b746c"/>
+  <rect x="120" y="500" width="160" height="90" fill="#a39b90"/>
+  <rect x="140" y="640" width="120" height="90" fill="#8a9c7c"/>
+</svg>

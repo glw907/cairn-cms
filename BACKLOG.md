@@ -33,12 +33,21 @@
 - [ ] **#413** Chassis roles hold only at `:root`, so a nested `[data-theme]` subtree falls back to the chassis defaults `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The same limit already held for `--cairn-caption-tracking`; the scroll cue resolves `--cairn-code-bg` at `:root`, and the role comment says so. Found by G1's whole-branch review (PR #207).
   Placement: when a theme or site needs a nested theme scope.
-- [ ] **#414** `build-tokens.mjs --check` misses an `options/<key>/<value>.css` left behind after its option value is removed `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
-  Found by G1's whole-branch review (PR #207). The check should fail on an orphaned option sheet.
-  Placement: with G2's theme check, or the next tokens-build change.
 - [ ] **#415** Test the lay-in's overlap check on a symlinked theme directory `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The check compares real paths since G1's review, but no test covers a symlinked theme. Found by G1's whole-branch review (PR #207).
   Placement: with the next `scripts/theme/lay-in.mjs` change.
+- [ ] **#416** Retire the showcase's `/styleguide` route once the viewer's directives page carries its checks `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The viewer's conformance pages show every directive under any theme, so `/styleguide` is a second home for the same job. It still holds 10 of the 51 port baselines (`site-visual.spec.ts`), the equivalence spec's focus pages, the only axe run over every directive (`e2e/styleguide.spec.ts`, run by `design.yml`), and a primary-menu entry in `site.config.yaml`. Retire it in this order: port the axe run to the viewer's directives page, move the 10 baselines, then delete the route. Found in theme-garden pass G2 (plan "Calls settled here").
+  Placement: a theme-garden pass after G3, or the next showcase pass.
+- [ ] **#417** Let a theme designer outside this project run the theme viewer `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The viewer needs a clone of this repository and runs on a showcase copy. A theme designer should be able to run the viewer from the published package, without a clone, by following one docs page that names no path only this repository has (Geoff, 2026-11-09; the design says outsiders may use the viewer later). Decide what ships (the conformance set, the viewer scripts, and Chromium as a peer dependency) and how the viewer finds the engine when the package is the only install. It already needs no Cloudflare account. Found in theme-garden pass G2.
+  Placement: before the first outside theme is accepted into the catalog.
+- [ ] **#418** `rehypeSlug` runs after the sanitize step, so a heading id is unprefixed and can collide with a footnote id `#improvement` `#cairn-cms` *(2026-11-09)*
+  A heading titled `user-content-fn-1` slugs to the id of the footnote definition. The author can only hijack their own page, and an unprefixed id also creates a `window[id]` named property. Fix: slug before the sanitize step, or give slug ids the sanitize prefix. Found by the web-auth-security read of theme-garden G2's T2.1 (`src/lib/render/pipeline.ts`).
+  Placement: with the next `src/lib/render/` change; needs its own scope call.
+- [ ] **#419** Measure a font pairing an option selects, once a theme has one `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  The theme check's `fonts` rule sums every manifest font as the theme's one pairing, because no manifest option selects fonts yet. A theme that offers a font option needs the 400 KB limit measured per pairing. Found by G2's whole-branch review.
+  Placement: with the first theme that ships a font option.
 - [ ] **#410** Ship the tokens build to a scaffolded site, or keep `tokens.json` out of the scaffold `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The lay-in copies a theme's `tokens/tokens.json` and `resolver.json` into a scaffolded site's `src/theme/tokens/`, but `scripts/theme/build-tokens.mjs` ships only in this repository, so a site developer retunes `src/theme/tokens/tokens.css` by hand and `tokens.json` drifts from it. Found in theme-garden pass G1 (register-check on `retheme-by-tokens.md`). Decide whether the build ships in the template or the scaffold leaves `tokens.json` out.
   Placement: engine batch, with the theme-garden setup pass (design step 4).
@@ -47,9 +56,6 @@
   Found in the cairn-new-4 pass. The starter content no longer mentions trails, but `templates/waymark/src/site/site.config.yaml` still carries the description "Trail reports and gear notes from the field." and the tag vocabulary `trail-reports`, `gear`, `weather`, `routes`, `season-notes`, and the `create-cairn-site` transcript fixture (`packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt`) lists the demo's routes. A new site's home page reads the description under its heading until setup replaces it.
   Placement: the description is done in cairn-setup P1 (the scaffold sets a neutral description, "A new site built with cairn."); the tag vocabulary and the transcript fixture still need a ruling on a neutral starter set.
 
-- [ ] **#387** A markdown footnote renders a link to an id the page does not carry, which fails the prerender `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-08)*
-  Found in the cairn-new-4 pass while drafting the every-element starter post. A post with `[^1]` and its definition builds a footnote link to `#user-content-fn-1`, and the page holds no element with that id, so the template's build fails with `prerender_missing_id`. The render pipeline runs `remark-gfm` (`src/lib/render/pipeline.ts:178`) and the sanitize step (`src/lib/render/sanitize-schema.ts`), and the mismatch points at one of them rewriting the id or the href but not both. Reproduce with one footnote in any post and `npm run build` in the showcase. The starter post omits footnotes until this is fixed.
-  Placement: engine batch; fix in `src/lib/render/`, with a render test for a footnote's link and id.
 
 - [ ] **#383** Show an admin a failed deploy, with what to do next `#feature` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)*
   Placement: the cairn-setup design's admin view of a failed deploy; to be planned in the cairn-setup initiative.
@@ -399,6 +405,13 @@
   P6 copied the wizard's `api.mjs` and `catalogue.mjs` to `scripts/gate/cloudflare/` byte for byte, because `scripts/gate/gate.mjs` and `legs.mjs` imported them from the deleted package, and the wizard's `api.test.mjs` and `catalogue.test.mjs` were deleted with it. The catalogue still says `npx create-cairn-site --dir ...`. The tooling brainstorm replaces the gate's legs; until then the copy has no tests.
   Placement: handed to the tooling brainstorm.
   Done: b0ae6d2b8: the gate's legs and `scripts/gate/cloudflare/` are deleted with their tests, and the new sweep and smoke call the Cloudflare API through their own tested client.
+- [x] **#414** `build-tokens.mjs --check` misses an `options/<key>/<value>.css` left behind after its option value is removed `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
+  Found by G1's whole-branch review (PR #207). Done in theme-garden G2: `--check` exits 1 on an orphaned option sheet, and the theme check's `tokens-stale` rule fails on one.
+
+- [x] **#387** A markdown footnote renders a link to an id the page does not carry, which fails the prerender `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-08 → 2026-11-09)*
+  Found in the cairn-new-4 pass while drafting the every-element starter post. A post with `[^1]` and its definition builds a footnote link to `#user-content-fn-1`, and the page holds no element with that id, so the template's build fails with `prerender_missing_id`. The render pipeline runs `remark-gfm` (`src/lib/render/pipeline.ts:178`) and the sanitize step (`src/lib/render/sanitize-schema.ts`), and the mismatch points at one of them rewriting the id or the href but not both. Reproduce with one footnote in any post and `npm run build` in the showcase. The starter post omits footnotes until this is fixed.
+  Placement: engine batch; fix in `src/lib/render/`, with a render test for a footnote's link and id.
+  Done: theme-garden-2 T2.1. `remark-rehype` takes an empty `clobberPrefix`, and `rehypeFootnoteLinks` prefixes the footnote reference and backref `href` after the sanitize step, so each link names its target id.
 - [x] **#379** Fix the theme checks' references to a `/styleguide` the scaffold lacks `#docs` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-07)*
   `skills/cairn-styling-public-pages/references/checking-a-theme.md:114` sends a theme author to `/styleguide`, while `templates/waymark/src/chassis/README.md:195` says the scaffold carries no such route (it is the showcase's) and `templates/waymark/src/routes/(site)/` has none. No page shows every directive under a theme. Fix: ship the route, or name the content page to check against instead and drop the references. Source: builder A, item 6 (checked against the 0.99 scaffold).
   done: 62e66dfb5, merged in PR #202 (a55cf548e): `checking-a-theme.md` now names the every-element post.

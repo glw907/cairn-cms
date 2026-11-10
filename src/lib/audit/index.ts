@@ -37,4 +37,4 @@ export type { AuditConfig, AuditFlags } from './config.js';
 export type { ClassToken, ElementAttribute, ParsedComponent, SourceNode } from './markup.js';
 export type { CompiledSheet, SheetDeclaration, SheetRule } from './sheet.js';
 export type { Directive, DirectiveForm, SuppressionSource, SuppressionSplit } from './suppress.js';
-export type { AuditReport, Finding, StaticRule, StaticRuleContext, Tier } from './types.js';
+export type { AuditReport, Finding, Measured, StaticRule, StaticRuleContext, Tier } from './types.js';

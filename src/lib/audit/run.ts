@@ -12,7 +12,7 @@ import { CONFIG_FILE, isPublicFile, isUnderRoots } from './config.js';
 import type { Dirent } from 'node:fs';
 import type { AuditConfig } from './config.js';
 import type { ParsedComponent } from './markup.js';
-import type { AuditReport, CssSource, Finding, SourceFile, StaticRule } from './types.js';
+import type { AuditReport, CssSource, Finding, Measured, SourceFile, StaticRule, StaticRuleContext } from './types.js';
 
 /**
  * Every file under a directory carrying one of the given extensions, recursively, as paths
@@ -218,14 +218,16 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   const publicScope = rules.some((rule) => rule.publicScope) ? loadPublicScope(config) : null;
   // The import chain is read for the same reason: only a rule that reads it pays for the walk.
   const chain = rules.some((rule) => rule.importChain) ? loadChain(config) : undefined;
-  const raised = rules.flatMap((rule) => {
+  const contextFor = (rule: StaticRule): StaticRuleContext => {
     if (rule.publicScope && publicScope) {
-      return rule.check({ files: publicScope.files, sheet, config, cssFiles: publicScope.cssFiles, sources, chain: rule.importChain ? chain : undefined });
+      return { files: publicScope.files, sheet, config, cssFiles: publicScope.cssFiles, sources, chain: rule.importChain ? chain : undefined };
     }
     return rule.adminOnly
-      ? rule.check({ files: adminFiles, sheet, config, cssFiles: adminCssFiles, sources })
-      : rule.check({ files, sheet, config, cssFiles, sources });
-  });
+      ? { files: adminFiles, sheet, config, cssFiles: adminCssFiles, sources }
+      : { files, sheet, config, cssFiles, sources };
+  };
+  const raised = rules.flatMap((rule) => rule.check(contextFor(rule)));
+  const measured = rules.flatMap((rule) => rule.measured?.(contextFor(rule)) ?? []);
   // A file `adminScope` and `staticScope` both cover (the two roots overlap by default) is
   // deduplicated by path so its suppression directives resolve once, never once per scope. The
   // source-text walk is inserted first and the markup/CSS walks overwrite it by path, so a
@@ -250,6 +252,7 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
     filesScanned:
       files.length + sources.length + (publicScope ? publicScope.files.length + publicScope.cssFiles.length : 0),
     ruleIds: rules.map((rule) => rule.id),
+    measured,
     ...(chain && chain.unread.length > 0 ? { unreadImports: chain.unread } : {}),
   };
 }

@@ -23,5 +23,6 @@ export function scopeReport(report, ruleIds) {
     suppressed: report.suppressed.filter(owns),
     filesScanned: report.filesScanned,
     ruleIds: report.ruleIds.filter((id) => ruleIds.includes(id)),
+    measured: report.measured.filter((entry) => ruleIds.includes(entry.ruleId)),
   };
 }

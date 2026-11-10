@@ -57,6 +57,12 @@ pass, was dropped by Geoff on 2026-11-08.
   after its launch checks. G3's design session (`cairn-cms-theme-garden-3-design`, session
   `5013bd5e`) prepares the design and waits for Geoff to attach. Theme-garden launches hold during pass 3's T3.5 dependency sweep.
 
+- HOLD, pass 3 (executor `cairn-cms-setup-tooling-3`): Geoff ruled, through the conductor, that no new
+  rc is published until setup is complete and polished. Round one's cut PR #212 merged at `68eb92ecf`
+  (rc.5 in the tree), but nothing is published: no `gh release create`, no `tool/v2.0.0-rc.1` tag, no
+  publish or tool dispatch. `gate` still serves `0.99.0-rc.4`. The executor waits for the conductor's
+  next message.
+
 ## Open decisions and watches
 
 - `BACKLOG.md` lists open items, each with a `Placement` line, and `## Won't do` holds Geoff's

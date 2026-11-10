@@ -66,6 +66,14 @@ if (!binary) {
 }
 
 /**
+ * The arguments for `cairn new`. A leading `new` is dropped, because the launcher already runs
+ * that command and `create-cairn-site new --plan ...` would otherwise reach `cairn new new`, a
+ * usage error that people and agents both type from the habit of `cairn new`.
+ */
+const args = process.argv.slice(2);
+if (args[0] === 'new') args.shift();
+
+/**
  * Runs the binary and settles with its exit status. The launcher stays alive until the child
  * exits and forwards the signals a terminal or a harness sends it: `cairn new` traps SIGINT
  * and SIGTERM to stop gracefully, and a launcher that died first would orphan it mid-setup.
@@ -74,7 +82,7 @@ if (!binary) {
  */
 function run() {
   return new Promise((resolve) => {
-    const child = spawn(binary, ['new', ...process.argv.slice(2)], { stdio: 'inherit' });
+    const child = spawn(binary, ['new', ...args], { stdio: 'inherit' });
     const forward = process.platform === 'win32' ? () => {} : (signal) => child.kill(signal);
     const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
     for (const s of signals) process.on(s, forward);

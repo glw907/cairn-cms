@@ -2426,3 +2426,66 @@ func TestATokenRunWithoutAnOwnerEmailIsRefusedBeforeAnyWrite(t *testing.T) {
 		t.Errorf("writes: github %d, keyring %d, record %d; want none", w.gh.writes, w.vault.puts, len(w.saver.saves))
 	}
 }
+
+// tokenWorld is a world whose run takes a supplied Cloudflare token and the owner's address.
+func tokenWorld(t *testing.T) *world {
+	t.Helper()
+	w := newWorld(t)
+	w.cfg.CloudflareToken = providers.NewCredential("token-" + strings.Repeat("a", 36))
+	w.cfg.Answers.OwnerEmail = "owner@example.test"
+	return w
+}
+
+// TestATokenRunSaysItStoredTheToken pins that a token run's stop after the deploy-key step and
+// its done screen both say the token went into the repository's secrets, and that an approval
+// run says neither.
+func TestATokenRunSaysItStoredTheToken(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		world func(*testing.T) *world
+		want  bool
+	}{
+		{"a token run", tokenWorld, true},
+		{"an approval run", newWorld, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := tc.world(t)
+			_, err := w.run(killAfter(w, StepDeployKey))
+			f := failureOf(t, err)
+			if got := strings.Contains(f.Did, LineTokenStored); got != tc.want {
+				t.Errorf("Did = %q; names the stored token %v, want %v", f.Did, got, tc.want)
+			}
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			if res.Done.TokenStored != tc.want {
+				t.Errorf("done = %+v, want TokenStored %v", res.Done, tc.want)
+			}
+		})
+	}
+}
+
+// TestATokenResumeWithoutTheTokenSweepsFirst pins that a token resume without the variable still
+// deletes an all-repositories installation before it stops, and calls no Cloudflare API.
+func TestATokenResumeWithoutTheTokenSweepsFirst(t *testing.T) {
+	w := tokenWorld(t)
+	if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+		t.Fatal("the first run was not stopped")
+	}
+	w.gh.installs = append(w.gh.installs, install{ID: allInstallID, AppID: w.gh.app.ID, Selection: "all"})
+	w.cfg.CloudflareToken = providers.Credential{}
+	w.log = nil
+	_, err := w.resume()
+	if f := failureOf(t, err); f.Reason != ReasonTokenMissing {
+		t.Fatalf("failure = %+v, want the token-missing stop", f)
+	}
+	if ours := w.gh.ours(); len(ours) != 0 {
+		t.Errorf("installations left = %+v, want the all-repositories one deleted", ours)
+	}
+	for _, call := range w.log {
+		if strings.HasPrefix(call, "cf:") {
+			t.Errorf("the stopped resume called Cloudflare: %s", call)
+		}
+	}
+}

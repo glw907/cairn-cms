@@ -197,7 +197,8 @@ func TestDoneShowsEachNoticeOnlyWhenItsFlagIsSet(t *testing.T) {
 		done      setup.Done
 		want, not []string
 	}{
-		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "Manage OAuth authorizations"}},
+		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "Manage OAuth authorizations", "Cloudflare API token"}},
+		{"token stored", setup.Done{TokenStored: true}, []string{setup.LineTokenStored}, []string{"npm rebuild", "Manage OAuth authorizations"}},
 		{"scripts skipped", setup.Done{ScriptsSkipped: true}, []string{skipped}, []string{"Manage OAuth authorizations"}},
 		{"revoke failed", setup.Done{RevokeFailed: true}, []string{revoke}, []string{"npm rebuild"}},
 		{"both", setup.Done{ScriptsSkipped: true, RevokeFailed: true}, []string{skipped, revoke}, nil},

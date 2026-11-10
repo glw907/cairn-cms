@@ -595,6 +595,7 @@ Run `cairn new status` to list them, or run --plan again
 - Setup keeps what it already created.
 - Setup needs Node.js 24 or later. This computer has Node.js <n>.
 - Setup stopped.
+- Setup stored your Cloudflare API token as an Actions secret in your GitHub repository, where every deploy uses it. When the site no longer needs the token, revoke it in Cloudflare.
 - That address already points to another site. Choose another address, or remove its DNS records in Cloudflare first.
 - The 30-minute limit to approve the requests ran out.
 - The Cloudflare approval doesn't include the account that setup started with.

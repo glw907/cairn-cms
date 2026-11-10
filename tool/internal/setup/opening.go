@@ -27,9 +27,6 @@ func (r *run) opening(ctx context.Context) error {
 	r.start(StepOpeningChecks)
 	r.suffix = r.recordedSuffix()
 	r.names, _ = deriveNames(r.cfg.Answers.SiteName, r.suffix)
-	if r.resumed && recordedCredential(r.rec) == CredentialToken && !r.tokenRun {
-		return r.failure(ReasonTokenMissing, lineTokenMissing, lineTokenAgain, nil)
-	}
 	if loopback.Remote(r.cfg.GOOS, r.cfg.Env) {
 		return r.failure(ReasonRemote, "Setup can't run over SSH or without a display.",
 			"Run cairn new in a terminal on the computer where you use your browser.", nil)

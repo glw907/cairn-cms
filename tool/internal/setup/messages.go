@@ -242,6 +242,10 @@ const (
 	// Cloudflare token when the token's variable is no longer set.
 	lineTokenMissing = "This setup began with a Cloudflare API token from " + TokenVariable + ", and that variable isn't set."
 	lineTokenAgain   = "Set " + TokenVariable + " to the same token, and then run cairn new again."
+	// LineTokenStored is what a token run did once its deploy-key step passed: the token itself
+	// went into the repository's secrets, and only the owner can revoke it. A stop's "already did"
+	// part and the done screen both say it.
+	LineTokenStored = "Setup stored your Cloudflare API token as an Actions secret in your GitHub repository, where every deploy uses it. When the site no longer needs the token, revoke it in Cloudflare."
 )
 
 // Catalogue returns every string this table carries, for the copy golden.
@@ -251,7 +255,7 @@ func Catalogue() []string {
 		out = append(out, e.Happened, e.Did, e.Left, e.Do)
 	}
 	out = append(out, LineSlugNoLetters, LineSignInStep, LineDoneOpen, linePageFooter, lineLinkExpired, lineAppNameTaken,
-		ProblemEmail, ProblemAddress, ProblemHost)
+		LineTokenStored, ProblemEmail, ProblemAddress, ProblemHost)
 	return slices.DeleteFunc(out, func(s string) bool { return s == "" })
 }
 

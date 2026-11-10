@@ -284,6 +284,10 @@ type Done struct {
 	RevokeFailed bool
 	// KeysLeft reports that a keyring entry could not be deleted.
 	KeysLeft bool
+	// TokenStored reports a run on a supplied Cloudflare token, which setup stored as the
+	// repository's deploy-key secret and never revokes. The done screen says so with
+	// LineTokenStored.
+	TokenStored bool
 }
 
 // The runner's fixed limits.
@@ -458,14 +462,18 @@ func (r *run) steps(ctx context.Context) (Result, error) {
 // approvals runs the four approvals and the account checks, skipping each one the record shows
 // done. A resumed run whose record holds an App sweeps its installations first, before any
 // Cloudflare step can stop the run and leave an installation that reaches all the owner's
-// repositories in place; the sweep needs only the App key and the record. Approval 4 runs again
-// when the sweep leaves no installation recorded. Once the run's approvals are done, the tab
-// shows done.html, which stops its clock for the watch.
+// repositories in place; the sweep needs only the App key and the record. A resume of a token
+// run whose variable is no longer set stops after the sweep and before any Cloudflare call.
+// Approval 4 runs again when the sweep leaves no installation recorded. Once the run's approvals
+// are done, the tab shows done.html, which stops its clock for the watch.
 func (r *run) approvals(ctx context.Context) error {
 	if r.resumed && r.rec.Setup.IDs.AppID != 0 {
 		if err := r.resumeGitHub(ctx); err != nil {
 			return err
 		}
+	}
+	if r.resumed && recordedCredential(r.rec) == CredentialToken && !r.tokenRun {
+		return r.failure(ReasonTokenMissing, lineTokenMissing, lineTokenAgain, nil)
 	}
 	if err := r.cloudflare(ctx); err != nil {
 		return err
@@ -582,6 +590,7 @@ func (r *run) finish(ctx context.Context) {
 	// grant still stands. Only the refresh token's revoke is reported, since once it is revoked
 	// the grant mints no new access token; no event carries the access token's. A token run has
 	// no grant: the token is the site's deploy key and stays.
+	r.out.TokenStored = r.tokenRun
 	if !r.tokenRun {
 		_ = r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Access)
 		if err := r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Refresh); err != nil {
@@ -701,6 +710,9 @@ func (r *run) did() string {
 	}
 	if s.IDs.DeployKeyID != "" {
 		parts = append(parts, "Setup made a deploy key for GitHub Actions.")
+	}
+	if recordedCredential(r.rec) == CredentialToken && reached(r.rec.Step, spine.StepDeployKeyStored) {
+		parts = append(parts, LineTokenStored)
 	}
 	if len(parts) == 0 {
 		return nothingCreated

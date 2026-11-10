@@ -21,6 +21,8 @@ Run `cairn` as one bare command: no `cd`, no redirect, no pipe, and no `$(...)`.
 
 When `cairn` isn't installed, run `npx create-cairn-site` followed by the flags. Put no npx option in front of the name, not `--yes` and not `-y`, and add no version or tag to it. The launcher already runs `cairn new`. Write no `new` after the name. Claude Code matches a sandbox exclusion against the text of the call. An option in front of the name or a tag on it can keep the call sandboxed, where the owner's browser can't reach the tab. With no terminal, npx installs the package without asking, so an option adds nothing.
 
+Run that call from an empty folder, and never from inside a clone of the cairn-cms repository. npx matches the package name against the local project before it fetches anything, and a clone holds a package of the same name that isn't installed, so the call fails at once with `command not found`.
+
 ## Use a Cloudflare token for an unattended run
 
 An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. Setup trims spaces and line breaks around the value and refuses one with a space or line break inside. With it set when a setup starts, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.

@@ -166,6 +166,14 @@ breaks `npm run package`. Write the concrete token. A quick check:
 
 ## 6. Cut the candidate
 
+**An rc is cut only for an actual release candidate, once the install process is effective and tested.**
+A build made to prove something, such as a proving round or a probe, is a dev snapshot on `gate`: a
+`<x.y.z>-dev.<n>` prerelease published by a `workflow_dispatch` of `publish.yml` (engine) or `tool.yml`
+(tool) on `main` with `snapshot` set, with no GitHub release, no `v*` or `tool/v*` tag, and no CHANGELOG
+release heading, and `latest` and `next` never move. Otherwise a polish loop publishes 10 or 20 rcs. Cut
+the rc once, at the end of the loop. The snapshot procedure is in `cairn-proving-setup`. Geoff, 2026-11-09,
+recorded in the setup tooling plan (initiatives `782a946`).
+
 A stable is cut only from the final gated candidate's tree, so every release starts as a candidate
 (`<x.y.z>-rc.N`). The transcript recapture and every quoted docs block it updates land before the final
 candidate is cut; a recapture merged after it fails the stable check by design and means one more

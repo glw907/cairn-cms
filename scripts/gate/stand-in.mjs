@@ -17,7 +17,9 @@ import {
   stepGithubPage,
   tailUrlLog,
 } from './browser.mjs';
+import { LIVE_ORIGIN } from './grade.mjs';
 import { findSignInMessage } from './mail.mjs';
+import { authoritativeAddress } from './resolve.mjs';
 import { makeSession } from './gate.mjs';
 
 /**
@@ -49,6 +51,22 @@ export const TAB_PAGES = {
 const WAITING = new Set(['wait', 'done']);
 
 /**
+ * Whether the setup tab's loopback server has gone: a connection to its origin is refused. The
+ * agent lane's `--plan` serves the tab and its server goes with the plan, so a page that waits on
+ * the CLI by design can wait on nothing.
+ * @param {string} url the tab's address
+ * @returns {Promise<boolean>}
+ */
+async function loopbackGone(url) {
+  try {
+    await fetch(new URL(url).origin, { signal: AbortSignal.timeout(2000) });
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * @typedef {object} MailConfig
  * @property {string} login the gate mailbox
  * @property {string} password its password
@@ -75,6 +93,13 @@ const WAITING = new Set(['wait', 'done']);
  * @property {(page: import('playwright').Page, origin: string, email: string) => Promise<number>} [requestLink] asks the site
  *  for a sign-in link and returns the request time
  * @property {(url: string) => Promise<unknown>} [openLink] opens a sign-in link and confirms the admin lands
+ * @property {string} [signInOrigin] the site's origin. When the setup tab ends before the owner signs in, the
+ *  stand-in signs in from the sign-in mail; without it the tab is followed to its end and a dead tab fails
+ * @property {(host: string) => Promise<boolean>} [addressReady] whether the zone's nameserver answers for the host
+ * @property {(url: string) => Promise<boolean>} [tabGone] whether the tab's loopback server has gone
+ * @property {number} [idleMs] how long the tab must stay gone before the stand-in leaves it (20 seconds)
+ * @property {number} [siteWaitMs] how long the address may take to answer (20 minutes)
+ * @property {number} [mailWaitMs] how long to look for the sign-in mail before asking for a new link (1 minute)
  */
 
 /** @param {import('playwright').Locator} locator */
@@ -124,7 +149,17 @@ export async function followTab(page, options) {
     findMail = findSignInMessage,
     requestLink = (tab, origin, email) => requestSignInLink(tab.context(), { origin, email, pauseMs }),
     openLink,
+    signInOrigin,
+    addressReady = async (/** @type {string} */ host) => (await authoritativeAddress(host)) !== null,
+    tabGone = loopbackGone,
+    idleMs = 20_000,
+    siteWaitMs = 20 * 60_000,
+    mailWaitMs = 60_000,
   } = options;
+  const startedAt = now();
+  /** @type {number | null} */
+  let goneSince = null;
+  let recovered = false;
   const stamp = (/** @type {string} */ kind) => ({ leg: 'stand-in', dir: evidenceDir, log, kind });
   let key = '';
   let since = now();
@@ -150,6 +185,36 @@ export async function followTab(page, options) {
     if (here !== key) {
       key = here;
       since = now();
+    }
+
+    // The tab ended before the owner signed in. In the agent lane `--plan` opens the tab and its
+    // server goes with the plan, and `--apply` opens none, so the owner signs in the way a person does:
+    // from the mail setup sent. The stand-in waits for the site's address to answer from its zone's
+    // nameservers, opens that mail's link, and asks for a new link only when no mail has come.
+    if (signInOrigin && !recovered) {
+      const hostname = new URL(url).hostname;
+      const gone = url.startsWith('chrome-error:') || (hostname === '127.0.0.1' && (kind === 'unknown' || WAITING.has(kind)) && (await tabGone(url)));
+      goneSince = gone ? (goneSince ?? now()) : null;
+      if (goneSince !== null && now() - goneSince >= idleMs) {
+        recovered = true;
+        const siteHost = new URL(signInOrigin).hostname;
+        const until = now() + siteWaitMs;
+        while (!(await addressReady(siteHost))) {
+          if (now() > until) await failPage(page, stamp('signin'), `the site's address ${siteHost} never answered from its zone's nameservers in ${Math.round(siteWaitMs / 60_000)} minutes`);
+          await sleep(5000);
+        }
+        const found = await findMail({ ...mail, sinceMs: startedAt, expectedOrigin: signInOrigin, budgetMs: mailWaitMs, sleep, now });
+        if (found.found) {
+          await record('login', 'read sign-in mail');
+          await (openLink ?? ((link) => handleUrl(link, { github: page.context(), admin: () => page.context(), creds, leg: 'stand-in', evidenceDir, log, page: { pauseMs } })))(found.url);
+          await record('login', 'open sign-in link');
+          await requireAdmin(page, stamp('signin'), pageMs);
+          await record('admin', 'signed-in');
+          return;
+        }
+        await page.goto(`${signInOrigin}/admin/login`, { waitUntil: 'load' });
+        continue;
+      }
     }
 
     if (kind === 'admin') {
@@ -214,6 +279,7 @@ export async function followTab(page, options) {
  * @property {import('./browser.mjs').Creds} creds the machine account
  * @property {MailConfig} mail the mailbox
  * @property {AbortSignal} [signal] ends the tail early
+ * @property {string} [signInOrigin] the site's origin: when the setup tab ends first, the owner signs in from the sign-in mail
  * @property {(line: string) => void} [log] one line per event
  */
 
@@ -223,7 +289,7 @@ export async function followTab(page, options) {
  * @param {StandInOptions} options
  * @returns {Promise<void>} when the admin shows the owner signed in
  */
-export async function runStandIn({ runDir, browser, creds, mail, signal, log = console.log }) {
+export async function runStandIn({ runDir, browser, creds, mail, signal, signInOrigin, log = console.log }) {
   await mkdir(runDir, { recursive: true, mode: 0o700 });
   const out = path.join(runDir, 'stand-in.jsonl');
   /** @param {string} kind @param {string} action */
@@ -240,7 +306,7 @@ export async function runStandIn({ runDir, browser, creds, mail, signal, log = c
       if (kind === 'manifest') {
         const page = await browser.github.newPage();
         await page.goto(url, { waitUntil: 'load' });
-        await followTab(page, { creds, evidenceDir: runDir, log, record, mail });
+        await followTab(page, { creds, evidenceDir: runDir, log, record, mail, signInOrigin });
         await page.close().catch(() => {});
         finish();
         return;
@@ -270,7 +336,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const owner = env.GATE_OWNER_EMAIL || 'cairn-gate@probe.907.life';
     try {
       const browser = await session.getBrowser();
-      await runStandIn({ runDir, browser, creds: session.creds, mail: { login: owner, password: env.STALWART_PASSWORD_CAIRN_GATE, siteName: env.GATE_SITE_NAME, owner } });
+      await runStandIn({ runDir, browser, creds: session.creds, signInOrigin: LIVE_ORIGIN, mail: { login: owner, password: env.STALWART_PASSWORD_CAIRN_GATE, siteName: env.GATE_SITE_NAME, owner } });
     } catch (error) {
       console.error(`stand-in failed: ${error instanceof Error ? error.message : String(error)}`);
       // A line in stand-in.jsonl too, so whoever watches that file sees the stand-in stop. Round four's

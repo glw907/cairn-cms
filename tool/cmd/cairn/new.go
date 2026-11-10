@@ -103,6 +103,12 @@ func newTag(c *cobra.Command, flag string, env func(string) string) string {
 	return flag
 }
 
+// inSandbox reports whether the call runs inside Claude Code's sandbox, which sets SANDBOX_RUNTIME
+// for every sandboxed command and for no excluded one (probed 2026-11-09, Claude Code 2.1.319).
+func inSandbox(env func(string) string) bool {
+	return env("SANDBOX_RUNTIME") != ""
+}
+
 // validate refuses a flag combination before anything runs, naming the flags at fault.
 func (f newFlags) validate(c *cobra.Command) error {
 	set := func(name string) bool { return c.Flags().Changed(name) }
@@ -158,6 +164,9 @@ func (f newFlags) validate(c *cobra.Command) error {
 func runNew(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 	if err := f.validate(cmd); err != nil {
 		return err
+	}
+	if !f.dryRun && inSandbox(d.env) {
+		return newSandboxedError()
 	}
 	f.tag = newTag(cmd, f.tag, d.env)
 	for _, m := range newModeFlags {

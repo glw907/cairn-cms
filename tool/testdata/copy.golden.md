@@ -420,6 +420,8 @@ Run `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the dom
 Name the check that entry holds
 - cairn: the plan's runId is %s, and no unfinished setup has that run.
 Run `cairn new status` to list them, or run --plan again
+- cairn: this call runs inside a sandbox, where the approval page setup serves can't be reached from the owner's browser.
+Run it as one bare call outside the sandbox: no option before the package name, no version or tag, and no `cd`, pipe, or redirect in the call. Or ask the owner to exclude the command from the sandbox
 - cairn: this output carries identifiers and is not safe to paste in public.
 - columns to render at, instead of the terminal's width
 - continue the unfinished setup with this site id

@@ -57,6 +57,13 @@ pass, was dropped by Geoff on 2026-11-08.
   after its launch checks. G3's design session (`cairn-cms-theme-garden-3-design`, session
   `5013bd5e`) prepares the design and waits for Geoff to attach. Theme-garden launches hold during pass 3's T3.5 dependency sweep.
 
+- Pass 3 (executor `cairn-cms-setup-tooling-3`): Geoff ruled (2026-11-09, plan at initiatives
+  `782a946`) that no rc is cut until the install process is effective and tested, and `rc.5` is cut once,
+  at the end. Until then each round's candidate is a dev snapshot on `gate` only, with no GitHub release,
+  no `v*` or `tool/v*` rc tag, and no CHANGELOG release heading, and `latest` and `next` never move.
+  Round one's cut PR #212 is reverted, so `main` carries no `0.99.0-rc.5` and no "Released 2026-11-09".
+  Nothing was published, and `gate` still serves `0.99.0-rc.4`.
+
 ## Open decisions and watches
 
 - `BACKLOG.md` lists open items, each with a `Placement` line, and `## Won't do` holds Geoff's

@@ -340,7 +340,7 @@ Run `cairn new --help` for the flags
 - cairn: %s crashed with a %s.
 This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: %s has a space or a line break inside the token.
-Set it to the token alone, and then run cairn new again.
+Set it to the token alone, and then run cairn new again
 - cairn: %s is empty.
 Pipe a non-empty value: printf %%s "$v" | cairn auth set %s
 - cairn: %s is not a valid hold file.

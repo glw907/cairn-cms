@@ -767,7 +767,7 @@ approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the
 
 // tmplSetupTokenSpace refuses a setup token with whitespace inside it. It names the variable and
 // never the value.
-const tmplSetupTokenSpace = "cairn: %s has a space or a line break inside the token.\nSet it to the token alone, and then run cairn new again."
+const tmplSetupTokenSpace = "cairn: %s has a space or a line break inside the token.\nSet it to the token alone, and then run cairn new again"
 
 // newSetupTokenSpaceError renders tmplSetupTokenSpace.
 func newSetupTokenSpaceError() error {

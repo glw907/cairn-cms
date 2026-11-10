@@ -40,6 +40,17 @@ export function commandFor(env) {
 }
 
 /**
+ * The index of the last line the test accepts, or -1. A screen can sit below earlier output, so the
+ * last match is the one on screen.
+ * @param {string[]} lines
+ * @param {(line: string) => boolean} test
+ */
+function lastIndex(lines, test) {
+  for (let i = lines.length - 1; i >= 0; i--) if (test(/** @type {string} */ (lines[i]))) return i;
+  return -1;
+}
+
+/**
  * The keys that move a choose screen's selection to the row that names `target`, then Enter. The
  * screen marks its selection with a leading `>` and lists one row per line. A screen with several
  * choices starts with no selection and no marker, so the first Down selects its first row, and the
@@ -54,7 +65,7 @@ export function commandFor(env) {
  */
 export function chooseRow(pane, target, step) {
   const lines = pane.split('\n').map((l) => l.trim());
-  const count = lines.findLastIndex((l) => /^\d+ (domains?|accounts?)\b/.test(l));
+  const count = lastIndex(lines, (l) => /^\d+ (domains?|accounts?)\b/.test(l));
   const rowsFrom = count === -1 ? 0 : count + 1;
   const marked = lines.findIndex((l, i) => i >= rowsFrom && l.startsWith('> '));
   const wanted = lines.findIndex((l, i) => i >= rowsFrom && l.replace(/^> /, '') === target);
@@ -75,7 +86,7 @@ export function chooseRow(pane, target, step) {
  */
 export function hasSelection(pane, titlePattern) {
   const lines = pane.split('\n').map((l) => l.trim());
-  const from = lines.findLastIndex((l) => titlePattern.test(l));
+  const from = lastIndex(lines, (l) => titlePattern.test(l));
   return lines.some((l, i) => i > from && l.startsWith('> '));
 }
 /** How long the whole leg may take. */

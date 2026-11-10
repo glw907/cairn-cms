@@ -394,3 +394,15 @@ func TestSharedRetryPolicy(t *testing.T) {
 		})
 	}
 }
+
+func TestRootedNamesCarryOneTrailingDot(t *testing.T) {
+	for _, tc := range []struct{ in, want string }{
+		{"gate.example.org", "gate.example.org."},
+		{"gate.example.org.", "gate.example.org."},
+		{"burt.ns.cloudflare.com", "burt.ns.cloudflare.com."},
+	} {
+		if got := rooted(tc.in); got != tc.want {
+			t.Errorf("rooted(%q) = %q, want %q, so a resolver never appends a search domain", tc.in, got, tc.want)
+		}
+	}
+}

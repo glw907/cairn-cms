@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { SCREENS, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
 
 const RUN_ID = '2611091430';
-const RUN_DIR = `/var/tmp/gate-runs/${RUN_ID}`;
+const RUN_DIR = `/var/tmp/cleanroom/${RUN_ID}/run`;
 const SESSION = `cleanroom-${RUN_ID}-scripted`;
 const OWNER = 'cairn-gate@probe.907.life';
 const START = 'npm create cairn-site';
@@ -123,6 +123,14 @@ describe('scripted leg: starting', () => {
     expect(shell.env.npm_config_tag).toBe('gate');
     const socket = '/home/owner/.local/state/cleanroom/tmux-scripted.sock';
     expect(h.tmux.calls.every((c) => c[0] === '-S' && c[1] === socket)).toBe(true);
+  });
+});
+
+describe('scripted leg: shell environment', () => {
+  it('passes only the allowlist and the tag, never an inherited secret', async () => {
+    const h = harness(HAPPY, {}, { CLEANROOM_ROOT: '/var/tmp/cleanroom', CF_WS_CAIRN_CLEANROOM_TOKEN: 'secret', GITHUB_TEST_TOKEN: 'secret', PATH: '/bin' });
+    await h.run();
+    expect(h.shells[0]!.env).toEqual({ HOME: '/home/owner', PATH: '/bin', CLEANROOM_ROOT: '/var/tmp/cleanroom', npm_config_tag: 'gate' });
   });
 });
 

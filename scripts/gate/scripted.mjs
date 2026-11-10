@@ -116,16 +116,40 @@ function title(pane) {
  */
 
 /**
+ * The clean-room run id, which names the directory above the run directory (`<root>/<id>/run`).
+ * @param {string} runDir the run directory
+ * @returns {string}
+ */
+function runIdOf(runDir) {
+  return path.basename(path.dirname(runDir));
+}
+
+const SHELL_ENV = ['PATH', 'HOME', 'TERM', 'LANG', 'XDG_RUNTIME_DIR', 'CLEANROOM_ROOT'];
+
+/**
+ * The environment `cleanroom shell` gets: a short allowlist and the dist-tag, so no inherited
+ * secret reaches it. The setup token goes through `--secret`, never the environment.
+ * @param {Record<string, string | undefined>} env the driver's environment
+ * @returns {Record<string, string | undefined>}
+ */
+function shellEnv(env) {
+  /** @type {Record<string, string | undefined>} */
+  const out = { npm_config_tag: 'gate' };
+  for (const name of SHELL_ENV) if (env[name] !== undefined) out[name] = env[name];
+  return out;
+}
+
+/**
  * Plays the owner through `cairn new`.
  * @param {object} options
- * @param {string} options.runDir the run directory; its name is the run id
+ * @param {string} options.runDir the run directory; the run id names its parent directory
  * @param {Record<string, string | undefined>} options.env `GATE_SITE_NAME`, `GATE_OWNER_EMAIL`, and `HOME`
  * @param {Deps} options.deps the shell, tmux, stand-in, record, and clock
  * @returns {Promise<{ ok: true, steps: string[] }>} the screens seen, in order
  * @throws {ScriptedError} on an unknown screen, a setup stop, a return to the prompt, or 20 minutes
  */
 export async function runScripted({ runDir, env, deps }) {
-  const runId = path.basename(runDir);
+  const runId = runIdOf(runDir);
   const session = `cleanroom-${runId}-scripted`;
   const socket = path.join(env.HOME ?? os.homedir(), '.local', 'state', 'cleanroom', 'tmux-scripted.sock');
   const answers = { name: env.GATE_SITE_NAME || `Cairn gate ${runId}`, email: env.GATE_OWNER_EMAIL || DEFAULT_OWNER };
@@ -138,7 +162,7 @@ export async function runScripted({ runDir, env, deps }) {
   let exitCode = null;
   const shell = deps.startShell(
     ['shell', runId, '--tmux', session, '--socket', socket, '--secret', 'CF_WS_CAIRN_CLEANROOM_TOKEN:CAIRN_CF_SETUP_TOKEN'],
-    { ...env, npm_config_tag: 'gate' },
+    shellEnv(env),
   );
   shell.exited.then((code) => (exitCode = code));
 
@@ -212,7 +236,7 @@ async function realDeps({ runDir, env, shotDir }) {
     },
     startStandIn: () => {
       const child = spawn(process.execPath, [path.join(HERE, 'stand-in.mjs'), runDir], {
-        env: { ...env, GATE_SITE_NAME: env.GATE_SITE_NAME || `Cairn gate ${path.basename(runDir)}` },
+        env: { ...env, GATE_SITE_NAME: env.GATE_SITE_NAME || `Cairn gate ${runIdOf(runDir)}` },
         stdio: ['ignore', log.fd, log.fd],
       });
       return { kill: () => child.kill('SIGTERM') };
@@ -223,7 +247,7 @@ async function realDeps({ runDir, env, shotDir }) {
   };
   if (shotDir) {
     const socket = path.join(env.HOME ?? os.homedir(), '.local', 'state', 'cleanroom', 'tmux-scripted.sock');
-    const session = `cleanroom-${path.basename(runDir)}-scripted`;
+    const session = `cleanroom-${runIdOf(runDir)}-scripted`;
     deps.shot = (name) =>
       execFileAsync('kitty-headless-shot', ['-o', shotDir, '-c', `tmux -S ${socket} attach -r -t ${session}`, 'sleep:1', `shot:${name}`]).then(() => {});
   }

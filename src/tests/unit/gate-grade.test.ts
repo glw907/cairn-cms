@@ -391,6 +391,11 @@ describe('the transcript readers', () => {
     expect(missedRelays(slow, setupEvents(slow))).toHaveLength(1);
     const open = parseTranscript(JSON.stringify(resultLine(0, [waiting])));
     expect(missedRelays(open, setupEvents(open))).toHaveLength(1);
+    // A step that finished before the sentence appeared cleared nothing, and one at the same instant did.
+    const earlier = parseTranscript(JSON.stringify(resultLine(0, [event('step_done', -1, { step: 'approve-create-app' }), waiting])));
+    expect(missedRelays(earlier, setupEvents(earlier))).toHaveLength(1);
+    const same = parseTranscript(JSON.stringify(resultLine(0, [waiting, event('step_done', 0, { step: 'approve-create-app' })])));
+    expect(missedRelays(same, setupEvents(same))).toEqual([]);
   });
 
   it('reads a command from a redrawn prompt once', () => {

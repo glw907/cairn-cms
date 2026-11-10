@@ -51,10 +51,12 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
-- **The agent page, the skill, and `cairn new`'s help say to make the call before asking about the sandbox.**
-  The bare call is the path. An exclusion the owner set for `cairn` makes it run outside the sandbox, and when
-  Claude Code's retry parameter is off, the owner adds an exclusion. The refusal for a sandboxed call says so, and
-  the page and the skill say the address is safe to visit once the `summary` event arrives.
+- **An agent now makes the bare `cairn` call before it asks about the sandbox.** A `sandbox.excludedCommands`
+  entry for `cairn *` or `npx create-cairn-site *` runs the call outside the sandbox with no prompt. Otherwise the
+  call stops with a message, and the agent retries with the Bash tool's `dangerouslyDisableSandbox` parameter. When the
+  owner has switched that off with `allowUnsandboxedCommands: false`, the retry stops with the same message and the
+  agent asks the owner to add the exclusion. The agent page, the skill, `cairn help agents`, and the refusal say so, and
+  the page and the skill say to visit the address once the `summary` event arrives.
 
   Consumers must: nothing.
 

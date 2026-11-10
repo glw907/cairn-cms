@@ -20,10 +20,12 @@ The plugin is optional. This page works without it. [Suggested plugins](./sugges
 Run `cairn` as one bare call, and make the call before you ask the owner anything about the sandbox. Setup serves its approval tab on a local port, and a sandboxed command's localhost is private to the sandbox, so the owner's browser can reach the tab only when the call runs outside the sandbox. What happens to the bare call depends on the owner's Claude Code settings ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)):
 
 - With the sandbox off, the call runs as it is.
-- With an exclusion for the command, such as `cairn *` and `npx create-cairn-site *` in `sandbox.excludedCommands`, a bare call runs outside the sandbox with no prompt.
+- With `cairn *` and `npx create-cairn-site *` in `sandbox.excludedCommands`, a bare call runs outside the sandbox with no prompt.
 - With neither, the call runs inside the sandbox, and `--plan`, `--apply`, and `--resume` stop at once, before they serve the tab, with a message that says so. A dry run still runs.
 
-When the call stops that way, run it again with the Bash tool's `dangerouslyDisableSandbox` parameter. Claude Code asks the owner to approve the call in a prompt titled `Bash command (unsandboxed)`, unless an allow rule already covers it. The owner can switch that retry off with `allowUnsandboxedCommands: false`. Your tool then lists the parameter as off, and only an exclusion lets the call run outside the sandbox, so ask the owner to add one.
+When the call stops that way, run it again with the Bash tool's `dangerouslyDisableSandbox` parameter. Don't ask first. Claude Code asks the owner to approve the call in a prompt titled `Bash command (unsandboxed)`, and that prompt is the owner's approval, unless an allow rule already covers it.
+
+The owner can switch the retry off with `allowUnsandboxedCommands: false`. The retry then runs inside the sandbox too and stops with the same message. When it does, ask the owner to add the two exclusions above, and make the same call again.
 
 Claude Code matches a sandbox exclusion against the text of the call, so keep the call bare:
 
@@ -112,7 +114,7 @@ cairn new --apply plan.json
 
 A run usually takes a few minutes. The step that connects the domain waits for the new address to answer over HTTPS, and that wait can last up to 15 more minutes. It needs nothing from the owner, so it prints no `waiting` event. A stream that goes quiet there isn't stuck.
 
-Leave the new address alone until the `summary` event, and visit it once the event arrives, since [Verify the site](#verify-the-site) asks you to. A `curl`, `dig`, or browser visit to the address before setup has created the address's record makes the computer's resolver remember that the name doesn't exist. The computer can then keep answering that way for up to 30 minutes after the record is live, and the owner's first visit fails.
+Leave the new address alone until the `summary` event arrives. Then visit it to [verify the site](#verify-the-site). A `curl`, `dig`, or browser visit to the address before setup has created the address's record makes the computer's resolver remember that the name doesn't exist. The computer can then keep answering that way for up to 30 minutes after the record is live, and the owner's first visit fails.
 
 ## Read a usage error
 

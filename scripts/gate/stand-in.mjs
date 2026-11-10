@@ -51,6 +51,21 @@ export const TAB_PAGES = {
 const WAITING = new Set(['wait', 'done']);
 
 /**
+ * Whether the site answers over HTTPS. Setup sends the sign-in mail only after that, so the mail
+ * is not looked for sooner.
+ * @param {string} origin the site's origin
+ * @returns {Promise<boolean>}
+ */
+async function siteAnswersOverHttps(origin) {
+  try {
+    const response = await fetch(`${origin}/`, { signal: AbortSignal.timeout(5000), redirect: 'manual' });
+    return response.status < 500;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Whether the setup tab's loopback server has gone: a connection to its origin is refused. The
  * agent lane's `--plan` serves the tab and its server goes with the plan, so a page that waits on
  * the CLI by design can wait on nothing.
@@ -99,7 +114,8 @@ async function loopbackGone(url) {
  * @property {(url: string) => Promise<boolean>} [tabGone] whether the tab's loopback server has gone
  * @property {number} [idleMs] how long the tab must stay gone before the stand-in leaves it (20 seconds)
  * @property {number} [siteWaitMs] how long the address may take to answer (20 minutes)
- * @property {number} [mailWaitMs] how long to look for the sign-in mail before asking for a new link (1 minute)
+ * @property {(origin: string) => Promise<boolean>} [siteAnswers] whether the site answers over HTTPS
+ * @property {number} [mailWaitMs] how long to look for the sign-in mail once the site answers, before asking for a new link (3 minutes)
  */
 
 /** @param {import('playwright').Locator} locator */
@@ -152,9 +168,10 @@ export async function followTab(page, options) {
     signInOrigin,
     addressReady = async (/** @type {string} */ host) => (await authoritativeAddress(host)) !== null,
     tabGone = loopbackGone,
+    siteAnswers = siteAnswersOverHttps,
     idleMs = 20_000,
     siteWaitMs = 20 * 60_000,
-    mailWaitMs = 60_000,
+    mailWaitMs = 3 * 60_000,
   } = options;
   const startedAt = now();
   /** @type {number | null} */
@@ -203,11 +220,18 @@ export async function followTab(page, options) {
           if (now() > until) await failPage(page, stamp('signin'), `the site's address ${siteHost} never answered from its zone's nameservers in ${Math.round(siteWaitMs / 60_000)} minutes`);
           await sleep(5000);
         }
+        // The record exists before the site answers, and setup sends the mail after the HTTPS wait.
+        while (!(await siteAnswers(signInOrigin))) {
+          if (now() > until) await failPage(page, stamp('signin'), `the site at ${siteHost} never answered over HTTPS in ${Math.round(siteWaitMs / 60_000)} minutes`);
+          await sleep(5000);
+        }
         const found = await findMail({ ...mail, sinceMs: startedAt, expectedOrigin: signInOrigin, budgetMs: mailWaitMs, sleep, now });
         if (found.found) {
           await record('login', 'read sign-in mail');
           await (openLink ?? ((link) => handleUrl(link, { github: page.context(), admin: () => page.context(), creds, leg: 'stand-in', evidenceDir, log, page: { pauseMs } })))(found.url);
           await record('login', 'open sign-in link');
+          // The link signed in on another page of this context, so the tab loads the admin itself.
+          await page.goto(`${signInOrigin}/admin`, { waitUntil: 'load' });
           await requireAdmin(page, stamp('signin'), pageMs);
           await record('admin', 'signed-in');
           return;
@@ -242,6 +266,8 @@ export async function followTab(page, options) {
           /** @type {{ url: string }} */ (found).url,
         );
         await record('login', 'open sign-in link');
+        // The link signed in on another page of this context, so the tab loads the admin itself.
+        await page.goto(`${origin}/admin`, { waitUntil: 'load' });
         await requireAdmin(page, stamp('signin'), pageMs);
         await record('admin', 'signed-in');
         return;

@@ -15,9 +15,9 @@ description: Sets up a new cairn site with `cairn new`. Use when a person asks t
 
 ## How to run `cairn`
 
-Run it as one bare call, outside the sandbox. Setup serves its approval page on a local port, and a sandboxed command's localhost is private to the sandbox, so the person's browser can't reach the page.
+Run it as one bare call. It has to end up outside the sandbox: setup serves its approval page on a local port, and a sandboxed command's localhost is private to the sandbox, so the person's browser can't reach the page.
 
-Make the call before you ask the person anything about the sandbox. With the sandbox off, it runs as it is. With an exclusion the person set for `cairn` (`sandbox.excludedCommands`), a bare call runs outside the sandbox with no prompt. With neither, `cairn` stops at once with a message that says it ran inside the sandbox: run the same call again with the Bash tool's `dangerouslyDisableSandbox` parameter, and Claude Code asks the person to approve it ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). The person can switch that retry off with `allowUnsandboxedCommands: false`. When your tool lists the parameter as off, only an exclusion works, so ask the person to add one.
+Make the call before you ask the person anything about the sandbox. With the sandbox off, it runs as it is. With `cairn *` and `npx create-cairn-site *` in the person's `sandbox.excludedCommands`, a bare call runs outside the sandbox with no prompt. With neither, `cairn` stops at once with a message that says it ran inside the sandbox. Run the same call again with the Bash tool's `dangerouslyDisableSandbox` parameter, and Claude Code asks the person to approve it. Don't ask first: that prompt is their approval ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). If the retry stops with the same message, the person has switched it off (`allowUnsandboxedCommands: false`). Only an exclusion works then, so ask the person to add the two above, and make the same call again.
 
 Keep the call bare, so that an exclusion the person already set for `cairn` still matches the text of the call:
 

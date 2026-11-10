@@ -27,7 +27,7 @@
 
 ## Medium
 
-- [ ] **#440** The sandbox question recurs when the room switches off the retry parameter `#improvement` `#cairn-cms` `#docs` `#initiative:cairn-setup` *(2026-11-10)*
+- [ ] **#440** The sandbox question recurs when the clean room sets `allowUnsandboxedCommands: false` `#improvement` `#cairn-cms` `#docs` `#initiative:cairn-setup` *(2026-11-10)*
   Round seven's agent read the new docs and still asked the owner how to run outside the sandbox, saying its session had `dangerouslyDisableSandbox` turned off. The clean room sets `allowUnsandboxedCommands: false`, so the retry the pre-pass docs led with is off there, and only the `excludedCommands` patterns let a bare call out. After the owner's nudge, the bare calls ran outside the sandbox with no prompt. The page, the skill, the agent guide, and the refusal now say to make the call first, treat the retry as the fallback, and tell the owner to add an exclusion when the parameter is off (#233). Round eight reads whether the agent still asks.
   Placement: round eight's grade; reopen the wording if the agent asks again.
 - [ ] **#441** `run-gate.sh scripted` refuses on leftover `gnome-keyring-daemon` processes and does not name the remedy `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
@@ -425,7 +425,7 @@
 ## Done
 - [x] **#442** The stand-in cannot sign in after the agent lane's `--apply`, so no naive run can pass its end state `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
   The stand-in follows the one tab `--plan` opens for the GitHub approvals. The tab's server goes with the plan, `--apply` opens none, and the sign-in link is only emailed, so run 2611102302's stand-in sat on a dead tab for its 2-minute page limit and failed with the site live and the mail delivered.
-  Done: #233: when the tab's loopback server is gone for 20 seconds, the stand-in waits for the zone's nameserver to answer for the host, opens the mail's link, and requests a new link at the login page only when no mail has come. Five tests, four of them red first.
+  Done: #233: when the tab's loopback server is gone for 20 seconds, the stand-in waits for the zone's nameserver and then the site to answer for the host (setup sends the mail after its HTTPS wait), opens the mail's link in the browser context, loads the admin in the tab, and requests a new link at the login page only when no mail has come. Tests with an opener that leaves the tab alone and a site that answers late, red first.
 - [x] **#443** Every scripted leg's per-screen screenshot is the error text "server exited unexpectedly" `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
   The headless terminal ran `tmux attach` with a PATH that names `/usr/bin/tmux` 3.5a, while the leg's server is Homebrew's 3.8, and a tmux client and server of different versions refuse each other. T3.4's "one screenshot per screen" evidence was never real in any earlier run.
   Done: #233: the attach uses the absolute path of the tmux the leg runs (`shotCommand`). The next scripted run's screenshots are the check.

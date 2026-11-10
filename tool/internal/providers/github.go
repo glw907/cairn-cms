@@ -98,13 +98,23 @@ func (gh *GitHub) getJSON(ctx context.Context, path string, out any) error {
 	return nil
 }
 
+// escapeRef escapes each segment of a ref and keeps its slashes, so a branch named feature/x
+// reaches the commits route as GitHub reads it.
+func escapeRef(ref string) string {
+	parts := strings.Split(ref, "/")
+	for i, part := range parts {
+		parts[i] = url.PathEscape(part)
+	}
+	return strings.Join(parts, "/")
+}
+
 // HeadSHA returns the commit sha ref currently resolves to (typically "main"), via GET
 // /repos/{owner}/{repo}/commits/{ref}.
 func (gh *GitHub) HeadSHA(ctx context.Context, owner, repo, ref string) (string, error) {
 	var commit struct {
 		SHA string `json:"sha"`
 	}
-	path := fmt.Sprintf("/repos/%s/%s/commits/%s", url.PathEscape(owner), url.PathEscape(repo), url.PathEscape(ref))
+	path := fmt.Sprintf("/repos/%s/%s/commits/%s", url.PathEscape(owner), url.PathEscape(repo), escapeRef(ref))
 	if err := gh.getJSON(ctx, path, &commit); err != nil {
 		return "", err
 	}

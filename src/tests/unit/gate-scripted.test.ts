@@ -229,6 +229,14 @@ describe('scripted leg: npm prints its banner above the chooser on the published
 });
 
 describe('scripted leg: a failure is written to the log', () => {
+  it('still throws the error that ended the leg when the log cannot be written', async () => {
+    const record = async (event: Record<string, unknown>) => {
+      if (event.action === 'failed') throw new Error('ENOSPC: no space left on device');
+    };
+    const h = harness([PANES.prompt, PANES.starting, PANES.welcome, PANES.stopped], { record });
+    await expect(h.run()).rejects.toThrow(/setup stopped at "stopped"/);
+  });
+
   it('records the screen and the first line of the reason before it throws', async () => {
     const h = harness([PANES.prompt, PANES.starting, PANES.welcome, PANES.stopped]);
     await expect(h.run()).rejects.toThrow(/setup stopped/);

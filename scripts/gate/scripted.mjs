@@ -334,7 +334,12 @@ export async function runScripted({ runDir, env, deps }) {
   } catch (error) {
     // Every end of the leg is in the log, so a reader of scripted.jsonl learns why it stopped.
     const reason = (error instanceof Error ? error.message : String(error)).split('\n')[0];
-    await deps.record({ at: new Date(deps.now()).toISOString(), screen: reached, action: 'failed', reason });
+    // The log is best effort: a write that fails must not replace the error that ended the leg.
+    try {
+      await deps.record({ at: new Date(deps.now()).toISOString(), screen: reached, action: 'failed', reason });
+    } catch {
+      // Nothing more to report: the original error goes on to the caller.
+    }
     throw error;
   } finally {
     standIn.kill();

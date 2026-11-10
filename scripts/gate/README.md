@@ -59,7 +59,7 @@ domain: a record on the bare address or `www` is a standing stop, and the apex h
 `--cairn-bin <path>` swaps the registry launcher for a `cairn` binary built from the branch
 (`make -C tool build`, then `--cairn-bin tool/cairn`), so a fix is proved before it publishes. The run
 keeps a copy of the binary, and its `harness.json` says `local` with the tool recorded as `local build at
-<commit>`, so a local run is never the release gate's `scripted` row, which runs the published candidate.
+<commit>` (the commit of the checkout the harness runs from, so build there), and `verdict.mjs` refuses a row whose tool reads `local build`. A local run is never the release gate's `scripted` row, which runs the published candidate.
 A fix to the engine package (the template, the scaffold's output) still needs an engine snapshot, since
 the build resolves the engine from the registry.
 

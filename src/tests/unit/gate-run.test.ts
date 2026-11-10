@@ -243,6 +243,14 @@ describe('scripted --cairn-bin', () => {
     expect(handoff(r, id)).not.toContain('GATE_CAIRN_BIN');
   });
 
+  it('never hands the driver a binary from the caller environment, which would run unrecorded', () => {
+    const r = rig();
+    const id = idOf(r.run(['scripted'], { GATE_CAIRN_BIN: '/tmp/elsewhere/cairn' }).stdout);
+    expect(handoff(r, id)).not.toContain('GATE_CAIRN_BIN');
+    const harness = JSON.parse(readFileSync(join(r.root, id, 'run', 'harness.json'), 'utf8'));
+    expect(harness.local).toBe(false);
+  });
+
   it('refuses a path that is not an executable file, or no path, and starts nothing', () => {
     const r = rig();
     const plain = join(r.base, 'plain');

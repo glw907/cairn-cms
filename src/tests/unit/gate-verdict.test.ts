@@ -50,6 +50,12 @@ function ghOf(text: string, compares: Record<string, string[] | 'error'> = {}) {
 const run = (text: string, compares: Record<string, string[] | 'error'> = {}) => verdict({ version: '0.99.0-rc.4', releaseCommit: RELEASE, gh: ghOf(text, compares).gh });
 
 describe('verdict from the release body', () => {
+  it('refuses a row from a local build, which never stands for the published candidate', async () => {
+    const result = await run(body(three({ scripted: { tool: `local build at ${RELEASE}` } })));
+    expect(result.ok).toBe(false);
+    expect(result.reasons).toEqual(['scripted ran a local build, which never stands for the published candidate']);
+  });
+
   it('passes three pass rows at the release commit with no compare', async () => {
     const stub = ghOf(body(three()));
     expect(await verdict({ version: '0.99.0-rc.4', releaseCommit: RELEASE, gh: stub.gh })).toEqual({ ok: true, reasons: [] });

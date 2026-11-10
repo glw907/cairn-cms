@@ -237,6 +237,8 @@ start_session() {
     for pair in "${allowed[@]}" "${session[@]}"; do
       case "${pair%%=*}" in
         CF_WS_CAIRN_CLEANROOM_TOKEN) continue ;;
+        # Only `--cairn-bin` hands the driver a binary, so a caller's variable never runs unrecorded.
+        GATE_CAIRN_BIN) continue ;;
       esac
       printf 'export %s=%q\n' "${pair%%=*}" "${pair#*=}"
     done
@@ -271,13 +273,14 @@ start_run() {
   if [ -n "$cairn_bin" ]; then tool="local build at $commit"; fi
   scrubbed cleanroom init "$run_id" >&2
   mkdir -p -m 0700 "$handoff_dir"
-  node -e 'const [leg, id, siteName, commit, engine, tool, local] = process.argv.slice(1); process.stdout.write(JSON.stringify({ leg, id, siteName, begin: process.env.GATE_BEGIN, commit, candidate: { engine, tool }, local: local === "1" }, null, 2) + "\n");' \
-    "$leg" "$run_id" "$site_name" "$commit" "$engine" "$tool" "${cairn_bin:+1}" >"$run_path/harness.json"
-  # The run keeps its own copy, so the binary it ran is not changed by a rebuild mid-run.
+  # The run keeps its own copy, so a rebuild mid-run changes nothing it ran. It is copied before the
+  # harness file is written, so a failed copy leaves no record of a run that never started.
   if [ -n "$cairn_bin" ]; then
     install -m 0755 "$cairn_bin" "$cleanroom_root/$run_id/cairn"
     cairn_bin="$cleanroom_root/$run_id/cairn"
   fi
+  node -e 'const [leg, id, siteName, commit, engine, tool, local] = process.argv.slice(1); process.stdout.write(JSON.stringify({ leg, id, siteName, begin: process.env.GATE_BEGIN, commit, candidate: { engine, tool }, local: local === "1" }, null, 2) + "\n");' \
+    "$leg" "$run_id" "$site_name" "$commit" "$engine" "$tool" "${cairn_bin:+1}" >"$run_path/harness.json"
   # The scripted driver starts its own stand-in, so only a naive run gets one here.
   if [ "$leg" = naive ]; then
     start_session "cleanroom-$run_id-stand-in" "$handoff_dir/$run_id-stand-in.env" node "$here/stand-in.mjs" "$run_path"

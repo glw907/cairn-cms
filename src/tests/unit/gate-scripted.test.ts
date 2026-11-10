@@ -2,7 +2,7 @@
 // which pane was showing when each key went in, a fake clock stands in for every wait, and no
 // cleanroom, terminal, network, or credential is involved.
 import { describe, it, expect } from 'vitest';
-import { SCREENS, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
+import { SCREENS, commandFor, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
 
 const RUN_ID = '2611091430';
 const RUN_DIR = `/var/tmp/cleanroom/${RUN_ID}/run`;
@@ -129,7 +129,8 @@ describe('scripted leg: starting', () => {
 
 describe('scripted leg: the target', () => {
   const typed = async (env: Record<string, string> = {}) => {
-    const h = harness(HAPPY, {}, env);
+    const panes = HAPPY.map((pane) => (pane === PANES.starting ? `owner@cleanroom:~$ ${commandFor(env)}` : pane));
+    const h = harness(panes, {}, env);
     await h.run();
     return h.tmux.sends.find((s) => s.pane === PANES.prompt)?.text;
   };
@@ -146,14 +147,16 @@ describe('scripted leg: the target', () => {
     );
   });
 
-  it('moves the target only when told to', async () => {
-    expect(await typed({ GATE_HOST: 'x.example.org', GATE_ZONE: 'example.org' })).toBe('npm create cairn-site -- --host x.example.org --zone example.org');
+  it('knows the screen while a long command wraps across lines', () => {
+    const command = '/var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org --zone carin-test.org';
+    const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org\n--zone carin-test.org';
+    expect(identify(wrapped, command)?.name).toBe('starting');
+    expect(identify(`${wrapped}\nowner@cleanroom:~$`, command)?.name).toBe('shell');
   });
 
-  it('knows the screen while a long command wraps across lines', () => {
-    const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org\n--zone carin-test.org';
-    expect(identify(wrapped)?.name).toBe('starting');
-    expect(identify(`${wrapped}\nowner@cleanroom:~$`)?.name).toBe('shell');
+  it('calls a screen it does not know unknown while the typed command is still above it', () => {
+    expect(identify(`owner@cleanroom:~$ ${START}\nSomething nobody planned\nwith no screen of its own`)).toBeNull();
+    expect(identify(`owner@cleanroom:~$ ${START}\nnpm error code E404`)).toBeNull();
   });
 });
 

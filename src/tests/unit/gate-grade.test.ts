@@ -2,8 +2,8 @@
 // sentence, the permission prompt's command, the over-10 and overhead flags, each deploy phase and
 // the HTTPS wait, splits provider waits from agent time, fails the timing check naming a gap, diffs
 // against the last record, fails a mailbox error and a wrong candidate, and fails a scan match.
-import { describe, it, expect, afterEach } from 'vitest';
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { findSignInMessage } from '../../../scripts/gate/mail.mjs';
@@ -251,6 +251,22 @@ describe('the end-state checks and the outcome', () => {
     };
     await expect(grade({ runDir: run.runDir, deps })).rejects.toThrow('scan crashed');
     await expect(stat(path.join(run.home, '.local', 'share', 'keyrings'))).rejects.toThrow();
+  });
+
+  it('keeps the record and says so when the clean room user owns the keyrings', async () => {
+    const run = await makeRun();
+    const keyrings = path.join(run.home, '.local', 'share', 'keyrings');
+    await chmod(keyrings, 0o500);
+    const said = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const written = await grade({ runDir: run.runDir, deps: run.deps });
+      expect(written.id).toBeDefined();
+      expect(said).toHaveBeenCalledWith(expect.stringContaining('left'));
+      await expect(stat(path.join(run.runDir, 'run-record.json'))).resolves.toBeDefined();
+    } finally {
+      said.mockRestore();
+      await chmod(keyrings, 0o700);
+    }
   });
 });
 

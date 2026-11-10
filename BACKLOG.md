@@ -292,6 +292,21 @@
   Placement: engine batch; a `tool/` change, with the credentials page.
 
 ## Low
+- [ ] **#425** `scripts/release/bump.mjs` drops its version argument when no `--date` is given `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-09)*
+  `main()` picks the version with `args.find((a, i) => !a.startsWith('--') && i !== dateAt + 1)`, and with no `--date` `dateAt` is -1, so index 0 is skipped and `node scripts/release/bump.mjs 0.99.0-rc.5` answers `"" is not a version`. A cut passes `--date` to work around it. Fix: skip index `dateAt + 1` only when `dateAt >= 0`, and test the no-flag call.
+  Placement: the next pass that touches `scripts/release/`, which is a held path.
+- [ ] **#426** `bump.mjs` moves `packages/create-cairn-site` off its manifest in the lockfile `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-09)*
+  The lockfile step replaces every `"version": "<current>"` line and requires exactly four, and one of the four is the launcher's workspace entry, which versions with the Go tool. A cut therefore bumps that entry to the engine version while `packages/create-cairn-site/package.json` stays put. Installs are unaffected, and the next `npm install` shows a diff. Fix: leave the launcher's entry out and expect three.
+  Placement: with #425.
+- [ ] **#427** Say how an agent runs `cairn` outside a sandbox that does not exclude it `#improvement` `#cairn-cms` `#docs` `#initiative:cairn-setup` *(2026-11-09)*
+  Round one's naive agent read "Run `cairn` outside the sandbox", could not find how, and stopped to ask the owner to pick between two options, which cost two owner turns before it ran anything. The agent page and the setup skill say what to run and that an option before the package name keeps the call sandboxed, and not what to do when the session sandboxes commands and nothing excludes this one. Decide what the page may say about Claude Code's exclusion list and its per-call override, then write it.
+  Placement: round two, if a rerun's agent stops at the same point.
+- [ ] **#428** `cleanroom` has no step that removes a home's keyrings as the clean room's user `#improvement` `#workstation` `#harness` `#initiative:cairn-setup` *(2026-11-09)*
+  `run-gate.sh grade` deletes the home's keyrings last, and under the `cleanroom` Unix user the directory is not the caller's to remove, so `grade` now reports that it left them. A `_child <name> keyrings` step, with a public form `grade` calls, would remove them as the user. The change touches `cleanroom`'s user code, which goes to Geoff.
+  Placement: glw907/workstation, with the next `cleanroom` change.
+- [ ] **#429** The fast lane's classifier runs no `test:emit` for a change under `plugins/` `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-09)*
+  A skill edit in `plugins/cairn/skills/` named a flag the Go tool lacks, and the `test:emit` check that catches it ran only in CI (the red on PR #216). `scripts/checks/gate-table.json` selects `test:emit` only through its showcase, engine, and harness buckets, and a plugin `SKILL.md` falls only in the docs bucket (`**/*.md`). Fix: add a bucket for `plugins/**` to `gate-table.json` and `pass-gate-tiers.md`.
+  Placement: the next pass that touches `scripts/checks/`, which is a runner path.
 - [ ] **#422** Check a supplied Cloudflare token's status before a token run creates anything `#improvement` `#cairn-cms` `#security` `#initiative:cairn-setup` *(2026-11-09)*
   A token run emits the approval step's done event with no check (`tool/internal/setup/approvals.go`, `useToken`), where the OAuth path checks its scope. An expired token, one with too few permissions, or one limited to the owner's IP address (which works locally and fails in Actions) is found partway through, after resources exist. Proposed: after the account is known, call `GET /accounts/{id}/tokens/verify`, refuse a token that is not active, and have the docs mention IP filtering. Found by the setup-tooling-2 security read.
   Placement: the next pass that touches the token option.

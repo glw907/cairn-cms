@@ -152,8 +152,8 @@ describe('scripted leg: the target', () => {
   it('sets the gate subdomain on the summary, and never leaves the bare domain', async () => {
     const h = harness(HAPPY);
     await h.run();
-    const atSummary = h.tmux.sends.filter((s) => s.pane === PANES.summary).map((s) => s.text);
-    expect(atSummary).toEqual(['<a>', '<C-u>', 'gate.carin-test.org', '<Enter>']);
+    expect(h.tmux.sends.filter((s) => s.pane === PANES.summary).map((s) => s.text)).toEqual(['<a>']);
+    expect(h.tmux.sends.filter((s) => s.pane === PANES.summaryEditing).map((s) => s.text)).toEqual(['<C-u>', 'gate.carin-test.org', '<Enter>']);
     expect(h.tmux.sends.filter((s) => s.pane === PANES.summarySet).map((s) => s.text)).toEqual(['<Enter>']);
     expect(h.tmux.sends.some((s) => s.text === 'carin-test.org')).toBe(false);
   });
@@ -176,6 +176,33 @@ describe('scripted leg: the target', () => {
   it('calls a screen it does not know unknown while the typed command is still above it', () => {
     expect(identify(`owner@cleanroom:~$ ${START}\nSomething nobody planned\nwith no screen of its own`)).toBeNull();
     expect(identify(`owner@cleanroom:~$ ${START}\nnpm error code E404`)).toBeNull();
+  });
+});
+
+describe('scripted leg: the bare domain is never confirmed', () => {
+  const toSummary = HAPPY.slice(0, HAPPY.indexOf(PANES.summary));
+
+  it('sends nothing but the edit key at a summary that shows the bare domain, and fails when it will not edit', async () => {
+    const h = harness([...toSummary, PANES.summary]);
+    await expect(h.run()).rejects.toThrow(/did not take its answer/);
+    const atBare = h.tmux.sends.filter((s) => s.pane === PANES.summary).map((s) => s.text);
+    expect(atBare).toEqual(['<a>']);
+    expect(h.tmux.sends.some((s) => s.text === '<Enter>' && s.pane === PANES.summary)).toBe(false);
+  });
+
+  it('fails, and never presses Enter, when the bare domain comes back after the address was saved', async () => {
+    const h = harness([...toSummary, PANES.summary, PANES.summaryEditing, PANES.summary]);
+    await expect(h.run()).rejects.toThrow(/shows the bare domain again/);
+    expect(h.tmux.sends.filter((s) => s.pane === PANES.summary).map((s) => s.text)).toEqual(['<a>']);
+  });
+
+  it('confirms only a summary whose address row shows the gate subdomain', () => {
+    expect(identify(PANES.summary)?.name).toBe('summary');
+    expect(identify(PANES.summarySet)?.name).toBe('summary-set');
+    expect(identify(PANES.summaryEditing)?.name).toBe('summary-editing');
+    const answer = (name: string) => SCREENS.find((s: { name: string }) => s.name === name)!.answer!({ name: 'n', email: 'e', command: 'c' }, '');
+    expect(answer('summary')).toEqual([{ key: 'a' }]);
+    expect(answer('summary-set')).toEqual([{ key: 'Enter' }]);
   });
 });
 
@@ -205,9 +232,9 @@ describe('scripted leg: answers', () => {
       { text: '<Down>', pane: PANES.domain },
       { text: '<Enter>', pane: PANES.domain },
       { text: '<a>', pane: PANES.summary },
-      { text: '<C-u>', pane: PANES.summary },
-      { text: 'gate.carin-test.org', pane: PANES.summary },
-      { text: '<Enter>', pane: PANES.summary },
+      { text: '<C-u>', pane: PANES.summaryEditing },
+      { text: 'gate.carin-test.org', pane: PANES.summaryEditing },
+      { text: '<Enter>', pane: PANES.summaryEditing },
       { text: '<Enter>', pane: PANES.summarySet },
       { text: '<Enter>', pane: PANES.browserOpen },
     ]);
@@ -218,7 +245,7 @@ describe('scripted leg: answers', () => {
     const result = await h.run();
     expect(result.ok).toBe(true);
     expect(h.events.map((e) => e.screen)).toEqual([
-      'shell', 'starting', 'npx', 'welcome', 'name', 'crawlers', 'email', 'domain', 'summary', 'summary-wait', 'summary-set', 'summary-wait', 'browser-open', 'browser-wait', 'watch', 'done',
+      'shell', 'starting', 'npx', 'welcome', 'name', 'crawlers', 'email', 'domain', 'summary', 'summary-editing', 'summary-set', 'summary-wait', 'browser-open', 'browser-wait', 'watch', 'done',
     ]);
   });
 

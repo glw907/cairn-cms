@@ -62,6 +62,8 @@ export function chooseRow(pane, target, step) {
 export const LIMIT_MS = 20 * 60 * 1000;
 /** The gap between looks at the pane. */
 const POLL_MS = 500;
+/** How long a screen may stay unchanged after it was answered before the leg calls it stuck. */
+export const ANSWER_MS = 60_000;
 /** How long an unrecognised pane may stay unchanged before it is called an unknown screen. */
 const UNKNOWN_MS = 15_000;
 const PASTE_ON = '\x1b[200~';
@@ -98,11 +100,14 @@ export const SCREENS = [
   { name: 'watch', test: (p) => /^\s*Setting up /m.test(p), answer: null },
   { name: 'browser-wait', test: (p) => /Approve each request in the setup tab/.test(p), answer: null },
   { name: 'browser-open', test: (p) => /Approve setup in your browser/.test(p) && /open your browser/.test(p), answer: () => enter },
-  // The address is typed on the summary: `a` opens it filled with the zone, Ctrl+U clears it, and
-  // Enter saves. Setup rechecks the address, and only then does the second screen answer Enter.
+  // The address is typed on the summary: `a` opens it filled with the zone, then Ctrl+U clears it and
+  // Enter saves. Setup rechecks the address, and only a summary that shows the subdomain is confirmed.
   { name: 'summary-set', test: (p) => /Review the settings for /.test(p) && /Enter set up/.test(p) && ADDRESS_SET.test(p), answer: () => enter },
-  { name: 'summary', test: (p) => /Review the settings for /.test(p) && /Enter set up/.test(p), answer: () => [{ key: 'a' }, { key: 'C-u' }, { type: HOST }, ...enter] },
-  // The address is open for editing, or Enter was sent: the screen takes no key until it changes.
+  // The edit opens only once the pane shows it open, so no Enter is ever sent while the summary is
+  // still unedited: an Enter there would confirm the bare domain.
+  { name: 'summary-editing', test: (p) => /Review the settings for /.test(p) && /Enter save/.test(p), answer: () => [{ key: 'C-u' }, { type: HOST }, ...enter] },
+  { name: 'summary', test: (p) => /Review the settings for /.test(p) && /Enter set up/.test(p), answer: () => [{ key: 'a' }] },
+  // Enter was sent, or the summary is otherwise waiting: the screen takes no key until it changes.
   { name: 'summary-wait', test: (p) => /Review the settings for /.test(p), answer: null },
   { name: 'email', test: (p) => /Setup can't read your email from a Cloudflare token/.test(p), answer: ({ email }) => [{ paste: email }, ...enter] },
   { name: 'crawlers', test: (p) => /Choose whether AI companies/.test(p), answer: () => enter },
@@ -224,6 +229,8 @@ export async function runScripted({ runDir, env, deps }) {
   let reached = 'start';
   let last = null;
   let typed = false;
+  let answeredPane = '';
+  let answeredAt = 0;
   let unknownText = null;
   let unknownSince = 0;
   try {
@@ -244,6 +251,9 @@ export async function runScripted({ runDir, env, deps }) {
           if (screen.name === 'shell' && typed) {
             throw new ScriptedError(`the command ended and the pane is back at the shell prompt; it reached step "${reached}":\n${pane.trim()}`, reached);
           }
+          if (screen.name === 'summary' && steps.includes('summary-editing')) {
+            throw new ScriptedError(`the summary shows the bare domain again after the address was saved, so setup refused it; it was not confirmed:\n${pane.trim()}`, reached);
+          }
           last = screen.name;
           reached = screen.name;
           steps.push(screen.name);
@@ -256,9 +266,13 @@ export async function runScripted({ runDir, env, deps }) {
               else await send('-l', op.type);
             }
             if (screen.name === 'shell') typed = true;
+            answeredPane = pane;
+            answeredAt = deps.now();
           }
           await deps.record({ at: new Date(deps.now()).toISOString(), screen: screen.name, action: screen.answer ? 'answered' : 'seen' });
           if (screen.end === 'done') return { ok: true, steps };
+        } else if (screen.answer && pane === answeredPane && deps.now() - answeredAt >= ANSWER_MS) {
+          throw new ScriptedError(`the "${screen.name}" screen did not take its answer in ${ANSWER_MS / 1000} seconds:\n${pane.trim()}`, reached);
         }
       } else if (pane.trim() !== '') {
         if (pane !== unknownText) {

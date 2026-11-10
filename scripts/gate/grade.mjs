@@ -631,7 +631,13 @@ export async function grade({ runDir, deps, end }) {
       await copyFile(jsonFile, path.join(provingDir, `${id}.json`));
     }
   } finally {
-    await rm(path.join(home, '.local', 'share', 'keyrings'), { recursive: true, force: true });
+    // The clean room's user owns the keyrings, and the caller cannot remove them: report that and
+    // keep the record, which `cleanroom init <name> --fresh --discard` clears with the home.
+    const keyrings = path.join(home, '.local', 'share', 'keyrings');
+    await rm(keyrings, { recursive: true, force: true }).catch((error) => {
+      if (error?.code !== 'EACCES' && error?.code !== 'EPERM') throw error;
+      console.error(`grade: left ${keyrings} in place (${error.code}); the clean room's user owns it`);
+    });
   }
   return written;
 }

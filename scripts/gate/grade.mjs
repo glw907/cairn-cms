@@ -19,8 +19,14 @@ import { findSignInMessage } from './mail.mjs';
 
 const execFileAsync = promisify(execFile);
 
-/** The address the proving runs serve at, read through `gateFetch`. */
-export const LIVE_ORIGIN = 'https://carin-test.org';
+/**
+ * The address the proving runs serve at, read through `gateFetch`: the gate subdomain, never the bare
+ * domain, whose apex holds the mail records and where any record is a standing stop. The scripted
+ * leg sets this address up, and the naive owner card gives it to the agent.
+ */
+export const LIVE_ORIGIN = 'https://gate.carin-test.org';
+/** How long the grader waits for the sign-in email to reach the gate mailbox. */
+const MAIL_WAIT_MS = 60_000;
 /** The mailbox that owns every proving site. */
 const DEFAULT_OWNER_EMAIL = 'cairn-gate@probe.907.life';
 /** Setup steps that wait on a provider, so their minutes are never the agent's. */
@@ -428,9 +434,20 @@ export async function grade({ runDir, deps, end }) {
   // Installed versions, against the candidate the run recorded.
   const installed = await npxVersions(home).catch(() => /** @type {{ launcher?: string, platform?: string }} */ ({}));
   note('npx cache', Boolean(installed.launcher && installed.platform), `launcher ${installed.launcher ?? 'missing'}, platform ${installed.platform ?? 'missing'}`);
-  const repoOwner = registry?.github?.repo?.owner;
-  const repoName = registry?.github?.repo?.repo;
+  let repoOwner = registry?.github?.repo?.owner;
+  let repoName = registry?.github?.repo?.repo;
   const token = env.GITHUB_TEST_TOKEN;
+  // A finished setup keeps no registry record, so the repository is found from the run: it is the site
+  // name's slug, on the test account the token belongs to.
+  if (!repoName) repoName = siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  if (!repoOwner && token) {
+    try {
+      const me = await githubFetch('https://api.github.com/user', { headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'cairn-gate-grade' } });
+      if (me.status === 200) repoOwner = /** @type {any} */ (await me.json()).login;
+    } catch {
+      // The read of the repository below reports the miss.
+    }
+  }
   /** @param {string} route @returns {Promise<any>} */
   const github = async (route) => {
     if (!token || !repoOwner || !repoName) throw new Error('no token or repository to read');
@@ -451,8 +468,9 @@ export async function grade({ runDir, deps, end }) {
   const candidate = harness.candidate ?? {};
   const mismatches = [
     ...(candidate.engine && engine !== candidate.engine ? [`engine ${engine ?? 'unread'} is not ${candidate.engine}`] : []),
-    ...(candidate.tool && installed.launcher !== candidate.tool ? [`launcher ${installed.launcher ?? 'unread'} is not ${candidate.tool}`] : []),
-    ...(candidate.tool && installed.platform !== candidate.tool ? [`platform ${installed.platform ?? 'unread'} is not ${candidate.tool}`] : []),
+    // A local build runs a binary, not an npx-installed launcher, so only the engine pin is compared.
+    ...(candidate.tool && !harness.local && installed.launcher !== candidate.tool ? [`launcher ${installed.launcher ?? 'unread'} is not ${candidate.tool}`] : []),
+    ...(candidate.tool && !harness.local && installed.platform !== candidate.tool ? [`platform ${installed.platform ?? 'unread'} is not ${candidate.tool}`] : []),
   ];
   const versionsOk = Boolean(candidate.engine && candidate.tool) && mismatches.length === 0;
 
@@ -495,10 +513,13 @@ export async function grade({ runDir, deps, end }) {
       password: env.STALWART_PASSWORD_CAIRN_GATE ?? '',
       siteName,
       owner,
-      sinceMs: Number.isNaN(goalAt) ? 0 : goalAt,
+      // A scripted run has no transcript, so its mail is read from the run's start. The wait is
+      // real: setup sends the sign-in email as its last step, and a read of the mailbox the instant
+      // the leg ends can come before it lands.
+      sinceMs: Number.isNaN(goalAt) ? (Number.isNaN(ms(String(harness.begin ?? ''))) ? 0 : ms(String(harness.begin))) : goalAt,
       expectedOrigin: LIVE_ORIGIN,
-      budgetMs: 1,
-      intervalMs: 1,
+      budgetMs: MAIL_WAIT_MS,
+      intervalMs: 3000,
     });
     mail = found.found ? { ok: true, evidence: `a "Sign in to ${siteName}" message from ${found.from} reached the mailbox` } : { ok: false, evidence: `no sign-in mail: ${found.reason}`.slice(0, 200) };
   } catch (error) {
@@ -576,7 +597,12 @@ export async function grade({ runDir, deps, end }) {
   else if (stateName.startsWith('stopped:')) outcome = { result: 'fail', reason: 'other', detail: `the watcher ended the run as ${stateName}` };
   else {
     const failedChecks = Object.entries(endState).filter(([, check]) => !check.ok).map(([key]) => key);
-    const detail = [...failedChecks.map((key) => `end-state check ${key} failed`), ...(timing.ok ? [] : [`timing check failed: ${timing.evidence}`]), ...failedReads.map((read) => `read ${read.name} failed: ${read.evidence}`)];
+    // A scripted run has no agent transcript, session state, or setup events to time, so it is judged on
+    // the end state and on reaching the done screen.
+    const scriptedText = harness.leg === 'scripted' ? await readFile(path.join(runDir, 'scripted.jsonl'), 'utf8').catch(() => '') : null;
+    const detail = scriptedText !== null
+      ? [...failedChecks.map((key) => `end-state check ${key} failed`), ...(/"screen":"done"/.test(scriptedText) ? [] : ['the scripted leg never reached the done screen'])]
+      : [...failedChecks.map((key) => `end-state check ${key} failed`), ...(timing.ok ? [] : [`timing check failed: ${timing.evidence}`]), ...failedReads.map((read) => `read ${read.name} failed: ${read.evidence}`)];
     if (detail.length > 0) outcome = { result: 'fail', reason: 'other', detail: detail.join('; ') };
   }
 

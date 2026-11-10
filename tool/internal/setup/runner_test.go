@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -1634,6 +1635,73 @@ func TestOneFailurePerProviderStopsResumably(t *testing.T) {
 		}
 		assertCreatedOnce(t, w)
 	})
+}
+
+// A resolver asked for a host the zone does not have yet caches "no such host" for the zone's
+// negative TTL, so the site is not asked until the zone's nameserver has every address (scripted run
+// 2611101829: the site was live and the wait still timed out).
+func TestTheSiteIsNotAskedUntilTheZoneNameserverHasTheHost(t *testing.T) {
+	w := newWorld(t)
+	asked := map[string]int{}
+	w.authority = func(host string) ([]net.IP, error) {
+		asked[host]++
+		if asked[host] <= 3 {
+			return nil, &net.DNSError{Err: "no such host", Name: host, IsNotFound: true}
+		}
+		return []net.IP{net.ParseIP("2606:4700::1")}, nil
+	}
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	firstSite := slices.IndexFunc(w.log, func(s string) bool { return strings.HasPrefix(s, "site:") })
+	lastAuthority := -1
+	for i, l := range w.log {
+		if strings.HasPrefix(l, "authority:") {
+			lastAuthority = i
+		}
+	}
+	if firstSite < 0 || lastAuthority < 0 || lastAuthority > firstSite {
+		t.Errorf("the site was asked at log index %d before the nameserver's last answer at %d: %v", firstSite, lastAuthority, w.log)
+	}
+	for host, n := range asked {
+		if n != 4 {
+			t.Errorf("the nameserver was asked %d times for %s, want 4 (three absent, one present)", n, host)
+		}
+	}
+	if len(asked) != 2 {
+		t.Errorf("asked for %v, want the bare domain and www", asked)
+	}
+}
+
+func TestANameserverThatCannotBeAskedDoesNotBlockTheSiteWait(t *testing.T) {
+	w := newWorld(t)
+	calls := 0
+	w.authority = func(string) ([]net.IP, error) {
+		calls++
+		return nil, errors.New("test: nameserver unreachable")
+	}
+	if _, err := w.run(context.Background()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if calls != 1 {
+		t.Errorf("the nameserver was asked %d times, want once before the site wait took over", calls)
+	}
+}
+
+func TestTheNameserverWaitEndsAtTheHTTPSLimit(t *testing.T) {
+	w := newWorld(t)
+	w.siteLive = false
+	w.authority = func(host string) ([]net.IP, error) {
+		return nil, &net.DNSError{Err: "no such host", Name: host, IsNotFound: true}
+	}
+	start := w.clock.Now()
+	_, err := w.run(context.Background())
+	if f := failureOf(t, err); f.Reason != ReasonHTTPSTimeout {
+		t.Fatalf("reason = %s, want the HTTPS timeout", f.Reason)
+	}
+	if waited := w.clock.Now().Sub(start); waited < HTTPSLimit || waited > HTTPSLimit+2*pollEvery {
+		t.Errorf("waited %v, want the 15-minute limit counted across the nameserver and the site", waited)
+	}
 }
 
 func TestTheHTTPSWaitStopsAtFifteenMinutes(t *testing.T) {

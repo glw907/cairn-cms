@@ -304,7 +304,10 @@ func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 	case phaseSummary:
 		cmd, confirmed := m.summary.Key(msg, m.width)
 		if confirmed {
-			return replyEdit(m.summaryReply, m.summary.Edit())
+			e := m.summary.Edit()
+			// The watch names the address the owner set, not the one the summary opened with.
+			m.sum.Addresses = addressesFor(m.sum, e.Host)
+			return replyEdit(m.summaryReply, e)
 		}
 		return cmd
 	case phaseWelcome:

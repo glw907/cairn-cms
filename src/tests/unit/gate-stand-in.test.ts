@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { UnrecognisedPageError } from '../../../scripts/gate/browser.mjs';
-import { TAB_PAGES, followTab } from '../../../scripts/gate/stand-in.mjs';
+import { TAB_PAGES, followTab, tabHeading } from '../../../scripts/gate/stand-in.mjs';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..', '..');
 const SITE = 'https://gate-site.example.workers.dev';
@@ -34,7 +34,7 @@ const FIXTURES: Record<string, Fixture> = {
     h1: 'Select API Tokens: Write',
     controls: [{ role: 'link', name: 'Try again', goto: 'admin' }],
   },
-  done: { url: 'http://127.0.0.1:4100/done.html', h1: 'Approvals complete', text: 'Keep this tab open.' },
+  done: { url: 'http://127.0.0.1:4100/done.html', h1: '✓Approvals complete', text: 'Keep this tab open.' },
   confirm: {
     url: `${SITE}/admin/auth/confirm?token=SECRET-TOKEN`,
     h1: 'Confirm sign-in',
@@ -284,10 +284,23 @@ describe('the tab page kinds', () => {
     for (const [name, entry] of Object.entries(TAB_PAGES)) {
       if (!entry) continue;
       const fixture = FIXTURES[entry.kind]!;
-      expect(entry.heading.test(fixture.h1!), name).toBe(true);
+      expect(entry.heading.test(tabHeading(fixture.h1!)), name).toBe(true);
       expect(entry.control === null ? undefined : fixture.controls?.[0]?.name, name).toSatisfy((controlName?: string) => (entry.control ? entry.control.name.test(controlName ?? '') : controlName === undefined));
     }
     const pagesDir = path.join(REPO, 'tool/internal/setup/loopback/pages');
+    // Every page's real <h1> text, tags dropped and glyphs kept, as the browser's innerText reads it,
+    // is a heading the stand-in knows once its leading glyph is stripped (run 2611101829: the done page's
+    // check mark made it an unknown page, and the stand-in failed after two minutes).
+    const unknown: string[] = [];
+    // These stop the setup, so the stand-in is meant to fail on them rather than click through.
+    const stops = new Set(['oldbrowser.html', 'otherbrowser.html', 'stopped.html']);
+    for (const file of (await readdir(pagesDir)).filter((name) => name.endsWith('.html') && !stops.has(name))) {
+      const h1 = /<h1[^>]*>([\s\S]*?)<\/h1>/.exec(await readFile(path.join(pagesDir, file), 'utf8'))?.[1];
+      if (!h1) continue;
+      const heading = tabHeading(h1.replace(/<[^>]+>/g, ''));
+      if (!Object.values(TAB_PAGES).some((entry) => entry && entry.heading.test(heading))) unknown.push(`${file}: ${heading}`);
+    }
+    expect(unknown).toEqual([]);
     const consent = await readFile(path.join(pagesDir, 'consent.html'), 'utf8');
     expect(consent).toContain('<h1>Approve setup on Cloudflare</h1>');
     expect(consent).toContain('>Continue to Cloudflare</a>');

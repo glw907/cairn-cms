@@ -20,6 +20,17 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **`cairn new` no longer times out on a site that is already live, and its progress screen names the
+  address you chose.** After it attaches the domain, setup asks the zone's nameserver for each address
+  before it makes the first request to the site. A resolver that is asked for a host the zone doesn't have
+  yet keeps that answer for the zone's negative TTL, 30 minutes on Cloudflare, so an early request left
+  setup unable to see a site that was serving over HTTPS, and the 15-minute wait ended in a timeout. The
+  wait counts inside the same 15 minutes, and setup goes on to the ordinary check if the nameserver can't
+  be asked. The progress step reads "Connect gate.example.org" when you set a subdomain on the summary, where
+  it showed the bare domain.
+
+  Consumers must: nothing.
+
 - **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
 - **The admin docs describe `cairn new`.** `before-you-start`, `create-your-site`, `own-your-domain`, `setup-recovery`, `troubleshooting`, and `credentials` are rebuilt for the new setup, and four pages are new: `set-up-with-an-agent`, `deploys`, `suggested-plugins`, and the generated `setup-reference`. The agent page is also embedded in the `cairn` binary, and a test fails when the copy drifts.

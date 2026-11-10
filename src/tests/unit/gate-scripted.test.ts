@@ -2,14 +2,13 @@
 // which pane was showing when each key went in, a fake clock stands in for every wait, and no
 // cleanroom, terminal, network, or credential is involved.
 import { describe, it, expect } from 'vitest';
-import { SCREENS, commandFor, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
+import { SCREENS, chooseRow, commandFor, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
 
 const RUN_ID = '2611091430';
 const RUN_DIR = `/var/tmp/cleanroom/${RUN_ID}/run`;
 const SESSION = `cleanroom-${RUN_ID}-scripted`;
 const OWNER = 'cairn-gate@probe.907.life';
-const TARGET = '--host gate.carin-test.org --zone carin-test.org';
-const START = `npm create cairn-site -- ${TARGET}`;
+const START = 'npm create cairn-site';
 const PASTE_ON = '\x1b[200~';
 const PASTE_OFF = '\x1b[201~';
 
@@ -22,7 +21,10 @@ const PANES = {
   name: 'About your site\n\nSite name\nShown at the top of every page.\n>',
   crawlers: 'About your site\n\nSite name  Cairn gate\n\nAI crawlers\nChoose whether AI companies can use your content to train their models.\n> Block AI training',
   email: "About your site\n\nYour email\nSetup can't read your email from a Cloudflare token. The admin sends your sign-in links to this address.\n>",
-  summary: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\n\nenter set up  e edit email',
+  domain: 'Choose a domain\n\nDomain\n3 domains on your Cloudflare account\n> alpha.example.org\n  carin-test.org\n  zeta.example.net\n\n↑↓ choose · Enter next',
+  summary: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\nAddress  carin-test.org and www.carin-test.org\n\nEnter set up · e edit email · a edit address · Ctrl+C quit',
+  summaryEditing: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\nAddress  > gate.carin-test.org\n\nEnter save · Esc cancel',
+  summarySet: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\nAddress  gate.carin-test.org\n\nEnter set up · e edit email · a edit address · Ctrl+C quit',
   summarySent: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\n\nq quit',
   browserOpen: 'Approve setup in your browser\n\nSetup opens a tab in your browser.\n\nenter open your browser  q quit',
   browserWait: 'Approve setup in your browser\n\nApprove each request in the setup tab.\n\nctrl+c stop',
@@ -34,27 +36,29 @@ const PANES = {
 
 type Send = { text: string; pane: string };
 
-/** A tmux that serves the sequence one pane per look, then holds the last pane. */
+/**
+ * A tmux that serves the sequence one pane per poll, then holds the last pane. The pane moves on
+ * when the leg sleeps between polls, so a second read in the same poll (the check after a
+ * screenshot) sees the same pane, as a real terminal would.
+ */
 function fakeTmux(panes: string[]) {
-  let looked = -1;
+  let looked = 0;
   const sends: Send[] = [];
   const calls: string[][] = [];
   const run = async (args: string[]) => {
     calls.push(args);
     const verb = args[2];
     if (verb === 'has-session') return '';
-    if (verb === 'capture-pane') {
-      looked = Math.min(looked + 1, panes.length - 1);
-      return panes[looked]!;
-    }
+    if (verb === 'capture-pane') return panes[looked]!;
     if (verb === 'send-keys') {
       const lit = args.includes('-l');
-      sends.push({ text: lit ? args[args.length - 1]! : `<${args[args.length - 1]}>`, pane: panes[Math.max(looked, 0)]! });
+      sends.push({ text: lit ? args[args.length - 1]! : `<${args[args.length - 1]}>`, pane: panes[looked]! });
       return '';
     }
     throw new Error(`unexpected tmux ${verb}`);
   };
-  return { run, sends, calls };
+  const tick = () => void (looked = Math.min(looked + 1, panes.length - 1));
+  return { run, sends, calls, tick };
 }
 
 function fakeClock() {
@@ -83,7 +87,11 @@ function harness(panes: string[], extra: Record<string, unknown> = {}, env: Reco
       return { kill() {} };
     },
     record: (event: Record<string, unknown>) => void events.push(event),
-    ...clock,
+    now: clock.now,
+    sleep: async (ms: number) => {
+      tmux.tick();
+      await clock.sleep(ms);
+    },
     ...extra,
   };
   const run = () => runScripted({ runDir: RUN_DIR, env: { HOME: '/home/owner', ...env }, deps });
@@ -104,7 +112,11 @@ const HAPPY = [
   PANES.crawlers,
   PANES.email,
   PANES.email,
+  PANES.domain,
+  PANES.domain,
   PANES.summary,
+  PANES.summaryEditing,
+  PANES.summarySet,
   PANES.summarySent,
   PANES.browserOpen,
   PANES.browserWait,
@@ -121,6 +133,8 @@ describe('scripted leg: starting', () => {
     const shell = h.shells[0]!;
     expect(shell.args.slice(0, 6)).toEqual(['shell', RUN_ID, '--tmux', SESSION, '--socket', '/home/owner/.local/state/cleanroom/tmux-scripted.sock']);
     expect(shell.args).toContain('CF_WS_CAIRN_CLEANROOM_TOKEN:CAIRN_CF_SETUP_TOKEN');
+    // The tag reaches the shell itself, since a local binary has no npm to export it.
+    expect(shell.args.slice(shell.args.indexOf('--env'))).toEqual(['--env', 'npm_config_tag=gate']);
     expect(shell.env.npm_config_tag).toBe('gate');
     const socket = '/home/owner/.local/state/cleanroom/tmux-scripted.sock';
     expect(h.tmux.calls.every((c) => c[0] === '-S' && c[1] === socket)).toBe(true);
@@ -135,21 +149,34 @@ describe('scripted leg: the target', () => {
     return h.tmux.sends.find((s) => s.pane === PANES.prompt)?.text;
   };
 
-  it('targets the gate subdomain by default, never the bare domain', async () => {
-    const text = await typed();
-    expect(text).toBe('npm create cairn-site -- --host gate.carin-test.org --zone carin-test.org');
-    expect(text).not.toMatch(/--host carin-test\.org/);
+  it('types the launcher with no address flags, since the interactive command takes none', async () => {
+    expect(await typed()).toBe('npm create cairn-site');
   });
 
-  it('runs the local build with the same target when one is handed in', async () => {
-    expect(await typed({ GATE_CAIRN_BIN: '/var/tmp/cleanroom/2611091430/cairn' })).toBe(
-      '/var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org --zone carin-test.org',
-    );
+  it('runs the local build the same way when one is handed in', async () => {
+    expect(await typed({ GATE_CAIRN_BIN: '/var/tmp/cleanroom/2611091430/cairn' })).toBe('/var/tmp/cleanroom/2611091430/cairn new');
+  });
+
+  it('sets the gate subdomain on the summary, and never leaves the bare domain', async () => {
+    const h = harness(HAPPY);
+    await h.run();
+    expect(h.tmux.sends.filter((s) => s.pane === PANES.summary).map((s) => s.text)).toEqual(['<a>']);
+    expect(h.tmux.sends.filter((s) => s.pane === PANES.summaryEditing).map((s) => s.text)).toEqual(['<C-u>', 'gate.carin-test.org', '<Enter>']);
+    expect(h.tmux.sends.filter((s) => s.pane === PANES.summarySet).map((s) => s.text)).toEqual(['<Enter>']);
+    expect(h.tmux.sends.some((s) => s.text === 'carin-test.org')).toBe(false);
+  });
+
+  it('moves the domain selection to the zone before Enter, up or down', () => {
+    const list = (selected: string) => `Choose a domain\n\nDomain\n3 domains\n${['alpha.example.org', 'carin-test.org', 'zeta.example.net'].map((d) => (d === selected ? `> ${d}` : `  ${d}`)).join('\n')}\n`;
+    expect(chooseRow(list('alpha.example.org'), 'carin-test.org', 'domain')).toEqual([{ key: 'Down' }, { key: 'Enter' }]);
+    expect(chooseRow(list('zeta.example.net'), 'carin-test.org', 'domain')).toEqual([{ key: 'Up' }, { key: 'Enter' }]);
+    expect(chooseRow(list('carin-test.org'), 'carin-test.org', 'domain')).toEqual([{ key: 'Enter' }]);
+    expect(() => chooseRow(list('alpha.example.org'), 'missing.example.org', 'domain')).toThrow(/offers no "missing.example.org" row/);
   });
 
   it('knows the screen while a long command wraps across lines', () => {
-    const command = '/var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org --zone carin-test.org';
-    const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org\n--zone carin-test.org';
+    const command = '/var/tmp/cleanroom/2611091430/cairn new';
+    const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn\nnew';
     expect(identify(wrapped, command)?.name).toBe('starting');
     expect(identify(`${wrapped}\nowner@cleanroom:~$`, command)?.name).toBe('shell');
   });
@@ -157,6 +184,56 @@ describe('scripted leg: the target', () => {
   it('calls a screen it does not know unknown while the typed command is still above it', () => {
     expect(identify(`owner@cleanroom:~$ ${START}\nSomething nobody planned\nwith no screen of its own`)).toBeNull();
     expect(identify(`owner@cleanroom:~$ ${START}\nnpm error code E404`)).toBeNull();
+  });
+});
+
+describe('scripted leg: a key goes only to the screen still showing', () => {
+  it('sends nothing to the browser screen when the domain screen replaces it during the screenshot', async () => {
+    // Run 2611101855: the browser screen showed for 0.4 seconds, the real-terminal screenshot took
+    // seconds, and the Enter meant for it accepted the domain screen's first row, 907.life.
+    const at = HAPPY.indexOf(PANES.domain);
+    const panes = [...HAPPY.slice(0, at), PANES.browserOpen, ...HAPPY.slice(at)];
+    let fired = false;
+    const box: { h?: ReturnType<typeof harness> } = {};
+    const shot = async (screen: string) => {
+      if (screen === 'browser-open' && !fired) {
+        fired = true;
+        box.h!.tmux.tick();
+      }
+    };
+    box.h = harness(panes, { shot });
+    await box.h.run();
+    const sends = box.h.tmux.sends;
+    expect(sends.filter((s) => s.pane === PANES.domain).map((s) => s.text)).toEqual(['<Down>', '<Enter>']);
+    const firstAtDomain = sends.findIndex((s) => s.pane === PANES.domain);
+    expect(sends.slice(0, firstAtDomain).some((s) => s.pane === PANES.browserOpen)).toBe(false);
+  });
+});
+
+describe('scripted leg: the bare domain is never confirmed', () => {
+  const toSummary = HAPPY.slice(0, HAPPY.indexOf(PANES.summary));
+
+  it('sends nothing but the edit key at a summary that shows the bare domain, and fails when it will not edit', async () => {
+    const h = harness([...toSummary, PANES.summary]);
+    await expect(h.run()).rejects.toThrow(/did not take its answer/);
+    const atBare = h.tmux.sends.filter((s) => s.pane === PANES.summary).map((s) => s.text);
+    expect(atBare).toEqual(['<a>']);
+    expect(h.tmux.sends.some((s) => s.text === '<Enter>' && s.pane === PANES.summary)).toBe(false);
+  });
+
+  it('fails, and never presses Enter, when the bare domain comes back after the address was saved', async () => {
+    const h = harness([...toSummary, PANES.summary, PANES.summaryEditing, PANES.summary]);
+    await expect(h.run()).rejects.toThrow(/shows the bare domain again/);
+    expect(h.tmux.sends.filter((s) => s.pane === PANES.summary).map((s) => s.text)).toEqual(['<a>']);
+  });
+
+  it('confirms only a summary whose address row shows the gate subdomain', () => {
+    expect(identify(PANES.summary)?.name).toBe('summary');
+    expect(identify(PANES.summarySet)?.name).toBe('summary-set');
+    expect(identify(PANES.summaryEditing)?.name).toBe('summary-editing');
+    const answer = (name: string) => SCREENS.find((s: { name: string }) => s.name === name)!.answer!({ name: 'n', email: 'e', command: 'c' }, '');
+    expect(answer('summary')).toEqual([{ key: 'a' }]);
+    expect(answer('summary-set')).toEqual([{ key: 'Enter' }]);
   });
 });
 
@@ -183,7 +260,13 @@ describe('scripted leg: answers', () => {
       { text: '<Enter>', pane: PANES.crawlers },
       { text: `${PASTE_ON}${OWNER}${PASTE_OFF}`, pane: PANES.email },
       { text: '<Enter>', pane: PANES.email },
-      { text: '<Enter>', pane: PANES.summary },
+      { text: '<Down>', pane: PANES.domain },
+      { text: '<Enter>', pane: PANES.domain },
+      { text: '<a>', pane: PANES.summary },
+      { text: '<C-u>', pane: PANES.summaryEditing },
+      { text: 'gate.carin-test.org', pane: PANES.summaryEditing },
+      { text: '<Enter>', pane: PANES.summaryEditing },
+      { text: '<Enter>', pane: PANES.summarySet },
       { text: '<Enter>', pane: PANES.browserOpen },
     ]);
   });
@@ -193,7 +276,7 @@ describe('scripted leg: answers', () => {
     const result = await h.run();
     expect(result.ok).toBe(true);
     expect(h.events.map((e) => e.screen)).toEqual([
-      'shell', 'starting', 'npx', 'welcome', 'name', 'crawlers', 'email', 'summary', 'browser-open', 'browser-wait', 'watch', 'done',
+      'shell', 'starting', 'npx', 'welcome', 'name', 'crawlers', 'email', 'domain', 'summary', 'summary-editing', 'summary-set', 'summary-wait', 'browser-open', 'browser-wait', 'watch', 'done',
     ]);
   });
 
@@ -221,6 +304,12 @@ describe('scripted leg: answers', () => {
 });
 
 describe('scripted leg: failures', () => {
+  it('fails when the command ends at once and the prompt shows again, though the screen before it was the shell', async () => {
+    const ended = `owner@cleanroom:~$ ${START}\ncairn: --plan is required with --zone.\nowner@cleanroom:~$`;
+    const h = harness([PANES.prompt, PANES.prompt, ended]);
+    await expect(h.run()).rejects.toThrow(/back at the shell prompt.*cairn: --plan is required/s);
+  });
+
   it('fails on a screen it does not know, naming it, and types nothing at it', async () => {
     const h = harness([PANES.prompt, PANES.starting, PANES.welcome, PANES.mystery]);
     await expect(h.run()).rejects.toThrow(/unknown screen "Something nobody planned"/);
@@ -276,7 +365,7 @@ describe('scripted leg: screens', () => {
   it('names each screen the owner meets in the setup tool, most advanced first', () => {
     expect(SCREENS.map((s: { name: string }) => s.name)).toEqual(expect.arrayContaining(['welcome', 'name', 'crawlers', 'email', 'summary', 'browser-open', 'done']));
     expect(identify(PANES.crawlers)?.name).toBe('crawlers');
-    expect(identify(PANES.summarySent)?.name).toBe('summary');
+    expect(identify(PANES.summarySent)?.name).toBe('summary-wait');
     expect(identify(PANES.mystery)).toBeNull();
   });
 });

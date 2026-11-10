@@ -2,9 +2,12 @@ package setup
 
 import (
 	"context"
+	"errors"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/scaffold"
@@ -401,6 +404,9 @@ func (r *run) domains(ctx context.Context) error {
 		}
 	}
 	deadline := r.cfg.Now().Add(HTTPSLimit)
+	if err := r.awaitAuthority(ctx, deadline); err != nil {
+		return err
+	}
 	for !r.siteAnswers(ctx) {
 		if !r.cfg.Now().Before(deadline) {
 			return r.failure(ReasonHTTPSTimeout, "The site didn't answer over HTTPS at "+r.host+" within 15 minutes.",
@@ -408,6 +414,35 @@ func (r *run) domains(ctx context.Context) error {
 		}
 		if err := r.pause(ctx, pollEvery); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// awaitAuthority holds the first request to the site until the zone's nameserver has each
+// address. A resolver asked for a host the zone does not have yet keeps that answer for the zone's
+// negative TTL (1800 seconds on Cloudflare), so an early request leaves this computer unable to see a
+// site that is already live, and the wait below ends in a timeout (scripted run 2611101829). It
+// returns nil when the nameserver cannot be asked or deadline passes, and the wait below takes over.
+func (r *run) awaitAuthority(ctx context.Context, deadline time.Time) error {
+	if r.cfg.Authority == nil || len(r.zone.NameServers) == 0 {
+		return nil
+	}
+	for _, host := range r.addresses {
+		for {
+			ips, err := r.cfg.Authority(ctx, r.zone.NameServers[0], host)
+			if len(ips) > 0 && err == nil {
+				break
+			}
+			if dnsErr, ok := errors.AsType[*net.DNSError](err); err != nil && (!ok || !dnsErr.IsNotFound) {
+				return nil
+			}
+			if !r.cfg.Now().Before(deadline) {
+				return nil
+			}
+			if err := r.pause(ctx, pollEvery); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

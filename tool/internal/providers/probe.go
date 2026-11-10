@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strings"
 )
 
 // Resolver is the DNS lookup surface Probe depends on, satisfied by *net.Resolver in production
@@ -18,7 +19,7 @@ type Resolver interface {
 	LookupIP(ctx context.Context, network, host string) ([]net.IP, error)
 }
 
-// AuthorityLookup asks nameserver directly for host's address records, bypassing the
+// AuthorityLookup asks nameserver directly for host's address records (A or AAAA), bypassing the
 // ordinary recursive resolver and its negative cache: the read diagnoseUnreachable
 // (as the retired Node wizard did) performs to tell a record that
 // already exists at the zone's authority from one that has not propagated there at all.
@@ -149,8 +150,10 @@ func (p *Probe) LookupAuthoritative(ctx context.Context, nameserver, host string
 // defaultAuthorityLookup is AuthorityLookup's production implementation: it resolves
 // nameserver's own address with the ordinary system resolver, trying IPv4 then IPv6 since a
 // nameserver may publish only one family, then dials that address directly (port 53) for
-// host's AAAA records, the same record type hostname.mjs's diagnoseUnreachable reads. No
-// recursive resolver's negative cache sits between this query and the zone's authority.
+// host's address records. A proxied Cloudflare record answers with both families, and a zone with
+// IPv6 turned off answers with A alone, so either one counts. No recursive resolver's negative
+// cache sits between this query and the zone's authority. Both names go out rooted, so the local
+// search list is never appended to a query sent to a zone's nameserver.
 func defaultAuthorityLookup(ctx context.Context, nameserver, host string) ([]net.IP, error) {
 	nsAddr, err := resolveNameserverAddress(ctx, nameserver)
 	if err != nil {
@@ -163,14 +166,18 @@ func defaultAuthorityLookup(ctx context.Context, nameserver, host string) ([]net
 			return d.DialContext(dialCtx, network, net.JoinHostPort(nsAddr, "53"))
 		},
 	}
-	return authoritative.LookupIP(ctx, "ip6", host)
+	return authoritative.LookupIP(ctx, "ip", rooted(host))
 }
+
+// rooted returns name as a fully qualified domain name, with the trailing dot that keeps a
+// resolver from trying the local search domains after it.
+func rooted(name string) string { return strings.TrimSuffix(name, ".") + "." }
 
 // resolveNameserverAddress resolves nameserver's own address through the system resolver, the
 // ordinary recursive hop defaultAuthorityLookup needs before it can dial the nameserver
 // directly for the actual authoritative query.
 func resolveNameserverAddress(ctx context.Context, nameserver string) (string, error) {
-	ip4Addrs, ip4Err := net.DefaultResolver.LookupIP(ctx, "ip4", nameserver)
+	ip4Addrs, ip4Err := net.DefaultResolver.LookupIP(ctx, "ip4", rooted(nameserver))
 	if ip4Err == nil && len(ip4Addrs) > 0 {
 		return ip4Addrs[0].String(), nil
 	}
@@ -180,7 +187,7 @@ func resolveNameserverAddress(ctx context.Context, nameserver string) (string, e
 		// behind whatever the ip6 attempt below returns for the same expired context.
 		return "", fmt.Errorf("providers: resolve nameserver %s: %w", nameserver, ip4Err)
 	}
-	addrs, err := net.DefaultResolver.LookupIP(ctx, "ip6", nameserver)
+	addrs, err := net.DefaultResolver.LookupIP(ctx, "ip6", rooted(nameserver))
 	if err != nil {
 		return "", fmt.Errorf("providers: resolve nameserver %s: %w", nameserver, err)
 	}

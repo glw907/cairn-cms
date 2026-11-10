@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -210,6 +211,11 @@ type Config struct {
 	// SiteGet sends one GET to the live site without following a redirect, on a client pinned to
 	// the site's address, and returns the status and the Location header.
 	SiteGet func(ctx context.Context, rawURL string) (status int, location string, err error)
+	// Authority asks the zone's own nameserver for host's address records, past every cache between
+	// this computer and the zone; providers.Probe.LookupAuthoritative in production. The domain step
+	// uses it to hold the first request to the site until the zone has the record, so no resolver is
+	// asked early enough to cache "no such host". Nil skips that wait.
+	Authority func(ctx context.Context, nameserver, host string) ([]net.IP, error)
 	// Listen binds the loopback tab; ListenLoopback in production.
 	Listen func(cfg loopback.Config) (Tab, error)
 

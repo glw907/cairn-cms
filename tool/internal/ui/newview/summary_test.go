@@ -34,6 +34,23 @@ func received(t *testing.T, reply chan setup.SummaryEdit) setup.SummaryEdit {
 
 func flat(m *Model) string { return strings.Join(strings.Fields(ansi.Strip(m.View().Content)), " ") }
 
+// The watch's "Connect <host>" step read the summary as it opened, so a subdomain the owner set
+// still showed as the bare domain (scripted run 2611101829).
+func TestTheWatchNamesTheAddressTheOwnerSet(t *testing.T) {
+	m, _ := summaryModel(80, 30)
+	editAddress(m, "Blog.fieldnotes.example.com")
+	send(m, enter)
+	if got := names(m.sum).Replace("Connect <host>"); got != "Connect blog.fieldnotes.example.com" {
+		t.Errorf("the watch names %q, want the subdomain the owner set", got)
+	}
+
+	m, _ = summaryModel(80, 30)
+	send(m, enter)
+	if got := names(m.sum).Replace("Connect <host>"); got != "Connect fieldnotes.example.com" {
+		t.Errorf("with no edit the watch names %q, want the bare domain", got)
+	}
+}
+
 func TestSummaryEditsReachTheRunner(t *testing.T) {
 	m, reply := summaryModel(80, 30)
 	send(m, letter('e'), tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl})

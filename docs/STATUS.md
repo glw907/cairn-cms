@@ -53,8 +53,9 @@ pass, was dropped by Geoff on 2026-11-08.
 - Approved clean-room template: `bin/.local/share/cleanroom/settings.json` in ~/.dotfiles, sha256
   `a779f417d273985ebcb095fcf3623f6b44634a2e7c39747bc256612e6a27720c`. Pass 3's probe proceeds
   without a packet while this holds (S-1); a change follows S-5.
-- Next: pass 3 (`cairn-cms-setup-tooling-3`, the polish loop) launches after its launch checks, and
-  G3's planner launches beside it. Theme-garden launches hold during pass 3's T3.5 dependency sweep.
+- Pass 3 (`cairn-cms-setup-tooling-3`, session `6500d57b`, the polish loop) launched 2026-11-09
+  after its launch checks. G3's design session (`cairn-cms-theme-garden-3-design`, session
+  `5013bd5e`) prepares the design and waits for Geoff to attach. Theme-garden launches hold during pass 3's T3.5 dependency sweep.
 
 ## Open decisions and watches
 

@@ -54,7 +54,11 @@ pass, was dropped by Geoff on 2026-11-08.
   `a779f417d273985ebcb095fcf3623f6b44634a2e7c39747bc256612e6a27720c`. Pass 3's probe proceeds
   without a packet while this holds (S-1); a change follows S-5.
 - Pass 3 (`cairn-cms-setup-tooling-3`, session `6500d57b`, the polish loop) launched 2026-11-09
-  after its launch checks. G3's design session (`cairn-cms-theme-garden-3-design`, session
+  after its launch checks. Geoff ruled that no rc is cut until the install is tested (initiatives `782a946`):
+  each round publishes a `dev` test build under `gate` (#214). The overnight packet (item
+  `20261109T202146-796403`) set the budget stop at ten naive runs or $100 and lets a held-path round PR
+  merge after a fresh review. A fresh `conductor-cairn-cms` runs the night from
+  `~/Projects/initiatives/cairn-setup/plans/2026-11-09-setup-tooling-overnight-conductor-prompt.txt`. G3's design session (`cairn-cms-theme-garden-3-design`, session
   `5013bd5e`) prepares the design and waits for Geoff to attach. Theme-garden launches hold during pass 3's T3.5 dependency sweep.
 
 - Pass 3 (executor `cairn-cms-setup-tooling-3`): Geoff ruled (2026-11-09, plan at initiatives

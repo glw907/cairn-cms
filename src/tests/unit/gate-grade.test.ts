@@ -151,6 +151,15 @@ describe('a scripted run', () => {
     expect(outcome).toMatchObject({ result: 'fail', detail: expect.stringContaining('launcher unread') });
   });
 
+  it('names the leg\'s recorded failure ahead of a wrong-candidate guess', async () => {
+    // A leg that stopped before setup ran reads no versions, and "wrong candidate" is the wrong cause.
+    const run = await makeRun({ noNpx: true });
+    await asScripted(run, ['{"screen":"domain","action":"answered"}', '{"screen":"stopped","action":"failed","reason":"setup stopped at \\"stopped\\": Setup can\'t continue"}']);
+    const outcome = (await grade({ runDir: run.runDir, deps: run.deps })).outcome;
+    expect(outcome).toMatchObject({ result: 'fail', reason: 'other', detail: expect.stringContaining('the scripted leg failed at "stopped"') });
+    expect(outcome.detail).not.toContain('wrong candidate');
+  });
+
   it('fails when the leg never reached the done screen', async () => {
     const run = await makeRun();
     await asScripted(run, ['{"screen":"watch","action":"seen"}']);

@@ -588,18 +588,28 @@ export async function grade({ runDir, deps, end }) {
   const standInFailed = (await readdir(runDir).catch(() => /** @type {string[]} */ ([]))).some((file) => file.endsWith('.controls.txt'));
   /** @type {{ result: 'pass' | 'fail', reason?: string, detail?: string }} */
   let outcome = { result: 'pass' };
+  // A scripted run has no agent transcript, session state, or setup events to time, so it is judged on
+  // the end state and on reaching the done screen. The leg's log says why it stopped, and that cause
+  // comes before a guess from what was never installed.
+  const scriptedText = harness.leg === 'scripted' ? await readFile(path.join(runDir, 'scripted.jsonl'), 'utf8').catch(() => '') : null;
+  const scriptedFailure = (scriptedText ?? '').split('\n').flatMap((line) => {
+    try {
+      const event = JSON.parse(line);
+      return event?.action === 'failed' ? [event] : [];
+    } catch {
+      return [];
+    }
+  }).at(-1);
   if (stateName === 'stopped:cost') outcome = { result: 'fail', reason: 'cost', detail: 'the cost cap stopped the session' };
   else if (stateName === 'stopped:time') outcome = { result: 'fail', reason: 'time', detail: 'the time cap stopped the session' };
   else if (end === 'stall') outcome = { result: 'fail', reason: 'stall', detail: 'the conductor ended the run as a stall' };
   else if (end === 'budget') outcome = { result: 'fail', reason: 'budget', detail: 'the loop budget ended the run' };
+  else if (scriptedFailure) outcome = { result: 'fail', reason: 'other', detail: `the scripted leg failed at "${scriptedFailure.screen}": ${scriptedFailure.reason}` };
   else if (!versions.ok && candidate.engine && candidate.tool && mismatches.length > 0) outcome = { result: 'fail', reason: 'other', detail: `wrong candidate: ${mismatches.join('; ')}` };
   else if (standInFailed && !signedIn.ok) outcome = { result: 'fail', reason: 'page', detail: 'the stand-in failed a page; see its controls file' };
   else if (stateName.startsWith('stopped:')) outcome = { result: 'fail', reason: 'other', detail: `the watcher ended the run as ${stateName}` };
   else {
     const failedChecks = Object.entries(endState).filter(([, check]) => !check.ok).map(([key]) => key);
-    // A scripted run has no agent transcript, session state, or setup events to time, so it is judged on
-    // the end state and on reaching the done screen.
-    const scriptedText = harness.leg === 'scripted' ? await readFile(path.join(runDir, 'scripted.jsonl'), 'utf8').catch(() => '') : null;
     const detail = scriptedText !== null
       ? [...failedChecks.map((key) => `end-state check ${key} failed`), ...(/"screen":"done"/.test(scriptedText) ? [] : ['the scripted leg never reached the done screen'])]
       : [...failedChecks.map((key) => `end-state check ${key} failed`), ...(timing.ok ? [] : [`timing check failed: ${timing.evidence}`]), ...failedReads.map((read) => `read ${read.name} failed: ${read.evidence}`)];

@@ -44,9 +44,10 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 - **A provider's refusal now shows its cause.** A `step_failed` event's `failure` may carry a `detail`
   with the provider, its reason, the HTTP status, the error code, and the method and path of the
   request, such as `cloudflare: forbidden (status 403, code 10000) on GET /zones/<id>/dns_records`. The
-  stderr print and the failure screen show it as a fifth line. A 401 or 403 now reads as a missing
-  permission, a 429 or 5xx as a wait, and only a failure with no provider answer still says to check
-  the internet connection. The event schema gains the optional `detail` field.
+  stderr print and the failure screen show it as a fifth line. A 403 now reads as a missing
+  permission, a 401 as a credential the provider didn't accept, and a 429, a 5xx, or a rate-limited 403
+  as a wait. The next step names the provider that refused, and only a failure with no provider answer
+  still says to check the internet connection. The event schema gains the optional `detail` field.
 
   Consumers must: nothing.
 

@@ -2662,3 +2662,20 @@ func TestProviderStopReadsAClassifiedRateLimit(t *testing.T) {
 		t.Errorf("providerStop = %q, %q; want the wait wording", happened, do)
 	}
 }
+
+// A 403 that carries a rate limit is a wait however the stop is reached: through `fail`, not only
+// through providerStop, so a change that reads the raw status there fails here.
+func TestAClassifiedRateLimitThroughFailReadsAsAWait(t *testing.T) {
+	limited := &providers.APIError{Status: 403, Code: 10000, Reason: providers.ReasonRateLimited,
+		Method: "GET", Path: "/zones/abc123/dns_records"}
+	w := newWorld(t)
+	w.cf.createErr["r2"] = fmt.Errorf("list records: %w", limited)
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if want := "Cloudflare is limiting requests."; f.Happened != want {
+		t.Errorf("Happened = %q, want %q", f.Happened, want)
+	}
+	if want := "Wait a few minutes, and then run cairn new again."; f.Do != want {
+		t.Errorf("Do = %q, want %q", f.Do, want)
+	}
+}

@@ -23,7 +23,7 @@ Claude Code matches a sandbox exclusion against the text of the call, so keep th
 
 - Put no `cd`, redirect, pipe, or `$(...)` in it. Change to an empty folder in a separate call first.
 - Never run it from inside a clone of the cairn-cms repository. npx matches the package name against the local project first, and a clone holds an uninstalled package of the same name, so the call fails with `command not found`.
-- Put no npx option in front of the package name, not `--yes` and not `-y`, and add no version or tag to it.
+- Put no npx option in front of the package name, not even the one that answers npx's install prompt, and add no version or tag to it.
 - Write no `new` after the package name. The launcher already runs `cairn new`.
 
 Start the call with the Bash tool's `run_in_background`, so you can relay each `waiting` sentence to the person while the run blocks.

@@ -243,6 +243,7 @@ start_session() {
       esac
       printf 'export %s=%q\n' "${pair%%=*}" "${pair#*=}"
     done
+    printf 'export CLEANROOM_ROOT=%q\n' "$cleanroom_root"
     printf 'export GATE_SITE_NAME=%q\n' "$site_name"
     printf 'export GATE_OWNER_EMAIL=%q\n' "${GATE_OWNER_EMAIL:-cairn-gate@probe.907.life}"
   } >"$envfile"
@@ -287,6 +288,7 @@ report() {
 new_run_dir() {
   run_dir="$state/runs/$(date +%Y%m%dT%H%M%S)-$1"
   mkdir -p -m 0700 "$run_dir"
+  echo "$$ $run_dir" >"$state/lock.holder"
 }
 
 GATE_BEGIN="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
@@ -327,7 +329,8 @@ case "${1:-}" in
     refuse_unless_clear scripted
     new_run_dir scripted
     start_run scripted
-    start_session "cleanroom-$run_id" "$handoff_dir/$run_id-scripted.env" node "$here/scripted.mjs" "$run_path"
+    mkdir -p -m 0700 "$run_dir/shots"
+    start_session "cleanroom-$run_id" "$handoff_dir/$run_id-scripted.env" node "$here/scripted.mjs" "$run_path" --shots "$run_dir/shots"
     report
     exit 0
     ;;

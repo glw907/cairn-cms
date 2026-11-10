@@ -223,7 +223,7 @@ describe('scripted and probe', () => {
     expect(r.read('cleanroom')).toContain(`init ${id}`);
     const tmux = r.read('tmux');
     expect(tmux).not.toContain(`cleanroom-${id}-stand-in`);
-    expect(tmux).toMatch(new RegExp(`new-session -d -s cleanroom-${id} .*scripted\\.mjs ${r.root}/${id}/run`));
+    expect(tmux).toMatch(new RegExp(`new-session -d -s cleanroom-${id} .*scripted\\.mjs ${r.root}/${id}/run --shots \\S+/runs/\\S+-scripted/shots`));
     const live = rig();
     live.sessions(['cleanroom-x']);
     expect(live.run(['scripted']).status).toBe(1);

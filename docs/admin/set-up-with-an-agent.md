@@ -19,6 +19,8 @@ The plugin is optional. This page works without it. [Suggested plugins](./sugges
 
 Run `cairn` as one bare command: no `cd`, no redirect, no pipe, and no `$(...)`. A redirect to a file, a `cd`, or a command substitution keeps the whole call in the agent's sandbox ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). Run `cairn` outside the sandbox. Setup serves its approval tab on a local port, and a sandboxed command's localhost is private to the sandbox, so the owner's browser can't reach the tab. Start the command in the background, so you can read each `waiting` sentence to the owner while the run blocks. In Claude Code, that is the Bash tool's `run_in_background` option.
 
+When `cairn` isn't installed, run `npx create-cairn-site` followed by the flags, with no npx option such as `--yes` in front of the name. With no terminal, npx installs the package without asking, so the option adds nothing. A rule that excludes the command from the sandbox names it in the plain form, so an option in front of the name keeps the call sandboxed, where the owner's browser can't reach the tab.
+
 ## Use a Cloudflare token for an unattended run
 
 An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. Setup trims spaces and line breaks around the value and refuses one with a space or line break inside. With it set when a setup starts, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.

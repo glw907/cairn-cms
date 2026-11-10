@@ -219,7 +219,9 @@ export async function runScripted({ runDir, env, deps }) {
   const standIn = deps.startStandIn();
   let exitCode = null;
   const shell = deps.startShell(
-    ['shell', runId, '--tmux', session, '--socket', socket, '--secret', 'CF_WS_CAIRN_CLEANROOM_TOKEN:CAIRN_CF_SETUP_TOKEN'],
+    // npm exports the dist-tag to the launcher it runs; a local binary gets it only from here, and
+    // without it `cairn new` fetches the engine at `latest`, which carries no template.
+    ['shell', runId, '--tmux', session, '--socket', socket, '--secret', 'CF_WS_CAIRN_CLEANROOM_TOKEN:CAIRN_CF_SETUP_TOKEN', '--env', 'npm_config_tag=gate'],
     shellEnv(env),
   );
   shell.exited.then((code) => (exitCode = code));

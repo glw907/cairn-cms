@@ -127,6 +127,8 @@ describe('scripted leg: starting', () => {
     const shell = h.shells[0]!;
     expect(shell.args.slice(0, 6)).toEqual(['shell', RUN_ID, '--tmux', SESSION, '--socket', '/home/owner/.local/state/cleanroom/tmux-scripted.sock']);
     expect(shell.args).toContain('CF_WS_CAIRN_CLEANROOM_TOKEN:CAIRN_CF_SETUP_TOKEN');
+    // The tag reaches the shell itself, since a local binary has no npm to export it.
+    expect(shell.args.slice(shell.args.indexOf('--env'))).toEqual(['--env', 'npm_config_tag=gate']);
     expect(shell.env.npm_config_tag).toBe('gate');
     const socket = '/home/owner/.local/state/cleanroom/tmux-scripted.sock';
     expect(h.tmux.calls.every((c) => c[0] === '-S' && c[1] === socket)).toBe(true);

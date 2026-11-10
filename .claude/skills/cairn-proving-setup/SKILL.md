@@ -36,9 +36,9 @@ Publish only what the round changed: an engine path needs `publish.yml`, a tool 
    `bash scripts/gate/run-gate.sh sweep --apply` as a separate call. A record left on the bare address or
    `www`, or an old-gate `cairn-e2e-gate-` name, is never deleted by the sweep: write it to STATUS for
    Geoff and stop starting runs until it is gone.
-2. `bash scripts/gate/run-gate.sh naive --conductor-transcript <path>` starts the run and returns with
+2. `bash scripts/gate/run-gate.sh naive` starts the run and returns with
    the run id, the tmux session, and the run directory. It refuses while any clean-room session or
-   process is live, while the sweep lists a target, on a sixth naive run, when the remaining budget is
+   process is live, while the sweep lists a target, on an eleventh naive run, when the remaining budget is
    under $5, and when the template's `sha256` differs from the last passing probe. Read what it names.
    A live session or process left by an ended run gets `cleanroom stop <name>` and its ledger row
    rewritten as failed, then one retry.
@@ -79,7 +79,7 @@ denied command. The grader's notes are cues. Read the transcript lines each cite
    agent met, and flailing. Every item is fixed in the round or filed, and the file records the
    per-round time comparison. Run `cleanroom scan` over the file and `gitleaks git --staged` before the
    commit.
-3. The budget stop is five naive runs or $100, and `naive` enforces both. At the stop, write both lists
+3. The budget stop is ten naive runs or $100 of clean-room cost (the executor's session is not counted), and `naive` enforces both. At the stop, write both lists
    and the ledger to STATUS with a recommendation, including whether to run the scripted leg.
 
 ## The scripted leg

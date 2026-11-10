@@ -290,17 +290,24 @@ func (m *summary) Cursor(width int, s setup.Summary) *tea.Cursor {
 // addresses is the address row's value: the runner's addresses for the host it checked, or for
 // an edited host, the host alone and its www name when the host is the bare domain.
 func (m *summary) addresses(s setup.Summary) string {
-	addrs := s.Addresses
-	if len(addrs) == 0 || addrs[0] != m.host {
-		addrs = []string{m.host}
-		if m.host == s.Zone {
-			addrs = append(addrs, "www."+m.host)
-		}
-	}
+	addrs := addressesFor(s, m.host)
 	if len(addrs) == 2 {
 		return fill(valueAddresses, "<host>", addrs[0], "<www>", addrs[1])
 	}
 	return strings.Join(addrs, ", ")
+}
+
+// addressesFor is the addresses a host serves: the runner's when it checked this host, else the
+// host alone, and its www name when the host is the bare domain.
+func addressesFor(s setup.Summary, host string) []string {
+	if len(s.Addresses) > 0 && s.Addresses[0] == host {
+		return s.Addresses
+	}
+	addrs := []string{host}
+	if host == s.Zone {
+		addrs = append(addrs, "www."+host)
+	}
+	return addrs
 }
 
 // themeName is the catalog's name for the theme id, or the id itself when the catalog lacks it.

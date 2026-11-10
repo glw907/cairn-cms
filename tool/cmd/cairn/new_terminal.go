@@ -153,13 +153,21 @@ func (l *terminalLane) offerResume(ctx context.Context, runs []store.Entry) {
 		return
 	}
 	e := runs[i]
+	// The run takes the setup token only when its record began with one, so the view counts the
+	// approvals from the record, not from the variable alone.
+	answers := setup.RecordedAnswers(e.Record)
+	credential := setup.CredentialApproval
+	if tok, _ := setupToken(l.d.env); tok != (providers.Credential{}) && answers.Credential == setup.CredentialToken {
+		credential = setup.CredentialToken
+	}
+	l.send(newview.CredentialMsg{Credential: credential})
 	// A run resumed past the summary sends no summary event, so the names the watch and done
 	// screens show come from the record.
 	if s, ok := recordSummary(e.Record); ok {
 		l.send(setup.Event{SchemaVersion: setup.EventSchemaVersion, Kind: setup.SummaryKind, Timestamp: l.d.now(), Step: setup.StepSummary, Summary: &s})
 	}
 	l.begin(ctx, newInput{
-		answers: setup.RecordedAnswers(e.Record),
+		answers: answers,
 		tag:     l.tag,
 		resume:  &setup.Resume{SiteID: e.ID, Record: e.Record},
 	}, "")

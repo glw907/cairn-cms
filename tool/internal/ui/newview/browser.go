@@ -55,11 +55,18 @@ type browser struct {
 }
 
 func newBrowser(s Styles, g Glyphs, k keys, ascii, token bool) *browser {
-	b := &browser{styles: s, glyphs: g, keys: k, spin: newSpinner(s, ascii), approvals: allApprovals, before: browserBefore}
+	b := &browser{styles: s, glyphs: g, keys: k, spin: newSpinner(s, ascii)}
+	b.SetToken(token)
+	return b
+}
+
+// SetToken sets whether the run's Cloudflare calls use a supplied token, which drops the
+// Cloudflare request from the list.
+func (b *browser) SetToken(token bool) {
+	b.approvals, b.skipped, b.before = allApprovals, 0, browserBefore
 	if token {
 		b.approvals, b.skipped, b.before = allApprovals[1:], 1, browserBeforeToken
 	}
-	return b
 }
 
 // newSpinner is the running mark the browser and the watch screens share in look; each screen

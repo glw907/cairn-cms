@@ -109,6 +109,11 @@ type ChooseResumeMsg struct {
 	Reply chan<- string
 }
 
+// CredentialMsg sets the Cloudflare credential a resumed run uses, which its record settles
+// rather than the environment Config.Token read: the browser screen counts the Cloudflare request
+// only for an approval run.
+type CredentialMsg struct{ Credential setup.CloudflareCredential }
+
 // CountdownMsg shows the time left in the approval chain. Send it only in the chain's last
 // minutes, when loopback's Countdown says the views show it.
 type CountdownMsg struct{ Left time.Duration }
@@ -258,6 +263,10 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		cmd := m.ask(resumeChoice(m.cfg.Styles, m.cfg.Glyphs, m.keys, msg.Runs), msg.Reply)
 		m.resuming = true
 		return cmd
+	case CredentialMsg:
+		m.cfg.Token = msg.Credential == setup.CredentialToken
+		m.browser.SetToken(m.cfg.Token)
+		return nil
 	case CountdownMsg:
 		m.browser.Countdown(msg.Left)
 		return nil

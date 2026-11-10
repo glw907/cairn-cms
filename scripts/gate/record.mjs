@@ -295,7 +295,7 @@ export function rerunPathsTouched(files) {
  */
 export async function changedFiles(gh, from, to) {
   if (sameCommit(from, to)) return { ok: true, files: [] };
-  const read = await gh(['api', `repos/${REPO}/compare/${from}...${to}`, '--jq', '{status: .status, files: [.files[].filename]}']);
+  const read = await gh(['api', `repos/${REPO}/compare/${from}...${to}`, '--jq', '{status: .status, files: [.files[] | (.filename, .previous_filename // empty)]}']);
   if (read.code !== 0) return { ok: false, reason: `could not read the compare ${from}...${to} (gh exit ${read.code})` };
   /** @type {{ status?: string, files?: string[] }} */
   let parsed;

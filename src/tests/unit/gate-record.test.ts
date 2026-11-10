@@ -167,6 +167,7 @@ describe('changedFiles', () => {
     const stub = fakeGh({ code: 0, stdout: '' }, compareOf(['a.ts']));
     expect(await changedFiles(stub.gh, 'abc1234', 'def5678')).toEqual({ ok: true, files: ['a.ts'] });
     expect(stub.calls[0].slice(0, 2)).toEqual(['api', 'repos/glw907/cairn-cms/compare/abc1234...def5678']);
+    expect(stub.calls[0].join(' ')).toContain('previous_filename');
   });
 
   it('makes no call for one commit named twice, abbreviated or not', async () => {

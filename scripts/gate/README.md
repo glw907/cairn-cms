@@ -13,7 +13,7 @@ bash scripts/gate/run-gate.sh sweep --check-scopes
 bash scripts/gate/run-gate.sh sweep --apply
 bash scripts/gate/run-gate.sh probe
 bash scripts/gate/run-gate.sh naive
-bash scripts/gate/run-gate.sh scripted
+bash scripts/gate/run-gate.sh scripted [--cairn-bin <path>]
 bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget]
 bash scripts/gate/run-gate.sh shell <name> [-c <command>]
 ```
@@ -53,6 +53,15 @@ sources and removes, so no value sits in argv; the Cloudflare token never reache
 starts `scripted.mjs` as session `cleanroom-<run id>`, and that driver starts the stand-in itself. `probe` runs
 `cleanroom init probe --fresh --discard` and `cleanroom probe probe` with the generic command list.
 Neither `naive` nor `scripted` takes an EXIT teardown, since the run goes on after they return.
+
+`scripted` sets up `gate.carin-test.org` in zone `carin-test.org` (`--host` and `--zone`), never the bare
+domain: a record on the bare address or `www` is a standing stop, and the apex holds the mail records.
+`--cairn-bin <path>` swaps the registry launcher for a `cairn` binary built from the branch
+(`make -C tool build`, then `--cairn-bin tool/cairn`), so a fix is proved before it publishes. The run
+keeps a copy of the binary, and its `harness.json` says `local` with the tool recorded as `local build at
+<commit>`, so a local run is never the release gate's `scripted` row, which runs the published candidate.
+A fix to the engine package (the template, the scaffold's output) still needs an engine snapshot, since
+the build resolves the engine from the registry.
 
 ### What refuses a start
 

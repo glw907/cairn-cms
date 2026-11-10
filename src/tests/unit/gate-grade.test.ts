@@ -40,6 +40,7 @@ interface Options {
   scanCode?: number;
   mail?: 'found' | 'throws';
   deployMinutes?: number;
+  local?: boolean;
 }
 
 async function makeRun(opts: Options = {}) {
@@ -52,7 +53,7 @@ async function makeRun(opts: Options = {}) {
   await mkdir(runDir, { recursive: true });
   await mkdir(path.join(home, '.local', 'share', 'keyrings'), { recursive: true });
   await writeFile(path.join(home, '.local', 'share', 'keyrings', 'login.keyring'), 'x');
-  await writeFile(path.join(runDir, 'harness.json'), JSON.stringify({ leg: 'naive', id, siteName: `Cairn gate ${id}`, begin: at(0), commit: 'abc1234def', candidate: { engine: '0.99.0-rc.4', tool: '2.0.0-rc.4' } }));
+  await writeFile(path.join(runDir, 'harness.json'), JSON.stringify({ leg: 'naive', id, siteName: `Cairn gate ${id}`, begin: at(0), commit: 'abc1234def', candidate: { engine: '0.99.0-rc.4', tool: '2.0.0-rc.4' }, ...(opts.local ? { local: true } : {}) }));
   const transcript: unknown[] = [
     { type: 'user', timestamp: at(GOAL), message: { role: 'user', content: 'Set up a new cairn site and sign in as owner.' } },
     assistantText(0.5, 'I will read the README first.', 'a1'),
@@ -149,6 +150,15 @@ describe('the record on a known fixture', () => {
       expect(check.ok).toBe(true);
       expect(check.evidence.length).toBeGreaterThan(0);
     }
+  });
+
+  it('marks a local build in the record and the report, and a registry run as not local', async () => {
+    const local = await makeRun({ local: true });
+    const record = await grade({ runDir: local.runDir, deps: local.deps });
+    expect(record.local).toBe(true);
+    const registry = await makeRun();
+    expect((await grade({ runDir: registry.runDir, deps: registry.deps })).local).toBe(false);
+    expect(await readFile(path.join(local.runDir, 'run-record.md'), 'utf8')).toContain('(naive, local build)');
   });
 
   it('writes both files, never a sign-in link, runs the scan over both, and deletes the keyrings', async () => {

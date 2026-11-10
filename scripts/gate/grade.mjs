@@ -584,6 +584,8 @@ export async function grade({ runDir, deps, end }) {
     id,
     leg: String(harness.leg ?? 'naive'),
     commit: String(harness.commit ?? ''),
+    // A local build proves a fix on a branch; it is never the published candidate's row.
+    local: harness.local === true,
     installed: { engine: engine ?? null, tool: installed.platform ?? null, launcher: installed.launcher ?? null },
     candidate: { engine: candidate.engine ?? null, tool: candidate.tool ?? null },
     start: Number.isNaN(beginAt) ? null : new Date(beginAt).toISOString(),
@@ -648,7 +650,7 @@ export async function grade({ runDir, deps, end }) {
  * @returns {string}
  */
 export function renderMarkdown(record) {
-  const out = [`# Run ${record.id} (${record.leg})`, ''];
+  const out = [`# Run ${record.id} (${record.leg}${record.local ? ', local build' : ''})`, ''];
   const outcome = record.outcome;
   out.push(`Outcome: ${outcome.result}${outcome.reason ? `, ${outcome.reason}` : ''}${outcome.detail ? ` (${outcome.detail})` : ''}`, '');
   if (!record.endState) return `${out.join('\n')}\n`;

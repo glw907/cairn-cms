@@ -38,6 +38,7 @@ cleanroom_root="${CLEANROOM_ROOT:-/var/tmp/cleanroom}"
 
 # The names the harness reads. Values are carried by name and never printed. GATE_SITE_NAME and
 # GATE_OWNER_EMAIL, which the stand-in reads, are among the GATE_ names.
+cairn_bin=""
 allowed=()
 while IFS= read -r name; do
   allowed+=("$name=${!name}")
@@ -242,6 +243,7 @@ start_session() {
     printf 'export CLEANROOM_ROOT=%q\n' "$cleanroom_root"
     printf 'export GATE_SITE_NAME=%q\n' "$site_name"
     printf 'export GATE_OWNER_EMAIL=%q\n' "${GATE_OWNER_EMAIL:-cairn-gate@probe.907.life}"
+    if [ -n "$cairn_bin" ]; then printf 'export GATE_CAIRN_BIN=%q\n' "$cairn_bin"; fi
   } >"$envfile"
   tmx new-session -d -s "$session_name" \
     "exec env -i PATH=$PATH HOME=$HOME TERM=xterm-256color bash -c '. $envfile; rm -f $envfile; exec \"\$@\"' bash $*"
@@ -265,10 +267,17 @@ start_run() {
     exit 1
   fi
   commit="$(git -C "$here" rev-parse HEAD 2>/dev/null || echo unknown)"
+  # A local build never stands for the published candidate: its row names the commit it was built at.
+  if [ -n "$cairn_bin" ]; then tool="local build at $commit"; fi
   scrubbed cleanroom init "$run_id" >&2
   mkdir -p -m 0700 "$handoff_dir"
-  node -e 'const [leg, id, siteName, commit, engine, tool] = process.argv.slice(1); process.stdout.write(JSON.stringify({ leg, id, siteName, begin: process.env.GATE_BEGIN, commit, candidate: { engine, tool } }, null, 2) + "\n");' \
-    "$leg" "$run_id" "$site_name" "$commit" "$engine" "$tool" >"$run_path/harness.json"
+  node -e 'const [leg, id, siteName, commit, engine, tool, local] = process.argv.slice(1); process.stdout.write(JSON.stringify({ leg, id, siteName, begin: process.env.GATE_BEGIN, commit, candidate: { engine, tool }, local: local === "1" }, null, 2) + "\n");' \
+    "$leg" "$run_id" "$site_name" "$commit" "$engine" "$tool" "${cairn_bin:+1}" >"$run_path/harness.json"
+  # The run keeps its own copy, so the binary it ran is not changed by a rebuild mid-run.
+  if [ -n "$cairn_bin" ]; then
+    install -m 0755 "$cairn_bin" "$cleanroom_root/$run_id/cairn"
+    cairn_bin="$cleanroom_root/$run_id/cairn"
+  fi
   # The scripted driver starts its own stand-in, so only a naive run gets one here.
   if [ "$leg" = naive ]; then
     start_session "cleanroom-$run_id-stand-in" "$handoff_dir/$run_id-stand-in.env" node "$here/stand-in.mjs" "$run_path"
@@ -318,6 +327,19 @@ case "${1:-}" in
     exit 0
     ;;
   scripted)
+    shift
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --cairn-bin)
+          if [ -z "${2:-}" ]; then echo "Usage: run-gate.sh scripted [--cairn-bin <path>]" >&2; exit 2; fi
+          cairn_bin="$2"; shift 2 ;;
+        *) echo "Usage: run-gate.sh scripted [--cairn-bin <path>]" >&2; exit 2 ;;
+      esac
+    done
+    if [ -n "$cairn_bin" ] && ! [ -f "$cairn_bin" -a -x "$cairn_bin" ]; then
+      echo "Refused: --cairn-bin $cairn_bin is not an executable file." >&2
+      exit 2
+    fi
     refuse_unless_clear scripted
     new_run_dir scripted
     start_run scripted

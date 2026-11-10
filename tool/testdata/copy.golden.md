@@ -110,6 +110,20 @@ and commit the diff.
 
 - 
 Run the command again in %s
+-   # Answer the questions in the terminal
+  $ cairn new
+
+  # An agent: write a plan, then create the site from it
+  $ cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
+  $ cairn new --apply plan.json
+
+  # Print the names setup would use, and create nothing
+  $ cairn new --dry-run --name "My Site" --email me@example.com --posture decline
+-   # Check a site's health
+  $ cairn health my-site-a1b2c3
+
+  # Set up a new site
+  $ cairn new
 -   GitHub App: %s
 -   keyring entries: %s
 -   repository: %s
@@ -163,11 +177,33 @@ With no site named, every zone-scoped and repository-scoped permission reports s
 
 auth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag.
 - Continue an unfinished setup with cairn new --resume <id>.
+- Create a site's GitHub repository, Cloudflare Worker, database, and media bucket, and
+sign the owner in. The owner approves each step in a browser, so run setup on the computer the
+owner browses from.
+
+A person at a terminal runs cairn new with no flags. Setup asks its questions on screen.
+
+An agent, or any run with no terminal, answers every question with a flag and runs in two
+steps. --plan runs the approvals, writes a plan file, and creates nothing. After the owner has
+read the plan, --apply creates the site from it. With no terminal and no flags, cairn new
+prints the setup page for agents, and cairn help agents lists the events and the exit codes.
+
+Run setup as one bare call, with no cd, pipe, or redirect, outside an agent's sandbox. It serves
+its approval page on a local port, and a sandboxed command's localhost is private to the
+sandbox, so the owner's browser can't reach the page. When CAIRN_CF_SETUP_TOKEN holds a
+Cloudflare API token, setup skips the Cloudflare approval and uses the token.
+
+A run usually takes a few minutes. The last step, waiting for the new address to answer over
+HTTPS, can take up to 15 more with no event. Leave the new address alone until the summary,
+because a lookup before its DNS record exists can make the computer's resolver remember the
+name as missing.
 - Credentials:
 - Delete one credential's keyring entry
 - Events from cairn new --plan, --apply, and --resume, one JSON object per line on stdout:
   step_started, step_done  a step began or finished; step names it
-  step_failed              a step stopped the run; failure holds the four-part reason
+  step_failed              a step stopped the run; failure holds the four-part reason, and a
+                           detail line with the provider's status and error code when a
+                           provider refused a request
   waiting                  setup waits on the owner in a browser; waiting names the approval
   resumed                  the run picked up an unfinished record
   summary                  every derived value, for the owner to review
@@ -189,6 +225,7 @@ A stream of events that does not end with a summary is unfinished.
 - Operate a cairn-cms production site
 - Operate a cairn-cms production site.
 
+To set up a new site, run `cairn new`. `cairn new --help` covers both ways to run it.
 Run `cairn help agents` for the contract a program reads.
 Pass --json to a reporting command for a machine-readable payload on stdout.
 Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
@@ -222,10 +259,12 @@ Nothing was created.
 - cairn auth set CAIRN_CF_READ_TOKEN
 - cairn auth unset CAIRN_CF_READ_TOKEN
 - cairn doctor ./my-site
-- cairn health my-site-a1b2c3
 - cairn health my-site-a1b2c3 --json
 - cairn help agents
 - cairn is a monitoring plugin. This page is its whole contract for a program.
+
+To set up a new site, skip to the text that begins "cairn new sets up a site". The rest of this
+page is the monitoring contract.
 
 Exit codes
   0 OK        every check passed
@@ -287,7 +326,6 @@ the https and email checks that need a live, adopted site.
 
 To check every site cairn knows, run: cairn health --json
 - cairn logs my-site-a1b2c3 --since 24h
-- cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
 - cairn new sets up a site on Cloudflare and GitHub. An agent runs it in two steps.
 
 Plan. Answer every question with a flag. Setup waits on the owner for each browser
@@ -306,24 +344,33 @@ An apply still runs the approvals in the owner's browser, so it waits on the own
 
 Token. Put a Cloudflare API token in CAIRN_CF_SETUP_TOKEN, never a flag, and setup skips the
 Cloudflare approval: it uses the token for every Cloudflare call and stores it as the site's
-deploy key, minting none. The token can't read the owner's address, so give --email with it. A resume needs the same variable. CLOUDFLARE_API_TOKEN is never read.
+deploy key, minting none. The token can't read the owner's address, so give --email with it. A
+resume needs the same variable. CLOUDFLARE_API_TOKEN is never read. When the variable is
+already set, the owner set it for this run: the events report credential: token, so tell the
+owner setup is using it, and go on. Never print it. Make it an account-owned token with these
+permissions:
+  account  Workers Scripts Edit, D1 Edit, Workers R2 Storage Edit, Email Sending Edit,
+           Account Settings Read
+  domain   Zone Read, DNS Edit, Workers Routes Edit
 
-Required with --plan and --dry-run:
-  --name         the site's name
-  --email        the first owner's email address
-  --posture      decline or invite, the site's AI-crawler stance
+Run it. Run cairn new as one bare call outside the sandbox, and in the background so you can
+read each waiting sentence to the owner while it blocks. When it comes back sandboxed it
+exits 3 at once with a message that says so: run the same call again outside the sandbox,
+without asking the owner first. When cairn isn't installed, npx create-cairn-site takes the same
+flags, with no npx option before the name, no version or tag on it, and no new after it.
 
-Answers asked for only when there is more than one choice:
-  --account      the Cloudflare account id
-  --zone         the Cloudflare zone
-  --host         the site's address, the zone or a subdomain of it
-  --site-theme   the theme id
+Wait. The run usually takes a few minutes. Its last step, waiting for the site to answer over
+HTTPS, can take up to 15 more and prints no waiting event, so a quiet stream is not a stuck
+run. Leave the new address alone until the summary: a curl, dig, or browser visit before its DNS
+record exists makes the computer's resolver remember the name as missing, for up to 30 minutes.
 
-Other flags:
-  --dry-run      print the names setup would use and create nothing; add --json for a payload
-  --resume       continue the unfinished setup with this site id
-  --new          start a new site instead of continuing an unfinished one
-  --tag          the engine's npm dist-tag to build from (default latest)
+Flags. cairn new --help lists them all. --plan and --dry-run require --name, --email, and
+--posture (decline or invite, the site's AI-crawler stance). --account (an id, not a name), --zone,
+--host, and --site-theme answer a choice, and a run needs one only when there is more than one
+choice; --host alone names its zone when it is that domain or sits under one. --dry-run prints
+the names and creates nothing, and adds a JSON payload with --json. --resume continues an
+unfinished setup, --new starts another site beside it, and --tag sets the engine's npm
+dist-tag (default latest).
 
 A usage error exits 3, before anything ran, and writes nothing to stdout. An unfinished run
 takes --account and --zone with --resume. The exit codes follow.
@@ -421,7 +468,7 @@ Name the check that entry holds
 - cairn: the plan's runId is %s, and no unfinished setup has that run.
 Run `cairn new status` to list them, or run --plan again
 - cairn: this call runs inside a sandbox, where the approval page setup serves can't be reached from the owner's browser.
-Run it as one bare call outside the sandbox: no option before the package name, no version or tag, and no `cd`, pipe, or redirect in the call. Or ask the owner to exclude the command from the sandbox
+Run the same call again outside the sandbox. In Claude Code, set the Bash tool's dangerouslyDisableSandbox parameter. The prompt it raises is the owner's approval, so there is nothing to ask first. Keep the call bare: no option before the package name, no version or tag, and no `cd`, pipe, or redirect in it
 - cairn: this output carries identifiers and is not safe to paste in public.
 - columns to render at, instead of the terminal's width
 - continue the unfinished setup with this site id
@@ -444,21 +491,21 @@ Run it as one bare call outside the sandbox: no option before the package name, 
 - run `cairn auth check <site>` to confirm this permission
 - run the questions and approvals, write the plan to this file, and create nothing
 - start a new site instead of continuing an unfinished one
-- the Cloudflare account id, when the sign-in lists several
-- the Cloudflare zone to serve the site from, when the account has several
+- the Cloudflare account id, not its name, when the sign-in lists several accounts
+- the Cloudflare domain to serve the site from, when the account has several and --host doesn't name one
 - the OS keyring did not open
 - the Workers script to adopt
 - the domain the Worker serves, for a Worker with no Custom Domain
 - the engine's npm dist-tag to build the site from, or npm's own tag setting when it is set
-- the first owner's email address
+- the first owner's email address, required with --plan and --dry-run
 - the ground to render for: dark or light
 - the number of sites the registry is expected to hold
 - the repository the Worker deploys from, as owner/name
-- the site's address: the zone itself or a subdomain of it
-- the site's name; the repository, Worker, and database names derive from it
+- the site's address: a domain the account holds, or a subdomain of one
+- the site's name, required with --plan and --dry-run; the repository, Worker, and database names derive from it
 - the theme id, when the template offers several
 - wall-clock budget for the whole run
-- what the site does about AI crawlers: decline or invite
+- what the site does about AI crawlers, required with --plan and --dry-run: decline or invite
 - when to colour the output: auto, always, or never
 - write the dry run as a JSON payload on stdout
 

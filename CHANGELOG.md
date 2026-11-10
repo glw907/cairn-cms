@@ -31,6 +31,31 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **`cairn new` tells an agent what to do the first time it runs it.** `cairn --help` points to
+  `cairn new`, and `cairn new --help` explains the two ways to run it, lists the answer flags first,
+  and gives examples. The sandbox refusal tells an agent to run the same call again outside the
+  sandbox, where it used to suggest asking the owner. The agent page, `cairn help agents`, and the
+  `cairn-setting-up-a-site` skill add the token's permissions, how long a run takes, and a warning not
+  to look up the new address before the summary. A subdomain `--host` now names its zone, so `--zone`
+  is needed only when the host names none, and the launcher drops a leading `new`.
+
+  Consumers must: nothing.
+
+- **A provider's refusal now shows its cause.** A `step_failed` event's `failure` may carry a `detail`
+  with the provider, its reason, the HTTP status, the error code, and the method and path of the
+  request, such as `cloudflare: forbidden (status 403, code 10000) on GET /zones/<id>/dns_records`. The
+  stderr print and the failure screen show it as a fifth line. A 401 or 403 now reads as a missing
+  permission, a 429 or 5xx as a wait, and only a failure with no provider answer still says to check
+  the internet connection. The event schema gains the optional `detail` field.
+
+  Consumers must: nothing.
+
+- **The setup screens no longer let an Enter accept a domain unread.** The browser screen shows its
+  Enter hint only once setup has armed the browser step, and the account and domain choosers start with
+  no selection when the account holds several, so the first arrow key selects the first row.
+
+  Consumers must: nothing.
+
 - **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
 - **The admin docs describe `cairn new`.** `before-you-start`, `create-your-site`, `own-your-domain`, `setup-recovery`, `troubleshooting`, and `credentials` are rebuilt for the new setup, and four pages are new: `set-up-with-an-agent`, `deploys`, `suggested-plugins`, and the generated `setup-reference`. The agent page is also embedded in the `cairn` binary, and a test fails when the copy drifts.

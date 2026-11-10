@@ -12,20 +12,20 @@ through the two calls.
 
 | Flag | Value | Meaning |
 | --- | --- | --- |
-| `--account` | string | the Cloudflare account id, when the sign-in lists several |
-| `--apply` | string | create the site from a plan file |
-| `--dry-run` | none | print the names setup would use and create nothing |
-| `--email` | string | the first owner's email address |
-| `--host` | string | the site's address: the zone itself or a subdomain of it |
-| `--json` | none | write the dry run as a JSON payload on stdout |
-| `--name` | string | the site's name; the repository, Worker, and database names derive from it |
-| `--new` | none | start a new site instead of continuing an unfinished one |
-| `--plan` | string | run the questions and approvals, write the plan to this file, and create nothing |
-| `--posture` | string | what the site does about AI crawlers: decline or invite |
-| `--resume` | string | continue the unfinished setup with this site id |
+| `--name` | string | the site's name, required with --plan and --dry-run; the repository, Worker, and database names derive from it |
+| `--email` | string | the first owner's email address, required with --plan and --dry-run |
+| `--posture` | string | what the site does about AI crawlers, required with --plan and --dry-run: decline or invite |
 | `--site-theme` | string | the theme id, when the template offers several |
+| `--account` | string | the Cloudflare account id, not its name, when the sign-in lists several accounts |
+| `--zone` | string | the Cloudflare domain to serve the site from, when the account has several and --host doesn't name one |
+| `--host` | string | the site's address: a domain the account holds, or a subdomain of one |
+| `--plan` | string | run the questions and approvals, write the plan to this file, and create nothing |
+| `--apply` | string | create the site from a plan file |
+| `--resume` | string | continue the unfinished setup with this site id |
+| `--new` | none | start a new site instead of continuing an unfinished one |
+| `--dry-run` | none | print the names setup would use and create nothing |
+| `--json` | none | write the dry run as a JSON payload on stdout |
 | `--tag` | string | the engine's npm dist-tag to build the site from, or npm's own tag setting when it is set (default "latest") |
-| `--zone` | string | the Cloudflare zone to serve the site from, when the account has several |
 
 ## Environment
 

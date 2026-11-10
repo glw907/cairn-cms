@@ -38,30 +38,23 @@ pass, was dropped by Geoff on 2026-11-08.
 - theme-garden: Geoff approved the plan and ruled Decide G-1 yes (2026-11-09, Approval Queue item
   `20261109T022112-3127080`). G1 merged (#207, `64cbe711d`, the theme contract and Waymark's port);
   G2 merged (#208, `412900111`, the conformance set, viewer, check, and CI) under the plan's gates
-  (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`). The garden record
-  (the grant's removal and whether G3's planner starts) rides the setup tooling run's packet B, since
-  the queue refuses a packet with no open PR or design.
+  (`~/Projects/initiatives/theme-garden/plans/2026-11-08-theme-garden-plan.md`). Packet B
+  (Approval Queue item `20261109T162647-560953`) carried the garden record: Geoff ruled that G3's
+  planner starts now, and the garden grant's removal is his `[you]` step.
 - cairn-setup tooling: Geoff approved the setup tooling design on 2026-11-09
-  (`~/Projects/initiatives/cairn-setup/specs/2026-11-09-setup-tooling-design.md`). Its planner,
-  `cairn-cms-setup-tooling-plan` (session `06cc7ec5`), handed the plan to `conductor-cairn-cms`.
-  Packet A (Approval Queue item `20261109T122948-4007611`) was approved with every ruling as
-  recommended; Geoff then reversed S-3 at the sitting, since the Console org held no credit, so the
-  clean room uses a subscription token (`CLAUDE_CLEANROOM_OAUTH_TOKEN`). Pre-flight items 1 to 6 are
-  done and checked: the six platform packages are published at `1.1.0-2973-gefc71f361` and bound to
-  `tool.yml`, the wizard is deprecated below 1.0.0, the Cloudflare token and the Claude token are in
-  the store, the grant is live (`839312a` in workstation), and the `cleanroom` user is uid 945. The
-  owner steps needed #209 (tool.yml attests the npm tarballs; the dry run's path) and four script
-  fixes in initiatives. Item 7's probe runs as `cairn-cms-setup-tooling-probe` (session `a15ed84e`).
-  Item 8, 2026-11-09 13:3x: the one open PR is #208 (theme-garden-2), and none of its files is
-  under pass 2's paths (`scripts/gate/`, `tool/`, `plugins/cairn/`, the two held skills,
-  `gate-table.json`, `gate-publish.spec.ts`, `set-up-with-an-agent.md`); no other live branch.
-  Item 7's probe passed all eight forms with no refusal. Passes 1 and 2 launched side by side:
-  `workstation-setup-tooling-1` (session `685a8bbe`, from ~/.dotfiles) and
-  `cairn-cms-setup-tooling-2` (session `3d50a697`). Packet B follows them; pass 3 waits on it.
-- Pass 2 (`setup-tooling-2`, executor `cairn-cms-setup-tooling-2`, session `3db688`): PR #210 holds
-  T2.0 to T2.7, CI green on its earlier heads; the close review and a security re-read are running.
-  The security read's one open design question (the setup token stored as the deploy secret) is with
-  the conductor for packet B.
+  (`~/Projects/initiatives/cairn-setup/specs/2026-11-09-setup-tooling-design.md`) and packet A
+  (item `20261109T122948-4007611`), then reversed S-3 at the sitting, so the clean room uses a
+  subscription token (`CLAUDE_CLEANROOM_OAUTH_TOKEN`). Pre-flight items 1 to 9 are done and checked.
+  Packet B (item `20261109T162647-560953`) was approved with all three asks as recommended: pass 1
+  merged as glw907/workstation#215 (`0ed69fb`, the clean room, installed with `stow -R bin`), and
+  pass 2 merged as #210 (`3774597a6`, the token option, the three-leg gate, and the proving skill).
+  The token-mode deploy secret merged as built, with the narrow deploy token filed as #424, due
+  before the stable cut.
+- Approved clean-room template: `bin/.local/share/cleanroom/settings.json` in ~/.dotfiles, sha256
+  `a779f417d273985ebcb095fcf3623f6b44634a2e7c39747bc256612e6a27720c`. Pass 3's probe proceeds
+  without a packet while this holds (S-1); a change follows S-5.
+- Next: pass 3 (`cairn-cms-setup-tooling-3`, the polish loop) launches after its launch checks, and
+  G3's planner launches beside it. Theme-garden launches hold during pass 3's T3.5 dependency sweep.
 
 ## Open decisions and watches
 

@@ -15,8 +15,7 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 - **`cairn new` no longer refuses a domain's bare address for its mail records.** The opening check
   counts only A, AAAA, and CNAME records on an address, so an apex that holds an MX and an SPF TXT
   passes, and a domain with live mail can host the site where its owner expects. An address with an A,
-  AAAA, or CNAME record or a Worker on it is refused as before. A subdomain given with `--host` is now
-  checked for records on the subdomain, not on its zone's apex. The three admin pages that described the
+  AAAA, or CNAME record or a Worker on it is refused as before. The three admin pages that described the
   refusal say which records count.
 
   Consumers must: nothing.

@@ -82,13 +82,7 @@ reference walks them.
 
 Only the release in this file has notes here. The notes of earlier releases live in their git tags.
 
-## 0.99.0-rc.5
-
-This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,
-carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc5) for every name
-and behavior that changed. The steps below are the ones that fall on whoever deploys the rebuilt site.
-
-### Since rc.4
+## Unreleased
 
 A new site's starter content is a standard set of pages and posts in place of the showcase's trail demo. This asks nothing of a site that already exists. A site you start after this lands replaces the sample content with its own, as [Make a scaffolded site yours](./skills/cairn-extending-a-site/references/make-it-yours.md) lists.
 
@@ -154,6 +148,12 @@ now carries the sanitize step's `user-content-` prefix exactly once.
 builds an `AuditReport` by hand adds `measured: []`, and a custom rule may add a `measured` method to
 list the files and theme blocks it read. The text report prints a `Measured:` block before its summary lines, or `measured
 nothing` when no theme sheet was read.
+
+## 0.99.0-rc.4
+
+This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,
+carry your content and theme across, and read [`CHANGELOG.md`](./CHANGELOG.md#0990-rc4) for every name
+and behavior that changed. The steps below are the ones that fall on whoever deploys the rebuilt site.
 
 - **Expect every editor to sign in again once.** Session ids are stored as a SHA-256 digest, so a
   session row written before the deploy no longer resolves. A script that inserts `session` rows by hand

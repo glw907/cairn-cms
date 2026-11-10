@@ -2,7 +2,7 @@
 // which pane was showing when each key went in, a fake clock stands in for every wait, and no
 // cleanroom, terminal, network, or credential is involved.
 import { describe, it, expect } from 'vitest';
-import { SCREENS, chooseRow, commandFor, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
+import { SCREENS, chooseRow, commandFor, identify, runScripted, shotCommand } from '../../../scripts/gate/scripted.mjs';
 
 const RUN_ID = '2611091430';
 const RUN_DIR = `/var/tmp/cleanroom/${RUN_ID}/run`;
@@ -201,6 +201,17 @@ describe('scripted leg: the target', () => {
   it('calls a screen it does not know unknown while the typed command is still above it', () => {
     expect(identify(`owner@cleanroom:~$ ${START}\nSomething nobody planned\nwith no screen of its own`)).toBeNull();
     expect(identify(`owner@cleanroom:~$ ${START}\nnpm error code E404`)).toBeNull();
+  });
+});
+
+describe('scripted leg: the screenshot attaches with the leg\'s own tmux', () => {
+  // Every screenshot of run 2611102257 read "server exited unexpectedly": the headless terminal found
+  // /usr/bin/tmux 3.5a on its PATH and the leg's server is Homebrew's 3.8, and a tmux client and server of
+  // different versions refuse each other. The command names the binary the leg itself runs.
+  it('names the absolute tmux path, the socket, and the session', () => {
+    expect(shotCommand('/home/linuxbrew/.linuxbrew/bin/tmux', '/s/tmux-scripted.sock', 'cleanroom-2611102257-scripted')).toBe(
+      '/home/linuxbrew/.linuxbrew/bin/tmux -S /s/tmux-scripted.sock attach -r -t cleanroom-2611102257-scripted',
+    );
   });
 });
 

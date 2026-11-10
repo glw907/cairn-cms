@@ -41,6 +41,8 @@ interface Options {
   mail?: 'found' | 'throws';
   deployMinutes?: number;
   local?: boolean;
+  /** Leaves out the npx cache, so the launcher and the platform package read as missing. */
+  noNpx?: boolean;
 }
 
 async function makeRun(opts: Options = {}) {
@@ -82,10 +84,13 @@ async function makeRun(opts: Options = {}) {
   await mkdir(path.join(home, '.config', 'cairn', 'sites'), { recursive: true });
   await writeFile(path.join(home, '.config', 'cairn', 'sites', 'site.json'), JSON.stringify({ name: 'Cairn gate', step: 'live', github: { repo: { owner: 'glw907-test', repo: `cairn-gate-${id}` } } }));
   const npx = path.join(home, '.npm', '_npx', 'abc', 'node_modules');
-  await mkdir(path.join(npx, 'create-cairn-site'), { recursive: true });
-  await mkdir(path.join(npx, '@glw907', 'cairn-linux-x64'), { recursive: true });
-  await writeFile(path.join(npx, 'create-cairn-site', 'package.json'), JSON.stringify({ version: launcher }));
-  await writeFile(path.join(npx, '@glw907', 'cairn-linux-x64', 'package.json'), JSON.stringify({ version: '2.0.0-rc.4' }));
+  await mkdir(path.join(home, '.npm', '_npx'), { recursive: true });
+  if (!opts.noNpx) {
+    await mkdir(path.join(npx, 'create-cairn-site'), { recursive: true });
+    await mkdir(path.join(npx, '@glw907', 'cairn-linux-x64'), { recursive: true });
+    await writeFile(path.join(npx, 'create-cairn-site', 'package.json'), JSON.stringify({ version: launcher }));
+    await writeFile(path.join(npx, '@glw907', 'cairn-linux-x64', 'package.json'), JSON.stringify({ version: '2.0.0-rc.4' }));
+  }
 
   const jobs = opts.jobs ?? [
     { name: 'Run npm install', started: 0, ended: 1.5 },
@@ -137,6 +142,13 @@ describe('a scripted run', () => {
     await asScripted(run, ['{"screen":"watch","action":"seen"}', '{"screen":"done","action":"seen"}']);
     await rm(path.join(run.runDir, 'transcript.jsonl'), { force: true });
     expect((await grade({ runDir: run.runDir, deps: run.deps })).outcome).toEqual({ result: 'pass' });
+  });
+
+  it('still fails a published-snapshot run whose launcher or platform package is unread', async () => {
+    const run = await makeRun({ noNpx: true });
+    await asScripted(run, ['{"screen":"done","action":"seen"}']);
+    const outcome = (await grade({ runDir: run.runDir, deps: run.deps })).outcome;
+    expect(outcome).toMatchObject({ result: 'fail', detail: expect.stringContaining('launcher unread') });
   });
 
   it('fails when the leg never reached the done screen', async () => {
@@ -239,6 +251,17 @@ describe('the end-state checks and the outcome', () => {
     expect(record.endState.signInMail.ok).toBe(false);
     expect(record.endState.signInMail.evidence).toContain('mailbox error');
     expect(record.outcome.result).toBe('fail');
+  });
+
+  it('fails a registry run whose launcher and platform package are unread, and passes a local build with none', async () => {
+    const registry = await makeRun({ noNpx: true });
+    const failed = await grade({ runDir: registry.runDir, deps: registry.deps });
+    expect(failed.endState.versionsMatchCandidate.ok).toBe(false);
+    expect(failed.outcome.detail).toContain('launcher unread is not 2.0.0-rc.4');
+    expect(failed.outcome.detail).toContain('platform unread is not 2.0.0-rc.4');
+
+    const local = await makeRun({ noNpx: true, local: true });
+    expect((await grade({ runDir: local.runDir, deps: local.deps })).endState.versionsMatchCandidate.ok).toBe(true);
   });
 
   it('fails an installed version unlike the candidate as other: wrong candidate', async () => {

@@ -106,10 +106,11 @@ func newTag(c *cobra.Command, flag string, env func(string) string) string {
 // inSandbox reports whether the call runs inside Claude Code's sandbox, which sets SANDBOX_RUNTIME
 // for every sandboxed command and for no excluded one (probed 2026-11-09, Claude Code 2.1.319).
 //
-// WATCH: Claude Code's documentation does not name SANDBOX_RUNTIME; this reads a marker that was
-// observed, and a public bug report (claudeissues.com 35986) saw it set whenever commands are wrapped.
-// If Claude Code renames or drops it, the refusal quietly stops firing and a sandboxed run reaches the
-// unreachable approval tab as before. Nothing else was found that exports it.
+// WATCH: Anthropic's sandbox runtime sets the marker itself on every command it wraps
+// (github.com/anthropics/sandbox-runtime, src/sandbox/sandbox-utils.ts, generateProxyEnvVars), so it
+// tracks actual wrapping, even with sandbox.enabled false (anthropics/claude-code#35986). Claude Code's
+// documentation does not name it. If the runtime renames or drops it, the refusal quietly stops firing
+// and a sandboxed run reaches the unreachable approval tab as before.
 func inSandbox(env func(string) string) bool {
 	return env("SANDBOX_RUNTIME") != ""
 }

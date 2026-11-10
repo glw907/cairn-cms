@@ -251,6 +251,13 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		r.zone, r.zoneChosen = zones[i], true
 	}
 	r.host = r.zone.Name
+	// An address the owner gave stands when it fits the zone, so a subdomain is checked for the
+	// records on it and not refused for the apex's, which the zone's default address would read.
+	if given := strings.ToLower(strings.TrimSpace(r.cfg.Answers.Host)); given != "" {
+		if _, err := addresses(r.zone.Name, given); err == nil {
+			kept = given
+		}
+	}
 	if _, err := addresses(r.zone.Name, kept); kept != "" && err == nil {
 		// An address an open-choice stop kept stands when it fits the zone the resume chose, and
 		// it is the address the check below reads.

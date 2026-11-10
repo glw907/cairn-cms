@@ -358,6 +358,31 @@ func TestEmptyFolderPassesTheOpening(t *testing.T) {
 	}
 }
 
+func TestAGivenSubdomainIsCheckedNotTheApexOfItsZone(t *testing.T) {
+	w := newWorld(t)
+	w.cf.dns["carin-test-5.org"] = cfResult[[]providers.DNSRecord](t, "zone_dns_records.named.200.json")
+	w.cfg.Answers.Host = "Blog.carin-test-5.org"
+	w.view.edits = []SummaryEdit{{OwnerEmail: w.cf.email, Host: "blog.carin-test-5.org"}}
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run with a subdomain over an apex that has records: %v", err)
+	}
+	if res.Record.Setup.Address != "blog.carin-test-5.org" {
+		t.Errorf("address = %q, want the subdomain", res.Record.Setup.Address)
+	}
+}
+
+func TestAGivenSubdomainWithRecordsOfItsOwnIsStillRefused(t *testing.T) {
+	w := newWorld(t)
+	w.cf.dns["blog.carin-test-5.org"] = []providers.DNSRecord{{Name: "blog.carin-test-5.org", Type: "A"}}
+	w.cfg.Answers.Host = "blog.carin-test-5.org"
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonAddressRecords {
+		t.Fatalf("reason = %s, want %s", f.Reason, ReasonAddressRecords)
+	}
+}
+
 func TestCloudflareChecksStopBeforeAnyProviderWrite(t *testing.T) {
 	cases := []struct {
 		name  string

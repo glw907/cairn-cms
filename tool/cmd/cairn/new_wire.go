@@ -109,7 +109,8 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 			defer func() { _ = resp.Body.Close() }()
 			return resp.StatusCode, resp.Header.Get("Location"), nil
 		},
-		Listen: setup.ListenLoopback,
+		Authority: probe.LookupAuthoritative,
+		Listen:    setup.ListenLoopback,
 
 		Vault: vault,
 		Store: reg,

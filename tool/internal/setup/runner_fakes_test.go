@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -1089,8 +1090,10 @@ type world struct {
 	template   Template
 	fetchErr   error
 	siteLive   bool
-	npmEnv     string
-	cfg        Config
+	// authority answers the zone nameserver's lookup for a host; nil means the record is there.
+	authority func(host string) ([]net.IP, error)
+	npmEnv    string
+	cfg       Config
 }
 
 const foreignAppID = 15368
@@ -1207,6 +1210,13 @@ func newWorld(t *testing.T) *world {
 		WriteSite:     w.writeSite,
 		FinalizeSite:  w.finalizeSite,
 		SiteGet:       w.siteGet,
+		Authority: func(_ context.Context, nameserver, host string) ([]net.IP, error) {
+			w.log = append(w.log, "authority:"+nameserver+":"+host)
+			if w.authority != nil {
+				return w.authority(host)
+			}
+			return []net.IP{net.ParseIP("2606:4700::1")}, nil
+		},
 		Listen: func(loopback.Config) (Tab, error) {
 			if w.listenErr != nil {
 				return nil, w.listenErr

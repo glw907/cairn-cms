@@ -54,6 +54,7 @@ var screenDescs = map[string]string{
 	"watch-sign-in":              "The watch on its last step, the sign-in.",
 	"failure-deploy":             "The four-part failure for a failed first deploy, which names the Workers Paid plan, under the watch.",
 	"failure-declined":           "The failure for a declined Cloudflare approval, with no watch.",
+	"failure-provider":           "The failure for a refused provider request, with the detail line after the four parts.",
 	"done":                       "The done screen after a used sign-in link and an emailed one.",
 	"done-open":                  "The done screen when the sign-in link was not used.",
 	"done-scripts-skipped":       "The done screen with the skipped install scripts notice.",

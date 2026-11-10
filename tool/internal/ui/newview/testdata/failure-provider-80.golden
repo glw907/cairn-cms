@@ -1,0 +1,21 @@
+
+  Setup can't continue
+
+  ● Write the site files
+  ■ Set up the database, storage bucket, and email
+  ○ Commit the site
+  ○ Store the deploy key in GitHub
+  ○ Push the site to GitHub
+  ○ Run the first deploy
+  ○ Connect fieldnotes.example.com
+  ○ Sign in to the admin
+
+  What happened     Cloudflare refused a request: the credential
+                    setup used lacks a permission it needs.
+  Already done      Setup created the GitHub App fieldnotes-cms.
+  Left in place     Everything setup created stays,
+                    and the next run resumes from it.
+  What to do        Run cairn new again, and approve every
+                    permission the Cloudflare page lists.
+  Detail            cloudflare: forbidden (status 403, code
+                    10000) on GET /zones/abc123/dns_records

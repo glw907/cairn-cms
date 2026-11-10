@@ -69,11 +69,15 @@ type APIError struct {
 	Status int
 	Code   int
 	Reason Reason
+	// Method and Path name the failed request, the path without its query. Both are empty on an
+	// error built outside a client.
+	Method, Path string
 }
 
 // Error implements the error interface.
 func (e *APIError) Error() string {
-	return fmt.Sprintf("cloudflare: %s (status %d, code %d)", e.Reason, e.Status, e.Code)
+	s := fmt.Sprintf("cloudflare: %s (status %d, code %d)", e.Reason, e.Status, e.Code)
+	return s + requestSuffix(e.Method, e.Path)
 }
 
 // ClassifiedReason implements ProviderError.
@@ -232,7 +236,8 @@ func (cf *Cloudflare) do(req *http.Request, out any, info *resultInfo) error {
 		if len(errs) > 0 {
 			code = errs[0].Code
 		}
-		return &APIError{Status: resp.StatusCode, Code: code, Reason: classifyReason(resp.StatusCode, errs, resp.Header)}
+		return &APIError{Status: resp.StatusCode, Code: code, Reason: classifyReason(resp.StatusCode, errs, resp.Header),
+			Method: req.Method, Path: strings.TrimPrefix(req.URL.Path, "/client/v4")}
 	}
 	if envErr != nil {
 		return fmt.Errorf("providers: parse response body: %w", envErr)

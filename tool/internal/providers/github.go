@@ -53,11 +53,14 @@ type GitHubError struct {
 	Status  int
 	Message string
 	Reason  Reason
+	// Method and Path name the failed request, the path without its query. Both are empty on an
+	// error built outside a client.
+	Method, Path string
 }
 
 // Error implements the error interface.
 func (e *GitHubError) Error() string {
-	return fmt.Sprintf("github: %s (status %d)", e.Reason, e.Status)
+	return fmt.Sprintf("github: %s (status %d)", e.Reason, e.Status) + requestSuffix(e.Method, e.Path)
 }
 
 // ClassifiedReason implements ProviderError.
@@ -84,11 +87,7 @@ func (gh *GitHub) getJSON(ctx context.Context, path string, out any) error {
 		return err
 	}
 	if isErrorStatus(status) {
-		var body struct {
-			Message string `json:"message"`
-		}
-		_ = json.Unmarshal(data, &body)
-		return &GitHubError{Status: status, Message: body.Message, Reason: reasonForStatus(status, header)}
+		return githubFailure(http.MethodGet, path, status, header, data)
 	}
 	if out == nil {
 		return nil

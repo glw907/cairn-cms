@@ -245,7 +245,7 @@ func (a *agentRun) finish(res setup.Result, err error) error {
 		return err
 	}
 	w := a.cmd.ErrOrStderr()
-	for _, line := range []string{f.Happened, f.Did, f.Left, f.Do} {
+	for _, line := range []string{f.Happened, f.Did, f.Left, f.Do, f.Detail} {
 		if line != "" {
 			_, _ = fmt.Fprintln(w, line)
 		}

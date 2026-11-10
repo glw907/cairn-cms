@@ -88,6 +88,14 @@ var (
 		Did:      "Nothing was created.",
 		Do:       "Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.",
 	}
+	providerRefused = setup.Failure{
+		Step: setup.StepProvision, Reason: setup.ReasonProvider,
+		Happened: "Cloudflare refused a request: the credential setup used lacks a permission it needs.",
+		Did:      "Setup created the GitHub App fieldnotes-cms.",
+		Left:     "Everything setup created stays, and the next run resumes from it.",
+		Do:       "Run cairn new again, and approve every permission the Cloudflare page lists.",
+		Detail:   "cloudflare: forbidden (status 403, code 10000) on GET /zones/abc123/dns_records",
+	}
 	nodeOld = setup.Failure{
 		Step: setup.StepOpeningChecks, Reason: setup.ReasonNodeOld,
 		Happened: "Setup needs Node.js 24 or later. This computer has Node.js 22.",
@@ -293,6 +301,7 @@ var screens = []struct {
 	{"watch-sign-in", oneTheme, false, watched(7)},
 	{"failure-deploy", oneTheme, false, failed(deployFailed)},
 	{"failure-declined", oneTheme, false, failed(declined)},
+	{"failure-provider", oneTheme, false, failed(providerRefused)},
 	{"done", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, Emailed: true})},
 	{"done-open", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", Emailed: true})},
 	{"done-scripts-skipped", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, ScriptsSkipped: true})},

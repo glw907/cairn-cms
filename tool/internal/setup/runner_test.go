@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -1357,7 +1358,7 @@ func TestAnInstallExchangeThatFailsOtherwiseStops(t *testing.T) {
 	w.web.errs = []error{&providers.GitHubError{Status: 502, Reason: providers.ReasonUnknown}}
 	_, err := w.run(context.Background())
 	f := failureOf(t, err)
-	if f.Reason != ReasonProvider || f.Happened != "A request to GitHub failed." || f.Do == "" {
+	if f.Reason != ReasonProvider || f.Happened != "GitHub had a problem on its side." || f.Do == "" {
 		t.Errorf("failure = %+v, want the four-part GitHub failure", f)
 	}
 	if n := slices.Index(w.log, "wait:"+string(loopback.GitHubCallback)); n < 0 || strings.Count(strings.Join(w.log, " "), "wait:"+string(loopback.GitHubCallback)) != 1 {
@@ -1524,7 +1525,7 @@ func TestAResumeAtTheDeployKeyReplacesTheKey(t *testing.T) {
 	w.gh.secretErr = &providers.GitHubError{Status: 500, Reason: providers.ReasonUnknown}
 	_, err := w.run(context.Background())
 	f := failureOf(t, err)
-	if f.Reason != ReasonProvider || f.Happened != "A request to GitHub failed." || f.Left == "" || f.Do == "" ||
+	if f.Reason != ReasonProvider || f.Happened != "GitHub had a problem on its side." || f.Left == "" || f.Do == "" ||
 		!strings.Contains(f.Did, "deploy key") {
 		t.Fatalf("failure = %+v, want the four-part GitHub failure", f)
 	}
@@ -1594,6 +1595,55 @@ func TestASpentGrantRerunsApprovalOneAlone(t *testing.T) {
 			t.Error("the refused grant reached a create")
 		}
 	})
+}
+
+func TestAProviderStopIsWordedByWhatTheProviderSaid(t *testing.T) {
+	denied := &providers.APIError{Status: 403, Code: 10000, Reason: providers.ReasonForbidden,
+		Method: "GET", Path: "/zones/abc123/dns_records"}
+	w := newWorld(t)
+	w.cf.createErr["r2"] = fmt.Errorf("list records: %w", denied)
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	wantDetail := "cloudflare: forbidden (status 403, code 10000) on GET /zones/abc123/dns_records"
+	if f.Reason != ReasonProvider || f.Detail != wantDetail {
+		t.Errorf("failure = %+v, want the provider reason and detail %q", f, wantDetail)
+	}
+	if want := "Cloudflare refused a request: the credential setup used lacks a permission it needs."; f.Happened != want {
+		t.Errorf("Happened = %q, want %q", f.Happened, want)
+	}
+	if !strings.Contains(f.Do, "approve every permission the Cloudflare page lists") || strings.Contains(f.Do, "internet") {
+		t.Errorf("Do = %q, want the approval wording", f.Do)
+	}
+
+	w = newWorld(t)
+	w.cf.createErr["r2"] = errors.New("dial tcp 203.0.113.7:443: i/o timeout")
+	_, err = w.run(context.Background())
+	f = failureOf(t, err)
+	if f.Detail != "" || !strings.Contains(f.Do, "Check your internet connection") {
+		t.Errorf("failure = %+v, want no detail and the connection wording for a transport error", f)
+	}
+}
+
+func TestProviderStopByStatus(t *testing.T) {
+	for _, tt := range []struct {
+		name         string
+		status       int
+		token        bool
+		happened, do string
+	}{
+		{"401 approval", 401, false, "Acme refused a request: the credential setup used lacks a permission it needs.", "Run cairn new again, and approve every permission the Cloudflare page lists."},
+		{"403 token", 403, true, "Acme refused a request: the credential setup used lacks a permission it needs.", "Give the token every permission that `cairn help agents` lists, and then run cairn new again."},
+		{"429", 429, false, "Acme is limiting requests.", "Wait a few minutes, and then run cairn new again."},
+		{"503", 503, true, "Acme had a problem on its side.", "Wait a few minutes, and then run cairn new again."},
+		{"422", 422, false, "Acme rejected a request.", "Read the detail line, and then run cairn new again."},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			happened, do := providerStop("Acme", tt.status, tt.token)
+			if happened != tt.happened || do != tt.do {
+				t.Errorf("providerStop = %q, %q; want %q, %q", happened, do, tt.happened, tt.do)
+			}
+		})
+	}
 }
 
 func TestOneFailurePerProviderStopsResumably(t *testing.T) {

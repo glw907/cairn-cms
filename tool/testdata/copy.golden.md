@@ -544,6 +544,10 @@ Run it as one bare call outside the sandbox: no option before the package name, 
 
 ## setup
 
+- <provider> had a problem on its side.
+- <provider> is limiting requests.
+- <provider> refused a request: the credential setup used lacks a permission it needs.
+- <provider> rejected a request.
 - A <kind> named <name> already exists on your Cloudflare account. Setup can't confirm that it created this <kind>.
 - A Worker already serves <host>.
 - A Worker named <name> appeared on your Cloudflare account while setup ran.
@@ -562,6 +566,7 @@ Run it as one bare call outside the sandbox: no option before the package name, 
 - Enter a valid email address.
 - Every name from <repo> to <repo>-9 is already in use.
 - Finish or stop the other setup, and then run cairn new again.
+- Give the token every permission that `cairn help agents` lists, and then run cairn new again.
 - If GitHub says the name is taken, change it on that page. Setup uses the name you choose.
 - If the account isn't on Workers Paid, the first deploy fails: check the plan first. Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.
 - If the link has expired, request a new one on the sign-in page.
@@ -573,12 +578,14 @@ Run it as one bare call outside the sandbox: no option before the package name, 
 - Nothing was created.
 - On GitHub, open the Actions tab of <repo> to see whether the deploy is still running. Then run cairn new again. Setup resumes at the first deploy.
 - Port 49152 is in use. Another setup may be running.
+- Read the detail line, and then run cairn new again.
 - Register a domain with Cloudflare, or add a domain you already own to Cloudflare. Then run cairn new again.
 - Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve to give the App access to <repo> only.
 - Remove the DNS records for <host> in Cloudflare, or choose another address. Then run cairn new again.
 - Remove the custom domain or route for <host> from that Worker in Cloudflare, or choose another address. Then run cairn new again.
 - Remove those commits or delete the repository. Then run cairn new again.
 - Run cairn new again to resume.
+- Run cairn new again, and approve every permission the Cloudflare page lists.
 - Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.
 - Run cairn new again. On the Cloudflare page, select the same account as before, select API Tokens: Write, and then select Allow.
 - Run cairn new in a terminal on the computer where you use your browser.
@@ -617,6 +624,7 @@ Run it as one bare call outside the sandbox: no option before the package name, 
 - Undo your changes in that folder, and then run cairn new again.
 - Unlock or set up the keyring, and then run cairn new again.
 - Use the bare domain, or a subdomain such as blog.<zone>. A subdomain gets no www.
+- Wait a few minutes, and then run cairn new again.
 - Wait a few minutes, and then run cairn new again. Setup resumes at the Connect <domain> step.
 - Wait until Cloudflare shows the domain as active, and then run cairn new again.
 - Your Cloudflare account has no domains. The admin sends sign-in links by email, and Cloudflare sends email only from a domain on your account.
@@ -652,6 +660,7 @@ Run it as one bare call outside the sandbox: no option before the package name, 
 - Database
 - Deploys
 - Design
+- Detail
 - Domain
 - Edit your site
 - Enter a name that has at least one number or one letter from A to Z.

@@ -227,7 +227,7 @@ func (w *GitHubWeb) ExchangeCode(ctx context.Context, clientID string, clientSec
 		return Credential{}, &GitHubOAuthError{Status: status, Code: out.Error}
 	}
 	if isErrorStatus(status) {
-		return Credential{}, githubFailure(status, header, data)
+		return Credential{}, githubFailure(http.MethodPost, "/login/oauth/access_token", status, header, data)
 	}
 	if out.AccessToken == "" {
 		return Credential{}, &GitHubOAuthError{Status: status, Code: "no access token in the response"}

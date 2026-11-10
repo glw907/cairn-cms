@@ -75,6 +75,7 @@ const (
 	partDid      = "Already done"
 	partLeft     = "Left in place"
 	partDo       = "What to do"
+	partDetail   = "Detail"
 
 	linkRegister = "Register a domain"
 	linkMove     = "Add a domain you own"
@@ -216,7 +217,7 @@ func Catalogue() []string {
 		titleBrowser, browserBefore, browserBeforeToken, browserDuring, browserNoTab, browserNoOpen, browserResume,
 		countdownLeft, countdownLate,
 		approvalAllow, approvalCreate, approvalInstall, approvalApprove,
-		titleNoDomain, titleStopped, partHappened, partDid, partLeft, partDo,
+		titleNoDomain, titleStopped, partHappened, partDid, partLeft, partDo, partDetail,
 		linkRegister, linkMove, linkStart,
 		titleDomain, labelDomain, descDomain, titleAccount, labelAccount, descAccount,
 		titleResume, labelResume, descResume, optionNew,

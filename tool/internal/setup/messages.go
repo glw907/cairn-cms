@@ -1,6 +1,10 @@
 package setup
 
-import "slices"
+import (
+	"net/http"
+	"slices"
+	"strings"
+)
 
 // This file is the messages table for setup's stops and for the copy the design left open: one
 // entry for every Reason, and the lines the plan's rulings added to the copy deck. Wording
@@ -248,12 +252,47 @@ const (
 	LineTokenStored = "Setup stored your Cloudflare API token as an Actions secret in your GitHub repository, where every deploy uses it. When the site no longer needs the token, revoke it in Cloudflare."
 )
 
+// What a provider said, worded for the owner. providerStop picks among them by status, and
+// <provider> is the provider's name.
+const (
+	lineProviderRefused   = "<provider> refused a request: the credential setup used lacks a permission it needs."
+	lineProviderLimiting  = "<provider> is limiting requests."
+	lineProviderDown      = "<provider> had a problem on its side."
+	lineProviderRejected  = "<provider> rejected a request."
+	lineGivePermissions   = "Give the token every permission that `cairn help agents` lists, and then run cairn new again."
+	lineApprovePermission = "Run cairn new again, and approve every permission the Cloudflare page lists."
+	lineWaitAndRun        = "Wait a few minutes, and then run cairn new again."
+	lineReadDetail        = "Read the detail line, and then run cairn new again."
+)
+
+// providerStop is the Happened and Do sentences for a request to provider that came back with
+// status. A token run sets the credential itself, so its Do points at the token's permissions.
+func providerStop(provider string, status int, token bool) (happened, do string) {
+	var h string
+	switch {
+	case status == http.StatusUnauthorized || status == http.StatusForbidden:
+		h, do = lineProviderRefused, lineApprovePermission
+		if token {
+			do = lineGivePermissions
+		}
+	case status == http.StatusTooManyRequests:
+		h, do = lineProviderLimiting, lineWaitAndRun
+	case status >= 500 && status <= 599:
+		h, do = lineProviderDown, lineWaitAndRun
+	default:
+		h, do = lineProviderRejected, lineReadDetail
+	}
+	return strings.ReplaceAll(h, "<provider>", provider), do
+}
+
 // Catalogue returns every string this table carries, for the copy golden.
 func Catalogue() []string {
 	var out []string
 	for _, e := range entries {
 		out = append(out, e.Happened, e.Did, e.Left, e.Do)
 	}
+	out = append(out, lineProviderRefused, lineProviderLimiting, lineProviderDown, lineProviderRejected,
+		lineGivePermissions, lineApprovePermission, lineWaitAndRun, lineReadDetail)
 	out = append(out, LineSlugNoLetters, LineSignInStep, LineDoneOpen, linePageFooter, lineLinkExpired, lineAppNameTaken,
 		LineTokenStored, ProblemEmail, ProblemAddress, ProblemHost)
 	return slices.DeleteFunc(out, func(s string) bool { return s == "" })

@@ -1,6 +1,20 @@
-## Unreleased
+## 0.99.0-rc.5
+
+Released 2026-11-09.
 
 <!-- release-size: minor -->
+
+This release is the rebuild. It breaks the public surface, the platform, the content model, the sign-in
+store, and the scaffold together, so a site is not upgraded in place. Start a new site from
+`create-cairn-site` and carry your content and theme across, reading the sections below for every name
+and behavior that changed from `0.98.0`. The sections list each break in the order a rebuilder meets
+it.
+
+Consumers must: rebuild the site from `create-cairn-site`; this release has no upgrade path from an earlier version.
+
+This candidate also carries the setup tooling's first loop: the token option for `cairn new`, the three-leg release gate, the standard starter content, and the theme contract. Those changes sit under "Since rc.4".
+
+### Since rc.4
 
 A new site now starts from a small standard content set in place of the showcase's trail demo. The
 template carries a home page, About, an author page, a Contact page with a placeholder address, six
@@ -36,20 +50,6 @@ Consumers must: create `src/site/theme-options.css` and `src/site/overrides.css`
 Consumers must: keep the site config at `src/site/site.config.yaml`, the only path the engine reads; a file left at `src/theme/site.config.yaml` is not read and logs `config.missing`.
 
 Consumers must: replace an `uppercase` class on an eyebrow with the `eyebrow-case` utility and set the case through `--cairn-eyebrow-case`, and use `--cairn-scroll-cue` for the code block's scroll cue.
-
-## 0.99.0-rc.4
-
-Released 2026-11-07.
-
-<!-- release-size: minor -->
-
-This release is the rebuild. It breaks the public surface, the platform, the content model, the sign-in
-store, and the scaffold together, so a site is not upgraded in place. Start a new site from
-`create-cairn-site` and carry your content and theme across, reading the sections below for every name
-and behavior that changed from `0.98.0`. The sections list each break in the order a rebuilder meets
-it.
-
-Consumers must: rebuild the site from `create-cairn-site`; this release has no upgrade path from an earlier version.
 
 ### What happens at deploy
 

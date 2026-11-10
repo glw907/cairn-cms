@@ -12,7 +12,7 @@ bash scripts/gate/run-gate.sh sweep
 bash scripts/gate/run-gate.sh sweep --check-scopes
 bash scripts/gate/run-gate.sh sweep --apply
 bash scripts/gate/run-gate.sh probe
-bash scripts/gate/run-gate.sh naive --conductor-transcript <path>
+bash scripts/gate/run-gate.sh naive
 bash scripts/gate/run-gate.sh scripted
 bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget]
 bash scripts/gate/run-gate.sh shell <name> [-c <command>]
@@ -64,8 +64,9 @@ the clean room's user is alive. `naive` also refuses:
   deletes);
 - an eleventh naive run (every ledger row named for a run id counts, except a scripted one);
 - when the remaining budget is under $5. The cap is the lower of $20 and $100 less the spend so far:
-  every ledger row (a `running` row at its full cap), probe sessions included, plus `cleanroom cost`
-  of the transcript passed as `--conductor-transcript`;
+  every ledger row (a `running` row at its full cap), probe sessions included, and nothing else: the
+  executor's own session no longer counts (Geoff, 2026-11-10, Approval Queue item
+  `20261110T032922-1565189`). `--conductor-transcript` is still accepted and ignored;
 - when the stowed template's `sha256` differs from the last passing row in
   `/var/tmp/cleanroom/probes.jsonl`.
 

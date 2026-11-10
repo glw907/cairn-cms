@@ -204,6 +204,38 @@ describe('scripted leg: the target', () => {
   });
 });
 
+describe('scripted leg: npm prints its banner above the chooser on the published path', () => {
+  // `npm create` prints `> create-cairn-site@<version> create-cairn-site` above the TUI, and every
+  // earlier run used a local binary that prints none. Run 2611102143 read that line as the selected
+  // row, counted its Downs from the top of the pane, and ran off the end of the domain list.
+  const banner = '> create-cairn-site@2.0.0-dev.5 create-cairn-site\n> create-cairn-site\n\n';
+  const answers = { name: 'n', email: OWNER, command: START };
+  const domains = (marked: string | null) =>
+    `Choose a domain\n\nDomain\n3 domains on your Cloudflare account\n${['alpha.example.org', 'carin-test.org', 'zeta.example.net'].map((d) => (d === marked ? `> ${d}` : `  ${d}`)).join('\n')}\n\n↑↓ choose`;
+  const accounts = (marked: string | null) =>
+    `Choose an account\n\nAccount\nYour Cloudflare sign-in can use 2 accounts. Setup creates your site in the one you choose.\n${['First', 'Second'].map((a) => (a === marked ? `> ${a}` : `  ${a}`)).join('\n')}\n\n↑↓ choose`;
+
+  it('counts the domain Downs from the chooser, whatever sits above it', () => {
+    expect(chooseRow(banner + domains(null), 'carin-test.org', 'domain')).toEqual([{ key: 'Down' }, { key: 'Down' }, { key: 'Enter' }]);
+    expect(chooseRow(banner + domains('alpha.example.org'), 'carin-test.org', 'domain')).toEqual([{ key: 'Down' }, { key: 'Enter' }]);
+    expect(chooseRow(banner + domains('carin-test.org'), 'carin-test.org', 'domain')).toEqual([{ key: 'Enter' }]);
+  });
+
+  it('answers a blank account chooser with a Down first, banner or not', () => {
+    const account = SCREENS.find((screen) => screen.name === 'account');
+    expect(account?.answer?.(answers, banner + accounts(null))).toEqual([{ key: 'Down' }, { key: 'Enter' }]);
+    expect(account?.answer?.(answers, banner + accounts('First'))).toEqual([{ key: 'Enter' }]);
+  });
+});
+
+describe('scripted leg: a failure is written to the log', () => {
+  it('records the screen and the first line of the reason before it throws', async () => {
+    const h = harness([PANES.prompt, PANES.starting, PANES.welcome, PANES.stopped]);
+    await expect(h.run()).rejects.toThrow(/setup stopped/);
+    expect(h.events.at(-1)).toMatchObject({ screen: 'stopped', action: 'failed', reason: expect.stringContaining('setup stopped at "stopped"') });
+  });
+});
+
 describe('scripted leg: a key goes only to the screen still showing', () => {
   it('sends nothing to the browser screen when the domain screen replaces it during the screenshot', async () => {
     // Run 2611101855: the browser screen showed for 0.4 seconds, the real-terminal screenshot took

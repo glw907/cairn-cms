@@ -227,6 +227,7 @@ export async function runScripted({ runDir, env, deps }) {
   shell.exited.then((code) => (exitCode = code));
 
   const started = deps.now();
+  /** @type {string[]} */
   const steps = [];
   let reached = 'start';
   let last = null;

@@ -5,7 +5,6 @@ description: >
   ship, cut, release, tag, or push out cairn; when merged-and-green work on `main` is ready to go out;
   when picking the next version or finalizing the CHANGELOG; or when a consumer site needs a new export
   on the registry. Not for a pass that holds unpublished (`cairn-running-passes`) or a site deploy.
-disable-model-invocation: true
 ---
 
 # Releasing cairn
@@ -14,6 +13,14 @@ A cairn-cms release is a deliberate, occasional act. A finished pass finalizes i
 under `## Unreleased`, leaves `package.json` alone, and holds. `main` stays releasable, so completed work
 accumulates unpublished until a release is warranted, and this skill is that separate publish step. The
 governing rule lives in `CLAUDE.md` ("Working here").
+
+A session loads this skill itself, and the approval sits on the act, not the load. Steps 1 to 7 and 10
+cut a candidate and gate it on the `gate` dist-tag, which no `latest` install sees. A session runs them when
+Geoff asks for a release or a plan he approved names the cut. A prerelease `tool/v*` tag also publishes to
+`gate`, so it and the rerun of a failed publish (under step 9) go with them. Step 8 moves `next` to a passed
+candidate, and step 9 puts a stable on `latest`. A session runs those only on Geoff's word in chat or an
+approved packet that names the version, and step 9 also waits on his install, as it says. The four owner
+steps under step 9 stay Geoff's.
 
 Every mechanical step is a command under `scripts/release/`. Each takes the version, exits 0 or 1, and
 ends with one `Next:` line naming what to run after it. This skill keeps four judgment calls (whether a

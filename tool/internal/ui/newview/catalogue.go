@@ -52,6 +52,7 @@ const (
 	titleBrowser       = "Approve setup in your browser"
 	browserBefore      = "Setup opens a tab in your browser. Approve these four requests in that tab."
 	browserBeforeToken = "Setup opens a tab in your browser. Approve these three requests in that tab."
+	browserWaiting     = "Setup is getting ready to open the tab."
 	browserDuring      = "Approve each request in the setup tab. The next request opens in the same tab."
 	browserNoTab       = "If no tab opened, go to <url>"
 	browserNoOpen      = "Setup couldn't open your browser. Go to <url>"
@@ -214,7 +215,7 @@ func Catalogue() []string {
 		titleSSH, sshBody, nothingCreated,
 		titleQuestions, labelTheme, descTheme, labelDesign, labelSiteName, descSiteName, labelRepo,
 		errSlug, labelCrawlers, descCrawlers, optionBlock, optionAllow, labelOwnerEmail, descOwnerEmail,
-		titleBrowser, browserBefore, browserBeforeToken, browserDuring, browserNoTab, browserNoOpen, browserResume,
+		titleBrowser, browserBefore, browserBeforeToken, browserWaiting, browserDuring, browserNoTab, browserNoOpen, browserResume,
 		countdownLeft, countdownLate,
 		approvalAllow, approvalCreate, approvalInstall, approvalApprove,
 		titleNoDomain, titleStopped, partHappened, partDid, partLeft, partDo, partDetail,

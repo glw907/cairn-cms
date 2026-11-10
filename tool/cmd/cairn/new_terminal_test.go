@@ -222,9 +222,9 @@ func TestTerminalLaneFramesCarryNoCredential(t *testing.T) {
 			await[newview.OpenBrowserMsg](ld)
 			ld.apply(enterKey)
 			await[newview.ChooseAccountMsg](ld)
-			ld.apply(downKey, enterKey)
+			ld.apply(downKey, downKey, enterKey)
 			await[newview.ChooseZoneMsg](ld)
-			ld.apply(enterKey)
+			ld.apply(downKey, enterKey)
 			await[newview.ConfirmSummaryMsg](ld)
 			ld.apply(enterKey)
 			for !ld.quit {

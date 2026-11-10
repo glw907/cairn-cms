@@ -144,7 +144,7 @@ func (q *questions) build(width int) *huh.Form {
 			Options(huh.NewOption(optionBlock, setup.Decline), huh.NewOption(optionAllow, setup.Invite)).
 			Value(&q.posture)
 	}
-	return oneField(q.styles, field, width)
+	return oneField(formTheme(q.styles), field, width)
 }
 
 // Render draws the questions screen: the answered questions as receipts, the current form,
@@ -233,9 +233,9 @@ func (e ownerError) Error() string { return string(e) }
 // oneField wraps field in the one-field form every question uses. The field takes its width
 // before the form takes its theme: Huh measures the group when the theme is set, and a
 // description measured before it wraps leaves too little room for the options.
-func oneField(s Styles, field huh.Field, width int) *huh.Form {
+func oneField(theme huh.Theme, field huh.Field, width int) *huh.Form {
 	return huh.NewForm(huh.NewGroup(field.WithWidth(width))).
-		WithTheme(formTheme(s)).
+		WithTheme(theme).
 		WithKeyMap(formKeys()).
 		WithShowHelp(false).
 		WithWidth(width)

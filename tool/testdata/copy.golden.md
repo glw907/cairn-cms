@@ -695,6 +695,7 @@ Run it as one bare call outside the sandbox: no option before the package name, 
 - Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Manage OAuth authorizations. Then find cairn and select Revoke.
 - Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
 - Setup didn't send a sign-in link. This site already has editors, and <email> isn't one of them. Ask one of them to invite you in Admin > Editors.
+- Setup is getting ready to open the tab.
 - Setup needs a domain on Cloudflare
 - Setup opens a tab in your browser. Approve these four requests in that tab.
 - Setup opens a tab in your browser. Approve these three requests in that tab.

@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
 
@@ -22,6 +23,10 @@ type choice struct {
 	options            []huh.Option[string]
 	value              string
 	form               *huh.Form
+	// blank reports that no option is chosen yet: several accounts or domains show no cursor,
+	// and Enter does nothing, until the owner moves. It keeps an Enter meant for an earlier
+	// screen from accepting the first option unread.
+	blank bool
 }
 
 func newChoice(s Styles, g Glyphs, k keys, title, label, desc string, opts []huh.Option[string]) *choice {
@@ -34,7 +39,9 @@ func accountChoice(s Styles, g Glyphs, k keys, accounts []providers.Account) *ch
 	for _, a := range accounts {
 		opts = append(opts, huh.NewOption(a.Name, a.ID))
 	}
-	return newChoice(s, g, k, titleAccount, labelAccount, count(descAccount, len(accounts)), opts)
+	c := newChoice(s, g, k, titleAccount, labelAccount, count(descAccount, len(accounts)), opts)
+	c.blank = len(opts) > 1
+	return c
 }
 
 // zoneChoice offers the account's active zones, by domain.
@@ -43,7 +50,9 @@ func zoneChoice(s Styles, g Glyphs, k keys, zones []providers.Zone) *choice {
 	for _, z := range zones {
 		opts = append(opts, huh.NewOption(z.Name, z.ID))
 	}
-	return newChoice(s, g, k, titleDomain, labelDomain, count(descDomain, len(zones)), opts)
+	c := newChoice(s, g, k, titleDomain, labelDomain, count(descDomain, len(zones)), opts)
+	c.blank = len(opts) > 1
+	return c
 }
 
 // resumeChoice offers each unfinished setup by its site name and domain, then a new site, whose
@@ -73,12 +82,38 @@ func (c *choice) Start(width int) tea.Cmd {
 		Description(prose(c.desc, w)).
 		Options(c.options...).
 		Value(&c.value)
-	c.form = oneField(c.styles, field, w)
+	c.form = oneField(c.theme(), field, w)
 	return c.form.Init()
 }
 
-// Forward hands msg to the form; done reports that the owner chose.
+// theme is the form theme, with the cursor row drawn like the others while blank. Huh asks for
+// styles at every render, so the cursor appears as soon as blank clears.
+func (c *choice) theme() huh.Theme {
+	base := formTheme(c.styles)
+	return huh.ThemeFunc(func(dark bool) *huh.Styles {
+		hs := base.Theme(dark)
+		if c.blank {
+			hs.Focused.SelectSelector = hs.Focused.SelectSelector.SetString("  ")
+			hs.Focused.SelectedOption = hs.Focused.UnselectedOption
+		}
+		return hs
+	})
+}
+
+// Forward hands msg to the form; done reports that the owner chose. While blank, Enter and Tab
+// do nothing, a first Down lands on the first option, and any other key clears blank.
 func (c *choice) Forward(msg tea.Msg) (done bool, cmd tea.Cmd) {
+	if k, ok := msg.(tea.KeyPressMsg); ok && c.blank {
+		km := formKeys().Select
+		switch {
+		case key.Matches(k, km.Next, km.Submit):
+			return false, nil
+		case key.Matches(k, km.Down):
+			c.blank = false
+			return false, nil
+		}
+		c.blank = false
+	}
 	cmd = forward(c.form, msg)
 	return c.form.State == huh.StateCompleted, cmd
 }
@@ -86,8 +121,12 @@ func (c *choice) Forward(msg tea.Msg) (done bool, cmd tea.Cmd) {
 // Value is the chosen option's value: an account id, a zone id, or a site id, "" for a new site.
 func (c *choice) Value() string { return c.value }
 
-// Render draws the choice: the title, the select, and the footer.
+// Render draws the choice: the title, the select, and the footer, which hints Enter only once an
+// option is chosen.
 func (c *choice) Render(width int) string {
 	g := Grid{Styles: c.styles, Glyphs: c.glyphs, Width: width}
+	if c.blank {
+		return Frame(g.Title(c.title), formBlock(c.form), g.Footer(c.keys.Choose))
+	}
 	return Frame(g.Title(c.title), formBlock(c.form), g.Footer(c.keys.Choose, c.keys.Next))
 }

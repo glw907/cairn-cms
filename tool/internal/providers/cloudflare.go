@@ -237,7 +237,7 @@ func (cf *Cloudflare) do(req *http.Request, out any, info *resultInfo) error {
 			code = errs[0].Code
 		}
 		return &APIError{Status: resp.StatusCode, Code: code, Reason: classifyReason(resp.StatusCode, errs, resp.Header),
-			Method: req.Method, Path: strings.TrimPrefix(req.URL.Path, "/client/v4")}
+			Method: req.Method, Path: strings.TrimPrefix(req.URL.EscapedPath(), "/client/v4")}
 	}
 	if envErr != nil {
 		return fmt.Errorf("providers: parse response body: %w", envErr)

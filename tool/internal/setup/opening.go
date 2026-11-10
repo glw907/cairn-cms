@@ -309,8 +309,8 @@ func (r *run) noActiveZone(ctx context.Context) error {
 		"Register a domain with Cloudflare, or add a domain you already own to Cloudflare. Then run cairn new again.", nil)
 }
 
-// checkAddress refuses an address that already answers for something: a DNS record, a Worker
-// custom domain, or a Worker route on any of its hosts. A custom domain already attached to
+// checkAddress refuses an address that already answers for something: an A, AAAA, or CNAME record,
+// a Worker custom domain, or a Worker route on any of its hosts. A custom domain already attached to
 // worker, the site's own Worker, is the site's, along with the DNS record Cloudflare made for
 // it; worker is empty before the site has a Worker.
 func (r *run) checkAddress(ctx context.Context, worker string) error {
@@ -330,7 +330,11 @@ func (r *run) checkAddress(ctx context.Context, worker string) error {
 		if err != nil {
 			return r.fail(ctx, err, "Cloudflare")
 		}
-		if len(recs) > 0 {
+		// Only a record that points the host somewhere counts. A domain's mail records (MX, TXT) sit
+		// at its apex beside a site, and refusing them would bar every domain that has mail.
+		if slices.ContainsFunc(recs, func(rec providers.DNSRecord) bool {
+			return slices.Contains([]string{"A", "AAAA", "CNAME"}, rec.Type)
+		}) {
 			return r.failure(ReasonAddressRecords, "That address already points to another site: "+host+" has DNS records.",
 				"Remove its DNS records in Cloudflare, and then run cairn new again.", nil)
 		}

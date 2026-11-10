@@ -86,6 +86,9 @@ Only the release in this file has notes here. The notes of earlier releases live
 
 A new site's starter content is a standard set of pages and posts in place of the showcase's trail demo. This asks nothing of a site that already exists. A site you start after this lands replaces the sample content with its own, as [Make a scaffolded site yours](./skills/cairn-extending-a-site/references/make-it-yours.md) lists.
 
+The `cairn new` opening check counts only A, AAAA, and CNAME records on an address, so a domain whose
+bare address holds only mail records is no longer refused. A site that already deploys is unaffected.
+
 The engine package also ships the Waymark site template and its theme catalog beside `dist`, for the
 `cairn new` command that a later release adds. A site that already deploys is unaffected, and no
 export, entry point, or migration changes.

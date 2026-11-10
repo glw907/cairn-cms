@@ -22,7 +22,7 @@ The change spreads across the internet gradually, which is called propagation, a
 
 ### Carry over existing DNS records
 
-DNS records are the entries that tell the internet where your domain's web traffic and mail go. Your domain probably carries records that have nothing to do with cairn, and mail records are the most common. Setup never edits or deletes a record your zone already holds. It refuses an address that already has DNS records or a Worker, and it adds only the records the site needs.
+DNS records are the entries that tell the internet where your domain's web traffic and mail go. Your domain probably carries records that have nothing to do with cairn, and mail records are the most common. Setup never edits or deletes a record your zone already holds. It refuses an address that already has an A, AAAA, or CNAME record or a Worker, and it adds only the records the site needs. Mail records such as MX and TXT don't count, so a domain with live mail can still host the site on its bare address.
 
 Cloudflare, not setup, brings records into a new zone when you add a domain, and its scan can miss a record. Compare the list with what you know before you switch nameservers. Mail that depends on a missing record stops working when the switch takes effect. An owner with live mail is the most exposed here, so read [Turn on sign-in email](#turn-on-sign-in-email) as well.
 

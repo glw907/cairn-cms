@@ -89,6 +89,10 @@ type Setup struct {
 	ThemeID string
 	// Deploys is how deploys run; SetupDeploys for a setup site.
 	Deploys string
+	// Credential is what the run's Cloudflare calls use: "token" for an API token the owner
+	// supplied in place of the Cloudflare approval, which a resume needs again, and "approval" or
+	// empty for the approval. The token itself is never recorded.
+	Credential string
 	// Extra carries every key under "setup" this package does not type, in the order Parse
 	// observed them.
 	Extra []ExtraField
@@ -124,6 +128,7 @@ var setupFields = []field[Setup]{
 	scalarField("aiPosture", func(s *Setup) *string { return &s.AIPosture }),
 	scalarField("themeId", func(s *Setup) *string { return &s.ThemeID }),
 	scalarField("deploys", func(s *Setup) *string { return &s.Deploys }),
+	scalarField("credential", func(s *Setup) *string { return &s.Credential }),
 }
 
 // IsSetup reports whether r carries a setup object.

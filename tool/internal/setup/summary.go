@@ -91,6 +91,7 @@ func (r *run) summaryOf() Summary {
 		ThemeDescription: r.theme.Description,
 		SuffixReason:     r.suffixReason,
 		ZoneChosen:       r.zoneChosen,
+		Credential:       r.credential(),
 	}
 }
 
@@ -105,6 +106,7 @@ func (r *run) outline() (Outline, error) {
 		Theme:      r.theme.ID,
 		AccountID:  r.account.ID,
 		Suffix:     r.suffix,
+		Credential: r.credential(),
 	})
 }
 

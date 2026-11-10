@@ -103,6 +103,7 @@ func (r *run) opening(ctx context.Context) error {
 			AIPosture:       string(r.cfg.Answers.Posture),
 			ThemeID:         r.theme.ID,
 			Deploys:         record.SetupDeploys,
+			Credential:      string(r.credential()),
 		},
 	}
 	r.done()
@@ -207,10 +208,13 @@ func (r *run) cloudflareChecks(ctx context.Context) error {
 		}
 		r.account = accounts[i]
 	}
-	if r.email, err = user.UserEmail(ctx); err != nil {
-		return r.fail(ctx, err, "Cloudflare")
+	// An account-owned token cannot read /user, so a token run takes the owner's address alone.
+	if !r.tokenRun {
+		if r.email, err = user.UserEmail(ctx); err != nil {
+			return r.fail(ctx, err, "Cloudflare")
+		}
+		r.email = strings.TrimSpace(r.email)
 	}
-	r.email = strings.TrimSpace(r.email)
 	// An owner who already gave an address has it shown at the summary, not the sign-in's.
 	if given := strings.TrimSpace(r.cfg.Answers.OwnerEmail); given != "" {
 		r.email = given

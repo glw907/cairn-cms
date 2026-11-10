@@ -283,11 +283,6 @@ func (c cfClient) ListZones(ctx context.Context) ([]providers.Zone, error) {
 	return c.f.all, c.note(ctx, "zones")
 }
 
-func (c cfClient) Subscriptions(ctx context.Context) ([]providers.Subscription, bool, error) {
-	c.needAccount()
-	return nil, false, c.note(ctx, "subscriptions")
-}
-
 func (c cfClient) WorkerExists(ctx context.Context, name string) (bool, error) {
 	c.needAccount()
 	_, ok := c.f.workers[name]

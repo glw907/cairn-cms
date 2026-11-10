@@ -21,11 +21,12 @@ import {
   deleteGithubApp,
   handleUrl,
   launchBrowser,
+  listGithubApps,
+  PUBLISHED_ALERT,
   publishViaAdmin,
   requestSignInLink,
   tailUrlLog,
 } from '../../../scripts/gate/browser.mjs';
-import { PUBLISHED_ALERT } from '../../../scripts/gate/legs.mjs';
 import { makeSession } from '../../../scripts/gate/gate.mjs';
 
 const SITE = 'https://gate-site.example.workers.dev';
@@ -165,6 +166,10 @@ async function answer(route: Route) {
   if (key === 'POST gate-site.example.workers.dev/admin/pages/about/publish') {
     seen.push('publish');
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(publishMode === 'ok' ? {} : { error: 'Publish failed. GitHub refused the commit.' }) });
+  }
+  if (key === 'GET github.com/settings/apps') {
+    const apps = ['cairn-cairn-gate-2611091200', 'cairn-e2e-gate-x'].map((slug) => `<a href="/settings/apps/${slug}">${slug}</a><a href="/settings/apps/${slug}/advanced">Advanced</a>`);
+    return gated(page(`<a href="/settings/apps/new">New GitHub App</a>${apps.join('')}`));
   }
   if (key === 'GET github.com/settings/apps/gate-app/advanced') {
     const dialog = `<dialog open><input name="verify" oninput="document.getElementById('c').disabled = this.value !== 'gate-app'"><button id="c" disabled onclick="fetch('/settings/apps/gate-app/delete', { method: 'POST' })">I understand the consequences, delete this GitHub App</button></dialog>`;
@@ -465,6 +470,10 @@ describe('the admin half', () => {
     expect((failure as Error).message).toContain('/admin/login');
     expect((failure as Error).message).not.toContain('from-mail');
   }, 30_000);
+
+  it('lists the Apps by slug from the settings page, never the new-App link', async () => {
+    expect(await listGithubApps(context, creds, { pauseMs: 100 })).toEqual(['cairn-cairn-gate-2611091200', 'cairn-e2e-gate-x']);
+  });
 
   it('deletes an App through its Advanced settings, and treats a 404 page as done', async () => {
     expect(await deleteGithubApp(context, 'gate-app', creds, { pauseMs: 100 })).toBe('deleted');

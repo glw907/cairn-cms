@@ -267,6 +267,6 @@ func summaryOf(res setup.Result) setup.Summary {
 	return setup.Summary{
 		SiteName: res.Record.Name, Repository: o.Names.Repository, Worker: o.Names.Worker, Database: o.Names.Database,
 		Bucket: o.Names.Bucket, App: res.Record.Setup.AppSlug, Folder: o.Names.Folder, Zone: res.Record.Domain,
-		Addresses: o.Addresses, OwnerEmail: o.OwnerEmail, Posture: o.Posture, Theme: o.Theme,
+		Addresses: o.Addresses, OwnerEmail: o.OwnerEmail, Posture: o.Posture, Theme: o.Theme, Credential: o.Credential,
 	}
 }

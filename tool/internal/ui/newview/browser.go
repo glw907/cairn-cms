@@ -13,9 +13,9 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/loopback"
 )
 
-// approvals are the four requests, in the order the setup tab shows them. Each label is the
-// site, then the button the owner selects there.
-var approvals = []string{approvalAllow, approvalCreate, approvalInstall, approvalApprove}
+// allApprovals are the four requests, in the order the setup tab shows them. Each label is the
+// site, then the button the owner selects there. A token run drops the first, the Cloudflare one.
+var allApprovals = []string{approvalAllow, approvalCreate, approvalInstall, approvalApprove}
 
 // approvalIndex places each waiting state in the list. A Cloudflare re-consent is approval 1
 // asked again.
@@ -43,14 +43,30 @@ type browser struct {
 	openFail bool
 	current  int
 	sentence string
+	// approvals are the requests this run asks, and skipped how many of allApprovals come before
+	// the first of them.
+	approvals []string
+	skipped   int
+	before    string
 	// left is the time left in the approval chain; countdown reports that it shows.
 	left      time.Duration
 	countdown bool
 	spin      spinner.Model
 }
 
-func newBrowser(s Styles, g Glyphs, k keys, ascii bool) *browser {
-	return &browser{styles: s, glyphs: g, keys: k, spin: newSpinner(s, ascii)}
+func newBrowser(s Styles, g Glyphs, k keys, ascii, token bool) *browser {
+	b := &browser{styles: s, glyphs: g, keys: k, spin: newSpinner(s, ascii)}
+	b.SetToken(token)
+	return b
+}
+
+// SetToken sets whether the run's Cloudflare calls use a supplied token, which drops the
+// Cloudflare request from the list.
+func (b *browser) SetToken(token bool) {
+	b.approvals, b.skipped, b.before = allApprovals, 0, browserBefore
+	if token {
+		b.approvals, b.skipped, b.before = allApprovals[1:], 1, browserBeforeToken
+	}
 }
 
 // newSpinner is the running mark the browser and the watch screens share in look; each screen
@@ -87,7 +103,7 @@ func (b *browser) OpenFailed() { b.openFail = true }
 
 // Wait shows the approval for state as current, with the sentence setup sends for it.
 func (b *browser) Wait(state setup.WaitState, sentence string) {
-	b.current = approvalIndex[state]
+	b.current = max(approvalIndex[state]-b.skipped, 0)
 	b.sentence = sentence
 }
 
@@ -119,12 +135,12 @@ func openTab(goos string, env map[string]string, url string, reply chan<- error)
 	}
 }
 
-// Render draws the screen: before the tab opens, the four requests and the go-ahead; after, the
+// Render draws the screen: before the tab opens, the requests and the go-ahead; after, the
 // current request with its sentence, the countdown in the chain's last minutes, and the fallback.
 func (b *browser) Render(width int) string {
 	g := Grid{Styles: b.styles, Glyphs: b.glyphs, Width: width}
 	if !b.opened {
-		return Frame(g.Title(titleBrowser), g.Para(RoleText, browserBefore), b.list(g), g.Footer(b.keys.Open, b.keys.Quit))
+		return Frame(g.Title(titleBrowser), g.Para(RoleText, b.before), b.list(g), g.Footer(b.keys.Open, b.keys.Quit))
 	}
 	note := browserResume
 	clock := ""
@@ -145,8 +161,8 @@ func (b *browser) Render(width int) string {
 
 func (b *browser) list(g Grid) string {
 	s := g.Styles
-	out := make([]string, 0, len(approvals)+3)
-	for i, a := range approvals {
+	out := make([]string, 0, len(b.approvals)+3)
+	for i, a := range b.approvals {
 		site, button, _ := strings.Cut(a, ": ")
 		quiet := s.Muted.Render(site+": ") + s.Strong(RoleMuted).Render(button)
 		switch {

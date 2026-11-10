@@ -33,7 +33,7 @@ The second install keeps the worktree's showcase off the main checkout's engine.
 
 **Carve-out for `scripts/gate/` (Geoff, 2026-11-03).** A change that only follows a third-party
 page, such as a renamed GitHub button, lands as a direct change after the fast lane and a dry run, provided
-`evaluateLeg`, the prompt answers, and teardown are untouched. Any other `scripts/gate/` change is a
+the grader, the sweep's name matcher, and the verdict rule are untouched. Any other `scripts/gate/` change is a
 `runner` pass and ends with one gate run (`cairn-releasing`, "Gate the candidate").
 
 **A harness-only fix after the final candidate** writes no `CHANGELOG.md` line, because

@@ -438,7 +438,7 @@ async function recordGithub(ctx, session, probes, getAdapter) {
   const bearer = `Bearer ${ctx.testToken}`;
   const repo = resourceName(ctx.runId, 'repo');
   ledger.add({ kind: 'repo', name: repo });
-  await gh.request('POST', '/user/repos', { auth: bearer, body: { name: repo, private: true, auto_init: true }, route: 'repo_create', caseName: 'ok' });
+  await gh.request('POST', '/user/repos', { auth: bearer, body: { name: repo, private: true, auto_init: false }, route: 'repo_create', caseName: 'ok' });
 
   const adapter = await getAdapter();
   const appName = resourceName(ctx.runId, 'github-app');

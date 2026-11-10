@@ -11,6 +11,7 @@ const (
 	e2eGHUserToken  = "e2e-gh-user-token-0006-planted-value"    // secret-guard-allow
 	e2eGHInstToken  = "e2e-gh-install-token-0007-planted-value" // secret-guard-allow
 	e2eDeployKey    = "e2e-deploy-key-0008-planted-value"       // secret-guard-allow
+	e2eCFSetupToken = "e2e-cf-setup-token-0009-planted-value"   // secret-guard-allow
 )
 
 // The identifiers the world's services agree on.

@@ -8,6 +8,10 @@ short how-to posts, and one post that shows every markdown element and each bloc
 ships with the site, so no page loads a picture from another host. The showcase keeps its own fixtures.
 The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/`.
 
+- **The release gate is rebuilt around three legs, and the setup docs gain the token option.** The agent page and the `cairn-setting-up-a-site` plugin skill say how to run `cairn` as one bare background command and how `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval. The rulings ledger records the verdict.
+
+  Consumers must: nothing.
+
 - **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
 - **The admin docs describe `cairn new`.** `before-you-start`, `create-your-site`, `own-your-domain`, `setup-recovery`, `troubleshooting`, and `credentials` are rebuilt for the new setup, and four pages are new: `set-up-with-an-agent`, `deploys`, `suggested-plugins`, and the generated `setup-reference`. The agent page is also embedded in the `cairn` binary, and a test fails when the copy drifts.

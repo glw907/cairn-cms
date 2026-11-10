@@ -24,8 +24,16 @@ through the two calls.
 | `--posture` | string | what the site does about AI crawlers: decline or invite |
 | `--resume` | string | continue the unfinished setup with this site id |
 | `--site-theme` | string | the theme id, when the template offers several |
-| `--tag` | string | the engine's npm dist-tag to build the site from (default "latest") |
+| `--tag` | string | the engine's npm dist-tag to build the site from, or npm's own tag setting when it is set (default "latest") |
 | `--zone` | string | the Cloudflare zone to serve the site from, when the account has several |
+
+## Environment
+
+| Variable | Meaning |
+| --- | --- |
+| `CAIRN_CF_SETUP_TOKEN` | A Cloudflare API token that setup uses in place of the Cloudflare approval, read from the environment only, never a flag. Setup uses it for every Cloudflare call, stores it as the site's deploy key, and mints no token. The token can't read the owner's email, so give `--email` with it. A resume needs the same variable. |
+
+Setup never reads `CLOUDFLARE_API_TOKEN`.
 
 ## Derived names
 
@@ -76,6 +84,9 @@ With `--apply`, setup writes one JSON object per line to stdout. Each carries `s
 | `waiting` | setup waits on the owner in the browser |
 | `resumed` | the run picked up an unfinished record |
 | `summary` | every derived value, for the owner to review |
+
+The `step_done` event of `approve-cloudflare` and every `summary` carry `credential`: `token`
+when the run used the setup token, and `approval` otherwise.
 
 A `waiting` event carries one of these states:
 

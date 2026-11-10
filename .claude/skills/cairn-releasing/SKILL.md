@@ -215,46 +215,49 @@ a caret when the stable lands.
 
 ## 7. Gate the candidate
 
-A candidate on `gate` is judged before anyone installs it. The gate installs real sites with the
-published setup tool, publishes an edit through each site's admin, and passes a leg only when the edit
-shows at the live address. Before the first leg, check that the account's Email Sending product is live
-and that the account is on Workers Paid (the estate inventory records both). Then:
+A candidate on `gate` is judged by three legs before anyone installs it, each proving setup the way an
+owner meets it:
 
-```bash
-bash scripts/gate/run-gate.sh --smoke
-bash scripts/gate/run-gate.sh --all --version <x.y.z-rc.N>
-```
+- **`naive`**: an agent with no context sets up a site from the public docs while a conductor plays the
+  owner (`cairn-proving-setup`; `run-gate.sh naive`).
+- **`scripted`**: a scripted human drives the interactive `cairn new` and the browser half
+  (`run-gate.sh scripted`).
+- **`owner`**: Geoff installs a site in his own browser, with his own accounts, from the final
+  candidate.
 
-The run is headless and never waits for a person; `--headed` shows the browser and is the rerun for a
-headless GitHub challenge. An unknown page fails its leg, saves a screenshot, and writes a controls file
-of the page's button and link names, so the fix is a change to the harness's page handling, not a hold.
-A lock refuses a second run and names the holder's pid, so wait for the first to exit and never start
-another. A four-leg run takes an hour or more: start it with `run_in_background`.
+Before the first leg, run `bash scripts/gate/run-gate.sh --smoke` and `bash scripts/gate/run-gate.sh
+sweep --check-scopes`, and check that the account's Email Sending product is live and that the account
+is on Workers Paid (the estate inventory records both). A candidate for a gate round runs `npm run
+check:close` on the default lane, since the light lane runs out of memory on it (#370).
 
-A leg passes only when its fetch, its page read, its origin read, and the sign-in email's From all hold,
-as `evaluateLeg` judges them. The run writes a `## Gate` table into the candidate's release body with
-four rows (A1, A2, B1, B2), each carrying the run id. `scripts/gate/verdict.mjs <x.y.z-rc.N>` reads that
-table and exits 0 only when each of the four reads `pass` and all four share one run id.
+The `## Gate` table in the candidate's release body has one row per leg, each carrying the cairn-cms
+commit the leg ran against with the engine and tool versions. A tool-only round publishes a new
+`tool/v2.0.0-rc.<n>` and no engine version, which is why the rows are keyed on commits.
+`scripts/gate/verdict.mjs <x.y.z-rc.N>` exits 0 only with one `pass` row per leg: `scripted` at the
+release's own commit, and `naive` and `owner` at commits with no change under a rerun path up to it.
+`node scripts/gate/record.mjs carry --version <x.y.z-rc.N> --from <commit> --to <commit>` copies the
+`naive` and `owner` rows forward only across a diff that touches none of the rerun paths, which
+`RERUN_PATHS` in `scripts/gate/record.mjs` names. A change under a rerun path reruns the legs it
+touches. Never carry a row by hand.
 
 The standing answers when a leg fails:
 
-- **A candidate's gate failure reruns `--all`, never one group.** `verdict.mjs` without `--file` needs one
-  run id across all four rows, and a group rerun writes a second id. (A rehearsal against a local record
-  uses `--file` and reruns by group; a candidate does not.)
-- A failure fixes forward to the next candidate.
+- A failure fixes forward to the next candidate, and the rows carry only across a diff that the rule
+  allows.
 - A harness-only fix, one that changes only paths that ship in no package, does not force a new
   candidate (see the ruling 10 carve-out in `cairn-running-passes`), and the gate reruns on the candidate
   already out.
-- A Workers Builds outage gets one rerun after 15 minutes.
-- A GitHub page the harness cannot pass asks Geoff once, and the fix is filed.
+- A first deploy that fails on a provider outage gets one rerun after 15 minutes.
+- A GitHub page the harness cannot pass is never defeated: rerun once headed, and if it holds, ask
+  Geoff once and file the fix.
+- A `naive` run that stalls, runs past its caps, or hits the budget stop (five naive runs or $100) is
+  graded with `--end stall` or `--end budget` and follows `cairn-proving-setup`.
 
 **Standing rule (#349).** A pass that changes `scripts/gate/` ends with one run against the current
-`gate` candidate, through `--cli <tarball>` when it also changes the setup tool, so the harness and the
-new product code are proven together before anything publishes. Any unexpected failure is a harness gap,
-fixed before the next cut.
-
-Geoff runs install B's first leg on the final candidate in his own browser, with his own accounts,
-before the stable cut.
+`gate` candidate, through each leg its change touches, so the harness and the new product code are
+proven together before anything publishes. Any unexpected failure is a harness gap, fixed before the
+next cut. The retired wizard's candidate cannot serve for the pass that rebuilt the gate around `cairn
+new`, so that pass's live proof is the first round of the setup-tooling loop.
 
 ## 8. Promote a passed candidate
 
@@ -266,7 +269,7 @@ gh workflow run publish.yml --ref v<x.y.z-rc.N> -f promote=<x.y.z-rc.N>
 
 Note the newest publish `workflow_dispatch` run id first (`gh run list --workflow publish.yml --event
 workflow_dispatch --json databaseId,headBranch`), since the dispatch may not print its run URL. The
-`promote` job refuses unless the gate table shows four passes from one run, then moves `next` to the
+`promote` job refuses unless the gate table passes `verdict.mjs`, then moves `next` to the
 version on the engine and the dev package. A `latest` never moves to a candidate: the engine packages'
 stays on the last stable, and the launcher's is set by the tool release (see "The launcher and its
 platform packages"). Then:

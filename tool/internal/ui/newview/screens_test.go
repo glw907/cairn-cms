@@ -75,12 +75,12 @@ var (
 		ZoneChosen:       true,
 	}
 
-	workersPaid = setup.Failure{
-		Step: setup.StepFirstDeploy, Reason: setup.ReasonWorkersPaid,
-		Happened: "Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.",
+	deployFailed = setup.Failure{
+		Step: setup.StepFirstDeploy, Reason: setup.ReasonDeployFailed,
+		Happened: "The first deploy failed in GitHub Actions.",
 		Did:      "The completed steps above are kept.",
 		Left:     "Everything setup created stays, and the next run resumes from it.",
-		Do:       "Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.",
+		Do:       "If the account isn't on Workers Paid, the first deploy fails: check the plan first. Open the run at https://example.test/runs/1 to see what failed. Then run cairn new again. Setup resumes at the first deploy.",
 	}
 	declined = setup.Failure{
 		Step: setup.StepApproveCloudflare, Reason: setup.ReasonDeclined,
@@ -291,7 +291,7 @@ var screens = []struct {
 	{"watch-start", oneTheme, false, watched(0)},
 	{"watch-mid", oneTheme, false, watched(5)},
 	{"watch-sign-in", oneTheme, false, watched(7)},
-	{"failure-deploy", oneTheme, false, failed(workersPaid)},
+	{"failure-deploy", oneTheme, false, failed(deployFailed)},
 	{"failure-declined", oneTheme, false, failed(declined)},
 	{"done", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, Emailed: true})},
 	{"done-open", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", Emailed: true})},
@@ -419,6 +419,51 @@ func TestQuestionsHandTheAnswersToStart(t *testing.T) {
 				t.Errorf("phase after the questions = %v, want the browser screen", m.phase)
 			}
 		})
+	}
+}
+
+// TestATokenRunAsksForTheOwnerEmail covers a run whose Cloudflare token cannot read the owner's
+// address: the email is asked after the other questions, refuses anything but one address, and
+// reaches Start with the answers.
+func TestATokenRunAsksForTheOwnerEmail(t *testing.T) {
+	var got []setup.Answers
+	cfg := testConfig(true, oneTheme)
+	cfg.Token = true
+	cfg.Start = func(a setup.Answers) tea.Cmd { got = append(got, a); return nil }
+	m := driven(cfg, 80, 24, func(m *Model) {
+		send(m, enter)
+		typeText(m, "Field Notes")
+		send(m, enter, enter)
+	})
+	if !strings.Contains(ansi.Strip(m.View().Content), labelOwnerEmail) || len(got) != 0 {
+		t.Fatalf("after the crawler question: Start got %+v; frame:\n%s", got, ansi.Strip(m.View().Content))
+	}
+	typeText(m, "not an address")
+	send(m, enter)
+	if len(got) != 0 {
+		t.Fatalf("Start ran with an email that is no address: %+v", got)
+	}
+	send(m, tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl})
+	typeText(m, "sam@example.com")
+	send(m, enter)
+	want := setup.Answers{SiteName: "Field Notes", Posture: setup.Decline, OwnerEmail: "sam@example.com"}
+	if len(got) != 1 || got[0] != want {
+		t.Errorf("Start got %+v, want one call with %+v", got, want)
+	}
+}
+
+// TestATokenRunsSummaryClaimsNoCloudflareEmail: a token run's email is what the owner typed, so
+// the summary never says it came from the Cloudflare account.
+func TestATokenRunsSummaryClaimsNoCloudflareEmail(t *testing.T) {
+	s := fieldNotes
+	s.Credential = setup.CredentialToken
+	content, _ := frame(oneTheme, 100, asked(s, ""))
+	if strings.Contains(ansi.Strip(content), reasonEmail) {
+		t.Errorf("a token run's summary says the email came from Cloudflare:\n%s", ansi.Strip(content))
+	}
+	approval, _ := frame(oneTheme, 100, asked(fieldNotes, ""))
+	if !strings.Contains(ansi.Strip(approval), reasonEmail) {
+		t.Errorf("an approval run's summary lacks the email's reason, so the check above proves nothing:\n%s", ansi.Strip(approval))
 	}
 }
 

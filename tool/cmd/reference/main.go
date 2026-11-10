@@ -1,5 +1,5 @@
-// Command reference writes the setup reference: every flag, derived name, step, event, and exit
-// code of cairn new, read from the code. `make reference` writes its output to
+// Command reference writes the setup reference: every flag, environment variable, derived name,
+// step, event, and exit code of cairn new, read from the code. `make reference` writes its output to
 // docs/admin/setup-reference.md at the repository root, and its test fails when the committed
 // page and a fresh render disagree.
 //
@@ -33,6 +33,9 @@ Run ` + "`cairn new --plan plan.json`" + ` with the answers as flags, review the
 ` + "`cairn new --apply plan.json`" + `. [Set up a site with an agent](./set-up-with-an-agent.md) walks
 through the two calls.
 `
+
+// tokenMeaning is the environment table's row for setup.TokenVariable.
+const tokenMeaning = "A Cloudflare API token that setup uses in place of the Cloudflare approval, read from the environment only, never a flag. Setup uses it for every Cloudflare call, stores it as the site's deploy key, and mints no token. The token can't read the owner's email, so give `--email` with it. A resume needs the same variable."
 
 // flagLine matches one line of the Flags block of `cairn new --help`: a long name, an optional
 // type word, and the usage text.
@@ -128,6 +131,10 @@ func render() (string, error) {
 		b.WriteString(r + "\n")
 	}
 
+	b.WriteString("\n## Environment\n\n| Variable | Meaning |\n| --- | --- |\n")
+	fmt.Fprintf(&b, "| `%s` | %s |\n", setup.TokenVariable, tokenMeaning)
+	b.WriteString("\nSetup never reads `CLOUDFLARE_API_TOKEN`.\n")
+
 	fmt.Fprintf(&b, "\n## Derived names\n\nSetup derives every name from the site name. For the site name %q:\n\n", example)
 	b.WriteString("| Name | Example |\n| --- | --- |\n")
 	for _, r := range [][2]string{
@@ -157,6 +164,8 @@ func render() (string, error) {
 	} {
 		fmt.Fprintf(&b, "| `%s` | %s |\n", e.kind, e.what)
 	}
+
+	b.WriteString("\nThe `step_done` event of `approve-cloudflare` and every `summary` carry `credential`: `token`\nwhen the run used the setup token, and `approval` otherwise.\n")
 
 	b.WriteString("\nA `waiting` event carries one of these states:\n\n| State | Sentence |\n| --- | --- |\n")
 	for _, w := range []setup.WaitState{

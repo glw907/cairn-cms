@@ -100,11 +100,6 @@ var entries = map[Reason]Entry{
 		Do:       "Wait until Cloudflare shows the domain as active, and then run cairn new again.",
 		Anchor:   anchorCloudflare,
 	},
-	ReasonWorkersPaid: {
-		Happened: "Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.",
-		Did:      kept,
-		Do:       "Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.",
-	},
 	ReasonAddressRecords: {
 		Happened: "The address <host> already points to another site. It has DNS records in Cloudflare.",
 		Did:      nothingCreated,
@@ -199,7 +194,7 @@ var entries = map[Reason]Entry{
 	ReasonDeployFailed: {
 		Happened: "The first deploy failed in GitHub Actions.",
 		Did:      kept,
-		Do:       "Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.",
+		Do:       "If the account isn't on Workers Paid, the first deploy fails: check the plan first. Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.",
 	},
 	ReasonDeployTimeout: {
 		Happened: "The first deploy didn't finish within 30 minutes.",
@@ -210,6 +205,11 @@ var entries = map[Reason]Entry{
 		Happened: "The site didn't answer over HTTPS at <host> within 15 minutes.",
 		Did:      kept,
 		Do:       "Wait a few minutes, and then run cairn new again. Setup resumes at the Connect <domain> step.",
+	},
+	ReasonTokenMissing: {
+		Happened: lineTokenMissing,
+		Did:      kept,
+		Do:       lineTokenAgain,
 	},
 	// ReasonRefused is the agent lane's stop: its caller words each Happened and Do, so this entry
 	// is the fixed fallback for a view that cannot.
@@ -238,6 +238,14 @@ const (
 	// lineAppNameTaken joins the Create waiting sentence for a GitHub App name another owner
 	// holds.
 	lineAppNameTaken = "If GitHub says the name is taken, change it on that page. Setup uses the name you choose."
+	// lineTokenMissing and lineTokenAgain are the stop of a resume whose run began with a
+	// Cloudflare token when the token's variable is no longer set.
+	lineTokenMissing = "This setup began with a Cloudflare API token from " + TokenVariable + ", and that variable isn't set."
+	lineTokenAgain   = "Set " + TokenVariable + " to the same token, and then run cairn new again."
+	// LineTokenStored is what a token run did once its deploy-key step passed: the token itself
+	// went into the repository's secrets, and only the owner can revoke it. A stop's "already did"
+	// part and the done screen both say it.
+	LineTokenStored = "Setup stored your Cloudflare API token as an Actions secret in your GitHub repository, where every deploy uses it. When the site no longer needs the token, revoke it in Cloudflare."
 )
 
 // Catalogue returns every string this table carries, for the copy golden.
@@ -247,7 +255,7 @@ func Catalogue() []string {
 		out = append(out, e.Happened, e.Did, e.Left, e.Do)
 	}
 	out = append(out, LineSlugNoLetters, LineSignInStep, LineDoneOpen, linePageFooter, lineLinkExpired, lineAppNameTaken,
-		ProblemEmail, ProblemAddress, ProblemHost)
+		LineTokenStored, ProblemEmail, ProblemAddress, ProblemHost)
 	return slices.DeleteFunc(out, func(s string) bool { return s == "" })
 }
 

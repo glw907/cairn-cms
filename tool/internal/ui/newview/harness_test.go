@@ -63,7 +63,7 @@ func replay(t *testing.T, events []setup.Event) string {
 // TestAFinalFrameEndsTheProgram runs a real program to each final frame and requires it to quit
 // by itself, with the final frame the last thing it wrote and the frame ending on a newline.
 func TestAFinalFrameEndsTheProgram(t *testing.T) {
-	f := workersPaid
+	f := deployFailed
 	for _, tc := range []struct {
 		name   string
 		remote bool

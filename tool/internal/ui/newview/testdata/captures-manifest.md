@@ -62,7 +62,7 @@ table from the code, which is the source of truth.
 | watch-start | 80x24, 60x24 | The watch with its first step running. |
 | watch-mid | 80x24, 60x24 | The watch with five steps done and the sixth running, the clock at 5:12. |
 | watch-sign-in | 80x24, 60x24 | The watch on its last step, the sign-in. |
-| failure-deploy | 80x24, 60x24 | The four-part failure for the Workers Paid plan at the first deploy, under the watch. |
+| failure-deploy | 80x24, 60x24 | The four-part failure for a failed first deploy, which names the Workers Paid plan, under the watch. |
 | failure-declined | 80x24, 60x24 | The failure for a declined Cloudflare approval, with no watch. |
 | done | 80x24, 60x24 | The done screen after a used sign-in link and an emailed one. |
 | done-open | 80x24, 60x24 | The done screen when the sign-in link was not used. |

@@ -11,7 +11,7 @@ func TestScrubDropsEveryCredential(t *testing.T) {
 	in := map[string]string{
 		"PATH": "/usr/bin", "HOME": "/home/x",
 		"CLOUDFLARE_API_TOKEN": "a", "GH_TOKEN": "b", "github_token": "c",
-		"CAIRN_CLOUDFLARE_TOKEN": "d", "CAIRN_GITHUB_TOKEN": "e", "cairn_other_token": "f",
+		"CAIRN_CLOUDFLARE_TOKEN": "d", "CAIRN_GITHUB_TOKEN": "e", "cairn_other_token": "f", "CAIRN_CF_SETUP_TOKEN": "m",
 		"CLOUDFLARE_API_KEY": "h", "cf_api_key": "i", "CLOUDFLARE_EMAIL": "j", "CF_EMAIL": "k", "cf_api_token": "l",
 		"CAIRN_STATE_DIR": "/tmp/state", "TOKEN_COUNT": "3", "GIT_CONFIG_COUNT": "1", "NPM_TOKEN": "g",
 	}

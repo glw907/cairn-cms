@@ -42,8 +42,11 @@ func (g Grid) done(d setup.Done, s setup.Summary, took time.Duration) string {
 	if d.ScriptsSkipped {
 		skipped = g.Para(RoleText, fill(doneScriptsSkipped, "<folder>", s.Folder))
 	}
-	if d.RevokeFailed {
+	switch {
+	case d.RevokeFailed:
 		revoke = g.Para(RoleText, doneRevokeFailed)
+	case d.TokenStored:
+		revoke = g.Para(RoleText, setup.LineTokenStored)
 	}
 
 	host := strings.TrimPrefix(d.URL, "https://")

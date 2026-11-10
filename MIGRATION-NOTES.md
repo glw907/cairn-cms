@@ -135,6 +135,10 @@ longer tracked, so edit `themes/waymark/` and lay it in again. A site that alrea
 (`schema/cairn-theme-contract-1.json`) yet, and `theme.css` imports the built tokens sheet
 in place of the two daisyUI blocks and the `@theme` scale it held.
 
+The release gate is rebuilt around three legs, and the setup docs describe a token option for
+`cairn new`: a Cloudflare API token in `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval.
+Consumers must: nothing.
+
 A footnote link used to name an id the page lacked, and a prerender could fail with
 `prerender_missing_id`. The fix needs nothing from the site. A site with its own rehype step that reads
 the `href` of `a[data-footnote-ref]` or `a[data-footnote-backref]` should check that step: each `href`

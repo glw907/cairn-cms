@@ -34,8 +34,11 @@ func extraGitConfig(env map[string]string) []childenv.Pair {
 // and nothing here prints or prompts. Register hands each credential to the process's output
 // scrub the moment the runner receives it.
 func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Event)) (setup.Config, error) {
+	token, err := setupToken(d.env)
+	if err != nil {
+		return setup.Config{}, err
+	}
 	var runID string
-	var err error
 	if in.resume != nil {
 		runID = in.resume.Record.Setup.RunID
 	} else if runID, err = newRunID(); err != nil {
@@ -58,6 +61,9 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 		register = func(providers.Credential) {}
 	}
 	env := environMap(os.Environ())
+	// The opening's version checks start from the same environment as every other child, so no
+	// credential the shell holds, the setup token included, reaches git or node.
+	childEnv := childenv.Scrub(env)
 	probe := providers.NewProbe(d.transport, d.resolver)
 	// A resume fetches the template version its record names, never the tag's current one. A run
 	// whose view already fetched the tag's template builds from that one.
@@ -82,10 +88,14 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 		GitConfigPairs: extraGitConfig(env),
 
 		Git: func(ctx context.Context) error {
-			return exec.CommandContext(ctx, "git", "--version").Run()
+			cmd := exec.CommandContext(ctx, "git", "--version")
+			cmd.Env = childEnv
+			return cmd.Run()
 		},
 		NodeVersion: func(ctx context.Context) (string, error) {
-			out, err := exec.CommandContext(ctx, "node", "--version").Output()
+			cmd := exec.CommandContext(ctx, "node", "--version")
+			cmd.Env = childEnv
+			out, err := cmd.Output()
 			return strings.TrimSpace(string(out)), err
 		},
 		FetchTemplate: fetch,
@@ -105,6 +115,7 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 		Store: reg,
 
 		CloudflareOAuth: providers.NewCloudflareOAuth(d.transport),
+		CloudflareToken: token,
 		Cloudflare: func(accountID string, token providers.Credential) setup.CloudflareAPI {
 			return providers.NewCloudflare(accountID, token, d.transport)
 		},

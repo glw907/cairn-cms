@@ -714,7 +714,7 @@ const (
 	flagNewApplyHelp     = "create the site from a plan file"
 	flagNewResumeHelp    = "continue the unfinished setup with this site id"
 	flagNewNewHelp       = "start a new site instead of continuing an unfinished one"
-	flagNewTagHelp       = "the engine's npm dist-tag to build the site from"
+	flagNewTagHelp       = "the engine's npm dist-tag to build the site from, or npm's own tag setting when it is set"
 	flagNewDryRunHelp    = "print the names setup would use and create nothing"
 	flagNewJSONHelp      = "write the dry run as a JSON payload on stdout"
 )
@@ -761,8 +761,18 @@ const agentsSetupEvents = `Events from cairn new --plan, --apply, and --resume, 
   waiting                  setup waits on the owner in a browser; waiting names the approval
   resumed                  the run picked up an unfinished record
   summary                  every derived value, for the owner to review
+The approve-cloudflare step_done and the summary carry credential: token or approval.
 Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
 approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.`
+
+// tmplSetupTokenSpace refuses a setup token with whitespace inside it. It names the variable and
+// never the value.
+const tmplSetupTokenSpace = "cairn: %s has a space or a line break inside the token.\nSet it to the token alone, and then run cairn new again"
+
+// newSetupTokenSpaceError renders tmplSetupTokenSpace.
+func newSetupTokenSpaceError() error {
+	return translated(fmt.Errorf(tmplSetupTokenSpace, varCFSetupToken))
+}
 
 // tmplNewUsage renders a refusal the agent view found in the flags or the plan file.
 const tmplNewUsage = "%s\nRun `cairn new --help` for the flags"
@@ -871,6 +881,10 @@ fields, the account, the domain, the email, and the address, may be edited first
 refuses a plan that leaves the account or the domain open, before anything runs:
   cairn new --apply plan.json
 An apply still runs the approvals in the owner's browser, so it waits on the owner.
+
+Token. Put a Cloudflare API token in CAIRN_CF_SETUP_TOKEN, never a flag, and setup skips the
+Cloudflare approval: it uses the token for every Cloudflare call and stores it as the site's
+deploy key, minting none. The token can't read the owner's address, so give --email with it. A resume needs the same variable. CLOUDFLARE_API_TOKEN is never read.
 
 Required with --plan and --dry-run:
   --name         the site's name

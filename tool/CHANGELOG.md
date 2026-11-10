@@ -16,6 +16,30 @@ every route. No `tool/v2.0.0` tag exists yet.
 
 ### Added
 
+- **`cairn new` runs on a Cloudflare token.** With a Cloudflare API token in `CAIRN_CF_SETUP_TOKEN`
+  (environment only, never a flag), setup skips the Cloudflare approval, uses the token for every
+  Cloudflare call, and stores it as the site's `CLOUDFLARE_API_TOKEN` Actions secret in place of
+  minting one. It revokes no grant and reads no user email, so `--email` is required. A resume
+  needs the variable again. The `summary` and the first approval's `step_done` carry `credential`,
+  `token` or `approval`.
+
+  Consumers must: nothing.
+
+- **`--tag` defaults from npm's `tag` setting.** Without `--tag`, `cairn new` reads `npm_config_tag`
+  from the environment, then falls back to `latest`.
+
+  Consumers must: nothing.
+
+- **The first-deploy failure names Workers Paid.** A failed first deploy tells the owner to check
+  that the account is on Workers Paid before reading the run.
+
+  Consumers must: nothing.
+
+- **The OAuth revoke fallback names the menu.** When Cloudflare refuses to revoke the approval, the
+  last screen points to **Manage OAuth authorizations** in the Cloudflare profile.
+
+  Consumers must: nothing.
+
 - **The setup spine and its write routes.** `internal/setup` plans and runs every step of the
   coming `cairn new` command against injected clients: the opening checks, the Cloudflare and
   GitHub approvals, the eight watch steps, resume after any approval or step, and the sign-in.

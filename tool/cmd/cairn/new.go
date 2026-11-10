@@ -88,6 +88,21 @@ func newNewCmd(d deps, rf *rootFlags) *cobra.Command {
 	return cmd
 }
 
+// newTag is the dist-tag the template is fetched at. An explicit --tag wins; otherwise npm's own
+// tag setting from the environment, so the agent resolves the tag npm would; otherwise flag, the
+// flag's default.
+func newTag(c *cobra.Command, flag string, env func(string) string) string {
+	if c.Flags().Changed("tag") {
+		return flag
+	}
+	for _, name := range []string{"npm_config_tag", "NPM_CONFIG_TAG"} {
+		if v := env(name); v != "" {
+			return v
+		}
+	}
+	return flag
+}
+
 // validate refuses a flag combination before anything runs, naming the flags at fault.
 func (f newFlags) validate(c *cobra.Command) error {
 	set := func(name string) bool { return c.Flags().Changed(name) }
@@ -144,6 +159,7 @@ func runNew(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 	if err := f.validate(cmd); err != nil {
 		return err
 	}
+	f.tag = newTag(cmd, f.tag, d.env)
 	for _, m := range newModeFlags {
 		if cmd.Flags().Changed(m) {
 			return runAgent(cmd, d, f, m)

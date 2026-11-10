@@ -14,7 +14,7 @@ func (g Grid) failure(f setup.Failure, list string) string {
 	if a := setup.Anchor(f.Reason); a != "" {
 		links = append(links, g.link(linkStart, urlStart+a))
 	}
-	if f.Reason == setup.ReasonWorkersPaid {
+	if f.Reason == setup.ReasonDeployFailed {
 		links = append(links, g.link(linkWorkers, urlWorkers))
 	}
 	return Frame(g.Title(title), list, g.parts(f, links...))

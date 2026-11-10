@@ -20,7 +20,17 @@ func RecordedAnswers(rec record.Record) Answers {
 		Theme:      rec.Setup.ThemeID,
 		AccountID:  rec.Cloudflare.AccountID,
 		Suffix:     suffixOf(rec.Name, rec),
+		Credential: recordedCredential(rec),
 	}
+}
+
+// recordedCredential is the credential rec's run began with. A record from before the token
+// option names none, and its run used the approval.
+func recordedCredential(rec record.Record) CloudflareCredential {
+	if rec.Setup.Credential == string(CredentialToken) {
+		return CredentialToken
+	}
+	return CredentialApproval
 }
 
 // Steps returns the ordered plan every run follows, for the generated setup reference.

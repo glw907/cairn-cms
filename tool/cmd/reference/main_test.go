@@ -36,7 +36,7 @@ func TestPageMatchesTheCode(t *testing.T) {
 }
 
 // TestRenderCarriesEveryPart holds the page to what it promises: a flag, a derived name, a
-// step, an event kind, a waiting state, and an exit code.
+// step, an event kind, a waiting state, an exit code, and the setup token's variable.
 func TestRenderCarriesEveryPart(t *testing.T) {
 	got, err := render()
 	if err != nil {
@@ -44,7 +44,7 @@ func TestRenderCarriesEveryPart(t *testing.T) {
 	}
 	for _, want := range []string{
 		"`--site-theme`", "`my-site-auth`", "`first-deploy`", "`step_failed`",
-		"`reconsent-cloudflare`", "| 3 |", "`cairn-my-site`",
+		"`reconsent-cloudflare`", "| 3 |", "`cairn-my-site`", "`CAIRN_CF_SETUP_TOKEN`",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("the page does not carry %s", want)

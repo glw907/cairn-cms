@@ -150,14 +150,17 @@ func messageConstants(t *testing.T) []string {
 
 // TestNoCAIRNPrefixedLiteralOutsideCredentialVars extends Task 19c-i's conflict test over this
 // table: every CAIRN_-prefixed literal messages.go carries is a member of authVariables (built
-// from credentialVars, env.go), which TestCredentialVariableNamesAreSpelledOnlyInEnvGo already
-// exempts this file to allow.
+// from credentialVars, env.go) or the setup token's variable, which
+// TestCredentialVariableNamesAreSpelledOnlyInEnvGo already exempts this file to allow.
 func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 	cairnVarPattern := regexp.MustCompile(`CAIRN_[A-Z_]+`)
-	allowed := make(map[string]bool, len(authVariables))
+	allowed := make(map[string]bool, len(authVariables)+1)
 	for _, v := range authVariables {
 		allowed[v] = true
 	}
+	// cairn new's agent guide names the setup token's variable, which env.go reads and cairn auth
+	// does not manage.
+	allowed[varCFSetupToken] = true
 	for _, s := range messageConstants(t) {
 		for _, m := range cairnVarPattern.FindAllString(s, -1) {
 			if !allowed[m] {

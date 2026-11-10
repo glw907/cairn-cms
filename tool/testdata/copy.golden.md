@@ -171,6 +171,7 @@ auth check's whole output is identifiers (permission labels, credential variable
   waiting                  setup waits on the owner in a browser; waiting names the approval
   resumed                  the run picked up an unfinished record
   summary                  every derived value, for the owner to review
+The approve-cloudflare step_done and the summary carry credential: token or approval.
 Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
 approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.
 - Exit codes for cairn new:
@@ -303,6 +304,10 @@ refuses a plan that leaves the account or the domain open, before anything runs:
   cairn new --apply plan.json
 An apply still runs the approvals in the owner's browser, so it waits on the owner.
 
+Token. Put a Cloudflare API token in CAIRN_CF_SETUP_TOKEN, never a flag, and setup skips the
+Cloudflare approval: it uses the token for every Cloudflare call and stores it as the site's
+deploy key, minting none. The token can't read the owner's address, so give --email with it. A resume needs the same variable. CLOUDFLARE_API_TOKEN is never read.
+
 Required with --plan and --dry-run:
   --name         the site's name
   --email        the first owner's email address
@@ -334,6 +339,8 @@ The names are %s
 Run `cairn new --help` for the flags
 - cairn: %s crashed with a %s.
 This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
+- cairn: %s has a space or a line break inside the token.
+Set it to the token alone, and then run cairn new again
 - cairn: %s is empty.
 Pipe a non-empty value: printf %%s "$v" | cairn auth set %s
 - cairn: %s is not a valid hold file.
@@ -440,7 +447,7 @@ Run `cairn new status` to list them, or run --plan again
 - the OS keyring did not open
 - the Workers script to adopt
 - the domain the Worker serves, for a Worker with no Custom Domain
-- the engine's npm dist-tag to build the site from
+- the engine's npm dist-tag to build the site from, or npm's own tag setting when it is set
 - the first owner's email address
 - the ground to render for: dark or light
 - the number of sites the registry is expected to hold
@@ -545,7 +552,6 @@ Run `cairn new status` to list them, or run --plan again
 - Choose another site name, and then run cairn new again.
 - Cloudflare didn't approve setup's request.
 - Cloudflare no longer accepts setup's approval.
-- Cloudflare rejected the first deploy from GitHub Actions. Your Cloudflare account doesn't have the Workers Paid plan. Every cairn site needs it. The plan costs $5 a month.
 - Correct the answer, and then run cairn new again.
 - Create a Cloudflare account, and then run cairn new again.
 - Delete that Worker or rename it in Cloudflare, and then run cairn new again.
@@ -555,6 +561,7 @@ Run `cairn new status` to list them, or run --plan again
 - Every name from <repo> to <repo>-9 is already in use.
 - Finish or stop the other setup, and then run cairn new again.
 - If GitHub says the name is taken, change it on that page. Setup uses the name you choose.
+- If the account isn't on Workers Paid, the first deploy fails: check the plan first. Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.
 - If the link has expired, request a new one on the sign-in page.
 - If you don't need it, delete the <kind> in Cloudflare. If you need it, choose another site name. Then run cairn new again.
 - Install Git, and then run cairn new again.
@@ -563,7 +570,6 @@ Run `cairn new status` to list them, or run --plan again
 - Move or rename that folder, or run cairn new from another folder.
 - Nothing was created.
 - On GitHub, open the Actions tab of <repo> to see whether the deploy is still running. Then run cairn new again. Setup resumes at the first deploy.
-- Open the run at <url> to see what failed. Then run cairn new again. Setup resumes at the first deploy.
 - Port 49152 is in use. Another setup may be running.
 - Register a domain with Cloudflare, or add a domain you already own to Cloudflare. Then run cairn new again.
 - Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve to give the App access to <repo> only.
@@ -574,6 +580,7 @@ Run `cairn new status` to list them, or run --plan again
 - Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.
 - Run cairn new again. On the Cloudflare page, select the same account as before, select API Tokens: Write, and then select Allow.
 - Run cairn new in a terminal on the computer where you use your browser.
+- Set CAIRN_CF_SETUP_TOKEN to the same token, and then run cairn new again.
 - Setup can't find Git on this computer.
 - Setup can't find Node.js on this computer.
 - Setup can't find a Cloudflare account for your sign-in.
@@ -590,7 +597,7 @@ Run `cairn new status` to list them, or run --plan again
 - Setup keeps what it already created.
 - Setup needs Node.js 24 or later. This computer has Node.js <n>.
 - Setup stopped.
-- Subscribe to Workers Paid, and then run cairn new again. Setup resumes at the first deploy.
+- Setup stored your Cloudflare API token as an Actions secret in your GitHub repository, where every deploy uses it. When the site no longer needs the token, revoke it in Cloudflare.
 - That address already points to another site. Choose another address, or remove its DNS records in Cloudflare first.
 - The 30-minute limit to approve the requests ran out.
 - The Cloudflare approval doesn't include the account that setup started with.
@@ -603,6 +610,7 @@ Run `cairn new status` to list them, or run --plan again
 - The folder <folder> changed after setup wrote the site there.
 - The repository <repo> already holds commits setup didn't make.
 - The site didn't answer over HTTPS at <host> within 15 minutes.
+- This setup began with a Cloudflare API token from CAIRN_CF_SETUP_TOKEN, and that variable isn't set.
 - To resume, run cairn new again.
 - Undo your changes in that folder, and then run cairn new again.
 - Unlock or set up the keyring, and then run cairn new again.
@@ -670,13 +678,15 @@ Run `cairn new status` to list them, or run --plan again
 - Setup adds your site's settings and makes the site's first Git commit.
 - Setup also emailed a sign-in link to <email>.
 - Setup can't continue
+- Setup can't read your email from a Cloudflare token. The admin sends your sign-in links to this address.
 - Setup can't run over SSH
 - Setup couldn't open your browser. Go to <url>
-- Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, go to Access Management > Connected Applications, and then revoke cairn.
+- Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Manage OAuth authorizations. Then find cairn and select Revoke.
 - Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
 - Setup didn't send a sign-in link. This site already has editors, and <email> isn't one of them. Ask one of them to invite you in Admin > Editors.
 - Setup needs a domain on Cloudflare
 - Setup opens a tab in your browser. Approve these four requests in that tab.
+- Setup opens a tab in your browser. Approve these three requests in that tab.
 - Setup opens its approval pages in a browser on the computer where it runs. Run cairn new in a terminal on the computer where you use your browser.
 - Setup stopped. Nothing was created.
 - Setup stopped. To resume, run cairn new again.
@@ -702,10 +712,12 @@ Run `cairn new status` to list them, or run --plan again
 - Workers pricing
 - Write the site files
 - You approve four requests in your browser.
+- You approve three requests in your browser.
 - You can leave this running. When your site is live, setup emails a sign-in link to <email>.
 - You need a domain on Cloudflare and the Workers Paid plan.
 - You're signed in to the admin in your browser.
 - Your Cloudflare sign-in can use <n> accounts. Setup creates your site in the one you choose.
+- Your email
 - Your site's code and content are stored in <repo>.
 - approve in your browser (<n> of <total>)
 - back

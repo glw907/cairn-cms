@@ -66,11 +66,18 @@ func (r *run) approveCloudflare(ctx context.Context, state WaitState) error {
 			return err
 		}
 		if tok.MissingScope(providers.MintScope) == "" {
-			r.done()
+			r.emit(Event{Kind: StepDone, Step: r.step, Credential: CredentialApproval})
 			return nil
 		}
 		page = PageScopeError
 	}
+}
+
+// useToken stands in for approval 1 on a token run: the supplied token is the run's Cloudflare
+// credential, so no tab opens and nothing reaches the keyring.
+func (r *run) useToken() {
+	r.start(StepApproveCloudflare)
+	r.emit(Event{Kind: StepDone, Step: r.step, Credential: CredentialToken})
 }
 
 // keepPair registers a new pair with the scrub, names its two entries in the record, and stores

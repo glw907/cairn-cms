@@ -35,7 +35,6 @@ type CloudflareAPI interface {
 	UserEmail(ctx context.Context) (string, error)
 	ActiveZones(ctx context.Context) ([]providers.Zone, error)
 	ListZones(ctx context.Context) ([]providers.Zone, error)
-	Subscriptions(ctx context.Context) ([]providers.Subscription, bool, error)
 	WorkerExists(ctx context.Context, name string) (bool, error)
 	ListWorkers(ctx context.Context) ([]providers.Worker, error)
 	D1DatabaseNamed(ctx context.Context, name string) (*providers.D1Database, error)
@@ -218,6 +217,13 @@ type Config struct {
 	Store Saver
 
 	CloudflareOAuth CloudflareAuth
+	// CloudflareToken is the API token the owner supplied in TokenVariable, or the zero
+	// Credential. A new run given one skips approval 1 and uses it for every Cloudflare call; it
+	// stores the token as the site's deploy key in place of minting one, revokes no grant, writes
+	// no Cloudflare entry to the keyring, and reads no Cloudflare user email, so Answers.OwnerEmail
+	// must be set. A resume uses it only when the record's run began with a token, and then stops
+	// without it.
+	CloudflareToken providers.Credential
 	// Cloudflare builds an API client bound to accountID, empty before the account is known.
 	Cloudflare func(accountID string, token providers.Credential) CloudflareAPI
 	// GitHub builds an api.github.com client for cred: the zero Credential, the App JWT, the user
@@ -278,6 +284,10 @@ type Done struct {
 	RevokeFailed bool
 	// KeysLeft reports that a keyring entry could not be deleted.
 	KeysLeft bool
+	// TokenStored reports a run on a supplied Cloudflare token, which setup stored as the
+	// repository's deploy-key secret and never revokes. The done screen says so with
+	// LineTokenStored.
+	TokenStored bool
 }
 
 // The runner's fixed limits.
@@ -326,8 +336,11 @@ type run struct {
 	tmpl         Template
 	theme        scaffold.Theme
 
+	// tokenRun reports that the run's Cloudflare calls use Config.CloudflareToken rather than a
+	// grant.
+	tokenRun bool
 	// pair is the grant as the keyring holds it, kept for the refresh and the revoke; access is
-	// its access token as the clients take it.
+	// its access token as the clients take it, or the supplied token on a token run.
 	pair       secrets.OAuthPair
 	access     providers.Credential
 	grantAt    time.Time
@@ -387,6 +400,11 @@ func Run(ctx context.Context, cfg Config) (Result, error) {
 	if cfg.Resume != nil {
 		r.resumed, r.siteID, r.rec = true, cfg.Resume.SiteID, cfg.Resume.Record
 	}
+	r.tokenRun = cfg.CloudflareToken != providers.Credential{} && (!r.resumed || recordedCredential(r.rec) == CredentialToken)
+	if r.tokenRun && strings.TrimSpace(cfg.Answers.OwnerEmail) == "" && r.rec.Setup.OwnerEmail == "" {
+		return Result{}, errTokenNoEmail
+	}
+	r.register(cfg.CloudflareToken)
 	defer func() {
 		r.stopInstall()
 		if r.tab != nil {
@@ -444,14 +462,18 @@ func (r *run) steps(ctx context.Context) (Result, error) {
 // approvals runs the four approvals and the account checks, skipping each one the record shows
 // done. A resumed run whose record holds an App sweeps its installations first, before any
 // Cloudflare step can stop the run and leave an installation that reaches all the owner's
-// repositories in place; the sweep needs only the App key and the record. Approval 4 runs again
-// when the sweep leaves no installation recorded. Once the run's approvals are done, the tab
-// shows done.html, which stops its clock for the watch.
+// repositories in place; the sweep needs only the App key and the record. A resume of a token
+// run whose variable is no longer set stops after the sweep and before any Cloudflare call.
+// Approval 4 runs again when the sweep leaves no installation recorded. Once the run's approvals
+// are done, the tab shows done.html, which stops its clock for the watch.
 func (r *run) approvals(ctx context.Context) error {
 	if r.resumed && r.rec.Setup.IDs.AppID != 0 {
 		if err := r.resumeGitHub(ctx); err != nil {
 			return err
 		}
+	}
+	if r.resumed && recordedCredential(r.rec) == CredentialToken && !r.tokenRun {
+		return r.failure(ReasonTokenMissing, lineTokenMissing, lineTokenAgain, nil)
 	}
 	if err := r.cloudflare(ctx); err != nil {
 		return err
@@ -506,6 +528,14 @@ func (r *run) register(cs ...providers.Credential) {
 	}
 }
 
+// credential reports which Cloudflare credential the run works on, for its events and summary.
+func (r *run) credential() CloudflareCredential {
+	if r.tokenRun {
+		return CredentialToken
+	}
+	return CredentialApproval
+}
+
 func (r *run) registerValue(vs ...string) {
 	for _, v := range vs {
 		r.cfg.Register(providers.NewCredential(v))
@@ -545,9 +575,9 @@ func (r *run) keepKeys() {
 }
 
 // finish ends a run that reached the sign-in: it revokes the Cloudflare grant's access and
-// refresh tokens and deletes every keyring entry the record names, then records that none is
-// kept. A refused refresh-token revoke is reported on the done screen, never a stop, and the
-// entries go either way.
+// refresh tokens, unless the run used a supplied token, and deletes every keyring entry the
+// record names, then records that none is kept. A refused refresh-token revoke is reported on
+// the done screen, never a stop, and the entries go either way.
 //
 // The GitHub tokens are never persisted, but they do not end with the process. The installation
 // token stays valid up to its hour, and the user-to-server token up to the 8 hours GitHub gives
@@ -558,10 +588,14 @@ func (r *run) finish(ctx context.Context) {
 	// RFC 7009 2.1 says revoking a refresh token "SHOULD" also invalidate the grant's access
 	// tokens, which is not a must, so the access token is revoked separately, first, while the
 	// grant still stands. Only the refresh token's revoke is reported, since once it is revoked
-	// the grant mints no new access token; no event carries the access token's.
-	_ = r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Access)
-	if err := r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Refresh); err != nil {
-		r.out.RevokeFailed = true
+	// the grant mints no new access token; no event carries the access token's. A token run has
+	// no grant: the token is the site's deploy key and stays.
+	r.out.TokenStored = r.tokenRun
+	if !r.tokenRun {
+		_ = r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Access)
+		if err := r.cfg.CloudflareOAuth.Revoke(ctx, r.pair.Refresh); err != nil {
+			r.out.RevokeFailed = true
+		}
 	}
 	if err := r.cfg.Vault.DeleteEntries(r.rec.Setup.KeyringEntries); err != nil {
 		r.out.KeysLeft = true
@@ -676,6 +710,9 @@ func (r *run) did() string {
 	}
 	if s.IDs.DeployKeyID != "" {
 		parts = append(parts, "Setup made a deploy key for GitHub Actions.")
+	}
+	if recordedCredential(r.rec) == CredentialToken && reached(r.rec.Step, spine.StepDeployKeyStored) {
+		parts = append(parts, LineTokenStored)
 	}
 	if len(parts) == 0 {
 		return nothingCreated

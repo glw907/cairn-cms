@@ -58,6 +58,10 @@ pass, was dropped by Geoff on 2026-11-08.
   Item 7's probe passed all eight forms with no refusal. Passes 1 and 2 launched side by side:
   `workstation-setup-tooling-1` (session `685a8bbe`, from ~/.dotfiles) and
   `cairn-cms-setup-tooling-2` (session `3d50a697`). Packet B follows them; pass 3 waits on it.
+- Pass 2 (`setup-tooling-2`, executor `cairn-cms-setup-tooling-2`, session `3db688`): PR #210 holds
+  T2.0 to T2.7, CI green on its earlier heads; the close review and a security re-read are running.
+  The security read's one open design question (the setup token stored as the deploy secret) is with
+  the conductor for packet B.
 
 ## Open decisions and watches
 

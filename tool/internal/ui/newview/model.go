@@ -74,6 +74,10 @@ type Config struct {
 	Env  map[string]string
 	// Start runs once the questions are answered, with the owner's answers; nil starts nothing.
 	Start func(setup.Answers) tea.Cmd
+	// Token reports a run on a supplied Cloudflare token. It asks a last question for the owner's
+	// email, which the token cannot read from the sign-in, and counts three approvals, since the
+	// Cloudflare request never comes.
+	Token bool
 }
 
 // OpenBrowserMsg asks the owner's go-ahead to open the setup tab at URL. The view answers on
@@ -104,6 +108,11 @@ type ChooseResumeMsg struct {
 	Runs  []store.Entry
 	Reply chan<- string
 }
+
+// CredentialMsg sets the Cloudflare credential a resumed run uses, which its record settles
+// rather than the environment Config.Token read: the browser screen counts the Cloudflare request
+// only for an approval run.
+type CredentialMsg struct{ Credential setup.CloudflareCredential }
 
 // CountdownMsg shows the time left in the approval chain. Send it only in the chain's last
 // minutes, when loopback's Countdown says the views show it.
@@ -181,8 +190,8 @@ func New(cfg Config) *Model {
 	m := &Model{
 		cfg:       cfg,
 		keys:      k,
-		questions: newQuestions(cfg.Styles, cfg.Glyphs, k, cfg.Themes),
-		browser:   newBrowser(cfg.Styles, cfg.Glyphs, k, ascii),
+		questions: newQuestions(cfg.Styles, cfg.Glyphs, k, cfg.Themes, cfg.Token),
+		browser:   newBrowser(cfg.Styles, cfg.Glyphs, k, ascii, cfg.Token),
 		summary:   newSummary(cfg.Styles, cfg.Glyphs, k, cfg.Themes),
 		watch:     newWatch(cfg.Styles, cfg.Glyphs, k, ascii),
 	}
@@ -254,6 +263,10 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		cmd := m.ask(resumeChoice(m.cfg.Styles, m.cfg.Glyphs, m.keys, msg.Runs), msg.Reply)
 		m.resuming = true
 		return cmd
+	case CredentialMsg:
+		m.cfg.Token = msg.Credential == setup.CredentialToken
+		m.browser.SetToken(m.cfg.Token)
+		return nil
 	case CountdownMsg:
 		m.browser.Countdown(msg.Left)
 		return nil
@@ -486,7 +499,7 @@ func (m *Model) screen(g Grid) string {
 	case phaseWatch:
 		return m.watch.Render(m.width, m.sum)
 	}
-	return g.welcome(g.Footer(m.keys.Start, m.keys.Quit))
+	return g.welcome(m.cfg.Token, g.Footer(m.keys.Start, m.keys.Quit))
 }
 
 // windowTitle names what the window wants from the owner, so the window list or tab bar says
@@ -495,7 +508,7 @@ func (m *Model) windowTitle() string {
 	what := ""
 	switch {
 	case m.phase == phaseBrowser && m.browser.opened:
-		what = fill(windowApprove, "<n>", strconv.Itoa(m.browser.current+1), "<total>", strconv.Itoa(len(approvals)))
+		what = fill(windowApprove, "<n>", strconv.Itoa(m.browser.current+1), "<total>", strconv.Itoa(len(m.browser.approvals)))
 	case m.phase == phaseChoose:
 		what = windowChoose
 	case m.phase == phaseSummary:

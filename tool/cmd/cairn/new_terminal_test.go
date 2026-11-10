@@ -341,6 +341,50 @@ func TestTerminalLaneResumesAChosenRecord(t *testing.T) {
 	}
 }
 
+// TestTerminalLaneCountsTheResumedRecordsApprovals resumes an approval-started record with the
+// setup token set, and the reverse. The run's credential comes from the record, so the browser
+// screen counts the Cloudflare request exactly when the run will ask it.
+func TestTerminalLaneCountsTheResumedRecordsApprovals(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		credential string
+		want, not  string
+	}{
+		{"an approval record", "", "Approve these four requests", "Approve these three requests"},
+		{"a token record", "token", "Approve these three requests", "Approve these four requests"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := record.Record{Name: "Example Site", Setup: record.Setup{
+				RunID: "0123456789abcdef", OwnerEmail: "owner@example.com", AIPosture: "decline", ThemeID: "survey", Credential: tc.credential,
+			}}
+			ld := newLaneDriver(t, func(ctx context.Context, cfg setup.Config) (setup.Result, error) {
+				if err := cfg.View.OpenBrowser(ctx, laneTab); err != nil {
+					return setup.Result{}, err
+				}
+				return setup.Result{Done: setup.Done{URL: "https://example.com"}}, nil
+			})
+			ld.l.d.env = fakeEnv(map[string]string{varCFSetupToken: "token-" + strings.Repeat("a", 36)})
+			ld.m = ld.l.model(context.Background(), newview.Config{
+				Styles: newview.NewStyles(true, colorprofile.TrueColor), Glyphs: newview.GlyphsFor(false), Themes: laneThemes,
+				GOOS: "linux", Env: map[string]string{"BROWSER": "true"}, Token: true,
+			})
+			ld.apply(tea.WindowSizeMsg{Width: 100, Height: 50})
+			go ld.l.offerResume(context.Background(), []store.Entry{{ID: "example-site-3f9a2c", Record: rec}})
+			await[newview.ChooseResumeMsg](ld)
+			ld.apply(enterKey)
+			await[newview.OpenBrowserMsg](ld)
+			v := ld.m.View()
+			frame := ansi.Strip(v.Content)
+			if !strings.Contains(frame, tc.want) || strings.Contains(frame, tc.not) {
+				t.Errorf("the browser screen should say %q:\n%s", tc.want, frame)
+			}
+			ld.apply(enterKey)
+			await[newview.DoneMsg](ld)
+			_ = ld.l.finish(ld.cancel, setup.ReasonStopped)
+		})
+	}
+}
+
 // laneCode is the exit code a lane's error carries: 0 for none, the verdict for a coded one.
 func laneCode(err error) int {
 	if err == nil {

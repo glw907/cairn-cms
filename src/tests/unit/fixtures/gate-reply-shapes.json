@@ -1,0 +1,311 @@
+{
+  "tokenVerify": {
+    "result": {
+      "id": "string",
+      "status": "string",
+      "expires_on": "string"
+    },
+    "success": "boolean",
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      {
+        "code": "number",
+        "message": "string",
+        "type": "null"
+      }
+    ]
+  },
+  "Workers Scripts": {
+    "result": [
+      {
+        "created_on": "string",
+        "modified_on": "string",
+        "id": "string",
+        "tag": "string",
+        "tags": [
+          "empty"
+        ],
+        "deployment_id": "string",
+        "tail_consumers": "null",
+        "logpush": "boolean",
+        "has_assets": "boolean",
+        "has_modules": "boolean",
+        "etag": "string",
+        "handlers": [
+          "string"
+        ],
+        "last_deployed_from": "string",
+        "compatibility_date": "string",
+        "usage_model": "string",
+        "routes": [
+          {
+            "id": "string",
+            "pattern": "string",
+            "script": "string",
+            "request_limit_fail_open": "boolean"
+          }
+        ]
+      }
+    ],
+    "success": "boolean",
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      "empty"
+    ]
+  },
+  "D1": {
+    "result": [
+      {
+        "uuid": "string",
+        "name": "string",
+        "created_at": "string",
+        "version": "string",
+        "num_tables": "number",
+        "file_size": "number",
+        "jurisdiction": "null"
+      }
+    ],
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      "empty"
+    ],
+    "success": "boolean",
+    "result_info": {
+      "count": "number",
+      "page": "number",
+      "per_page": "number",
+      "total_count": "number"
+    }
+  },
+  "Workers R2 Storage": {
+    "success": "boolean",
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      "empty"
+    ],
+    "result": {
+      "buckets": [
+        {
+          "name": "string",
+          "creation_date": "string"
+        }
+      ]
+    },
+    "result_info": {
+      "total_count": "number",
+      "cursor": "string",
+      "per_page": "number"
+    }
+  },
+  "Account Settings": {
+    "result": {
+      "id": "string",
+      "name": "string",
+      "type": "string",
+      "settings": {
+        "enforce_twofactor": "boolean",
+        "api_access_enabled": "null",
+        "access_approval_expiry": "null",
+        "abuse_contact_email": "null",
+        "oauth_app_access_enabled": "boolean"
+      },
+      "legacy_flags": {
+        "enterprise_zone_quota": {
+          "maximum": "number",
+          "current": "number",
+          "available": "number"
+        }
+      },
+      "created_on": "string"
+    },
+    "success": "boolean",
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      "empty"
+    ]
+  },
+  "Zone": {
+    "result": {
+      "id": "string",
+      "name": "string",
+      "status": "string",
+      "paused": "boolean",
+      "type": "string",
+      "development_mode": "number",
+      "name_servers": [
+        "string"
+      ],
+      "original_name_servers": "null",
+      "original_registrar": "null",
+      "original_dnshost": "null",
+      "modified_on": "string",
+      "created_on": "string",
+      "activated_on": "string",
+      "vanity_name_servers": [
+        "empty"
+      ],
+      "vanity_name_servers_ips": "null",
+      "meta": {
+        "step": "number",
+        "custom_certificate_quota": "number",
+        "page_rule_quota": "number",
+        "phishing_detected": "boolean"
+      },
+      "owner": {
+        "id": "null",
+        "type": "string",
+        "email": "null"
+      },
+      "account": {
+        "id": "string",
+        "name": "string"
+      },
+      "tenant": {
+        "id": "null",
+        "name": "null"
+      },
+      "tenant_unit": {
+        "id": "null"
+      },
+      "permissions": [
+        "string"
+      ],
+      "plan": {
+        "id": "string",
+        "name": "string",
+        "price": "number",
+        "currency": "string",
+        "frequency": "string",
+        "is_subscribed": "boolean",
+        "can_subscribe": "boolean",
+        "legacy_id": "string",
+        "legacy_discount": "boolean",
+        "externally_managed": "boolean"
+      }
+    },
+    "success": "boolean",
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      "empty"
+    ]
+  },
+  "DNS": {
+    "result": [
+      {
+        "id": "string",
+        "name": "string",
+        "type": "string",
+        "content": "string",
+        "priority": "number",
+        "proxiable": "boolean",
+        "proxied": "boolean",
+        "ttl": "number",
+        "settings": {},
+        "meta": {},
+        "comment": "null",
+        "tags": [
+          "empty"
+        ],
+        "created_on": "string",
+        "modified_on": "string"
+      }
+    ],
+    "success": "boolean",
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      "empty"
+    ],
+    "result_info": {
+      "page": "number",
+      "per_page": "number",
+      "count": "number",
+      "total_count": "number",
+      "total_pages": "number"
+    }
+  },
+  "Email Sending": {
+    "result": [
+      {
+        "id": "string",
+        "tag": "string",
+        "name": "string",
+        "enabled": "boolean",
+        "preview_enabled": "boolean",
+        "return_path_domain": "string",
+        "dkim_selector": "string",
+        "drop_suppressed_recipients": "boolean",
+        "created": "string",
+        "modified": "string"
+      }
+    ],
+    "success": "boolean",
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      "empty"
+    ]
+  },
+  "Workers Routes": {
+    "result": [
+      "empty"
+    ],
+    "success": "boolean",
+    "errors": [
+      "empty"
+    ],
+    "messages": [
+      "empty"
+    ]
+  },
+  "githubUser": {
+    "login": "string",
+    "id": "number",
+    "node_id": "string",
+    "avatar_url": "string",
+    "gravatar_id": "string",
+    "url": "string",
+    "html_url": "string",
+    "followers_url": "string",
+    "following_url": "string",
+    "gists_url": "string",
+    "starred_url": "string",
+    "subscriptions_url": "string",
+    "organizations_url": "string",
+    "repos_url": "string",
+    "events_url": "string",
+    "received_events_url": "string",
+    "type": "string",
+    "user_view_type": "string",
+    "site_admin": "boolean",
+    "name": "null",
+    "company": "null",
+    "blog": "string",
+    "location": "null",
+    "email": "null",
+    "hireable": "null",
+    "bio": "null",
+    "twitter_username": "null",
+    "notification_email": "null",
+    "public_repos": "number",
+    "public_gists": "number",
+    "followers": "number",
+    "following": "number",
+    "created_at": "string",
+    "updated_at": "string"
+  }
+}

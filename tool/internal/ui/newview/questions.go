@@ -18,26 +18,30 @@ const (
 	qTheme question = iota
 	qName
 	qCrawlers
+	qEmail
 	qCount
 )
 
-// questions asks for the theme, the site name, and the AI-crawler posture, one Huh form at a
-// time. The theme question is asked only when the catalog offers more than one theme.
+// questions asks for the theme, the site name, the AI-crawler posture, and the owner's email,
+// one Huh form at a time. The theme question is asked only when the catalog offers more than one
+// theme, and the email only when askEmail is set.
 type questions struct {
-	styles Styles
-	glyphs Glyphs
-	keys   keys
-	themes []scaffold.Theme
+	styles   Styles
+	glyphs   Glyphs
+	keys     keys
+	themes   []scaffold.Theme
+	askEmail bool
 
 	q       question
 	theme   string
 	name    string
 	posture setup.Posture
+	email   string
 	form    *huh.Form
 }
 
-func newQuestions(s Styles, g Glyphs, k keys, themes []scaffold.Theme) *questions {
-	q := &questions{styles: s, glyphs: g, keys: k, themes: themes, posture: setup.Decline}
+func newQuestions(s Styles, g Glyphs, k keys, themes []scaffold.Theme, askEmail bool) *questions {
+	q := &questions{styles: s, glyphs: g, keys: k, themes: themes, askEmail: askEmail, posture: setup.Decline}
 	if len(themes) > 0 {
 		q.theme = themes[0].ID
 	}
@@ -76,17 +80,24 @@ func (q *questions) Forward(msg tea.Msg, width int) (done bool, cmd tea.Cmd) {
 		return false, cmd
 	}
 	q.q++
+	if q.q == qEmail && !q.askEmail {
+		q.q++
+	}
 	if q.q == qCount {
 		return true, nil
 	}
 	return false, q.Start(width)
 }
 
-// Answers returns what the owner chose. Theme is set only when the catalog offered a choice.
+// Answers returns what the owner chose. Theme is set only when the catalog offered a choice, and
+// OwnerEmail only when the email was asked.
 func (q *questions) Answers() setup.Answers {
 	a := setup.Answers{SiteName: strings.TrimSpace(q.name), Posture: q.posture}
 	if len(q.themes) > 1 {
 		a.Theme = q.theme
+	}
+	if q.askEmail {
+		a.OwnerEmail = strings.TrimSpace(q.email)
 	}
 	return a
 }
@@ -115,6 +126,17 @@ func (q *questions) build(width int) *huh.Form {
 				}
 				return nil
 			})
+	case qEmail:
+		field = huh.NewInput().
+			Title(labelOwnerEmail).
+			Description(prose(descOwnerEmail, width)).
+			Value(&q.email).
+			Validate(func(s string) error {
+				if !setup.ValidEmail(strings.TrimSpace(s)) {
+					return ownerError(setup.ProblemEmail)
+				}
+				return nil
+			})
 	default:
 		field = huh.NewSelect[setup.Posture]().
 			Title(labelCrawlers).
@@ -136,6 +158,13 @@ func (q *questions) Render(width int) string {
 	if q.q > qName {
 		receipts = append(receipts, g.Cell(labelSiteName, g.Styles.Muted, g.Styles.Text.Render(strings.TrimSpace(q.name))))
 	}
+	if q.q > qCrawlers {
+		choice := optionBlock
+		if q.posture == setup.Invite {
+			choice = optionAllow
+		}
+		receipts = append(receipts, g.Cell(labelCrawlers, g.Styles.Muted, g.Styles.Text.Render(choice)))
+	}
 
 	after := ""
 	hints := []key.Binding{q.keys.Choose, q.keys.Next}
@@ -147,6 +176,8 @@ func (q *questions) Render(width int) string {
 		if r := repository(q.name); r != "" {
 			after = g.Cell(labelRepo, g.Styles.Muted, g.Styles.Muted.Render(r))
 		}
+	case qEmail:
+		hints = hints[1:]
 	}
 	if q.q > q.first() {
 		hints = append(hints, q.keys.Back)

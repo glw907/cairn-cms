@@ -408,18 +408,6 @@ func TestCloudflareChecksStopBeforeAnyProviderWrite(t *testing.T) {
 	}
 }
 
-// TestTheChecksNeverReadSubscriptions holds the live finding that the subscriptions route answers
-// the setup grant with a 403: the checks do not ask for the plan at all.
-func TestTheChecksNeverReadSubscriptions(t *testing.T) {
-	w := newWorld(t)
-	if _, err := w.run(context.Background()); err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if slices.Contains(w.log, "cf:subscriptions") {
-		t.Errorf("log %v reads the subscriptions route", w.log)
-	}
-}
-
 func TestATakenCloudflareNameTakesTheNextSuffix(t *testing.T) {
 	w := newWorld(t)
 	w.cf.d1["example-site-auth"] = &d1{uuid: "someone-elses-database"}
@@ -2423,5 +2411,81 @@ func TestFetchFromReadsTheTaggedTemplate(t *testing.T) {
 	}
 	if _, err := FetchFrom(scaffold.NewFetcher(rt), "beta")(t.Context()); err == nil {
 		t.Error("FetchFrom of a tag the registry lacks succeeded")
+	}
+}
+
+func TestATokenRunWithoutAnOwnerEmailIsRefusedBeforeAnyWrite(t *testing.T) {
+	w := newWorld(t)
+	w.cfg.CloudflareToken = providers.NewCredential("token-" + strings.Repeat("a", 36))
+	w.cfg.Answers.OwnerEmail = " "
+	_, err := w.run(context.Background())
+	if !errors.Is(err, errTokenNoEmail) || !strings.Contains(err.Error(), "--email") {
+		t.Fatalf("err = %v, want errTokenNoEmail naming --email", err)
+	}
+	if w.gh.writes != 0 || w.vault.puts != 0 || len(w.saver.saves) != 0 {
+		t.Errorf("writes: github %d, keyring %d, record %d; want none", w.gh.writes, w.vault.puts, len(w.saver.saves))
+	}
+}
+
+// tokenWorld is a world whose run takes a supplied Cloudflare token and the owner's address.
+func tokenWorld(t *testing.T) *world {
+	t.Helper()
+	w := newWorld(t)
+	w.cfg.CloudflareToken = providers.NewCredential("token-" + strings.Repeat("a", 36))
+	w.cfg.Answers.OwnerEmail = "owner@example.test"
+	return w
+}
+
+// TestATokenRunSaysItStoredTheToken pins that a token run's stop after the deploy-key step and
+// its done screen both say the token went into the repository's secrets, and that an approval
+// run says neither.
+func TestATokenRunSaysItStoredTheToken(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		world func(*testing.T) *world
+		want  bool
+	}{
+		{"a token run", tokenWorld, true},
+		{"an approval run", newWorld, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := tc.world(t)
+			_, err := w.run(killAfter(w, StepDeployKey))
+			f := failureOf(t, err)
+			if got := strings.Contains(f.Did, LineTokenStored); got != tc.want {
+				t.Errorf("Did = %q; names the stored token %v, want %v", f.Did, got, tc.want)
+			}
+			res, err := w.resume()
+			if err != nil {
+				t.Fatalf("resume: %v", err)
+			}
+			if res.Done.TokenStored != tc.want {
+				t.Errorf("done = %+v, want TokenStored %v", res.Done, tc.want)
+			}
+		})
+	}
+}
+
+// TestATokenResumeWithoutTheTokenSweepsFirst pins that a token resume without the variable still
+// deletes an all-repositories installation before it stops, and calls no Cloudflare API.
+func TestATokenResumeWithoutTheTokenSweepsFirst(t *testing.T) {
+	w := tokenWorld(t)
+	if _, err := w.run(killAfter(w, StepApproveCreateApp)); err == nil {
+		t.Fatal("the first run was not stopped")
+	}
+	w.gh.installs = append(w.gh.installs, install{ID: allInstallID, AppID: w.gh.app.ID, Selection: "all"})
+	w.cfg.CloudflareToken = providers.Credential{}
+	w.log = nil
+	_, err := w.resume()
+	if f := failureOf(t, err); f.Reason != ReasonTokenMissing {
+		t.Fatalf("failure = %+v, want the token-missing stop", f)
+	}
+	if ours := w.gh.ours(); len(ours) != 0 {
+		t.Errorf("installations left = %+v, want the all-repositories one deleted", ours)
+	}
+	for _, call := range w.log {
+		if strings.HasPrefix(call, "cf:") {
+			t.Errorf("the stopped resume called Cloudflare: %s", call)
+		}
 	}
 }

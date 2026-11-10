@@ -772,7 +772,7 @@ func newConflictError(first, second string) error {
 // page on a local port, and a sandboxed command's port is private to the sandbox, so the owner's
 // browser could never reach the page.
 const tmplNewSandboxed = "cairn: this call runs inside a sandbox, so the owner's browser can't reach setup's approval page.\n" +
-	"Run the same call again outside the sandbox. In Claude Code, set the Bash tool's dangerouslyDisableSandbox parameter; the permission prompt it raises is the owner's approval, so don't ask first. In any other agent, ask the owner to run the call outside the sandbox. Keep the call bare: no `cd`, pipe, or redirect in it, and when you run it through npx, no option before create-cairn-site and no version or tag on it"
+	"Run the same call again outside the sandbox. In Claude Code, set the Bash tool's dangerouslyDisableSandbox parameter; the permission prompt it raises is the owner's approval, so don't ask first. When that parameter is off, or in any other agent, ask the owner to exclude the command from the sandbox or to run it outside. Keep the call bare: no `cd`, pipe, or redirect in it, and when you run it through npx, no option before create-cairn-site and no version or tag on it"
 
 // newSandboxedError renders tmplNewSandboxed.
 func newSandboxedError() error {
@@ -938,9 +938,11 @@ It must be an account-owned token with these permissions:
            Account Settings Read
   domain   Zone Read, DNS Edit, Workers Routes Edit
 
-Run it. Run cairn new as one bare call outside the sandbox, and in the background so you can
-read each waiting sentence to the owner while it blocks. A call made inside the sandbox exits 3
-at once and says so: run the same call again outside the sandbox. When cairn isn't installed,
+Run it. Make the call before you ask the owner about the sandbox: one bare call, in the
+background so you can read each waiting sentence to the owner while it blocks. An exclusion the
+owner set for cairn runs it outside the sandbox. A call made inside the sandbox exits 3 at once
+and says so: run the same call again with the Bash tool's dangerouslyDisableSandbox parameter,
+or, when that parameter is off, ask the owner to exclude the command. When cairn isn't installed,
 run npx create-cairn-site with the same flags. Put no npx option before create-cairn-site and
 no version or tag on it, and don't add the word new after it. Run it from an empty folder,
 which you change to in a separate call, and never from inside a clone of the cairn-cms

@@ -17,7 +17,7 @@ description: Sets up a new cairn site with `cairn new`. Use when a person asks t
 
 Run it as one bare call, outside the sandbox. Setup serves its approval page on a local port, and a sandboxed command's localhost is private to the sandbox, so the person's browser can't reach the page.
 
-Do not ask the person how to run outside the sandbox. Make the call. If it runs inside the sandbox, `cairn` stops at once with a message that says so. Run the same call again with the Bash tool's `dangerouslyDisableSandbox` parameter set. Claude Code asks the person to approve it, and that prompt is their approval ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)).
+Make the call before you ask the person anything about the sandbox. With the sandbox off, it runs as it is. With an exclusion the person set for `cairn` (`sandbox.excludedCommands`), a bare call runs outside the sandbox with no prompt. With neither, `cairn` stops at once with a message that says it ran inside the sandbox: run the same call again with the Bash tool's `dangerouslyDisableSandbox` parameter, and Claude Code asks the person to approve it ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). The person can switch that retry off with `allowUnsandboxedCommands: false`. When your tool lists the parameter as off, only an exclusion works, so ask the person to add one.
 
 Keep the call bare, so that an exclusion the person already set for `cairn` still matches the text of the call:
 
@@ -45,7 +45,7 @@ If the variable is already set when you start, the person set it for this run. S
 ## While it runs
 
 - A run usually takes a few minutes. The last step waits for the new address to answer over HTTPS and can take up to 15 more. It prints no `waiting` event, so a quiet stream there is not a stuck run.
-- Leave the new address alone until the `summary` event: no `curl`, `dig`, or browser visit. A lookup before setup has created the record makes the computer remember that the name doesn't exist, for up to 30 minutes, and the person's first visit fails.
+- Leave the new address alone until the `summary` event: no `curl`, `dig`, or browser visit. A lookup before setup has created the record makes the computer remember that the name doesn't exist, for up to 30 minutes, and the person's first visit fails. When the `summary` event arrives, visit the address to check the site answers.
 
 ## Read the result
 

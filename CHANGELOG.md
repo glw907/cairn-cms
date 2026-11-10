@@ -51,6 +51,13 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **The agent page, the skill, and `cairn new`'s help say to make the call before asking about the sandbox.**
+  The bare call is the path. An exclusion the owner set for `cairn` makes it run outside the sandbox, and when
+  Claude Code's retry parameter is off, the owner adds an exclusion. The refusal for a sandboxed call says so, and
+  the page and the skill say the address is safe to visit once the `summary` event arrives.
+
+  Consumers must: nothing.
+
 - **The setup screens no longer let an Enter accept a domain unread.** The browser screen shows its
   Enter hint only once setup has armed the browser step, and the account and domain choosers start with
   no selection when the account holds several, so the first arrow key selects the first row.

@@ -363,6 +363,12 @@
 - [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)* *(swept 2026-11-02)*
   The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it.
   Placement: After the release.
+- [ ] **#433** A plain `npx create-cairn-site` resolved the retired wizard in one proving run `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
+  Round three's naive agent ran `npx create-cairn-site new --dry-run` and then `npx create-cairn-site --dry-run`, and both answered with the retired 0.99 wizard's "Retired: this wizard writes secrets to disk" notice and `Unknown option '--help'`, though the run set `npm_config_tag=gate` and round two's plain call resolved the 2.0 launcher. The agent then pinned `@gate` and `-y`, which put the call outside the clean room's sandbox exclusion. The cause is unread: either the tag setting did not reach the call or npx read a stale packument. A candidate that reads `latest` instead of `gate` is the case the plan's version check ("wrong candidate") exists to fail, and the agent never saw it as a failure. Find out whether the setting reaches an excluded call, and print the resolved version in the probe.
+  Placement: round four's first probe; the harness owns it.
+- [ ] **#434** Agents write `new` after `npx create-cairn-site` `#improvement` `#cairn-cms` `#docs` `#initiative:cairn-setup` *(2026-11-10)*
+  The launcher runs `cairn new` with every argument passed through (`packages/create-cairn-site/bin.mjs:77`), so `npx create-cairn-site new --plan ...` runs `cairn new new --plan`. Round one's and round three's agents each wrote `new` first, because the page says `cairn new`. The agent page and the setup skill now say to write no `new` after the name. Dropping a leading `new` in the launcher would make the habit harmless, which is a small behavior change in the 2.0 launcher.
+  Placement: after round four, if an agent still writes it.
 
 
 ## Won't do

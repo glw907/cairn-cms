@@ -248,9 +248,26 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     }
   });
 
-  it('admits only a published release to each publish job', () => {
+  it('admits only a published release or a snapshot dispatch to each publish job', () => {
     for (const id of publishJobs) {
-      expect(jobs[id].if, id).toBe("github.event_name == 'release'");
+      expect(jobs[id].if, id).toBe("github.event_name == 'release' || inputs.snapshot != ''");
+    }
+  });
+
+  it('keeps a snapshot on main, on a dev version of the manifests, with no tag mapping to latest', () => {
+    const dispatch = (loadWorkflow('publish.yml') as Workflow & {
+      on?: { workflow_dispatch?: { inputs?: Record<string, { required?: boolean }> } };
+    }).on?.workflow_dispatch?.inputs;
+    expect(dispatch?.snapshot?.required).toBe(false);
+    const guard = (jobs.build.steps ?? []).find((s) => (s.run ?? '').includes('refs/heads/main'));
+    expect(guard?.run).toContain('-dev\\.[0-9]+$');
+    expect(guard?.if).toBe("github.event_name == 'workflow_dispatch'");
+    const stamp = (jobs.build.steps ?? []).find((s) => (s.run ?? '').includes('npm pkg set'));
+    expect(stamp?.if).toBe("github.event_name == 'workflow_dispatch'");
+    for (const id of publishJobs) {
+      const publish = (jobs[id].steps ?? []).find((s) => (s.run ?? '').includes('npm publish'));
+      expect(publish?.run, id).toContain('VERSION="${SNAPSHOT:-${GITHUB_REF_NAME#v}}"');
+      expect(publish?.run, id).toContain('*-*) TAG=gate ;;');
     }
   });
 

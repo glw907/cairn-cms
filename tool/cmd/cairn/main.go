@@ -69,7 +69,9 @@ func scrubbedWriters(d deps) (out, errOut *logx.Writer, skipped int, flush func(
 // cairn new's setup token, for the reasons scrubbedWriters states.
 func scrubTargets(d deps) []providers.Credential {
 	resolved, _ := loadEnv(d.env, d.secretProviders()...)
-	return []providers.Credential{resolved.cfToken(), resolved.ghToken(), setupToken(d.env)}
+	// A refused setup token is scrubbed too, since the refusal does not keep it out of a stream.
+	tok, _ := setupToken(d.env)
+	return []providers.Credential{resolved.cfToken(), resolved.ghToken(), tok}
 }
 
 func main() {

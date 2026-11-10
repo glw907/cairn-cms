@@ -34,8 +34,11 @@ func extraGitConfig(env map[string]string) []childenv.Pair {
 // and nothing here prints or prompts. Register hands each credential to the process's output
 // scrub the moment the runner receives it.
 func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Event)) (setup.Config, error) {
+	token, err := setupToken(d.env)
+	if err != nil {
+		return setup.Config{}, err
+	}
 	var runID string
-	var err error
 	if in.resume != nil {
 		runID = in.resume.Record.Setup.RunID
 	} else if runID, err = newRunID(); err != nil {
@@ -112,7 +115,7 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 		Store: reg,
 
 		CloudflareOAuth: providers.NewCloudflareOAuth(d.transport),
-		CloudflareToken: setupToken(d.env),
+		CloudflareToken: token,
 		Cloudflare: func(accountID string, token providers.Credential) setup.CloudflareAPI {
 			return providers.NewCloudflare(accountID, token, d.transport)
 		},

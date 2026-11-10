@@ -231,6 +231,43 @@ var _ secrets.Provider = fakeFailingProvider{}
 // store/paths.go's CAIRN_STATE_DIR and providers/cloudflare.go's CAIRN_CLOUDFLARE_API_BASE,
 // neither a credential), the CAIRN_CF_/CAIRN_GH_ prefixes only, and env.go and messages.go
 // (created by Task 19c-ii, and exempted here by name in advance) are the two allowed files.
+// TestSetupTokenTrimsAndRefusesInnerWhitespace pins the setup token's reading: surrounding
+// whitespace is trimmed, a blank value is unset, and a value with whitespace inside is refused
+// by the variable's name without the value. The scrub holds the trimmed value either way.
+func TestSetupTokenTrimsAndRefusesInnerWhitespace(t *testing.T) {
+	const tok = "token-0123456789abcdef0123456789abcdef"
+	for _, tc := range []struct {
+		name, raw, want string
+		refused         bool
+	}{
+		{"a plain value", tok, tok, false},
+		{"a pasted line break", tok + "\n", tok, false},
+		{"surrounding spaces", "  " + tok + "\t", tok, false},
+		{"a blank value", " \n", "", false},
+		{"a space inside", "token-0123 456789", "token-0123 456789", true},
+		{"a line break inside", "token-0123\n456789\n", "token-0123\n456789", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			envFn := fakeEnv(map[string]string{varCFSetupToken: tc.raw})
+			got, err := setupToken(envFn)
+			if (err != nil) != tc.refused {
+				t.Fatalf("err = %v, want refused %v", err, tc.refused)
+			}
+			if err != nil && (!strings.Contains(err.Error(), varCFSetupToken) || strings.Contains(err.Error(), "0123")) {
+				t.Errorf("refusal %q should name %s and never the value", err, varCFSetupToken)
+			}
+			if got.Reveal() != tc.want {
+				t.Errorf("token = %q, want %q", got.Reveal(), tc.want)
+			}
+			d := mustDeps(t)
+			d.env = envFn
+			if scrub := scrubTargets(d); scrub[len(scrub)-1].Reveal() != tc.want {
+				t.Errorf("the scrub holds %q, want the trimmed %q", scrub[len(scrub)-1].Reveal(), tc.want)
+			}
+		})
+	}
+}
+
 func TestCredentialVariableNamesAreSpelledOnlyInEnvGo(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	if err != nil {

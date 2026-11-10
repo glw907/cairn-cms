@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"os"
+	"strings"
+	"unicode"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
@@ -45,10 +47,21 @@ const (
 // that names it.
 const varCFSetupToken = setup.TokenVariable
 
-// setupToken returns the token in varCFSetupToken, wrapped so it never prints by accident. A
-// CLOUDFLARE_API_TOKEN in the environment is never read here: it selects nothing.
-func setupToken(envFn func(string) string) providers.Credential {
-	return providers.NewCredential(envFn(varCFSetupToken))
+// setupToken returns the token in varCFSetupToken with its surrounding whitespace trimmed,
+// wrapped so it never prints by accident; a blank value is the zero Credential, the variable
+// unset. A value with whitespace inside is refused, since no Cloudflare token holds any, and the
+// trimmed value comes back with the refusal so the scrub still holds it. A CLOUDFLARE_API_TOKEN
+// in the environment is never read here: it selects nothing.
+func setupToken(envFn func(string) string) (providers.Credential, error) {
+	v := strings.TrimSpace(envFn(varCFSetupToken))
+	if v == "" {
+		return providers.Credential{}, nil
+	}
+	tok := providers.NewCredential(v)
+	if strings.ContainsFunc(v, unicode.IsSpace) {
+		return tok, newSetupTokenSpaceError()
+	}
+	return tok, nil
 }
 
 // varNoColor and varTerm are the two variables loadEnv reads for render.DetectProfile. Neither

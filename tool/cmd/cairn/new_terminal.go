@@ -58,6 +58,10 @@ type runEnd struct {
 func runTerminal(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
+	token, err := setupToken(d.env)
+	if err != nil {
+		return err
+	}
 	env := environMap(os.Environ())
 	remote := loopback.Remote(runtime.GOOS, env)
 	l := &terminalLane{d: d, tag: f.tag, run: setup.Run}
@@ -86,7 +90,7 @@ func runTerminal(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 		GOOS:   runtime.GOOS,
 		Env:    env,
 		// A token cannot read the Cloudflare sign-in's email, so the owner types it.
-		Token: setupToken(d.env) != providers.Credential{},
+		Token: token != providers.Credential{},
 	})
 	p := newProgram(m, d.stdout)
 	l.send = p.Send

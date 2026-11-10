@@ -21,7 +21,7 @@ Run `cairn` as one bare command: no `cd`, no redirect, no pipe, and no `$(...)`.
 
 ## Use a Cloudflare token for an unattended run
 
-An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. With it set when a setup starts, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.
+An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. Setup trims spaces and line breaks around the value and refuses one with a space or line break inside. With it set when a setup starts, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.
 
 Create the token as an account-owned token, with these permissions:
 

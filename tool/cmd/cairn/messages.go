@@ -765,6 +765,15 @@ The approve-cloudflare step_done and the summary carry credential: token or appr
 Waiting states: approve-cloudflare, approve-create-app, approve-install-all,
 approve-install-repo, reconsent-cloudflare. Read the sentence field aloud to the owner.`
 
+// tmplSetupTokenSpace refuses a setup token with whitespace inside it. It names the variable and
+// never the value.
+const tmplSetupTokenSpace = "cairn: %s has a space or a line break inside the token.\nSet it to the token alone, and then run cairn new again."
+
+// newSetupTokenSpaceError renders tmplSetupTokenSpace.
+func newSetupTokenSpaceError() error {
+	return translated(fmt.Errorf(tmplSetupTokenSpace, varCFSetupToken))
+}
+
 // tmplNewUsage renders a refusal the agent view found in the flags or the plan file.
 const tmplNewUsage = "%s\nRun `cairn new --help` for the flags"
 

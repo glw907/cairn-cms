@@ -61,12 +61,23 @@ pass, was dropped by Geoff on 2026-11-08.
   `~/Projects/initiatives/cairn-setup/plans/2026-11-09-setup-tooling-overnight-conductor-prompt.txt`. G3's design session (`cairn-cms-theme-garden-3-design`, session
   `5013bd5e`) prepares the design and waits for Geoff to attach. Theme-garden launches hold during pass 3's T3.5 dependency sweep.
 
-- Pass 3 (executor `cairn-cms-setup-tooling-3`): Geoff ruled (2026-11-09, plan at initiatives
-  `782a946`) that no rc is cut until the install process is effective and tested, and `rc.5` is cut once,
-  at the end. Until then each round's candidate is a dev snapshot on `gate` only, with no GitHub release,
-  no `v*` or `tool/v*` rc tag, and no CHANGELOG release heading, and `latest` and `next` never move.
-  Round one's cut PR #212 is reverted, so `main` carries no `0.99.0-rc.5` and no "Released 2026-11-09".
-  Nothing was published, and `gate` still serves `0.99.0-rc.4`.
+- **Pass 3 holds at the budget stop** (executor `cairn-cms-setup-tooling-3`, 2026-11-10). Six naive runs
+  ran ($1.88 of clean-room cost) and the executor's spend priced at $98.35, so `run-gate.sh naive` refuses
+  a seventh: "$100.69 spent leaves $-0.69 of $100". Nothing further runs, T3.4 to T3.6 included, until Geoff
+  rules. The test build on `gate` is engine `0.99.0-dev.1` and tool `2.0.0-dev.4` (`latest` and `next` never
+  moved). Four runs of the ten remain, but the dollar line, not the run count, is the limit.
+- The loop's lists are `~/Projects/initiatives/cairn-setup/research/proving/round-1.md` to `round-6.md`, each
+  with the friction the agent met, the flailing, the harness items, and the readings against the three speed
+  fixes. Round four reached GitHub, where setup created the repository and the App; no run has reached a
+  deploy, so the three speed fixes have no reading. Fixed and merged: the agent page's sandbox lines (no
+  `--yes`, `-y`, tag, `new`, or `cd`), the install-button name, the stand-in's `failed` line, `grade` finishing,
+  the sandbox stop (#224), the subdomain check (#225), the watcher, and the probe list. Open for Geoff:
+  #430 (setup refuses an apex that holds only mail records) and S-2's exclusion widening, which the sandbox
+  stop makes smaller; held-path rows (the proving skill's "a sixth naive run", the watcher's stop code).
+- Next: Geoff rules on the budget (the $100 line counts the executor's session at list price), on #430,
+  and on the held-path rows. Then round seven's naive run is the first test of `2.0.0-dev.4`'s subdomain fix,
+  and the scripted leg, the dependency sweep, and the rc.5 cut follow. A final PR carries `## Decisions`
+  (the clock resets, the process point) and the runbook, T3.6, which is not written.
 
 ## Open decisions and watches
 

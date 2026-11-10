@@ -347,6 +347,20 @@ export async function runScripted({ runDir, env, deps }) {
 }
 
 /**
+ * The command the headless terminal runs to show the leg's pane: a read-only attach with the same
+ * tmux binary the leg drives. A client and a server of different versions refuse each other, and the
+ * headless terminal's PATH can name another tmux (run 2611102257's screenshots all read "server exited
+ * unexpectedly").
+ * @param {string} tmuxBin the absolute path of the tmux the leg runs
+ * @param {string} socket the leg's tmux socket
+ * @param {string} session the leg's tmux session
+ * @returns {string}
+ */
+export function shotCommand(tmuxBin, socket, session) {
+  return `${tmuxBin} -S ${socket} attach -r -t ${session}`;
+}
+
+/**
  * The real dependencies: execFile for tmux, spawn for the shell and the stand-in.
  * @param {object} options
  * @param {string} options.runDir the run directory
@@ -377,8 +391,10 @@ async function realDeps({ runDir, env, shotDir }) {
   if (shotDir) {
     const socket = path.join(env.HOME ?? os.homedir(), '.local', 'state', 'cleanroom', 'tmux-scripted.sock');
     const session = `cleanroom-${runIdOf(runDir)}-scripted`;
+    // The headless terminal's PATH can name a different tmux, which cannot attach to this leg's server.
+    const tmuxBin = (await execFileAsync('sh', ['-c', 'command -v tmux'])).stdout.trim() || 'tmux';
     deps.shot = (name) =>
-      execFileAsync('kitty-headless-shot', ['-o', shotDir, '-c', `tmux -S ${socket} attach -r -t ${session}`, 'sleep:1', `shot:${name}`]).then(() => {});
+      execFileAsync('kitty-headless-shot', ['-o', shotDir, '-c', shotCommand(tmuxBin, socket, session), 'sleep:1', `shot:${name}`]).then(() => {});
   }
   return deps;
 }

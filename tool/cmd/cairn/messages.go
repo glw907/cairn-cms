@@ -197,8 +197,8 @@ const (
 	exampleAgents = "cairn help agents"
 	agentsPage    = `cairn is a monitoring plugin. This page is its whole contract for a program.
 
-To set up a new site, skip to the text that begins "cairn new sets up a site". The rest of this
-page is the monitoring contract.
+To set up a new site, skip to the line that starts with cairn new sets up a site. Everything
+before it is the monitoring contract.
 
 Exit codes
   0 OK        every check passed
@@ -728,7 +728,7 @@ name as missing.`
 	exampleNew = `  # Answer the questions in the terminal
   $ cairn new
 
-  # An agent: write a plan, then create the site from it
+  # For an agent, write a plan and then create the site from it
   $ cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
   $ cairn new --apply plan.json
 

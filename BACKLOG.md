@@ -292,6 +292,15 @@
   Placement: engine batch; a `tool/` change, with the credentials page.
 
 ## Low
+- [ ] **#430** Setup refuses an address whose only DNS records are mail records `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09)*
+  `checkAddress` (`tool/internal/setup/opening.go:305`) refuses an address that has a DNS record of any type, and `own-your-domain.md` and `setup-recovery.md` document the refusal. A domain's apex usually carries mail records, MX and an SPF TXT, so a first-time owner who puts the site on the bare address of a domain they own is refused by a check meant for a site that already answers there. The test domain `carin-test.org` hit it in proving round two: its apex holds only an MX and an SPF TXT, and apply stopped with nothing created (the `apex has records` fixture is MX and TXT too). Option A keeps the rule and has an owner choose a subdomain. Option B counts only A, AAAA, and CNAME records, which is a tool change with both docs pages and the test updated, and it is the same set the gate's sweep counts as a record left on the address. This is Geoff's call: it changes a documented refusal.
+  Placement: Geoff's morning packet, before the stable cut, since it decides what an owner of a real domain meets.
+- [ ] **#431** An agent hesitates at a Cloudflare token it did not set `#improvement` `#cairn-cms` `#docs` `#initiative:cairn-setup` *(2026-11-09)*
+  Round two's agent saw `credential: token`, said it had not set `CAIRN_CF_SETUP_TOKEN`, and asked the owner to confirm before it applied, adding that setup would store the token as the site's deploy secret. The question was sound, and it cost an owner turn. The "Use a Cloudflare token" section could say that setup reads the variable the owner set and tells the owner it is using it, so an agent that finds a token in its environment relays the `credential` event and goes on.
+  Placement: round three, if another run asks it again.
+- [ ] **#432** The clean room's probe list hard-codes the launcher version it expects `#bug` `#workstation` `#harness` `#initiative:cairn-setup` *(2026-11-09)*
+  The `prints [2.0.0-dev.1]` item in `bin/.local/share/cleanroom/probe-commands.md` reads the version the npx cache holds and fails once `gate` moves to `2.0.0-dev.2`, so the next probe rerun fails for a reason that is not a regression. Make the item version-free (print whether the cache holds exactly one version beyond the shadow package) or have the harness supply the version.
+  Placement: glw907/workstation, with the next `cleanroom` change.
 - [ ] **#425** `scripts/release/bump.mjs` drops its version argument when no `--date` is given `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-09)*
   `main()` picks the version with `args.find((a, i) => !a.startsWith('--') && i !== dateAt + 1)`, and with no `--date` `dateAt` is -1, so index 0 is skipped and `node scripts/release/bump.mjs 0.99.0-rc.5` answers `"" is not a version`. A cut passes `--date` to work around it. Fix: skip index `dateAt + 1` only when `dateAt >= 0`, and test the no-flag call.
   Placement: the next pass that touches `scripts/release/`, which is a held path.

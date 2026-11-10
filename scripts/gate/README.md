@@ -62,7 +62,7 @@ the clean room's user is alive. `naive` also refuses:
 
 - while the sweep's dry run lists any target, any old-gate name, or any address record (it never
   deletes);
-- a sixth naive run (every ledger row named for a run id counts, except a scripted one);
+- an eleventh naive run (every ledger row named for a run id counts, except a scripted one);
 - when the remaining budget is under $5. The cap is the lower of $20 and $100 less the spend so far:
   every ledger row (a `running` row at its full cap), probe sessions included, plus `cleanroom cost`
   of the transcript passed as `--conductor-transcript`;

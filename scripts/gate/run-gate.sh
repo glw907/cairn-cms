@@ -184,7 +184,7 @@ if (kind === 'naive') {
   const executor = Number(/([0-9]+(?:\.[0-9]+)?)/.exec(costed.out)?.[1]);
   if (!costed.ok || Number.isNaN(executor)) refusals.push(`cleanroom cost could not price ${transcript}, so the spend so far is unknown`);
   else spend += executor;
-  if (naiveRows.length >= 5) refusals.push(`the ledger holds ${naiveRows.length} naive runs; a sixth is refused`);
+  if (naiveRows.length >= 10) refusals.push(`the ledger holds ${naiveRows.length} naive runs; an eleventh is refused`);
   cap = Math.min(20, 100 - spend);
   if (cap < 5) refusals.push(`the budget stop: $${spend.toFixed(2)} spent leaves $${(100 - spend).toFixed(2)} of $100, under the $5 floor`);
   const template = path.join(home, '.local', 'share', 'cleanroom', 'settings.json');

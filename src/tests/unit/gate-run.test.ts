@@ -78,7 +78,7 @@ function rig(options: { ledger?: object[]; probes?: object[]; sweepCount?: numbe
 
 const naive = (r: ReturnType<typeof rig>, extra: Record<string, string> = {}) => r.run(['naive', '--conductor-transcript', r.transcript], extra);
 const row = (name: string, over: Record<string, unknown> = {}) => ({ name, state: 'exited', cost: 1, ...over });
-const naiveRows = (count: number, cost = 1) => Array.from({ length: count }, (_, i) => row(`26110${i}0000`, { cost }));
+const naiveRows = (count: number, cost = 1) => Array.from({ length: count }, (_, i) => row(`2611${String(i).padStart(2, "0")}0000`, { cost }));
 
 describe('naive', () => {
   it('prints the run id, session, and run directory, then starts the stand-in and the run', () => {
@@ -165,10 +165,10 @@ describe('naive', () => {
     expect(refused(r)).toContain('1 process(es) owned by cleanroom are alive (first pid 4242)');
   });
 
-  it('refuses a sixth naive run, counting a scripted row for nothing', () => {
-    const rows = [...naiveRows(5), row('2611090000', { leg: 'scripted' })];
-    expect(refused(rig({ ledger: rows }))).toContain('holds 5 naive runs; a sixth is refused');
-    expect(naive(rig({ ledger: [...naiveRows(4), row('2611090000', { leg: 'scripted' })] })).status).toBe(0);
+  it('refuses an eleventh naive run, counting a scripted row for nothing', () => {
+    const rows = [...naiveRows(10), row('2611990000', { leg: 'scripted' })];
+    expect(refused(rig({ ledger: rows }))).toContain('holds 10 naive runs; an eleventh is refused');
+    expect(naive(rig({ ledger: [...naiveRows(9), row('2611990000', { leg: 'scripted' })] })).status).toBe(0);
   });
 
   it('refuses when the remaining budget is under $5, naming the budget stop', () => {

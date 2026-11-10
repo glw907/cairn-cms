@@ -2,14 +2,13 @@
 // which pane was showing when each key went in, a fake clock stands in for every wait, and no
 // cleanroom, terminal, network, or credential is involved.
 import { describe, it, expect } from 'vitest';
-import { SCREENS, commandFor, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
+import { SCREENS, chooseRow, commandFor, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
 
 const RUN_ID = '2611091430';
 const RUN_DIR = `/var/tmp/cleanroom/${RUN_ID}/run`;
 const SESSION = `cleanroom-${RUN_ID}-scripted`;
 const OWNER = 'cairn-gate@probe.907.life';
-const TARGET = '--host gate.carin-test.org --zone carin-test.org';
-const START = `npm create cairn-site -- ${TARGET}`;
+const START = 'npm create cairn-site';
 const PASTE_ON = '\x1b[200~';
 const PASTE_OFF = '\x1b[201~';
 
@@ -22,7 +21,10 @@ const PANES = {
   name: 'About your site\n\nSite name\nShown at the top of every page.\n>',
   crawlers: 'About your site\n\nSite name  Cairn gate\n\nAI crawlers\nChoose whether AI companies can use your content to train their models.\n> Block AI training',
   email: "About your site\n\nYour email\nSetup can't read your email from a Cloudflare token. The admin sends your sign-in links to this address.\n>",
-  summary: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\n\nenter set up  e edit email',
+  domain: 'Choose a domain\n\nDomain\n3 domains on your Cloudflare account\n> alpha.example.org\n  carin-test.org\n  zeta.example.net\n\n↑↓ choose · Enter next',
+  summary: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\nAddress  carin-test.org and www.carin-test.org\n\nEnter set up · e edit email · a edit address · Ctrl+C quit',
+  summaryEditing: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\nAddress  > gate.carin-test.org\n\nEnter save · Esc cancel',
+  summarySet: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\nAddress  gate.carin-test.org\n\nEnter set up · e edit email · a edit address · Ctrl+C quit',
   summarySent: 'Review the settings for Cairn gate 2611091430\n\nDomain  carin-test.org\n\nq quit',
   browserOpen: 'Approve setup in your browser\n\nSetup opens a tab in your browser.\n\nenter open your browser  q quit',
   browserWait: 'Approve setup in your browser\n\nApprove each request in the setup tab.\n\nctrl+c stop',
@@ -104,7 +106,11 @@ const HAPPY = [
   PANES.crawlers,
   PANES.email,
   PANES.email,
+  PANES.domain,
+  PANES.domain,
   PANES.summary,
+  PANES.summaryEditing,
+  PANES.summarySet,
   PANES.summarySent,
   PANES.browserOpen,
   PANES.browserWait,
@@ -135,21 +141,34 @@ describe('scripted leg: the target', () => {
     return h.tmux.sends.find((s) => s.pane === PANES.prompt)?.text;
   };
 
-  it('targets the gate subdomain by default, never the bare domain', async () => {
-    const text = await typed();
-    expect(text).toBe('npm create cairn-site -- --host gate.carin-test.org --zone carin-test.org');
-    expect(text).not.toMatch(/--host carin-test\.org/);
+  it('types the launcher with no address flags, since the interactive command takes none', async () => {
+    expect(await typed()).toBe('npm create cairn-site');
   });
 
-  it('runs the local build with the same target when one is handed in', async () => {
-    expect(await typed({ GATE_CAIRN_BIN: '/var/tmp/cleanroom/2611091430/cairn' })).toBe(
-      '/var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org --zone carin-test.org',
-    );
+  it('runs the local build the same way when one is handed in', async () => {
+    expect(await typed({ GATE_CAIRN_BIN: '/var/tmp/cleanroom/2611091430/cairn' })).toBe('/var/tmp/cleanroom/2611091430/cairn new');
+  });
+
+  it('sets the gate subdomain on the summary, and never leaves the bare domain', async () => {
+    const h = harness(HAPPY);
+    await h.run();
+    const atSummary = h.tmux.sends.filter((s) => s.pane === PANES.summary).map((s) => s.text);
+    expect(atSummary).toEqual(['<a>', '<C-u>', 'gate.carin-test.org', '<Enter>']);
+    expect(h.tmux.sends.filter((s) => s.pane === PANES.summarySet).map((s) => s.text)).toEqual(['<Enter>']);
+    expect(h.tmux.sends.some((s) => s.text === 'carin-test.org')).toBe(false);
+  });
+
+  it('moves the domain selection to the zone before Enter, up or down', () => {
+    const list = (selected: string) => `Choose a domain\n\nDomain\n3 domains\n${['alpha.example.org', 'carin-test.org', 'zeta.example.net'].map((d) => (d === selected ? `> ${d}` : `  ${d}`)).join('\n')}\n`;
+    expect(chooseRow(list('alpha.example.org'), 'carin-test.org', 'domain')).toEqual([{ key: 'Down' }, { key: 'Enter' }]);
+    expect(chooseRow(list('zeta.example.net'), 'carin-test.org', 'domain')).toEqual([{ key: 'Up' }, { key: 'Enter' }]);
+    expect(chooseRow(list('carin-test.org'), 'carin-test.org', 'domain')).toEqual([{ key: 'Enter' }]);
+    expect(() => chooseRow(list('alpha.example.org'), 'missing.example.org', 'domain')).toThrow(/offers no "missing.example.org" row/);
   });
 
   it('knows the screen while a long command wraps across lines', () => {
-    const command = '/var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org --zone carin-test.org';
-    const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org\n--zone carin-test.org';
+    const command = '/var/tmp/cleanroom/2611091430/cairn new';
+    const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn\nnew';
     expect(identify(wrapped, command)?.name).toBe('starting');
     expect(identify(`${wrapped}\nowner@cleanroom:~$`, command)?.name).toBe('shell');
   });
@@ -183,7 +202,13 @@ describe('scripted leg: answers', () => {
       { text: '<Enter>', pane: PANES.crawlers },
       { text: `${PASTE_ON}${OWNER}${PASTE_OFF}`, pane: PANES.email },
       { text: '<Enter>', pane: PANES.email },
+      { text: '<Down>', pane: PANES.domain },
+      { text: '<Enter>', pane: PANES.domain },
+      { text: '<a>', pane: PANES.summary },
+      { text: '<C-u>', pane: PANES.summary },
+      { text: 'gate.carin-test.org', pane: PANES.summary },
       { text: '<Enter>', pane: PANES.summary },
+      { text: '<Enter>', pane: PANES.summarySet },
       { text: '<Enter>', pane: PANES.browserOpen },
     ]);
   });
@@ -193,7 +218,7 @@ describe('scripted leg: answers', () => {
     const result = await h.run();
     expect(result.ok).toBe(true);
     expect(h.events.map((e) => e.screen)).toEqual([
-      'shell', 'starting', 'npx', 'welcome', 'name', 'crawlers', 'email', 'summary', 'browser-open', 'browser-wait', 'watch', 'done',
+      'shell', 'starting', 'npx', 'welcome', 'name', 'crawlers', 'email', 'domain', 'summary', 'summary-wait', 'summary-set', 'summary-wait', 'browser-open', 'browser-wait', 'watch', 'done',
     ]);
   });
 
@@ -221,6 +246,12 @@ describe('scripted leg: answers', () => {
 });
 
 describe('scripted leg: failures', () => {
+  it('fails when the command ends at once and the prompt shows again, though the screen before it was the shell', async () => {
+    const ended = `owner@cleanroom:~$ ${START}\ncairn: --plan is required with --zone.\nowner@cleanroom:~$`;
+    const h = harness([PANES.prompt, PANES.prompt, ended]);
+    await expect(h.run()).rejects.toThrow(/back at the shell prompt.*cairn: --plan is required/s);
+  });
+
   it('fails on a screen it does not know, naming it, and types nothing at it', async () => {
     const h = harness([PANES.prompt, PANES.starting, PANES.welcome, PANES.mystery]);
     await expect(h.run()).rejects.toThrow(/unknown screen "Something nobody planned"/);
@@ -276,7 +307,7 @@ describe('scripted leg: screens', () => {
   it('names each screen the owner meets in the setup tool, most advanced first', () => {
     expect(SCREENS.map((s: { name: string }) => s.name)).toEqual(expect.arrayContaining(['welcome', 'name', 'crawlers', 'email', 'summary', 'browser-open', 'done']));
     expect(identify(PANES.crawlers)?.name).toBe('crawlers');
-    expect(identify(PANES.summarySent)?.name).toBe('summary');
+    expect(identify(PANES.summarySent)?.name).toBe('summary-wait');
     expect(identify(PANES.mystery)).toBeNull();
   });
 });

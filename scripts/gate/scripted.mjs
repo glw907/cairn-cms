@@ -15,14 +15,18 @@ import { promisify } from 'node:util';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const execFileAsync = promisify(execFile);
 
-/** The launcher the owner types, before the address flags. */
+/** The launcher the owner types. */
 export const COMMAND = 'npm create cairn-site';
 /**
  * The address the leg sets up: a subdomain, never the bare domain. A record on the bare address or
- * `www` is a standing stop for Geoff, and the zone's apex holds the mail records.
+ * `www` is a standing stop for Geoff, and the zone's apex holds the mail records. The interactive
+ * command takes no address flags (those belong to `--plan`), so the leg picks the zone on the domain
+ * screen and types the subdomain at the summary, the way a person does.
  */
 export const HOST = 'gate.carin-test.org';
 export const ZONE = 'carin-test.org';
+/** The summary's address row once the subdomain is saved. */
+const ADDRESS_SET = new RegExp(`Address\\s+${HOST.replaceAll('.', '\\.')}`);
 
 /**
  * The line the owner types. A local build (`GATE_CAIRN_BIN`, set by `run-gate.sh scripted
@@ -32,8 +36,27 @@ export const ZONE = 'carin-test.org';
  * @returns {string}
  */
 export function commandFor(env) {
-  const flags = `--host ${HOST} --zone ${ZONE}`;
-  return env.GATE_CAIRN_BIN ? `${env.GATE_CAIRN_BIN} new ${flags}` : `${COMMAND} -- ${flags}`;
+  return env.GATE_CAIRN_BIN ? `${env.GATE_CAIRN_BIN} new` : COMMAND;
+}
+
+/**
+ * The keys that move a choose screen's selection to the row that names `target`, then Enter. The
+ * screen marks its selection with a leading `>` and lists one row per line.
+ * @param {string} pane the captured pane text
+ * @param {string} target the row's text
+ * @param {string} step the screen's name, for the failure
+ * @returns {Op[]}
+ * @throws {ScriptedError} when the screen has no selection or no row for the target
+ */
+export function chooseRow(pane, target, step) {
+  const lines = pane.split('\n').map((l) => l.trim());
+  const selected = lines.findIndex((l) => l.startsWith('> '));
+  const wanted = lines.findIndex((l) => l.replace(/^> /, '') === target);
+  if (selected === -1 || wanted === -1) {
+    throw new ScriptedError(`the ${step} screen offers no "${target}" row to choose:\n${pane.trim()}`, step);
+  }
+  const keys = Array.from({ length: Math.abs(wanted - selected) }, () => ({ key: wanted > selected ? 'Down' : 'Up' }));
+  return [...keys, ...enter];
 }
 /** How long the whole leg may take. */
 export const LIMIT_MS = 20 * 60 * 1000;
@@ -50,7 +73,7 @@ const DEFAULT_OWNER = 'cairn-gate@probe.907.life';
  * @typedef {object} Screen
  * @property {string} name the screen's name, written to `scripted.jsonl` and named in a failure
  * @property {(pane: string, last: string, command: string) => boolean} test whether the pane shows this screen
- * @property {((answers: { name: string, email: string, command: string }) => Op[]) | null} answer the keys it takes, or null
+ * @property {((answers: { name: string, email: string, command: string }, pane: string) => Op[]) | null} answer the keys it takes, or null
  *  when the screen only waits on the tool
  * @property {'fail' | 'done'} [end] a screen that ends the leg
  */
@@ -75,13 +98,18 @@ export const SCREENS = [
   { name: 'watch', test: (p) => /^\s*Setting up /m.test(p), answer: null },
   { name: 'browser-wait', test: (p) => /Approve each request in the setup tab/.test(p), answer: null },
   { name: 'browser-open', test: (p) => /Approve setup in your browser/.test(p) && /open your browser/.test(p), answer: () => enter },
-  { name: 'summary', test: (p) => /Review the settings for /.test(p), answer: () => enter },
+  // The address is typed on the summary: `a` opens it filled with the zone, Ctrl+U clears it, and
+  // Enter saves. Setup rechecks the address, and only then does the second screen answer Enter.
+  { name: 'summary-set', test: (p) => /Review the settings for /.test(p) && /Enter set up/.test(p) && ADDRESS_SET.test(p), answer: () => enter },
+  { name: 'summary', test: (p) => /Review the settings for /.test(p) && /Enter set up/.test(p), answer: () => [{ key: 'a' }, { key: 'C-u' }, { type: HOST }, ...enter] },
+  // The address is open for editing, or Enter was sent: the screen takes no key until it changes.
+  { name: 'summary-wait', test: (p) => /Review the settings for /.test(p), answer: null },
   { name: 'email', test: (p) => /Setup can't read your email from a Cloudflare token/.test(p), answer: ({ email }) => [{ paste: email }, ...enter] },
   { name: 'crawlers', test: (p) => /Choose whether AI companies/.test(p), answer: () => enter },
   { name: 'name', test: (p) => /Shown at the top of every page/.test(p), answer: ({ name }) => [{ type: name }, ...enter] },
   { name: 'theme', test: (p) => /How your site looks to readers/.test(p), answer: () => enter },
   { name: 'account', test: (p) => /Choose an account/.test(p), answer: () => enter },
-  { name: 'domain', test: (p) => /Choose a domain/.test(p), answer: () => enter },
+  { name: 'domain', test: (p) => /Choose a domain/.test(p), answer: (_answers, pane) => chooseRow(pane, ZONE, 'domain') },
   { name: 'resume', test: (p) => /Resume setup/.test(p), answer: () => enter },
   { name: 'welcome', test: (p) => /Set up a cairn site/.test(p), answer: () => enter },
   // npm's own confirmation before it runs a package it has not cached.
@@ -207,9 +235,14 @@ export async function runScripted({ runDir, env, deps }) {
       const screen = identify(pane, answers.command);
       if (screen) {
         unknownText = null;
+        // The prompt again with the typed command above it means the command ended, whether or not the
+        // screen before it was also the shell.
+        if (screen.name === 'shell' && typed && squash(pane).includes(squash(answers.command))) {
+          throw new ScriptedError(`the command ended and the pane is back at the shell prompt; it reached step "${reached}":\n${pane.trim()}`, reached);
+        }
         if (screen.name !== last) {
           if (screen.name === 'shell' && typed) {
-            throw new ScriptedError(`the command ended and the pane is back at the shell prompt; it reached step "${reached}"`, reached);
+            throw new ScriptedError(`the command ended and the pane is back at the shell prompt; it reached step "${reached}":\n${pane.trim()}`, reached);
           }
           last = screen.name;
           reached = screen.name;
@@ -217,7 +250,7 @@ export async function runScripted({ runDir, env, deps }) {
           await deps.shot?.(screen.name);
           if (screen.end === 'fail') throw new ScriptedError(`setup stopped at "${screen.name}": ${title(pane)}\n${pane.trim()}`, reached);
           if (screen.answer) {
-            for (const op of screen.answer(answers)) {
+            for (const op of screen.answer(answers, pane)) {
               if ('key' in op) await send(op.key);
               else if ('paste' in op) await send('-l', `${PASTE_ON}${op.paste}${PASTE_OFF}`);
               else await send('-l', op.type);

@@ -17,6 +17,13 @@ name: Publish to npm
 # publish from tool.yml.
 # The `verdict` job reads the gate's record first, and `promote` needs it.
 
+# A dev snapshot is a test build made to prove something, such as a proving round. It is
+# published by a dispatch on `main` with `snapshot` set (for example 0.99.0-dev.3): no release,
+# no tag, no CHANGELOG heading. The build job stamps that version into both manifests in the
+# runner's checkout, so the template inside the tarball pins it, and the snapshot goes to `gate`
+# and nowhere else. An rc is cut only for a real release candidate (the cairn-releasing skill).
+# The `npm-publish` environment must allow the `main` branch beside its tag policies.
+
 on:
   release:
     types: [published]
@@ -25,7 +32,11 @@ on:
       promote:
         description: A passed candidate's version (for example 0.99.0-rc.3) to move to the next dist-tag; dispatch on that version's tag ref
         type: string
-        required: true
+        required: false
+      snapshot:
+        description: A dev snapshot's version (for example 0.99.0-dev.3) to publish to the gate dist-tag; dispatch on main
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -36,7 +47,7 @@ jobs:
   # https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference, which asks
   # for `checks: read` on the token). The script still takes the highest id per name.
   ci-green:
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || inputs.snapshot != ''
     runs-on: ubuntu-latest
     timeout-minutes: 50
     permissions:
@@ -84,7 +95,7 @@ jobs:
   # publish-capable credential in reach.
   build:
     needs: ci-green
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || inputs.snapshot != ''
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -94,7 +105,28 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
+      - name: The snapshot is a dev version of the manifests' line, on main
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::a snapshot publishes from main, not $GITHUB_REF"
+            exit 1
+          fi
+          if ! printf '%s\n' "$SNAPSHOT" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$'; then
+            echo "::error::a snapshot is <x.y.z>-dev.<n>, got '$SNAPSHOT'"
+            exit 1
+          fi
+          for m in package.json packages/cairn-cms-dev/package.json; do
+            v=$(node -p "require('./$m').version")
+            if [ "${v%%-*}" != "${SNAPSHOT%%-*}" ]; then
+              echo "::error::$m is at $v, so a snapshot of it is ${v%%-*}-dev.<n>, not $SNAPSHOT"
+              exit 1
+            fi
+          done
       - name: The tag names the version in both manifests
+        if: github.event_name == 'release'
         run: |
           for m in package.json packages/cairn-cms-dev/package.json; do
             v=$(node -p "require('./$m').version")
@@ -116,6 +148,15 @@ jobs:
           clean: node_modules
       # Validate the published package shape before releasing.
       - run: npm run check:package
+      # The stamp lives in this runner's checkout only; nothing is committed. `pack-engine-template`
+      # reads the manifests, so the template in the tarball pins the snapshot.
+      - name: Stamp the snapshot into both manifests
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
+        run: |
+          npm pkg set "version=$SNAPSHOT"
+          npm pkg set "version=$SNAPSHOT" --prefix packages/cairn-cms-dev
       - name: Pack the two tarballs
         run: |
           mkdir tarballs
@@ -146,7 +187,7 @@ jobs:
   # backend failed provenance validation.
   publish:
     needs: build
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || inputs.snapshot != ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: npm-publish
@@ -174,8 +215,10 @@ jobs:
       # failure and publish without one rather than failing the command, so the flag is what turns
       # a silent gap into a loud one.
       - name: Publish to npm
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${SNAPSHOT:-${GITHUB_REF_NAME#v}}"
           case "$VERSION" in
             *-*) TAG=gate ;;
             *)   TAG=latest ;;
@@ -198,7 +241,7 @@ jobs:
   # manually); re-running a release must not fail on the half that already landed.
   publish-dev:
     needs: build
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || inputs.snapshot != ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: npm-publish
@@ -217,8 +260,10 @@ jobs:
       # Same npm pin as the engine job above; see its WATCH comment.
       - run: npm install -g npm@11.21.1
       - name: Publish @glw907/cairn-cms-dev to npm
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${SNAPSHOT:-${GITHUB_REF_NAME#v}}"
           case "$VERSION" in
             *-*) TAG=gate ;;
             *)   TAG=latest ;;

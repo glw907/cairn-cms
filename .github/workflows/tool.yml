@@ -48,7 +48,15 @@ on:
       - 'schema/**'
       - 'migrations/**'
       - 'templates/waymark/migrations/**'
+  # A dispatch packs and dry-runs. With `snapshot` set (for example 2.0.0-dev.3) on `main`, it also
+  # publishes the launcher and the six platform packages at that dev version to `gate`, with no
+  # tag and no GitHub release; the `npm-publish` environment must allow the `main` branch.
   workflow_dispatch:
+    inputs:
+      snapshot:
+        description: A dev snapshot's version (for example 2.0.0-dev.3) to publish to the gate dist-tag; dispatch on main
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -201,12 +209,25 @@ jobs:
       - name: Cross-compile release archives
         id: build
         working-directory: tool
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
         run: |
           set -euo pipefail
-          # A tag names its own version; a dry run has no tag, so it describes from the nearest
-          # one. Either way the `tool/v` prefix comes off: it is the monorepo's tag namespace,
-          # not part of the version an operator reads out of `cairn --version`.
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+          # A tag names its own version, and a snapshot dispatch names one outright; a dry run has
+          # no tag, so it describes from the nearest one. Either way the `tool/v` prefix comes
+          # off: it is the monorepo's tag namespace, not part of the version an operator reads
+          # out of `cairn --version`.
+          if [ -n "${SNAPSHOT}" ]; then
+            if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+              echo "::error::a snapshot publishes from main, not ${GITHUB_REF}"
+              exit 1
+            fi
+            if ! printf '%s\n' "${SNAPSHOT}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$'; then
+              echo "::error::a snapshot is <x.y.z>-dev.<n>, got '${SNAPSHOT}'"
+              exit 1
+            fi
+            version="${SNAPSHOT}"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             version="${GITHUB_REF_NAME#tool/v}"
           else
             version="$(git describe --tags --match 'tool/v*' --always | sed 's|^tool/v||')"
@@ -372,7 +393,7 @@ jobs:
   publish-npm:
     name: publish npm packages
     needs: release
-    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/tool/v') }}
+    if: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/tool/v')) || inputs.snapshot != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: npm-publish
@@ -397,11 +418,13 @@ jobs:
       # `--provenance` is passed explicitly: npm's OIDC helper can swallow an attestation failure
       # and publish without one, so the flag turns a silent gap into a loud one.
       - name: Publish the platform packages, then the launcher
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#tool/v}"
+          VERSION="${SNAPSHOT:-${GITHUB_REF_NAME#tool/v}}"
           if ! printf '%s\n' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
-            echo "::error::'$GITHUB_REF_NAME' does not name a version"
+            echo "::error::'$VERSION' does not name a version"
             exit 1
           fi
           case "$VERSION" in

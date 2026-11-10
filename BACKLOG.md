@@ -286,6 +286,12 @@
   Placement: engine batch; a `tool/` change, with the credentials page.
 
 ## Low
+- [ ] **#422** Check a supplied Cloudflare token's status before a token run creates anything `#improvement` `#cairn-cms` `#security` `#initiative:cairn-setup` *(2026-11-09)*
+  A token run emits the approval step's done event with no check (`tool/internal/setup/approvals.go`, `useToken`), where the OAuth path checks its scope. An expired token, one with too few permissions, or one limited to the owner's IP address (which works locally and fails in Actions) is found partway through, after resources exist. Proposed: after the account is known, call `GET /accounts/{id}/tokens/verify`, refuse a token that is not active, and have the docs mention IP filtering. Found by the setup-tooling-2 security read.
+  Placement: the next pass that touches the token option.
+- [ ] **#423** Install the deploy workflow's dependencies from a lockfile with scripts off `#improvement` `#cairn-cms` `#security` `#initiative:cairn-setup` *(2026-11-09)*
+  `scripts/build/setup-overlay/.github/workflows/deploy.yml` runs `npm install` with lifecycle scripts on and no lockfile, then `npx wrangler` with `CLOUDFLARE_API_TOKEN` in the environment, so a compromised dependency can read the deploy secret. In token mode the secret is the owner's setup token, which is wider than the minted key. Proposed: commit a lockfile in the scaffold and run `npm ci --ignore-scripts`. Found by the setup-tooling-2 security read.
+  Placement: with the decision on a separate narrow deploy token (packet B).
 - [ ] **#421** Name the token run's steps by the credential `cairn new` uses `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-09)*
   With `CAIRN_CF_SETUP_TOKEN` set, the plan's step labels `approve-cloudflare` ("Approve Cloudflare sign-in") and `deploy-key` ("Mint the deploy key and store it as a repository secret") in `tool/internal/setup/steps.go` still describe the OAuth path, though the done event and summary carry `credential: token`. A fix makes `steps()` depend on the credential, which touches the plan golden, the agent schema, and the event stream. Found by T2.1 and T2.2 of setup-tooling-2.
   Placement: the next pass that changes the plan's step list; the agent reads `credential` on the done event meanwhile.

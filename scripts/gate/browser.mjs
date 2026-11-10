@@ -11,6 +11,12 @@ import { chromium } from 'playwright';
 /** What the admin says after a publish. */
 export const PUBLISHED_ALERT = 'Published. The live site shows this change once the site rebuilds.';
 
+/**
+ * The install button's accessible name. GitHub's install page says "Install" and its permissions
+ * page for a suggested installation says "Approve, Install, & Authorize" (seen 2026-11-10).
+ */
+export const INSTALL_BUTTON = /^(approve,\s*)?install/i;
+
 /** @param {number} ms */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -296,7 +302,7 @@ async function reachLoopback(page, { consent }, creds, pageOptions, evidence) {
  */
 async function chooseInstallAccount(page, creds, pauseMs) {
   const chooser = page.getByRole('link', { name: creds.login });
-  if (!(await visible(page.getByRole('button', { name: /^install/i }))) && (await visible(chooser))) {
+  if (!(await visible(page.getByRole('button', { name: INSTALL_BUTTON }))) && (await visible(chooser))) {
     await chooser.first().click();
     await settle(page, pauseMs);
     return true;
@@ -320,7 +326,7 @@ export async function stepGithubPage(page, creds, pauseMs = 500) {
   /** @type {Array<[RegExp, string]>} */
   const controls = [
     [/^create github app\b/i, 'create-app'],
-    [/^install/i, 'install'],
+    [INSTALL_BUTTON, 'install'],
     [/^authorize/i, 'authorize'],
   ];
   for (const [name, action] of controls) {
@@ -395,7 +401,7 @@ export async function handleUrl(url, options) {
       await reachLoopback(page, {}, creds, pageOptions, evidence);
     } else if (kind === 'install') {
       await chooseInstallAccount(page, creds, pauseMs);
-      await clickControl(page, /^install/i, creds, pageOptions);
+      await clickControl(page, INSTALL_BUTTON, creds, pageOptions);
       await reachLoopback(page, {}, creds, pageOptions, evidence);
     } else {
       await reachLoopback(page, { consent: /^authorize/i }, creds, pageOptions, evidence);

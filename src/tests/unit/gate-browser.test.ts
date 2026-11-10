@@ -239,6 +239,16 @@ describe('classifyUrl', () => {
   });
 });
 
+describe('the install button name', () => {
+  const name = (browserModule as unknown as { INSTALL_BUTTON: RegExp }).INSTALL_BUTTON;
+  it.each(['Install', 'Install & Authorize', 'Approve, Install, & Authorize'])('%s matches', (label) => {
+    expect(name.test(label)).toBe(true);
+  });
+  it.each(['Cancel', 'Select repositories', 'Remove cairn-gate-1', 'Reinstall'])('%s does not', (label) => {
+    expect(name.test(label)).toBe(false);
+  });
+});
+
 describe('handleUrl', () => {
   let dir: string;
   beforeEach(async () => {

@@ -264,6 +264,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       await runStandIn({ runDir, browser, creds: session.creds, mail: { login: owner, password: env.STALWART_PASSWORD_CAIRN_GATE, siteName: env.GATE_SITE_NAME, owner } });
     } catch (error) {
       console.error(`stand-in failed: ${error instanceof Error ? error.message : String(error)}`);
+      // A line in stand-in.jsonl too, so whoever watches that file sees the stand-in stop. Round four's
+      // stand-in failed on a GitHub page and the run waited twelve minutes before anyone knew.
+      const line = JSON.stringify({ kind: 'stand-in', action: 'failed', at: new Date().toISOString() });
+      await appendFile(path.join(runDir, 'stand-in.jsonl'), `${line}\n`, { mode: 0o600 }).catch(() => {});
       process.exitCode = 1;
     } finally {
       await session.close();

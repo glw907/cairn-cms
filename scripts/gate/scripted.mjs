@@ -41,20 +41,25 @@ export function commandFor(env) {
 
 /**
  * The keys that move a choose screen's selection to the row that names `target`, then Enter. The
- * screen marks its selection with a leading `>` and lists one row per line.
+ * screen marks its selection with a leading `>` and lists one row per line. A screen with several
+ * choices starts with no selection and no marker, so the first Down selects its first row, and the
+ * rows begin on the line after the one that counts them ("5 domains on your Cloudflare account").
  * @param {string} pane the captured pane text
  * @param {string} target the row's text
  * @param {string} step the screen's name, for the failure
  * @returns {Op[]}
- * @throws {ScriptedError} when the screen has no selection or no row for the target
+ * @throws {ScriptedError} when the screen has no row for the target, or neither a selection nor a count line
  */
 export function chooseRow(pane, target, step) {
   const lines = pane.split('\n').map((l) => l.trim());
-  const selected = lines.findIndex((l) => l.startsWith('> '));
+  const marked = lines.findIndex((l) => l.startsWith('> '));
   const wanted = lines.findIndex((l) => l.replace(/^> /, '') === target);
-  if (selected === -1 || wanted === -1) {
+  const count = lines.findIndex((l) => /^\d+ (domains?|accounts?)\b/.test(l));
+  if (wanted === -1 || (marked === -1 && count === -1)) {
     throw new ScriptedError(`the ${step} screen offers no "${target}" row to choose:\n${pane.trim()}`, step);
   }
+  // With no marker the cursor sits above the first row, one line below the count.
+  const selected = marked === -1 ? count : marked;
   const keys = Array.from({ length: Math.abs(wanted - selected) }, () => ({ key: wanted > selected ? 'Down' : 'Up' }));
   return [...keys, ...enter];
 }

@@ -174,6 +174,15 @@ describe('scripted leg: the target', () => {
     expect(() => chooseRow(list('alpha.example.org'), 'missing.example.org', 'domain')).toThrow(/offers no "missing.example.org" row/);
   });
 
+  it('selects a row on a screen that starts with no selection, by counting down from the count line', () => {
+    // The newer chooser shows no marker until the first arrow key, so Enter alone never answers it.
+    const blank = 'Choose a domain\n\nDomain\n3 domains on your Cloudflare account\n  alpha.example.org\n  carin-test.org\n  zeta.example.net\n\n↑↓ choose';
+    expect(chooseRow(blank, 'alpha.example.org', 'domain')).toEqual([{ key: 'Down' }, { key: 'Enter' }]);
+    expect(chooseRow(blank, 'carin-test.org', 'domain')).toEqual([{ key: 'Down' }, { key: 'Down' }, { key: 'Enter' }]);
+    expect(chooseRow(blank, 'zeta.example.net', 'domain')).toEqual([{ key: 'Down' }, { key: 'Down' }, { key: 'Down' }, { key: 'Enter' }]);
+    expect(() => chooseRow('Choose a domain\n\n  alpha.example.org', 'alpha.example.org', 'domain')).toThrow(/offers no "alpha.example.org" row/);
+  });
+
   it('knows the screen while a long command wraps across lines', () => {
     const command = '/var/tmp/cleanroom/2611091430/cairn new';
     const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn\nnew';

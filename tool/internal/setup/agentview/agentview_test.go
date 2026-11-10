@@ -118,6 +118,38 @@ func TestChoicesComeFromFlagsOrNameTheMissingFlag(t *testing.T) {
 	}
 }
 
+func TestChooseZoneFromHost(t *testing.T) {
+	ctx := context.Background()
+	zones := []providers.Zone{
+		{ID: "z1", Name: "example.com"},
+		{ID: "z2", Name: "blog.example.com"},
+		{ID: "z3", Name: "example.org"},
+	}
+	for _, tc := range []struct {
+		name, host, zone, want string
+		open                   bool
+	}{
+		{name: "a subdomain names its zone", host: "gate.example.org", want: "z3"},
+		{name: "the zone itself", host: "example.org", want: "z3"},
+		{name: "nested zones take the longer name", host: "a.blog.example.com", want: "z2"},
+		{name: "a host in no zone leaves the choice open", host: "gate.other.net", open: true},
+		{name: "a name that only ends the same is no subdomain", host: "myexample.org", open: true},
+		{name: "an explicit zone wins over the host", host: "gate.example.org", zone: "z1", want: "z1"},
+	} {
+		v := &View{Mode: PlanMode, Host: tc.host, Zone: tc.zone}
+		got, err := v.ChooseZone(ctx, zones)
+		if tc.open {
+			if !errors.Is(err, setup.ErrOpenChoice) {
+				t.Errorf("%s: err = %v, want ErrOpenChoice", tc.name, err)
+			}
+			continue
+		}
+		if err != nil || got != tc.want {
+			t.Errorf("%s: ChooseZone = %q, %v, want %q", tc.name, got, err, tc.want)
+		}
+	}
+}
+
 func TestConfirmSummaryByMode(t *testing.T) {
 	ctx := context.Background()
 	s := setup.Summary{OwnerEmail: "a@b.co", Addresses: []string{"blog.example.com"}}

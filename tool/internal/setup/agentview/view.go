@@ -54,6 +54,9 @@ type View struct {
 	// Theme, Account, and Zone are the --site-theme, --account, and --zone values. An account
 	// is named by id and a zone by name or id.
 	Theme, Account, Zone string
+	// Host is the --host value, lowercased. With no --zone, it names the zone: the one domain
+	// the account holds that the host is, or is a subdomain of.
+	Host string
 	// Edit is Apply mode's answer: the plan file's open fields.
 	Edit setup.SummaryEdit
 	// Stderr receives the fallback link when no browser opens.
@@ -98,13 +101,20 @@ func (v *View) ChooseAccount(_ context.Context, accounts []providers.Account) (s
 		"Run cairn new --resume with --account and one of them.")
 }
 
-// ChooseZone returns the id of the zone --zone names, by name or id. With none given, a plan
-// leaves the choice open and every other mode stops at the step.
+// ChooseZone returns the id of the zone --zone names, by name or id. With no --zone, the zone
+// is the one --host belongs to, and when two nest (example.com and blog.example.com) the longer
+// name, the zone Cloudflare serves the host from. With neither, a plan leaves the choice open
+// and every other mode stops at the step.
 func (v *View) ChooseZone(_ context.Context, zones []providers.Zone) (string, error) {
 	v.Zones = zones
 	for _, z := range zones {
 		if v.Zone != "" && (z.ID == v.Zone || z.Name == v.Zone) {
 			return z.ID, nil
+		}
+	}
+	if v.Zone == "" {
+		if id, ok := zoneOfHost(zones, v.Host); ok {
+			return id, nil
 		}
 	}
 	if v.Mode == PlanMode && v.Zone == "" {
@@ -116,6 +126,24 @@ func (v *View) ChooseZone(_ context.Context, zones []providers.Zone) (string, er
 	}
 	return "", refusal("The account has several active domains, and none was chosen: "+strings.Join(names, ", ")+".",
 		"Run cairn new --resume with --zone and one of them.")
+}
+
+// zoneOfHost returns the id of the zone whose name is host or a parent domain of it, taking the
+// longest name when several fit.
+func zoneOfHost(zones []providers.Zone, host string) (string, bool) {
+	best := -1
+	for i, z := range zones {
+		if host != z.Name && !strings.HasSuffix(host, "."+z.Name) {
+			continue
+		}
+		if best < 0 || len(z.Name) > len(zones[best].Name) {
+			best = i
+		}
+	}
+	if best < 0 {
+		return "", false
+	}
+	return zones[best].ID, true
 }
 
 // openTimeout is how long OpenBrowser waits on a launcher before it counts the browser as open.

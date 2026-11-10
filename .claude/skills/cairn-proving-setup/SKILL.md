@@ -14,6 +14,22 @@ owner, and the grader writes the record. The tooling is `scripts/gate/` (read it
 workstation's `cleanroom` tool. The release rule that consumes the records is in `cairn-releasing`
 step 7.
 
+## Publish the round's snapshot
+
+A proving round tests a dev snapshot on `gate`, never an rc (Geoff, 2026-11-09; `cairn-releasing`, step 6).
+After a round's PRs merge and CI is green on `main`, dispatch both workflows on `main`, one engine
+snapshot and one tool snapshot, each a prerelease on the manifests' line with the next free `dev.<n>`:
+
+```sh
+gh workflow run publish.yml --ref main -f snapshot=0.99.0-dev.<n>
+gh workflow run tool.yml --ref main -f snapshot=2.0.0-dev.<n>
+```
+
+Publish only what the round changed: an engine path needs `publish.yml`, a tool or launcher path needs
+`tool.yml`. Watch each run with `gh run watch <id> --exit-status`, then confirm `npm view
+@glw907/cairn-cms@gate version` and `npm view create-cairn-site@gate version` print the snapshots, and that
+`latest` and `next` did not move. A snapshot takes no GitHub release, no tag, and no CHANGELOG heading.
+
 ## Start a run
 
 1. `bash scripts/gate/run-gate.sh sweep` prints what a run would delete. When it lists a target, run

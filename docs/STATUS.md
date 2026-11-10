@@ -106,7 +106,13 @@ pass, was dropped by Geoff on 2026-11-08.
      sign-in mail from the run's start with a 60-second wait, and judges a scripted run on its end state and
      its done screen. Runs 5, 7, and 8 used throwaway instrumented binaries (never committed) to read the
      hidden `Failure.Err` (#439).
-- **Not done, in order (a fresh session takes these).** (a) The friction pre-pass below. (b) One published
+- **Friction pre-pass built (2026-11-10, executor `cairn-cms-setup-tooling-3b`, PR #231).** It fixes #427, #431,
+  #434, #436, #438, and #439, rewrites the help, the agent page, and the skill, and holds for the conductor's
+  merge (no `conductor-cairn-cms` session was reachable when it was ready). The record is
+  `~/Projects/initiatives/cairn-setup/research/proving/pre-pass.md`. After the merge: cut `2.0.0-dev.5` (the launcher
+  and tool changed, the engine did not), run one scripted leg on the published launcher, then wait for the go
+  to naive round seven.
+- **Not done, in order (a fresh session takes these).** (a) The friction pre-pass: built, awaiting the merge. (b) One published
   snapshot, `gh workflow run tool.yml --ref main -f snapshot=2.0.0-dev.5 -R glw907/cairn-cms`, then one scripted
   run on the published `npm create` path (`run-gate.sh scripted`, no `--cairn-bin`), which must pass with the
   launcher and platform versions read. (c) Naive round seven, then up to three more of the ten, only on the

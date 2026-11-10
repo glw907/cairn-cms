@@ -36,27 +36,29 @@ const PANES = {
 
 type Send = { text: string; pane: string };
 
-/** A tmux that serves the sequence one pane per look, then holds the last pane. */
+/**
+ * A tmux that serves the sequence one pane per poll, then holds the last pane. The pane moves on
+ * when the leg sleeps between polls, so a second read in the same poll (the check after a
+ * screenshot) sees the same pane, as a real terminal would.
+ */
 function fakeTmux(panes: string[]) {
-  let looked = -1;
+  let looked = 0;
   const sends: Send[] = [];
   const calls: string[][] = [];
   const run = async (args: string[]) => {
     calls.push(args);
     const verb = args[2];
     if (verb === 'has-session') return '';
-    if (verb === 'capture-pane') {
-      looked = Math.min(looked + 1, panes.length - 1);
-      return panes[looked]!;
-    }
+    if (verb === 'capture-pane') return panes[looked]!;
     if (verb === 'send-keys') {
       const lit = args.includes('-l');
-      sends.push({ text: lit ? args[args.length - 1]! : `<${args[args.length - 1]}>`, pane: panes[Math.max(looked, 0)]! });
+      sends.push({ text: lit ? args[args.length - 1]! : `<${args[args.length - 1]}>`, pane: panes[looked]! });
       return '';
     }
     throw new Error(`unexpected tmux ${verb}`);
   };
-  return { run, sends, calls };
+  const tick = () => void (looked = Math.min(looked + 1, panes.length - 1));
+  return { run, sends, calls, tick };
 }
 
 function fakeClock() {
@@ -85,7 +87,11 @@ function harness(panes: string[], extra: Record<string, unknown> = {}, env: Reco
       return { kill() {} };
     },
     record: (event: Record<string, unknown>) => void events.push(event),
-    ...clock,
+    now: clock.now,
+    sleep: async (ms: number) => {
+      tmux.tick();
+      await clock.sleep(ms);
+    },
     ...extra,
   };
   const run = () => runScripted({ runDir: RUN_DIR, env: { HOME: '/home/owner', ...env }, deps });
@@ -178,6 +184,29 @@ describe('scripted leg: the target', () => {
   it('calls a screen it does not know unknown while the typed command is still above it', () => {
     expect(identify(`owner@cleanroom:~$ ${START}\nSomething nobody planned\nwith no screen of its own`)).toBeNull();
     expect(identify(`owner@cleanroom:~$ ${START}\nnpm error code E404`)).toBeNull();
+  });
+});
+
+describe('scripted leg: a key goes only to the screen still showing', () => {
+  it('sends nothing to the browser screen when the domain screen replaces it during the screenshot', async () => {
+    // Run 2611101855: the browser screen showed for 0.4 seconds, the real-terminal screenshot took
+    // seconds, and the Enter meant for it accepted the domain screen's first row, 907.life.
+    const at = HAPPY.indexOf(PANES.domain);
+    const panes = [...HAPPY.slice(0, at), PANES.browserOpen, ...HAPPY.slice(at)];
+    let fired = false;
+    const box: { h?: ReturnType<typeof harness> } = {};
+    const shot = async (screen: string) => {
+      if (screen === 'browser-open' && !fired) {
+        fired = true;
+        box.h!.tmux.tick();
+      }
+    };
+    box.h = harness(panes, { shot });
+    await box.h.run();
+    const sends = box.h.tmux.sends;
+    expect(sends.filter((s) => s.pane === PANES.domain).map((s) => s.text)).toEqual(['<Down>', '<Enter>']);
+    const firstAtDomain = sends.findIndex((s) => s.pane === PANES.domain);
+    expect(sends.slice(0, firstAtDomain).some((s) => s.pane === PANES.browserOpen)).toBe(false);
   });
 });
 

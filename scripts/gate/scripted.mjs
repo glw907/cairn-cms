@@ -240,7 +240,7 @@ export async function runScripted({ runDir, env, deps }) {
       if (exitCode !== null && exitCode !== 0) throw new ScriptedError(`cleanroom shell exited ${exitCode} at step "${reached}"`, reached);
       if (deps.now() - started > LIMIT_MS) throw new ScriptedError(`the leg took longer than 20 minutes; it reached step "${reached}"`, reached);
       const up = await tmux('has-session', '-t', session).then(() => true, () => false);
-      const pane = up ? await tmux('capture-pane', '-p', '-t', session) : '';
+      let pane = up ? await tmux('capture-pane', '-p', '-t', session) : '';
       const screen = identify(pane, answers.command);
       if (screen) {
         unknownText = null;
@@ -262,6 +262,17 @@ export async function runScripted({ runDir, env, deps }) {
           await deps.shot?.(screen.name);
           if (screen.end === 'fail') throw new ScriptedError(`setup stopped at "${screen.name}": ${title(pane)}\n${pane.trim()}`, reached);
           if (screen.answer) {
+            // The screenshot takes seconds, and the pane can move on in that time. A key sent for a
+            // screen that is gone lands on the next one: run 2611101855's Enter, meant for the browser
+            // screen, accepted the domain screen's first row, 907.life. So the pane is read again, and
+            // only a screen that is still showing is answered, from the fresh pane.
+            const fresh = await tmux('capture-pane', '-p', '-t', session);
+            if (identify(fresh, answers.command)?.name !== screen.name) {
+              last = '';
+              await deps.sleep(POLL_MS);
+              continue;
+            }
+            pane = fresh;
             for (const op of screen.answer(answers, pane)) {
               if ('key' in op) await send(op.key);
               else if ('paste' in op) await send('-l', `${PASTE_ON}${op.paste}${PASTE_OFF}`);

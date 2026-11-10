@@ -170,16 +170,19 @@ func runNew(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 	if err := f.validate(cmd); err != nil {
 		return err
 	}
-	if !f.dryRun && inSandbox(d.env) {
-		return newSandboxedError()
-	}
 	f.tag = newTag(cmd, f.tag, d.env)
 	for _, m := range newModeFlags {
 		if cmd.Flags().Changed(m) {
+			if m != "dry-run" && inSandbox(d.env) {
+				return newSandboxedError()
+			}
 			return runAgent(cmd, d, f, m)
 		}
 	}
 	if d.interactive != nil && d.interactive() {
+		if inSandbox(d.env) {
+			return newSandboxedError()
+		}
 		for _, a := range newAnswerFlags {
 			if cmd.Flags().Changed(a) {
 				return newRequiresError("--plan", "--"+a)

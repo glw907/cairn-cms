@@ -2,13 +2,14 @@
 // which pane was showing when each key went in, a fake clock stands in for every wait, and no
 // cleanroom, terminal, network, or credential is involved.
 import { describe, it, expect } from 'vitest';
-import { SCREENS, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
+import { SCREENS, commandFor, identify, runScripted } from '../../../scripts/gate/scripted.mjs';
 
 const RUN_ID = '2611091430';
 const RUN_DIR = `/var/tmp/cleanroom/${RUN_ID}/run`;
 const SESSION = `cleanroom-${RUN_ID}-scripted`;
 const OWNER = 'cairn-gate@probe.907.life';
-const START = 'npm create cairn-site';
+const TARGET = '--host gate.carin-test.org --zone carin-test.org';
+const START = `npm create cairn-site -- ${TARGET}`;
 const PASTE_ON = '\x1b[200~';
 const PASTE_OFF = '\x1b[201~';
 
@@ -123,6 +124,39 @@ describe('scripted leg: starting', () => {
     expect(shell.env.npm_config_tag).toBe('gate');
     const socket = '/home/owner/.local/state/cleanroom/tmux-scripted.sock';
     expect(h.tmux.calls.every((c) => c[0] === '-S' && c[1] === socket)).toBe(true);
+  });
+});
+
+describe('scripted leg: the target', () => {
+  const typed = async (env: Record<string, string> = {}) => {
+    const panes = HAPPY.map((pane) => (pane === PANES.starting ? `owner@cleanroom:~$ ${commandFor(env)}` : pane));
+    const h = harness(panes, {}, env);
+    await h.run();
+    return h.tmux.sends.find((s) => s.pane === PANES.prompt)?.text;
+  };
+
+  it('targets the gate subdomain by default, never the bare domain', async () => {
+    const text = await typed();
+    expect(text).toBe('npm create cairn-site -- --host gate.carin-test.org --zone carin-test.org');
+    expect(text).not.toMatch(/--host carin-test\.org/);
+  });
+
+  it('runs the local build with the same target when one is handed in', async () => {
+    expect(await typed({ GATE_CAIRN_BIN: '/var/tmp/cleanroom/2611091430/cairn' })).toBe(
+      '/var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org --zone carin-test.org',
+    );
+  });
+
+  it('knows the screen while a long command wraps across lines', () => {
+    const command = '/var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org --zone carin-test.org';
+    const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn new --host gate.carin-test.org\n--zone carin-test.org';
+    expect(identify(wrapped, command)?.name).toBe('starting');
+    expect(identify(`${wrapped}\nowner@cleanroom:~$`, command)?.name).toBe('shell');
+  });
+
+  it('calls a screen it does not know unknown while the typed command is still above it', () => {
+    expect(identify(`owner@cleanroom:~$ ${START}\nSomething nobody planned\nwith no screen of its own`)).toBeNull();
+    expect(identify(`owner@cleanroom:~$ ${START}\nnpm error code E404`)).toBeNull();
   });
 });
 

@@ -213,6 +213,55 @@ describe('naive', () => {
   });
 });
 
+describe('scripted --cairn-bin', () => {
+  const binary = (r: ReturnType<typeof rig>) => {
+    const path = join(r.base, 'cairn-build');
+    writeFileSync(path, '#!/bin/sh\n', { mode: 0o755 });
+    return path;
+  };
+  const idOf = (stdout: string) => /run id: (\d{10})/.exec(stdout)?.[1] as string;
+  const handoff = (r: ReturnType<typeof rig>, id: string) => readFileSync(join(r.home, '.local', 'state', 'cairn-gate', 'cairn-gate', `${id}-scripted.env`), 'utf8');
+
+  it('runs a copy of the binary, hands its path to the driver, and records the run as a local build', () => {
+    const r = rig();
+    const result = r.run(['scripted', '--cairn-bin', binary(r)]);
+    expect(result.status).toBe(0);
+    const id = idOf(result.stdout);
+    expect(statSync(join(r.root, id, 'cairn')).mode & 0o111).not.toBe(0);
+    const harness = JSON.parse(readFileSync(join(r.root, id, 'run', 'harness.json'), 'utf8'));
+    expect(harness.local).toBe(true);
+    expect(harness.candidate.tool).toMatch(/^local build at /);
+    expect(handoff(r, id)).toContain(`GATE_CAIRN_BIN=${join(r.root, id, 'cairn')}`);
+  });
+
+  it('records a registry run as not local and hands the driver no binary', () => {
+    const r = rig();
+    const id = idOf(r.run(['scripted']).stdout);
+    const harness = JSON.parse(readFileSync(join(r.root, id, 'run', 'harness.json'), 'utf8'));
+    expect(harness.local).toBe(false);
+    expect(harness.candidate.tool).toBe('2.0.0-rc.4');
+    expect(handoff(r, id)).not.toContain('GATE_CAIRN_BIN');
+  });
+
+  it('never hands the driver a binary from the caller environment, which would run unrecorded', () => {
+    const r = rig();
+    const id = idOf(r.run(['scripted'], { GATE_CAIRN_BIN: '/tmp/elsewhere/cairn' }).stdout);
+    expect(handoff(r, id)).not.toContain('GATE_CAIRN_BIN');
+    const harness = JSON.parse(readFileSync(join(r.root, id, 'run', 'harness.json'), 'utf8'));
+    expect(harness.local).toBe(false);
+  });
+
+  it('refuses a path that is not an executable file, or no path, and starts nothing', () => {
+    const r = rig();
+    const plain = join(r.base, 'plain');
+    writeFileSync(plain, 'x', { mode: 0o644 });
+    expect(r.run(['scripted', '--cairn-bin', plain]).status).toBe(2);
+    expect(r.run(['scripted', '--cairn-bin', join(r.base, 'missing')]).status).toBe(2);
+    expect(r.run(['scripted', '--cairn-bin']).status).toBe(2);
+    expect(r.read('cleanroom')).toBe('');
+  });
+});
+
 describe('scripted and probe', () => {
   it('starts only the scripted driver, which owns the stand-in, and refuses on a live session', () => {
     const r = rig();

@@ -52,6 +52,10 @@ export async function judge({ body, releaseCommit, gh }) {
       reasons.push(`${leg} reads "${row.verdict}", not pass`);
       continue;
     }
+    if (/^local build/.test(row.tool)) {
+      reasons.push(`${leg} ran a local build, which never stands for the published candidate`);
+      continue;
+    }
     if (sameCommit(row.commit, releaseCommit)) continue;
     if (leg === 'scripted') {
       reasons.push(`scripted passed at ${row.commit}, not at the release's commit ${releaseCommit}`);

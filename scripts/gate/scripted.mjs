@@ -1,6 +1,7 @@
 // The scripted human leg: a script plays the owner in the interactive `cairn new`, so a release is
 // proved on the path a person meets. It starts a clean-room shell in tmux, types `npm create
-// cairn-site`, answers each screen the setup tool paints, and starts the stand-in for the browser
+// cairn-site` (or runs a local `cairn` build) for a subdomain,
+// answers each screen the setup tool paints, and starts the stand-in for the browser
 // half. It types an answer only when the pane shows that answer's screen, fails on a screen it
 // does not know, and fails at 20 minutes naming the step it reached. Run it through run-gate.sh;
 // it never reads a secret store, only the environment it is handed.
@@ -14,8 +15,26 @@ import { promisify } from 'node:util';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const execFileAsync = promisify(execFile);
 
-/** The command the owner types. */
+/** The launcher the owner types, before the address flags. */
 export const COMMAND = 'npm create cairn-site';
+/**
+ * The address the leg sets up: a subdomain, never the bare domain. A record on the bare address or
+ * `www` is a standing stop for Geoff, and the zone's apex holds the mail records.
+ */
+export const HOST = 'gate.carin-test.org';
+export const ZONE = 'carin-test.org';
+
+/**
+ * The line the owner types. A local build (`GATE_CAIRN_BIN`, set by `run-gate.sh scripted
+ * --cairn-bin`) replaces the registry launcher with that `cairn` binary, so a fix is proved on the
+ * branch before it publishes.
+ * @param {Record<string, string | undefined>} env `GATE_CAIRN_BIN`
+ * @returns {string}
+ */
+export function commandFor(env) {
+  const flags = `--host ${HOST} --zone ${ZONE}`;
+  return env.GATE_CAIRN_BIN ? `${env.GATE_CAIRN_BIN} new ${flags}` : `${COMMAND} -- ${flags}`;
+}
 /** How long the whole leg may take. */
 export const LIMIT_MS = 20 * 60 * 1000;
 /** The gap between looks at the pane. */
@@ -30,8 +49,8 @@ const DEFAULT_OWNER = 'cairn-gate@probe.907.life';
  * @typedef {{ type: string } | { key: string } | { paste: string }} Op
  * @typedef {object} Screen
  * @property {string} name the screen's name, written to `scripted.jsonl` and named in a failure
- * @property {(pane: string, last: string) => boolean} test whether the pane shows this screen
- * @property {((answers: { name: string, email: string }) => Op[]) | null} answer the keys it takes, or null
+ * @property {(pane: string, last: string, command: string) => boolean} test whether the pane shows this screen
+ * @property {((answers: { name: string, email: string, command: string }) => Op[]) | null} answer the keys it takes, or null
  *  when the screen only waits on the tool
  * @property {'fail' | 'done'} [end] a screen that ends the leg
  */
@@ -67,20 +86,26 @@ export const SCREENS = [
   { name: 'welcome', test: (p) => /Set up a cairn site/.test(p), answer: () => enter },
   // npm's own confirmation before it runs a package it has not cached.
   { name: 'npx', test: (p) => /Ok to proceed\?/.test(p), answer: () => [{ type: 'y' }, ...enter] },
-  { name: 'starting', test: (_p, last) => last.endsWith(COMMAND) || /^npm (warn|notice) /.test(last), answer: null },
-  { name: 'shell', test: (_p, last) => /[$#%]$/.test(last), answer: () => [{ type: COMMAND }, ...enter] },
+  // The typed command may wrap across lines and the inline TUI leaves it above every later screen,
+  // so it is the starting screen only while it is the end of the pane, whitespace aside.
+  { name: 'starting', test: (p, last, command) => squash(p).endsWith(squash(command)) || /^npm (warn|notice) /.test(last), answer: null },
+  { name: 'shell', test: (_p, last) => /[$#%]$/.test(last), answer: ({ command }) => [{ type: command }, ...enter] },
 ];
 
 /**
  * Names the screen a pane shows.
  * @param {string} pane the captured pane text
+ * @param {string} [command] the line the owner typed, which the starting screen ends with
  * @returns {Screen | null} the screen, or null when the pane matches none
  */
-export function identify(pane) {
+export function identify(pane, command = commandFor({})) {
   const lines = pane.split('\n').map((l) => l.trimEnd()).filter((l) => l.trim() !== '');
   const last = lines.at(-1) ?? '';
-  return SCREENS.find((s) => s.test(pane, last)) ?? null;
+  return SCREENS.find((s) => s.test(pane, last, command)) ?? null;
 }
+
+/** The text with all whitespace removed, so a command the terminal wrapped still matches itself. */
+const squash = (/** @type {string} */ text) => text.replace(/\s+/g, '');
 
 /** A failure that names the step the leg reached. */
 export class ScriptedError extends Error {
@@ -143,7 +168,7 @@ function shellEnv(env) {
  * Plays the owner through `cairn new`.
  * @param {object} options
  * @param {string} options.runDir the run directory; the run id names its parent directory
- * @param {Record<string, string | undefined>} options.env `GATE_SITE_NAME`, `GATE_OWNER_EMAIL`, and `HOME`
+ * @param {Record<string, string | undefined>} options.env `GATE_SITE_NAME`, `GATE_OWNER_EMAIL`, `GATE_CAIRN_BIN`, `GATE_HOST`, `GATE_ZONE`, and `HOME`
  * @param {Deps} options.deps the shell, tmux, stand-in, record, and clock
  * @returns {Promise<{ ok: true, steps: string[] }>} the screens seen, in order
  * @throws {ScriptedError} on an unknown screen, a setup stop, a return to the prompt, or 20 minutes
@@ -152,7 +177,7 @@ export async function runScripted({ runDir, env, deps }) {
   const runId = runIdOf(runDir);
   const session = `cleanroom-${runId}-scripted`;
   const socket = path.join(env.HOME ?? os.homedir(), '.local', 'state', 'cleanroom', 'tmux-scripted.sock');
-  const answers = { name: env.GATE_SITE_NAME || `Cairn gate ${runId}`, email: env.GATE_OWNER_EMAIL || DEFAULT_OWNER };
+  const answers = { name: env.GATE_SITE_NAME || `Cairn gate ${runId}`, email: env.GATE_OWNER_EMAIL || DEFAULT_OWNER, command: commandFor(env) };
   /** @param {...string} args */
   const tmux = (...args) => deps.tmux(['-S', socket, ...args]);
   /** @param {...string} args */
@@ -179,7 +204,7 @@ export async function runScripted({ runDir, env, deps }) {
       if (deps.now() - started > LIMIT_MS) throw new ScriptedError(`the leg took longer than 20 minutes; it reached step "${reached}"`, reached);
       const up = await tmux('has-session', '-t', session).then(() => true, () => false);
       const pane = up ? await tmux('capture-pane', '-p', '-t', session) : '';
-      const screen = identify(pane);
+      const screen = identify(pane, answers.command);
       if (screen) {
         unknownText = null;
         if (screen.name !== last) {

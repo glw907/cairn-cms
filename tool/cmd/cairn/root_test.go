@@ -394,13 +394,19 @@ func TestEveryCommandCarriesAnExample(t *testing.T) {
 		if generated[c.Name()] {
 			return
 		}
-		first, _, _ := strings.Cut(c.Example, "\n")
-		if first == "" {
+		if c.Example == "" {
 			t.Errorf("%s carries no Example", c.CommandPath())
 			return
 		}
-		if !strings.HasPrefix(first, "cairn ") {
-			t.Errorf("%s example starts %q, want a line beginning \"cairn \"", c.CommandPath(), first)
+		// An Example is one bare command, or the form gh uses: a "# comment" line over a
+		// "$ cairn ..." line, indented two spaces.
+		var command bool
+		for line := range strings.SplitSeq(c.Example, "\n") {
+			line = strings.TrimPrefix(strings.TrimSpace(line), "$ ")
+			command = command || strings.HasPrefix(line, "cairn ")
+		}
+		if !command {
+			t.Errorf("%s example has no line beginning \"cairn \": %q", c.CommandPath(), c.Example)
 		}
 	})
 }

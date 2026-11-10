@@ -53,7 +53,7 @@ func TestASandboxedSetupStopsBeforeItServesAnything(t *testing.T) {
 			if err == nil || !strings.Contains(err.Error(), "runs inside a sandbox") {
 				t.Fatalf("Execute error = %v, want the sandbox refusal", err)
 			}
-			for _, want := range []string{"no `cd`, pipe, or redirect", "exclude the command from the sandbox"} {
+			for _, want := range []string{"no `cd`, pipe, or redirect", "dangerouslyDisableSandbox"} {
 				if !strings.Contains(err.Error(), want) {
 					t.Errorf("refusal %q lacks %q", err, want)
 				}

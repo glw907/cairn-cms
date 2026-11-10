@@ -8,12 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// flagNamePattern matches a long flag name at the start of a pflag usage line. None of this
-// package's flag help text contains "--" itself (checked by inspection), so one match per line
-// is exact; this is how the test enumerates a command's flags without importing
-// github.com/spf13/pflag, which every other file in this package avoids naming directly so it
+// flagNamePattern matches a long flag name at the start of a pflag usage line, so a flag's help
+// text may name another flag. This is how the test enumerates a command's flags without importing
+// the pflag package, which every other file in this package avoids naming directly so it
 // stays an indirect requirement `go mod tidy` never promotes.
-var flagNamePattern = regexp.MustCompile(`--([a-zA-Z][a-zA-Z0-9-]*)`)
+var flagNamePattern = regexp.MustCompile(`(?m)^\s+(?:-[a-zA-Z], )?--([a-zA-Z][a-zA-Z0-9-]*)`)
 
 // coveragePaths walks root and returns every command's CommandPath, one entry per node.
 // cobra's completion and help subtrees are named at their top level but not descended

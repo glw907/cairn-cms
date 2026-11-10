@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strings"
 
 	"golang.org/x/crypto/nacl/box"
 )
@@ -79,19 +80,20 @@ func (c *client) rawSend(ctx context.Context, method, target, accept string, bod
 
 // githubFailure classifies a non-2xx GitHub response into a *GitHubError carrying the API's
 // message and the status, the same shape getJSON returns for a read.
-func githubFailure(status int, header http.Header, data []byte) *GitHubError {
+func githubFailure(method, path string, status int, header http.Header, data []byte) *GitHubError {
 	var body struct {
 		Message string `json:"message"`
 	}
 	_ = json.Unmarshal(data, &body)
-	return &GitHubError{Status: status, Message: body.Message, Reason: reasonForStatus(status, header)}
+	path, _, _ = strings.Cut(path, "?")
+	return &GitHubError{Status: status, Message: body.Message, Reason: reasonForStatus(status, header), Method: method, Path: path}
 }
 
 // githubDecode turns a raw response into out (when non-nil) for a 2xx status, or a *GitHubError
 // for anything else. A 2xx body that is empty or JSON null decodes to nothing.
-func githubDecode(status int, header http.Header, data []byte, out any) error {
+func githubDecode(method, path string, status int, header http.Header, data []byte, out any) error {
 	if isErrorStatus(status) {
-		return githubFailure(status, header, data)
+		return githubFailure(method, path, status, header, data)
 	}
 	if out == nil || len(bytes.TrimSpace(data)) == 0 {
 		return nil
@@ -108,7 +110,7 @@ func (gh *GitHub) call(ctx context.Context, method, path string, body, out any) 
 	if err != nil {
 		return err
 	}
-	return githubDecode(status, header, data, out)
+	return githubDecode(method, path, status, header, data, out)
 }
 
 // Repository is the part of a repository record setup reads back.
@@ -154,11 +156,11 @@ func (gh *GitHub) CreateRepo(ctx context.Context, name string) (Repository, erro
 		}
 		_ = json.Unmarshal(data, &body)
 		if slices.ContainsFunc(body.Errors, namesNameField) {
-			return Repository{}, &nameTakenError{githubFailure(status, header, data)}
+			return Repository{}, &nameTakenError{githubFailure(http.MethodPost, "/user/repos", status, header, data)}
 		}
 	}
 	var repo Repository
-	if err := githubDecode(status, header, data, &repo); err != nil {
+	if err := githubDecode(http.MethodPost, "/user/repos", status, header, data, &repo); err != nil {
 		return Repository{}, err
 	}
 	return repo, nil

@@ -17,17 +17,28 @@ The plugin is optional. This page works without it. [Suggested plugins](./sugges
 
 ## Run the command
 
-Run `cairn` as one bare command: no `cd`, no redirect, no pipe, and no `$(...)`. A redirect to a file, a `cd`, or a command substitution keeps the whole call in the agent's sandbox ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). Run `cairn` outside the sandbox. Setup serves its approval tab on a local port, and a sandboxed command's localhost is private to the sandbox, so the owner's browser can't reach the tab. Start the command in the background, so you can read each `waiting` sentence to the owner while the run blocks. In Claude Code, that is the Bash tool's `run_in_background` option.
+Run `cairn` as one bare call, outside the agent's sandbox. Setup serves its approval tab on a local port, and a sandboxed command's localhost is private to the sandbox, so the owner's browser can't reach the tab. Don't ask the owner how to run outside the sandbox. Make the call, and let the prompt below be the owner's approval.
 
-When `cairn` isn't installed, run `npx create-cairn-site` followed by the flags. Put no npx option in front of the name, not `--yes` and not `-y`, and add no version or tag to it. The launcher already runs `cairn new`. Write no `new` after the name. Claude Code matches a sandbox exclusion against the text of the call. An option in front of the name or a tag on it can keep the call sandboxed, where the owner's browser can't reach the tab. With no terminal, npx installs the package without asking, so an option adds nothing.
+If the agent's sandbox is on and the call runs inside it, `--plan`, `--apply`, and `--resume` stop at once, before they serve the tab, and the message says so. A dry run still runs. To go on:
 
-Run that call from an empty folder, and never from inside a clone of the cairn-cms repository. Change to the folder in a separate call first, since a `cd` in the same call as `npx` keeps the whole call sandboxed. npx matches the package name against the local project before it fetches anything, and a clone holds a package of the same name that isn't installed, so the call fails at once with `command not found`.
+1. Read the message.
+2. Run the same call again outside the sandbox. In Claude Code, set the Bash tool's `dangerouslyDisableSandbox` parameter.
+3. Claude Code asks the owner to approve the call in a prompt titled `Bash command (unsandboxed)`, unless an allow rule already covers it. See [Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing).
 
-A call that still runs inside the sandbox makes `--plan`, `--apply`, and `--resume` stop at once with a message that says so, before they serve the approval tab. A dry run still runs. Read the message, and run the call again as one bare call outside the sandbox.
+Claude Code matches a sandbox exclusion against the text of the call, so keep the call bare:
+
+- Write no `cd`, redirect, pipe, or `$(...)` in it. Change to the folder in a separate call first.
+- Put no npx option in front of the package name, not `--yes` and not `-y`, and add no version or tag to it. With no terminal, npx installs the package without asking, so an option adds nothing.
+- Write no `new` after the package name. The launcher already runs `cairn new`, and it drops a leading `new`.
+- Run the call from an empty folder, and never from inside a clone of the cairn-cms repository. npx matches the package name against the local project before it fetches anything, and a clone holds a package of the same name that isn't installed, so the call fails at once with `command not found`.
+
+Start the command in the background, so you can read each `waiting` sentence to the owner while the run blocks. In Claude Code, that's the Bash tool's `run_in_background` option. When `cairn` isn't installed, run `npx create-cairn-site` followed by the flags.
 
 ## Use a Cloudflare token for an unattended run
 
 An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. Setup trims spaces and line breaks around the value and refuses one with a space or line break inside. With it set when a setup starts, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.
+
+If the variable is already set when you start, the owner set it for this run. Setup reports `credential: token`. Tell the owner that setup is using their token, and go on. There is nothing to confirm, and you never print the value.
 
 Create the token as an account-owned token, with these permissions:
 
@@ -61,16 +72,16 @@ Answer every question with a flag, and name a file for the plan:
 cairn new --plan plan.json --name "My Site" --email me@example.com --posture decline
 ```
 
-This call runs the owner's four browser approvals. The first signs in to Cloudflare. The other three create the site's GitHub App and give it access to the repository. The call then stops where the summary would appear and writes `plan.json`. Nothing exists on Cloudflare yet. The plan holds no credential.
+This call runs the owner's four browser approvals, or three when the owner sets a Cloudflare token. The first signs in to Cloudflare. The other three create the site's GitHub App and give it access to the repository. The call then stops where the summary would appear and writes `plan.json`. Nothing exists on Cloudflare yet. The plan holds no credential.
 
 Give the flags only for the choices that apply:
 
-- `--account` names the Cloudflare account, by id, when the sign-in lists several.
+- `--account` names the Cloudflare account by its id, never by its name, when the sign-in lists several.
 - `--zone` names the Cloudflare domain to serve the site from, when the account has several.
-- `--host` sets the site's address: the zone itself, or a subdomain of it. A subdomain doesn't answer the zone, so give `--zone` with it, as in `--host blog.example.com --zone example.com`, when the account has several domains.
+- `--host` sets the site's address: a domain the account holds, or a subdomain of one. The host names its zone: the longest domain the account holds that is the host or a parent of it. `--host blog.example.com` serves from `example.com` when the account holds that domain and no closer one. Give `--zone` only when the host doesn't name one.
 - `--site-theme` names the theme, when the template offers several.
 
-An account or domain that no flag answered stays open. The call exits 0 and its stream has no `summary` event. The plan lists the options, and it lists no domains while the account is open, so give `--account` with `--plan`. A theme that no flag answered is a usage error, because setup asks for it before it writes a record.
+An account that no flag answered, or a domain that neither `--zone` nor `--host` answered, stays open. The call exits 0 and its stream has no `summary` event. The plan lists the options, and it lists no domains while the account is open, so give `--account` with `--plan`. A theme that no flag answered is a usage error, because setup asks for it before it writes a record.
 
 A second `--plan` refuses to start while an unfinished setup exists. It names the unfinished setup and asks you to resume it or add `--new`.
 
@@ -97,6 +108,14 @@ cairn new --apply plan.json
 
 `--apply` takes no answer flags, because the plan holds the answers. It refuses a plan that leaves the account or the domain open, before anything runs. Apply can still wait on the owner for a browser approval.
 
+## Wait for the run
+
+A run usually takes a few minutes. The step that connects the domain waits for the new address to answer over HTTPS, and that wait can last up to 15 more minutes. It needs nothing from the owner, so it prints no `waiting` event. A stream that goes quiet there isn't stuck.
+
+Leave the new address alone until the `summary` event. A `curl`, `dig`, or browser visit to the address before setup has created the address's record makes the computer's resolver remember that the name doesn't exist. The computer can then keep answering that way for up to 30 minutes after the record is live, and the owner's first visit fails.
+
+## Read a usage error
+
 A usage error exits 3 before anything runs and leaves stdout empty. The message goes to stderr, and this block merges both streams:
 
 <!-- transcript: tool/testdata/transcripts/08-cairn-new-usage-error.txt -->
@@ -119,7 +138,7 @@ cairn new --dry-run --name "My Site" --host example.com --email me@example.com -
 | --- | --- |
 | `step_started`, `step_done` | Track progress. The `step` field names the step. |
 | `waiting` | Read the `sentence` field to the owner, word for word. The run blocks until the owner finishes that browser step. |
-| `step_failed` | The run stopped. The `failure` field holds the four-part reason: what happened, what setup already did, what it left in place, and what to do. |
+| `step_failed` | The run stopped. The `failure` field holds the four-part reason: what happened, what setup already did, what it left in place, and what to do. When a provider answered a request with an error, `failure` also carries a `detail` field. |
 | `resumed` | The run picked up an unfinished record. |
 | `summary` | Every derived value. The run finished. |
 
@@ -137,6 +156,8 @@ Check the exit code first.
 | 3 | A usage error. A flag or the plan file was refused before anything ran, and stdout is empty. |
 
 On exit 1 or 2, setup prints the four-part failure to stderr. Show the owner what it says to do.
+
+When a provider answered a request with an error, setup adds a fifth line with the cause: the provider, its reason, the HTTP status, the error code when the provider gives one, and the request. For example, `cloudflare: forbidden (status 403, code 10000) on GET /zones/<id>/dns_records` means the credential lacks a permission for that request. Pass the line on with the four parts. In a token run, it means the token lacks one of the permissions this page lists.
 
 To find an unfinished run, including one the agent didn't start, list the setup records. The command reads the local record only, with no network and no keyring:
 

@@ -687,8 +687,15 @@ func (r *run) fail(ctx context.Context, err error, who string) *Failure {
 	case who == "":
 		return r.failure(ReasonProvider, "Setup stopped on an unexpected error.", "Run cairn new again.", err)
 	}
-	return r.failure(ReasonProvider, "A request to "+who+" failed.",
-		"Check your internet connection, and then run cairn new again.", err)
+	pe, ok := errors.AsType[providers.ProviderError](err)
+	if !ok {
+		return r.failure(ReasonProvider, "A request to "+who+" failed.",
+			"Check your internet connection, and then run cairn new again.", err)
+	}
+	happened, do := providerStop(who, pe.HTTPStatus(), pe.ClassifiedReason(), r.tokenRun)
+	f := r.failure(ReasonProvider, happened, do, err)
+	f.Detail = pe.Error()
+	return f
 }
 
 // did is the "already did" part: what exists outside this computer because of the run, and the

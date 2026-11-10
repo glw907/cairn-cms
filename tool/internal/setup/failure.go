@@ -53,7 +53,10 @@ type Failure struct {
 	Did      string `json:"did"`
 	Left     string `json:"left,omitempty"`
 	Do       string `json:"do"`
-	Err      error  `json:"-"`
+	// Detail is a provider error's own text, with the failed request's method and path, shown
+	// after the four parts. It is empty for any other cause, which can hold a path or a URL.
+	Detail string `json:"detail,omitempty"`
+	Err    error  `json:"-"`
 }
 
 // Error implements the error interface.

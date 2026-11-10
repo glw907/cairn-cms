@@ -60,6 +60,7 @@ func newNewCmd(d deps, rf *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "new",
 		Short:   shortNew,
+		Long:    longNew,
 		Example: exampleNew,
 		GroupID: groupSite,
 		Args:    cobra.NoArgs,
@@ -68,22 +69,25 @@ func newNewCmd(d deps, rf *rootFlags) *cobra.Command {
 		},
 	}
 	fl := cmd.Flags()
+	// Help lists the flags in this order, the answers first and then the modes, rather than
+	// alphabetically, so an agent reads which flags a plan needs before it reads the rest.
+	fl.SortFlags = false
 	fl.StringVar(&f.name, "name", "", flagNewNameHelp)
 	fl.StringVar(&f.email, "email", "", flagNewEmailHelp)
 	fl.StringVar(&f.posture, "posture", "", flagNewPostureHelp)
-	fl.StringVar(&f.account, "account", "", flagNewAccountHelp)
-	fl.StringVar(&f.zone, "zone", "", flagNewZoneHelp)
-	fl.StringVar(&f.host, "host", "", flagNewHostHelp)
 	// The root's persistent --theme picks the terminal palette, so the site's theme takes
 	// another name rather than shadow it.
 	fl.StringVar(&f.siteTheme, "site-theme", "", flagNewSiteThemeHelp)
+	fl.StringVar(&f.account, "account", "", flagNewAccountHelp)
+	fl.StringVar(&f.zone, "zone", "", flagNewZoneHelp)
+	fl.StringVar(&f.host, "host", "", flagNewHostHelp)
 	fl.StringVar(&f.plan, "plan", "", flagNewPlanHelp)
 	fl.StringVar(&f.apply, "apply", "", flagNewApplyHelp)
 	fl.StringVar(&f.resume, "resume", "", flagNewResumeHelp)
 	fl.BoolVar(&f.fresh, "new", false, flagNewNewHelp)
-	fl.StringVar(&f.tag, "tag", "latest", flagNewTagHelp)
 	fl.BoolVar(&f.dryRun, "dry-run", false, flagNewDryRunHelp)
 	fl.BoolVar(&f.asJSON, "json", false, flagNewJSONHelp)
+	fl.StringVar(&f.tag, "tag", "latest", flagNewTagHelp)
 	cmd.AddCommand(newStatusCmd(d))
 	return cmd
 }

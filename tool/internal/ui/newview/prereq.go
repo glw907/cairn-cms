@@ -44,6 +44,9 @@ func (g Grid) parts(f setup.Failure, links ...string) string {
 		ps = append(ps, g.part(partLeft, f.Left))
 	}
 	ps = append(ps, g.part(partDo, f.Do, packed...))
+	if f.Detail != "" {
+		ps = append(ps, g.Cell(partDetail, g.Styles.Muted, g.WrapValue(RoleMuted, f.Detail)...))
+	}
 	return strings.Join(ps, "\n")
 }
 

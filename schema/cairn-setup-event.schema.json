@@ -30,7 +30,8 @@
         "happened": { "type": "string" },
         "did": { "type": "string" },
         "left": { "type": "string" },
-        "do": { "type": "string" }
+        "do": { "type": "string" },
+        "detail": { "type": "string" }
       }
     },
     "summary": {

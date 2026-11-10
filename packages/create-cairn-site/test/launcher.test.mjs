@@ -135,6 +135,14 @@ test('flags and the exit status pass through to the binary', { skip: !host }, ()
   assert.notEqual(refused.status, 0, 'a usage error exits non-zero');
 });
 
+test('a leading `new` is dropped, so the habit from `cairn new` is harmless', { skip: !host || process.platform === 'win32' }, () => {
+  const project = install(fixture.packed.launcher);
+  plant(project, { script: 'echo "args: $*"' });
+  assert.match(runLauncher(project, ['new', '--plan', 'p.json']).stdout, /^args: new --plan p\.json$/m);
+  assert.match(runLauncher(project, ['--plan', 'p.json']).stdout, /^args: new --plan p\.json$/m);
+  assert.match(runLauncher(project, ['--name', 'new']).stdout, /^args: new --name new$/m);
+});
+
 test('a missing platform package says how to install it', { skip: !host }, () => {
   const project = install(fixture.packed.launcher);
   const run = runLauncher(project, []);

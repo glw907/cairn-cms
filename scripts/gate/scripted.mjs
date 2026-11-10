@@ -41,20 +41,25 @@ export function commandFor(env) {
 
 /**
  * The keys that move a choose screen's selection to the row that names `target`, then Enter. The
- * screen marks its selection with a leading `>` and lists one row per line.
+ * screen marks its selection with a leading `>` and lists one row per line. A screen with several
+ * choices starts with no selection and no marker, so the first Down selects its first row, and the
+ * rows begin on the line after the one that counts them ("5 domains on your Cloudflare account").
  * @param {string} pane the captured pane text
  * @param {string} target the row's text
  * @param {string} step the screen's name, for the failure
  * @returns {Op[]}
- * @throws {ScriptedError} when the screen has no selection or no row for the target
+ * @throws {ScriptedError} when the screen has no row for the target, or neither a selection nor a count line
  */
 export function chooseRow(pane, target, step) {
   const lines = pane.split('\n').map((l) => l.trim());
-  const selected = lines.findIndex((l) => l.startsWith('> '));
+  const marked = lines.findIndex((l) => l.startsWith('> '));
   const wanted = lines.findIndex((l) => l.replace(/^> /, '') === target);
-  if (selected === -1 || wanted === -1) {
+  const count = lines.findIndex((l) => /^\d+ (domains?|accounts?)\b/.test(l));
+  if (wanted === -1 || (marked === -1 && count === -1)) {
     throw new ScriptedError(`the ${step} screen offers no "${target}" row to choose:\n${pane.trim()}`, step);
   }
+  // With no marker the cursor sits above the first row, one line below the count.
+  const selected = marked === -1 ? count : marked;
   const keys = Array.from({ length: Math.abs(wanted - selected) }, () => ({ key: wanted > selected ? 'Down' : 'Up' }));
   return [...keys, ...enter];
 }
@@ -113,7 +118,9 @@ export const SCREENS = [
   { name: 'crawlers', test: (p) => /Choose whether AI companies/.test(p), answer: () => enter },
   { name: 'name', test: (p) => /Shown at the top of every page/.test(p), answer: ({ name }) => [{ type: name }, ...enter] },
   { name: 'theme', test: (p) => /How your site looks to readers/.test(p), answer: () => enter },
-  { name: 'account', test: (p) => /Choose an account/.test(p), answer: () => enter },
+  // A chooser with several accounts shows no selection until the first arrow key, and Enter alone
+  // does nothing there, so the first Down selects the first account.
+  { name: 'account', test: (p) => /Choose an account/.test(p), answer: (_answers, pane) => (/^\s*> /m.test(pane) ? enter : [{ key: 'Down' }, ...enter]) },
   { name: 'domain', test: (p) => /Choose a domain/.test(p), answer: (_answers, pane) => chooseRow(pane, ZONE, 'domain') },
   { name: 'resume', test: (p) => /Resume setup/.test(p), answer: () => enter },
   { name: 'welcome', test: (p) => /Set up a cairn site/.test(p), answer: () => enter },

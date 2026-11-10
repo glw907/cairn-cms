@@ -64,6 +64,7 @@ table from the code, which is the source of truth.
 | watch-sign-in | 80x24, 60x24 | The watch on its last step, the sign-in. |
 | failure-deploy | 80x24, 60x24 | The four-part failure for a failed first deploy, which names the Workers Paid plan, under the watch. |
 | failure-declined | 80x24, 60x24 | The failure for a declined Cloudflare approval, with no watch. |
+| failure-provider | 80x24, 60x24 | The failure for a refused provider request, with the detail line after the four parts. |
 | done | 80x24, 60x24 | The done screen after a used sign-in link and an emailed one. |
 | done-open | 80x24, 60x24 | The done screen when the sign-in link was not used. |
 | done-scripts-skipped | 80x24, 60x24 | The done screen with the skipped install scripts notice. |

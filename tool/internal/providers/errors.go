@@ -83,6 +83,16 @@ type ProviderError interface {
 	HTTPStatus() int
 }
 
+// requestSuffix names the failed request in a provider error's text, or is empty when the error
+// carries none. The path never holds a query and stays escaped. A route with a secret in a path
+// segment must pass a template in its place, as ConvertManifest does with its one-time code.
+func requestSuffix(method, path string) string {
+	if method == "" {
+		return ""
+	}
+	return " on " + method + " " + path
+}
+
 // reasonForStatus classifies an HTTP status into a Reason, using header to disambiguate a 403:
 // GitHub returns 403 both for a rate limit and for a missing permission, and the status alone
 // cannot tell them apart. A 403 carrying an exhausted primary rate limit

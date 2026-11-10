@@ -96,7 +96,10 @@ The following table lists the stops that happen after the summary, while setup c
 | Cloudflare no longer accepts the approval setup saved, which setup finds during a long step while it builds the site. | The completed steps. | **Act:** run the setup command again. On the Cloudflare page, select `API Tokens: Write`, and then select **Allow**. |
 | The first deploy didn't finish within 30 minutes. | Everything setup created. | **Wait or act:** open the Actions tab of your repository on GitHub to see whether the deploy is still running, then run the setup command again. |
 | The site didn't answer over HTTPS within 15 minutes. Cloudflare is still issuing the certificate. | Everything setup created. | **Wait:** run the setup command again in a few minutes. Setup resumes at connecting your domain. |
-| A request to Cloudflare or GitHub failed, or setup stopped on an unexpected error. | Everything setup created. | **Act:** check your internet connection, then run the setup command again. |
+| Cloudflare or GitHub refused a request because setup's credential is missing a permission, or didn't accept the credential. Setup prints the request and the provider's status on a detail line. | Everything setup created. | **Act:** for Cloudflare in a run with a token, check that the token hasn't expired and carries every permission [Set up with an agent](./set-up-with-an-agent.md#use-a-cloudflare-token-for-an-unattended-run) lists. In any other run, run the setup command again and approve every permission the provider's page lists. |
+| Cloudflare or GitHub is limiting requests, or had a problem on its side. | Everything setup created. | **Wait:** wait a few minutes, then run the setup command again. |
+| Cloudflare or GitHub rejected a request in another way. Setup prints the request and the provider's status on a detail line. | Everything setup created. | **Act:** read the detail line, then run the setup command again. |
+| A request to Cloudflare or GitHub failed before the provider answered, or setup stopped on an unexpected error. | Everything setup created. | **Act:** check your internet connection, then run the setup command again. |
 | Setup couldn't save its record of the run. | Everything setup created. | **Act:** make sure your home folder is writable, then run the setup command again. |
 
 ## Start over

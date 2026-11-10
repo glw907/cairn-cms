@@ -220,7 +220,7 @@ func (a *agentRun) runRecord(e store.Entry, view *agentview.View, apply bool) er
 }
 
 func (a *agentRun) view(mode agentview.Mode) *agentview.View {
-	return &agentview.View{Mode: mode, Stderr: a.cmd.ErrOrStderr(), GOOS: runtime.GOOS, Env: environMap(os.Environ())}
+	return &agentview.View{Mode: mode, Host: strings.ToLower(a.f.host), Stderr: a.cmd.ErrOrStderr(), GOOS: runtime.GOOS, Env: environMap(os.Environ())}
 }
 
 // finish turns a run's end into the stream's last line and the exit code. A finished run ends the
@@ -245,7 +245,7 @@ func (a *agentRun) finish(res setup.Result, err error) error {
 		return err
 	}
 	w := a.cmd.ErrOrStderr()
-	for _, line := range []string{f.Happened, f.Did, f.Left, f.Do} {
+	for _, line := range []string{f.Happened, f.Did, f.Left, f.Do, f.Detail} {
 		if line != "" {
 			_, _ = fmt.Fprintln(w, line)
 		}

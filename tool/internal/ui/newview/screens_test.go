@@ -88,6 +88,14 @@ var (
 		Did:      "Nothing was created.",
 		Do:       "Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.",
 	}
+	providerRefused = setup.Failure{
+		Step: setup.StepProvision, Reason: setup.ReasonProvider,
+		Happened: "Cloudflare refused a request: the credential setup used lacks a permission it needs.",
+		Did:      "Setup created the GitHub App fieldnotes-cms.",
+		Left:     "Everything setup created stays, and the next run resumes from it.",
+		Do:       "Run cairn new again, and approve every permission the Cloudflare page lists.",
+		Detail:   "cloudflare: forbidden (status 403, code 10000) on GET /zones/abc123/dns_records",
+	}
 	nodeOld = setup.Failure{
 		Step: setup.StepOpeningChecks, Reason: setup.ReasonNodeOld,
 		Happened: "Setup needs Node.js 24 or later. This computer has Node.js 22.",
@@ -260,6 +268,7 @@ var screens = []struct {
 		typeText(m, "Field Notes")
 		send(m, enter)
 	}},
+	{"browser-waiting", oneTheme, false, func(m *Model) { m.phase = phaseBrowser }},
 	{"browser-start", oneTheme, false, func(m *Model) { send(m, OpenBrowserMsg{URL: tabURL}) }},
 	{"browser-allow", oneTheme, false, opened(setup.WaitCloudflare)},
 	{"browser", oneTheme, false, opened(setup.WaitCreateApp)},
@@ -293,6 +302,7 @@ var screens = []struct {
 	{"watch-sign-in", oneTheme, false, watched(7)},
 	{"failure-deploy", oneTheme, false, failed(deployFailed)},
 	{"failure-declined", oneTheme, false, failed(declined)},
+	{"failure-provider", oneTheme, false, failed(providerRefused)},
 	{"done", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, Emailed: true})},
 	{"done-open", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", Emailed: true})},
 	{"done-scripts-skipped", oneTheme, false, finished(setup.Done{URL: "https://fieldnotes.example.com", SignedIn: true, ScriptsSkipped: true})},
@@ -514,8 +524,8 @@ func TestChoicesAnswerTheRunner(t *testing.T) {
 		want  string
 		phase phase
 	}{
-		{"account", func(r chan<- string) tea.Msg { return ChooseAccountMsg{Accounts: twoAccounts, Reply: r} }, []tea.Msg{down, enter}, "a2", phaseBrowser},
-		{"zone", func(r chan<- string) tea.Msg { return ChooseZoneMsg{Zones: fiveZones, Reply: r} }, []tea.Msg{down, down, enter}, "z3", phaseBrowser},
+		{"account", func(r chan<- string) tea.Msg { return ChooseAccountMsg{Accounts: twoAccounts, Reply: r} }, []tea.Msg{down, down, enter}, "a2", phaseBrowser},
+		{"zone", func(r chan<- string) tea.Msg { return ChooseZoneMsg{Zones: fiveZones, Reply: r} }, []tea.Msg{down, down, down, enter}, "z3", phaseBrowser},
 		{"resume", func(r chan<- string) tea.Msg { return ChooseResumeMsg{Runs: twoRuns, Reply: r} }, []tea.Msg{enter}, "field-notes-3f9a2c", phaseBrowser},
 		// A new site has no run yet, so it goes on to the welcome screen and the questions.
 		{"new site", func(r chan<- string) tea.Msg { return ChooseResumeMsg{Runs: twoRuns, Reply: r} }, []tea.Msg{down, down, enter}, "", phaseWelcome},
@@ -583,6 +593,70 @@ func TestEnterOpensNothingBeforeTheRunnerAsks(t *testing.T) {
 	send(m, tea.WindowSizeMsg{Width: 80, Height: 24})
 	if _, cmd := m.Update(enter); cmd != nil || m.browser.opened {
 		t.Error("Enter opened a tab before the runner sent its address")
+	}
+}
+
+func TestUnarmedBrowserScreenHasNoEnterHint(t *testing.T) {
+	m := New(testConfig(true, oneTheme))
+	send(m, tea.WindowSizeMsg{Width: 80, Height: 24})
+	m.phase = phaseBrowser
+	if v := m.browser.Render(80); strings.Contains(v, "Enter") || !strings.Contains(v, browserWaiting) {
+		t.Errorf("unarmed browser screen hints Enter or shows no waiting line:\n%s", v)
+	}
+	// An Enter on the unarmed screen opens nothing, and a domain screen that follows still waits.
+	send(m, enter)
+	if m.browser.opened {
+		t.Fatal("Enter opened the tab before setup armed it")
+	}
+	reply := make(chan string, 1)
+	send(m, ChooseZoneMsg{Zones: fiveZones, Reply: reply})
+	select {
+	case got := <-reply:
+		t.Fatalf("the domain screen answered %q with no key sent to it", got)
+	default:
+	}
+}
+
+func TestBlankChoiceIgnoresEnterUntilTheOwnerMoves(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		msg  func(chan<- string) tea.Msg
+	}{
+		{"zone", func(r chan<- string) tea.Msg { return ChooseZoneMsg{Zones: fiveZones, Reply: r} }},
+		{"account", func(r chan<- string) tea.Msg { return ChooseAccountMsg{Accounts: twoAccounts, Reply: r} }},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			reply := make(chan string, 1)
+			m := New(testConfig(true, oneTheme))
+			send(m, tea.WindowSizeMsg{Width: 80, Height: 24}, tt.msg(reply), enter, enter)
+			if m.phase != phaseChoose {
+				t.Fatalf("phase after Enter on a blank choice = %v, want the choice still showing", m.phase)
+			}
+			if v := m.View().Content; strings.Contains(v, "Enter") || strings.Contains(v, "> ") {
+				t.Errorf("a blank choice shows an Enter hint or a cursor:\n%s", v)
+			}
+			select {
+			case got := <-reply:
+				t.Fatalf("Enter on a blank choice answered %q", got)
+			default:
+			}
+			send(m, down)
+			if m.phase != phaseChoose {
+				t.Error("the first Down should land on the first option, not accept it")
+			}
+			send(m, enter)
+			if m.phase != phaseBrowser {
+				t.Errorf("phase after choosing = %v, want the browser screen", m.phase)
+			}
+		})
+	}
+}
+
+func TestLoneChoiceStaysChosen(t *testing.T) {
+	m := New(testConfig(true, oneTheme))
+	send(m, tea.WindowSizeMsg{Width: 80, Height: 24}, ChooseZoneMsg{Zones: fiveZones[:1]}, enter)
+	if m.phase != phaseBrowser {
+		t.Errorf("phase after Enter on a lone domain = %v, want the browser screen", m.phase)
 	}
 }
 

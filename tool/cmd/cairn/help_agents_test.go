@@ -18,8 +18,10 @@ import (
 // when this summary is not enough and the machine holds no cairn-cms checkout. It was raised from
 // 55 to 70 for the pages' other additions, and from 70 to 120 when cairn new left hiding, since the
 // setup contract (the plan and apply flow, the event kinds, the waiting states, the exit codes)
-// is now part of the page an agent reads.
-const agentsPageLineBound = 120
+// is now part of the page an agent reads. It was raised from 120 to 150 for the setup run's own
+// instructions, which a naive agent otherwise asks its owner for: how to run outside the
+// sandbox, the token's permissions, and how long the run waits.
+const agentsPageLineBound = 150
 
 // TestHelpAgentsIsReachableAndExitsZero covers the surface itself: the topic resolves, it is not
 // hidden from `cairn --help`, and reaching it is a success.

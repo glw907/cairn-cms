@@ -135,10 +135,14 @@ func openTab(goos string, env map[string]string, url string, reply chan<- error)
 	}
 }
 
-// Render draws the screen: before the tab opens, the requests and the go-ahead; after, the
+// Render draws the screen: before the tab opens, the requests and, once setup has armed the tab,
+// the go-ahead, or a waiting line until then; after, the
 // current request with its sentence, the countdown in the chain's last minutes, and the fallback.
 func (b *browser) Render(width int) string {
 	g := Grid{Styles: b.styles, Glyphs: b.glyphs, Width: width}
+	if !b.opened && !b.Armed() {
+		return Frame(g.Title(titleBrowser), g.Para(RoleText, b.before), b.list(g), g.Para(RoleMuted, browserWaiting), g.Footer(b.keys.Quit))
+	}
 	if !b.opened {
 		return Frame(g.Title(titleBrowser), g.Para(RoleText, b.before), b.list(g), g.Footer(b.keys.Open, b.keys.Quit))
 	}

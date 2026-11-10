@@ -123,7 +123,14 @@ func (gh *GitHub) ConvertManifest(ctx context.Context, code string) (AppRecord, 
 			ID    int64  `json:"id"`
 		} `json:"owner"`
 	}
-	if err := gh.call(ctx, http.MethodPost, "/app-manifests/"+url.PathEscape(code)+"/conversions", nil, &out); err != nil {
+	// The code is in the route, so a failure names the route's template: an error's text reaches
+	// stderr, an event an agent relays, and the failure screen, and anyone who reads the code within
+	// its hour can fetch the App's key.
+	status, header, data, err := gh.client.rawSend(ctx, http.MethodPost, githubBase+"/app-manifests/"+url.PathEscape(code)+"/conversions", githubAccept, nil)
+	if err != nil {
+		return AppRecord{}, err
+	}
+	if err := githubDecode(http.MethodPost, "/app-manifests/{code}/conversions", status, header, data, &out); err != nil {
 		return AppRecord{}, err
 	}
 	return AppRecord{
@@ -227,7 +234,7 @@ func (w *GitHubWeb) ExchangeCode(ctx context.Context, clientID string, clientSec
 		return Credential{}, &GitHubOAuthError{Status: status, Code: out.Error}
 	}
 	if isErrorStatus(status) {
-		return Credential{}, githubFailure(status, header, data)
+		return Credential{}, githubFailure(http.MethodPost, "/login/oauth/access_token", status, header, data)
 	}
 	if out.AccessToken == "" {
 		return Credential{}, &GitHubOAuthError{Status: status, Code: "no access token in the response"}

@@ -1,6 +1,12 @@
 package setup
 
-import "slices"
+import (
+	"net/http"
+	"slices"
+	"strings"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+)
 
 // This file is the messages table for setup's stops and for the copy the design left open: one
 // entry for every Reason, and the lines the plan's rulings added to the copy deck. Wording
@@ -248,12 +254,57 @@ const (
 	LineTokenStored = "Setup stored your Cloudflare API token as an Actions secret in your GitHub repository, where every deploy uses it. When the site no longer needs the token, revoke it in Cloudflare."
 )
 
+// What a provider said, worded for the owner. providerStop picks among them by status and by
+// provider, and <provider> is the provider's name.
+const (
+	lineProviderRefused   = "<provider> refused a request because setup's credential is missing a permission."
+	lineProviderNoCred    = "<provider> didn't accept setup's credential."
+	lineProviderLimiting  = "<provider> is limiting requests."
+	lineProviderDown      = "<provider> had a problem on its side."
+	lineProviderRejected  = "<provider> rejected a request."
+	lineGivePermissions   = "Give the token every permission that `cairn help agents` lists, and then run cairn new again."
+	lineCheckToken        = "Check that the token in CAIRN_CF_SETUP_TOKEN is valid and hasn't expired, and then run cairn new again."
+	lineApprovePermission = "Run cairn new again, and approve every permission the <provider> page lists."
+	lineWaitAndRun        = "Wait a few minutes, and then run cairn new again."
+	lineReadDetail        = "Read the detail line, and then run cairn new again."
+)
+
+// providerStop is the Happened and Do sentences for a request to provider that came back with
+// status and the reason the providers package classified it to. A 403 that carries a rate limit
+// is a wait, never a missing permission. Only a Cloudflare run with a token sets that credential itself, so only its Do points at
+// the token. Any other credential is an approval the owner gives again on the provider's page.
+func providerStop(provider string, status int, reason providers.Reason, token bool) (happened, do string) {
+	tokenRun := token && provider == "Cloudflare"
+	var h string
+	switch {
+	case reason == providers.ReasonRateLimited || status == http.StatusTooManyRequests:
+		h, do = lineProviderLimiting, lineWaitAndRun
+	case status == http.StatusUnauthorized:
+		h, do = lineProviderNoCred, lineApprovePermission
+		if tokenRun {
+			do = lineCheckToken
+		}
+	case status == http.StatusForbidden:
+		h, do = lineProviderRefused, lineApprovePermission
+		if tokenRun {
+			do = lineGivePermissions
+		}
+	case status >= 500 && status <= 599:
+		h, do = lineProviderDown, lineWaitAndRun
+	default:
+		h, do = lineProviderRejected, lineReadDetail
+	}
+	return strings.ReplaceAll(h, "<provider>", provider), strings.ReplaceAll(do, "<provider>", provider)
+}
+
 // Catalogue returns every string this table carries, for the copy golden.
 func Catalogue() []string {
 	var out []string
 	for _, e := range entries {
 		out = append(out, e.Happened, e.Did, e.Left, e.Do)
 	}
+	out = append(out, lineProviderRefused, lineProviderNoCred, lineProviderLimiting, lineProviderDown, lineProviderRejected,
+		lineGivePermissions, lineCheckToken, lineApprovePermission, lineWaitAndRun, lineReadDetail)
 	out = append(out, LineSlugNoLetters, LineSignInStep, LineDoneOpen, linePageFooter, lineLinkExpired, lineAppNameTaken,
 		LineTokenStored, ProblemEmail, ProblemAddress, ProblemHost)
 	return slices.DeleteFunc(out, func(s string) bool { return s == "" })

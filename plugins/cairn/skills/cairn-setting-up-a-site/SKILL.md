@@ -5,36 +5,52 @@ description: Sets up a new cairn site with `cairn new`. Use when a person asks t
 
 # Set up a cairn site
 
-`cairn new` creates the site's GitHub repository, its Cloudflare Worker, database, and media bucket, and signs the person in as the owner. The person approves each step in their browser. This skill covers how to run it for them. The flags, events, and exit codes are in `cairn help agents`, and the human-readable version is the [set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md) page. Read those instead of guessing.
+`cairn new` creates the site's GitHub repository, its Cloudflare Worker, database, and media bucket, and signs the person in as the owner. The person approves each step in their browser. This skill covers how to run it for them. `cairn new --help` lists the flags, `cairn help agents` lists the events and exit codes, and the [set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md) page is the human-readable version. Read those instead of guessing.
 
 ## Before you run it
 
-1. Run `cairn help agents` and follow it. If `cairn` is not installed, run `npm create cairn-site`, which installs it.
-2. Ask the person for the site's name, the owner's email address, and whether the site should decline or invite AI crawlers. Do not choose for them.
-3. Check the person has a GitHub account, a Cloudflare account, and Cloudflare's Workers Paid plan. The [before you start](https://github.com/glw907/cairn-cms/blob/main/docs/admin/before-you-start.md) page says what each costs.
+1. Ask the person for the site's name, the owner's email address, and whether the site should decline or invite AI crawlers. Ask for the address too if they have one in mind. It must be a domain on their Cloudflare account or a subdomain of one. Do not choose for them.
+2. Check the person has a GitHub account, a Cloudflare account with a domain on it, and Cloudflare's Workers Paid plan. The [before you start](https://github.com/glw907/cairn-cms/blob/main/docs/admin/before-you-start.md) page says what each costs.
+3. Find out how to run it. If `cairn` is installed, run `cairn new --help`. If it isn't, install nothing: `npx create-cairn-site` takes the same flags as `cairn new`, and `npx create-cairn-site --help` lists them.
 
 ## How to run `cairn`
 
-Run `cairn` as one bare command, with no `cd`, redirect, pipe, or `$(...)`. A redirect to a file, a `cd`, or a command substitution such as `$(...)` keeps the whole call sandboxed ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)), and `cairn` must run outside an agent's sandbox, because a sandboxed command's localhost is private and the person's browser can't reach setup's approval tab. Start it with the Bash tool's `run_in_background`, so you can relay each `waiting` sentence to the person while the run blocks. When `cairn` isn't installed, run `npx create-cairn-site` followed by the flags. Put no npx option in front of the name, not even the one that answers npx's install prompt, and add no version or tag to it. The launcher already runs `cairn new`. Write no `new` after the name. Claude Code matches a sandbox exclusion against the text of the call. An option in front of the name or a tag on it can keep the call sandboxed, and the person's browser can't reach the tab. With no terminal, npx installs the package without asking, so an option adds nothing. Run that call from an empty folder, never from inside a clone of the cairn-cms repository. Change to the folder in a separate call first, since a `cd` in the same call as `npx` keeps the whole call sandboxed. npx matches the package name against the local project first, and a clone holds a package of the same name that isn't installed, so the call fails with `command not found`. A call that still runs inside the sandbox makes `--plan`, `--apply`, and `--resume` stop at once with a message that says so. Read it, and run the call again as one bare call outside the sandbox.
+Run it as one bare call, outside the sandbox. Setup serves its approval page on a local port, and a sandboxed command's localhost is private to the sandbox, so the person's browser can't reach the page.
 
-## Attended: the person is at the keyboard
+Do not ask the person how to run outside the sandbox. Make the call. If it runs inside the sandbox, `cairn` stops at once with a message that says so. Run the same call again with the Bash tool's `dangerouslyDisableSandbox` parameter set. Claude Code asks the person to approve it, and that prompt is their approval ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)).
 
-Plan first, then apply.
+Keep the call bare, so that an exclusion the person already set for `cairn` still matches the text of the call:
 
-1. `cairn new --plan plan.json --name "<name>" --email <email> --posture <decline|invite>` runs the questions and the browser approvals, writes the plan, and creates nothing.
-2. Show the person the plan. Give every choice you already know (`--account`, `--zone`, `--host`, `--site-theme`) on the first `--plan` call. For a choice the plan leaves open, the person edits the plan's open fields (`account`, `zone`, `address`), or you run `cairn new --resume <id> --account <a> --zone <z>`. Ask before you decide. Never run `--plan` again or add `--new` to change an answer: that starts a second setup with new approvals and a new GitHub App.
+- Put no `cd`, redirect, pipe, or `$(...)` in it. Change to an empty folder in a separate call first.
+- Never run it from inside a clone of the cairn-cms repository. npx matches the package name against the local project first, and a clone holds an uninstalled package of the same name, so the call fails with `command not found`.
+- Put no npx option in front of the package name, not even the one that answers npx's install prompt, and add no version or tag to it.
+- Write no `new` after the package name. The launcher already runs `cairn new`.
+
+Start the call with the Bash tool's `run_in_background`, so you can relay each `waiting` sentence to the person while the run blocks.
+
+## Plan, then apply
+
+1. `cairn new --plan plan.json --name "<name>" --email <email> --posture <decline|invite>` runs the questions and the browser approvals, writes the plan, and creates nothing. Add every choice you already know in this same call: `--host`, `--account`, `--zone`, `--site-theme`. A `--host` that is a domain on the account, or a subdomain of one, names its zone, so give `--zone` only when it doesn't. `--account` takes the account's id, never its name.
+2. Show the person the plan. For a choice it leaves open, ask the person which account or domain to use, and never pick one. They edit the plan's open fields (`account`, `zone`, `address`), or you run `cairn new --resume <id> --account <a> --zone <z>`. Never run `--plan` again or add `--new` to change an answer: that starts a second setup with new approvals and a new GitHub App.
 3. `cairn new --apply plan.json` creates the site.
 
-Each `waiting` event carries a `sentence`. Show that sentence to the person as written, and wait. The run blocks until the browser step lands. Never click for them.
+Each `waiting` event carries a `sentence`. Show that sentence to the person as written. The event stays open until the person finishes the browser step, however long that takes, so keep waiting. Never click for them. With no Cloudflare token, the first approval is Cloudflare's and the next three are GitHub's.
 
-## Unattended
+## With a Cloudflare token
 
-An unattended run still needs the person for the GitHub browser approvals. Start it only when the person will be at their browser. To skip the Cloudflare approval, the person puts a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Never take it as a flag, and never print it. Setup then uses the token for every Cloudflare call and stores it as the site's deploy key, `--email` is required, and a resume needs the variable again. The [set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md) page lists the token's permissions. Write each event's `sentence` where they will see it, and treat a `waiting` event with no reply as a pause, not a failure.
+The person can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Never take it as a flag, and never print it. Setup then skips the Cloudflare approval, uses the token for every Cloudflare call, and stores it as the site's deploy key. `--email` is required, a resume needs the variable again, and the person still approves three GitHub steps in their browser. The [set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md) page lists the token's permissions.
+
+If the variable is already set when you start, the person set it for this run. Setup reports `credential: token`. Tell the person that setup is using their token, and go on. There is nothing to confirm.
+
+## While it runs
+
+- A run usually takes a few minutes. The last step waits for the new address to answer over HTTPS and can take up to 15 more. It prints no `waiting` event, so a quiet stream there is not a stuck run.
+- Leave the new address alone until the `summary` event: no `curl`, `dig`, or browser visit. A lookup before setup has created the record makes the computer remember that the name doesn't exist, for up to 30 minutes, and the person's first visit fails.
 
 ## Read the result
 
 - Events are one JSON object per line on stdout. A stream that ends without a `summary` event is unfinished.
-- Exit codes: 0 finished, 1 stopped at a step, 2 interrupted or timed out, 3 usage error (stdout is empty). A `step_failed` event carries four parts: what happened, why, what setup kept, and what to do. Pass the four parts on in order.
+- Exit codes: 0 finished, 1 stopped at a step, 2 interrupted or timed out, 3 usage error (stdout is empty). A `step_failed` event carries four parts: what happened, why, what setup kept, and what to do. Whenever a provider returned an error, it also carries a `detail` with the provider's status, its error code, and the failed request, such as `cloudflare: forbidden (status 403, code 10000) on GET /zones/<id>/dns_records`. Pass the four parts on in order, then the detail.
 - To resume, run `cairn new --resume <id>` (`cairn new status` lists the ids), or `--new` to start a different site.
 
 ## Hard rules
@@ -42,7 +58,7 @@ An unattended run still needs the person for the GitHub browser approvals. Start
 - Never print, log, or paste a sign-in link, a token, a code, or a key. Setup shows none in its events; do not go looking for one. One exception: when no browser opens, setup prints the setup tab's one-time link to stderr. Give that link to the person to open on this computer, and keep it out of any log or record.
 - Never create the Cloudflare grant, the GitHub App, or its installation for the person.
 - Never edit the plan's names after the person approved it, or run `--apply` on a plan they have not read.
-- On a failure, do not retry with different flags to get past it. Report the failure and the fix the event names.
+- On a failure, do not retry with different flags to get past it. Report the failure and the fix the event names. When that fix is a wait or a permission the person gives, tell the person, and when they have done it, run the same command again with the same flags.
 
 ## When setup finishes
 

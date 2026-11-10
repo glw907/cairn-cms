@@ -307,6 +307,11 @@ describe('the stand-in', () => {
       await expect(follow(page, { signInOrigin: SITE, addressReady: async () => false, siteWaitMs: 60_000 })).rejects.toThrow(/never answered/);
     });
 
+    it('fails when the site never answers over HTTPS, naming the host', async () => {
+      const page = new FakePage('dead', () => time, dir);
+      await expect(follow(page, { signInOrigin: SITE, addressReady: async () => true, siteAnswers: async () => false, siteWaitMs: 60_000 })).rejects.toThrow(/never answered over HTTPS/);
+    });
+
     it('still fails a dead tab at 2 minutes when no sign-in origin is given', async () => {
       const page = new FakePage('dead', () => time, dir);
       await expect(follow(page)).rejects.toBeInstanceOf(UnrecognisedPageError);

@@ -51,15 +51,15 @@ export const TAB_PAGES = {
 const WAITING = new Set(['wait', 'done']);
 
 /**
- * Whether the site answers over HTTPS. Setup sends the sign-in mail only after that, so the mail
- * is not looked for sooner.
+ * Whether the site answers over HTTPS with a 200 on its home page, the check setup's own HTTPS wait
+ * makes. Setup sends the sign-in mail only after that, so the mail is not looked for sooner.
  * @param {string} origin the site's origin
  * @returns {Promise<boolean>}
  */
 async function siteAnswersOverHttps(origin) {
   try {
     const response = await fetch(`${origin}/`, { signal: AbortSignal.timeout(5000), redirect: 'manual' });
-    return response.status < 500;
+    return response.status === 200;
   } catch {
     return false;
   }

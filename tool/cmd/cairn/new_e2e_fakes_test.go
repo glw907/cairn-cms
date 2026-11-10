@@ -217,7 +217,10 @@ func (w *e2eWorld) cloudflare(rw http.ResponseWriter, r *http.Request) {
 		writeJSON(rw, http.StatusNotFound, corpusBody(w.t, "cloudflare", "r2_bucket.name-check.404.json"))
 	case route == "GET /zones/*/dns_records":
 		if strings.HasPrefix(r.URL.Query().Get("name"), "taken.") {
-			writeJSON(rw, http.StatusOK, corpusBody(w.t, "cloudflare", "zone_dns_records.named.200.json"))
+			// An A record is what makes an address taken; the corpus fixture holds only mail records.
+			body := cfEmpty()
+			body["result"] = []any{map[string]any{"id": "taken-a", "type": "A", "name": r.URL.Query().Get("name"), "content": "192.0.2.1"}}
+			writeJSON(rw, http.StatusOK, body)
 			return
 		}
 		writeJSON(rw, http.StatusOK, corpusBody(w.t, "cloudflare", "zone_dns_records.none.200.json"))

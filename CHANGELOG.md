@@ -12,6 +12,14 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **`cairn new` no longer refuses a domain's bare address for its mail records.** The opening check
+  counts only A, AAAA, and CNAME records on an address, so an apex that holds an MX and an SPF TXT
+  passes, and a domain with live mail can host the site where its owner expects. An address with an A,
+  AAAA, or CNAME record or a Worker on it is refused as before. The three admin pages that described the
+  refusal say which records count.
+
+  Consumers must: nothing.
+
 - **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
 - **The admin docs describe `cairn new`.** `before-you-start`, `create-your-site`, `own-your-domain`, `setup-recovery`, `troubleshooting`, and `credentials` are rebuilt for the new setup, and four pages are new: `set-up-with-an-agent`, `deploys`, `suggested-plugins`, and the generated `setup-reference`. The agent page is also embedded in the `cairn` binary, and a test fails when the copy drifts.

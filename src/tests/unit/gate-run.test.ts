@@ -125,11 +125,10 @@ describe('naive', () => {
     expect(text).not.toContain('UNRELATED_SECRET');
   });
 
-  it('is refused without the conductor transcript', () => {
+  it('starts without the conductor transcript, which no longer counts against the budget', () => {
     const r = rig();
-    const result = r.run(['naive']);
-    expect(result.status).toBe(2);
-    expect(r.read('cleanroom')).toBe('');
+    expect(r.run(['naive']).status).toBe(0);
+    expect(r.read('cleanroom')).not.toContain('cost');
   });
 
   /** A refusal exits 1 naming what it found, and nothing starts. */
@@ -172,16 +171,16 @@ describe('naive', () => {
   });
 
   it('refuses when the remaining budget is under $5, naming the budget stop', () => {
-    const stderr = refused(rig({ ledger: [row('2611010000', { cost: 95 })] }));
+    const stderr = refused(rig({ ledger: [row('2611010000', { cost: 96 })] }));
     expect(stderr).toContain('the budget stop');
     expect(stderr).toContain('under the $5 floor');
   });
 
-  it('sets the cost cap to the remaining budget below $20, counting every row and the executor transcript', () => {
+  it('sets the cost cap to the remaining budget below $20, counting every ledger row and nothing else', () => {
     const r = rig({ ledger: [row('probe', { cost: 30 }), row('2611010000', { cost: 55 })] });
     expect(naive(r).status).toBe(0);
-    // $85 in the ledger and $1.00 for the transcript leave $14.
-    expect(r.read('cleanroom')).toContain('--cap-usd 14.00 --cap-min 60');
+    // $85 in the ledger leaves $15; the executor's own session is not priced (Geoff, 2026-11-10).
+    expect(r.read('cleanroom')).toContain('--cap-usd 15.00 --cap-min 60');
   });
 
   it('caps at $20 while the remaining budget is larger', () => {

@@ -61,23 +61,21 @@ pass, was dropped by Geoff on 2026-11-08.
   `~/Projects/initiatives/cairn-setup/plans/2026-11-09-setup-tooling-overnight-conductor-prompt.txt`. G3's design session (`cairn-cms-theme-garden-3-design`, session
   `5013bd5e`) prepares the design and waits for Geoff to attach. Theme-garden launches hold during pass 3's T3.5 dependency sweep.
 
-- **Pass 3 holds at the budget stop** (executor `cairn-cms-setup-tooling-3`, 2026-11-10). Six naive runs
-  ran ($1.88 of clean-room cost) and the executor's spend priced at $98.35, so `run-gate.sh naive` refuses
-  a seventh: "$100.69 spent leaves $-0.69 of $100". Nothing further runs, T3.4 to T3.6 included, until Geoff
-  rules. The test build on `gate` is engine `0.99.0-dev.1` and tool `2.0.0-dev.4` (`latest` and `next` never
-  moved). Four runs of the ten remain, but the dollar line, not the run count, is the limit.
-- The loop's lists are `~/Projects/initiatives/cairn-setup/research/proving/round-1.md` to `round-6.md`, each
-  with the friction the agent met, the flailing, the harness items, and the readings against the three speed
-  fixes. Round four reached GitHub, where setup created the repository and the App; no run has reached a
-  deploy, so the three speed fixes have no reading. Fixed and merged: the agent page's sandbox lines (no
-  `--yes`, `-y`, tag, `new`, or `cd`), the install-button name, the stand-in's `failed` line, `grade` finishing,
-  the sandbox stop (#224), the subdomain check (#225), the watcher, and the probe list. Open for Geoff:
-  #430 (setup refuses an apex that holds only mail records) and S-2's exclusion widening, which the sandbox
-  stop makes smaller; held-path rows (the proving skill's "a sixth naive run", the watcher's stop code).
-- Next: Geoff rules on the budget (the $100 line counts the executor's session at list price), on #430,
-  and on the held-path rows. Then round seven's naive run is the first test of `2.0.0-dev.4`'s subdomain fix,
-  and the scripted leg, the dependency sweep, and the rc.5 cut follow. A final PR carries `## Decisions`
-  (the clock resets, the process point) and the runbook, T3.6, which is not written.
+- **Pass 3 resumed on 2026-11-10 under Geoff's rulings** (executor `cairn-cms-setup-tooling-3`; Approval
+  Queue item `20261110T032922-1565189`, then chat). The $100 line counts only the clean room, every ledger
+  row, probe sessions included; the executor's session is no longer priced, and the ten-run cap stays, so
+  four naive runs remain. Setup's opening counts only A, AAAA, and CNAME records on an address (#430, closed).
+  S-2 stays narrow: rely on the sandbox stop and the docs, and revisit after round seven with its evidence.
+  The test build on `gate` is engine `0.99.0-dev.1` and tool `2.0.0-dev.4`; `latest` and `next` never moved.
+- **Order change (Geoff, 2026-11-10, in chat).** The scripted leg (T3.4) runs before round seven, on the next
+  snapshot (`2.0.0-dev.5`), because no naive run has passed the GitHub App install and the deploy, DNS and
+  HTTPS, and sign-in stages have never run live. Scripted runs loop, each fix going through one PR, a
+  whole-branch review, the conductor's merge, and a new snapshot, until one reaches an owner signed in on
+  `gate.carin-test.org` or stops yielding fixes. Then the four naive runs. A scripted run is outside the
+  ten-run cap, and its ledger rows count toward the $100.
+- The loop's lists are `~/Projects/initiatives/cairn-setup/research/proving/round-1.md` to `round-6.md`. No run
+  has reached a deploy, so the three speed fixes have no reading yet. The final PR carries `## Decisions` (the
+  clock reset, the process point, this reorder) and the runbook, T3.6, which is not written.
 
 ## Open decisions and watches
 

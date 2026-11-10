@@ -372,6 +372,18 @@ func TestAGivenSubdomainIsCheckedNotTheApexOfItsZone(t *testing.T) {
 	}
 }
 
+func TestABareDomainWhoseOnlyRecordsAreMailRecordsPasses(t *testing.T) {
+	w := newWorld(t)
+	w.cf.dns["carin-test-5.org"] = cfResult[[]providers.DNSRecord](t, "zone_dns_records.named.200.json")
+	res, err := w.run(context.Background())
+	if err != nil {
+		t.Fatalf("Run with an apex that holds only MX and TXT records: %v", err)
+	}
+	if res.Record.Setup.Address != "carin-test-5.org" {
+		t.Errorf("address = %q, want the bare domain", res.Record.Setup.Address)
+	}
+}
+
 func TestAGivenSubdomainWithRecordsOfItsOwnIsStillRefused(t *testing.T) {
 	w := newWorld(t)
 	w.cf.dns["blog.carin-test-5.org"] = []providers.DNSRecord{{Name: "blog.carin-test-5.org", Type: "A"}}
@@ -395,8 +407,8 @@ func TestCloudflareChecksStopBeforeAnyProviderWrite(t *testing.T) {
 			w.cf.active = nil
 			w.cf.all = cfResult[[]providers.Zone](t, "zones.pending.200.json")
 		}, ReasonZonePending},
-		{"apex has records", func(w *world) {
-			w.cf.dns["carin-test-5.org"] = cfResult[[]providers.DNSRecord](t, "zone_dns_records.named.200.json")
+		{"apex has an A record", func(w *world) {
+			w.cf.dns["carin-test-5.org"] = []providers.DNSRecord{{Name: "carin-test-5.org", Type: "A"}}
 		}, ReasonAddressRecords},
 		{"www has records", func(w *world) {
 			w.cf.dns["www.carin-test-5.org"] = []providers.DNSRecord{{Name: "www.carin-test-5.org", Type: "CNAME"}}

@@ -79,7 +79,7 @@ When your account has several Cloudflare accounts or several active domains, set
 When the approvals finish, the tab says **Approvals complete** and the terminal shows the screen titled **Review the settings**. It lists the domain, the sign-in email, the four names, the theme, the AI-crawler choice, and the deploys. Each row carries a short reason, such as *based on your site name*. Three rows need a note:
 
 - **Sign-in email.** It comes from your Cloudflare account. Press E to change it. The admin sends your sign-in links there.
-- **Address.** It defaults to the bare domain and `www`. Press A to use a subdomain of your domain instead, such as `blog.example.com`, which gets no `www`. Setup refuses an address that already has DNS records or a Worker on it, and never changes a record it didn't create.
+- **Address.** It defaults to the bare domain and `www`. Press A to use a subdomain of your domain instead, such as `blog.example.com`, which gets no `www`. Setup refuses an address that already has an A, AAAA, or CNAME record or a Worker on it, and never changes a record it didn't create. Mail records on the address don't count.
 - **Deploys.** The row reads *GitHub Actions, each time you publish*, with the free limit. The repository, Worker, database, and bucket names are fixed, because the repository already exists.
 
 Press Enter to start. That's the only confirmation setup asks for. Nothing is created in Cloudflare until you do.

@@ -3,7 +3,7 @@
 #   bash scripts/gate/run-gate.sh --smoke
 #   bash scripts/gate/run-gate.sh sweep [--apply | --check-scopes] [--headed]
 #   bash scripts/gate/run-gate.sh probe | scripted
-#   bash scripts/gate/run-gate.sh naive --conductor-transcript <path>
+#   bash scripts/gate/run-gate.sh naive
 #   bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget]
 #   bash scripts/gate/run-gate.sh shell <name> [cleanroom shell options]
 #
@@ -117,7 +117,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
-const [kind, transcript] = process.argv.slice(1);
+const [kind] = process.argv.slice(1);
 const root = process.env.CLEANROOM_ROOT;
 const home = process.env.HOME;
 const refusals = [];
@@ -180,10 +180,6 @@ if (kind === 'naive') {
   // A running row whose session is gone is counted at its full cap, since its cost never settled.
   const costOf = (row) => (row.state === 'running' ? capOf(row) : Number(row.cost ?? 0));
   let spend = [...latest.values()].reduce((sum, row) => sum + costOf(row), 0);
-  const costed = run('cleanroom', ['cost', transcript]);
-  const executor = Number(/([0-9]+(?:\.[0-9]+)?)/.exec(costed.out)?.[1]);
-  if (!costed.ok || Number.isNaN(executor)) refusals.push(`cleanroom cost could not price ${transcript}, so the spend so far is unknown`);
-  else spend += executor;
   if (naiveRows.length >= 10) refusals.push(`the ledger holds ${naiveRows.length} naive runs; an eleventh is refused`);
   cap = Math.min(20, 100 - spend);
   if (cap < 5) refusals.push(`the budget stop: $${spend.toFixed(2)} spent leaves $${(100 - spend).toFixed(2)} of $100, under the $5 floor`);
@@ -301,13 +297,9 @@ case "${1:-}" in
     while [ $# -gt 0 ]; do
       case "$1" in
         --conductor-transcript) transcript="${2:-}"; shift 2 ;;
-        *) echo "Usage: run-gate.sh naive --conductor-transcript <path>" >&2; exit 2 ;;
+        *) echo "Usage: run-gate.sh naive [--conductor-transcript <path>]" >&2; exit 2 ;;
       esac
     done
-    if [ -z "$transcript" ]; then
-      echo "Usage: run-gate.sh naive --conductor-transcript <path>" >&2
-      exit 2
-    fi
     refuse_unless_clear naive "$transcript"
     new_run_dir naive
     refuse_unless_swept

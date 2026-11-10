@@ -109,7 +109,7 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 			defer func() { _ = resp.Body.Close() }()
 			return resp.StatusCode, resp.Header.Get("Location"), nil
 		},
-		Authority: probe.LookupAuthoritative,
+		Authority: siteAuthority(probe),
 		Listen:    setup.ListenLoopback,
 
 		Vault: vault,
@@ -131,6 +131,11 @@ func productionConfig(d deps, in newInput, view setup.View, emit func(setup.Even
 		Now:      d.now,
 	}, nil
 }
+
+// siteAuthority is how the domain step asks a zone's nameserver for a host: the probe's direct
+// lookup. A variable so the end-to-end build can replace it, since its fake zones name real
+// nameservers and a real lookup would wait out the HTTPS limit.
+var siteAuthority = func(p *providers.Probe) providers.AuthorityLookup { return p.LookupAuthoritative }
 
 // tagFetch is the template fetch of a new run: the engine's template at the dist-tag tag.
 func tagFetch(d deps, tag string) func(ctx context.Context) (setup.Template, error) {

@@ -434,7 +434,7 @@ func (r *run) awaitAuthority(ctx context.Context, deadline time.Time) error {
 			if len(ips) > 0 && err == nil {
 				break
 			}
-			if dnsErr, ok := errors.AsType[*net.DNSError](err); err != nil && !(ok && dnsErr.IsNotFound) {
+			if dnsErr, ok := errors.AsType[*net.DNSError](err); err != nil && (!ok || !dnsErr.IsNotFound) {
 				return nil
 			}
 			if !r.cfg.Now().Before(deadline) {

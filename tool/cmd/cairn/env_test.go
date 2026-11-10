@@ -225,12 +225,6 @@ func TestOSGetenvOnlyInEnvGo(t *testing.T) {
 var _ secrets.Provider = fakeProvider{}
 var _ secrets.Provider = fakeFailingProvider{}
 
-// TestCredentialVariableNamesAreSpelledOnlyInEnvGo asserts credentialVars is the only place a
-// CAIRN_CF_ or CAIRN_GH_ variable name is spelled. It is scoped narrowly, per the 2026-09-21
-// ratification: non-test .go files under cmd/cairn only (a bare CAIRN_ grep also matches
-// store/paths.go's CAIRN_STATE_DIR and providers/cloudflare.go's CAIRN_CLOUDFLARE_API_BASE,
-// neither a credential), the CAIRN_CF_/CAIRN_GH_ prefixes only, and env.go and messages.go
-// (created by Task 19c-ii, and exempted here by name in advance) are the two allowed files.
 // TestSetupTokenTrimsAndRefusesInnerWhitespace pins the setup token's reading: surrounding
 // whitespace is trimmed, a blank value is unset, and a value with whitespace inside is refused
 // by the variable's name without the value. The scrub holds the trimmed value either way.
@@ -268,6 +262,12 @@ func TestSetupTokenTrimsAndRefusesInnerWhitespace(t *testing.T) {
 	}
 }
 
+// TestCredentialVariableNamesAreSpelledOnlyInEnvGo asserts credentialVars is the only place a
+// CAIRN_CF_ or CAIRN_GH_ variable name is spelled. It is scoped narrowly, per the 2026-09-21
+// ratification: non-test .go files under cmd/cairn only (a bare CAIRN_ grep also matches
+// store/paths.go's CAIRN_STATE_DIR and providers/cloudflare.go's CAIRN_CLOUDFLARE_API_BASE,
+// neither a credential), the CAIRN_CF_/CAIRN_GH_ prefixes only, and env.go and messages.go
+// (created by Task 19c-ii, and exempted here by name in advance) are the two allowed files.
 func TestCredentialVariableNamesAreSpelledOnlyInEnvGo(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	if err != nil {

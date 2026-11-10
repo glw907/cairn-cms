@@ -54,6 +54,10 @@ pass, was dropped by Geoff on 2026-11-08.
   Item 8, 2026-11-09 13:3x: the one open PR is #208 (theme-garden-2), and none of its files is
   under pass 2's paths (`scripts/gate/`, `tool/`, `plugins/cairn/`, the two held skills,
   `gate-table.json`, `gate-publish.spec.ts`, `set-up-with-an-agent.md`); no other live branch.
+- Pass 2 (`setup-tooling-2`, executor `cairn-cms-setup-tooling-2`, session `3db688`): PR #210 holds
+  T2.0 to T2.7, CI green on its earlier heads; the close review and a security re-read are running.
+  The security read's one open design question (the setup token stored as the deploy secret) is with
+  the conductor for packet B.
 
 ## Open decisions and watches
 

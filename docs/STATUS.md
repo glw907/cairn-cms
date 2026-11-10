@@ -67,12 +67,48 @@ pass, was dropped by Geoff on 2026-11-08.
   four naive runs remain. Setup's opening counts only A, AAAA, and CNAME records on an address (#430, closed).
   S-2 stays narrow: rely on the sandbox stop and the docs, and revisit after round seven with its evidence.
   The test build on `gate` is engine `0.99.0-dev.1` and tool `2.0.0-dev.4`; `latest` and `next` never moved.
-- **Order change (Geoff, 2026-11-10, in chat).** The scripted leg (T3.4) runs before round seven, on the next
-  snapshot (`2.0.0-dev.5`), because no naive run has passed the GitHub App install and the deploy, DNS and
-  HTTPS, and sign-in stages have never run live. Scripted runs loop, each fix going through one PR, a
-  whole-branch review, the conductor's merge, and a new snapshot, until one reaches an owner signed in on
-  `gate.carin-test.org` or stops yielding fixes. Then the four naive runs. A scripted run is outside the
-  ten-run cap, and its ledger rows count toward the $100.
+- **Order change (Geoff, 2026-11-10, in chat).** The goal is setup working end to end with no blockers, as
+  fast as possible, and only then a naive agent on the working system. So the scripted leg (T3.4) runs
+  first and loops: each failed run's fixes, and what can be seen coming in the stages after it, go in one PR
+  with a whole-branch review and green CI, the conductor merging promptly. Naive runs wait until a scripted
+  run gets an owner signed in on `gate.carin-test.org`; there is no "stops yielding fixes" exit, and a stall
+  that cannot be fixed goes to the conductor. A scripted run is outside the ten-run cap and its ledger rows
+  count toward the $100 (clean room only). Local builds are allowed when a snapshot slows the loop
+  (`run-gate.sh scripted --cairn-bin tool/cairn`, merged in #228, recorded as a local build and never the
+  release gate's scripted row); an engine-side fix gets a proposed local equivalent first, then one
+  published snapshot confirms at the end. The leg targets `gate.carin-test.org` only, never the bare
+  `carin-test.org` (a record on it or `www` is a standing stop), and nothing is confirmed until the summary
+  shows the subdomain.
+- **Scripted loop, checkpointed 2026-11-10 09:20 AKST (clean state, nothing live, sweep reads 0).** Three
+  runs so far, all from a local build of `main` at `f721cafab`, no clean-room spend beyond a few cents:
+  1. `2611101759` died at the first screen: the interactive `cairn new` rejects `--host` and `--zone` (agent
+     lane only, `--plan` required), and the driver did not notice the prompt returning. Both were mine, from #228.
+  2. `2611101811` was ended by me seconds in, because the first summary answer sent Enter blindly after the
+     edit key and could have confirmed the bare domain.
+  3. `2611101813` reached `cairn new` and stopped at once: "setup couldn't download the site template from
+     npm: the tarball carries no template". The tool reads the dist-tag from `npm_config_tag` (default
+     `latest`, engine 0.98.0, which has no `template/`); npm exports it to the launcher but a local binary
+     gets nothing, and `cleanroom shell` drops it. The `gate` engine tarball, 0.99.0-dev.1, does carry
+     `template/`. No run has reached the TUI yet, so the summary, browser, deploy, HTTPS, and sign-in
+     stages are still unproved live.
+- **Fixed and unmerged: branch `setup-tooling-r11`, no PR yet** (harness only, `scripts/gate/scripted.mjs`
+  and `gate-scripted.test.ts`, 88 gate tests green): no address flags; the domain screen picks
+  `carin-test.org` by moving the selection; the address is edited in stages (`a`, then Ctrl+U, the host,
+  Enter only once the pane shows the edit open, then Enter only at a summary that shows `gate.carin-test.org`);
+  the bare domain returning after the edit fails the leg, and a bare summary is never sent Enter; a screen
+  unchanged 60 seconds after its answer fails; the prompt returning with the command above it fails with the
+  pane; and the shell gets `--env npm_config_tag=gate`.
+- **Exact next step.** Rebuild nothing: `tool/cairn` is the build of `main` at `f721cafab` (`make -C tool
+  build` again if `main` moved). From the worktree on `setup-tooling-r11`: `bash scripts/gate/run-gate.sh
+  sweep`; `cleanroom stop probe` if it refuses; then `bash scripts/gate/run-gate.sh scripted --cairn-bin
+  tool/cairn`, and a Monitor on `<run dir>/scripted.jsonl` and `stand-in.jsonl`. When it ends:
+  `cleanroom stop <id>`, `grade <run dir> --end stall`, sweep, and send the conductor the outcome and where it
+  stopped. When a run shows fixes, one PR folds everything it showed and what is visible ahead, with a
+  whole-branch `standards:diff-reviewer`, CI, and the conductor's merge; the branch's run is the PR's
+  evidence. Then one published snapshot confirms (`gh workflow run tool.yml --ref main -f
+  snapshot=2.0.0-dev.5 -R glw907/cairn-cms`) before round seven.
+- **Clock.** T3.3's clock (reset once, 645 minutes) stands at 476 minutes at 09:20 AKST; it is stopped here
+  for the session restart and the file removed. The final PR's `## Decisions` records the reset.
 - The loop's lists are `~/Projects/initiatives/cairn-setup/research/proving/round-1.md` to `round-6.md`. No run
   has reached a deploy, so the three speed fixes have no reading yet. The final PR carries `## Decisions` (the
   clock reset, the process point, this reorder) and the runbook, T3.6, which is not written.

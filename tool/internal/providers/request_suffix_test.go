@@ -54,3 +54,19 @@ func TestACloudflareErrorPathKeepsEscapedSegments(t *testing.T) {
 		t.Errorf("the error text %q holds a raw escape byte", err.Error())
 	}
 }
+
+// TestEscapeRefKeepsSlashes asserts a ref keeps its slashes and escapes anything else, so a branch
+// named feature/x reaches the commits route as GitHub reads it.
+func TestEscapeRefKeepsSlashes(t *testing.T) {
+	for ref, want := range map[string]string{
+		"main":        "main",
+		"feature/x":   "feature/x",
+		"fix/a b":     "fix/a%20b",
+		"release?x=1": "release%3Fx=1",
+		"":            "",
+	} {
+		if got := escapeRef(ref); got != want {
+			t.Errorf("escapeRef(%q) = %q, want %q", ref, got, want)
+		}
+	}
+}

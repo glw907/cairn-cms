@@ -604,7 +604,7 @@ export async function grade({ runDir, deps, end }) {
   else if (stateName === 'stopped:time') outcome = { result: 'fail', reason: 'time', detail: 'the time cap stopped the session' };
   else if (end === 'stall') outcome = { result: 'fail', reason: 'stall', detail: 'the conductor ended the run as a stall' };
   else if (end === 'budget') outcome = { result: 'fail', reason: 'budget', detail: 'the loop budget ended the run' };
-  else if (scriptedFailure && !(standInFailed && !signedIn.ok)) outcome = { result: 'fail', reason: 'other', detail: `the scripted leg failed at "${scriptedFailure.screen}": ${scriptedFailure.reason}` };
+  else if (scriptedFailure) outcome = { result: 'fail', reason: 'other', detail: `the scripted leg failed at "${scriptedFailure.screen}": ${scriptedFailure.reason}` };
   else if (!versions.ok && candidate.engine && candidate.tool && mismatches.length > 0) outcome = { result: 'fail', reason: 'other', detail: `wrong candidate: ${mismatches.join('; ')}` };
   else if (standInFailed && !signedIn.ok) outcome = { result: 'fail', reason: 'page', detail: 'the stand-in failed a page; see its controls file' };
   else if (stateName.startsWith('stopped:')) outcome = { result: 'fail', reason: 'other', detail: `the watcher ended the run as ${stateName}` };

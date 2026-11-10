@@ -104,7 +104,7 @@ func (gh *GitHub) HeadSHA(ctx context.Context, owner, repo, ref string) (string,
 	var commit struct {
 		SHA string `json:"sha"`
 	}
-	path := fmt.Sprintf("/repos/%s/%s/commits/%s", owner, repo, ref)
+	path := fmt.Sprintf("/repos/%s/%s/commits/%s", url.PathEscape(owner), url.PathEscape(repo), url.PathEscape(ref))
 	if err := gh.getJSON(ctx, path, &commit); err != nil {
 		return "", err
 	}
@@ -118,7 +118,7 @@ func (gh *GitHub) FileAtRef(ctx context.Context, owner, repo, path, ref string) 
 		Content  string `json:"content"`
 		Encoding string `json:"encoding"`
 	}
-	apiPath := fmt.Sprintf("/repos/%s/%s/contents/%s?ref=%s", owner, repo, path, url.QueryEscape(ref))
+	apiPath := fmt.Sprintf("/repos/%s/%s/contents/%s?ref=%s", url.PathEscape(owner), url.PathEscape(repo), path, url.QueryEscape(ref))
 	if err := gh.getJSON(ctx, apiPath, &result); err != nil {
 		return nil, err
 	}

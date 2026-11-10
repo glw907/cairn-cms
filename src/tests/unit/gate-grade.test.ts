@@ -234,7 +234,22 @@ describe('the end-state checks and the outcome', () => {
     expect(record.outcome.detail).toContain('value scan');
     const md = await readFile(path.join(run.runDir, 'run-record.md'), 'utf8');
     expect(md).not.toContain(SENTENCE_MISSED);
+    const json = await readFile(path.join(run.runDir, 'run-record.json'), 'utf8');
+    expect(json + md).not.toContain(path.join(run.runDir, 'run-record.json'));
     expect(await readdir(run.provingDir).catch(() => [])).toEqual([]);
+    await expect(stat(path.join(run.home, '.local', 'share', 'keyrings'))).rejects.toThrow();
+  });
+
+  it('deletes the keyrings even when the scan throws', async () => {
+    const run = await makeRun();
+    const deps = {
+      ...run.deps,
+      cleanroom: async (args: string[]) => {
+        if (args[0] === 'scan') throw new Error('scan crashed');
+        return run.deps.cleanroom(args);
+      },
+    };
+    await expect(grade({ runDir: run.runDir, deps })).rejects.toThrow('scan crashed');
     await expect(stat(path.join(run.home, '.local', 'share', 'keyrings'))).rejects.toThrow();
   });
 });

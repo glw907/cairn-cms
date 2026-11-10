@@ -612,24 +612,27 @@ export async function grade({ runDir, deps, end }) {
   await writeFile(mdFile, markdown, { mode: 0o600 });
 
   // The scan: a handed-in value in either file fails the record, which is then rewritten without it.
-  const scan = await cleanroom(['scan', name, jsonFile, mdFile]);
   /** @type {any} */
   let written = record;
-  if (scan.code !== 0) {
-    written = {
-      id,
-      leg: record.leg,
-      commit: record.commit,
-      outcome: { result: 'fail', reason: 'other', detail: `the value scan matched: ${scan.stdout.trim().slice(0, 200)}` },
-      scan: { ok: false, evidence: scan.stdout.trim().slice(0, 200) },
-    };
-    await writeFile(jsonFile, `${JSON.stringify(written, null, 2)}\n`, { mode: 0o600 });
-    await writeFile(mdFile, renderMarkdown(written), { mode: 0o600 });
-  } else {
-    await mkdir(provingDir, { recursive: true, mode: 0o700 });
-    await copyFile(jsonFile, path.join(provingDir, `${id}.json`));
+  try {
+    const scan = await cleanroom(['scan', name, jsonFile, mdFile]);
+    if (scan.code !== 0) {
+      written = {
+        id,
+        leg: record.leg,
+        commit: record.commit,
+        outcome: { result: 'fail', reason: 'other', detail: `the value scan matched (exit ${scan.code})` },
+        scan: { ok: false, evidence: `scan exit ${scan.code}` },
+      };
+      await writeFile(jsonFile, `${JSON.stringify(written, null, 2)}\n`, { mode: 0o600 });
+      await writeFile(mdFile, renderMarkdown(written), { mode: 0o600 });
+    } else {
+      await mkdir(provingDir, { recursive: true, mode: 0o700 });
+      await copyFile(jsonFile, path.join(provingDir, `${id}.json`));
+    }
+  } finally {
+    await rm(path.join(home, '.local', 'share', 'keyrings'), { recursive: true, force: true });
   }
-  await rm(path.join(home, '.local', 'share', 'keyrings'), { recursive: true, force: true });
   return written;
 }
 

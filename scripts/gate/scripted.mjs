@@ -44,6 +44,8 @@ export function commandFor(env) {
  * screen marks its selection with a leading `>` and lists one row per line. A screen with several
  * choices starts with no selection and no marker, so the first Down selects its first row, and the
  * rows begin on the line after the one that counts them ("5 domains on your Cloudflare account").
+ * Only the lines below that count are rows: on the published path npm prints `> create-cairn-site`
+ * above the screen, and read as a selection it sent run 2611102143 past the end of the list.
  * @param {string} pane the captured pane text
  * @param {string} target the row's text
  * @param {string} step the screen's name, for the failure
@@ -52,9 +54,10 @@ export function commandFor(env) {
  */
 export function chooseRow(pane, target, step) {
   const lines = pane.split('\n').map((l) => l.trim());
-  const marked = lines.findIndex((l) => l.startsWith('> '));
-  const wanted = lines.findIndex((l) => l.replace(/^> /, '') === target);
-  const count = lines.findIndex((l) => /^\d+ (domains?|accounts?)\b/.test(l));
+  const count = lines.findLastIndex((l) => /^\d+ (domains?|accounts?)\b/.test(l));
+  const rowsFrom = count === -1 ? 0 : count + 1;
+  const marked = lines.findIndex((l, i) => i >= rowsFrom && l.startsWith('> '));
+  const wanted = lines.findIndex((l, i) => i >= rowsFrom && l.replace(/^> /, '') === target);
   if (wanted === -1 || (marked === -1 && count === -1)) {
     throw new ScriptedError(`the ${step} screen offers no "${target}" row to choose:\n${pane.trim()}`, step);
   }
@@ -62,6 +65,18 @@ export function chooseRow(pane, target, step) {
   const selected = marked === -1 ? count : marked;
   const keys = Array.from({ length: Math.abs(wanted - selected) }, () => ({ key: wanted > selected ? 'Down' : 'Up' }));
   return [...keys, ...enter];
+}
+
+/**
+ * Whether a chooser shows a selected row, looking only below the screen's title so that a `>` line
+ * above it, such as npm's banner, is never read as one.
+ * @param {string} pane the captured pane text
+ * @param {RegExp} titlePattern the chooser's title
+ */
+export function hasSelection(pane, titlePattern) {
+  const lines = pane.split('\n').map((l) => l.trim());
+  const from = lines.findLastIndex((l) => titlePattern.test(l));
+  return lines.some((l, i) => i > from && l.startsWith('> '));
 }
 /** How long the whole leg may take. */
 export const LIMIT_MS = 20 * 60 * 1000;
@@ -120,7 +135,7 @@ export const SCREENS = [
   { name: 'theme', test: (p) => /How your site looks to readers/.test(p), answer: () => enter },
   // A chooser with several accounts shows no selection until the first arrow key, and Enter alone
   // does nothing there, so the first Down selects the first account.
-  { name: 'account', test: (p) => /Choose an account/.test(p), answer: (_answers, pane) => (/^\s*> /m.test(pane) ? enter : [{ key: 'Down' }, ...enter]) },
+  { name: 'account', test: (p) => /Choose an account/.test(p), answer: (_answers, pane) => (hasSelection(pane, /Choose an account/) ? enter : [{ key: 'Down' }, ...enter]) },
   { name: 'domain', test: (p) => /Choose a domain/.test(p), answer: (_answers, pane) => chooseRow(pane, ZONE, 'domain') },
   { name: 'resume', test: (p) => /Resume setup/.test(p), answer: () => enter },
   { name: 'welcome', test: (p) => /Set up a cairn site/.test(p), answer: () => enter },
@@ -161,11 +176,11 @@ export class ScriptedError extends Error {
 }
 
 /**
- * The first line of a pane that has text.
+ * The first line of a pane that has text, leaving out npm's `> ` banner lines above the screen.
  * @param {string} pane the captured pane text
  */
 function title(pane) {
-  return pane.split('\n').map((l) => l.trim()).find((l) => l !== '') ?? '';
+  return pane.split('\n').map((l) => l.trim()).find((l) => l !== '' && !l.startsWith('> ')) ?? '';
 }
 
 /**
@@ -305,6 +320,11 @@ export async function runScripted({ runDir, env, deps }) {
       }
       await deps.sleep(POLL_MS);
     }
+  } catch (error) {
+    // Every end of the leg is in the log, so a reader of scripted.jsonl learns why it stopped.
+    const reason = (error instanceof Error ? error.message : String(error)).split('\n')[0];
+    await deps.record({ at: new Date(deps.now()).toISOString(), screen: reached, action: 'failed', reason });
+    throw error;
   } finally {
     standIn.kill();
   }

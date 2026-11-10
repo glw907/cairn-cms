@@ -183,6 +183,14 @@ describe('scripted leg: the target', () => {
     expect(() => chooseRow('Choose a domain\n\n  alpha.example.org', 'alpha.example.org', 'domain')).toThrow(/offers no "alpha.example.org" row/);
   });
 
+  it('answers the account screen with a Down first when it shows no selection', () => {
+    const account = SCREENS.find((screen) => screen.name === 'account');
+    const answers = { email: OWNER, name: 'Cairn gate', command: START };
+    const blank = 'Choose an account\n\nAccount\n2 accounts on your Cloudflare login\n  First\n  Second\n\n↑↓ choose';
+    expect(account?.answer?.(answers, blank)).toEqual([{ key: 'Down' }, { key: 'Enter' }]);
+    expect(account?.answer?.(answers, blank.replace('  First', '> First'))).toEqual([{ key: 'Enter' }]);
+  });
+
   it('knows the screen while a long command wraps across lines', () => {
     const command = '/var/tmp/cleanroom/2611091430/cairn new';
     const wrapped = 'owner@cleanroom:~$ /var/tmp/cleanroom/2611091430/cairn\nnew';

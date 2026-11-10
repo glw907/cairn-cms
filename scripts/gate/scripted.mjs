@@ -118,7 +118,9 @@ export const SCREENS = [
   { name: 'crawlers', test: (p) => /Choose whether AI companies/.test(p), answer: () => enter },
   { name: 'name', test: (p) => /Shown at the top of every page/.test(p), answer: ({ name }) => [{ type: name }, ...enter] },
   { name: 'theme', test: (p) => /How your site looks to readers/.test(p), answer: () => enter },
-  { name: 'account', test: (p) => /Choose an account/.test(p), answer: () => enter },
+  // A chooser with several accounts shows no selection until the first arrow key, and Enter alone
+  // does nothing there, so the first Down selects the first account.
+  { name: 'account', test: (p) => /Choose an account/.test(p), answer: (_answers, pane) => (/^\s*> /m.test(pane) ? enter : [{ key: 'Down' }, ...enter]) },
   { name: 'domain', test: (p) => /Choose a domain/.test(p), answer: (_answers, pane) => chooseRow(pane, ZONE, 'domain') },
   { name: 'resume', test: (p) => /Resume setup/.test(p), answer: () => enter },
   { name: 'welcome', test: (p) => /Set up a cairn site/.test(p), answer: () => enter },

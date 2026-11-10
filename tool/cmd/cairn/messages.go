@@ -736,6 +736,17 @@ func newConflictError(first, second string) error {
 	return translated(fmt.Errorf(tmplNewConflict, first, second))
 }
 
+// tmplNewSandboxed is the refusal of a setup that runs inside a sandbox. Setup serves its approval
+// page on a local port, and a sandboxed command's port is private to the sandbox, so the owner's
+// browser could never reach the page.
+const tmplNewSandboxed = "cairn: this call runs inside a sandbox, where the approval page setup serves can't be reached from the owner's browser.\n" +
+	"Run it as one bare call outside the sandbox: no option before the package name, no version or tag, and no `cd`, pipe, or redirect in the call. Or ask the owner to exclude the command from the sandbox"
+
+// newSandboxedError renders tmplNewSandboxed.
+func newSandboxedError() error {
+	return translated(errors.New(tmplNewSandboxed))
+}
+
 // tmplNewBadPosture is the refusal of a --posture outside the two values setup writes.
 const tmplNewBadPosture = "cairn: --posture takes decline or invite, not %q.\nRun `cairn new --help` for the flags"
 

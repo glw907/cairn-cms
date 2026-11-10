@@ -23,6 +23,8 @@ When `cairn` isn't installed, run `npx create-cairn-site` followed by the flags.
 
 Run that call from an empty folder, and never from inside a clone of the cairn-cms repository. Change to the folder in a separate call first, since a `cd` in the same call as `npx` keeps the whole call sandboxed. npx matches the package name against the local project before it fetches anything, and a clone holds a package of the same name that isn't installed, so the call fails at once with `command not found`.
 
+A call that still runs inside the sandbox makes `--plan`, `--apply`, and `--resume` stop at once with a message that says so, before they serve the approval tab. A dry run still runs. Read the message, and run the call again as one bare call outside the sandbox.
+
 ## Use a Cloudflare token for an unattended run
 
 An owner who runs setup from CI, or who doesn't want the Cloudflare browser approval, can put a Cloudflare API token in the `CAIRN_CF_SETUP_TOKEN` environment variable. Set it in the environment only, because there is no flag for it. Setup trims spaces and line breaks around the value and refuses one with a space or line break inside. With it set when a setup starts, setup skips the first approval and uses the token for every Cloudflare call. The GitHub approvals still need the owner's browser.
@@ -65,7 +67,7 @@ Give the flags only for the choices that apply:
 
 - `--account` names the Cloudflare account, by id, when the sign-in lists several.
 - `--zone` names the Cloudflare domain to serve the site from, when the account has several.
-- `--host` sets the site's address: the zone itself, or a subdomain of it.
+- `--host` sets the site's address: the zone itself, or a subdomain of it. A subdomain doesn't answer the zone, so give `--zone` with it, as in `--host blog.example.com --zone example.com`, when the account has several domains.
 - `--site-theme` names the theme, when the template offers several.
 
 An account or domain that no flag answered stays open. The call exits 0 and its stream has no `summary` event. The plan lists the options, and it lists no domains while the account is open, so give `--account` with `--plan`. A theme that no flag answered is a usage error, because setup asks for it before it writes a record.

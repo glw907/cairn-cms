@@ -8,7 +8,7 @@ short how-to posts, and one post that shows every markdown element and each bloc
 ships with the site, so no page loads a picture from another host. The showcase keeps its own fixtures.
 The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/`.
 
-- **The release gate is rebuilt around three legs, and the setup docs gain the token option.** The agent page and the `cairn-setting-up-a-site` plugin skill say how to run `cairn` as one bare background command and how `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval. They also say to run `npx create-cairn-site` with no npx option such as `--yes` in front of the name, no version or tag on it, and no `new` after it, since an option or a tag can keep the call inside the sandbox and the launcher already runs `cairn new`. The rulings ledger records the verdict.
+- **The release gate is rebuilt around three legs, and the setup docs gain the token option.** The agent page and the `cairn-setting-up-a-site` plugin skill say how to run `cairn` as one bare background command and how `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval. They also say to run `npx create-cairn-site` with no npx option such as `--yes` in front of the name, no version or tag on it, and no `new` after it, since an option or a tag can keep the call inside the sandbox and the launcher already runs `cairn new`. `cairn new --plan`, `--apply`, and `--resume` now stop at once, with a message that says why, when the call runs inside Claude Code's sandbox, where the approval tab can't be reached. The rulings ledger records the verdict.
 
   Consumers must: nothing.
 

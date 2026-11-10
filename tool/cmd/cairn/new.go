@@ -103,6 +103,17 @@ func newTag(c *cobra.Command, flag string, env func(string) string) string {
 	return flag
 }
 
+// inSandbox reports whether the call runs inside Claude Code's sandbox, which sets SANDBOX_RUNTIME
+// for every sandboxed command and for no excluded one (probed 2026-11-09, Claude Code 2.1.319).
+//
+// WATCH: Claude Code's documentation does not name SANDBOX_RUNTIME; this reads a marker that was
+// observed, and a public bug report (claudeissues.com 35986) saw it set whenever commands are wrapped.
+// If Claude Code renames or drops it, the refusal quietly stops firing and a sandboxed run reaches the
+// unreachable approval tab as before. Nothing else was found that exports it.
+func inSandbox(env func(string) string) bool {
+	return env("SANDBOX_RUNTIME") != ""
+}
+
 // validate refuses a flag combination before anything runs, naming the flags at fault.
 func (f newFlags) validate(c *cobra.Command) error {
 	set := func(name string) bool { return c.Flags().Changed(name) }
@@ -162,10 +173,16 @@ func runNew(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 	f.tag = newTag(cmd, f.tag, d.env)
 	for _, m := range newModeFlags {
 		if cmd.Flags().Changed(m) {
+			if m != "dry-run" && inSandbox(d.env) {
+				return newSandboxedError()
+			}
 			return runAgent(cmd, d, f, m)
 		}
 	}
 	if d.interactive != nil && d.interactive() {
+		if inSandbox(d.env) {
+			return newSandboxedError()
+		}
 		for _, a := range newAnswerFlags {
 			if cmd.Flags().Changed(a) {
 				return newRequiresError("--plan", "--"+a)

@@ -1608,7 +1608,7 @@ func TestAProviderStopIsWordedByWhatTheProviderSaid(t *testing.T) {
 	if f.Reason != ReasonProvider || f.Detail != wantDetail {
 		t.Errorf("failure = %+v, want the provider reason and detail %q", f, wantDetail)
 	}
-	if want := "Cloudflare refused a request: the credential setup used lacks a permission it needs."; f.Happened != want {
+	if want := "Cloudflare refused a request because setup's credential is missing a permission."; f.Happened != want {
 		t.Errorf("Happened = %q, want %q", f.Happened, want)
 	}
 	if !strings.Contains(f.Do, "approve every permission the Cloudflare page lists") || strings.Contains(f.Do, "internet") {
@@ -1631,14 +1631,24 @@ func TestProviderStopByStatus(t *testing.T) {
 		token        bool
 		happened, do string
 	}{
-		{"401 approval", 401, false, "Acme refused a request: the credential setup used lacks a permission it needs.", "Run cairn new again, and approve every permission the Cloudflare page lists."},
-		{"403 token", 403, true, "Acme refused a request: the credential setup used lacks a permission it needs.", "Give the token every permission that `cairn help agents` lists, and then run cairn new again."},
+		{"401 approval", 401, false, "Acme didn't accept setup's credential.", "Run cairn new again, and approve every permission the Acme page lists."},
+		{"403 approval", 403, false, "Acme refused a request because setup's credential is missing a permission.", "Run cairn new again, and approve every permission the Acme page lists."},
+		{"403 token", 403, true, "Acme refused a request because setup's credential is missing a permission.", "Run cairn new again, and approve every permission the Acme page lists."},
+		{"401 Cloudflare token", 401, true, "Cloudflare didn't accept setup's credential.", "Check that the token in CAIRN_CF_SETUP_TOKEN is valid and hasn't expired, and then run cairn new again."},
+		{"403 Cloudflare token", 403, true, "Cloudflare refused a request because setup's credential is missing a permission.", "Give the token every permission that `cairn help agents` lists, and then run cairn new again."},
+		{"403 GitHub in a token run", 403, true, "GitHub refused a request because setup's credential is missing a permission.", "Run cairn new again, and approve every permission the GitHub page lists."},
 		{"429", 429, false, "Acme is limiting requests.", "Wait a few minutes, and then run cairn new again."},
 		{"503", 503, true, "Acme had a problem on its side.", "Wait a few minutes, and then run cairn new again."},
 		{"422", 422, false, "Acme rejected a request.", "Read the detail line, and then run cairn new again."},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			happened, do := providerStop("Acme", tt.status, tt.token)
+			provider := "Acme"
+			if strings.Contains(tt.name, "Cloudflare") {
+				provider = "Cloudflare"
+			} else if strings.Contains(tt.name, "GitHub") {
+				provider = "GitHub"
+			}
+			happened, do := providerStop(provider, tt.status, providers.ReasonUnknown, tt.token)
 			if happened != tt.happened || do != tt.do {
 				t.Errorf("providerStop = %q, %q; want %q, %q", happened, do, tt.happened, tt.do)
 			}
@@ -2642,5 +2652,13 @@ func TestATokenResumeWithoutTheTokenSweepsFirst(t *testing.T) {
 		if strings.HasPrefix(call, "cf:") {
 			t.Errorf("the stopped resume called Cloudflare: %s", call)
 		}
+	}
+}
+
+// A 403 that carries a rate limit is a wait, never a missing permission.
+func TestProviderStopReadsAClassifiedRateLimit(t *testing.T) {
+	happened, do := providerStop("GitHub", 403, providers.ReasonRateLimited, false)
+	if happened != "GitHub is limiting requests." || do != "Wait a few minutes, and then run cairn new again." {
+		t.Errorf("providerStop = %q, %q; want the wait wording", happened, do)
 	}
 }

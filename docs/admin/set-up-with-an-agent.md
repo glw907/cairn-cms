@@ -78,7 +78,7 @@ Give the flags only for the choices that apply:
 
 - `--account` names the Cloudflare account by its id, never by its name, when the sign-in lists several.
 - `--zone` names the Cloudflare domain to serve the site from, when the account has several.
-- `--host` sets the site's address: a domain the account holds, or a subdomain of one. The host names its zone, so `--host blog.example.com` serves from `example.com` when the account holds that domain. Give `--zone` only when the host doesn't name one.
+- `--host` sets the site's address: a domain the account holds, or a subdomain of one. The host names its zone: the longest domain the account holds that is the host or a parent of it. `--host blog.example.com` serves from `example.com` when the account holds that domain and no closer one. Give `--zone` only when the host doesn't name one.
 - `--site-theme` names the theme, when the template offers several.
 
 An account that no flag answered, or a domain that neither `--zone` nor `--host` answered, stays open. The call exits 0 and its stream has no `summary` event. The plan lists the options, and it lists no domains while the account is open, so give `--account` with `--plan`. A theme that no flag answered is a usage error, because setup asks for it before it writes a record.
@@ -110,7 +110,7 @@ cairn new --apply plan.json
 
 ## Wait for the run
 
-A run usually takes a few minutes. The last step waits for the new address to answer over HTTPS, and that wait can last up to 15 more minutes. It needs nothing from the owner, so it prints no `waiting` event. A stream that goes quiet there isn't stuck.
+A run usually takes a few minutes. The step that connects the domain waits for the new address to answer over HTTPS, and that wait can last up to 15 more minutes. It needs nothing from the owner, so it prints no `waiting` event. A stream that goes quiet there isn't stuck.
 
 Leave the new address alone until the `summary` event. A `curl`, `dig`, or browser visit to the address before setup has created the address's record makes the computer's resolver remember that the name doesn't exist. The computer can then keep answering that way for up to 30 minutes after the record is live, and the owner's first visit fails.
 
@@ -138,7 +138,7 @@ cairn new --dry-run --name "My Site" --host example.com --email me@example.com -
 | --- | --- |
 | `step_started`, `step_done` | Track progress. The `step` field names the step. |
 | `waiting` | Read the `sentence` field to the owner, word for word. The run blocks until the owner finishes that browser step. |
-| `step_failed` | The run stopped. The `failure` field holds the four-part reason: what happened, what setup already did, what it left in place, and what to do. When a provider refused a request, `failure` also carries a `detail` field. |
+| `step_failed` | The run stopped. The `failure` field holds the four-part reason: what happened, what setup already did, what it left in place, and what to do. When a provider answered a request with an error, `failure` also carries a `detail` field. |
 | `resumed` | The run picked up an unfinished record. |
 | `summary` | Every derived value. The run finished. |
 
@@ -157,7 +157,7 @@ Check the exit code first.
 
 On exit 1 or 2, setup prints the four-part failure to stderr. Show the owner what it says to do.
 
-When a provider refused a request, setup adds a fifth line with the cause: the provider, its reason, the HTTP status, the error code, and the request. For example, `cloudflare: forbidden (status 403, code 10000) on GET /zones/<id>/dns_records` means the credential lacks a permission for that request. Pass the line on with the four parts. In a token run, it means the token lacks one of the permissions this page lists.
+When a provider answered a request with an error, setup adds a fifth line with the cause: the provider, its reason, the HTTP status, the error code when the provider gives one, and the request. For example, `cloudflare: forbidden (status 403, code 10000) on GET /zones/<id>/dns_records` means the credential lacks a permission for that request. Pass the line on with the four parts. In a token run, it means the token lacks one of the permissions this page lists.
 
 To find an unfinished run, including one the agent didn't start, list the setup records. The command reads the local record only, with no network and no keyring:
 

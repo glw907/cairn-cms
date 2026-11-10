@@ -692,7 +692,7 @@ func (r *run) fail(ctx context.Context, err error, who string) *Failure {
 		return r.failure(ReasonProvider, "A request to "+who+" failed.",
 			"Check your internet connection, and then run cairn new again.", err)
 	}
-	happened, do := providerStop(who, pe.HTTPStatus(), r.tokenRun)
+	happened, do := providerStop(who, pe.HTTPStatus(), pe.ClassifiedReason(), r.tokenRun)
 	f := r.failure(ReasonProvider, happened, do, err)
 	f.Detail = pe.Error()
 	return f

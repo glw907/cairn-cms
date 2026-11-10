@@ -12,11 +12,11 @@ through the two calls.
 
 | Flag | Value | Meaning |
 | --- | --- | --- |
-| `--name` | string | the site's name, required with --plan and --dry-run; the repository, Worker, and database names derive from it |
-| `--email` | string | the first owner's email address, required with --plan and --dry-run |
-| `--posture` | string | what the site does about AI crawlers, required with --plan and --dry-run: decline or invite |
+| `--name` | string | the site's name, from which the repository, Worker, and database names derive; required with --plan and --dry-run |
+| `--email` | string | the first owner's email address; required with --plan and --dry-run |
+| `--posture` | string | decline or invite: what the site does about AI crawlers; required with --plan and --dry-run |
 | `--site-theme` | string | the theme id, when the template offers several |
-| `--account` | string | the Cloudflare account id, not its name, when the sign-in lists several accounts |
+| `--account` | string | the Cloudflare account id, not its name, when setup finds several accounts |
 | `--zone` | string | the Cloudflare domain to serve the site from, when the account has several and --host doesn't name one |
 | `--host` | string | the site's address: a domain the account holds, or a subdomain of one |
 | `--plan` | string | run the questions and approvals, write the plan to this file, and create nothing |

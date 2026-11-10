@@ -81,12 +81,21 @@ const WAITING = new Set(['wait', 'done']);
 const visible = (locator) => locator.first().isVisible().catch(() => false);
 
 /**
+ * A tab page's heading as the stand-in compares it: whitespace collapsed, and any leading glyph
+ * dropped, since a heading can lead with a glyph in its own span (the done page's check mark) that
+ * `innerText` keeps.
+ * @param {string} text the heading's text
+ * @returns {string}
+ */
+export const tabHeading = (text) => text.replace(/\s+/g, ' ').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+
+/**
  * What a tab page is, by its heading.
  * @param {import('playwright').Page} page
  * @returns {Promise<TabPage | null>} the page, or null when the heading is not one the tab shows
  */
 async function readTabPage(page) {
-  const heading = (await page.locator('h1').first().innerText({ timeout: 1000 }).catch(() => '')).replace(/\s+/g, ' ').trim();
+  const heading = tabHeading(await page.locator('h1').first().innerText({ timeout: 1000 }).catch(() => ''));
   return Object.values(TAB_PAGES).find((entry) => entry && entry.heading.test(heading)) ?? null;
 }
 

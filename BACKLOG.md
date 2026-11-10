@@ -27,6 +27,9 @@
 
 ## Medium
 
+- [ ] **#437** Turn the `cairn new` end-to-end fakes into a fake world the scripted leg can run against `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-10)*
+  `tool/cmd/cairn/new_e2e_fakes_test.go` already fakes Cloudflare's dashboard and API, GitHub's web flow and API, the npm registry, and the site, but only a Go test can drive it. Lift it into a standalone server with HTML pages the stand-in can click, and point the tool's provider URLs at it, so a scripted setup run costs nothing and can run on every PR. Left alone, the setup flow's only end-to-end proof stays a live run against real providers. It is a regression net, never a substitute for live runs: pass 3's blockers (the sandbox, the working folder, GitHub's install button, apex DNS records) were real-world, and no fake would have caught them. Raised by Geoff in pass 3 of the setup-tooling run.
+  Placement: after a scripted run first signs an owner in on gate.carin-test.org.
 - [ ] **#412** An option sheet that changes an unlayered token's light value loses to `tokens.css` with no color-mode cookie `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-09)*
   The option rule sits on `:where(:root)` and the unlayered token on `:root`, so `tokens.css` wins when no cookie pins a mode. Waymark and the options fixture do not hit it, but a theme option that changes a CTA, shadow, or card-border value would. Found by G1's whole-branch review (PR #207, "Known and not done").
   Placement: before a catalog theme ships an option over an unlayered token; G2's viewer options are a natural place to catch it.

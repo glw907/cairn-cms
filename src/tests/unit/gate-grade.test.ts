@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { findSignInMessage } from '../../../scripts/gate/mail.mjs';
 import { gateFetch } from '../../../scripts/gate/fetch-check.mjs';
-import { grade, missedRelays, parseTranscript, permissionPrompts, setupEvents } from '../../../scripts/gate/grade.mjs';
+import { LIVE_ORIGIN, grade, missedRelays, parseTranscript, permissionPrompts, setupEvents } from '../../../scripts/gate/grade.mjs';
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -53,7 +53,7 @@ async function makeRun(opts: Options = {}) {
   await mkdir(runDir, { recursive: true });
   await mkdir(path.join(home, '.local', 'share', 'keyrings'), { recursive: true });
   await writeFile(path.join(home, '.local', 'share', 'keyrings', 'login.keyring'), 'x');
-  await writeFile(path.join(runDir, 'harness.json'), JSON.stringify({ leg: 'naive', id, siteName: `Cairn gate ${id}`, begin: at(0), commit: 'abc1234def', candidate: { engine: '0.99.0-rc.4', tool: '2.0.0-rc.4' }, ...(opts.local ? { local: true } : {}) }));
+  await writeFile(path.join(runDir, 'harness.json'), JSON.stringify({ leg: 'naive', id, siteName: `Cairn gate ${id}`, begin: at(0), commit: 'abc1234def', candidate: { engine: '0.99.0-rc.4', tool: opts.local ? 'local build at abc1234def' : '2.0.0-rc.4' }, ...(opts.local ? { local: true } : {}) }));
   const transcript: unknown[] = [
     { type: 'user', timestamp: at(GOAL), message: { role: 'user', content: 'Set up a new cairn site and sign in as owner.' } },
     assistantText(0.5, 'I will read the README first.', 'a1'),
@@ -117,13 +117,41 @@ async function makeRun(opts: Options = {}) {
     siteFetch: (async () => ({ status: 200, text: async () => '' })) as unknown as typeof gateFetch, // the grader reads only status and text()
     findMail: (async () => {
       if (opts.mail === 'throws') throw new Error('JMAP Email/query answered an error');
-      return { found: true, from: 'noreply@carin-test.org', url: 'https://carin-test.org/admin/auth/confirm?token=SECRET' };
+      return { found: true, from: 'noreply@carin-test.org', url: 'https://gate.carin-test.org/admin/auth/confirm?token=SECRET' };
     }) as unknown as typeof findSignInMessage, // the stub answers the shape the grader reads
     provingDir,
     env: { GITHUB_TEST_TOKEN: 'stub-gh', STALWART_PASSWORD_CAIRN_GATE: 'stub-mail' },
   };
   return { runDir, home, provingDir, deps, cleanroomCalls, root };
 }
+
+describe('a scripted run', () => {
+  const asScripted = async (run: Awaited<ReturnType<typeof makeRun>>, lines: string[]) => {
+    const file = path.join(run.runDir, 'harness.json');
+    await writeFile(file, JSON.stringify({ ...JSON.parse(await readFile(file, 'utf8')), leg: 'scripted' }));
+    await writeFile(path.join(run.runDir, 'scripted.jsonl'), `${lines.join('\n')}\n`);
+  };
+
+  it('is judged on the end state and the done screen, with no transcript or session state to time', async () => {
+    const run = await makeRun();
+    await asScripted(run, ['{"screen":"watch","action":"seen"}', '{"screen":"done","action":"seen"}']);
+    await rm(path.join(run.runDir, 'transcript.jsonl'), { force: true });
+    expect((await grade({ runDir: run.runDir, deps: run.deps })).outcome).toEqual({ result: 'pass' });
+  });
+
+  it('fails when the leg never reached the done screen', async () => {
+    const run = await makeRun();
+    await asScripted(run, ['{"screen":"watch","action":"seen"}']);
+    const outcome = (await grade({ runDir: run.runDir, deps: run.deps })).outcome;
+    expect(outcome).toMatchObject({ result: 'fail', detail: expect.stringContaining('never reached the done screen') });
+  });
+});
+
+describe('the live origin', () => {
+  it('is the gate subdomain, never the bare domain, where any record is a standing stop', () => {
+    expect(new URL(LIVE_ORIGIN).hostname).toBe('gate.carin-test.org');
+  });
+});
 
 describe('the record on a known fixture', () => {
   it('names the missed relay, the prompt, the over-10 flag, the overhead, each phase, and the HTTPS wait', async () => {
@@ -156,6 +184,8 @@ describe('the record on a known fixture', () => {
     const local = await makeRun({ local: true });
     const record = await grade({ runDir: local.runDir, deps: local.deps });
     expect(record.local).toBe(true);
+    // No npx-installed launcher to compare, so a local build is judged on the engine pin alone.
+    expect(record.endState.versionsMatchCandidate.ok).toBe(true);
     const registry = await makeRun();
     expect((await grade({ runDir: registry.runDir, deps: registry.deps })).local).toBe(false);
     expect(await readFile(path.join(local.runDir, 'run-record.md'), 'utf8')).toContain('(naive, local build)');

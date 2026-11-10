@@ -271,6 +271,22 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     }
   });
 
+  it('fails a snapshot fast in ci-green when promote is also set, and pins the template exactly', () => {
+    const early = (jobs['ci-green'].steps ?? [])[0];
+    expect(early?.if).toBe("inputs.snapshot != ''");
+    expect(early?.run).toContain('set snapshot or promote, not both');
+    const pack = (jobs.build.steps ?? []).find((s) => (s.run ?? '').includes('pack-engine-template'));
+    expect(pack?.run).toContain('--engine-spec "$SNAPSHOT" --dev-spec "$SNAPSHOT"');
+  });
+
+  it("tool.yml publishes a snapshot's npm packages but makes a GitHub release for a tag only", () => {
+    const toolJobs = (loadWorkflow('tool.yml').jobs ?? {}) as Record<string, Job & { steps?: PublishStep[] }>;
+    expect(toolJobs['publish-npm'].if).toContain("inputs.snapshot != ''");
+    const release = (toolJobs.release.steps ?? []).find((s) => (s.run ?? '').includes('gh release create'));
+    expect(release?.if).toContain("startsWith(github.ref, 'refs/tags/tool/v')");
+    expect(release?.if).toContain("github.event_name == 'push'");
+  });
+
   it('grants id-token to the publishing jobs and promote only, each under the npm-publish environment', () => {
     const workflow = loadWorkflow('publish.yml') as Workflow & { permissions?: Record<string, string> };
     expect(workflow.permissions).toEqual({ contents: 'read' });

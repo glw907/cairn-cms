@@ -6,6 +6,7 @@
 import { cp, mkdir, readFile, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { composeTemplate } from './emit-template-dir.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -47,6 +48,9 @@ export async function packEngineTemplate({ engineSpec, devSpec } = {}) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const out = await packEngineTemplate();
+  // A dev snapshot pins both packages exactly: a caret on `0.99.0-dev.<n>` resolves to the highest
+  // 0.99.0 prerelease on the registry, and `dev` sorts below `rc`, so it would pick an rc's backend.
+  const { values } = parseArgs({ options: { 'engine-spec': { type: 'string' }, 'dev-spec': { type: 'string' } } });
+  const out = await packEngineTemplate({ engineSpec: values['engine-spec'], devSpec: values['dev-spec'] });
   console.log(`pack-engine-template: wrote ${path.relative(repoRoot, out)}/`);
 }

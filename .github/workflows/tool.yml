@@ -300,13 +300,19 @@ jobs:
         working-directory: tool
         env:
           VERSION: ${{ steps.build.outputs.version }}
+          SNAPSHOT: ${{ inputs.snapshot }}
         run: |
           set -euo pipefail
           mkdir -p native
           tar -xzf "dist/cairn_${VERSION}_linux_amd64.tar.gz" -C native
           out="$(./native/cairn --version)"
           echo "$out"
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+          if [ -n "${SNAPSHOT}" ]; then
+            case "$out" in
+              "$SNAPSHOT ("*) ;;
+              *) echo "--version does not open with ${SNAPSHOT} and a commit"; exit 1 ;;
+            esac
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             want="${GITHUB_REF_NAME#tool/v}"
             case "$out" in
               "$want ("*) ;;
@@ -370,7 +376,7 @@ jobs:
           if-no-files-found: error
       # Last, so a pack failure (a binary built for the wrong platform, say) leaves no GitHub
       # Release behind with no npm packages to match it. A tag push only: a dispatch run, even on
-      # a tag ref, packs and dry-runs and publishes nothing.
+      # a tag ref or with a snapshot, makes no GitHub Release.
       - name: Publish release
         if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/tool/v') }}
         run: |
@@ -381,11 +387,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
 
-  # Publishes the packed npm packages, on a `tool/v*` tag push only. It holds the id-token and
-  # the `npm-publish` environment. The release job above, which compiles and packs, also holds an
+  # Publishes the packed npm packages, on a `tool/v*` tag push or a snapshot dispatch on main
+  # (`gate` only). It holds the id-token and the `npm-publish` environment. The release job above, which compiles and packs, also holds an
   # id-token (for the attestation), so what keeps it from publishing is each package's trusted
   # publisher: it is bound to `--env npm-publish` (the cairn-releasing skill's owner steps), and
-  # that binding is load-bearing. The environment allows `tool/v*` tags and no branch. The six
+  # that binding is load-bearing. The environment allows the `v*` and `tool/v*` tags and the
+  # `main` branch, never every branch. The six
   # platform packages publish first and the launcher last, so a launcher on the registry never
   # names a platform package that is absent.
   #
@@ -446,7 +453,7 @@ jobs:
           done
           publish create-cairn-site "$PWD/npm-tarballs/create-cairn-site-$VERSION.tgz"
 
-  # A dry run (workflow_dispatch) packs and uploads in the release job and publishes nothing;
+  # A dry run (workflow_dispatch, with or without a snapshot) packs and uploads in the release job;
   # this job runs `npm publish --dry-run` on each tarball so the packaging is proved before a tag.
   publish-npm-dry-run:
     name: npm publish dry run

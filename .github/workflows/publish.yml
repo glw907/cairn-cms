@@ -7,7 +7,7 @@ name: Publish to npm
 # (repo: glw907/cairn-cms, workflow: publish.yml, environment: npm-publish).
 #
 # Release flow: bump "version" in the two manifests, then publish a GitHub Release. Only a
-# published release publishes: `ci-green` waits for the tagged commit's `test` (and, for a stable,
+# published release or a snapshot dispatch (below) publishes: `ci-green` waits for the tagged commit's `test` (and, for a stable,
 # `e2e`) check runs, `build` packs two tarballs with no publish credential in reach, and each
 # publish job uploads one tarball with `--ignore-scripts`, so no lifecycle script runs where the
 # OIDC token is. A candidate publishes to `gate`, which no tester's install command reads. A
@@ -22,6 +22,8 @@ name: Publish to npm
 # no tag, no CHANGELOG heading. The build job stamps that version into both manifests in the
 # runner's checkout, so the template inside the tarball pins it, and the snapshot goes to `gate`
 # and nowhere else. An rc is cut only for a real release candidate (the cairn-releasing skill).
+# A snapshot waits for `test` and `e2e` on main's head, and neither runs for a tool-only commit
+# (`paths-ignore: tool/**`), so a dispatch on one waits out `ci-green`'s deadline and fails.
 # The `npm-publish` environment must allow the `main` branch beside its tag policies.
 
 on:
@@ -54,6 +56,27 @@ jobs:
       contents: read
       checks: read
     steps:
+      # A snapshot fails fast here, before the poll below can wait the full deadline.
+      - name: A snapshot is alone, on main
+        if: inputs.snapshot != ''
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
+          PROMOTE: ${{ inputs.promote }}
+        run: |
+          if [ -n "$SNAPSHOT" ]; then
+            if [ -n "$PROMOTE" ]; then
+              echo "::error::set snapshot or promote, not both"
+              exit 1
+            fi
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "::error::a snapshot publishes from main, not $GITHUB_REF"
+              exit 1
+            fi
+            if ! printf '%s\n' "$SNAPSHOT" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$'; then
+              echo "::error::a snapshot is <x.y.z>-dev.<n>, got '$SNAPSHOT'"
+              exit 1
+            fi
+          fi
       - name: Wait for the required check runs
         env:
           GH_TOKEN: ${{ github.token }}
@@ -148,8 +171,9 @@ jobs:
           clean: node_modules
       # Validate the published package shape before releasing.
       - run: npm run check:package
-      # The stamp lives in this runner's checkout only; nothing is committed. `pack-engine-template`
-      # reads the manifests, so the template in the tarball pins the snapshot.
+      # The stamp lives in this runner's checkout only; nothing is committed. The template in the
+      # tarball pins the snapshot exactly, since a caret on a dev version resolves to the highest
+      # 0.99.0 prerelease on the registry, and `dev` sorts below `rc`.
       - name: Stamp the snapshot into both manifests
         if: github.event_name == 'workflow_dispatch'
         env:
@@ -158,9 +182,15 @@ jobs:
           npm pkg set "version=$SNAPSHOT"
           npm pkg set "version=$SNAPSHOT" --prefix packages/cairn-cms-dev
       - name: Pack the two tarballs
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
         run: |
           mkdir tarballs
-          node scripts/build/pack-engine-template.mjs
+          if [ -n "$SNAPSHOT" ]; then
+            node scripts/build/pack-engine-template.mjs --engine-spec "$SNAPSHOT" --dev-spec "$SNAPSHOT"
+          else
+            node scripts/build/pack-engine-template.mjs
+          fi
           npm pack --ignore-scripts --silent --pack-destination tarballs
           (cd packages/cairn-cms-dev && npm pack --ignore-scripts --silent --pack-destination ../../tarballs)
           ls -l tarballs

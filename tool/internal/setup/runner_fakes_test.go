@@ -574,16 +574,20 @@ type fakeGH struct {
 	convertErr    error
 	deleteErr     error
 	listErr       error
-	secretErr     error
-	taken         map[string]bool
-	installs      []install
-	writes        int
-	creates       map[string]int
-	onCreate      func()
-	remotes       string
-	secrets       map[string]string
-	instTokens    []providers.Credential
-	runFor        func(sha string) (providers.WorkflowRun, bool)
+	// listErrs fail the next AppInstallations calls in order, before listErr applies; onList runs on
+	// every call first.
+	listErrs   []error
+	onList     func()
+	secretErr  error
+	taken      map[string]bool
+	installs   []install
+	writes     int
+	creates    map[string]int
+	onCreate   func()
+	remotes    string
+	secrets    map[string]string
+	instTokens []providers.Credential
+	runFor     func(sha string) (providers.WorkflowRun, bool)
 	// deploy stands in for the deploy run's own effect: the Worker it creates.
 	deploy func(repo string)
 	log    *[]string
@@ -713,6 +717,16 @@ func (c ghClient) AppInstallations(ctx context.Context) ([]providers.Installatio
 	}
 	if !isJWT(c.cred) {
 		c.f.t.Error("AppInstallations ran without the App JWT")
+	}
+	if c.f.onList != nil {
+		c.f.onList()
+	}
+	if len(c.f.listErrs) > 0 {
+		err := c.f.listErrs[0]
+		c.f.listErrs = c.f.listErrs[1:]
+		if err != nil {
+			return nil, err
+		}
 	}
 	if c.f.listErr != nil {
 		return nil, c.f.listErr

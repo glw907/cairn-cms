@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { findSignInMessage } from '../../../scripts/gate/mail.mjs';
 import { gateFetch } from '../../../scripts/gate/fetch-check.mjs';
-import { LIVE_ORIGIN, REGISTRY_READ, grade, missedRelays, parseTranscript, permissionPrompts, setupEvents, stepRows } from '../../../scripts/gate/grade.mjs';
+import { LIVE_ORIGIN, REGISTRY_READ, grade, isRunWatcher, missedRelays, parseTranscript, permissionPrompts, setupEvents, stepRows } from '../../../scripts/gate/grade.mjs';
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -137,6 +137,10 @@ async function makeRun(opts: Options = {}) {
       return { found: true, from: 'noreply@carin-test.org', url: 'https://gate.carin-test.org/admin/auth/confirm?token=SECRET' };
     }) as unknown as typeof findSignInMessage, // the stub answers the shape the grader reads
     provingDir,
+    // No run's watcher is alive unless a test says so, and a wait that does happen is a few milliseconds.
+    watcherAlive: (async () => false) as (name: string) => Promise<boolean>,
+    pollMs: 1,
+    settleMs: 40,
     env: { GITHUB_TEST_TOKEN: 'stub-gh', STALWART_PASSWORD_CAIRN_GATE: 'stub-mail' },
   };
   return { runDir, home, provingDir, deps, cleanroomCalls, root };
@@ -306,6 +310,61 @@ describe('the apply stage of an agent run', () => {
     const record = await grade({ runDir: run.runDir, deps: run.deps });
     expect(record.reads).toContainEqual({ name: 'registry record', ok: false, evidence: 'no registry record under .config/cairn/sites' });
     expect(record.outcome.result).toBe('fail');
+  });
+});
+
+describe('the room settling before the grade reads it', () => {
+  // The watcher records `exited` and then SIGTERMs every process of the room, so a read that starts
+  // while it is alive can be killed (exit 241), as the first grade of run 2611110815 was.
+  it('waits for the run\'s watcher to be gone before its first read inside the room', async () => {
+    const run = await makeRun();
+    const order: string[] = [];
+    let polls = 0;
+    run.deps.watcherAlive = async (name: string) => {
+      order.push(`poll ${name}`);
+      polls += 1;
+      return polls <= 3;
+    };
+    const shell = run.deps.cleanroom;
+    run.deps.cleanroom = async (args: string[]) => {
+      order.push(`cleanroom ${args[0]}`);
+      return shell(args);
+    };
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(polls).toBe(4);
+    expect(order.filter((entry) => entry.startsWith('poll')).every((entry) => entry === 'poll 2611091200')).toBe(true);
+    expect(order.indexOf('cleanroom shell')).toBeGreaterThan(order.lastIndexOf('poll 2611091200'));
+    expect(record.reads).toContainEqual({ name: 'room settled', ok: true, evidence: "the run's watcher had finished" });
+    expect(record.outcome).toEqual({ result: 'pass' });
+  });
+
+  it('names a watcher that outlives the wait as a failed read, and still reads the room', async () => {
+    const run = await makeRun();
+    run.deps.watcherAlive = async () => true;
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(record.reads).toContainEqual({ name: 'room settled', ok: false, evidence: "the run's watcher was still running after 0.04 s" });
+    expect(record.outcome.result).toBe('fail');
+    expect(run.cleanroomCalls).toContainEqual(['shell', '2611091200', '-c', REGISTRY_READ]);
+  });
+
+  it('does not wait when the executor ends the run, whose room may still be live', async () => {
+    const run = await makeRun();
+    let polls = 0;
+    run.deps.watcherAlive = async () => {
+      polls += 1;
+      return true;
+    };
+    const record = await grade({ runDir: run.runDir, deps: run.deps, end: 'stall', reason: 'no event in 3 minutes' });
+    expect(polls).toBe(0);
+    expect(record.reads.map((read: { name: string }) => read.name)).not.toContain('room settled');
+  });
+
+  it('finds the watcher by its arguments, never by words inside another command', () => {
+    const watcher = ['/usr/bin/python3', '-I', '/home/u/.local/bin/cleanroom', '_watch', '2611110815'].join('\0');
+    expect(isRunWatcher(`${watcher}\0`, '2611110815')).toBe(true);
+    expect(isRunWatcher(`${watcher}\0`, '2611110726')).toBe(false);
+    expect(isRunWatcher(['bash', '-c', 'cleanroom _watch 2611110815'].join('\0'), '2611110815')).toBe(false);
+    expect(isRunWatcher('', '2611110815')).toBe(false);
   });
 });
 

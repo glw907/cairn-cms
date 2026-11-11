@@ -116,3 +116,12 @@ func TestAProbeRequestIsNotRetriedOnADialFailure(t *testing.T) {
 		t.Errorf("calls = %d, want 1", len(rt.bodies))
 	}
 }
+
+// TestATransportErrorWithNoCauseNamesAClassAndDoesNotPanic asserts the exported type is safe to build
+// with a nil cause, as a caller or a test might.
+func TestATransportErrorWithNoCauseNamesAClassAndDoesNotPanic(t *testing.T) {
+	err := &TransportError{Op: "Get", Host: "api.cloudflare.com"}
+	if got, want := err.Error(), "Get request to api.cloudflare.com: transport error"; got != want {
+		t.Errorf("Error() = %q, want %q", got, want)
+	}
+}

@@ -279,6 +279,8 @@ func TestCredsCheckAbsentCredentialIsUnknownCredMissing(t *testing.T) {
 }
 
 func TestCredsCheckUnreachableEndpointIsUnknownTimeout(t *testing.T) {
+	// The provider clients repeat a failed read, so the test must not wait out the pauses.
+	t.Cleanup(providers.SetDialRetryWait(func(context.Context, time.Duration) error { return nil }))
 	c := credsCheck{}
 	clients := Clients{
 		CF:     cfClient(unreachableRoundTripper{}),

@@ -459,7 +459,8 @@ func (r *run) awaitAuthority(ctx context.Context, deadline time.Time) error {
 }
 
 // maxAuthorityErrors is how many lookups in a row may fail for a reason but "not found" before
-// awaitAuthority stops asking, about a minute at pollEvery.
+// awaitAuthority stops asking. That is six pauses at pollEvery plus the lookups themselves, which
+// take up to 15 seconds each when the nameserver cannot be reached.
 const maxAuthorityErrors = 6
 
 // siteAnswers reports whether every host serves its home page and the admin sends a signed-out

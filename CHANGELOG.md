@@ -66,8 +66,9 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
   internet connection". The detail names a fixed kind, never the transport's raw text, which can quote a proxy address.
   A lookup or connection that failed before the request left is tried up to three times with a 1 and 2 second pause, a
   timeout or a dropped connection is repeated only for a read-only request, a certificate error never is, and a response
-  with any status is never retried. This applies to setup's Cloudflare and GitHub clients, and the health and doctor
-  checks keep their one attempt. Every stop built from a provider error carries the detail, including the one for the
+  with any status is never retried. This applies to the Cloudflare, GitHub, and npm clients, so the health checks that use
+  them repeat a failed read the same way, and the serving and HTTPS probes keep one attempt. Every stop built from a
+  provider error carries the detail, including the one for the
   GitHub App's installations. When the check of those installations fails to list them before any exists, it reads as an
   ordinary provider stop, and a failed deletion of one still warns that it may reach every repository. While the domain
   step waits for the site, a nameserver lookup that fails for a reason other than "not found" is retried for about a

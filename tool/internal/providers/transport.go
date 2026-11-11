@@ -111,6 +111,9 @@ func cutRunes(s string, n int) string {
 // resolver strings a DNS error carries. It never repeats err's text, since Go's cause text can
 // quote a proxy address with credentials, a header value, or a status line.
 func transportClass(err error) string {
+	if err == nil {
+		return "transport error"
+	}
 	if ue, ok := errors.AsType[*url.Error](err); ok {
 		err = ue.Err
 	}
@@ -223,8 +226,9 @@ func doWithRetry(hc *http.Client, req *http.Request) (*http.Response, error) {
 // second such response is returned to the caller unretried. Every other method, and a second 429
 // or 503, is returned as-is. It is the one retry implementation every client in this package
 // shares: client.Do calls it after pinning the host and applying a credential, passing the dial
-// retry as send, and Probe.do reaches it through doWithRetry with a plain send, since Probe carries
-// neither and health and doctor must not wait out a dial retry.
+// retry as send, and Probe.do reaches it through doWithRetry with a plain send, so the serving and
+// https probes and the site poll send once. The health credential and API checks use the provider
+// clients, and share the dial retry.
 //
 // When the advised wait is longer than req's remaining context deadline, retryRateLimited does not
 // sleep at all: the wait would only spend the request's whole remaining budget waiting, then fail
@@ -271,7 +275,8 @@ const maxSendAttempts = 3
 //     which change nothing, and not for a TLS or proxy failure, which a second try cannot change;
 //     a POST, PUT, PATCH, or DELETE returns the error as is.
 //   - Behind an HTTP proxy Go wraps a connect failure as Op "proxyconnect", not "dial", so a POST
-//     is not repeated there. That errs on the safe side.
+//     is repeated there only when the lookup of the proxy host's name failed, which also means no
+//     connection was made. That errs on the safe side.
 //   - A response with any HTTP status is never repeated here, so a 401, 429, or 503 reaches the
 //     caller. retryRateLimited's separate one-shot GET retry of 429 and 503 is unchanged.
 //
@@ -356,4 +361,13 @@ func parseRetryAfter(header string) time.Duration {
 		return defaultRetryAfter
 	}
 	return time.Duration(seconds) * time.Second
+}
+
+// SetDialRetryWait replaces how the dial retry waits between attempts and returns a function that
+// restores the previous wait. It exists for tests in other packages, such as the health checks,
+// that must not sleep through a retry.
+func SetDialRetryWait(wait func(ctx context.Context, d time.Duration) error) (restore func()) {
+	previous := dialRetryWait
+	dialRetryWait = wait
+	return func() { dialRetryWait = previous }
 }

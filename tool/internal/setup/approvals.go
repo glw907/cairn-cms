@@ -221,8 +221,9 @@ func (r *run) appKeyFailure(err error) *Failure {
 func (r *run) installAll(ctx context.Context) error {
 	r.start(StepApproveInstall)
 	if _, err := r.sweep(ctx, 0); err != nil {
-		// A failed list proves nothing exists, so it is a provider stop. A failed delete follows a
-		// list that showed an installation of this App, which may reach every repository.
+		// A failed list shows nothing about what exists, so it is an ordinary provider stop. A failed
+		// delete follows a list that showed an installation of this App, which may reach every
+		// repository.
 		if _, ok := errors.AsType[deleteFailed](err); ok {
 			return r.installDeleteFailure(ctx, err)
 		}

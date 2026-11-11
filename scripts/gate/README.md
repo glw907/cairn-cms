@@ -88,6 +88,10 @@ mailbox, and the live site. It copies the JSON to `~/.local/state/cairn-gate/pro
 and diffs each step against the last record there. `cleanroom scan` then runs over both files, and a
 match rewrites the record without its content and fails it. The home's keyrings are deleted last.
 
+The registry record is read through `cleanroom shell`, as the clean room's user, because its
+directory is closed to every other user. The setup events come from tool results in the transcript,
+including the ones the agent read with its Read tool, which prints each line behind a number and a tab.
+
 A read that fails is a failed check, and the record lists each by name. The outcome is `pass`, or
 `fail` with `cost`, `time`, `stall`, `page`, `budget`, or `other`; a version unlike the candidate's
 is `other: wrong candidate`. The four end-state checks are live, owner signed in, sign-in mail in

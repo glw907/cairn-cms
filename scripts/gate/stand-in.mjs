@@ -166,7 +166,7 @@ export async function followTab(page, options) {
     requestLink = (tab, origin, email) => requestSignInLink(tab.context(), { origin, email, pauseMs }),
     openLink,
     signInOrigin,
-    addressReady = async (/** @type {string} */ host) => (await authoritativeAddress(host)) !== null,
+    addressReady = async (/** @type {string} */ host) => typeof (await authoritativeAddress(host)) === 'string',
     tabGone = loopbackGone,
     siteAnswers = siteAnswersOverHttps,
     idleMs = 20_000,

@@ -65,7 +65,7 @@ const RELAY_PREFIX = 50;
  * @property {(args: string[]) => Promise<CmdResult>} cleanroom runs the workstation `cleanroom` tool
  * @property {typeof fetch} [githubFetch] the fetch for the GitHub API
  * @property {typeof gateFetch} [siteFetch] the fetch for the live site
- * @property {(host: string) => Promise<string | null>} [authority] the address the zone's nameserver gives a host, or null
+ * @property {(host: string) => Promise<string | null | undefined>} [authority] the address the zone's nameserver gives a host; null when it answered with none; undefined when none could be asked
  * @property {typeof findSignInMessage} [findMail] the mailbox read
  * @property {string} [provingDir] where run records are kept between runs
  * @property {Record<string, string | undefined>} env the allowlisted environment
@@ -512,11 +512,15 @@ export async function grade({ runDir, deps, end }) {
     // A resolver asked for a host its zone does not have yet keeps that answer for up to 30 minutes, and
     // the next run's site then looks dead to this computer. A run that failed before its site existed
     // must not ask for it, so the zone's nameserver is asked first.
-    if ((await authority(new URL(LIVE_ORIGIN).hostname)) === null) {
+    // Only a nameserver's own answer of no address skips the read. When none could be asked (port 53
+    // blocked, resolvers down) the zone is unknown, so the ordinary read goes ahead and says so.
+    const zoneAnswer = await authority(new URL(LIVE_ORIGIN).hostname);
+    if (zoneAnswer === null) {
       live = { ok: false, evidence: `the zone has no address for ${new URL(LIVE_ORIGIN).hostname}, so the live read was skipped` };
     } else {
       const [home1, admin] = [await siteFetch(`${LIVE_ORIGIN}/`), await siteFetch(`${LIVE_ORIGIN}/admin`)];
-      live = { ok: home1.status === 200 && admin.status === 200, evidence: `GET / answered ${home1.status}, GET /admin answered ${admin.status}` };
+      const unasked = zoneAnswer === undefined ? '; no nameserver could be asked, so the zone was not checked first' : '';
+      live = { ok: home1.status === 200 && admin.status === 200, evidence: `GET / answered ${home1.status}, GET /admin answered ${admin.status}${unasked}` };
     }
   } catch (error) {
     live = { ok: false, evidence: `the live read failed: ${/** @type {Error} */ (error).message}`.slice(0, 160) };

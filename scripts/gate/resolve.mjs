@@ -29,11 +29,25 @@ export function defaultMakeResolver(servers) {
  */
 
 /**
+ * Whether a lookup failure is a nameserver's own "no such data" answer, as opposed to a failure to
+ * reach it (timeout, refusal, a blocked port 53). Only the first is evidence about the zone.
+ * @param {unknown} error
+ */
+function isAnswer(error) {
+  const code = /** @type {{ code?: string } | null} */ (error)?.code;
+  return code === 'ENODATA' || code === 'ENOTFOUND';
+}
+
+/**
  * Find a domain's address as its zone's authoritative nameservers answer it, bypassing every
  * caching resolver. The zone is found by trying the domain, then each parent, for NS records.
+ * Three outcomes, which callers must not conflate: a string is the address; null is a real answer
+ * with no address (the zone's nameserver replied, or no NS record exists for the name); undefined
+ * means nothing could be asked (the public resolvers or the nameservers were unreachable, or a
+ * resolver could not be built), so it says nothing about whether the zone has an address.
  * @param {string} domain the hostname to resolve
  * @param {ResolveOptions} [options]
- * @returns {Promise<string | null>} the first address any nameserver gives, or null when none does
+ * @returns {Promise<string | null | undefined>}
  */
 export async function authoritativeAddress(domain, { makeResolver = defaultMakeResolver } = {}) {
   try {
@@ -41,17 +55,28 @@ export async function authoritativeAddress(domain, { makeResolver = defaultMakeR
     const labels = domain.split('.');
     /** @type {string[]} */
     let nameServers = [];
+    let nsUnasked = false;
     for (let start = 0; start < labels.length - 1 && nameServers.length === 0; start++) {
-      nameServers = await publicReader.resolveNs(labels.slice(start).join('.')).catch(() => []);
+      nameServers = await publicReader.resolveNs(labels.slice(start).join('.')).catch((/** @type {unknown} */ error) => {
+        if (!isAnswer(error)) nsUnasked = true;
+        return [];
+      });
     }
+    if (nameServers.length === 0) return nsUnasked ? undefined : null;
+    let answered = false;
     for (const nameServer of nameServers) {
       const addresses = await publicReader.resolve4(nameServer).catch(() => []);
       if (addresses.length === 0) continue;
-      const answer = await makeResolver(addresses).resolve4(domain).catch(() => []);
+      let reached = true;
+      const answer = await makeResolver(addresses).resolve4(domain).catch((/** @type {unknown} */ error) => {
+        if (!isAnswer(error)) reached = false;
+        return [];
+      });
       if (answer.length > 0) return answer[0];
+      if (reached) answered = true;
     }
+    return answered ? null : undefined;
   } catch {
-    // A resolver that cannot be built means no address: callers fall back to the system resolver.
+    return undefined;
   }
-  return null;
 }

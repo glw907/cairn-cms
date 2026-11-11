@@ -536,7 +536,7 @@ describe('the transcript readers', () => {
     // The repeat does not open a second row for the closed step, and it does not move the waiting event
     // to a later line, where a relay that came before it would read as missed.
     expect(stepRows(setupEvents(lines)).filter((row) => row.step === 'scaffold')).toHaveLength(1);
-    expect(setupEvents(lines).find((e) => e.kind === 'waiting')?.line).toBe(0);
+    expect(setupEvents(lines).find((e) => e.kind === 'waiting')?.line).toBe(lines[0].index);
   });
 
   it('reads a command from a redrawn prompt once', () => {

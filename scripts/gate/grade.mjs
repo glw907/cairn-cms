@@ -156,6 +156,10 @@ function resultText(block) {
 export function setupEvents(lines) {
   /** @type {SetupEvent[]} */
   const events = [];
+  // An agent that reads the same output file again repeats each event on a later line. The first
+  // reading stands: a repeat would open a second row for a closed step and move a waiting event past
+  // the relay that answered it.
+  const seen = new Set();
   for (const entry of lines) {
     if (entry.type !== 'user') continue;
     for (const block of entry.blocks) {
@@ -167,7 +171,9 @@ export function setupEvents(lines) {
         if (!body.trim().startsWith('{')) continue;
         try {
           const event = JSON.parse(body);
-          if (event && typeof event.schemaVersion === 'number' && EVENT_KINDS.has(event.kind)) {
+          const key = `${event?.kind}|${event?.step}|${event?.waiting}|${event?.timestamp}`;
+          if (event && typeof event.schemaVersion === 'number' && EVENT_KINDS.has(event.kind) && !seen.has(key)) {
+            seen.add(key);
             events.push({ kind: event.kind, step: event.step, waiting: event.waiting, sentence: event.sentence, at: ms(event.timestamp), line: entry.index });
           }
         } catch {
@@ -455,7 +461,7 @@ export async function grade({ runDir, deps, end, reason }) {
   // user: its directory is closed to everyone else, so a read from here would find nothing.
   const recordRead = await cleanroom(['shell', name, '-c', REGISTRY_READ]);
   /** @type {{ ok: true, value: any } | { ok: false, reason: string }} */
-  let registryRead = { ok: false, reason: 'no registry record under .config/cairn/sites' };
+  let registryRead = { ok: false, reason: recordRead.code === 0 ? 'no registry record under .config/cairn/sites' : `exited ${recordRead.code}` };
   if (recordRead.code === 0 && recordRead.stdout.trim() !== '') {
     try {
       registryRead = { ok: true, value: JSON.parse(recordRead.stdout) };

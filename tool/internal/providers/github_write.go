@@ -43,8 +43,9 @@ func (e *nameTakenError) Is(target error) bool { return target == ErrRepoNameTak
 func (e *nameTakenError) Unwrap() error { return e.GitHubError }
 
 // rawSend performs a request with a JSON body (nil for none) through c and returns the raw
-// status, headers, and body with no classification, the write-side counterpart of rawGet. Only
-// a GET is retried, so a POST, PUT, or DELETE that comes back rate-limited is returned as-is.
+// status, headers, and body with no classification, the write-side counterpart of rawGet. A
+// request is re-sent only when no connection was made or it is read-only, so a POST, PUT, or
+// DELETE that reached GitHub and came back rate-limited is returned as-is.
 func (c *client) rawSend(ctx context.Context, method, target, accept string, body any) (int, http.Header, []byte, error) {
 	var reader io.Reader
 	if body != nil {

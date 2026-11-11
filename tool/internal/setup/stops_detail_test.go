@@ -32,7 +32,7 @@ func TestADirectFailureCarriesAProviderErrorsDetail(t *testing.T) {
 }
 
 func TestATransportErrorsDetailHoldsOnlyItsStructuredParts(t *testing.T) {
-	inner := errors.New("context deadline exceeded")
+	inner := context.DeadlineExceeded
 	longParse := "providers: parse response body: " + strings.Repeat("x", 300)
 	for _, tc := range []struct {
 		name string

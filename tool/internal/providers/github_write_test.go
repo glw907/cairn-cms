@@ -107,7 +107,7 @@ func TestInstallURLs(t *testing.T) {
 	}
 }
 
-// TestATransportErrorCarriesNoURL pins that a failed request's error keeps its cause and drops
+// TestATransportErrorCarriesNoURL pins that a failed request's error keeps its cause, shows only its class, and drops
 // the URL, which for the manifest conversion carries the one-time code in its path.
 func TestATransportErrorCarriesNoURL(t *testing.T) {
 	cause := errors.New("connection reset by peer")
@@ -120,8 +120,8 @@ func TestATransportErrorCarriesNoURL(t *testing.T) {
 	if strings.Contains(err.Error(), code) || strings.Contains(err.Error(), "app-manifests") {
 		t.Errorf("error %q quotes the request URL", err)
 	}
-	if !errors.Is(err, cause) || !strings.Contains(err.Error(), cause.Error()) {
-		t.Errorf("error %q lost its cause", err)
+	if !errors.Is(err, cause) || !strings.Contains(err.Error(), "transport error") {
+		t.Errorf("error %q lost its cause or its class", err)
 	}
 	if !strings.Contains(err.Error(), "Post") {
 		t.Errorf("error %q lost the request's method", err)

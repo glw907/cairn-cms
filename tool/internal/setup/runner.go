@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
@@ -669,13 +670,22 @@ func transportDetail(who string, err error) string {
 	name := strings.ToLower(who)
 	if te, ok := errors.AsType[*providers.TransportError](err); ok {
 		text := te.Error()
-		return name + ": " + text[:min(len(text), detailLimit)]
+		return name + ": " + cutDetail(text)
 	}
 	text := err.Error()
 	if strings.HasPrefix(text, "providers: parse response body:") || strings.HasPrefix(text, "providers: read response body:") {
-		return name + ": " + text[:min(len(text), detailLimit)]
+		return name + ": " + cutDetail(text)
 	}
 	return ""
+}
+
+// cutDetail cuts text to detailLimit bytes at a rune boundary.
+func cutDetail(text string) string {
+	n := min(len(text), detailLimit)
+	for n > 0 && n < len(text) && !utf8.RuneStart(text[n]) {
+		n--
+	}
+	return text[:n]
 }
 
 // localFailure is the stop for a step on this computer, such as git or the scaffold, unless the

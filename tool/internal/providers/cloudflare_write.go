@@ -13,7 +13,8 @@ import (
 )
 
 // send performs a write (or any non-GET) against path with body marshaled as JSON, decoding a
-// successful envelope's result into out. The transport never retries a non-GET, so a write is
+// successful envelope's result into out. The transport re-sends a request only when no
+// connection was made or the request is read-only, so a write that may have reached Cloudflare is
 // never sent twice behind the caller's back.
 func (cf *Cloudflare) send(ctx context.Context, method, path string, body, out any) error {
 	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)

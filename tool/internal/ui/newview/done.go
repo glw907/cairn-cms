@@ -13,7 +13,7 @@ import (
 type DoneMsg struct{ Done setup.Done }
 
 // done is the final frame for a live site. It says the owner is signed in only when setup read
-// the setup tab's link as used; otherwise it points to the tab's Sign in button and the email.
+// the setup tab's link as used; otherwise it points to the tab's Confirm sign-in button and the email.
 func (g Grid) done(d setup.Done, s setup.Summary, took time.Duration) string {
 	st := g.Styles
 	strong := st.Link(RoleText, d.URL).Bold(!st.NoColor()).Underline(!st.NoColor())

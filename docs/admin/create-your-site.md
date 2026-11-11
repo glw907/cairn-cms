@@ -66,7 +66,7 @@ After the questions, setup shows the screen titled **Approve setup in your brows
 Cloudflare comes first, so setup can check your domain before anything exists on GitHub.
 
 1. **Cloudflare: Authorize.** On the Cloudflare page, check that the account shown is the one you want, and select **Edit** to change it. Then turn on **API Tokens Write** under **Sensitive scopes**, and select **Authorize**. Cloudflare leaves that permission off, and setup needs it to create your site's deploy key. If you skip it, the setup tab explains and offers **Try again**, and nothing has been created.
-2. **GitHub: Create.** Select **Create GitHub App** to add a GitHub App for the site. The admin saves changes to your site through the App. GitHub App names are unique across GitHub. If GitHub says the name is taken, change it on that page. Setup uses the name you choose. If you're signed out of GitHub, sign in first and land back on **Create**. GitHub may first ask you to confirm access with a passkey, an authenticator app, or your password.
+2. **GitHub: Create.** Select **Create GitHub App** to add a GitHub App for the site. The admin saves changes to your site through the App. GitHub App names are unique across GitHub. If GitHub says the name is taken, change it on that page. Setup uses the name you choose. If you're signed out of GitHub, sign in first and land back on the **Create GitHub App** page. GitHub may first ask you to confirm access with a passkey, an authenticator app, or your password.
 3. **GitHub: Install & Authorize.** Select **Install & Authorize** to let setup create the repository. This access covers all your repositories, and setup removes it as soon as the repository exists.
 4. **GitHub: Approve.** Select **Approve, Install, & Authorize** to give the App access to the new repository only. Setup reads the installation back. If it covers more than that repository, setup removes it and asks you to approve again.
 
@@ -130,7 +130,7 @@ The link works once, for 10 minutes. A new site sends the mail from your own dom
 The done screen names your live address, says whether you're signed in, and lists three next steps. Check the result in this order:
 
 1. Open the live address. The starter site loads.
-2. Open `/admin` on the same address. You're signed in, or the setup tab shows a **Sign in** button.
+2. Open `/admin` on the same address. You're signed in, or the setup tab shows a **Confirm sign-in** button.
 3. Open the site's folder on your computer. Setup left a working copy there, with `origin` pointing at your repository.
 4. Run `cairn doctor` from the folder. The setup command installed the `cairn` CLI; if `cairn` isn't on your path, install it from the [release page](https://github.com/glw907/cairn-cms/releases). [Check that your site works](./is-it-working.md) explains each result.
 

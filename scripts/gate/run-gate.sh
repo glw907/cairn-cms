@@ -203,6 +203,9 @@ refuse_unless_clear() {
   if ! out="$(scrubbed node --input-type=module -e "$preflight" -- "$@")"; then
     echo "Refused: $1 will not start." >&2
     echo "$out" | sed -n 's/^REFUSE /  /p' >&2
+    if echo "$out" | grep -Eq '^REFUSE (the tmux session |[0-9]+ process\(es\))'; then
+      echo "A live clean-room session or process: \`cleanroom stop geoff\` ends the session and its leftover daemons." >&2
+    fi
     exit 1
   fi
   preflight_cap="$(echo "$out" | sed -n 's/^CAP //p')"

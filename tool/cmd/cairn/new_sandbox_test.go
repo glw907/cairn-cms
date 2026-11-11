@@ -121,14 +121,26 @@ func assertRefusalOrder(t *testing.T, text string) {
 	if bare < 0 || param < 0 || exclusions < 0 || bare >= param || param >= exclusions {
 		t.Fatalf("refusal %q must give the bare retry, then the parameter, then the exclusions", text)
 	}
-	for _, way := range []string{"`cd`", "pipe", "redirect", "`;`", "`&&`", "an option before create-cairn-site", "a version or tag"} {
+	for _, way := range []string{"`cd`", "pipe", "redirect", "`;`", "`&&`", "option before", "create-cairn-site", "version or tag"} {
 		if !strings.Contains(text[bare:param], way) {
 			t.Errorf("the bare-retry step lacks %q", way)
 		}
 	}
-	for _, line := range strings.Split(text, "\n") {
+	lines := strings.Split(text, "\n")
+	for _, line := range lines {
 		if len(line) > 100 {
 			t.Errorf("refusal line is %d characters, want at most 100: %q", len(line), line)
 		}
+	}
+	// An agent that shortens the output with tail keeps only the last lines, which must send it back
+	// to step 1, and step 2 must apply to a bare call that still stops, not only to a first call.
+	if last := lines[len(lines)-1]; !strings.Contains(last, "step 1") || !strings.Contains(last, "no pipe") {
+		t.Errorf("the last line %q must send a piped call back to step 1", last)
+	}
+	if !strings.Contains(text, "if a bare call prints this message") {
+		t.Error("step 2 must apply when a bare call prints the refusal")
+	}
+	if !strings.Contains(text, "likely switched the parameter off") {
+		t.Error("step 3 must hedge: the refusal cannot know the owner switched the parameter off")
 	}
 }

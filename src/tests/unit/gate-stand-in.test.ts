@@ -31,7 +31,7 @@ const FIXTURES: Record<string, Fixture> = {
   },
   'scope-error': {
     url: 'http://127.0.0.1:4100/error.html',
-    h1: 'Select API Tokens: Write',
+    h1: 'Turn on API Tokens Write',
     controls: [{ role: 'link', name: 'Try again', goto: 'admin' }],
   },
   done: { url: 'http://127.0.0.1:4100/done.html', h1: '✓Approvals complete', text: 'Keep this tab open.' },

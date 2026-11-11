@@ -204,14 +204,14 @@ describe('scripted leg: the target', () => {
   });
 });
 
-describe('scripted leg: the screenshot attaches with the leg\'s own tmux', () => {
-  // Every screenshot of run 2611102257 read "server exited unexpectedly": the headless terminal found
-  // /usr/bin/tmux 3.5a on its PATH and the leg's server is Homebrew's 3.8, and a tmux client and server of
-  // different versions refuse each other. The command names the binary the leg itself runs.
-  it('names the absolute tmux path, the socket, and the session', () => {
-    expect(shotCommand('/home/linuxbrew/.linuxbrew/bin/tmux', '/s/tmux-scripted.sock', 'cleanroom-2611102257-scripted')).toBe(
-      '/home/linuxbrew/.linuxbrew/bin/tmux -S /s/tmux-scripted.sock attach -r -t cleanroom-2611102257-scripted',
-    );
+describe('scripted leg: the screenshot renders a capture of the pane', () => {
+  // The headless terminal runs in another root: it has tmux 3.5a and no Homebrew, so it cannot attach to
+  // the leg's tmux 3.8 server by any path (run 2611102257's screenshots read "server exited unexpectedly",
+  // and 2611110006's read "/home/linuxbrew/.linuxbrew/bin/tmux: No such file or directory"). The leg
+  // captures the pane with the tmux it drives, writes the escape sequences to a file, and the headless
+  // terminal shows that file.
+  it('shows the capture file with cat', () => {
+    expect(shotCommand('/s/shots/domain.capture')).toBe('cat /s/shots/domain.capture');
   });
 });
 

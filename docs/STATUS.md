@@ -29,14 +29,15 @@ Pass 3 of the cairn-setup run is finishing the proving loop for `cairn new`. `ma
 
 1. The owner runbook (`~/Projects/initiatives/cairn-setup/research/owner-install-runbook.md`, T3.6, pointed at dev.7)
    and Geoff's install on it. His friction log outranks the naive lists, and its fixes ship as one PR per sitting.
-2. The naive leg, to its first pass (Geoff, 2026-11-10: one successful naive run is enough). Runs go one at a time on
-   dev.7, with no fix and no docs change between them, up to three, and the first graded pass is the release gate's
-   naive row and ends the leg. If all three fail, there is one fix PR (a cairn defect that ended a run, and friction
-   met in two or more runs), one snapshot, and up to three more runs, again stopping at the first pass. With no pass
-   in those, the end packet asks Geoff whether to ship. Friction from a passing run is filed, not fixed.
-   `proving/batch-1.md` keeps a row per run. 8 of the 15 naive runs are used (about $10.5 of the $100), and the
-   fifteenth is a reserve. A run that ends on the stand-in, the watcher, or the grader is a harness failure: trace it
-   before any rerun.
+2. The naive leg, to its first pass (Geoff, 2026-11-10: an agent should set up a cairn site nearly every time unless
+   Cloudflare or GitHub misbehave, and one successful run is enough). Each run on dev.7 is graded and recorded as a
+   row in `proving/batch-1.md`. A pass ends the leg and is the release gate's naive row, and its friction is filed,
+   not fixed. A fail traced to cairn (the tool, the refusal, the agent page, the skill, or `cairn help agents`) is a
+   defect: one PR fixes it with the friction that run showed, a snapshot publishes, and the next run uses it. A fail
+   traced to the harness, Cloudflare, or GitHub is traced and reported to the conductor, then rerun on the same build
+   with no fix. A cause that cannot be traced goes to the conductor before any rerun. The 15-run cap stays, with 8
+   used (about $10.5 of the $100). If no run has passed after the remaining runs or two fix PRs, the end packet asks
+   Geoff whether to ship.
 3. T3.4's close (#366 to `## Done`), T3.5 (the dependency sweep, the final candidate, a scripted leg on it, and one
    naive run only if the sweep touched a rerun path), and the end packet.
 

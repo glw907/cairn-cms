@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { findSignInMessage } from '../../../scripts/gate/mail.mjs';
 import { gateFetch } from '../../../scripts/gate/fetch-check.mjs';
-import { LIVE_ORIGIN, REGISTRY_READ, grade, missedRelays, parseTranscript, permissionPrompts, setupEvents } from '../../../scripts/gate/grade.mjs';
+import { LIVE_ORIGIN, REGISTRY_READ, grade, missedRelays, parseTranscript, permissionPrompts, setupEvents, stepRows } from '../../../scripts/gate/grade.mjs';
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -48,6 +48,10 @@ interface Options {
   numberedEvents?: boolean;
   /** The clean room holds no registry record. */
   noRecord?: boolean;
+  /** What the registry read prints instead of the record. */
+  recordText?: string;
+  /** The exit code of the registry read, as when the room is gone or refuses the shell. */
+  recordCode?: number;
 }
 
 async function makeRun(opts: Options = {}) {
@@ -119,7 +123,7 @@ async function makeRun(opts: Options = {}) {
     cleanroomCalls.push(args);
     if (args[0] === 'cost') return { code: 0, stdout: '$0.50\n' };
     if (args[0] === 'scan') return { code: opts.scanCode ?? 0, stdout: opts.scanCode ? `${args[2]}\n` : '' };
-    if (args[0] === 'shell' && args[3] === REGISTRY_READ) return { code: 0, stdout: opts.noRecord ? '' : recordJson };
+    if (args[0] === 'shell' && args[3] === REGISTRY_READ) return { code: opts.recordCode ?? 0, stdout: opts.recordCode || opts.noRecord ? '' : (opts.recordText ?? recordJson) };
     return { code: 0, stdout: 'cairn-gate: finished at live\n' };
   };
   const provingDir = path.join(root, 'proving');
@@ -302,6 +306,21 @@ describe('the apply stage of an agent run', () => {
     const record = await grade({ runDir: run.runDir, deps: run.deps });
     expect(record.reads).toContainEqual({ name: 'registry record', ok: false, evidence: 'no registry record under .config/cairn/sites' });
     expect(record.outcome.result).toBe('fail');
+  });
+});
+
+describe('a registry read that fails', () => {
+  it('names the exit code when the clean room refuses the shell, not a missing record', async () => {
+    const run = await makeRun({ recordCode: 1 });
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(record.reads).toContainEqual({ name: 'registry record', ok: false, evidence: 'exited 1' });
+    expect(record.outcome.result).toBe('fail');
+  });
+
+  it('says so when the record is not JSON', async () => {
+    const run = await makeRun({ recordText: 'cairn-gate: finished at live\n' });
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(record.reads).toContainEqual({ name: 'registry record', ok: false, evidence: 'the registry record is not JSON' });
   });
 });
 
@@ -507,6 +526,17 @@ describe('the transcript readers', () => {
     expect(setupEvents(parseTranscript(`${padded.map((line) => JSON.stringify(line)).join('\n')}\n`)).map((e) => `${e.kind}:${e.step}`)).toEqual(['step_started:scaffold', 'step_done:scaffold']);
     const bare = [resultLine(5, body, true)];
     expect(setupEvents(parseTranscript(`${bare.map((line) => JSON.stringify(line)).join('\n')}\n`))).toHaveLength(2);
+  });
+
+  it('counts an event once when the agent reads the same output file again', () => {
+    const first = [event('step_started', 5, { step: 'scaffold' }), event('step_done', 6, { step: 'scaffold' }), event('waiting', 6, { step: 'approve-create-app', waiting: 'approve-create-app', sentence: SENTENCE_RELAYED })];
+    const again = [resultLine(5, first), resultLine(9, first, true), resultLine(9.5, [...first, event('step_done', 9, { step: 'provision' })], true)];
+    const lines = parseTranscript(`${again.map((line) => JSON.stringify(line)).join('\n')}\n`);
+    expect(setupEvents(lines).map((e) => `${e.kind}:${e.step}`)).toEqual(['step_started:scaffold', 'step_done:scaffold', 'waiting:approve-create-app', 'step_done:provision']);
+    // The repeat does not open a second row for the closed step, and it does not move the waiting event
+    // to a later line, where a relay that came before it would read as missed.
+    expect(stepRows(setupEvents(lines)).filter((row) => row.step === 'scaffold')).toHaveLength(1);
+    expect(setupEvents(lines).find((e) => e.kind === 'waiting')?.line).toBe(0);
   });
 
   it('reads a command from a redrawn prompt once', () => {

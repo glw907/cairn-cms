@@ -16,6 +16,7 @@ import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { gateFetch } from './fetch-check.mjs';
 import { findSignInMessage } from './mail.mjs';
+import { authoritativeAddress } from './resolve.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -64,6 +65,7 @@ const RELAY_PREFIX = 50;
  * @property {(args: string[]) => Promise<CmdResult>} cleanroom runs the workstation `cleanroom` tool
  * @property {typeof fetch} [githubFetch] the fetch for the GitHub API
  * @property {typeof gateFetch} [siteFetch] the fetch for the live site
+ * @property {(host: string) => Promise<string | null>} [authority] the address the zone's nameserver gives a host, or null
  * @property {typeof findSignInMessage} [findMail] the mailbox read
  * @property {string} [provingDir] where run records are kept between runs
  * @property {Record<string, string | undefined>} env the allowlisted environment
@@ -391,6 +393,7 @@ export async function grade({ runDir, deps, end }) {
   const { cleanroom, env } = deps;
   const githubFetch = deps.githubFetch ?? fetch;
   const siteFetch = deps.siteFetch ?? gateFetch;
+  const authority = deps.authority ?? ((/** @type {string} */ host) => authoritativeAddress(host));
   const findMail = deps.findMail ?? findSignInMessage;
   const provingDir = deps.provingDir ?? path.join(homedir(), '.local', 'state', 'cairn-gate', 'proving');
   const home = path.join(path.dirname(runDir), 'home');
@@ -506,8 +509,15 @@ export async function grade({ runDir, deps, end }) {
   /** @type {Check} */
   let live;
   try {
-    const [home1, admin] = [await siteFetch(`${LIVE_ORIGIN}/`), await siteFetch(`${LIVE_ORIGIN}/admin`)];
-    live = { ok: home1.status === 200 && admin.status === 200, evidence: `GET / answered ${home1.status}, GET /admin answered ${admin.status}` };
+    // A resolver asked for a host its zone does not have yet keeps that answer for up to 30 minutes, and
+    // the next run's site then looks dead to this computer. A run that failed before its site existed
+    // must not ask for it, so the zone's nameserver is asked first.
+    if ((await authority(new URL(LIVE_ORIGIN).hostname)) === null) {
+      live = { ok: false, evidence: `the zone has no address for ${new URL(LIVE_ORIGIN).hostname}, so the live read was skipped` };
+    } else {
+      const [home1, admin] = [await siteFetch(`${LIVE_ORIGIN}/`), await siteFetch(`${LIVE_ORIGIN}/admin`)];
+      live = { ok: home1.status === 200 && admin.status === 200, evidence: `GET / answered ${home1.status}, GET /admin answered ${admin.status}` };
+    }
   } catch (error) {
     live = { ok: false, evidence: `the live read failed: ${/** @type {Error} */ (error).message}`.slice(0, 160) };
   }

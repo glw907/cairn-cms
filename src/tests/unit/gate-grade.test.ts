@@ -120,7 +120,7 @@ async function makeRun(opts: Options = {}) {
     cleanroom,
     githubFetch: githubFetch as typeof fetch,
     siteFetch: (async () => ({ status: 200, text: async () => '' })) as unknown as typeof gateFetch, // the grader reads only status and text()
-    authority: async () => '203.0.113.7', // the zone's nameserver has the address, so the live read goes ahead
+    authority: (async (_host: string): Promise<string | null> => '203.0.113.7') as (host: string) => Promise<string | null>, // the zone's nameserver has the address, so the live read goes ahead
     findMail: (async () => {
       if (opts.mail === 'throws') throw new Error('JMAP Email/query answered an error');
       return { found: true, from: 'noreply@carin-test.org', url: 'https://gate.carin-test.org/admin/auth/confirm?token=SECRET' };

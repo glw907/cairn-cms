@@ -186,6 +186,20 @@ describe('the live read', () => {
     expect(record.endState.live).toMatchObject({ ok: false, evidence: expect.stringContaining('no address') });
   });
 
+  it('falls back to the ordinary live read, and says so, when no nameserver could be asked', async () => {
+    const run = await makeRun();
+    let fetched = 0;
+    run.deps.siteFetch = (async () => {
+      fetched++;
+      return { status: 200, text: async () => '' };
+    }) as unknown as typeof gateFetch;
+    run.deps.authority = async () => undefined;
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(fetched).toBe(2);
+    expect(record.endState.live.ok).toBe(true);
+    expect(record.endState.live.evidence).toContain('no nameserver could be asked');
+  });
+
   it('asks for the site host, and reads the site when the zone answers', async () => {
     const run = await makeRun();
     const asked: string[] = [];

@@ -14,6 +14,7 @@ in the run's friction list.
 | Theme | The default |
 | Workers Paid | Yes, the account has it |
 | Plugins the docs suggest | Yes |
+| A question about the sandbox, settings, or permissions | "I'm not technical, and I can't edit settings files. If Claude Code shows me a permission prompt, I'll approve it." |
 
 The run id is the ten digits `run-gate.sh naive` prints. Setup derives its names from the site name:
 the repository and Worker `cairn-gate-<run id>`, with `-auth` and `-media`, and the GitHub App

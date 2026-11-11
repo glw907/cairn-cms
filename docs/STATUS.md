@@ -112,15 +112,31 @@ pass, was dropped by Geoff on 2026-11-08.
   `~/Projects/initiatives/cairn-setup/research/proving/pre-pass.md`. After the merge: cut `2.0.0-dev.5` (the launcher
   and tool changed, the engine did not), run one scripted leg on the published launcher, then wait for the go
   to naive round seven.
-- **Not done, in order (a fresh session takes these).** (a) The friction pre-pass: built, awaiting the merge. (b) One published
-  snapshot, `gh workflow run tool.yml --ref main -f snapshot=2.0.0-dev.5 -R glw907/cairn-cms`, then one scripted
-  run on the published `npm create` path (`run-gate.sh scripted`, no `--cairn-bin`), which must pass with the
-  launcher and platform versions read. (c) Naive round seven, then up to three more of the ten, only on the
-  conductor's go. (d) The dependency sweep, the final candidate, and the runbook (T3.4 to T3.6). A scripted run:
-  `bash scripts/gate/run-gate.sh sweep`, `make -C tool build`, flush the resolver (`resolvectl flush-caches`,
-  and never query the new host yourself before the run), `run-gate.sh scripted --cairn-bin tool/cairn`, a
-  Monitor on `<run dir>/scripted.jsonl` and `stand-in.jsonl`, then `cleanroom stop <id>`, `grade <run dir>`,
-  `sweep`, `sweep --apply`. Tool tests bind port 49152: never run `make -C tool check` while a run is live.
+- **State at the end of 2026-11-10 (executor `cairn-cms-setup-tooling-3b`).** Merged: #231 (the pre-pass), #232,
+  #233, and #234 (merge `2a9fed671`). The snapshot `create-cairn-site` 2.0.0-dev.6 is on `gate` (tool.yml run
+  42947572055), `latest` and `next` did not move, and the engine stays at 0.99.0-dev.1. Scripted leg 2611110255 on
+  dev.6 passed (`~/Projects/initiatives/cairn-setup/research/proving/scripted-dev6.md`). Naive round eight
+  (2611110319, run 8 of 15, about $10.5 of the $100) never ran setup: the agent piped its call, the sandbox
+  refusal fired, and it stopped without a bare call. The trace is in `.../proving/round-8.md`, and the dead-tab
+  mail sign-in (#233) is still unproved live. **PR #235** (`setup-tooling-r16`) is the reply: the refusal, `cairn
+  help agents`, the agent page, and the skill give the bare retry first (BACKLOG #448), the owner card has a
+  sandbox row (#449), and the harness fixes land (#450 to #452, #441, #455). #453 and #454 are filed open. Its
+  review record is `~/Projects/initiatives/cairn-setup/reviews/2026-11-10-setup-tooling-r16-review.md`. The next
+  conductor's prompt is
+  `~/Projects/initiatives/cairn-setup/plans/2026-11-10-setup-tooling-day-conductor-3-prompt.txt`.
+- **Not done, in order.** (a) Merge #235 on the conductor's word, once CI is green and a whole-branch accept
+  stands on its head. (b) Publish dev.7 (`gh workflow run tool.yml --ref main -f snapshot=2.0.0-dev.7 -R
+  glw907/cairn-cms`), flush the resolver, run the scripted leg (#235 changes the scripted driver and the grader),
+  then naive round nine on dev.7 (run 9 of 15), and trace any failure before a tenth. (c) The dependency sweep, the
+  final candidate, and the runbook (T3.4 to T3.6). S-2, a narrow sandbox exclusion in the clean room, is Geoff's
+  call, and `round-8.md` carries the evidence. A scripted run: `bash scripts/gate/run-gate.sh sweep`, flush the
+  resolver (`resolvectl flush-caches`, and never query the new host yourself before the run), `run-gate.sh
+  scripted` (no `--cairn-bin` for the published path), a Monitor of `grep --line-buffered` alone on `<run
+  dir>/scripted.jsonl` (`cut` in the pipe holds every line back), then `cleanroom stop geoff`, `grade` on the run
+  dir the launcher prints (`/var/tmp/cleanroom/<id>/run`, never the gate-state `runs/<id>-scripted` directory,
+  which holds only the shots), `sweep`, and `sweep --apply`. Tool tests bind port 49152: never run `make -C tool
+  check` while a run is live. This host's Go lags the vulnerability database: `make -C tool vulncheck` needs
+  `GOTOOLCHAIN=go1.27.4` until Homebrew ships 1.27.4.
 - **Friction pre-pass inputs (Geoff's ruling: fix what a naive agent will meet before round seven, in the skill,
   the docs, `cairn --help` and `cairn new --help`, and the agent lane's messages; cobra-style plain writing, no
   marketing words, no em dashes in terminal output).** What I expect a naive agent to trip on:

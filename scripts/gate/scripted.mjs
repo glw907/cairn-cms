@@ -350,11 +350,12 @@ export async function runScripted({ runDir, env, deps }) {
  * The command the headless terminal runs to show the leg's pane: it prints a capture of the pane,
  * with its escape sequences, that the leg took with the tmux it drives. The headless terminal runs
  * in another root with a different tmux and no Homebrew, so it cannot attach to the leg's server.
+ * The headless terminal runs the command under bash -c, so the path is single-quoted.
  * @param {string} captureFile the file holding the capture
  * @returns {string}
  */
 export function shotCommand(captureFile) {
-  return `cat ${captureFile}`;
+  return `cat '${captureFile.replaceAll("'", "'\\''")}'`;
 }
 
 /**

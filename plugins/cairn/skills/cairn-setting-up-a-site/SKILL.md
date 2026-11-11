@@ -17,11 +17,15 @@ description: Sets up a new cairn site with `cairn new`. Use when a person asks t
 
 Run it as one bare call. It has to end up outside the sandbox: setup serves its approval page on a local port, and a sandboxed command's localhost is private to the sandbox, so the person's browser can't reach the page.
 
-Make the call before you ask the person anything about the sandbox. With the sandbox off, it runs as it is. With `cairn *` and `npx create-cairn-site *` in the person's `sandbox.excludedCommands`, a bare call runs outside the sandbox with no prompt. With neither, `cairn` stops at once with a message that says it ran inside the sandbox. Run the same call again with the Bash tool's `dangerouslyDisableSandbox` parameter, and Claude Code asks the person to approve it. Don't ask first: that prompt is their approval ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)). If the retry stops with the same message, the person has switched it off (`allowUnsandboxedCommands: false`). Only an exclusion works then, so ask the person to add the two above, and make the same call again.
+Make the call before you ask the person anything about the sandbox. With the sandbox off, it runs as it is. With `cairn *` and `npx create-cairn-site *` in the person's `sandbox.excludedCommands`, a bare call runs outside the sandbox with no prompt. With neither, `cairn` stops at once with a message that says it ran inside the sandbox. When it stops that way, take these steps in order:
+
+1. Run the same call again, bare, as the list below describes. A `cd`, a redirect, or `$(...)` keeps even an excluded call inside the sandbox, and in a chain every command has to match an exclusion.
+2. If a bare call stops the same way, run it again with the Bash tool's `dangerouslyDisableSandbox` parameter. Don't ask first: Claude Code's prompt for it, or an allow rule the person already set, is their approval ([Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing)).
+3. If the step 2 retry stops the same way too, the person has most likely switched the parameter off (`allowUnsandboxedCommands: false`). Only an exclusion works then, so ask the person to add the two above, and make the same call again.
 
 Keep the call bare, so that an exclusion the person already set for `cairn` still matches the text of the call:
 
-- Put no `cd`, redirect, pipe, or `$(...)` in it. Change to an empty folder in a separate call first.
+- Put no `cd`, redirect, pipe, `;`, `&&`, or `$(...)` in it, and don't pipe the output through `tail` or `head` to shorten it. Claude Code keeps a call sandboxed when it has a `cd`, a redirect, or `$(...)`, and in a chain every command has to match an exclusion. Change to an empty folder in a separate call first.
 - Never run it from inside a clone of the cairn-cms repository. npx matches the package name against the local project first, and a clone holds an uninstalled package of the same name, so the call fails with `command not found`.
 - Put no npx option in front of the package name, not even the one that answers npx's install prompt, and add no version or tag to it.
 - Write no `new` after the package name. The launcher already runs `cairn new`.

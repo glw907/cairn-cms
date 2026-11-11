@@ -4,7 +4,7 @@
 #   bash scripts/gate/run-gate.sh sweep [--apply | --check-scopes] [--headed]
 #   bash scripts/gate/run-gate.sh probe | scripted
 #   bash scripts/gate/run-gate.sh naive
-#   bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget]
+#   bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget [--reason "<text>"]]
 #   bash scripts/gate/run-gate.sh shell <name> [cleanroom shell options]
 #
 # Sources the workstation's secrets (the pattern CLAUDE.md names for a script), and starts the
@@ -203,6 +203,9 @@ refuse_unless_clear() {
   if ! out="$(scrubbed node --input-type=module -e "$preflight" -- "$@")"; then
     echo "Refused: $1 will not start." >&2
     echo "$out" | sed -n 's/^REFUSE /  /p' >&2
+    if echo "$out" | grep -Eq '^REFUSE (the tmux session |[0-9]+ process\(es\))'; then
+      echo "A live clean-room session or process: \`cleanroom stop geoff\` ends the session and its leftover daemons." >&2
+    fi
     exit 1
   fi
   preflight_cap="$(echo "$out" | sed -n 's/^CAP //p')"
@@ -349,6 +352,7 @@ case "${1:-}" in
     mkdir -p -m 0700 "$run_dir/shots"
     start_session "cleanroom-$run_id" "$handoff_dir/$run_id-scripted.env" node "$here/scripted.mjs" "$run_path" --shots "$run_dir/shots"
     report
+    echo "shots: $run_dir/shots"
     exit 0
     ;;
   probe)

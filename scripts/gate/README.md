@@ -14,7 +14,7 @@ bash scripts/gate/run-gate.sh sweep --apply
 bash scripts/gate/run-gate.sh probe
 bash scripts/gate/run-gate.sh naive
 bash scripts/gate/run-gate.sh scripted [--cairn-bin <path>]
-bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget]
+bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget [--reason "<text>"]]
 bash scripts/gate/run-gate.sh shell <name> [-c <command>]
 ```
 
@@ -92,6 +92,11 @@ A read that fails is a failed check, and the record lists each by name. The outc
 `fail` with `cost`, `time`, `stall`, `page`, `budget`, or `other`; a version unlike the candidate's
 is `other: wrong candidate`. The four end-state checks are live, owner signed in, sign-in mail in
 the mailbox, and installed versions equal to the candidate's, each with an evidence line.
+
+`--end stall` or `--end budget` records that the executor, the session running the proving loop,
+ended the run. With `--end stall`, `--reason "<text>"` records why; the grader strips control
+characters and newlines and keeps the first 200 characters. Without it the record says no reason
+was recorded.
 
 The deploy phases come from the first `deploy` workflow run's job steps: install is a step named for
 `npm install`, build is `npm run check` and `npm run build`, and deploy is the two `wrangler`

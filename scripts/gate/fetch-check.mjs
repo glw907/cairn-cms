@@ -72,7 +72,7 @@ function pinnedGet(url, address, headers, ca) {
 /**
  * @typedef {object} GateFetchOptions
  * @property {typeof fetch} [fetchImpl] the first attempt (the global fetch)
- * @property {(domain: string) => Promise<string | null>} [resolveAddress] the authoritative lookup
+ * @property {(domain: string) => Promise<string | null | undefined>} [resolveAddress] the authoritative lookup
  * @property {string | Buffer} [ca] test-only: a CA for a local self-signed server
  */
 

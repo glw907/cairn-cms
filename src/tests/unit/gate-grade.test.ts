@@ -120,7 +120,7 @@ async function makeRun(opts: Options = {}) {
     cleanroom,
     githubFetch: githubFetch as typeof fetch,
     siteFetch: (async () => ({ status: 200, text: async () => '' })) as unknown as typeof gateFetch, // the grader reads only status and text()
-    authority: (async (_host: string): Promise<string | null> => '203.0.113.7') as (host: string) => Promise<string | null>, // the zone's nameserver has the address, so the live read goes ahead
+    authority: (async (_host: string): Promise<string | null | undefined> => '203.0.113.7') as (host: string) => Promise<string | null | undefined>, // the zone's nameserver has the address, so the live read goes ahead
     findMail: (async () => {
       if (opts.mail === 'throws') throw new Error('JMAP Email/query answered an error');
       return { found: true, from: 'noreply@carin-test.org', url: 'https://gate.carin-test.org/admin/auth/confirm?token=SECRET' };
@@ -184,6 +184,20 @@ describe('the live read', () => {
     const record = await grade({ runDir: run.runDir, deps: run.deps });
     expect(fetched).toBe(0);
     expect(record.endState.live).toMatchObject({ ok: false, evidence: expect.stringContaining('no address') });
+  });
+
+  it('falls back to the ordinary live read, and says so, when no nameserver could be asked', async () => {
+    const run = await makeRun();
+    let fetched = 0;
+    run.deps.siteFetch = (async () => {
+      fetched++;
+      return { status: 200, text: async () => '' };
+    }) as unknown as typeof gateFetch;
+    run.deps.authority = async () => undefined;
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(fetched).toBe(2);
+    expect(record.endState.live.ok).toBe(true);
+    expect(record.endState.live.evidence).toContain('no nameserver could be asked');
   });
 
   it('asks for the site host, and reads the site when the zone answers', async () => {
@@ -328,6 +342,32 @@ describe('the end-state checks and the outcome', () => {
     expect((await grade({ runDir: run.runDir, deps: run.deps })).outcome.reason).toBe('time');
     await writeFile(path.join(run.runDir, 'state.json'), JSON.stringify({ state: 'exited', elapsedMinutes: 10 }));
     expect((await grade({ runDir: run.runDir, deps: run.deps, end: 'stall' })).outcome.reason).toBe('stall');
+  });
+
+  it('names the executor and the reason in a stall, and cleans and caps the reason', async () => {
+    const run = await makeRun();
+    await writeFile(path.join(run.runDir, 'state.json'), JSON.stringify({ state: 'exited', elapsedMinutes: 10 }));
+    const detail = async (reason?: string) => (await grade({ runDir: run.runDir, deps: run.deps, end: 'stall', reason })).outcome.detail;
+    expect(await detail('the owner card never answered')).toBe('the executor ended the run as a stall: the owner card never answered');
+    expect(await detail()).toBe('the executor ended the run as a stall; no reason was recorded');
+    expect(await detail('  \n\t ')).toBe('the executor ended the run as a stall; no reason was recorded');
+    const cleaned = await detail(`one\ntwo\u0007${'x'.repeat(300)}`);
+    expect(cleaned).toMatch(/^the executor ended the run as a stall: one two/);
+    expect(cleaned).not.toMatch(/[\u0000-\u001f]/);
+    expect(cleaned.length).toBe('the executor ended the run as a stall: '.length + 200);
+  });
+
+  it('refuses a directory that is not a run dir, and points a shot directory at the run dir', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'gate-stub-'));
+    roots.push(root);
+    const run = await makeRun();
+    await expect(grade({ runDir: root, deps: run.deps })).rejects.toThrow(/not a run directory/);
+    await mkdir(path.join(root, 'shots'));
+    await expect(grade({ runDir: root, deps: run.deps })).rejects.toThrow(/scripted leg's shot directory.*run dir/);
+    // A run dir whose harness.json is unreadable is still graded, with the failed read recorded.
+    await rm(path.join(run.runDir, 'harness.json'));
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(record.reads.find((read: { name: string }) => read.name === 'harness.json')).toMatchObject({ ok: false });
   });
 
   it('fails a record whose scan matched, rewrites both files without the content, and keeps no proving copy', async () => {

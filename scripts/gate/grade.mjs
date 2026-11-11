@@ -2,7 +2,7 @@
 // `run-record.json` and `run-record.md` in the run directory. A read that fails is a failed check,
 // never an empty one, and the record carries each failed read by name.
 //
-// Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget]
+// Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget [--reason "<text>"]]
 //
 // `<run dir>` is `/var/tmp/cleanroom/<name>/run`; the clean home is `../home`. The grader runs
 // `cleanroom shell` and `cleanroom scan`, copies the record to `~/.local/state/cairn-gate/proving/`,
@@ -10,6 +10,7 @@
 // runs it on a fixture with no network.
 import { execFile } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -65,7 +66,7 @@ const RELAY_PREFIX = 50;
  * @property {(args: string[]) => Promise<CmdResult>} cleanroom runs the workstation `cleanroom` tool
  * @property {typeof fetch} [githubFetch] the fetch for the GitHub API
  * @property {typeof gateFetch} [siteFetch] the fetch for the live site
- * @property {(host: string) => Promise<string | null>} [authority] the address the zone's nameserver gives a host, or null
+ * @property {(host: string) => Promise<string | null | undefined>} [authority] the address the zone's nameserver gives a host; null when it answered with none; undefined when none could be asked
  * @property {typeof findSignInMessage} [findMail] the mailbox read
  * @property {string} [provingDir] where run records are kept between runs
  * @property {Record<string, string | undefined>} env the allowlisted environment
@@ -386,10 +387,10 @@ function numberUnder(state, key) {
 
 /**
  * Grade a run.
- * @param {{ runDir: string, deps: GradeDeps, end?: 'stall' | 'budget' }} input
+ * @param {{ runDir: string, deps: GradeDeps, end?: 'stall' | 'budget', reason?: string }} input `reason` is why the executor ended a stall
  * @returns {Promise<any>} the record, as written to `run-record.json`
  */
-export async function grade({ runDir, deps, end }) {
+export async function grade({ runDir, deps, end, reason }) {
   const { cleanroom, env } = deps;
   const githubFetch = deps.githubFetch ?? fetch;
   const siteFetch = deps.siteFetch ?? gateFetch;
@@ -403,6 +404,14 @@ export async function grade({ runDir, deps, end }) {
   /** @param {string} what @param {boolean} ok @param {string} evidence */
   const note = (what, ok, evidence) => reads.push({ name: what, ok, evidence });
 
+  // `run-gate.sh scripted` also makes a gate-state directory that holds only `shots/`. A directory
+  // with none of a run's files is refused outright, because grading it would read as a meaningless fail.
+  if (!['harness.json', 'transcript.jsonl', 'stand-in.jsonl'].some((file) => existsSync(path.join(runDir, file)))) {
+    throw new Error(
+      `${runDir} is not a run directory: it holds no harness.json, transcript.jsonl, or stand-in.jsonl.` +
+        (existsSync(path.join(runDir, 'shots')) ? " It looks like a scripted leg's shot directory; grade the run dir that `run-gate.sh scripted` printed." : ''),
+    );
+  }
   const harnessRead = await readJson(path.join(runDir, 'harness.json'));
   const harness = harnessRead.ok ? harnessRead.value : {};
   note('harness.json', harnessRead.ok, harnessRead.ok ? 'read' : harnessRead.reason);
@@ -512,11 +521,15 @@ export async function grade({ runDir, deps, end }) {
     // A resolver asked for a host its zone does not have yet keeps that answer for up to 30 minutes, and
     // the next run's site then looks dead to this computer. A run that failed before its site existed
     // must not ask for it, so the zone's nameserver is asked first.
-    if ((await authority(new URL(LIVE_ORIGIN).hostname)) === null) {
+    // Only a nameserver's own answer of no address skips the read. When none could be asked (port 53
+    // blocked, resolvers down) the zone is unknown, so the ordinary read goes ahead and says so.
+    const zoneAnswer = await authority(new URL(LIVE_ORIGIN).hostname);
+    if (zoneAnswer === null) {
       live = { ok: false, evidence: `the zone has no address for ${new URL(LIVE_ORIGIN).hostname}, so the live read was skipped` };
     } else {
       const [home1, admin] = [await siteFetch(`${LIVE_ORIGIN}/`), await siteFetch(`${LIVE_ORIGIN}/admin`)];
-      live = { ok: home1.status === 200 && admin.status === 200, evidence: `GET / answered ${home1.status}, GET /admin answered ${admin.status}` };
+      const unasked = zoneAnswer === undefined ? '; no nameserver could be asked, so the zone was not checked first' : '';
+      live = { ok: home1.status === 200 && admin.status === 200, evidence: `GET / answered ${home1.status}, GET /admin answered ${admin.status}${unasked}` };
     }
   } catch (error) {
     live = { ok: false, evidence: `the live read failed: ${/** @type {Error} */ (error).message}`.slice(0, 160) };
@@ -622,7 +635,12 @@ export async function grade({ runDir, deps, end }) {
   }).at(-1);
   if (stateName === 'stopped:cost') outcome = { result: 'fail', reason: 'cost', detail: 'the cost cap stopped the session' };
   else if (stateName === 'stopped:time') outcome = { result: 'fail', reason: 'time', detail: 'the time cap stopped the session' };
-  else if (end === 'stall') outcome = { result: 'fail', reason: 'stall', detail: 'the conductor ended the run as a stall' };
+  else if (end === 'stall') {
+    // The reason is operator text that lands in a record file: control characters become spaces and
+    // the length is capped.
+    const why = (reason ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200).trim();
+    outcome = { result: 'fail', reason: 'stall', detail: `the executor ended the run as a stall${why ? `: ${why}` : '; no reason was recorded'}` };
+  }
   else if (end === 'budget') outcome = { result: 'fail', reason: 'budget', detail: 'the loop budget ended the run' };
   else if (scriptedFailure) outcome = { result: 'fail', reason: 'other', detail: `the scripted leg failed at "${scriptedFailure.screen}": ${scriptedFailure.reason}` };
   else if (!versions.ok && candidate.engine && candidate.tool && mismatches.length > 0) outcome = { result: 'fail', reason: 'other', detail: `wrong candidate: ${mismatches.join('; ')}` };
@@ -758,11 +776,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const runDir = process.argv[2];
   const endAt = process.argv.indexOf('--end');
   const end = endAt === -1 ? undefined : process.argv[endAt + 1];
-  if (!runDir || (endAt !== -1 && end !== 'stall' && end !== 'budget')) {
-    console.error('Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget]');
+  const reasonAt = process.argv.indexOf('--reason');
+  const reason = reasonAt === -1 ? undefined : process.argv[reasonAt + 1];
+  if (!runDir || (endAt !== -1 && end !== 'stall' && end !== 'budget') || (reasonAt !== -1 && reason === undefined)) {
+    console.error('Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget [--reason "<text>"]]');
     process.exitCode = 2;
   } else {
-    const record = await grade({ runDir: path.resolve(runDir), end: /** @type {'stall' | 'budget' | undefined} */ (end), deps: { cleanroom: cleanroomDefault, env: process.env } });
+    const record = await grade({ runDir: path.resolve(runDir), end: /** @type {'stall' | 'budget' | undefined} */ (end), reason, deps: { cleanroom: cleanroomDefault, env: process.env } }).catch((/** @type {Error} */ error) => {
+      console.error(error.message);
+      process.exit(2);
+    });
     console.log(`Graded ${record.id}: ${record.outcome.result}${record.outcome.reason ? `, ${record.outcome.reason}` : ''}. Record: ${path.join(runDir, 'run-record.md')}`);
     process.exitCode = record.outcome.result === 'pass' ? 0 : 1;
   }

@@ -54,11 +54,36 @@ describe('authoritativeAddress', () => {
     expect(await authoritativeAddress('carin-test.org', { makeResolver })).toBe('104.21.0.7');
   });
 
-  it('returns null when no nameserver is found or none answers', async () => {
-    const none = (): Reader => ({ resolveNs: async () => { throw new Error('ENODATA'); }, resolve4: async () => [] });
-    expect(await authoritativeAddress('carin-test.org', { makeResolver: none })).toBeNull();
+  it('returns null when the zone answers with no address', async () => {
+    const code = (c: string) => Object.assign(new Error(c), { code: c });
+    const noZone = (): Reader => ({ resolveNs: async () => { throw code('ENODATA'); }, resolve4: async () => [] });
+    expect(await authoritativeAddress('carin-test.org', { makeResolver: noZone })).toBeNull();
+    const emptyZone = (servers?: string[]): Reader => ({
+      resolveNs: async () => ['ns1.example.net'],
+      resolve4: async (name) => {
+        if (name === 'ns1.example.net') return ['198.51.100.9'];
+        if (servers?.[0] === '198.51.100.9') throw code('ENODATA');
+        return [];
+      },
+    });
+    expect(await authoritativeAddress('carin-test.org', { makeResolver: emptyZone })).toBeNull();
+  });
+
+  it('returns undefined, not null, when nothing could be asked', async () => {
+    const code = (c: string) => Object.assign(new Error(c), { code: c });
+    const publicBlocked = (): Reader => ({ resolveNs: async () => { throw code('ETIMEOUT'); }, resolve4: async () => [] });
+    expect(await authoritativeAddress('carin-test.org', { makeResolver: publicBlocked })).toBeUndefined();
+    const nameserverBlocked = (servers?: string[]): Reader => ({
+      resolveNs: async () => ['ns1.example.net'],
+      resolve4: async (name) => {
+        if (name === 'ns1.example.net') return ['198.51.100.9'];
+        if (servers?.[0] === '198.51.100.9') throw code('ECONNREFUSED');
+        return [];
+      },
+    });
+    expect(await authoritativeAddress('carin-test.org', { makeResolver: nameserverBlocked })).toBeUndefined();
     const broken = () => { throw new Error('no resolver'); };
-    expect(await authoritativeAddress('carin-test.org', { makeResolver: broken })).toBeNull();
+    expect(await authoritativeAddress('carin-test.org', { makeResolver: broken })).toBeUndefined();
   });
 });
 

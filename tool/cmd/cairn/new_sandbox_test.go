@@ -53,11 +53,7 @@ func TestASandboxedSetupStopsBeforeItServesAnything(t *testing.T) {
 			if err == nil || !strings.Contains(err.Error(), "runs inside a sandbox") {
 				t.Fatalf("Execute error = %v, want the sandbox refusal", err)
 			}
-			for _, want := range []string{"no `cd`, pipe, or redirect", "dangerouslyDisableSandbox"} {
-				if !strings.Contains(err.Error(), want) {
-					t.Errorf("refusal %q lacks %q", err, want)
-				}
-			}
+			assertRefusalOrder(t, err.Error())
 			if strings.Contains(out.String(), `{"`) {
 				t.Errorf("wrote a setup event before refusing: %q", out.String())
 			}
@@ -111,4 +107,49 @@ func TestTheGuideAndTheTerminalRunMeetTheSandboxStopOnlyWhereTheTabIsServed(t *t
 			t.Errorf("terminal run error = %v, want the sandbox refusal", err)
 		}
 	})
+}
+
+// assertRefusalOrder checks the refusal lists its remedies from the cheapest: a bare retry, which
+// needs no prompt and no settings change, then the parameter, then the exclusions. An agent that
+// ran a piped call got the refusal in round 8 and took the last remedy's premise, so the first
+// step must name every way a call stops being bare, and no line may hide it in a long run of text.
+func assertRefusalOrder(t *testing.T, text string) {
+	t.Helper()
+	bare := strings.Index(text, "Run the same call again, bare")
+	param := strings.Index(text, "dangerouslyDisableSandbox")
+	exclusions := strings.Index(text, "add `cairn *` and `npx create-cairn-site *`")
+	if bare < 0 || param < 0 || exclusions < 0 || bare >= param || param >= exclusions {
+		t.Fatalf("refusal %q must give the bare retry, then the parameter, then the exclusions", text)
+	}
+	for _, way := range []string{"`cd`", "pipe", "redirect", "`;`", "`&&`", "option before", "create-cairn-site", "version or tag"} {
+		if !strings.Contains(text[bare:param], way) {
+			t.Errorf("the bare-retry step lacks %q", way)
+		}
+	}
+	lines := strings.Split(text, "\n")
+	for _, line := range lines {
+		if len(line) > 100 {
+			t.Errorf("refusal line is %d characters, want at most 100: %q", len(line), line)
+		}
+	}
+	// An agent that shortens the output with tail keeps only the last lines, which must send it back
+	// to step 1, and step 2 must apply to a bare call that still stops, not only to a first call.
+	if last := lines[len(lines)-1]; !strings.Contains(last, "step 1") || !strings.Contains(last, "no pipe") {
+		t.Errorf("the last line %q must send a piped call back to step 1", last)
+	}
+	if !strings.Contains(text, "if a bare call prints this message") {
+		t.Error("step 2 must apply when a bare call prints the refusal")
+	}
+	// The refusal cannot know the owner changed a setting, so step 3 hedges, names the setting the
+	// parameter depends on, and says which retry it follows, since an agent that shortens the output
+	// may see step 3 first.
+	if !strings.Contains(text, "If the step 2 retry prints this message too") || !strings.Contains(text, "likely turned off") ||
+		!strings.Contains(text, "allowUnsandboxedCommands") {
+		t.Error("step 3 must follow the step 2 retry, hedge, and name allowUnsandboxedCommands")
+	}
+	// Claude Code asks the owner for the retry only in some modes, and an allow rule approves it with
+	// no prompt, so step 2 must not call the prompt the approval without the rule.
+	if !strings.Contains(strings.Join(strings.Fields(text), " "), "allow rule") {
+		t.Error("step 2 must say an allow rule the owner set also approves the retry")
+	}
 }

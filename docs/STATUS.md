@@ -8,8 +8,8 @@ Published stable: **`0.98.0`** on npm `latest` for `@glw907/cairn-cms` and `@glw
 the Go tool is `tool/v1.1.0`. The newest candidate is **`0.99.0-rc.4`** (cut commit `275892869`):
 
 - It passed the release gate (run `20261107T151545`, four legs, one run id) and was promoted by the
-  `publish.yml` dispatch run 42430858765. `next` and `gate` serve it on all three packages, and
-  `create-cairn-site@latest` serves it.
+  `publish.yml` dispatch run 42430858765. `next` serves it on the two engine packages and
+  `create-cairn-site@latest` serves it. `gate` now carries the dev snapshots named under "Immediate next action".
 - It carries the narrow Workers Builds token (#341), the name-clash guard and true DMARC copy (PR
   #200), every minor and patch through the 2026-11-07 sweep, and vitest 5. Node stays 24 (#333).
 - Geoff ran the real install on it, a clean-room setup of 907.life, and it went badly: five setup
@@ -31,12 +31,12 @@ Pass 3 of the cairn-setup run is finishing the proving loop for `cairn new`. `ma
    and Geoff's install on it. His friction log outranks the naive lists, and its fixes ship as one PR per sitting.
 2. The naive leg, to its first pass (Geoff, 2026-11-10: an agent should set up a cairn site nearly every time unless
    Cloudflare or GitHub misbehave, and one successful run is enough). Each run on dev.7 is graded and recorded as a
-   row in `proving/batch-1.md`. A pass ends the leg and is the release gate's naive row, and its friction is filed,
+   row in `proving/batch-1.md`, across any fix snapshot. A pass ends the leg and is the release gate's naive row, and its friction is filed,
    not fixed. A fail traced to cairn (the tool, the refusal, the agent page, the skill, or `cairn help agents`) is a
    defect: one PR fixes it with the friction that run showed, a snapshot publishes, and the next run uses it. A fail
    traced to the harness, Cloudflare, or GitHub is traced and reported to the conductor, then rerun on the same build
    with no fix. A cause that cannot be traced goes to the conductor before any rerun. The 15-run cap stays, with 8
-   used (about $10.5 of the $100). If no run has passed after the remaining runs or two fix PRs, the end packet asks
+   used (about $11 of the $100, probes included). If no run has passed after the remaining runs or two fix PRs, the end packet asks
    Geoff whether to ship.
 3. T3.4's close (#366 to `## Done`), T3.5 (the dependency sweep, the final candidate, a scripted leg on it, and one
    naive run only if the sweep touched a rerun path), and the end packet.

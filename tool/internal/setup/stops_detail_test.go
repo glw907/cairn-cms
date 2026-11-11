@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
@@ -134,12 +135,12 @@ func TestTheAuthorityWaitKeepsRetryingUntilTheDeadline(t *testing.T) {
 			}
 		}
 	})
-	t.Run("a permanent error runs to the deadline and then returns", func(t *testing.T) {
+	t.Run("a name the zone never gets runs to the deadline and then returns", func(t *testing.T) {
 		w := newWorld(t)
 		asked := 0
 		w.authority = func(string) ([]net.IP, error) {
 			asked++
-			return nil, errors.New("read udp: i/o timeout")
+			return nil, &net.DNSError{Err: "no such host", Name: "x", IsNotFound: true}
 		}
 		start := w.clock.Now()
 		if _, err := w.run(context.Background()); err != nil {
@@ -155,4 +156,67 @@ func TestTheAuthorityWaitKeepsRetryingUntilTheDeadline(t *testing.T) {
 			t.Errorf("the site was asked at %d before the last lookup at %d: %v", s, a, w.log)
 		}
 	})
+}
+
+// TestAnUnaskableNameserverEndsTheAuthorityWaitAfterAMinute asserts a nameserver that cannot be
+// asked at all does not cost the run its whole HTTPS limit: six lookups in a row that fail for
+// any reason but "not found" hand the wait to the ordinary site poll, and a "not found" restarts
+// the count.
+func TestAnUnaskableNameserverEndsTheAuthorityWaitAfterAMinute(t *testing.T) {
+	blocked := errors.New("read udp: i/o timeout")
+	live := []net.IP{net.ParseIP("2606:4700::1")}
+	t.Run("six errors in a row return before any site request", func(t *testing.T) {
+		w := newWorld(t)
+		asked := 0
+		var firstAsked, firstSite time.Time
+		w.authority = func(string) ([]net.IP, error) {
+			if asked++; asked == 1 {
+				firstAsked = w.clock.Now()
+			}
+			return nil, blocked
+		}
+		site := w.cfg.SiteGet
+		w.cfg.SiteGet = func(ctx context.Context, u string) (int, string, error) {
+			if firstSite.IsZero() {
+				firstSite = w.clock.Now()
+			}
+			return site(ctx, u)
+		}
+		if _, err := w.run(context.Background()); err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if asked != 6 {
+			t.Errorf("the nameserver was asked %d times, want 6", asked)
+		}
+		if got := firstSite.Sub(firstAsked); got < 5*pollEvery || got > 7*pollEvery {
+			t.Errorf("the site was first asked %s after the first lookup, want about a minute", got)
+		}
+	})
+	t.Run("a not-found between errors restarts the count", func(t *testing.T) {
+		w := newWorld(t)
+		asked := 0
+		w.authority = func(host string) ([]net.IP, error) {
+			asked++
+			switch {
+			case asked == 6:
+				return nil, &net.DNSError{Err: "no such host", Name: host, IsNotFound: true}
+			case asked <= 11:
+				return nil, blocked
+			}
+			return live, nil
+		}
+		if _, err := w.run(context.Background()); err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if asked < 12 {
+			t.Errorf("the nameserver was asked %d times, want past 11: the not-found should have reset the count", asked)
+		}
+	})
+}
+
+func TestAWaitWithNoAuthorityReturnsAtOnce(t *testing.T) {
+	r := &run{}
+	if err := r.awaitAuthority(context.Background(), time.Time{}); err != nil {
+		t.Errorf("awaitAuthority = %v, want nil", err)
+	}
 }

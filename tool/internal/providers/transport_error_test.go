@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"io"
@@ -58,6 +59,7 @@ func TestATransportErrorsTextNamesOnlyAFixedClass(t *testing.T) {
 		{"an unreachable dial", &net.OpError{Op: "dial", Net: "tcp", Err: syscall.ENETUNREACH}, "network unreachable"},
 		{"another dial failure", &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("secret detail")}, "could not connect"},
 		{"an x509 error", x509.UnknownAuthorityError{}, "TLS error"},
+		{"an alert the server sent", &net.OpError{Op: "remote error", Err: tls.AlertError(40)}, "TLS error"},
 		{"a proxy URL in the text", errors.New(`invalid proxy address "http://user:SECRET@proxy.example:3128"`), "proxy error"},
 		{"a proxy connect failure", &net.OpError{Op: "proxyconnect", Net: "tcp", Err: syscall.ECONNREFUSED}, "proxy error"},
 		{"a Location header in the text", errors.New(`failed to parse Location header "https://x/?token=SECRET"`), "transport error"},
@@ -88,6 +90,7 @@ func TestACertificateErrorIsNotRetried(t *testing.T) {
 		calls int
 	}{
 		{"a certificate error", x509.UnknownAuthorityError{}, 1},
+		{"a TLS alert from the server", &net.OpError{Op: "remote error", Err: tls.AlertError(40)}, 1},
 		{"a proxy error", errors.New("proxyconnect tcp: refused"), 1},
 		{"a timeout", context.DeadlineExceeded, 2},
 		{"an EOF", io.EOF, 2},

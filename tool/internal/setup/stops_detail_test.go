@@ -240,3 +240,32 @@ func TestAWaitWithNoAuthorityReturnsAtOnce(t *testing.T) {
 		t.Errorf("awaitAuthority = %v, want nil", err)
 	}
 }
+
+// TestAStopThatNoProviderAnsweredCarriesItsTransportDetail asserts the stops built by failure()
+// directly, which skip fail()'s provider branch, still show what kind of request got no answer.
+func TestAStopThatNoProviderAnsweredCarriesItsTransportDetail(t *testing.T) {
+	lookup := func(host string) error {
+		return &net.DNSError{Err: "i/o timeout", Name: host, IsTimeout: true}
+	}
+	t.Run("a first-sweep delete with no answer", func(t *testing.T) {
+		w := newWorld(t)
+		w.gh.installs = append(w.gh.installs, install{ID: 5550099, AppID: w.gh.app.ID, Selection: "all"})
+		w.gh.deleteErr = &providers.TransportError{Op: "Delete", Host: "api.github.com", Err: lookup("api.github.com")}
+		_, err := w.run(context.Background())
+		f := failureOf(t, err)
+		want := "github: Delete request to api.github.com: DNS lookup of api.github.com failed: i/o timeout"
+		if f.Reason != ReasonInstallDelete || f.Detail != want {
+			t.Errorf("Reason = %q, Detail = %q, want the install-delete stop with Detail %q", f.Reason, f.Detail, want)
+		}
+	})
+	t.Run("a template fetch with no answer", func(t *testing.T) {
+		w := newWorld(t)
+		w.fetchErr = &providers.TransportError{Op: "Get", Host: "registry.npmjs.org", Err: lookup("registry.npmjs.org")}
+		_, err := w.run(context.Background())
+		f := failureOf(t, err)
+		want := "npm: Get request to registry.npmjs.org: DNS lookup of registry.npmjs.org failed: i/o timeout"
+		if f.Reason != ReasonTemplate || f.Detail != want {
+			t.Errorf("Reason = %q, Detail = %q, want the template stop with Detail %q", f.Reason, f.Detail, want)
+		}
+	})
+}

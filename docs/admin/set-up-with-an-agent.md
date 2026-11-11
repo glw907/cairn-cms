@@ -25,13 +25,13 @@ Run `cairn` as one bare call, and make the call before you ask the owner anythin
 
 When the call stops that way, take these steps in order:
 
-1. Run the same call again, bare, as the list after these steps describes. An exclusion matches only the text of a bare call, so this step needs no prompt and no change to the owner's settings.
+1. Run the same call again, bare, as the list after these steps describes. If the owner has set the two exclusions above, a bare call matches them and runs outside the sandbox with no prompt.
 2. If a bare call stops with this message, run it again with the Bash tool's `dangerouslyDisableSandbox` parameter. Don't ask first. Claude Code asks the owner to approve the call in a prompt titled `Bash command (unsandboxed)`, and that prompt is the owner's approval, unless an allow rule already covers it.
 3. If the retry stops with the same message, the owner has most likely switched the parameter off with `allowUnsandboxedCommands: false`, and the retry ran inside the sandbox too. Ask the owner to add the two exclusions above, and make the same call again.
 
 Claude Code matches a sandbox exclusion against the text of the call, so keep the call bare:
 
-- Write no `cd`, redirect, pipe, `;`, `&&`, or `$(...)` in it. Claude Code keeps a call sandboxed when it has a `cd`, a redirect, or `$(...)`, and in a chain every command has to match an exclusion, so a pipe or `;` is no safer. Change to the folder in a separate call first, and don't pipe the output through `tail` or `head` to shorten it.
+- Write no `cd`, redirect, pipe, `;`, `&&`, or `$(...)` in it. Claude Code keeps a call sandboxed when it has a `cd`, a redirect, or `$(...)`, and in a chain every command has to match an exclusion, so treat a pipe or `;` the same way. Change to the folder in a separate call first, and don't pipe the output through `tail` or `head` to shorten it.
 - Put no npx option in front of the package name, not `--yes` and not `-y`, and add no version or tag to it. With no terminal, npx installs the package without asking, so an option adds nothing.
 - Write no `new` after the package name. The launcher already runs `cairn new`, and it drops a leading `new`.
 - Run the call from an empty folder, and never from inside a clone of the cairn-cms repository. npx matches the package name against the local project before it fetches anything, and a clone holds a package of the same name that isn't installed, so the call fails at once with `command not found`.

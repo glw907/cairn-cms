@@ -149,7 +149,7 @@ func assertRefusalOrder(t *testing.T, text string) {
 	}
 	// Claude Code asks the owner for the retry only in some modes, and an allow rule approves it with
 	// no prompt, so step 2 must not call the prompt the approval without the rule.
-	if !strings.Contains(text, "allow rule") {
+	if !strings.Contains(strings.Join(strings.Fields(text), " "), "allow rule") {
 		t.Error("step 2 must say an allow rule the owner set also approves the retry")
 	}
 }

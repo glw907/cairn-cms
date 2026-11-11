@@ -30,6 +30,9 @@
 - [ ] **#453** A scripted run's grade has no HTTPS-wait time `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
   A scripted leg writes no setup events, so `grade` reports "the HTTPS wait is missing: no finished domains step in setup events". The interval from the `watch` screen to the `done` screen in `scripted.jsonl` covers setup's whole "Setting up" step, the first deploy and the HTTPS wait together, so reporting it as the wait would mislabel it, and the deploy phases are read separately from GitHub, so subtracting them would be a guess.
   Placement: when the scripted driver records the domains step (a screen or a timestamp on it); until then the gap line is accurate.
+- [ ] **#456** Three small gaps in the grader's and the stand-in's new handling `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
+  Found in #235's whole-branch review. `grade --reason` takes the next argument even when it is a flag, so `--reason --end stall` records "--end" as the reason, and `--reason` with `--end budget` or with no `--end` is ignored without a word; refuse both. The stand-in waits its full 20 minutes when no nameserver can be asked (the new `undefined`) and then fails with "never answered from its zone's nameservers", which mislabels a blocked port 53. The stall reason strips control characters but not U+0085, which JavaScript's `\s` also misses; add `\u0080-\u009f` to the class.
+  Placement: the next pass that touches `scripts/gate/grade.mjs` or `stand-in.mjs`.
 - [ ] **#454** A response body that would not parse or read is recognised by its text prefix `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-10)*
   `transportDetail` in `tool/internal/setup/runner.go` shows a body parse or read error by matching `providers: parse response body:` and `providers: read response body:` at the start of the error text. The match fails closed (an unmatched error shows no detail), but a reworded error in the providers package silently drops the detail, and a read error can carry server text (an HTTP/2 GOAWAY debug string). Give the providers package a typed error for both, as it has for a request with no answer, and test `transportDetail` against the type.
   Placement: the next pass that touches `tool/internal/providers` or `runner.go`.
@@ -444,7 +447,7 @@
 - [x] **#449** The owner card has no row for a sandbox or settings question `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
   Round eight's agent asked the owner how to run outside the sandbox, and the conductor improvised "I cannot change the sandbox settings", which the agent quoted back as its reason to stop.
   Done: #235: the card carries the answer a non-technical owner gives, who cannot edit settings files and approves a permission prompt.
-- [x] **#455** Four small findings from #234's last review `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
+- [x] **#455** Small findings from #234's last review `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
   `scripted.mjs` left the capture path unquoted in `cat ${captureFile}`; the real-handshake test printed the test server's TLS log lines; the `Detail` doc comment listed body parse and read text that only `fail()` sets; and a null authority address read as "the zone has no address" (see #451).
   Done: #235: the path is single-quoted for `bash -c`, the test server's log goes to a discard logger, and the doc comment names which stops carry the body text.
 - [x] **#445** The grader's live read of a site the zone does not have primes this computer's resolver for 30 minutes `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*

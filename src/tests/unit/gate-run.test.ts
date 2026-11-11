@@ -152,6 +152,17 @@ describe('naive', () => {
     expect(refused(r)).toContain('cleanroom-2611010000-scripted is live on the scripted socket');
   });
 
+  it('hints at cleanroom stop for a live session or process, and not for a ledger row alone', () => {
+    const live = rig();
+    live.sessions(['cleanroom-2611010000']);
+    expect(refused(live)).toContain('cleanroom stop geoff');
+    const owned = rig();
+    owned.exe('id', 'if [ "$1" = -u ] && [ "$2" = cleanroom ]; then echo 999; else exit 1; fi');
+    owned.exe('pgrep', 'echo 4242');
+    expect(refused(owned)).toContain('cleanroom stop geoff');
+    expect(refused(rig({ ledger: [row('2611010000', { state: 'running' })] }))).not.toContain('cleanroom stop');
+  });
+
   it('refuses a ledger row that reads running', () => {
     const r = rig({ ledger: [row('2611010000', { state: 'running' })] });
     expect(refused(r)).toContain('the ledger row 2611010000 reads running');

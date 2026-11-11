@@ -8,9 +8,10 @@
   install scripts. If a dependency needs its script, go
   to /home/sam/sites/field-notes and run npm rebuild.
 
-  Setup couldn't remove its access to your Cloudflare
-  account. In your Cloudflare profile, select Manage OAuth
-  authorizations. Then find cairn and select Revoke.
+  Setup couldn't remove its access to your
+  Cloudflare account. In your Cloudflare profile,
+  select Access Management, and then Connected
+  Applications. Find cairn and revoke its access.
 
   Edit your site    fieldnotes.example.com/admin
   Invite an editor  Admin > Editors

@@ -769,7 +769,7 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - Setup can't read your email from a Cloudflare token. The admin sends your sign-in links to this address.
 - Setup can't run over SSH
 - Setup couldn't open your browser. Go to <url>
-- Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Manage OAuth authorizations. Then find cairn and select Revoke.
+- Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Access Management, and then Connected Applications. Find cairn and revoke its access.
 - Setup creates your site on GitHub and Cloudflare and publishes it to your domain.
 - Setup didn't send a sign-in link. This site already has editors, and <email> isn't one of them. Ask one of them to invite you in Admin > Editors.
 - Setup is getting ready to open the tab.

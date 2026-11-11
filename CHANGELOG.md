@@ -91,10 +91,12 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 - **Setup's instructions name each page's real button and switch.** A first run through the real Cloudflare and
   GitHub pages with no token showed four wrong words. Cloudflare's button is Authorize, not Allow, and API Tokens
   Write (no colon) is a switch under Sensitive scopes that the owner turns on, not a choice to select. GitHub's first
-  button reads Create GitHub App, and its last reads Approve, Install, & Authorize, not Approve. The terminal screen,
-  the setup tab's approval and error pages, the `sentence` field of the agent lane's waiting events, and the admin
-  docs (`create-your-site`, `setup-recovery`, `setup-reference`) now say so. `create-your-site` also tells the owner
-  to check the account Cloudflare shows and to expect GitHub's confirm-access page.
+  button reads Create GitHub App, and its last reads Approve, Install, & Authorize, not Approve. The site's confirm
+  page button reads Confirm sign-in, not Sign in. The terminal screen, the setup tab's approval and error pages, the
+  `sentence` field of the agent lane's waiting events, and the admin docs (`create-your-site`, `setup-recovery`,
+  `setup-reference`) now say so. `create-your-site` also tells the owner to check the account Cloudflare shows and
+  to expect GitHub's confirm-access page. The done screen's revoke line and `credentials` name Access Management,
+  then Connected Applications, where Cloudflare lists the grant as cairn, instead of "Manage OAuth authorizations".
 
   Consumers must: nothing.
 

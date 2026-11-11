@@ -1733,21 +1733,6 @@ func TestTheSiteIsNotAskedUntilTheZoneNameserverHasTheHost(t *testing.T) {
 	}
 }
 
-func TestANameserverThatCannotBeAskedDoesNotBlockTheSiteWait(t *testing.T) {
-	w := newWorld(t)
-	calls := 0
-	w.authority = func(string) ([]net.IP, error) {
-		calls++
-		return nil, errors.New("test: nameserver unreachable")
-	}
-	if _, err := w.run(context.Background()); err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if calls != 1 {
-		t.Errorf("the nameserver was asked %d times, want once before the site wait took over", calls)
-	}
-}
-
 func TestTheNameserverWaitEndsAtTheHTTPSLimit(t *testing.T) {
 	w := newWorld(t)
 	w.siteLive = false

@@ -202,8 +202,9 @@ resolver remember the name as missing, for up to 30 minutes.
 - Events from cairn new --plan, --apply, and --resume, one JSON object per line on stdout:
   step_started, step_done  a step began or finished; step names it
   step_failed              a step stopped the run; failure holds the four-part reason, and a
-                           detail field with the provider's status, its error code, and the
-                           failed request whenever a provider returned an error
+                           detail field when a request to a provider failed: the provider's
+                           status, its error code, and the request when it answered, or the
+                           method, the host, and the cause when no answer came
   waiting                  setup waits on the owner in a browser; waiting names the approval
   resumed                  the run picked up an unfinished record
   summary                  every derived value, for the owner to review

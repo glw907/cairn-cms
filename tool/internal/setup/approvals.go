@@ -221,7 +221,13 @@ func (r *run) appKeyFailure(err error) *Failure {
 func (r *run) installAll(ctx context.Context) error {
 	r.start(StepApproveInstall)
 	if _, err := r.sweep(ctx, 0); err != nil {
-		return r.installDeleteFailure(ctx, err)
+		// A failed list shows nothing about what exists, so it is an ordinary provider stop. A failed
+		// delete follows a list that showed an installation of this App, which may reach every
+		// repository.
+		if _, ok := errors.AsType[deleteFailed](err); ok {
+			return r.installDeleteFailure(ctx, err)
+		}
+		return r.fail(ctx, err, "GitHub")
 	}
 	for {
 		cb, err := r.installCallback(ctx, providers.InstallURL(r.app.Slug), WaitInstallAll)
@@ -507,8 +513,18 @@ func (r *run) sweep(ctx context.Context, keep int64) (keptGone bool, err error) 
 		}
 		keptGone = keptGone || in.ID == keep
 	}
-	return keptGone, errors.Join(errs...)
+	if len(errs) > 0 {
+		return keptGone, deleteFailed{errors.Join(errs...)}
+	}
+	return keptGone, nil
 }
+
+// deleteFailed marks a sweep error as a failed deletion, which proves an installation of the App
+// exists, unlike a failed list.
+type deleteFailed struct{ err error }
+
+func (d deleteFailed) Error() string { return d.err.Error() }
+func (d deleteFailed) Unwrap() error { return d.err }
 
 // errAppKeyLost reports a record that holds an App whose key never reached the keyring.
 var errAppKeyLost = errors.New("setup: the GitHub App's key is not in the keyring")

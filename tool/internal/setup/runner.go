@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
@@ -652,7 +654,47 @@ func (r *run) failure(reason Reason, happened, do string, err error) *Failure {
 	if f.Did != nothingCreated {
 		f.Left = "Everything setup created stays, and the next run resumes from it."
 	}
+	if pe, ok := errors.AsType[providers.ProviderError](err); ok {
+		f.Detail = pe.Error()
+	} else if te, ok := errors.AsType[*providers.TransportError](err); ok && !endedBySetup(reason) {
+		f.Detail = transportDetail(cmp.Or(te.Provider(), te.Host), err)
+	}
 	return f
+}
+
+// endedBySetup reports whether reason is a stop where setup itself cut a request short, the owner's
+// stop or the approval limit, so the request's failure is no cause worth showing.
+func endedBySetup(reason Reason) bool {
+	return reason == ReasonStopped || reason == ReasonChainTimeout
+}
+
+// detailLimit cuts a parse or read error's text in a Failure's Detail.
+const detailLimit = 200
+
+// transportDetail is the Detail for a failed request to who that no provider answered. It is
+// built from two typed causes only: a *providers.TransportError gives its method, host, and cause,
+// which carry no URL, and a body parse or read error from the providers package gives its text.
+// Any other error can hold a local path or a URL and gives nothing.
+func transportDetail(who string, err error) string {
+	name := strings.ToLower(who)
+	if te, ok := errors.AsType[*providers.TransportError](err); ok {
+		text := te.Error()
+		return name + ": " + cutDetail(text)
+	}
+	text := err.Error()
+	if strings.HasPrefix(text, "providers: parse response body:") || strings.HasPrefix(text, "providers: read response body:") {
+		return name + ": " + cutDetail(text)
+	}
+	return ""
+}
+
+// cutDetail cuts text to detailLimit bytes at a rune boundary.
+func cutDetail(text string) string {
+	n := min(len(text), detailLimit)
+	for n > 0 && n < len(text) && !utf8.RuneStart(text[n]) {
+		n--
+	}
+	return text[:n]
 }
 
 // localFailure is the stop for a step on this computer, such as git or the scaffold, unless the
@@ -689,13 +731,13 @@ func (r *run) fail(ctx context.Context, err error, who string) *Failure {
 	}
 	pe, ok := errors.AsType[providers.ProviderError](err)
 	if !ok {
-		return r.failure(ReasonProvider, "A request to "+who+" failed.",
+		f := r.failure(ReasonProvider, "A request to "+who+" failed.",
 			"Check your internet connection, and then run cairn new again.", err)
+		f.Detail = transportDetail(who, err)
+		return f
 	}
 	happened, do := providerStop(who, pe.HTTPStatus(), pe.ClassifiedReason(), r.tokenRun)
-	f := r.failure(ReasonProvider, happened, do, err)
-	f.Detail = pe.Error()
-	return f
+	return r.failure(ReasonProvider, happened, do, err)
 }
 
 // did is the "already did" part: what exists outside this computer because of the run, and the

@@ -164,10 +164,11 @@ describe('naive', () => {
     expect(refused(r)).toContain('1 process(es) owned by cleanroom are alive (first pid 4242)');
   });
 
-  it('refuses an eleventh naive run, counting a scripted row for nothing', () => {
-    const rows = [...naiveRows(10), row('2611990000', { leg: 'scripted' })];
-    expect(refused(rig({ ledger: rows }))).toContain('holds 10 naive runs; an eleventh is refused');
-    expect(naive(rig({ ledger: [...naiveRows(9), row('2611990000', { leg: 'scripted' })] })).status).toBe(0);
+  it('refuses a sixteenth naive run, counting a scripted row for nothing', () => {
+    // Geoff, 2026-11-10: up to fifteen naive runs.
+    const rows = [...naiveRows(15), row('2611990000', { leg: 'scripted' })];
+    expect(refused(rig({ ledger: rows }))).toContain('holds 15 naive runs; a sixteenth is refused');
+    expect(naive(rig({ ledger: [...naiveRows(14), row('2611990000', { leg: 'scripted' })] })).status).toBe(0);
   });
 
   it('refuses when the remaining budget is under $5, naming the budget stop', () => {

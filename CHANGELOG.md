@@ -60,6 +60,23 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **Setup shows why a request got no answer, and retries a lookup that dropped.** A request that got no answer from
+  Cloudflare or GitHub now carries a `detail` with the method, the host, and the kind of failure (a failed lookup, a
+  timeout, a refused connection, a TLS or proxy error, or a connection that closed), where it showed only "Check your
+  internet connection". The detail names a fixed kind, never the transport's raw text, which can quote a proxy address.
+  A lookup or connection that failed before the request left is tried up to three times with a 1 and 2 second pause, a
+  timeout or a dropped connection is repeated only for a read-only request, a certificate error never is, and a response
+  with any status is never retried. This applies to the Cloudflare, GitHub, and npm clients, so the health checks that use
+  them repeat a failed read the same way, and the serving and HTTPS probes keep one attempt. Every stop built from a
+  provider error carries the detail, including the one for the GitHub App's installations and the one for the
+  template download from npm. When the check of those installations fails to list them before any exists, it reads as an
+  ordinary provider stop, and a failed deletion of one still warns that it may reach every repository. While the domain
+  step waits for the site, a nameserver lookup that fails for a reason other than "not found" is retried for about a
+  minute before the ordinary wait takes over, so an early lookup of the site's address is far less likely to make the
+  computer remember a missing name.
+
+  Consumers must: nothing.
+
 - **The setup screens no longer let an Enter accept a domain unread.** The browser screen shows its
   Enter hint only once setup has armed the browser step, and the account and domain choosers start with
   no selection when the account holds several, so the first arrow key selects the first row.

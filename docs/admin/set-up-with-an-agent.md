@@ -140,7 +140,7 @@ cairn new --dry-run --name "My Site" --host example.com --email me@example.com -
 | --- | --- |
 | `step_started`, `step_done` | Track progress. The `step` field names the step. |
 | `waiting` | Read the `sentence` field to the owner, word for word. The run blocks until the owner finishes that browser step. |
-| `step_failed` | The run stopped. The `failure` field holds the four-part reason: what happened, what setup already did, what it left in place, and what to do. When a provider answered a request with an error, `failure` also carries a `detail` field. |
+| `step_failed` | The run stopped. The `failure` field holds the four-part reason: what happened, what setup already did, what it left in place, and what to do. When a request to a provider failed, `failure` also carries a `detail` field. |
 | `resumed` | The run picked up an unfinished record. |
 | `summary` | Every derived value. The run finished. |
 
@@ -160,6 +160,8 @@ Check the exit code first.
 On exit 1 or 2, setup prints the four-part failure to stderr. Show the owner what it says to do.
 
 When a provider answered a request with an error, setup adds a fifth line with the cause: the provider, its reason, the HTTP status, the error code when the provider gives one, and the request. For example, `cloudflare: forbidden (status 403, code 10000) on GET /zones/<id>/dns_records` means the credential lacks a permission for that request. Pass the line on with the four parts. In a token run, it means the token lacks one of the permissions this page lists.
+
+When a request got no answer at all, the same line names the method, the host, and the kind of failure, such as `cloudflare: Get request to api.cloudflare.com: DNS lookup of api.cloudflare.com failed: i/o timeout`. The kinds are a failed lookup, a timeout, a refused or unreachable connection, a connection that could not be made, a TLS error, a proxy error, a connection that closed unexpectedly, and a plain transport error. That is a problem on the owner's computer or network, not a refusal. Setup already tried a lookup or connection that failed before the request left up to three times, and it repeats a read-only request that timed out or dropped the same way. It never repeats a write that may have reached the provider, so a stop with this line after a write can be the first and only attempt. Run the setup command again.
 
 To find an unfinished run, including one the agent didn't start, list the setup records. The command reads the local record only, with no network and no keyring:
 

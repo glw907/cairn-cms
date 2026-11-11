@@ -513,6 +513,24 @@ func TestTheCloudflareApprovalOpensOnTheConsentPage(t *testing.T) {
 	}
 }
 
+// TestTheGitHubCopyNamesTheRealButtons pins that each GitHub approval sentence names the button
+// GitHub shows, as read from the pages in the 2026-11-10 rehearsal: the Create page's button begins
+// "Create GitHub App", and the last page's button is "Approve, Install, & Authorize", not "Approve".
+func TestTheGitHubCopyNamesTheRealButtons(t *testing.T) {
+	for _, tc := range []struct {
+		state WaitState
+		want  string
+	}{
+		{WaitCreateApp, "Select Create GitHub App to add the App for Example Site."},
+		{WaitInstallAll, "Select Install & Authorize to let setup create the example-site repository."},
+		{WaitInstallRepo, "Select Approve, Install, & Authorize to give the App access to example-site only."},
+	} {
+		if got := WaitSentence(tc.state, "Example Site", "example-site"); !strings.HasPrefix(got, tc.want) {
+			t.Errorf("%s sentence = %q, want it to open with %q", tc.state, got, tc.want)
+		}
+	}
+}
+
 // TestTheCloudflareCopyNamesThePermission pins that every Cloudflare approval sentence names
 // the permission Cloudflare leaves unselected.
 func TestTheCloudflareCopyNamesThePermission(t *testing.T) {

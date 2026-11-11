@@ -10,6 +10,7 @@
 // runs it on a fixture with no network.
 import { execFile } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -403,6 +404,14 @@ export async function grade({ runDir, deps, end, reason }) {
   /** @param {string} what @param {boolean} ok @param {string} evidence */
   const note = (what, ok, evidence) => reads.push({ name: what, ok, evidence });
 
+  // `run-gate.sh scripted` also makes a gate-state directory that holds only `shots/`. A directory
+  // with none of a run's files is refused outright, because grading it would read as a meaningless fail.
+  if (!['harness.json', 'transcript.jsonl', 'stand-in.jsonl'].some((file) => existsSync(path.join(runDir, file)))) {
+    throw new Error(
+      `${runDir} is not a run directory: it holds no harness.json, transcript.jsonl, or stand-in.jsonl.` +
+        (existsSync(path.join(runDir, 'shots')) ? " It looks like a scripted leg's shot directory; grade the run dir that `run-gate.sh scripted` printed." : ''),
+    );
+  }
   const harnessRead = await readJson(path.join(runDir, 'harness.json'));
   const harness = harnessRead.ok ? harnessRead.value : {};
   note('harness.json', harnessRead.ok, harnessRead.ok ? 'read' : harnessRead.reason);
@@ -773,7 +782,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error('Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget [--reason "<text>"]]');
     process.exitCode = 2;
   } else {
-    const record = await grade({ runDir: path.resolve(runDir), end: /** @type {'stall' | 'budget' | undefined} */ (end), reason, deps: { cleanroom: cleanroomDefault, env: process.env } });
+    const record = await grade({ runDir: path.resolve(runDir), end: /** @type {'stall' | 'budget' | undefined} */ (end), reason, deps: { cleanroom: cleanroomDefault, env: process.env } }).catch((/** @type {Error} */ error) => {
+      console.error(error.message);
+      process.exit(2);
+    });
     console.log(`Graded ${record.id}: ${record.outcome.result}${record.outcome.reason ? `, ${record.outcome.reason}` : ''}. Record: ${path.join(runDir, 'run-record.md')}`);
     process.exitCode = record.outcome.result === 'pass' ? 0 : 1;
   }

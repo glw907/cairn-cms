@@ -352,6 +352,7 @@ case "${1:-}" in
     mkdir -p -m 0700 "$run_dir/shots"
     start_session "cleanroom-$run_id" "$handoff_dir/$run_id-scripted.env" node "$here/scripted.mjs" "$run_path" --shots "$run_dir/shots"
     report
+    echo "shots: $run_dir/shots"
     exit 0
     ;;
   probe)

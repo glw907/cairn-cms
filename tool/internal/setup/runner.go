@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -655,6 +656,8 @@ func (r *run) failure(reason Reason, happened, do string, err error) *Failure {
 	}
 	if pe, ok := errors.AsType[providers.ProviderError](err); ok {
 		f.Detail = pe.Error()
+	} else if te, ok := errors.AsType[*providers.TransportError](err); ok {
+		f.Detail = transportDetail(cmp.Or(te.Provider(), te.Host), err)
 	}
 	return f
 }

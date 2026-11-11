@@ -68,8 +68,8 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
   timeout or a dropped connection is repeated only for a read-only request, a certificate error never is, and a response
   with any status is never retried. This applies to the Cloudflare, GitHub, and npm clients, so the health checks that use
   them repeat a failed read the same way, and the serving and HTTPS probes keep one attempt. Every stop built from a
-  provider error carries the detail, including the one for the
-  GitHub App's installations. When the check of those installations fails to list them before any exists, it reads as an
+  provider error carries the detail, including the one for the GitHub App's installations and the one for the
+  template download from npm. When the check of those installations fails to list them before any exists, it reads as an
   ordinary provider stop, and a failed deletion of one still warns that it may reach every repository. While the domain
   step waits for the site, a nameserver lookup that fails for a reason other than "not found" is retried for about a
   minute before the ordinary wait takes over, so an early lookup of the site's address is far less likely to make the

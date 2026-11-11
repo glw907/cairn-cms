@@ -30,8 +30,9 @@ const defaultRetryAfter = time.Second
 
 // client is the shared HTTP transport every provider's public type wraps: it pins requests to
 // one host, applies a credential to every request, times out, never follows a redirect, and
-// retries a rate-limited GET exactly once and a request that never left this computer a few times. It carries no base-URL field; a caller builds the
-// full URL, and Do refuses anything that resolves to a different host before dialing.
+// retries a rate-limited GET exactly once and a request that never left this computer a few
+// times. It carries no base-URL field; a caller builds the full URL, and Do refuses anything that
+// resolves to a different host before dialing.
 type client struct {
 	host       string
 	cred       Credential
@@ -59,8 +60,8 @@ func newClient(host string, cred Credential, rt http.RoundTripper) *client {
 }
 
 // Do refuses req before dialing when its URL host does not match the client's pinned host,
-// applies the client's credential, and sends it through the rate-limit retry and the dial retry. A redirect response is
-// returned unfollowed, per the CheckRedirect set in newClient. A failed request's error keeps
+// applies the client's credential, and sends it through the rate-limit retry and the dial retry.
+// A redirect response is returned unfollowed, per the CheckRedirect set in newClient. A failed request's error keeps
 // the method and the cause and drops the URL, whose path or query can carry a one-time code.
 func (c *client) Do(req *http.Request) (*http.Response, error) {
 	if req.URL.Host != c.host {
@@ -86,6 +87,20 @@ type TransportError struct {
 	Host string
 	// Err is the cause the transport reported. It stays whole for errors.Is and errors.As.
 	Err error
+}
+
+// Provider names the service Host belongs to, such as github or npm, or returns "" for a host no
+// client in this package is pinned to.
+func (e *TransportError) Provider() string {
+	switch e.Host {
+	case cloudflareHost, cloudflareOAuthHost:
+		return "cloudflare"
+	case githubHost, githubWebHost:
+		return "github"
+	case npmHost:
+		return "npm"
+	}
+	return ""
 }
 
 // Error implements the error interface.
@@ -150,7 +165,8 @@ func isTimeout(err error) bool {
 	return ok && ne.Timeout()
 }
 
-// isTLSError reports whether err is a certificate or handshake failure.
+// isTLSError reports whether err is a certificate or handshake failure, including an alert the
+// server sent.
 func isTLSError(err error) bool {
 	if _, ok := errors.AsType[*tls.CertificateVerificationError](err); ok {
 		return true
@@ -165,6 +181,9 @@ func isTLSError(err error) bool {
 		return true
 	}
 	if _, ok := errors.AsType[x509.CertificateInvalidError](err); ok {
+		return true
+	}
+	if _, ok := errors.AsType[tls.AlertError](err); ok {
 		return true
 	}
 	_, ok := errors.AsType[tls.RecordHeaderError](err)
@@ -365,7 +384,8 @@ func parseRetryAfter(header string) time.Duration {
 
 // SetDialRetryWait replaces how the dial retry waits between attempts and returns a function that
 // restores the previous wait. It exists for tests in other packages, such as the health checks,
-// that must not sleep through a retry.
+// that must not sleep through a retry. It is never for production code, and a test that calls it
+// must not run in parallel, since the wait is one package-wide value.
 func SetDialRetryWait(wait func(ctx context.Context, d time.Duration) error) (restore func()) {
 	previous := dialRetryWait
 	dialRetryWait = wait

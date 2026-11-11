@@ -25,13 +25,13 @@ Run `cairn` as one bare call, and make the call before you ask the owner anythin
 
 When the call stops that way, take these steps in order:
 
-1. Run the same call again, bare. An exclusion matches only the text of the call, so a call that has a `cd`, a pipe, a redirect, `;`, `&&`, an option before the package name, or a version or tag runs inside the sandbox even when the exclusions are set. This step needs no prompt and no change to the owner's settings.
-2. If the call was already bare, run it again with the Bash tool's `dangerouslyDisableSandbox` parameter. Don't ask first. Claude Code asks the owner to approve the call in a prompt titled `Bash command (unsandboxed)`, and that prompt is the owner's approval, unless an allow rule already covers it.
-3. The owner can switch the parameter off with `allowUnsandboxedCommands: false`. The retry then runs inside the sandbox too and stops with the same message. When it does, ask the owner to add the two exclusions above, and make the same call again.
+1. Run the same call again, bare, as the list after these steps describes. An exclusion matches only the text of a bare call, so this step needs no prompt and no change to the owner's settings.
+2. If a bare call stops with this message, run it again with the Bash tool's `dangerouslyDisableSandbox` parameter. Don't ask first. Claude Code asks the owner to approve the call in a prompt titled `Bash command (unsandboxed)`, and that prompt is the owner's approval, unless an allow rule already covers it.
+3. If the retry stops with the same message, the owner has most likely switched the parameter off with `allowUnsandboxedCommands: false`, and the retry ran inside the sandbox too. Ask the owner to add the two exclusions above, and make the same call again.
 
 Claude Code matches a sandbox exclusion against the text of the call, so keep the call bare:
 
-- Write no `cd`, redirect, pipe, `;`, `&&`, or `$(...)` in it. Change to the folder in a separate call first. Don't pipe the output through `tail` or `head` to shorten it: the pipe is what stops the exclusion from matching.
+- Write no `cd`, redirect, pipe, `;`, `&&`, or `$(...)` in it. Claude Code keeps a call sandboxed when it has a `cd`, a redirect, or `$(...)`, and in a chain every command has to match an exclusion, so a pipe or `;` is no safer. Change to the folder in a separate call first, and don't pipe the output through `tail` or `head` to shorten it.
 - Put no npx option in front of the package name, not `--yes` and not `-y`, and add no version or tag to it. With no terminal, npx installs the package without asking, so an option adds nothing.
 - Write no `new` after the package name. The launcher already runs `cairn new`, and it drops a leading `new`.
 - Run the call from an empty folder, and never from inside a clone of the cairn-cms repository. npx matches the package name against the local project before it fetches anything, and a clone holds a package of the same name that isn't installed, so the call fails at once with `command not found`.

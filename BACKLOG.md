@@ -27,9 +27,12 @@
 
 ## Medium
 
+- [ ] **#454** A response body that would not parse or read is recognised by its text prefix `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-10)*
+  `transportDetail` in `tool/internal/setup/runner.go` shows a body parse or read error by matching `providers: parse response body:` and `providers: read response body:` at the start of the error text. The match fails closed (an unmatched error shows no detail), but a reworded error in the providers package silently drops the detail, and a read error can carry server text (an HTTP/2 GOAWAY debug string). Give the providers package a typed error for both, as it has for a request with no answer, and test `transportDetail` against the type.
+  Placement: the next pass that touches `tool/internal/providers` or `runner.go`.
 - [ ] **#440** The sandbox question recurs when the clean room sets `allowUnsandboxedCommands: false` `#improvement` `#cairn-cms` `#docs` `#initiative:cairn-setup` *(2026-11-10)*
   Round seven's agent read the new docs and still asked the owner how to run outside the sandbox, saying its session had `dangerouslyDisableSandbox` turned off. The clean room sets `allowUnsandboxedCommands: false`, so the retry the pre-pass docs led with is off there, and only the `excludedCommands` patterns let a bare call out. After the owner's nudge, the bare calls ran outside the sandbox with no prompt. The page, the skill, the agent guide, and the refusal now say to make the call first, treat the retry as the fallback, and tell the owner to add an exclusion when the parameter is off (#233). Round eight reads whether the agent still asks.
-  Placement: round eight's grade; reopen the wording if the agent asks again.
+  Round eight's agent asked again and never ran a bare call (`research/proving/round-8.md`); the cause was its piped call, fixed by #448, and the question of whether the clean room should run with the setting is Geoff's (S-2). Placement: Geoff's S-2 ruling; a rerun of the naive run on the reworded refusal shows whether #448 was enough.
 - [ ] **#441** `run-gate.sh scripted` refuses on leftover `gnome-keyring-daemon` processes and does not name the remedy `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
   After the failed run 2611102143 a fresh scripted run refused with "4 process(es) owned by cleanroom are alive", all keyring daemons from earlier runs, and `cleanroom stop geoff` cleared them. `cleanroom stop <run id>` at the end of a run did not, so the refusal should say to run `cleanroom stop <name>`, or `grade` should end them. Related to #428 (`cleanroom` has no step that removes a home's keyrings).
   Placement: the next pass that touches `scripts/gate/run-gate.sh`.
@@ -423,6 +426,15 @@
 - **#185** Re-capture the setup transcript with a neutral scratch path and host: the fixtures retire with the wizard; the goldens replace them (Geoff, 2026-11-08, cairn-setup plan)
 
 ## Done
+- [x] **#448** The sandbox refusal leads with a remedy a piped call cannot use, and an agent stops `#bug` `#cairn-cms` `#docs` `#initiative:cairn-setup` *(2026-11-10)*
+  Naive round eight's agent piped its call through `tail -20`, so the exclusion did not match and the call ran sandboxed. The refusal told it to retry with `dangerouslyDisableSandbox` (switched off in the clean room), then to ask the owner for exclusions that were already set, and kept "Keep the call bare" as the closing clause of one 900-character line. The agent took the second remedy's premise and stopped without a bare call (`research/proving/round-8.md`). Round seven's agent ran its call bare and passed, so the same docs produced both outcomes.
+  Done: #235: the refusal, `cairn help agents`, the agent page, and the skill give the steps in order (bare retry, the parameter, the exclusions), the refusal in short numbered lines, with a test on the order and the line length. `--plan` keeps the refusal, since it runs the approvals.
+- [x] **#449** The owner card has no row for a sandbox or settings question `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
+  Round eight's agent asked the owner how to run outside the sandbox, and the conductor improvised "I cannot change the sandbox settings", which the agent quoted back as its reason to stop.
+  Done: #235: the card carries the answer a non-technical owner gives, who cannot edit settings files and approves a permission prompt.
+- [x] **#455** Four small findings from #234's last review `#improvement` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
+  `scripted.mjs` left the capture path unquoted in `cat ${captureFile}`; the real-handshake test printed the test server's TLS log lines; the `Detail` doc comment listed body parse and read text that only `fail()` sets; and a null authority address read as "the zone has no address" (see #451).
+  Done: #235: the path is single-quoted for `bash -c`, the test server's log goes to a discard logger, and the doc comment names which stops carry the body text.
 - [x] **#445** The grader's live read of a site the zone does not have primes this computer's resolver for 30 minutes `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-10)*
   `grade` fetched the live address of every graded run, including a run that failed before its site existed, and a resolver asked for a host its zone does not have keeps that answer for the zone's negative TTL. A flush of this computer's cache does not clear the router's. Run 2611110013's HTTPS wait ended in a timeout with the zone's nameserver, 1.1.1.1, and the router all answering and this computer's resolver still holding "no such record". The trigger of that lookup is not proved: it could also have been the setup tool's authority fall-through (#447).
   Done: #234: the grader asks the zone's nameserver first and skips the live read when it has no address.

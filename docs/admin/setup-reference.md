@@ -92,11 +92,11 @@ A `waiting` event carries one of these states:
 
 | State | Sentence |
 | --- | --- |
-| `approve-cloudflare` | On the Cloudflare page, select API Tokens: Write, and then select Allow. Cloudflare leaves API Tokens: Write unselected, and setup needs it to create your site's deploy key. |
-| `approve-create-app` | Select Create to add a GitHub App for <name>. The admin saves changes to your site through the App. |
+| `approve-cloudflare` | On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. Cloudflare leaves API Tokens Write off, and setup needs it to create your site's deploy key. |
+| `approve-create-app` | Select Create GitHub App to add the App for <name>. The admin saves changes to your site through the App. |
 | `approve-install-all` | Select Install & Authorize to let setup create the <repo> repository. This access covers all your repositories. Setup removes it within seconds. |
-| `approve-install-repo` | Select Approve to give the App access to <repo> only. Setup uses this access to push your site and store the deploy key. |
-| `reconsent-cloudflare` | On the Cloudflare page, select API Tokens: Write, and then select Allow. The earlier approval no longer works, so setup asks again. |
+| `approve-install-repo` | Select Approve, Install, & Authorize to give the App access to <repo> only. Setup uses this access to push your site and store the deploy key. |
+| `reconsent-cloudflare` | On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. The earlier approval no longer works, so setup asks again. |
 
 ## Exit codes
 

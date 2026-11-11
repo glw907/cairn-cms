@@ -513,15 +513,51 @@ func TestTheCloudflareApprovalOpensOnTheConsentPage(t *testing.T) {
 	}
 }
 
+// TestTheGitHubCopyNamesTheRealButtons pins that each GitHub approval sentence names the button
+// GitHub shows, as read from the pages in the 2026-11-10 rehearsal: the Create page's button begins
+// "Create GitHub App", and the last page's button is "Approve, Install, & Authorize", not "Approve".
+func TestTheGitHubCopyNamesTheRealButtons(t *testing.T) {
+	for _, tc := range []struct {
+		state WaitState
+		want  string
+	}{
+		{WaitCreateApp, "Select Create GitHub App to add the App for Example Site."},
+		{WaitInstallAll, "Select Install & Authorize to let setup create the example-site repository."},
+		{WaitInstallRepo, "Select Approve, Install, & Authorize to give the App access to example-site only."},
+	} {
+		if got := WaitSentence(tc.state, "Example Site", "example-site"); !strings.HasPrefix(got, tc.want) {
+			t.Errorf("%s sentence = %q, want it to open with %q", tc.state, got, tc.want)
+		}
+	}
+}
+
+// TestTheInstallRecoveryNamesTheRealButton pins that the stop for a left-over installation tells
+// the owner to select the button the last GitHub page shows, not "Approve".
+func TestTheInstallRecoveryNamesTheRealButton(t *testing.T) {
+	if do := entries[ReasonInstallDelete].Do; !strings.Contains(do, "select Approve, Install, & Authorize") {
+		t.Errorf("the install-delete fix = %q, want it to name Approve, Install, & Authorize", do)
+	}
+}
+
+// TestTheSignInCopyNamesTheRealButton pins that the sign-in sentences name the button the site's
+// confirm page shows. The rehearsal of 2026-11-10 read it as "Confirm sign-in", not "Sign in".
+func TestTheSignInCopyNamesTheRealButton(t *testing.T) {
+	for name, line := range map[string]string{"LineSignInStep": LineSignInStep, "LineDoneOpen": LineDoneOpen, "linePageFooter": linePageFooter} {
+		if !strings.Contains(line, "Confirm sign-in") {
+			t.Errorf("%s = %q, want it to name the Confirm sign-in button", name, line)
+		}
+	}
+}
+
 // TestTheCloudflareCopyNamesThePermission pins that every Cloudflare approval sentence names
 // the permission Cloudflare leaves unselected.
 func TestTheCloudflareCopyNamesThePermission(t *testing.T) {
-	const ruled = "On the Cloudflare page, select API Tokens: Write, and then select Allow. " +
-		"Cloudflare leaves API Tokens: Write unselected, and setup needs it to create your site's deploy key."
+	const ruled = "On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. " +
+		"Cloudflare leaves API Tokens Write off, and setup needs it to create your site's deploy key."
 	if got := WaitSentence(WaitCloudflare, "Example Site", "example-site"); got != ruled {
 		t.Errorf("WaitCloudflare sentence = %q, want %q", got, ruled)
 	}
-	if got := WaitSentence(WaitCloudflareReconsent, "Example Site", "example-site"); !strings.HasPrefix(got, "On the Cloudflare page, select API Tokens: Write, and then select Allow. ") {
+	if got := WaitSentence(WaitCloudflareReconsent, "Example Site", "example-site"); !strings.HasPrefix(got, "On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. ") {
 		t.Errorf("WaitCloudflareReconsent sentence = %q, want it to open with the permission instruction", got)
 	}
 
@@ -532,8 +568,8 @@ func TestTheCloudflareCopyNamesThePermission(t *testing.T) {
 		},
 	}
 	_, err := w.run(context.Background())
-	if f := failureOf(t, err); f.Reason != ReasonDeclined || !strings.Contains(f.Do, "select API Tokens: Write, and then select Allow") {
-		t.Errorf("decline failure = %+v, want a fix that names API Tokens: Write", f)
+	if f := failureOf(t, err); f.Reason != ReasonDeclined || !strings.Contains(f.Do, "turn on API Tokens Write under Sensitive scopes, and then select Authorize") {
+		t.Errorf("decline failure = %+v, want a fix that names API Tokens Write", f)
 	}
 }
 

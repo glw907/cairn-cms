@@ -124,7 +124,7 @@ var entries = map[Reason]Entry{
 	ReasonDeclined: {
 		Happened: "Cloudflare didn't approve setup's request.",
 		Did:      nothingCreated,
-		Do:       "Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.",
+		Do:       "Run cairn new again. On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize.",
 	},
 	ReasonKeyringWrite: {
 		Happened: "Setup couldn't store a credential in the keyring.",
@@ -135,7 +135,7 @@ var entries = map[Reason]Entry{
 		Happened: "The GitHub App <app> may still have access to all your repositories.",
 		Did:      kept,
 		Left:     "Setup couldn't confirm that the App's access is limited to <repo>.",
-		Do:       "Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve to give the App access to <repo> only.",
+		Do:       "Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve, Install, & Authorize to give the App access to <repo> only.",
 	},
 	ReasonChainTimeout: {
 		Happened: "The 30-minute limit to approve the requests ran out.",
@@ -160,12 +160,12 @@ var entries = map[Reason]Entry{
 	ReasonGrantSpent: {
 		Happened: "Cloudflare no longer accepts setup's approval.",
 		Did:      kept,
-		Do:       "Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.",
+		Do:       "Run cairn new again. On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize.",
 	},
 	ReasonAccountMissing: {
 		Happened: "The Cloudflare approval doesn't include the account that setup started with.",
 		Did:      kept,
-		Do:       "Run cairn new again. On the Cloudflare page, select the same account as before, select API Tokens: Write, and then select Allow.",
+		Do:       "Run cairn new again. On the Cloudflare page, check that the account shown is the same as before, turn on API Tokens Write under Sensitive scopes, and then select Authorize.",
 	},
 	ReasonNotOurs: {
 		Happened: "A <kind> named <name> already exists on your Cloudflare account. Setup can't confirm that it created this <kind>.",
@@ -233,12 +233,12 @@ const (
 	LineSlugNoLetters = "Enter a name that has at least one number or one letter from A to Z."
 	// LineSignInStep replaces the watch sentence for the sign-in step, since the confirm page
 	// takes one more click.
-	LineSignInStep = "Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Sign in there."
+	LineSignInStep = "Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Confirm sign-in there."
 	// LineDoneOpen replaces the done screen's signed-in sentence when the setup tab's link was
 	// not consumed.
-	LineDoneOpen = "Your site is open in the setup tab. Select Sign in there, or use the link in your email."
+	LineDoneOpen = "Your site is open in the setup tab. Select Confirm sign-in there, or use the link in your email."
 	// linePageFooter is the done page's footer, which names the click.
-	linePageFooter = "Keep this tab open. When setup finishes, your site opens here. Select Sign in to open the admin."
+	linePageFooter = "Keep this tab open. When setup finishes, your site opens here. Select Confirm sign-in to open the admin."
 	// lineLinkExpired is the sign-in email's line for a link that has expired.
 	lineLinkExpired = "If the link has expired, request a new one on the sign-in page."
 	// lineAppNameTaken joins the Create waiting sentence for a GitHub App name another owner

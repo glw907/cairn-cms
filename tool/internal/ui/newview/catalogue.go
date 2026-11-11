@@ -59,12 +59,12 @@ const (
 	browserResume      = "To resume, run cairn new again."
 	countdownLeft      = "<time> left to approve"
 	countdownLate      = "If the countdown reaches 0:00, run cairn new again to resume."
-	permissionName     = "API Tokens: Write"
+	permissionName     = "API Tokens Write"
 
-	approvalAllow   = "Cloudflare: Allow"
-	approvalCreate  = "GitHub: Create"
-	approvalInstall = "GitHub: Install & Authorize"
-	approvalApprove = "GitHub: Approve"
+	approvalAuthorize = "Cloudflare: Authorize"
+	approvalCreate    = "GitHub: Create"
+	approvalInstall   = "GitHub: Install & Authorize"
+	approvalApprove   = "GitHub: Approve"
 )
 
 // The prerequisite failure.
@@ -158,11 +158,11 @@ const (
 	doneTook     = "Setup took <time>."
 
 	doneScriptsSkipped = "To protect your computer, setup didn't run dependency install scripts. If a dependency needs its script, go to <folder> and run npm rebuild."
-	// doneRevokeFailed follows Cloudflare's page on viewing and revoking authorized applications,
-	// https://developers.cloudflare.com/fundamentals/oauth/authorizing-an-application/ (read
-	// 2026-11-09). The page names the profile link and the Revoke button; the client name cairn
-	// is the registered one and awaits a live check.
-	doneRevokeFailed = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Manage OAuth authorizations. Then find cairn and select Revoke."
+	// doneRevokeFailed names the place and the name read live on 2026-11-10: Cloudflare's consent
+	// page says the grant can be revoked in My Profile, Access Management, Connected Applications,
+	// and the grant is listed as cairn. Cloudflare's docs page names a "Manage OAuth authorizations"
+	// link instead, and the live path wins. The Revoke button's label has not been read.
+	doneRevokeFailed = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Access Management, and then Connected Applications. Find cairn and revoke its access."
 )
 
 // The Ctrl+C lines.
@@ -217,7 +217,7 @@ func Catalogue() []string {
 		errSlug, labelCrawlers, descCrawlers, optionBlock, optionAllow, labelOwnerEmail, descOwnerEmail,
 		titleBrowser, browserBefore, browserBeforeToken, browserWaiting, browserDuring, browserNoTab, browserNoOpen, browserResume,
 		countdownLeft, countdownLate,
-		approvalAllow, approvalCreate, approvalInstall, approvalApprove,
+		approvalAuthorize, approvalCreate, approvalInstall, approvalApprove,
 		titleNoDomain, titleStopped, partHappened, partDid, partLeft, partDo, partDetail,
 		linkRegister, linkMove, linkStart,
 		titleDomain, labelDomain, descDomain, titleAccount, labelAccount, descAccount,

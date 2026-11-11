@@ -55,7 +55,7 @@ func (r *run) approveCloudflare(ctx context.Context, state WaitState) error {
 		}
 		if cb.Error != "" {
 			return r.failure(ReasonDeclined, "The Cloudflare approval was declined.",
-				"Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.", nil)
+				"Run cairn new again. On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize.", nil)
 		}
 		r.registerValue(cb.Code)
 		tok, err := r.cfg.CloudflareOAuth.Exchange(ctx, cb.Code, verifier)

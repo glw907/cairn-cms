@@ -4,10 +4,10 @@
   Approve each request in the setup tab.
   The next request opens in the same tab.
 
-  ⣽ Cloudflare: Allow
-    On the Cloudflare page, select API Tokens: Write, and then
-    select Allow. Cloudflare leaves API Tokens: Write unselected,
-    and setup needs it to create your site's deploy key.
+  ⣽ Cloudflare: Authorize
+    On the Cloudflare page, turn on API Tokens Write under Sensitive
+    scopes, and then select Authorize. Cloudflare leaves API Tokens Write
+    off, and setup needs it to create your site's deploy key.
   ○ GitHub: Create
   ○ GitHub: Install & Authorize
   ○ GitHub: Approve

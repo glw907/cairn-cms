@@ -15,7 +15,7 @@ import (
 
 // allApprovals are the four requests, in the order the setup tab shows them. Each label is the
 // site, then the button the owner selects there. A token run drops the first, the Cloudflare one.
-var allApprovals = []string{approvalAllow, approvalCreate, approvalInstall, approvalApprove}
+var allApprovals = []string{approvalAuthorize, approvalCreate, approvalInstall, approvalApprove}
 
 // approvalIndex places each waiting state in the list. A Cloudflare re-consent is approval 1
 // asked again.

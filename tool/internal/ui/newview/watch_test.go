@@ -162,7 +162,7 @@ func TestFailureEmphasisAndLinks(t *testing.T) {
 	t.Run("the permission name is bold in a failure", func(t *testing.T) {
 		f, _ := frame(oneTheme, 80, failed(declined))
 		if !strings.Contains(f, s.Title.Render(permissionName)) {
-			t.Error("API Tokens: Write is not drawn bold in the What to do part")
+			t.Error("API Tokens Write is not drawn bold in the What to do part")
 		}
 	})
 	for _, tt := range []struct {
@@ -191,15 +191,15 @@ func TestFailureEmphasisAndLinks(t *testing.T) {
 
 func TestDoneShowsEachNoticeOnlyWhenItsFlagIsSet(t *testing.T) {
 	const skipped = "To protect your computer, setup didn't run dependency install scripts. If a dependency needs its script, go to /home/sam/sites/field-notes and run npm rebuild."
-	const revoke = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Manage OAuth authorizations. Then find cairn and select Revoke."
+	const revoke = "Setup couldn't remove its access to your Cloudflare account. In your Cloudflare profile, select Access Management, and then Connected Applications. Find cairn and revoke its access."
 	tests := []struct {
 		name      string
 		done      setup.Done
 		want, not []string
 	}{
-		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "Manage OAuth authorizations", "Cloudflare API token"}},
-		{"token stored", setup.Done{TokenStored: true}, []string{setup.LineTokenStored}, []string{"npm rebuild", "Manage OAuth authorizations"}},
-		{"scripts skipped", setup.Done{ScriptsSkipped: true}, []string{skipped}, []string{"Manage OAuth authorizations"}},
+		{"neither", setup.Done{SignedIn: true}, nil, []string{"npm rebuild", "Connected Applications", "Cloudflare API token"}},
+		{"token stored", setup.Done{TokenStored: true}, []string{setup.LineTokenStored}, []string{"npm rebuild", "Connected Applications"}},
+		{"scripts skipped", setup.Done{ScriptsSkipped: true}, []string{skipped}, []string{"Connected Applications"}},
 		{"revoke failed", setup.Done{RevokeFailed: true}, []string{revoke}, []string{"npm rebuild"}},
 		{"both", setup.Done{ScriptsSkipped: true, RevokeFailed: true}, []string{skipped, revoke}, nil},
 	}

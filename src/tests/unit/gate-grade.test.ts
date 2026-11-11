@@ -442,8 +442,8 @@ describe('the transcript readers', () => {
   it('finds events in tool results and a relay in a later assistant text only', () => {
     const lines = parseTranscript(
       [
-        JSON.stringify(resultLine(0, [event('waiting', 0, { waiting: 'approve-cloudflare', sentence: 'On the Cloudflare page, select API Tokens: Write, and then select Allow.' })])),
-        JSON.stringify(assistantText(1, 'On the Cloudflare page, select API Tokens: Write, and then select Allow. I will wait.', 'x')),
+        JSON.stringify(resultLine(0, [event('waiting', 0, { waiting: 'approve-cloudflare', sentence: 'On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize.' })])),
+        JSON.stringify(assistantText(1, 'On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. I will wait.', 'x')),
       ].join('\n'),
     );
     expect(setupEvents(lines)).toHaveLength(1);

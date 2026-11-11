@@ -43,7 +43,7 @@ export const TAB_PAGES = {
   Wait: { kind: 'wait', heading: /^setup in progress$/i, control: null },
   Consent: { kind: 'consent', heading: /^approve setup on cloudflare$/i, control: { role: 'link', name: /^continue to cloudflare$/i } },
   Manifest: { kind: 'manifest', heading: /^continue to github$/i, control: { role: 'button', name: /^continue to github$/i } },
-  ScopeError: { kind: 'scope-error', heading: /^select api tokens: write$/i, control: { role: 'link', name: /^try again$/i } },
+  ScopeError: { kind: 'scope-error', heading: /^turn on api tokens write$/i, control: { role: 'link', name: /^try again$/i } },
   Done: { kind: 'done', heading: /^approvals complete$/i, control: null },
 };
 

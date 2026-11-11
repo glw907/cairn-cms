@@ -21,8 +21,8 @@ func TestATokenRunCountsThreeApprovals(t *testing.T) {
 		first string
 		gone  string
 	}{
-		{"sign-in", false, "four", "2 of 4", "Cloudflare: Allow", "three requests"},
-		{"token", true, "three", "1 of 3", "GitHub: Create", "Cloudflare: Allow"},
+		{"sign-in", false, "four", "2 of 4", "Cloudflare: Authorize", "three requests"},
+		{"token", true, "three", "1 of 3", "GitHub: Create", "Cloudflare: Authorize"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := testConfig(true, oneTheme)

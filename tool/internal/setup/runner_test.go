@@ -516,12 +516,12 @@ func TestTheCloudflareApprovalOpensOnTheConsentPage(t *testing.T) {
 // TestTheCloudflareCopyNamesThePermission pins that every Cloudflare approval sentence names
 // the permission Cloudflare leaves unselected.
 func TestTheCloudflareCopyNamesThePermission(t *testing.T) {
-	const ruled = "On the Cloudflare page, select API Tokens: Write, and then select Allow. " +
-		"Cloudflare leaves API Tokens: Write unselected, and setup needs it to create your site's deploy key."
+	const ruled = "On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. " +
+		"Cloudflare leaves API Tokens Write off, and setup needs it to create your site's deploy key."
 	if got := WaitSentence(WaitCloudflare, "Example Site", "example-site"); got != ruled {
 		t.Errorf("WaitCloudflare sentence = %q, want %q", got, ruled)
 	}
-	if got := WaitSentence(WaitCloudflareReconsent, "Example Site", "example-site"); !strings.HasPrefix(got, "On the Cloudflare page, select API Tokens: Write, and then select Allow. ") {
+	if got := WaitSentence(WaitCloudflareReconsent, "Example Site", "example-site"); !strings.HasPrefix(got, "On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. ") {
 		t.Errorf("WaitCloudflareReconsent sentence = %q, want it to open with the permission instruction", got)
 	}
 
@@ -532,8 +532,8 @@ func TestTheCloudflareCopyNamesThePermission(t *testing.T) {
 		},
 	}
 	_, err := w.run(context.Background())
-	if f := failureOf(t, err); f.Reason != ReasonDeclined || !strings.Contains(f.Do, "select API Tokens: Write, and then select Allow") {
-		t.Errorf("decline failure = %+v, want a fix that names API Tokens: Write", f)
+	if f := failureOf(t, err); f.Reason != ReasonDeclined || !strings.Contains(f.Do, "turn on API Tokens Write under Sensitive scopes, and then select Authorize") {
+		t.Errorf("decline failure = %+v, want a fix that names API Tokens Write", f)
 	}
 }
 

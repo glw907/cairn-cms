@@ -610,7 +610,7 @@ func TestRootPages(t *testing.T) {
 	if strings.Contains(body, "dash.cloudflare.com") {
 		t.Errorf("error.html carries the retry URL in its source:\n%s", body)
 	}
-	if !strings.Contains(body, "<strong>API Tokens: Write</strong>") {
+	if !strings.Contains(body, "<strong>API Tokens Write</strong>") {
 		t.Errorf("error.html does not set the permission name in bold:\n%s", body)
 	}
 	if !strings.Contains(body, "cairn · Field Notes · approval 1 of 4") {
@@ -665,8 +665,8 @@ func TestConsentPage(t *testing.T) {
 	}
 	for _, want := range []string{
 		"<title>Approve setup on Cloudflare</title>",
-		"On the Cloudflare page, select <strong>API Tokens: Write</strong>, and then select Allow.",
-		"Cloudflare leaves <strong>API Tokens: Write</strong> unselected, and setup needs it to create your site's deploy key.",
+		"On the Cloudflare page, turn on <strong>API Tokens Write</strong> under Sensitive scopes, and then select Authorize.",
+		"Cloudflare leaves <strong>API Tokens Write</strong> off, and setup needs it to create your site's deploy key.",
 		`href="/cloudflare/go"`,
 		"Continue to Cloudflare",
 		"cairn · Field Notes · approval 1 of 4",
@@ -675,7 +675,7 @@ func TestConsentPage(t *testing.T) {
 			t.Errorf("the consent page lacks %q:\n%s", want, body)
 		}
 	}
-	if i, j := strings.Index(body, "API Tokens: Write"), strings.Index(body, "Continue to Cloudflare"); i < 0 || j < i {
+	if i, j := strings.Index(body, "API Tokens Write"), strings.Index(body, "Continue to Cloudflare"); i < 0 || j < i {
 		t.Error("the consent page's instruction does not come before its button")
 	}
 	if strings.Contains(body, "dash.cloudflare.com") || strings.Contains(body, "code_challenge") {

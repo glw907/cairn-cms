@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -148,6 +149,8 @@ func TestARealTLSAlertFromAServerIsATLSErrorAndIsNotRetried(t *testing.T) {
 	noWait(t)
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	srv.TLS = &tls.Config{MinVersion: tls.VersionTLS13}
+	// The handshake fails on purpose, so the server's log line about it is noise.
+	srv.Config.ErrorLog = log.New(io.Discard, "", 0)
 	srv.StartTLS()
 	defer srv.Close()
 	rt, ok := srv.Client().Transport.(*http.Transport)

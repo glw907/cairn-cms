@@ -4,7 +4,7 @@
 #   bash scripts/gate/run-gate.sh sweep [--apply | --check-scopes] [--headed]
 #   bash scripts/gate/run-gate.sh probe | scripted
 #   bash scripts/gate/run-gate.sh naive
-#   bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget]
+#   bash scripts/gate/run-gate.sh grade <run dir> [--end stall|budget [--reason "<text>"]]
 #   bash scripts/gate/run-gate.sh shell <name> [cleanroom shell options]
 #
 # Sources the workstation's secrets (the pattern CLAUDE.md names for a script), and starts the

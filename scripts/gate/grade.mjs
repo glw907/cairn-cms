@@ -2,7 +2,7 @@
 // `run-record.json` and `run-record.md` in the run directory. A read that fails is a failed check,
 // never an empty one, and the record carries each failed read by name.
 //
-// Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget]
+// Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget [--reason "<text>"]]
 //
 // `<run dir>` is `/var/tmp/cleanroom/<name>/run`; the clean home is `../home`. The grader runs
 // `cleanroom shell` and `cleanroom scan`, copies the record to `~/.local/state/cairn-gate/proving/`,
@@ -386,10 +386,10 @@ function numberUnder(state, key) {
 
 /**
  * Grade a run.
- * @param {{ runDir: string, deps: GradeDeps, end?: 'stall' | 'budget' }} input
+ * @param {{ runDir: string, deps: GradeDeps, end?: 'stall' | 'budget', reason?: string }} input `reason` is why the executor ended a stall
  * @returns {Promise<any>} the record, as written to `run-record.json`
  */
-export async function grade({ runDir, deps, end }) {
+export async function grade({ runDir, deps, end, reason }) {
   const { cleanroom, env } = deps;
   const githubFetch = deps.githubFetch ?? fetch;
   const siteFetch = deps.siteFetch ?? gateFetch;
@@ -626,7 +626,12 @@ export async function grade({ runDir, deps, end }) {
   }).at(-1);
   if (stateName === 'stopped:cost') outcome = { result: 'fail', reason: 'cost', detail: 'the cost cap stopped the session' };
   else if (stateName === 'stopped:time') outcome = { result: 'fail', reason: 'time', detail: 'the time cap stopped the session' };
-  else if (end === 'stall') outcome = { result: 'fail', reason: 'stall', detail: 'the conductor ended the run as a stall' };
+  else if (end === 'stall') {
+    // The reason is operator text that lands in a record file: control characters become spaces and
+    // the length is capped.
+    const why = (reason ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200).trim();
+    outcome = { result: 'fail', reason: 'stall', detail: `the executor ended the run as a stall${why ? `: ${why}` : '; no reason was recorded'}` };
+  }
   else if (end === 'budget') outcome = { result: 'fail', reason: 'budget', detail: 'the loop budget ended the run' };
   else if (scriptedFailure) outcome = { result: 'fail', reason: 'other', detail: `the scripted leg failed at "${scriptedFailure.screen}": ${scriptedFailure.reason}` };
   else if (!versions.ok && candidate.engine && candidate.tool && mismatches.length > 0) outcome = { result: 'fail', reason: 'other', detail: `wrong candidate: ${mismatches.join('; ')}` };
@@ -762,11 +767,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const runDir = process.argv[2];
   const endAt = process.argv.indexOf('--end');
   const end = endAt === -1 ? undefined : process.argv[endAt + 1];
-  if (!runDir || (endAt !== -1 && end !== 'stall' && end !== 'budget')) {
-    console.error('Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget]');
+  const reasonAt = process.argv.indexOf('--reason');
+  const reason = reasonAt === -1 ? undefined : process.argv[reasonAt + 1];
+  if (!runDir || (endAt !== -1 && end !== 'stall' && end !== 'budget') || (reasonAt !== -1 && reason === undefined)) {
+    console.error('Usage: node scripts/gate/grade.mjs <run dir> [--end stall|budget [--reason "<text>"]]');
     process.exitCode = 2;
   } else {
-    const record = await grade({ runDir: path.resolve(runDir), end: /** @type {'stall' | 'budget' | undefined} */ (end), deps: { cleanroom: cleanroomDefault, env: process.env } });
+    const record = await grade({ runDir: path.resolve(runDir), end: /** @type {'stall' | 'budget' | undefined} */ (end), reason, deps: { cleanroom: cleanroomDefault, env: process.env } });
     console.log(`Graded ${record.id}: ${record.outcome.result}${record.outcome.reason ? `, ${record.outcome.reason}` : ''}. Record: ${path.join(runDir, 'run-record.md')}`);
     process.exitCode = record.outcome.result === 'pass' ? 0 : 1;
   }

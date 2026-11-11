@@ -120,6 +120,7 @@ async function makeRun(opts: Options = {}) {
     cleanroom,
     githubFetch: githubFetch as typeof fetch,
     siteFetch: (async () => ({ status: 200, text: async () => '' })) as unknown as typeof gateFetch, // the grader reads only status and text()
+    authority: async () => '203.0.113.7', // the zone's nameserver has the address, so the live read goes ahead
     findMail: (async () => {
       if (opts.mail === 'throws') throw new Error('JMAP Email/query answered an error');
       return { found: true, from: 'noreply@carin-test.org', url: 'https://gate.carin-test.org/admin/auth/confirm?token=SECRET' };
@@ -165,6 +166,36 @@ describe('a scripted run', () => {
     await asScripted(run, ['{"screen":"watch","action":"seen"}']);
     const outcome = (await grade({ runDir: run.runDir, deps: run.deps })).outcome;
     expect(outcome).toMatchObject({ result: 'fail', detail: expect.stringContaining('never reached the done screen') });
+  });
+});
+
+describe('the live read', () => {
+  // A resolver asked for a host the zone does not have yet keeps that answer for 30 minutes, and the next
+  // run's site then looks dead to this computer (run 2611110013). A run that failed before its site existed
+  // must not ask for it, so the grader asks the zone's nameserver first.
+  it('is skipped, and never touches the resolver, when the zone has no address for the site', async () => {
+    const run = await makeRun();
+    let fetched = 0;
+    run.deps.siteFetch = (async () => {
+      fetched++;
+      return { status: 200, text: async () => '' };
+    }) as unknown as typeof gateFetch;
+    run.deps.authority = async () => null;
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(fetched).toBe(0);
+    expect(record.endState.live).toMatchObject({ ok: false, evidence: expect.stringContaining('no address') });
+  });
+
+  it('asks for the site host, and reads the site when the zone answers', async () => {
+    const run = await makeRun();
+    const asked: string[] = [];
+    run.deps.authority = async (host: string) => {
+      asked.push(host);
+      return '203.0.113.7';
+    };
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(asked).toEqual([new URL(LIVE_ORIGIN).hostname]);
+    expect(record.endState.live.ok).toBe(true);
   });
 });
 

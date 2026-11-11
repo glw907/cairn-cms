@@ -135,7 +135,7 @@ var entries = map[Reason]Entry{
 		Happened: "The GitHub App <app> may still have access to all your repositories.",
 		Did:      kept,
 		Left:     "Setup couldn't confirm that the App's access is limited to <repo>.",
-		Do:       "Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve to give the App access to <repo> only.",
+		Do:       "Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve, Install, & Authorize to give the App access to <repo> only.",
 	},
 	ReasonChainTimeout: {
 		Happened: "The 30-minute limit to approve the requests ran out.",

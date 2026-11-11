@@ -89,7 +89,7 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
   Consumers must: nothing.
 
 - **Setup's instructions name each page's real button and switch.** A first run through the real Cloudflare and
-  GitHub pages with no token showed four wrong words. Cloudflare's button is Authorize, not Allow, and API Tokens
+  GitHub pages with no token showed six wrong labels. Cloudflare's button is Authorize, not Allow, and API Tokens
   Write (no colon) is a switch under Sensitive scopes that the owner turns on, not a choice to select. GitHub's first
   button reads Create GitHub App, and its last reads Approve, Install, & Authorize, not Approve. The site's confirm
   page button reads Confirm sign-in, not Sign in. The terminal screen, the setup tab's approval and error pages, the

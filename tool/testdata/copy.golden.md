@@ -657,7 +657,7 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - Port 49152 is in use. Another setup may be running.
 - Read the detail line, and then run cairn new again.
 - Register a domain with Cloudflare, or add a domain you already own to Cloudflare. Then run cairn new again.
-- Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve to give the App access to <repo> only.
+- Remove the App's installation at <url>, and then run cairn new again. When GitHub asks, select Approve, Install, & Authorize to give the App access to <repo> only.
 - Remove the DNS records for <host> in Cloudflare, or choose another address. Then run cairn new again.
 - Remove the custom domain or route for <host> from that Worker in Cloudflare, or choose another address. Then run cairn new again.
 - Remove those commits or delete the repository. Then run cairn new again.

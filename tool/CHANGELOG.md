@@ -36,7 +36,7 @@ every route. No `tool/v2.0.0` tag exists yet.
   Consumers must: nothing.
 
 - **The OAuth revoke fallback names the menu.** When Cloudflare refuses to revoke the approval, the
-  last screen points to **Manage OAuth authorizations** in the Cloudflare profile.
+  last screen points to **Access Management**, and then **Connected Applications**, in the Cloudflare profile.
 
   Consumers must: nothing.
 

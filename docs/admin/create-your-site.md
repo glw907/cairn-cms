@@ -109,7 +109,7 @@ A failed first deploy reads *The first deploy failed* and links the run's page i
 The last step signs you in.
 
 1. Setup writes a sign-in link, and the setup tab opens your site's sign-in confirmation page through it.
-2. In that tab, select **Sign in**.
+2. In that tab, select **Confirm sign-in**.
 
 Your site's admin opens, and you're signed in as the owner.
 

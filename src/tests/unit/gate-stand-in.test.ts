@@ -42,6 +42,10 @@ const FIXTURES: Record<string, Fixture> = {
   },
   login: { url: `${SITE}/admin/login`, h1: 'Sign in', controls: [{ role: 'button', name: 'Send sign-in link' }] },
   admin: { url: `${SITE}/admin/posts`, h1: 'Posts' },
+  // What the tab shows once setup's loopback server has gone: Chrome's error page.
+  dead: { url: 'chrome-error://chromewebdata/' },
+  // The admin root the stand-in loads itself after the mailed link signed in on another page.
+  adminHome: { url: `${SITE}/admin`, h1: 'Posts' },
   mystery: { url: 'http://127.0.0.1:4100/', h1: 'Something nobody planned', text: 'No control here.', controls: [{ role: 'link', name: 'Other' }] },
 };
 
@@ -54,7 +58,7 @@ class FakePage {
     this.fixture = FIXTURES[start]!;
   }
   goto(name: string) {
-    this.fixture = FIXTURES[name]!;
+    this.fixture = FIXTURES[name] ?? Object.values(FIXTURES).find((fixture) => fixture.url === name)!;
   }
   url() {
     return this.fixture.url;
@@ -205,6 +209,113 @@ describe('the stand-in', () => {
     } finally {
       delete FIXTURES['stuck'];
     }
+  });
+
+  describe('a tab that ended before the owner signed in', () => {
+    // The agent lane: `--plan` opens the tab for the GitHub approvals and its server goes with the
+    // plan, and `--apply` opens none. Run 2611102302's stand-in sat on the dead tab for two minutes and
+    // failed, with the site live and the sign-in mail delivered.
+    const found = (token: string) => ({ found: true as const, from: 'no-reply@carin-test.org', url: `${SITE}/admin/auth/confirm?token=${token}` });
+
+    it('opens the mailed link once the address answers, and requests no second link', async () => {
+      const page = new FakePage('dead', () => time, dir);
+      const opened: string[] = [];
+      let requested = 0;
+      let queried: { sinceMs?: number; expectedOrigin?: string } = {};
+      const start = time;
+      await follow(page, {
+        signInOrigin: SITE,
+        addressReady: async () => true,
+        siteAnswers: async () => true,
+        requestLink: async () => void requested++,
+        findMail: async (query: { sinceMs?: number; expectedOrigin?: string }) => {
+          queried = query;
+          return found('the-mailed-link');
+        },
+        openLink: async (url: string) => {
+          opened.push(url);
+        },
+      });
+      expect(opened).toEqual([`${SITE}/admin/auth/confirm?token=the-mailed-link`]);
+      expect(page.url()).toBe(`${SITE}/admin`);
+      expect(requested).toBe(0);
+      expect(queried).toMatchObject({ sinceMs: start, expectedOrigin: SITE });
+      expect(records.map((record) => record[1])).toEqual(['read sign-in mail', 'open sign-in link', 'signed-in']);
+    });
+
+    it('waits for the zone\'s nameserver to answer for the host before it looks', async () => {
+      const page = new FakePage('dead', () => time, dir);
+      let asked = 0;
+      const askedAt: number[] = [];
+      await follow(page, {
+        signInOrigin: SITE,
+        siteAnswers: async () => true,
+        addressReady: async (host: string) => {
+          expect(host).toBe(new URL(SITE).hostname);
+          askedAt.push(time);
+          return ++asked > 3;
+        },
+        findMail: async () => found('late'),
+        openLink: async () => {},
+      });
+      expect(asked).toBe(4);
+      expect(askedAt.every((at) => at - 1_000_000 >= 20_000)).toBe(true);
+    });
+
+    it('requests a new link at the login page only when no mail has arrived', async () => {
+      const page = new FakePage('dead', () => time, dir);
+      let requested = 0;
+      let searches = 0;
+      await follow(page, {
+        signInOrigin: SITE,
+        addressReady: async () => true,
+        siteAnswers: async () => true,
+        requestLink: async () => void ++requested,
+        findMail: async () => (++searches === 1 ? { found: false as const, reason: 'no matching sign-in message arrived within the budget' } : found('requested')),
+        openLink: async () => {},
+      });
+      expect(requested).toBe(1);
+      expect(searches).toBe(2);
+      expect(records.map((record) => record[1])).toEqual(['read sign-in mail', 'open sign-in link', 'signed-in']);
+    });
+
+    it('looks for the mail only once the site answers over HTTPS, since setup sends it after that wait', async () => {
+      const page = new FakePage('dead', () => time, dir);
+      let polls = 0;
+      let firstSearch = 0;
+      let answeredAt = 0;
+      await follow(page, {
+        signInOrigin: SITE,
+        addressReady: async () => true,
+        siteAnswers: async () => {
+          if (++polls > 5) answeredAt = answeredAt || time;
+          return polls > 5;
+        },
+        findMail: async () => {
+          firstSearch = firstSearch || time;
+          return found('after-https');
+        },
+        openLink: async () => {},
+      });
+      expect(polls).toBe(6);
+      expect(firstSearch).toBeGreaterThanOrEqual(answeredAt);
+      expect(answeredAt - 1_000_000).toBeGreaterThanOrEqual(20_000 + 5 * 5000);
+    });
+
+    it('fails when the address never answers, naming the host', async () => {
+      const page = new FakePage('dead', () => time, dir);
+      await expect(follow(page, { signInOrigin: SITE, addressReady: async () => false, siteWaitMs: 60_000 })).rejects.toThrow(/never answered/);
+    });
+
+    it('fails when the site never answers over HTTPS, naming the host', async () => {
+      const page = new FakePage('dead', () => time, dir);
+      await expect(follow(page, { signInOrigin: SITE, addressReady: async () => true, siteAnswers: async () => false, siteWaitMs: 60_000 })).rejects.toThrow(/never answered over HTTPS/);
+    });
+
+    it('still fails a dead tab at 2 minutes when no sign-in origin is given', async () => {
+      const page = new FakePage('dead', () => time, dir);
+      await expect(follow(page)).rejects.toBeInstanceOf(UnrecognisedPageError);
+    });
   });
 
   describe('the mail path', () => {

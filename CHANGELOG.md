@@ -51,6 +51,15 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **An agent now makes the bare `cairn` call before it asks about the sandbox.** A `sandbox.excludedCommands`
+  entry for `cairn *` or `npx create-cairn-site *` runs the call outside the sandbox with no prompt. Otherwise the
+  call stops with a message, and the agent retries with the Bash tool's `dangerouslyDisableSandbox` parameter. When the
+  owner has switched that off with `allowUnsandboxedCommands: false`, the retry stops with the same message and the
+  agent asks the owner to add the exclusion. The agent page, the skill, `cairn help agents`, and the refusal say so, and
+  the page and the skill say to visit the address once the `summary` event arrives.
+
+  Consumers must: nothing.
+
 - **The setup screens no longer let an Enter accept a domain unread.** The browser screen shows its
   Enter hint only once setup has armed the browser step, and the account and domain choosers start with
   no selection when the account holds several, so the first arrow key selects the first row.

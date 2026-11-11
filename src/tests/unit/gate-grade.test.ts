@@ -223,7 +223,7 @@ describe('the record on a known fixture', () => {
     expect(md).toContain('OVER 5');
     expect(md + json).not.toContain('SECRET');
     expect(run.cleanroomCalls).toContainEqual(['scan', '2611091200', path.join(run.runDir, 'run-record.json'), path.join(run.runDir, 'run-record.md')]);
-    expect(run.cleanroomCalls).toContainEqual(['shell', '2611091200', '-c', 'npx --yes create-cairn-site status']);
+    expect(run.cleanroomCalls).toContainEqual(['shell', '2611091200', '-c', 'npm_config_tag=gate npx --yes create-cairn-site status']);
     await expect(stat(path.join(run.home, '.local', 'share', 'keyrings'))).rejects.toThrow();
   });
 });
@@ -378,6 +378,24 @@ describe('the transcript readers', () => {
     expect(setupEvents(lines)).toHaveLength(1);
     expect(missedRelays(lines, setupEvents(lines))).toEqual([]);
     expect(missedRelays(lines.slice(0, 1), setupEvents(lines))).toHaveLength(1);
+  });
+
+  it('does not count a waiting sentence the stand-in cleared within seconds, which no agent could relay', () => {
+    // Run 2611102302: the stand-in clicked each GitHub approval 0 to 12 seconds after its `waiting`
+    // event, and the agent, reading a background task's output, cannot pass a sentence on that fast.
+    const sentence = 'Select Create to add a GitHub App for Cairn gate 2611091200. The admin saves changes through the App.';
+    const waiting = event('waiting', 0, { waiting: 'approve-create-app', sentence });
+    const quick = parseTranscript(JSON.stringify(resultLine(0, [waiting, event('step_done', 0.1, { step: 'approve-create-app' })])));
+    expect(missedRelays(quick, setupEvents(quick))).toEqual([]);
+    const slow = parseTranscript(JSON.stringify(resultLine(0, [waiting, event('step_done', 2, { step: 'approve-create-app' })])));
+    expect(missedRelays(slow, setupEvents(slow))).toHaveLength(1);
+    const open = parseTranscript(JSON.stringify(resultLine(0, [waiting])));
+    expect(missedRelays(open, setupEvents(open))).toHaveLength(1);
+    // A step that finished before the sentence appeared cleared nothing, and one at the same instant did.
+    const earlier = parseTranscript(JSON.stringify(resultLine(0, [event('step_done', -1, { step: 'approve-create-app' }), waiting])));
+    expect(missedRelays(earlier, setupEvents(earlier))).toHaveLength(1);
+    const same = parseTranscript(JSON.stringify(resultLine(0, [waiting, event('step_done', 0, { step: 'approve-create-app' })])));
+    expect(missedRelays(same, setupEvents(same))).toEqual([]);
   });
 
   it('reads a command from a redrawn prompt once', () => {

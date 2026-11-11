@@ -206,9 +206,13 @@ export function stepRows(events) {
   return rows;
 }
 
+/** How soon the stand-in may clear an approval before a relay of its sentence was impossible. */
+const RELAY_GRACE_MS = 15_000;
+
 /**
  * The `waiting` sentences the agent never passed on: a later assistant text must hold the
- * sentence's opening words.
+ * sentence's opening words. A sentence whose approval was cleared within seconds is not counted:
+ * the stand-in clicks faster than an agent reading a background task's output can pass it on.
  * @param {TranscriptLine[]} lines
  * @param {SetupEvent[]} events
  * @returns {{ sentence: string, waiting: string, line: number }[]}
@@ -216,6 +220,10 @@ export function stepRows(events) {
 export function missedRelays(lines, events) {
   return events
     .filter((event) => event.kind === 'waiting' && event.sentence)
+    .filter((event) => {
+      const cleared = events.find((other) => other.kind === 'step_done' && other.step === event.waiting && other.at >= event.at);
+      return !(cleared && cleared.at - event.at < RELAY_GRACE_MS);
+    })
     .filter((event) => {
       const key = squash(/** @type {string} */ (event.sentence)).slice(0, RELAY_PREFIX);
       return !lines.some(
@@ -428,7 +436,9 @@ export async function grade({ runDir, deps, end }) {
   const registryRead = siteFiles.length === 0 ? { ok: false, reason: 'no registry record under .config/cairn/sites' } : await readJson(path.join(siteDir, siteFiles[0]));
   note('registry record', registryRead.ok, registryRead.ok ? siteFiles[0] : /** @type {{ reason: string }} */ (registryRead).reason);
   const registry = registryRead.ok ? /** @type {any} */ (registryRead).value : {};
-  const status = await cleanroom(['shell', name, '-c', 'npx --yes create-cairn-site status']);
+  // The gate tag, as a naive agent's shell carries it: without it npx resolves `latest`, which no
+  // launcher serves a version of, and the read exits 1 from npm before `cairn new status` runs.
+  const status = await cleanroom(['shell', name, '-c', 'npm_config_tag=gate npx --yes create-cairn-site status']);
   note('cairn new status', status.code === 0, status.code === 0 ? status.stdout.split('\n')[0].slice(0, 120) : `exited ${status.code}`);
 
   // Installed versions, against the candidate the run recorded.

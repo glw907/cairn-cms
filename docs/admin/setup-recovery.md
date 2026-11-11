@@ -56,7 +56,7 @@ The following table lists the stops that happen on your computer, before the bro
 
 ## Fix a stop after the Cloudflare approval
 
-The following table lists the stops that setup finds by checking your Cloudflare account, which happens right after approval 1. Setup created nothing on GitHub or Cloudflare. It does keep the Cloudflare approval in your keyring, so the rerun can reuse it. An approval that leaves out `API Tokens: Write` isn't a stop. The setup tab shows an error page with **Try again**, which asks Cloudflare again. Setup needs that permission to create the site's deploy key, so select it and then **Allow**. [Before you start](./before-you-start.md#what-you-need-on-cloudflare) lists what the account needs.
+The following table lists the stops that setup finds by checking your Cloudflare account, which happens right after approval 1. Setup created nothing on GitHub or Cloudflare. It does keep the Cloudflare approval in your keyring, so the rerun can reuse it. An approval that leaves out `API Tokens Write` isn't a stop. The setup tab shows an error page with **Try again**, which asks Cloudflare again. Setup needs that permission to create the site's deploy key, so turn it on under **Sensitive scopes** and then select **Authorize**. [Before you start](./before-you-start.md#what-you-need-on-cloudflare) lists what the account needs.
 
 | What happened and why | What setup kept | What to do |
 | --- | --- | --- |
@@ -66,7 +66,7 @@ The following table lists the stops that setup finds by checking your Cloudflare
 | The address you chose already has an A, AAAA, or CNAME record in Cloudflare, so it points at another site. | Nothing was created. | **Act:** remove that record in Cloudflare, or choose another address. Then run the setup command again. |
 | A Worker already serves the address you chose. | Nothing was created. | **Act, or ask whoever runs that Worker:** remove the Worker's custom domain or route for that address in Cloudflare, or choose another address. Then run the setup command again. |
 | Every name from your site's name to the same name followed by `-9` is already in use. | Nothing was created. | **Act:** choose another site name, then run the setup command again. |
-| Cloudflare didn't approve setup's request. | Nothing was created. | **Act:** run the setup command again. On the Cloudflare page, select `API Tokens: Write`, and then select **Allow**. |
+| Cloudflare didn't approve setup's request. | Nothing was created. | **Act:** run the setup command again. On the Cloudflare page, turn on `API Tokens Write` under **Sensitive scopes**, and then select **Authorize**. |
 
 ## Fix a stop during the browser approvals
 
@@ -75,7 +75,7 @@ The following table lists the stops that happen while you approve requests in th
 | What happened and why | What setup kept | What to do |
 | --- | --- | --- |
 | The 30-minute limit to approve the requests ran out, or you pressed Ctrl+C. Setup exits with code 2. | The completed approvals. | **Act:** run the setup command again to resume. |
-| The Cloudflare approval doesn't include the account the setup began in. | The completed steps. | **Act:** run the setup command again, select the same account as before, then select `API Tokens: Write` and **Allow**. |
+| The Cloudflare approval doesn't include the account the setup began in. | The completed steps. | **Act:** run the setup command again. On the Cloudflare page, check that the account shown is the same as before, turn on `API Tokens Write` under **Sensitive scopes**, and then select **Authorize**. |
 | GitHub says the App's name is taken. | The Cloudflare approval. | **Act:** change the name on GitHub's page. Setup uses the name you choose. |
 | Setup couldn't store a credential in the keyring. | The completed steps, and the GitHub App if setup had created it. | **Act:** unlock your keyring and run the setup command again. If setup names a GitHub App to delete, delete it first at the address setup prints. |
 | The GitHub App may still have access to all your repositories. Setup couldn't confirm that its access is limited to the new repository. | The App and the repository, and an installation that may reach every repository. | **Act:** remove the App's installation at [GitHub's installations page](https://github.com/settings/installations), then run the setup command again. When GitHub asks, select **Approve** to give the App access to the new repository only. |
@@ -93,7 +93,7 @@ The following table lists the stops that happen after the summary, while setup c
 | The repository already holds commits that setup didn't make. | Everything setup created. | **Act:** remove those commits or delete the repository, then run the setup command again. |
 | Setup couldn't push the site to GitHub. | Everything setup created. | **Act:** check your internet connection, then run the setup command again. |
 | The first deploy failed in GitHub Actions, and setup names no cause. Setup can't read your Cloudflare plan, so an account without the Workers Paid plan, which every cairn site needs, shows up only here. | Everything setup created. | **Act, or ask a developer:** open the run at the address setup prints and read why it failed. If the account lacks Workers Paid, subscribe, then run the setup command again. Setup resumes at the first deploy, and a rerun pushes one empty commit to deploy again. |
-| Cloudflare no longer accepts the approval setup saved, which setup finds during a long step while it builds the site. | The completed steps. | **Act:** run the setup command again. On the Cloudflare page, select `API Tokens: Write`, and then select **Allow**. |
+| Cloudflare no longer accepts the approval setup saved, which setup finds during a long step while it builds the site. | The completed steps. | **Act:** run the setup command again. On the Cloudflare page, turn on `API Tokens Write` under **Sensitive scopes**, and then select **Authorize**. |
 | The first deploy didn't finish within 30 minutes. | Everything setup created. | **Wait or act:** open the Actions tab of your repository on GitHub to see whether the deploy is still running, then run the setup command again. |
 | The site didn't answer over HTTPS within 15 minutes. Cloudflare is still issuing the certificate. | Everything setup created. | **Wait:** run the setup command again in a few minutes. Setup resumes at connecting your domain. |
 | Cloudflare or GitHub refused a request because setup's credential is missing a permission, or didn't accept the credential. Setup prints the request and the provider's status on a detail line. | Everything setup created. | **Act:** for Cloudflare in a run with a token, check that the token hasn't expired and carries every permission [Set up with an agent](./set-up-with-an-agent.md#use-a-cloudflare-token-for-an-unattended-run) lists. In any other run, run the setup command again and approve every permission the provider's page lists. |

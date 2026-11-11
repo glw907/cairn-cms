@@ -9,8 +9,8 @@
   ● Run the first deploy
   ● Connect fieldnotes.example.com
   ⣽ Sign in to the admin
-    Setup emails you a one-time sign-in link and opens
-    your site in the setup tab. Select Sign in there.
+    Setup emails you a one-time sign-in link and opens your
+    site in the setup tab. Select Confirm sign-in there.
 
   You can leave this running. When your site is live,
   setup emails a sign-in link to sam@example.com.

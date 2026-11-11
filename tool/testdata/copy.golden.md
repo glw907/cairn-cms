@@ -650,7 +650,7 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - If you don't need it, delete the <kind> in Cloudflare. If you need it, choose another site name. Then run cairn new again.
 - Install Git, and then run cairn new again.
 - Install Node.js 24 or later, and then run cairn new again.
-- Keep this tab open. When setup finishes, your site opens here. Select Sign in to open the admin.
+- Keep this tab open. When setup finishes, your site opens here. Select Confirm sign-in to open the admin.
 - Move or rename that folder, or run cairn new from another folder.
 - Nothing was created.
 - On GitHub, open the Actions tab of <repo> to see whether the deploy is still running. Then run cairn new again. Setup resumes at the first deploy.
@@ -663,8 +663,8 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - Remove those commits or delete the repository. Then run cairn new again.
 - Run cairn new again to resume.
 - Run cairn new again, and approve every permission the <provider> page lists.
-- Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.
-- Run cairn new again. On the Cloudflare page, select the same account as before, select API Tokens: Write, and then select Allow.
+- Run cairn new again. On the Cloudflare page, check that the account shown is the same as before, turn on API Tokens Write under Sensitive scopes, and then select Authorize.
+- Run cairn new again. On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize.
 - Run cairn new in a terminal on the computer where you use your browser.
 - Set CAIRN_CF_SETUP_TOKEN to the same token, and then run cairn new again.
 - Setup can't find Git on this computer.
@@ -679,7 +679,7 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - Setup couldn't store a credential in the keyring.
 - Setup couldn't use an answer it was given.
 - Setup couldn't write the site into <folder>.
-- Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Sign in there.
+- Setup emails you a one-time sign-in link and opens your site in the setup tab. Select Confirm sign-in there.
 - Setup keeps what it already created.
 - Setup needs Node.js 24 or later. This computer has Node.js <n>.
 - Setup stopped.
@@ -706,7 +706,7 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - Wait until Cloudflare shows the domain as active, and then run cairn new again.
 - Your Cloudflare account has no domains. The admin sends sign-in links by email, and Cloudflare sends email only from a domain on your account.
 - Your domain <domain> is still being added to Cloudflare.
-- Your site is open in the setup tab. Select Sign in there, or use the link in your email.
+- Your site is open in the setup tab. Select Confirm sign-in there, or use the link in your email.
 
 ## newview
 
@@ -731,7 +731,7 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - Choose an account
 - Choose whether AI companies can use your content to train their models. This setting doesn't affect search engines.
 - Cloudflare is issuing the site's HTTPS certificate. This can take up to 15 minutes.
-- Cloudflare: Allow
+- Cloudflare: Authorize
 - Commit the site
 - Connect <host>
 - Database

@@ -59,12 +59,12 @@ const (
 	browserResume      = "To resume, run cairn new again."
 	countdownLeft      = "<time> left to approve"
 	countdownLate      = "If the countdown reaches 0:00, run cairn new again to resume."
-	permissionName     = "API Tokens: Write"
+	permissionName     = "API Tokens Write"
 
-	approvalAllow   = "Cloudflare: Allow"
-	approvalCreate  = "GitHub: Create"
-	approvalInstall = "GitHub: Install & Authorize"
-	approvalApprove = "GitHub: Approve"
+	approvalAuthorize = "Cloudflare: Authorize"
+	approvalCreate    = "GitHub: Create"
+	approvalInstall   = "GitHub: Install & Authorize"
+	approvalApprove   = "GitHub: Approve"
 )
 
 // The prerequisite failure.
@@ -217,7 +217,7 @@ func Catalogue() []string {
 		errSlug, labelCrawlers, descCrawlers, optionBlock, optionAllow, labelOwnerEmail, descOwnerEmail,
 		titleBrowser, browserBefore, browserBeforeToken, browserWaiting, browserDuring, browserNoTab, browserNoOpen, browserResume,
 		countdownLeft, countdownLate,
-		approvalAllow, approvalCreate, approvalInstall, approvalApprove,
+		approvalAuthorize, approvalCreate, approvalInstall, approvalApprove,
 		titleNoDomain, titleStopped, partHappened, partDid, partLeft, partDo, partDetail,
 		linkRegister, linkMove, linkStart,
 		titleDomain, labelDomain, descDomain, titleAccount, labelAccount, descAccount,

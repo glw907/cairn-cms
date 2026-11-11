@@ -44,11 +44,11 @@ const (
 // waitSentences is the copy deck's current-step sentence for each state. <name> takes the site
 // name and <repo> the repository name.
 var waitSentences = map[WaitState]string{
-	WaitCloudflare:          "On the Cloudflare page, select API Tokens: Write, and then select Allow. Cloudflare leaves API Tokens: Write unselected, and setup needs it to create your site's deploy key.",
-	WaitCreateApp:           "Select Create to add a GitHub App for <name>. The admin saves changes to your site through the App.",
+	WaitCloudflare:          "On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. Cloudflare leaves API Tokens Write off, and setup needs it to create your site's deploy key.",
+	WaitCreateApp:           "Select Create GitHub App to add the App for <name>. The admin saves changes to your site through the App.",
 	WaitInstallAll:          "Select Install & Authorize to let setup create the <repo> repository. This access covers all your repositories. Setup removes it within seconds.",
-	WaitInstallRepo:         "Select Approve to give the App access to <repo> only. Setup uses this access to push your site and store the deploy key.",
-	WaitCloudflareReconsent: "On the Cloudflare page, select API Tokens: Write, and then select Allow. The earlier approval no longer works, so setup asks again.",
+	WaitInstallRepo:         "Select Approve, Install, & Authorize to give the App access to <repo> only. Setup uses this access to push your site and store the deploy key.",
+	WaitCloudflareReconsent: "On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize. The earlier approval no longer works, so setup asks again.",
 }
 
 // WaitSentence returns the sentence a view shows while setup waits in state s.

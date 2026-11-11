@@ -86,7 +86,7 @@ var (
 		Step: setup.StepApproveCloudflare, Reason: setup.ReasonDeclined,
 		Happened: "Cloudflare didn't approve setup's request.",
 		Did:      "Nothing was created.",
-		Do:       "Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.",
+		Do:       "Run cairn new again. On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize.",
 	}
 	providerRefused = setup.Failure{
 		Step: setup.StepProvision, Reason: setup.ReasonProvider,
@@ -665,7 +665,7 @@ func TestBrowserStyles(t *testing.T) {
 	t.Run("the permission name is bold", func(t *testing.T) {
 		f, _ := frame(oneTheme, 80, opened(setup.WaitCloudflare))
 		if !strings.Contains(f, s.Title.Render(permissionName)) {
-			t.Error("API Tokens: Write is not drawn in the bold text style")
+			t.Error("API Tokens Write is not drawn in the bold text style")
 		}
 	})
 	t.Run("a finished approval is marked in the pass ink", func(t *testing.T) {

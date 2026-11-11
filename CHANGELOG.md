@@ -88,6 +88,16 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **Setup's instructions name each page's real button and switch.** A first run through the real Cloudflare and
+  GitHub pages with no token showed four wrong words. Cloudflare's button is Authorize, not Allow, and API Tokens
+  Write (no colon) is a switch under Sensitive scopes that the owner turns on, not a choice to select. GitHub's first
+  button reads Create GitHub App, and its last reads Approve, Install, & Authorize, not Approve. The terminal screen,
+  the setup tab's approval and error pages, the `sentence` field of the agent lane's waiting events, and the admin
+  docs (`create-your-site`, `setup-recovery`, `setup-reference`) now say so. `create-your-site` also tells the owner
+  to check the account Cloudflare shows and to expect GitHub's confirm-access page.
+
+  Consumers must: nothing.
+
 - **The setup screens no longer let an Enter accept a domain unread.** The browser screen shows its
   Enter hint only once setup has armed the browser step, and the account and domain choosers start with
   no selection when the account holds several, so the first arrow key selects the first row.

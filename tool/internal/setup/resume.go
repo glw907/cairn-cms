@@ -48,7 +48,7 @@ func (r *run) freshGrant(ctx context.Context) error {
 	err := r.refreshGrant(ctx)
 	if errors.Is(err, errGrantSpent) {
 		return r.failure(ReasonGrantSpent, "Cloudflare no longer accepts setup's approval.",
-			"Run cairn new again. On the Cloudflare page, select API Tokens: Write, and then select Allow.", err)
+			"Run cairn new again. On the Cloudflare page, turn on API Tokens Write under Sensitive scopes, and then select Authorize.", err)
 	}
 	return err
 }

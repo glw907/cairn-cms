@@ -162,7 +162,7 @@ func TestFailureEmphasisAndLinks(t *testing.T) {
 	t.Run("the permission name is bold in a failure", func(t *testing.T) {
 		f, _ := frame(oneTheme, 80, failed(declined))
 		if !strings.Contains(f, s.Title.Render(permissionName)) {
-			t.Error("API Tokens: Write is not drawn bold in the What to do part")
+			t.Error("API Tokens Write is not drawn bold in the What to do part")
 		}
 	})
 	for _, tt := range []struct {

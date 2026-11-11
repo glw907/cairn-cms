@@ -140,7 +140,16 @@ func assertRefusalOrder(t *testing.T, text string) {
 	if !strings.Contains(text, "if a bare call prints this message") {
 		t.Error("step 2 must apply when a bare call prints the refusal")
 	}
-	if !strings.Contains(text, "likely switched the parameter off") {
-		t.Error("step 3 must hedge: the refusal cannot know the owner switched the parameter off")
+	// The refusal cannot know the owner changed a setting, so step 3 hedges, names the setting the
+	// parameter depends on, and says which retry it follows, since an agent that shortens the output
+	// may see step 3 first.
+	if !strings.Contains(text, "If the step 2 retry prints this message too") || !strings.Contains(text, "likely turned off") ||
+		!strings.Contains(text, "allowUnsandboxedCommands") {
+		t.Error("step 3 must follow the step 2 retry, hedge, and name allowUnsandboxedCommands")
+	}
+	// Claude Code asks the owner for the retry only in some modes, and an allow rule approves it with
+	// no prompt, so step 2 must not call the prompt the approval without the rule.
+	if !strings.Contains(text, "allow rule") {
+		t.Error("step 2 must say an allow rule the owner set also approves the retry")
 	}
 }

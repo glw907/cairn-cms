@@ -344,6 +344,19 @@ describe('the end-state checks and the outcome', () => {
     expect((await grade({ runDir: run.runDir, deps: run.deps, end: 'stall' })).outcome.reason).toBe('stall');
   });
 
+  it('names the executor and the reason in a stall, and cleans and caps the reason', async () => {
+    const run = await makeRun();
+    await writeFile(path.join(run.runDir, 'state.json'), JSON.stringify({ state: 'exited', elapsedMinutes: 10 }));
+    const detail = async (reason?: string) => (await grade({ runDir: run.runDir, deps: run.deps, end: 'stall', reason })).outcome.detail;
+    expect(await detail('the owner card never answered')).toBe('the executor ended the run as a stall: the owner card never answered');
+    expect(await detail()).toBe('the executor ended the run as a stall; no reason was recorded');
+    expect(await detail('  \n\t ')).toBe('the executor ended the run as a stall; no reason was recorded');
+    const cleaned = await detail(`one\ntwo\u0007${'x'.repeat(300)}`);
+    expect(cleaned).toMatch(/^the executor ended the run as a stall: one two/);
+    expect(cleaned).not.toMatch(/[\u0000-\u001f]/);
+    expect(cleaned.length).toBe('the executor ended the run as a stall: '.length + 200);
+  });
+
   it('fails a record whose scan matched, rewrites both files without the content, and keeps no proving copy', async () => {
     const run = await makeRun({ scanCode: 1 });
     const record = await grade({ runDir: run.runDir, deps: run.deps });

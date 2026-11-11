@@ -421,8 +421,9 @@ export function isRunWatcher(cmdline, name) {
 
 /**
  * Whether the run's watcher process is still alive. The watcher records `exited` and then ends the
- * session by sending SIGTERM to every process of the room, with its own tmux session last, so a read
- * inside the room that starts while it runs can be killed.
+ * session by sending SIGTERM to every process of the room and only then removing its tmux sessions,
+ * the watcher's included. The watcher is gone once those kills are done, and a read inside the
+ * room that starts while it runs can be killed.
  * @param {string} name
  * @returns {Promise<boolean>}
  */
@@ -484,7 +485,7 @@ export async function grade({ runDir, deps, end, reason }) {
   // The room is read only once its watcher has finished ending it. A run the executor ends by hand may
   // still have a live room, so that grade reads it as it stands.
   if (!end) {
-    const settled = await settle(path.basename(path.dirname(runDir)), watcherAlive, deps.settleMs ?? SETTLE_MS, deps.pollMs ?? SETTLE_POLL_MS);
+    const settled = await settle(name, watcherAlive, deps.settleMs ?? SETTLE_MS, deps.pollMs ?? SETTLE_POLL_MS);
     note('room settled', settled.ok, settled.evidence);
   }
   const harnessRead = await readJson(path.join(runDir, 'harness.json'));

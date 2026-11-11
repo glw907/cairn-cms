@@ -88,6 +88,11 @@ mailbox, and the live site. It copies the JSON to `~/.local/state/cairn-gate/pro
 and diffs each step against the last record there. `cleanroom scan` then runs over both files, and a
 match rewrites the record without its content and fails it. The home's keyrings are deleted last.
 
+The grade first waits, up to 30 seconds, for the run's watcher (`cleanroom _watch <run id>`) to be
+gone: the watcher records `exited` and only then ends the room's processes, so a read made inside
+the room in between is killed. A watcher still alive at the limit is a failed read named `room
+settled`. A grade with `--end` skips the wait, because a stalled room may still be live.
+
 The registry record is read through `cleanroom shell`, as the clean room's user, because its
 directory is closed to every other user. The setup events come from tool results in the transcript,
 including the ones the agent read with its Read tool, which prints each line behind a number and a tab.

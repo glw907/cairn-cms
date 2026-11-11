@@ -27,6 +27,8 @@
 
 ## Medium
 
+- [ ] **#465** Move the docs review to a close packet and a self-merge before the approval queue retires its old forms `#improvement` `#cairn-cms` *(2026-11-11)*
+  `.claude/skills/cairn-writing-docs/references/review.md:48` (`approval-queue notes --check`), `:80` (`approval-queue docs`), and `:100` (a bare `gh pr merge`), and `.claude/skills/cairn-writing-docs/evals/cycle-prompt.txt:110` (a bare `gh pr merge <n> --merge`) name commands that refuse after the workstation's Pass 2 cutover: the queue's `docs` and `notes` forms exit 2, and the new merge guard denies every `gh pr merge`. Left alone, the next docs review session cannot queue its review or merge its PR. A docs review becomes a close packet (`approval-packet`), and a PR that needs no packet merges with `approval-queue land <owner/repo#n> <claim>`. The theme-garden run's auto-mode entry also lets that initiative edit `cairn-writing-docs/**`, so check it when the files change. Found by the workstation-refinement Pass 2 plan (glw907/workstation, Pass 2b).
 - [ ] **#461** The done screen after a no-token run says nothing about what to revoke `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-10)*
   The token-mode done screen says "Setup stored your Cloudflare API token as an Actions secret ... revoke it in Cloudflare". The no-token screen (rehearsal 2611110552, `t20-done`) says nothing about the deploy key setup minted (a Cloudflare user token named `cairn-deploy-<run id>`, stored in the repository's Actions secrets) or about the authorization "cairn" in Connected Applications, so an owner is not told what to revoke afterwards.
   Placement: the next pass that touches the done screen.

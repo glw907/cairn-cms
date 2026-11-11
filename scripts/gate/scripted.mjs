@@ -6,7 +6,7 @@
 // does not know, and fails at 20 minutes naming the step it reached. Run it through run-gate.sh;
 // it never reads a secret store, only the environment it is handed.
 import { spawn, execFile } from 'node:child_process';
-import { appendFile, mkdir, open } from 'node:fs/promises';
+import { appendFile, mkdir, open, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -347,17 +347,14 @@ export async function runScripted({ runDir, env, deps }) {
 }
 
 /**
- * The command the headless terminal runs to show the leg's pane: a read-only attach with the same
- * tmux binary the leg drives. A client and a server of different versions refuse each other, and the
- * headless terminal's PATH can name another tmux (run 2611102257's screenshots all read "server exited
- * unexpectedly").
- * @param {string} tmuxBin the absolute path of the tmux the leg runs
- * @param {string} socket the leg's tmux socket
- * @param {string} session the leg's tmux session
+ * The command the headless terminal runs to show the leg's pane: it prints a capture of the pane,
+ * with its escape sequences, that the leg took with the tmux it drives. The headless terminal runs
+ * in another root with a different tmux and no Homebrew, so it cannot attach to the leg's server.
+ * @param {string} captureFile the file holding the capture
  * @returns {string}
  */
-export function shotCommand(tmuxBin, socket, session) {
-  return `${tmuxBin} -S ${socket} attach -r -t ${session}`;
+export function shotCommand(captureFile) {
+  return `cat ${captureFile}`;
 }
 
 /**
@@ -391,10 +388,11 @@ async function realDeps({ runDir, env, shotDir }) {
   if (shotDir) {
     const socket = path.join(env.HOME ?? os.homedir(), '.local', 'state', 'cleanroom', 'tmux-scripted.sock');
     const session = `cleanroom-${runIdOf(runDir)}-scripted`;
-    // The headless terminal's PATH can name a different tmux, which cannot attach to this leg's server.
-    const tmuxBin = (await execFileAsync('sh', ['-c', 'command -v tmux'])).stdout.trim() || 'tmux';
-    deps.shot = (name) =>
-      execFileAsync('kitty-headless-shot', ['-o', shotDir, '-c', shotCommand(tmuxBin, socket, session), 'sleep:1', `shot:${name}`]).then(() => {});
+    deps.shot = async (name) => {
+      const capture = path.join(shotDir, `${name}.capture`);
+      await writeFile(capture, await deps.tmux(['-S', socket, 'capture-pane', '-p', '-e', '-t', session]));
+      await execFileAsync('kitty-headless-shot', ['-o', shotDir, '-c', shotCommand(capture), 'sleep:1', `shot:${name}`]);
+    };
   }
   return deps;
 }

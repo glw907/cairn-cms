@@ -440,7 +440,7 @@ func (r *run) awaitAuthority(ctx context.Context, deadline time.Time) error {
 				failed = 0
 				break
 			}
-			if dnsErr, ok := errors.AsType[*net.DNSError](err); err != nil && !(ok && dnsErr.IsNotFound) {
+			if dnsErr, ok := errors.AsType[*net.DNSError](err); err != nil && (!ok || !dnsErr.IsNotFound) {
 				if failed++; failed >= maxAuthorityErrors {
 					return nil
 				}

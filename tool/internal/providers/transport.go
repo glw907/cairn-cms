@@ -63,10 +63,31 @@ func (c *client) Do(req *http.Request) (*http.Response, error) {
 	c.cred.apply(req)
 	resp, err := doWithRetry(c.httpClient, req)
 	if ue, ok := errors.AsType[*url.Error](err); ok {
-		return nil, fmt.Errorf("%s request to %s: %w", ue.Op, c.host, ue.Err)
+		return nil, &TransportError{Op: ue.Op, Host: c.host, Err: ue.Err}
 	}
 	return resp, err
 }
+
+// TransportError reports a request that got no response: the method, the host the client is pinned
+// to, and the cause. It carries no URL, since a path or a query can hold a one-time code. A stop
+// shows its text as the failure's detail, so an owner or an agent can tell a lookup that dropped
+// from a token that lacks a permission.
+type TransportError struct {
+	// Op is the method as net/http names it, such as Get or Post.
+	Op string
+	// Host is the host the client is pinned to.
+	Host string
+	// Err is the cause the transport reported.
+	Err error
+}
+
+// Error implements the error interface.
+func (e *TransportError) Error() string {
+	return fmt.Sprintf("%s request to %s: %v", e.Op, e.Host, e.Err)
+}
+
+// Unwrap returns the cause.
+func (e *TransportError) Unwrap() error { return e.Err }
 
 // getWith performs a GET against base+path through c, sending accept as the request's Accept
 // header alongside the User-Agent every host this package talks to expects. It returns the raw

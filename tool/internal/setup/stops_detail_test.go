@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"net"
-	"net/url"
 	"slices"
 	"strings"
 	"testing"

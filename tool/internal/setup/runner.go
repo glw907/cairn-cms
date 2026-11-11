@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -663,21 +662,14 @@ func (r *run) failure(reason Reason, happened, do string, err error) *Failure {
 const detailLimit = 200
 
 // transportDetail is the Detail for a failed request to who that no provider answered. It is
-// built from structured parts only: a *url.Error gives its method and path, with no host, query,
-// userinfo, or fragment, and a body parse or read error from the providers package gives its own
-// text. Any other error can hold a local path or a URL and gives nothing.
+// built from two typed causes only: a *providers.TransportError gives its method, host, and cause,
+// which carry no URL, and a body parse or read error from the providers package gives its text.
+// Any other error can hold a local path or a URL and gives nothing.
 func transportDetail(who string, err error) string {
 	name := strings.ToLower(who)
-	if ue, ok := errors.AsType[*url.Error](err); ok {
-		u, perr := url.Parse(ue.URL)
-		if perr != nil {
-			return ""
-		}
-		path := u.EscapedPath()
-		if name == "cloudflare" {
-			path = strings.TrimPrefix(path, "/client/v4")
-		}
-		return name + ": " + strings.ToUpper(ue.Op) + " " + path + ": " + ue.Err.Error()
+	if te, ok := errors.AsType[*providers.TransportError](err); ok {
+		text := te.Error()
+		return name + ": " + text[:min(len(text), detailLimit)]
 	}
 	text := err.Error()
 	if strings.HasPrefix(text, "providers: parse response body:") || strings.HasPrefix(text, "providers: read response body:") {

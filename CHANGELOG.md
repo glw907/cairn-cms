@@ -60,6 +60,19 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **Setup shows why a request got no answer, and retries a lookup that dropped.** A request that got no answer from
+  Cloudflare or GitHub now carries a `detail` with the method, the host, and the cause, such as a lookup that timed
+  out, where it showed only "Check your internet connection". A lookup or connection that failed before the request
+  left is tried up to three times with a 1 and 2 second pause, a connection that dropped after the request left is
+  repeated only for a read-only request, and a response with any status is never retried. Every stop built from a
+  provider error carries the detail, including the one for the GitHub App's installations. The pre-install check of
+  those installations, which runs before any exists, now reads as an ordinary provider stop instead of claiming an
+  installation may still reach every repository. While the domain step waits for the site, a nameserver lookup that
+  fails for any reason but "not found" is retried until the 15-minute limit, so no early lookup of the site's address
+  can make the computer remember a missing name.
+
+  Consumers must: nothing.
+
 - **The setup screens no longer let an Enter accept a domain unread.** The browser screen shows its
   Enter hint only once setup has armed the browser step, and the account and domain choosers start with
   no selection when the account holds several, so the first arrow key selects the first row.

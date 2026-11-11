@@ -211,7 +211,12 @@ describe('scripted leg: the screenshot renders a capture of the pane', () => {
   // captures the pane with the tmux it drives, writes the escape sequences to a file, and the headless
   // terminal shows that file.
   it('shows the capture file with cat', () => {
-    expect(shotCommand('/s/shots/domain.capture')).toBe('cat /s/shots/domain.capture');
+    expect(shotCommand('/s/shots/domain.capture')).toBe("cat '/s/shots/domain.capture'");
+  });
+
+  // The headless terminal runs the command under bash -c, so a path with a space or a quote must not split it.
+  it('quotes a capture path that holds a space or a quote', () => {
+    expect(shotCommand("/s/my shots/it's.capture")).toBe("cat '/s/my shots/it'\\''s.capture'");
   });
 });
 

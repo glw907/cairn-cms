@@ -40,11 +40,13 @@ func TestATransportErrorsDetailHoldsOnlyItsStructuredParts(t *testing.T) {
 		want string
 	}{
 		{"a transport error", &providers.TransportError{Op: "Get", Host: "api.cloudflare.com", Err: inner},
-			"cloudflare: Get request to api.cloudflare.com: context deadline exceeded"},
+			"cloudflare: Get request to api.cloudflare.com: timed out"},
 		{"a wrapped transport error", fmt.Errorf("list: %w", &providers.TransportError{Op: "Post", Host: "api.cloudflare.com", Err: inner}),
-			"cloudflare: Post request to api.cloudflare.com: context deadline exceeded"},
-		{"a long transport error", &providers.TransportError{Op: "Get", Host: "api.cloudflare.com", Err: errors.New(strings.Repeat("y", 300))},
-			("cloudflare: Get request to api.cloudflare.com: " + strings.Repeat("y", 300))[:len("cloudflare: ")+200]},
+			"cloudflare: Post request to api.cloudflare.com: timed out"},
+		{"a long transport error", &providers.TransportError{Op: "Get", Host: strings.Repeat("y", 300), Err: errors.New("x")},
+			("cloudflare: Get request to " + strings.Repeat("y", 300))[:len("cloudflare: ")+200]},
+		{"a transport error cut inside a multi-byte rune", &providers.TransportError{Op: "Get", Host: strings.Repeat("é", 150), Err: errors.New("x")},
+			"cloudflare: Get request to " + strings.Repeat("é", 92)},
 		{"a parse error", errors.New("providers: parse response body: invalid character '<'"),
 			"cloudflare: providers: parse response body: invalid character '<'"},
 		{"a read error", errors.New("providers: read response body: unexpected EOF"),

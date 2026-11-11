@@ -357,6 +357,19 @@ describe('the end-state checks and the outcome', () => {
     expect(cleaned.length).toBe('the executor ended the run as a stall: '.length + 200);
   });
 
+  it('refuses a directory that is not a run dir, and points a shot directory at the run dir', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'gate-stub-'));
+    roots.push(root);
+    const run = await makeRun();
+    await expect(grade({ runDir: root, deps: run.deps })).rejects.toThrow(/not a run directory/);
+    await mkdir(path.join(root, 'shots'));
+    await expect(grade({ runDir: root, deps: run.deps })).rejects.toThrow(/scripted leg's shot directory.*run dir/);
+    // A run dir whose harness.json is unreadable is still graded, with the failed read recorded.
+    await rm(path.join(run.runDir, 'harness.json'));
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(record.reads.find((read: { name: string }) => read.name === 'harness.json')).toMatchObject({ ok: false });
+  });
+
   it('fails a record whose scan matched, rewrites both files without the content, and keeps no proving copy', async () => {
     const run = await makeRun({ scanCode: 1 });
     const record = await grade({ runDir: run.runDir, deps: run.deps });

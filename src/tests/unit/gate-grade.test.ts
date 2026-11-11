@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { findSignInMessage } from '../../../scripts/gate/mail.mjs';
 import { gateFetch } from '../../../scripts/gate/fetch-check.mjs';
-import { LIVE_ORIGIN, grade, missedRelays, parseTranscript, permissionPrompts, setupEvents } from '../../../scripts/gate/grade.mjs';
+import { LIVE_ORIGIN, REGISTRY_READ, grade, missedRelays, parseTranscript, permissionPrompts, setupEvents } from '../../../scripts/gate/grade.mjs';
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -23,10 +23,11 @@ const SENTENCE_MISSED = 'Select Approve to give the App access to cairn-gate-261
 const BUILD = '2026-11-09T12:00:00Z';
 
 const event = (kind: string, minute: number, extra: Record<string, unknown> = {}) => ({ schemaVersion: 1, kind, timestamp: at(GOAL + minute), ...extra });
-const resultLine = (minute: number, events: unknown[], id = `tu-${minute}`) => ({
+/** `numbered` prints each line the way the agent's Read tool does: a line number, a tab, the line. */
+const resultLine = (minute: number, events: unknown[], numbered = false, id = `tu-${minute}`) => ({
   type: 'user',
   timestamp: at(GOAL + minute),
-  message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: events.map((e) => JSON.stringify(e)).join('\n') }] },
+  message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: events.map((e, index) => `${numbered ? `${index + 1}\t` : ''}${JSON.stringify(e)}`).join('\n') }] },
 });
 const assistantText = (minute: number, text: string, id: string) => ({ type: 'assistant', timestamp: at(GOAL + minute), message: { id, role: 'assistant', content: [{ type: 'text', text }], usage: { input_tokens: 10, output_tokens: 5 } } });
 
@@ -43,6 +44,10 @@ interface Options {
   local?: boolean;
   /** Leaves out the npx cache, so the launcher and the platform package read as missing. */
   noNpx?: boolean;
+  /** Delivers the apply's events as the agent's Read tool prints a file, each line behind its number. */
+  numberedEvents?: boolean;
+  /** The clean room holds no registry record. */
+  noRecord?: boolean;
 }
 
 async function makeRun(opts: Options = {}) {
@@ -67,9 +72,9 @@ async function makeRun(opts: Options = {}) {
       assistantText(2.2, `Please do this next. ${SENTENCE_RELAYED}`, 'a2'),
       resultLine(3, [event('step_done', 3, { step: 'approve-create-app' }), event('step_started', 3, { step: 'approve-install-repo' }), event('waiting', 3, { step: 'approve-install-repo', waiting: 'approve-install-repo', sentence: SENTENCE_MISSED })]),
       assistantText(3.2, 'Still waiting on the browser.', 'a3'),
-      resultLine(3.5, [event('step_done', 3.5, { step: 'approve-install-repo' }), event('step_started', 4, { step: 'first-deploy' })]),
-      resultLine(8, [event('step_done', 8, { step: 'first-deploy' }), event('step_started', 8, { step: 'domains' })]),
-      resultLine(10, [event('step_done', 10, { step: 'domains' })]),
+      resultLine(3.5, [event('step_done', 3.5, { step: 'approve-install-repo' }), event('step_started', 4, { step: 'first-deploy' })], opts.numberedEvents),
+      resultLine(8, [event('step_done', 8, { step: 'first-deploy' }), event('step_started', 8, { step: 'domains' })], opts.numberedEvents),
+      resultLine(10, [event('step_done', 10, { step: 'domains' })], opts.numberedEvents),
       assistantText(11, 'Setup is done.', 'a4'),
     );
   }
@@ -81,8 +86,9 @@ async function makeRun(opts: Options = {}) {
     path.join(runDir, 'session.log'),
     '\u001b[1mBash command\u001b[0m\r\n   npm view cairn-thing version\r\n   Look up a version\r\n Do you want to proceed?\r\n 1. Yes\r\n',
   );
-  await mkdir(path.join(home, '.config', 'cairn', 'sites'), { recursive: true });
-  await writeFile(path.join(home, '.config', 'cairn', 'sites', 'site.json'), JSON.stringify({ name: 'Cairn gate', step: 'live', github: { repo: { owner: 'glw907-test', repo: `cairn-gate-${id}` } } }));
+  // The registry directory is 0700 and owned by the clean room's user, so the grader never lists it from
+  // outside: the record comes back through `cleanroom shell`, which the fake below answers.
+  const recordJson = JSON.stringify({ name: 'Cairn gate', step: 'live', github: { repo: { owner: 'glw907-test', repo: `cairn-gate-${id}` } } });
   const npx = path.join(home, '.npm', '_npx', 'abc', 'node_modules');
   await mkdir(path.join(home, '.npm', '_npx'), { recursive: true });
   if (!opts.noNpx) {
@@ -113,6 +119,7 @@ async function makeRun(opts: Options = {}) {
     cleanroomCalls.push(args);
     if (args[0] === 'cost') return { code: 0, stdout: '$0.50\n' };
     if (args[0] === 'scan') return { code: opts.scanCode ?? 0, stdout: opts.scanCode ? `${args[2]}\n` : '' };
+    if (args[0] === 'shell' && args[3] === REGISTRY_READ) return { code: 0, stdout: opts.noRecord ? '' : recordJson };
     return { code: 0, stdout: 'cairn-gate: finished at live\n' };
   };
   const provingDir = path.join(root, 'proving');
@@ -270,6 +277,31 @@ describe('the record on a known fixture', () => {
     expect(run.cleanroomCalls).toContainEqual(['scan', '2611091200', path.join(run.runDir, 'run-record.json'), path.join(run.runDir, 'run-record.md')]);
     expect(run.cleanroomCalls).toContainEqual(['shell', '2611091200', '-c', 'npm_config_tag=gate npx --yes create-cairn-site status']);
     await expect(stat(path.join(run.home, '.local', 'share', 'keyrings'))).rejects.toThrow();
+  });
+});
+
+describe('the apply stage of an agent run', () => {
+  it('times the HTTPS wait from events the agent read with its Read tool, each behind a line number', async () => {
+    const run = await makeRun({ numberedEvents: true });
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(record.httpsWaitMinutes).toBe(2);
+    expect(record.timing).toMatchObject({ ok: true, source: 'setup events' });
+    expect(record.outcome).toEqual({ result: 'pass' });
+  });
+
+  it('reads the registry record as the clean room user, the only user that may list its directory', async () => {
+    const run = await makeRun();
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(run.cleanroomCalls).toContainEqual(['shell', '2611091200', '-c', REGISTRY_READ]);
+    expect(record.reads).toContainEqual({ name: 'registry record', ok: true, evidence: 'read' });
+    expect(record.stepReached).toBe('live');
+  });
+
+  it('records a clean room with no registry record as a failed read', async () => {
+    const run = await makeRun({ noRecord: true });
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(record.reads).toContainEqual({ name: 'registry record', ok: false, evidence: 'no registry record under .config/cairn/sites' });
+    expect(record.outcome.result).toBe('fail');
   });
 });
 
@@ -467,6 +499,14 @@ describe('the transcript readers', () => {
     expect(missedRelays(earlier, setupEvents(earlier))).toHaveLength(1);
     const same = parseTranscript(JSON.stringify(resultLine(0, [waiting, event('step_done', 0, { step: 'approve-create-app' })])));
     expect(missedRelays(same, setupEvents(same))).toEqual([]);
+  });
+
+  it('finds events printed behind a line number, which is how the Read tool shows a file', () => {
+    const body = [event('step_started', 5, { step: 'scaffold' }), event('step_done', 6, { step: 'scaffold' })];
+    const padded = [{ type: 'user', timestamp: at(GOAL + 6), message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't', content: body.map((e, index) => `${String(index + 1).padStart(6)}\t${JSON.stringify(e)}`).join('\n') }] } }];
+    expect(setupEvents(parseTranscript(`${padded.map((line) => JSON.stringify(line)).join('\n')}\n`)).map((e) => `${e.kind}:${e.step}`)).toEqual(['step_started:scaffold', 'step_done:scaffold']);
+    const bare = [resultLine(5, body, true)];
+    expect(setupEvents(parseTranscript(`${bare.map((line) => JSON.stringify(line)).join('\n')}\n`))).toHaveLength(2);
   });
 
   it('reads a command from a redrawn prompt once', () => {

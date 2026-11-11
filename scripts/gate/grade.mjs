@@ -33,6 +33,10 @@ export const LIVE_ORIGIN = 'https://gate.carin-test.org';
  * from outside.
  */
 export const REGISTRY_READ = 'f=$(ls ~/.config/cairn/sites/*.json 2>/dev/null | sort | head -n 1); if [ -n "$f" ]; then cat "$f"; fi';
+/** How long the grade waits for a run's watcher to finish ending the room before it reads the room. */
+export const SETTLE_MS = 30_000;
+/** The pause between checks of the watcher while the grade waits. */
+const SETTLE_POLL_MS = 500;
 /** How long the grader waits for the sign-in email to reach the gate mailbox. */
 const MAIL_WAIT_MS = 60_000;
 /** The mailbox that owns every proving site. */
@@ -77,6 +81,9 @@ const RELAY_PREFIX = 50;
  * @property {string} [provingDir] where run records are kept between runs
  * @property {Record<string, string | undefined>} env the allowlisted environment
  * @property {() => number} [now] the clock, epoch milliseconds
+ * @property {(name: string) => Promise<boolean>} [watcherAlive] whether the run's watcher process is still running
+ * @property {number} [settleMs] how long to wait for the watcher to finish; defaults to `SETTLE_MS`
+ * @property {number} [pollMs] the pause between those checks; defaults to `SETTLE_POLL_MS`
  */
 
 /** @param {string} value @returns {number} epoch milliseconds, or NaN */
@@ -401,6 +408,53 @@ function numberUnder(state, key) {
 }
 
 /**
+ * Whether a process's command line is the watcher of one run: `cleanroom _watch <name>`, matched on
+ * its arguments so a shell command that merely mentions those words does not count.
+ * @param {string} cmdline the process's `/proc/<pid>/cmdline`, arguments separated by NUL
+ * @param {string} name the run id
+ * @returns {boolean}
+ */
+export function isRunWatcher(cmdline, name) {
+  const args = cmdline.split('\0');
+  return args.some((arg, index) => arg === '_watch' && args[index + 1] === name);
+}
+
+/**
+ * Whether the run's watcher process is still alive. The watcher records `exited` and then ends the
+ * session by sending SIGTERM to every process of the room and only then removing its tmux sessions,
+ * the watcher's included. The watcher is gone once those kills are done, and a read inside the
+ * room that starts while it runs can be killed.
+ * @param {string} name
+ * @returns {Promise<boolean>}
+ */
+async function watcherRunning(name) {
+  for (const entry of await readdir('/proc').catch(() => /** @type {string[]} */ ([]))) {
+    if (!/^\d+$/.test(entry)) continue;
+    const cmdline = await readFile(path.join('/proc', entry, 'cmdline'), 'utf8').catch(() => '');
+    if (isRunWatcher(cmdline, name)) return true;
+  }
+  return false;
+}
+
+/**
+ * Wait for the run's watcher to finish, up to the limit. A watcher that is still alive at the limit
+ * is a failed read, because the room may be mid-kill.
+ * @param {string} name
+ * @param {(name: string) => Promise<boolean>} alive
+ * @param {number} limitMs
+ * @param {number} pollMs
+ * @returns {Promise<{ ok: boolean, evidence: string }>}
+ */
+async function settle(name, alive, limitMs, pollMs) {
+  const deadline = Date.now() + limitMs;
+  while (await alive(name)) {
+    if (Date.now() >= deadline) return { ok: false, evidence: `the run's watcher was still running after ${limitMs / 1000} s` };
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+  }
+  return { ok: true, evidence: "the run's watcher had finished" };
+}
+
+/**
  * Grade a run.
  * @param {{ runDir: string, deps: GradeDeps, end?: 'stall' | 'budget', reason?: string }} input `reason` is why the executor ended a stall
  * @returns {Promise<any>} the record, as written to `run-record.json`
@@ -412,6 +466,7 @@ export async function grade({ runDir, deps, end, reason }) {
   const authority = deps.authority ?? ((/** @type {string} */ host) => authoritativeAddress(host));
   const findMail = deps.findMail ?? findSignInMessage;
   const provingDir = deps.provingDir ?? path.join(homedir(), '.local', 'state', 'cairn-gate', 'proving');
+  const watcherAlive = deps.watcherAlive ?? watcherRunning;
   const home = path.join(path.dirname(runDir), 'home');
   const name = path.basename(path.dirname(runDir));
   /** @type {{ name: string, ok: boolean, evidence: string }[]} */
@@ -426,6 +481,12 @@ export async function grade({ runDir, deps, end, reason }) {
       `${runDir} is not a run directory: it holds no harness.json, transcript.jsonl, or stand-in.jsonl.` +
         (existsSync(path.join(runDir, 'shots')) ? " It looks like a scripted leg's shot directory; grade the run dir that `run-gate.sh scripted` printed." : ''),
     );
+  }
+  // The room is read only once its watcher has finished ending it. A run the executor ends by hand may
+  // still have a live room, so that grade reads it as it stands.
+  if (!end) {
+    const settled = await settle(name, watcherAlive, deps.settleMs ?? SETTLE_MS, deps.pollMs ?? SETTLE_POLL_MS);
+    note('room settled', settled.ok, settled.evidence);
   }
   const harnessRead = await readJson(path.join(runDir, 'harness.json'));
   const harness = harnessRead.ok ? harnessRead.value : {};

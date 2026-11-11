@@ -531,6 +531,14 @@ func TestTheGitHubCopyNamesTheRealButtons(t *testing.T) {
 	}
 }
 
+// TestTheInstallRecoveryNamesTheRealButton pins that the stop for a left-over installation tells
+// the owner to select the button the last GitHub page shows, not "Approve".
+func TestTheInstallRecoveryNamesTheRealButton(t *testing.T) {
+	if do := entries[ReasonInstallDelete].Do; !strings.Contains(do, "select Approve, Install, & Authorize") {
+		t.Errorf("the install-delete fix = %q, want it to name Approve, Install, & Authorize", do)
+	}
+}
+
 // TestTheSignInCopyNamesTheRealButton pins that the sign-in sentences name the button the site's
 // confirm page shows. The rehearsal of 2026-11-10 read it as "Confirm sign-in", not "Sign in".
 func TestTheSignInCopyNamesTheRealButton(t *testing.T) {

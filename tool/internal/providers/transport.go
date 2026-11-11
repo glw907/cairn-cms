@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -121,7 +122,7 @@ func (c *client) rawGet(ctx context.Context, url string, header http.Header) (st
 // rate-limited response is returned unretried instead, the same shape as a second 429 or 503, so
 // the caller's classification (ReasonRateLimited) still applies with no wasted wait.
 func doWithRetry(hc *http.Client, req *http.Request) (*http.Response, error) {
-	resp, err := hc.Do(req)
+	resp, err := sendRetryingDial(hc, req)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +144,63 @@ func doWithRetry(hc *http.Client, req *http.Request) (*http.Response, error) {
 	case <-timer.C:
 	}
 
-	return hc.Do(req.Clone(req.Context()))
+	return sendRetryingDial(hc, req.Clone(req.Context()))
+}
+
+// maxSendAttempts is how many times sendRetryingDial sends one request in all.
+const maxSendAttempts = 3
+
+// sendRetryingDial sends req via hc and retries a failure that is safe to repeat, waiting 1s and
+// then 2s, up to maxSendAttempts sends in all. The cases, by what the failure proves:
+//
+//   - A *net.DNSError, or a *net.OpError whose Op is "dial" (timeout, refusal, no route): no
+//     connection was made, so no request reached the provider. Safe to repeat for every method,
+//     POST and PUT included.
+//   - Any other transport failure (a reset, an EOF, a timeout after the connection was made):
+//     the provider may have received and acted on the request. Repeated only for GET and HEAD,
+//     which change nothing; a POST, PUT, PATCH, or DELETE returns the error as is.
+//   - A response with any HTTP status is never repeated here, so a 401, 429, or 503 reaches the
+//     caller. doWithRetry's separate one-shot GET retry of 429 and 503 is unchanged.
+//
+// Each attempt sends a fresh clone with its body rebuilt from GetBody, so a replayed body is
+// whole. A request whose body cannot be rebuilt is never repeated. The loop ends at once when
+// req's context does.
+func sendRetryingDial(hc *http.Client, req *http.Request) (*http.Response, error) {
+	wait := time.Second
+	for attempt := 1; ; attempt++ {
+		resp, err := hc.Do(req)
+		if err == nil || attempt == maxSendAttempts || req.Context().Err() != nil || !repeatable(req, err) {
+			return resp, err
+		}
+		if werr := dialRetryWait(req.Context(), wait); werr != nil {
+			return nil, err
+		}
+		wait *= 2
+		next := req.Clone(req.Context())
+		if req.GetBody != nil {
+			body, berr := req.GetBody()
+			if berr != nil {
+				return nil, err
+			}
+			next.Body = body
+		}
+		req = next
+	}
+}
+
+// repeatable reports whether a request that failed with err may be sent again, per
+// sendRetryingDial's cases.
+func repeatable(req *http.Request, err error) bool {
+	if req.Body != nil && req.Body != http.NoBody && req.GetBody == nil {
+		return false
+	}
+	if _, ok := errors.AsType[*net.DNSError](err); ok {
+		return true
+	}
+	if op, ok := errors.AsType[*net.OpError](err); ok && op.Op == "dial" {
+		return true
+	}
+	return req.Method == http.MethodGet || req.Method == http.MethodHead
 }
 
 // dialRetryWait waits d before a retried dial, or ends early with ctx's error. Tests replace it

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -652,7 +653,37 @@ func (r *run) failure(reason Reason, happened, do string, err error) *Failure {
 	if f.Did != nothingCreated {
 		f.Left = "Everything setup created stays, and the next run resumes from it."
 	}
+	if pe, ok := errors.AsType[providers.ProviderError](err); ok {
+		f.Detail = pe.Error()
+	}
 	return f
+}
+
+// detailLimit cuts a parse or read error's text in a Failure's Detail.
+const detailLimit = 200
+
+// transportDetail is the Detail for a failed request to who that no provider answered. It is
+// built from structured parts only: a *url.Error gives its method and path, with no host, query,
+// userinfo, or fragment, and a body parse or read error from the providers package gives its own
+// text. Any other error can hold a local path or a URL and gives nothing.
+func transportDetail(who string, err error) string {
+	name := strings.ToLower(who)
+	if ue, ok := errors.AsType[*url.Error](err); ok {
+		u, perr := url.Parse(ue.URL)
+		if perr != nil {
+			return ""
+		}
+		path := u.EscapedPath()
+		if name == "cloudflare" {
+			path = strings.TrimPrefix(path, "/client/v4")
+		}
+		return name + ": " + strings.ToUpper(ue.Op) + " " + path + ": " + ue.Err.Error()
+	}
+	text := err.Error()
+	if strings.HasPrefix(text, "providers: parse response body:") || strings.HasPrefix(text, "providers: read response body:") {
+		return name + ": " + text[:min(len(text), detailLimit)]
+	}
+	return ""
 }
 
 // localFailure is the stop for a step on this computer, such as git or the scaffold, unless the
@@ -689,13 +720,13 @@ func (r *run) fail(ctx context.Context, err error, who string) *Failure {
 	}
 	pe, ok := errors.AsType[providers.ProviderError](err)
 	if !ok {
-		return r.failure(ReasonProvider, "A request to "+who+" failed.",
+		f := r.failure(ReasonProvider, "A request to "+who+" failed.",
 			"Check your internet connection, and then run cairn new again.", err)
+		f.Detail = transportDetail(who, err)
+		return f
 	}
 	happened, do := providerStop(who, pe.HTTPStatus(), pe.ClassifiedReason(), r.tokenRun)
-	f := r.failure(ReasonProvider, happened, do, err)
-	f.Detail = pe.Error()
-	return f
+	return r.failure(ReasonProvider, happened, do, err)
 }
 
 // did is the "already did" part: what exists outside this computer because of the run, and the

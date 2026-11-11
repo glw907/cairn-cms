@@ -221,7 +221,8 @@ func (r *run) appKeyFailure(err error) *Failure {
 func (r *run) installAll(ctx context.Context) error {
 	r.start(StepApproveInstall)
 	if _, err := r.sweep(ctx, 0); err != nil {
-		return r.installDeleteFailure(ctx, err)
+		// No installation exists yet, so nothing may reach the owner's repositories.
+		return r.fail(ctx, err, "GitHub")
 	}
 	for {
 		cb, err := r.installCallback(ctx, providers.InstallURL(r.app.Slug), WaitInstallAll)

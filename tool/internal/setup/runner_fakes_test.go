@@ -574,10 +574,8 @@ type fakeGH struct {
 	convertErr    error
 	deleteErr     error
 	listErr       error
-	// listErrs fail the next AppInstallations calls in order, before listErr applies; onList runs on
-	// every call first.
+	// listErrs fail the next AppInstallations calls in order, before listErr applies.
 	listErrs   []error
-	onList     func()
 	secretErr  error
 	taken      map[string]bool
 	installs   []install
@@ -717,9 +715,6 @@ func (c ghClient) AppInstallations(ctx context.Context) ([]providers.Installatio
 	}
 	if !isJWT(c.cred) {
 		c.f.t.Error("AppInstallations ran without the App JWT")
-	}
-	if c.f.onList != nil {
-		c.f.onList()
 	}
 	if len(c.f.listErrs) > 0 {
 		err := c.f.listErrs[0]

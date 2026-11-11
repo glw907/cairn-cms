@@ -82,7 +82,7 @@ func TestTheFirstSweepFailingIsAProviderStopNotAnInstallDelete(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			w := newWorld(t)
-			w.gh.listErr = tc.err
+			w.gh.listErrs = []error{tc.err}
 			_, err := w.run(context.Background())
 			f := failureOf(t, err)
 			if f.Reason != ReasonProvider || strings.Contains(f.Left, "may still reach all your repositories") ||

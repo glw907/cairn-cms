@@ -2,8 +2,6 @@ package setup
 
 import (
 	"context"
-	"errors"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -424,6 +422,8 @@ func (r *run) domains(ctx context.Context) error {
 // negative TTL (1800 seconds on Cloudflare), so an early request leaves this computer unable to see a
 // site that is already live, and the wait below ends in a timeout (scripted run 2611101829). It
 // returns nil when the nameserver cannot be asked or deadline passes, and the wait below takes over.
+// A lookup that fails for any reason but "not found" is retried like a missing record, since an
+// early system lookup is what primes the negative cache.
 func (r *run) awaitAuthority(ctx context.Context, deadline time.Time) error {
 	if r.cfg.Authority == nil || len(r.zone.NameServers) == 0 {
 		return nil
@@ -433,9 +433,6 @@ func (r *run) awaitAuthority(ctx context.Context, deadline time.Time) error {
 			ips, err := r.cfg.Authority(ctx, r.zone.NameServers[0], host)
 			if len(ips) > 0 && err == nil {
 				break
-			}
-			if dnsErr, ok := errors.AsType[*net.DNSError](err); err != nil && (!ok || !dnsErr.IsNotFound) {
-				return nil
 			}
 			if !r.cfg.Now().Before(deadline) {
 				return nil

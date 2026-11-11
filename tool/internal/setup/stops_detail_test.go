@@ -100,6 +100,26 @@ func TestTheFirstSweepFailingIsAProviderStopNotAnInstallDelete(t *testing.T) {
 	}
 }
 
+// TestTheFirstSweepFailingToDeleteIsAnInstallDelete asserts that when the first sweep lists an
+// installation of the App and cannot delete it, the stop says it may still reach all repositories
+// and links the page that removes it, since the list proved the installation exists.
+func TestTheFirstSweepFailingToDeleteIsAnInstallDelete(t *testing.T) {
+	denied := &providers.GitHubError{Status: 500, Reason: providers.ReasonUnknown,
+		Method: "DELETE", Path: "/app/installations/5550099"}
+	w := newWorld(t)
+	w.gh.installs = append(w.gh.installs, install{ID: 5550099, AppID: w.gh.app.ID, Selection: "all"})
+	w.gh.deleteErr = denied
+	_, err := w.run(context.Background())
+	f := failureOf(t, err)
+	if f.Reason != ReasonInstallDelete || !strings.Contains(f.Left, "may still reach all your repositories") ||
+		!strings.Contains(f.Do, installationsURL) {
+		t.Errorf("failure = %+v, want the install-delete wording and its removal link", f)
+	}
+	if !strings.Contains(f.Detail, denied.Error()) {
+		t.Errorf("Detail = %q, want the delete's cause %q", f.Detail, denied.Error())
+	}
+}
+
 func TestTheAuthorityWaitKeepsRetryingUntilTheDeadline(t *testing.T) {
 	siteIndex := func(w *world) int {
 		return slices.IndexFunc(w.log, func(s string) bool { return strings.HasPrefix(s, "site:") })

@@ -531,6 +531,16 @@ func TestTheGitHubCopyNamesTheRealButtons(t *testing.T) {
 	}
 }
 
+// TestTheSignInCopyNamesTheRealButton pins that the sign-in sentences name the button the site's
+// confirm page shows. The rehearsal of 2026-11-10 read it as "Confirm sign-in", not "Sign in".
+func TestTheSignInCopyNamesTheRealButton(t *testing.T) {
+	for name, line := range map[string]string{"LineSignInStep": LineSignInStep, "LineDoneOpen": LineDoneOpen, "linePageFooter": linePageFooter} {
+		if !strings.Contains(line, "Confirm sign-in") {
+			t.Errorf("%s = %q, want it to name the Confirm sign-in button", name, line)
+		}
+	}
+}
+
 // TestTheCloudflareCopyNamesThePermission pins that every Cloudflare approval sentence names
 // the permission Cloudflare leaves unselected.
 func TestTheCloudflareCopyNamesThePermission(t *testing.T) {

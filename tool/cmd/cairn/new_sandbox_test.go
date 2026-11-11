@@ -53,11 +53,7 @@ func TestASandboxedSetupStopsBeforeItServesAnything(t *testing.T) {
 			if err == nil || !strings.Contains(err.Error(), "runs inside a sandbox") {
 				t.Fatalf("Execute error = %v, want the sandbox refusal", err)
 			}
-			for _, want := range []string{"no `cd`, pipe, or redirect", "dangerouslyDisableSandbox"} {
-				if !strings.Contains(err.Error(), want) {
-					t.Errorf("refusal %q lacks %q", err, want)
-				}
-			}
+			assertRefusalOrder(t, err.Error())
 			if strings.Contains(out.String(), `{"`) {
 				t.Errorf("wrote a setup event before refusing: %q", out.String())
 			}
@@ -111,4 +107,28 @@ func TestTheGuideAndTheTerminalRunMeetTheSandboxStopOnlyWhereTheTabIsServed(t *t
 			t.Errorf("terminal run error = %v, want the sandbox refusal", err)
 		}
 	})
+}
+
+// assertRefusalOrder checks the refusal lists its remedies from the cheapest: a bare retry, which
+// needs no prompt and no settings change, then the parameter, then the exclusions. An agent that
+// ran a piped call got the refusal in round 8 and took the last remedy's premise, so the first
+// step must name every way a call stops being bare, and no line may hide it in a long run of text.
+func assertRefusalOrder(t *testing.T, text string) {
+	t.Helper()
+	bare := strings.Index(text, "Run the same call again, bare")
+	param := strings.Index(text, "dangerouslyDisableSandbox")
+	exclusions := strings.Index(text, "add `cairn *` and `npx create-cairn-site *`")
+	if bare < 0 || param < 0 || exclusions < 0 || bare >= param || param >= exclusions {
+		t.Fatalf("refusal %q must give the bare retry, then the parameter, then the exclusions", text)
+	}
+	for _, way := range []string{"`cd`", "pipe", "redirect", "`;`", "`&&`", "an option before create-cairn-site", "a version or tag"} {
+		if !strings.Contains(text[bare:param], way) {
+			t.Errorf("the bare-retry step lacks %q", way)
+		}
+	}
+	for _, line := range strings.Split(text, "\n") {
+		if len(line) > 100 {
+			t.Errorf("refusal line is %d characters, want at most 100: %q", len(line), line)
+		}
+	}
 }

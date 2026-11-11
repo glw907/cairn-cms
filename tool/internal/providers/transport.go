@@ -146,6 +146,19 @@ func doWithRetry(hc *http.Client, req *http.Request) (*http.Response, error) {
 	return hc.Do(req.Clone(req.Context()))
 }
 
+// dialRetryWait waits d before a retried dial, or ends early with ctx's error. Tests replace it
+// so none of them sleeps.
+var dialRetryWait = func(ctx context.Context, d time.Duration) error {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
 // isErrorStatus reports whether status is outside the 2xx range, the one boundary every provider
 // in this package turns into its error type.
 func isErrorStatus(status int) bool {

@@ -40,13 +40,12 @@ func TestATransportErrorsDetailHoldsOnlyItsStructuredParts(t *testing.T) {
 		err  error
 		want string
 	}{
-		{"a url error", &url.Error{Op: "Get", URL: "https://api.cloudflare.com/client/v4/zones/abc123/dns_records", Err: inner},
-			"cloudflare: GET /zones/abc123/dns_records: context deadline exceeded"},
-		{"a url error with a query and userinfo",
-			&url.Error{Op: "Get", URL: "https://user:pass@api.cloudflare.com/client/v4/zones/abc123/dns_records?token=SECRET&x=1#frag", Err: inner},
-			"cloudflare: GET /zones/abc123/dns_records: context deadline exceeded"},
-		{"a wrapped url error", fmt.Errorf("list: %w", &url.Error{Op: "Post", URL: "https://api.cloudflare.com/client/v4/a%2Fb", Err: inner}),
-			"cloudflare: POST /a%2Fb: context deadline exceeded"},
+		{"a transport error", &providers.TransportError{Op: "Get", Host: "api.cloudflare.com", Err: inner},
+			"cloudflare: Get request to api.cloudflare.com: context deadline exceeded"},
+		{"a wrapped transport error", fmt.Errorf("list: %w", &providers.TransportError{Op: "Post", Host: "api.cloudflare.com", Err: inner}),
+			"cloudflare: Post request to api.cloudflare.com: context deadline exceeded"},
+		{"a long transport error", &providers.TransportError{Op: "Get", Host: "api.cloudflare.com", Err: errors.New(strings.Repeat("y", 300))},
+			("cloudflare: Get request to api.cloudflare.com: " + strings.Repeat("y", 300))[:len("cloudflare: ")+200]},
 		{"a parse error", errors.New("providers: parse response body: invalid character '<'"),
 			"cloudflare: providers: parse response body: invalid character '<'"},
 		{"a read error", errors.New("providers: read response body: unexpected EOF"),
@@ -63,7 +62,7 @@ func TestATransportErrorsDetailHoldsOnlyItsStructuredParts(t *testing.T) {
 			if f.Detail != tc.want {
 				t.Errorf("Detail = %q, want %q", f.Detail, tc.want)
 			}
-			for _, leak := range []string{"SECRET", "pass", "frag", "api.cloudflare.com"} {
+			for _, leak := range []string{"SECRET", "pass", "frag", "/zones", "?"} {
 				if strings.Contains(f.Detail, leak) {
 					t.Errorf("Detail = %q leaks %q", f.Detail, leak)
 				}
@@ -78,7 +77,7 @@ func TestTheFirstSweepFailingIsAProviderStopNotAnInstallDelete(t *testing.T) {
 		err  error
 	}{
 		{"a GitHub 500", &providers.GitHubError{Status: 500, Reason: providers.ReasonUnknown, Method: "GET", Path: "/app/installations"}},
-		{"a transport error", &url.Error{Op: "Get", URL: "https://api.github.com/app/installations?page=1", Err: errors.New("i/o timeout")}},
+		{"a transport error", &providers.TransportError{Op: "Get", Host: "api.github.com", Err: errors.New("i/o timeout")}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			w := newWorld(t)

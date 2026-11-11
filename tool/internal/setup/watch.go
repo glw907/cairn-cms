@@ -2,6 +2,8 @@ package setup
 
 import (
 	"context"
+	"errors"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -421,18 +423,29 @@ func (r *run) domains(ctx context.Context) error {
 // address. A resolver asked for a host the zone does not have yet keeps that answer for the zone's
 // negative TTL (1800 seconds on Cloudflare), so an early request leaves this computer unable to see a
 // site that is already live, and the wait below ends in a timeout (scripted run 2611101829). It
-// returns nil when the nameserver cannot be asked or deadline passes, and the wait below takes over.
-// A lookup that fails for any reason but "not found" is retried like a missing record, since an
-// early system lookup is what primes the negative cache.
+// returns nil, and the wait below takes over, when there is no Authority or no nameserver, when
+// deadline passes, or after maxAuthorityErrors lookups in a row fail for any reason but "not
+// found", which is how a network that blocks outbound port 53 looks. A lookup that fails for any
+// reason but "not found" is retried like a missing record until then, since an early system lookup
+// is what primes the negative cache. A "not found" or an answer restarts the count.
 func (r *run) awaitAuthority(ctx context.Context, deadline time.Time) error {
 	if r.cfg.Authority == nil || len(r.zone.NameServers) == 0 {
 		return nil
 	}
+	failed := 0
 	for _, host := range r.addresses {
 		for {
 			ips, err := r.cfg.Authority(ctx, r.zone.NameServers[0], host)
 			if len(ips) > 0 && err == nil {
+				failed = 0
 				break
+			}
+			if dnsErr, ok := errors.AsType[*net.DNSError](err); err != nil && !(ok && dnsErr.IsNotFound) {
+				if failed++; failed >= maxAuthorityErrors {
+					return nil
+				}
+			} else {
+				failed = 0
 			}
 			if !r.cfg.Now().Before(deadline) {
 				return nil
@@ -444,6 +457,10 @@ func (r *run) awaitAuthority(ctx context.Context, deadline time.Time) error {
 	}
 	return nil
 }
+
+// maxAuthorityErrors is how many lookups in a row may fail for a reason but "not found" before
+// awaitAuthority stops asking, about a minute at pollEvery.
+const maxAuthorityErrors = 6
 
 // siteAnswers reports whether every host serves its home page and the admin sends a signed-out
 // visitor to its sign-in page, the sign that the certificate and the Worker are both live.

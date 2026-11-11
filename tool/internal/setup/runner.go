@@ -656,10 +656,16 @@ func (r *run) failure(reason Reason, happened, do string, err error) *Failure {
 	}
 	if pe, ok := errors.AsType[providers.ProviderError](err); ok {
 		f.Detail = pe.Error()
-	} else if te, ok := errors.AsType[*providers.TransportError](err); ok {
+	} else if te, ok := errors.AsType[*providers.TransportError](err); ok && !endedBySetup(reason) {
 		f.Detail = transportDetail(cmp.Or(te.Provider(), te.Host), err)
 	}
 	return f
+}
+
+// endedBySetup reports whether reason is a stop where setup itself cut a request short, the owner's
+// stop or the approval limit, so the request's failure is no cause worth showing.
+func endedBySetup(reason Reason) bool {
+	return reason == ReasonStopped || reason == ReasonChainTimeout
 }
 
 // detailLimit cuts a parse or read error's text in a Failure's Detail.

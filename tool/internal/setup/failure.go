@@ -53,8 +53,10 @@ type Failure struct {
 	Did      string `json:"did"`
 	Left     string `json:"left,omitempty"`
 	Do       string `json:"do"`
-	// Detail is a provider error's own text, with the failed request's method and path, shown
-	// after the four parts. It is empty for any other cause, which can hold a path or a URL.
+	// Detail is the cause of a stop on a provider, shown after the four parts: a provider error's
+	// text with the failed request's method and path, a request with no answer by its method, host,
+	// and kind of failure, or a response body that would not parse or read. It is empty for any other
+	// cause, which can hold a path or a URL, and for a stop that setup itself ended.
 	Detail string `json:"detail,omitempty"`
 	Err    error  `json:"-"`
 }

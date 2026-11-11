@@ -61,8 +61,9 @@ func newClient(host string, cred Credential, rt http.RoundTripper) *client {
 
 // Do refuses req before dialing when its URL host does not match the client's pinned host,
 // applies the client's credential, and sends it through the rate-limit retry and the dial retry.
-// A redirect response is returned unfollowed, per the CheckRedirect set in newClient. A failed request's error keeps
-// the method and the cause and drops the URL, whose path or query can carry a one-time code.
+// A redirect response is returned unfollowed, per the CheckRedirect set in newClient. A failed
+// request's error keeps the method and the cause and drops the URL, whose path or query can
+// carry a one-time code.
 func (c *client) Do(req *http.Request) (*http.Response, error) {
 	if req.URL.Host != c.host {
 		return nil, fmt.Errorf("providers: refusing request to host %q, client is pinned to %q", req.URL.Host, c.host)
@@ -181,6 +182,11 @@ func isTLSError(err error) bool {
 		return true
 	}
 	if _, ok := errors.AsType[x509.CertificateInvalidError](err); ok {
+		return true
+	}
+	// crypto/tls reports an alert the server sent as a *net.OpError with this Op and an unexported
+	// cause, so the Op is the only match. No other package in the standard library sets it.
+	if op, ok := errors.AsType[*net.OpError](err); ok && op.Op == "remote error" {
 		return true
 	}
 	if _, ok := errors.AsType[tls.AlertError](err); ok {

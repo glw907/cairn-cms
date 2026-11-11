@@ -269,3 +269,15 @@ func TestAStopThatNoProviderAnsweredCarriesItsTransportDetail(t *testing.T) {
 		}
 	})
 }
+
+// TestAStopTheOwnerStartedCarriesNoTransportDetail asserts a stop or a timed-out approval wait, where
+// the request failed only because setup ended it, does not show a request's failure as the cause.
+func TestAStopTheOwnerStartedCarriesNoTransportDetail(t *testing.T) {
+	cause := &providers.TransportError{Op: "Get", Host: "api.cloudflare.com", Err: context.Canceled}
+	r := &run{}
+	for _, reason := range []Reason{ReasonStopped, ReasonChainTimeout} {
+		if f := r.failure(reason, "x", "y", cause); f.Detail != "" {
+			t.Errorf("Detail = %q for %q, want none", f.Detail, reason)
+		}
+	}
+}

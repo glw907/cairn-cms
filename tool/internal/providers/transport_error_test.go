@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"syscall"
 	"testing"
@@ -59,7 +60,7 @@ func TestATransportErrorsTextNamesOnlyAFixedClass(t *testing.T) {
 		{"an unreachable dial", &net.OpError{Op: "dial", Net: "tcp", Err: syscall.ENETUNREACH}, "network unreachable"},
 		{"another dial failure", &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("secret detail")}, "could not connect"},
 		{"an x509 error", x509.UnknownAuthorityError{}, "TLS error"},
-		{"an alert the server sent", &net.OpError{Op: "remote error", Err: tls.AlertError(40)}, "TLS error"},
+		{"an alert the server sent", &net.OpError{Op: "remote error", Err: errors.New("tls: handshake failure")}, "TLS error"},
 		{"a proxy URL in the text", errors.New(`invalid proxy address "http://user:SECRET@proxy.example:3128"`), "proxy error"},
 		{"a proxy connect failure", &net.OpError{Op: "proxyconnect", Net: "tcp", Err: syscall.ECONNREFUSED}, "proxy error"},
 		{"a Location header in the text", errors.New(`failed to parse Location header "https://x/?token=SECRET"`), "transport error"},
@@ -90,7 +91,7 @@ func TestACertificateErrorIsNotRetried(t *testing.T) {
 		calls int
 	}{
 		{"a certificate error", x509.UnknownAuthorityError{}, 1},
-		{"a TLS alert from the server", &net.OpError{Op: "remote error", Err: tls.AlertError(40)}, 1},
+		{"a TLS alert from the server", &net.OpError{Op: "remote error", Err: errors.New("tls: handshake failure")}, 1},
 		{"a proxy error", errors.New("proxyconnect tcp: refused"), 1},
 		{"a timeout", context.DeadlineExceeded, 2},
 		{"an EOF", io.EOF, 2},
@@ -126,5 +127,50 @@ func TestATransportErrorWithNoCauseNamesAClassAndDoesNotPanic(t *testing.T) {
 	err := &TransportError{Op: "Get", Host: "api.cloudflare.com"}
 	if got, want := err.Error(), "Get request to api.cloudflare.com: transport error"; got != want {
 		t.Errorf("Error() = %q, want %q", got, want)
+	}
+}
+
+// countingTripper counts the requests it passes on.
+type countingTripper struct {
+	rt    http.RoundTripper
+	calls int
+}
+
+func (c *countingTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	c.calls++
+	return c.rt.RoundTrip(r)
+}
+
+// TestARealTLSAlertFromAServerIsATLSErrorAndIsNotRetried asserts the class and the retry hold for the
+// error a real handshake produces. crypto/tls reports an alert the server sent as a *net.OpError
+// whose cause is an unexported type, so a synthetic error would not prove the match.
+func TestARealTLSAlertFromAServerIsATLSErrorAndIsNotRetried(t *testing.T) {
+	noWait(t)
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	srv.TLS = &tls.Config{MinVersion: tls.VersionTLS13}
+	srv.StartTLS()
+	defer srv.Close()
+	rt, ok := srv.Client().Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("test server transport is %T, want *http.Transport", srv.Client().Transport)
+	}
+	rt = rt.Clone()
+	rt.TLSClientConfig.MaxVersion = tls.VersionTLS12
+	counter := &countingTripper{rt: rt}
+	host := srv.Listener.Addr().String()
+	req, err := http.NewRequest(http.MethodGet, "https://"+host+"/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = newClient(host, Credential{}, counter).Do(req)
+	var te *TransportError
+	if !errors.As(err, &te) {
+		t.Fatalf("error = %v, want a *TransportError", err)
+	}
+	if want := "Get request to " + host + ": TLS error"; te.Error() != want {
+		t.Errorf("Error() = %q, want %q", te.Error(), want)
+	}
+	if counter.calls != 1 {
+		t.Errorf("calls = %d, want 1", counter.calls)
 	}
 }

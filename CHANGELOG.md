@@ -77,6 +77,17 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **The sandbox refusal gives the bare retry first.** A call that ran inside the sandbox now gets three steps in
+  order: run the same call again, bare; then the Bash tool's `dangerouslyDisableSandbox` parameter; then ask the
+  owner for the two exclusions. An exclusion matches only the text of the call, so a `cd`, a pipe, a redirect, `;`,
+  `&&`, an option before `create-cairn-site`, or a version or tag stops the match even when the owner already set
+  the exclusions. The refusal used to lead with the parameter and keep the bare rule in a closing clause of one long
+  line, and a naive agent that piped its call asked the owner to add exclusions that were already there. `--plan`
+  keeps the refusal, since it runs the approvals. The agent page, the skill, `cairn help agents`, and the refusal
+  give the same order.
+
+  Consumers must: nothing.
+
 - **The setup screens no longer let an Enter accept a domain unread.** The browser screen shows its
   Enter hint only once setup has armed the browser step, and the account and domain choosers start with
   no selection when the account holds several, so the first arrow key selects the first row.

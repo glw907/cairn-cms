@@ -772,7 +772,16 @@ func newConflictError(first, second string) error {
 // page on a local port, and a sandboxed command's port is private to the sandbox, so the owner's
 // browser could never reach the page.
 const tmplNewSandboxed = "cairn: this call runs inside a sandbox, so the owner's browser can't reach setup's approval page.\n" +
-	"Run the same call again outside the sandbox. In Claude Code, set the Bash tool's dangerouslyDisableSandbox parameter, and don't ask first: the permission prompt it raises is the owner's approval. If the call with that parameter set prints this message again, the owner has switched the parameter off. Ask the owner to add `cairn *` and `npx create-cairn-site *` to sandbox.excludedCommands, and then make the same call again. In any other agent, ask the owner to exclude the command from the sandbox. Keep the call bare: no `cd`, pipe, or redirect in it, and when you run it through npx, no option before create-cairn-site and no version or tag on it"
+	"1. Run the same call again, bare. An exclusion in sandbox.excludedCommands matches only the text\n" +
+	"   of the call, so a `cd`, a pipe, a redirect, `;`, `&&`, an option before create-cairn-site, or\n" +
+	"   a version or tag on it stops the match.\n" +
+	"2. In Claude Code, if the call was already bare, run it again with the Bash tool's\n" +
+	"   dangerouslyDisableSandbox parameter, and don't ask first: the permission prompt it raises is\n" +
+	"   the owner's approval.\n" +
+	"3. If that prints this message again, the owner has switched the parameter off. Ask the owner to\n" +
+	"   add `cairn *` and `npx create-cairn-site *` to sandbox.excludedCommands, and then make the\n" +
+	"   same call again.\n" +
+	"In any other agent, ask the owner to exclude the command from the sandbox"
 
 // newSandboxedError renders tmplNewSandboxed.
 func newSandboxedError() error {
@@ -940,16 +949,17 @@ It must be an account-owned token with these permissions:
   domain   Zone Read, DNS Edit, Workers Routes Edit
 
 Run it. Make the call before you ask the owner about the sandbox: one bare call, in the
-background so you can read each waiting sentence to the owner while it blocks. A call made
-inside the sandbox exits 3 at once and says so. Run the same call again with the Bash tool's
+background so you can read each waiting sentence to the owner while it blocks. Bare means no
+cd, pipe, redirect, ; or &&, no npx option before create-cairn-site, and no version or tag,
+because an exclusion matches only the text of a bare call. A call made inside the sandbox
+exits 3 at once and says so: run it again bare. If it was bare, run it with the Bash tool's
 dangerouslyDisableSandbox parameter, and don't ask first: its prompt is the owner's approval.
-If that retry stops with the same message, the owner has switched it off: ask the owner to
-add cairn * and npx create-cairn-site * to sandbox.excludedCommands, and make the call again.
-When cairn isn't installed,
-run npx create-cairn-site with the same flags. Put no npx option before create-cairn-site and
-no version or tag on it, and don't add the word new after it. Run it from an empty folder,
-which you change to in a separate call, and never from inside a clone of the cairn-cms
-repository: npx looks for the package in the clone first and fails with command not found.
+If that stops with the same message, the owner has switched it off: ask the owner to add
+cairn * and npx create-cairn-site * to sandbox.excludedCommands, and make the call again.
+When cairn isn't installed, run npx create-cairn-site with the same flags, and don't add the
+word new after it. Run it from an empty folder, which you change to in a separate call, and
+never from inside a clone of the cairn-cms repository: npx looks for the package in the
+clone first and fails with command not found.
 
 Wait. The run usually takes a few minutes. Its last step, waiting for the site to answer over
 HTTPS, can take up to 15 more and prints no waiting event, so a quiet stream is not a stuck

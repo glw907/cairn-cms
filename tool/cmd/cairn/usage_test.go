@@ -20,6 +20,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/logx"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/testharness"
 )
 
 // builtBinary builds cairn once per test run and returns its path. The falsification table below
@@ -27,7 +28,7 @@ import (
 // code, and the exit code is the whole assertion. The module root is relative because a test
 // binary's working directory is its package directory, where ./cmd/cairn does not resolve.
 var builtBinary = sync.OnceValues(func() (string, error) {
-	dir, err := os.MkdirTemp("", "cairn-usage")
+	dir, err := testharness.TempDir()
 	if err != nil {
 		return "", err
 	}

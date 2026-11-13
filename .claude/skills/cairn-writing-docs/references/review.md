@@ -48,11 +48,14 @@ Under a round conductor, the round report names each changed page.
 ## 4. Ask each call in the close packet
 
 Each call is a `:::question` in the pass's close packet, a document of kind `merge` that you
-write per the `approval-packet` skill. Under a conductor, the conductor sends it. The question
-quotes the sentence and states both readings in the text: what the fact-check found, with its
-`source`, and why the author wrote it. It gives two options:
+write per the `approval-packet` skill. Under a conductor, the conductor sends it. The paragraph
+that asks the question quotes the whole sentence and states both readings: what the fact-check
+found, with its `source`, and why the author wrote it. The block after it gives two options:
 
 ```markdown
+**Keep "<the whole sentence>"?** The fact-check found <its reading>, from `<source>`. The author
+wrote it because <the author's reading>.
+
 :::question <a few words naming the sentence>
 - **Apply the fix**: the page says "<proposed>".
 - **Keep the text**: the page stands as written.

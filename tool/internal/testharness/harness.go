@@ -15,6 +15,7 @@
 package testharness
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -48,6 +49,16 @@ func Main(m *testing.M) {
 	code := m.Run()
 	_ = os.RemoveAll(dir)
 	os.Exit(code)
+}
+
+// TempDir returns a new directory under the one Main removes after the run. It exists for tests
+// that build their own binary, so TestMain's os.Exit does not strand the build in the system
+// temp dir.
+func TempDir() (string, error) {
+	if binDir == "" {
+		return "", errors.New("call testharness.Main from the package's TestMain")
+	}
+	return os.MkdirTemp(binDir, "build-")
 }
 
 // Binary returns the path of pkg, a main package path relative to Module such as "cmd/cairn",

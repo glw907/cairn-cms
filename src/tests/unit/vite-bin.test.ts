@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { existsSync, mkdtempSync } from 'node:fs';
+import { afterEach, describe, it, expect } from 'vitest';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -31,8 +31,19 @@ const BIN = resolve(process.cwd(), 'dist/vite/bin.js');
 const built = existsSync(BIN);
 
 describe('packaged bin (needs dist/vite/bin.js; run npm run package to unskip)', () => {
+  const scratchDirs: string[] = [];
+  const scratch = (prefix: string): string => {
+    const dir = mkdtempSync(resolve(tmpdir(), prefix));
+    scratchDirs.push(dir);
+    return dir;
+  };
+
+  afterEach(() => {
+    for (const dir of scratchDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
   it.skipIf(!built)('prints usage and exits 0 on --help, without writing a manifest', () => {
-    const dir = mkdtempSync(resolve(tmpdir(), 'cairn-manifest-help-'));
+    const dir = scratch('cairn-manifest-help-');
     const out = spawnSync(process.execPath, [BIN, '--help'], {
       cwd: dir,
       env: { PATH: process.env.PATH },
@@ -43,7 +54,7 @@ describe('packaged bin (needs dist/vite/bin.js; run npm run package to unskip)',
   });
 
   it.skipIf(!built)('prints usage to stderr and exits 2 on an unknown flag', () => {
-    const dir = mkdtempSync(resolve(tmpdir(), 'cairn-manifest-bogus-'));
+    const dir = scratch('cairn-manifest-bogus-');
     const out = spawnSync(process.execPath, [BIN, '--bogus'], {
       cwd: dir,
       env: { PATH: process.env.PATH },
@@ -54,7 +65,7 @@ describe('packaged bin (needs dist/vite/bin.js; run npm run package to unskip)',
   });
 
   it.skipIf(!built)('exits 1 with the error on stderr, never a stack-only crash, when no Vite config is found', () => {
-    const dir = mkdtempSync(resolve(tmpdir(), 'cairn-manifest-no-config-'));
+    const dir = scratch('cairn-manifest-no-config-');
     const out = spawnSync(process.execPath, [BIN], {
       cwd: dir,
       env: { PATH: process.env.PATH },

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { existsSync, mkdtempSync, writeFileSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
@@ -538,6 +538,17 @@ describe('seedMedia', () => {
 const BIN = resolve(process.cwd(), 'packages/cairn-cms-dev/dist/media-seed/bin.js');
 
 describe('packaged bin (needs packages/cairn-cms-dev/dist/media-seed/bin.js; run npm run package first)', () => {
+  const binDirs: string[] = [];
+  const binScratch = (): string => {
+    const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-bin-'));
+    binDirs.push(dir);
+    return dir;
+  };
+
+  afterEach(() => {
+    for (const dir of binDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
   it('has been built', () => {
     expect(existsSync(BIN), 'missing; run "npm run package" first').toBe(true);
   });
@@ -573,7 +584,7 @@ describe('packaged bin (needs packages/cairn-cms-dev/dist/media-seed/bin.js; run
   });
 
   it('exits 2 naming --bucket when no wrangler config is present', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-bin-'));
+    const dir = binScratch();
     const out = spawnSync(process.execPath, [BIN, '--from', 'https://example.com'], {
       cwd: dir,
       env: { PATH: process.env.PATH },
@@ -584,7 +595,7 @@ describe('packaged bin (needs packages/cairn-cms-dev/dist/media-seed/bin.js; run
   });
 
   it('reports a clean zero-item summary and exits 0 from a bare site with a bucket flag', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-bin-'));
+    const dir = binScratch();
     const out = spawnSync(
       process.execPath,
       [BIN, '--from', 'https://example.com', '--bucket', 'site-media'],
@@ -595,7 +606,7 @@ describe('packaged bin (needs packages/cairn-cms-dev/dist/media-seed/bin.js; run
   });
 
   it('resolves the sole r2_buckets entry from wrangler.jsonc with no --bucket flag', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'cairn-media-seed-bin-'));
+    const dir = binScratch();
     writeFileSync(
       join(dir, 'wrangler.jsonc'),
       '{ "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "site-media" }] }'

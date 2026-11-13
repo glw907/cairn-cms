@@ -7,9 +7,9 @@
 // first attempt (`retries: 1`), and the Vitest pair from the retry reporter over a throwaway test
 // that does the same (`retry: 1`), each beside a spec that passes first time. The last describe
 // block re-runs the reporter live, so a Vitest upgrade that changes `diagnostic()` fails here.
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { formatNotice, noticeForReports } from '../../../scripts/ci/retries-notice.mjs';
@@ -19,8 +19,16 @@ const FIXTURES = resolve(__dirname, '../fixtures/ci-retries');
 const fixture = (name: string): string => join(FIXTURES, name);
 const NOTICE = '::notice title=retries::';
 
+const scratchDirs: string[] = [];
+
+afterEach(() => {
+  for (const dir of scratchDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+
 function scratchDir(): string {
-  return mkdtempSync(join(tmpdir(), 'cairn-retries-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cairn-retries-'));
+  scratchDirs.push(dir);
+  return dir;
 }
 
 describe('retries notice from recorded reports', () => {

@@ -1,6 +1,7 @@
-// Setup for `review-unsupported-claim`: commit a docs change whose one new sentence the code cannot
-// settle, plus the fact-check findings for it, so the review step has a call for Geoff. How soon
-// the live site updates depends on the developer's host, which no file in the repository states.
+// Setup for `review-unsupported-claim`: write a docs change whose one new sentence the code cannot
+// settle, plus the fact-check findings for it, for the runner to commit, so the review step has a
+// call for Geoff. How soon the live site updates depends on the developer's host, which no file in
+// the repository states.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 

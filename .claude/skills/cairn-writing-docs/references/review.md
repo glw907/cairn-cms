@@ -61,6 +61,8 @@ quotes the sentence and states both readings in the text: what the fact-check fo
 
 Mark one option `{recommended}` when you have a view, and give the reason in the text.
 
-On approve, run `approval-queue merge <id>`. On send-back, read `approval-queue notes <id>`, answer
+On approve, run `approval-queue merge <id>`. Where Geoff's answer is **Apply the fix**, the merged
+page still carries the old text: open a follow-up pull request with the proposed text and land it
+with `approval-queue land`. On send-back, read `approval-queue notes <id>`, answer
 each thread with `approval-queue reply <id> <thread> <text.md>`, fix forward, and return the
 document with `approval-queue send --returns <id> <doc.md>`.

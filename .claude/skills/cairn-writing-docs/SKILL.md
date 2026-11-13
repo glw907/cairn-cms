@@ -1,6 +1,6 @@
 ---
 name: cairn-writing-docs
-description: Changes cairn-cms's editor and admin documentation the docs-as-code way: pages under docs/editors/ and docs/admin/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and land through the pass's hand-over, with any disputed claim asked as a question in its close packet. Use when code changes behavior an editor or admin page describes (a screen, a command, a default, an error), when one of those pages is wrong or missing something, when writing, splitting, or restructuring one, or when handing over a docs pull request or acting on Geoff's answer to a docs call. Not for export doc comments, the packaged skills, CHANGELOG entries, code comments, specs, plans, or site content.
+description: Changes cairn-cms's editor and admin documentation the docs-as-code way: pages under docs/editors/ and docs/admin/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and land with any disputed claim asked of Geoff. Use when code changes behavior an editor or admin page describes (a screen, a command, a default, an error), when one of those pages is wrong or missing something, when writing, splitting, or restructuring one, or when landing a docs pull request or acting on Geoff's answer about one. Not for export doc comments, the packaged skills, CHANGELOG entries, code comments, specs, plans, or site content.
 ---
 
 # Change cairn docs

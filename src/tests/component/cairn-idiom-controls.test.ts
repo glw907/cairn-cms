@@ -238,9 +238,9 @@ describe.each(THEMES)('the switch (%s)', (theme) => {
     try {
       const el = wrapper.querySelector('input')!;
       // The rule excludes :disabled, so the disabled switch is left entirely to daisyUI's own
-      // .toggle:checked (track background-color: base-100) and its knob
-      // rules, not this rule's neutral track or base-100 knob. As of daisyUI 5.8.0 the checked
-      // knob rule (`:is(.toggle:checked, ...):before`, currentColor) outranks the disabled one by
+      // .toggle:checked track (background-color: base-100) and knob rules, not this rule's
+      // neutral track or base-100 knob. As of daisyUI 5.8.0 the checked knob rule
+      // (`:is(.toggle:checked, ...):before`, currentColor) outranks the disabled one by
       // specificity, so the stock knob is currentColor, which is base-content here.
       expect(getComputedStyle(el).backgroundColor).toBe(resolveColor('var(--color-base-100)', theme));
       expect(getComputedStyle(el, '::before').backgroundColor).toBe(resolveColor('var(--color-base-content)', theme));

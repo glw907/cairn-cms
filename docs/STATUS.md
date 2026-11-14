@@ -4,34 +4,33 @@ Present tense only; history lives in git and PR bodies, orientation in `CLAUDE.m
 
 ## Current state
 
-Published stable: **`0.98.0`** on npm `latest` for `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`;
-the Go tool is `tool/v1.1.0`. The newest candidate is **`0.99.0-rc.4`** (cut commit `275892869`):
-
-- It passed the release gate (run `20261107T151545`, four legs, one run id) and was promoted by the
-  `publish.yml` dispatch run 42430858765. `next` serves it on the two engine packages and
-  `create-cairn-site@latest` serves it. `gate` now carries the dev snapshots named under "Immediate next action".
-- It carries the narrow Workers Builds token (#341), the name-clash guard and true DMARC copy (PR
-  #200), every minor and patch through the 2026-11-07 sweep, and vitest 5. Node stays 24 (#333).
-- Geoff ran the real install on it, a clean-room setup of 907.life, and it went badly: five setup
-  defects the gate never exercised, and a wizard he called "way too manual, user-hostile, and
-  apparently quite fragile". He ruled on 2026-11-07 that `0.99.0` takes **no stable from rc.4**.
-  The lessons form the next release, and nothing ships in the meantime.
-- The 907.life site from that run is torn down; its rerun waits on the setup fixes.
+Published stable: **`0.98.0`** on npm `latest` for `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`; the Go tool is
+`tool/v1.1.0`. `next` and `create-cairn-site@latest` serve **`0.99.0-rc.4`** (cut `275892869`), which passed the
+release gate and was promoted. Geoff's real install on it went badly, and he ruled on 2026-11-07 that `0.99.0` takes
+no stable from rc.4: the setup rebuild (`cairn new`) forms the next release, and nothing ships until then. `gate`
+carries the dev snapshots named below.
 
 ## Immediate next action
 
-Pass 3 of the cairn-setup run is closing. `main` holds the dependency sweep (#243, `34b614466`). Its dev snapshots are
-on `gate`: engine 0.99.0-dev.2 and `create-cairn-site` 2.0.0-dev.9 with its six platform packages. `latest` and
-`next` have not moved. On that candidate the scripted leg passed (`2611140406`) and the naive leg passed
-(`2611140542`, 14 of the 15 naive runs used). The gate rows sit in the private record
-`~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`, and `verdict.mjs` lists only the `owner` row missing.
+Setup-tooling pass 3 is closed (#244, merged at `e17c3c47e`). Its dev snapshots stay on `gate`: engine 0.99.0-dev.2
+and `create-cairn-site` 2.0.0-dev.9 with its six platform packages. `latest` and `next` have not moved. On that
+candidate the scripted leg passed (`2611140406`) and the naive leg passed (`2611140542`, 14 of 15 naive runs used).
+The gate rows sit in the private record `~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`; only `owner` is
+missing.
 
-1. The close PR (#244, branch `setup-tooling-r22`): the stand-in's throttle fix, the grader's timing from background
-   output files, the `/exit` rule in `cairn-proving-setup`, and BACKLOG #469 to #472.
-2. The end packet, which carries #244 and asks Geoff for his live 907.life setup and whether it also writes the
-   `owner` row. It also asks whether Claude proves the tokenless path on this candidate first. That path makes a
-   GitHub App on Geoff's own account and stops at his passkey, so it waits for his ruling. It last ran end to end
-   on dev.7. The Survey-or-Waymark question is in the packet, since Geoff said on 2026-11-11 that Survey comes first.
+1. Round `tui-language` runs next (conductor prompt `initiatives/cairn-setup/plans/2026-11-13-tui-language-conductor-prompt.txt`).
+2. Geoff's 907.life live setup waits for Survey (his ruling, 2026-11-14): theme-garden G3, whose design session
+   waits for him, then an installer step with no plan yet. That setup writes the release's `owner` row. It runs on
+   the candidate that installs Survey, with the wide All-repositories grant accepted (#473 looks for a narrower
+   order), and starts with `npm_config_tag=gate npm create cairn-site`.
+3. At the start of that sitting, in order:
+   - Claude rehearses the tokenless path on that candidate as Geoff's account; his step is the passkey. Claude
+     reads every screenshot, refreshes the private walk-through at
+     `~/.local/state/cairn-rehearsal/907-walkthrough/`, then deletes the App and the test site.
+   - Claude deletes the old leftovers after a dry run: two Cloudflare user tokens named "cairn create-cairn-site"
+     and seven test Apps on Geoff's account, one of them (cairn-rc2-install) installed.
+   - On Geoff's "starting", Claude shows the dry run of the two DNS deletions (`dns-prep.md` in the walk-through
+     folder) and deletes them. No `make -C tool check` runs while his setup is live (port 49152).
 
 What a session needs to know:
 
@@ -39,7 +38,6 @@ What a session needs to know:
   (glw907/workstation#226, Geoff, Approval Queue item `20261110T200035-16373`): `allowUnsandboxedCommands` is on, with
   the ask rule `Bash(dangerouslyDisableSandbox:true)` so every unsandboxed retry raises a prompt. `cairn-proving-setup`
   says how the conductor answers that prompt, and that a finished run ends with `/exit`, never `cleanroom stop`.
-- Run 14's HTTPS wait took 11.4 minutes because an early lookup cached "no such host" on this host (#469, #470).
 - A scripted run: `bash scripts/gate/run-gate.sh sweep`; `resolvectl flush-caches`, and never query the new host
   yourself before the run; `run-gate.sh scripted` (no `--cairn-bin` for the published path); a Monitor of `grep
   --line-buffered` alone on `<run dir>/scripted.jsonl`; then `cleanroom stop geoff`, `grade` on the run dir the
@@ -50,8 +48,7 @@ What a session needs to know:
   name matcher, and `cleanroom`'s secret, environment, user, and stop code.
 - No release is cut until the tooling gates in `~/Projects/initiatives/cairn-setup/research/handoff-tooling.md`
   exist. The owner steps for the first tool tag are done (2026-11-09).
-- theme-garden: G1 (#207) and G2 (#208) are merged. G3's design session waits for Geoff to attach. The T3.5
-  dependency sweep that theme-garden launches held for merged as #243.
+- theme-garden: G1 (#207) and G2 (#208) are merged. G3's design session waits for Geoff to attach.
 
 ## Open decisions and watches
 

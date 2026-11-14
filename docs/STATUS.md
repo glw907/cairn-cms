@@ -18,9 +18,9 @@ candidate the scripted leg passed (`2611140406`) and the naive leg passed (`2611
 The gate rows sit in the private record `~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`; only `owner` is
 missing.
 
-1. Round `tui-language` runs next (conductor prompt `initiatives/cairn-setup/plans/2026-11-13-tui-language-conductor-prompt.txt`).
-2. Geoff's 907.life live setup waits for Survey (his ruling, 2026-11-14): theme-garden G3, whose design session
-   waits for him, then an installer step with no plan yet. That setup writes the release's `owner` row. It runs on
+1. Round `tui-language` is running under `conductor-cairn-cms` (prompt `initiatives/cairn-setup/plans/2026-11-13-tui-language-conductor-prompt.txt`).
+2. Geoff's 907.life live setup waits for Survey (his ruling, 2026-11-14): theme-garden G3 in the theme round he
+   starts, probably after cairn.pub work so the site can show themes, then an installer step with no plan yet. That setup writes the release's `owner` row. It runs on
    the candidate that installs Survey, with the wide All-repositories grant accepted (#473 looks for a narrower
    order), and starts with `npm_config_tag=gate npm create cairn-site`.
 3. At the start of that sitting, in order:
@@ -48,7 +48,9 @@ What a session needs to know:
   name matcher, and `cleanroom`'s secret, environment, user, and stop code.
 - No release is cut until the tooling gates in `~/Projects/initiatives/cairn-setup/research/handoff-tooling.md`
   exist. The owner steps for the first tool tag are done (2026-11-09).
-- theme-garden: G1 (#207) and G2 (#208) are merged. G3's design session waits for Geoff to attach.
+- theme-garden: G1 (#207) and G2 (#208) are merged. G3's design is approved (item `20261109T194535-695594`) and its plan
+  (`initiatives/theme-garden/plans/2026-11-09-theme-garden-3-plan.md`) has never launched. It was read at `68eb92ecf`,
+  so its pre-flight re-check runs against `main` first. Geoff's theme round takes it up; no conductor holds it.
 
 ## Open decisions and watches
 

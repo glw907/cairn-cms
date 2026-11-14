@@ -9,6 +9,16 @@ glyph East Asian Width classes:
     rail             '▌' U+258C EAW=A
     separator        '·' U+00B7 EAW=A
     ellipsis         '…' U+2026 EAW=A
+    warning          '▲' U+25B2 EAW=A
+    held (new)       '◌' U+25CC EAW=N
+    spinner 1        '⣾' U+28FE EAW=N
+    spinner 2        '⣽' U+28FD EAW=N
+    spinner 3        '⣻' U+28FB EAW=N
+    spinner 4        '⢿' U+28BF EAW=N
+    spinner 5        '⡿' U+287F EAW=N
+    spinner 6        '⣟' U+28DF EAW=N
+    spinner 7        '⣯' U+28EF EAW=N
+    spinner 8        '⣷' U+28F7 EAW=N
 unicode tier, Ambiguous=narrow, 20 to 400: 0 lines over width across 1024 renders
 ASCII tier, Ambiguous=WIDE, 20 to 400: 0 lines over width across 1024 renders
 unicode tier, Ambiguous=WIDE (known, see the index), 20 to 400: 2980 lines over width across 1024 renders

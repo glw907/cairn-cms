@@ -153,18 +153,21 @@ func (t Theme) Link(role Role, url string) lipgloss.Style {
 // Sized returns role's style constrained to a fixed-width cell: Width(w).MaxWidth(w), padding
 // inside the styled block and cut at the same width.
 func (t Theme) Sized(role Role, w int) lipgloss.Style {
-	w = max(w, 0)
-	return t.Style(role).Width(w).MaxWidth(w)
+	return fixed(t.Style(role), w)
 }
 
 // SizedStrong returns Strong's style constrained to a fixed-width cell.
 func (t Theme) SizedStrong(role Role, w int) lipgloss.Style {
-	w = max(w, 0)
-	return t.Strong(role).Width(w).MaxWidth(w)
+	return fixed(t.Strong(role), w)
 }
 
 // SizedLink returns Link's style constrained to a fixed-width cell.
 func (t Theme) SizedLink(role Role, url string, w int) lipgloss.Style {
+	return fixed(t.Link(role, url), w)
+}
+
+// fixed pads s to w cells and cuts it there; a negative w counts as zero.
+func fixed(s lipgloss.Style, w int) lipgloss.Style {
 	w = max(w, 0)
-	return t.Link(role, url).Width(w).MaxWidth(w)
+	return s.Width(w).MaxWidth(w)
 }

@@ -13,42 +13,28 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// warmStoneInk is one Warm Stone role's light and dark hex, copied from style's palette table,
-// so a change to the palette is a change to both.
-type warmStoneInk struct{ light, dark string }
-
-var (
-	inkText    = warmStoneInk{"#28231d", "#eae7e3"}
-	inkMuted   = warmStoneInk{"#615d57", "#a8a49e"}
-	inkFailing = warmStoneInk{"#b71824", "#ff8e86"}
-	inkUnknown = warmStoneInk{"#915200", "#f7ac4d"}
-	inkAccent  = warmStoneInk{"#7246cf", "#9d84ec"}
-)
-
 // fangColorScheme paints Cobra's help in the Warm Stone palette. Fang decides light or dark from
 // the terminal and supplies the choice as pick; no colour reaches a stream that is not a
 // terminal, or one with NO_COLOR set, because fang writes through a colorprofile writer.
 func fangColorScheme(pick lipgloss.LightDarkFunc) fang.ColorScheme {
-	ink := func(i warmStoneInk) color.Color {
-		return pick(lipgloss.Color(i.light), lipgloss.Color(i.dark))
-	}
+	ink := func(r style.Role) color.Color { return pick(style.Pair(r)) }
 	return fang.ColorScheme{
-		Base:           ink(inkText),
-		Title:          ink(inkAccent),
-		Description:    ink(inkText),
+		Base:           ink(style.RoleText),
+		Title:          ink(style.RoleAccent),
+		Description:    ink(style.RoleText),
 		Codeblock:      lipgloss.NoColor{},
-		Program:        ink(inkText),
-		DimmedArgument: ink(inkMuted),
-		Comment:        ink(inkMuted),
-		Flag:           ink(inkAccent),
-		FlagDefault:    ink(inkMuted),
-		Command:        ink(inkAccent),
-		QuotedString:   ink(inkUnknown),
-		Argument:       ink(inkText),
-		Help:           ink(inkMuted),
-		Dash:           ink(inkMuted),
-		ErrorHeader:    [2]color.Color{ink(inkText), ink(inkFailing)},
-		ErrorDetails:   ink(inkFailing),
+		Program:        ink(style.RoleText),
+		DimmedArgument: ink(style.RoleMuted),
+		Comment:        ink(style.RoleMuted),
+		Flag:           ink(style.RoleAccent),
+		FlagDefault:    ink(style.RoleMuted),
+		Command:        ink(style.RoleAccent),
+		QuotedString:   ink(style.RoleUnknown),
+		Argument:       ink(style.RoleText),
+		Help:           ink(style.RoleMuted),
+		Dash:           ink(style.RoleMuted),
+		ErrorHeader:    [2]color.Color{ink(style.RoleText), ink(style.RoleFailing)},
+		ErrorDetails:   ink(style.RoleFailing),
 	}
 }
 

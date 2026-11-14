@@ -232,6 +232,13 @@ describe('the live origin', () => {
   it('is the gate subdomain, never the bare domain, where any record is a standing stop', () => {
     expect(new URL(LIVE_ORIGIN).hostname).toBe('gate.carin-test.org');
   });
+
+  it('is the host the owner card gives the naive agent', async () => {
+    // A conductor answers only from the card, so a card that names another host voids the run.
+    const card = await readFile(path.join(import.meta.dirname, '../../../.claude/skills/cairn-proving-setup/references/owner-card.md'), 'utf8');
+    const row = card.split('\n').find((line) => line.startsWith('| Address (host) |'));
+    expect(row).toContain(`\`${new URL(LIVE_ORIGIN).hostname}\``);
+  });
 });
 
 describe('the record on a known fixture', () => {

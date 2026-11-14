@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { UnrecognisedPageError } from '../../../scripts/gate/browser.mjs';
-import { TAB_PAGES, followTab, tabHeading } from '../../../scripts/gate/stand-in.mjs';
+import { TAB_PAGES, failureLine, followTab, tabHeading } from '../../../scripts/gate/stand-in.mjs';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..', '..');
 const SITE = 'https://gate-site.example.workers.dev';
@@ -419,5 +419,18 @@ describe('the tab page kinds', () => {
     expect(github).toContain('<button class="button" type="submit">Continue to GitHub</button>');
     const error = await readFile(path.join(pagesDir, 'error.html'), 'utf8');
     expect(error).toContain('>Try again</a>');
+  });
+});
+
+describe('the failure line', () => {
+  it('carries the reason with every query string cut, so a sign-in token never reaches the file', () => {
+    const error = new Error('page.goto: net::ERR_NAME_NOT_RESOLVED at https://gate.carin-test.org/admin/auth/confirm?token=secret-value\nCall log:\n  - navigating');
+    const line = JSON.parse(failureLine(error, new Date('2026-11-14T05:00:05.520Z')));
+    expect(line).toEqual({
+      kind: 'stand-in',
+      action: 'failed',
+      reason: 'page.goto: net::ERR_NAME_NOT_RESOLVED at https://gate.carin-test.org/admin/auth/confirm?[query removed]',
+      at: '2026-11-14T05:00:05.520Z',
+    });
   });
 });

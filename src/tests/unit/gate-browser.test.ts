@@ -51,7 +51,7 @@ let holdBody: string;
 let loopbackBody: string;
 let authorizeMode: 'redirect' | 'consent';
 let confirmMode: 'ok' | 'login' | 'posts';
-let sendMode: 'ok' | 'error';
+let sendMode: 'ok' | 'error' | 'throttled';
 let publishMode: 'ok' | 'error';
 
 const page = (body: string, title = 'fixture') => `<!doctype html><html><head><title>${title}</title></head><body>${body}</body></html>`;
@@ -156,7 +156,13 @@ async function answer(route: Route) {
   if (key === 'GET gate-site.example.workers.dev/admin/login') return html(page(form('/admin/login', 'Send sign-in link', '<input type="email" name="email">')));
   if (key === 'POST gate-site.example.workers.dev/admin/login') {
     seen.push(`email=${new URLSearchParams(request.postData() ?? '').get('email')}`);
-    return html(page(sendMode === 'ok' ? '<h1>Check your email</h1><p>We sent a sign-in link.</p>' : '<div class="alert alert-error">Too many sign-in requests. Wait a minute.</div>'));
+    // The throttled answer is the engine's LoginPage markup for `outcome: 'throttled'`.
+    const sent = {
+      ok: '<h1>Check your email</h1><p>We sent a sign-in link.</p>',
+      error: '<div class="alert alert-error">Too many sign-in requests. Wait a minute.</div>',
+      throttled: '<div role="status" tabindex="-1" class="alert mb-3 type-body">You requested a link recently. Check your inbox, or wait a minute and try again.</div>',
+    };
+    return html(page(sent[sendMode]));
   }
   if (key === 'GET gate-site.example.workers.dev/admin/pages/about') return html(editorPage(url.search));
   if (key === 'POST gate-site.example.workers.dev/admin/pages/about/save') {
@@ -460,6 +466,17 @@ describe('the admin half', () => {
     expect(seen).toContain('POST gate-site.example.workers.dev/admin/auth/confirm');
     await fresh.close();
   });
+
+  it('searches from one cooldown back when the send is throttled, so the link already sent is found', async () => {
+    sendMode = 'throttled';
+    const fresh = await launched.newAdminContext();
+    await fresh.route(/.*/, answer);
+    const before = Date.now();
+    const since = await requestSignInLink(fresh, { origin: SITE, email: 'cairn-gate@probe.907.life', pauseMs: 100 });
+    await fresh.close();
+    expect(since).toBeLessThanOrEqual(before - 60_000);
+    expect(since).toBeGreaterThan(before - 120_000);
+  }, 30_000);
 
   it('throws the alert text when a send page lacks the Check your email heading', async () => {
     sendMode = 'error';

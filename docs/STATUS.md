@@ -20,26 +20,28 @@ the Go tool is `tool/v1.1.0`. The newest candidate is **`0.99.0-rc.4`** (cut com
 
 ## Immediate next action
 
-Pass 3 of the cairn-setup run is finishing the proving loop for `cairn new`. `main` holds #235 (`6ddcf7102`).
-`create-cairn-site` 2.0.0-dev.7 and its six platform packages are on `gate` (engine 0.99.0-dev.1), and `latest` and
-`next` have not moved. Scripted runs on dev.6 and dev.7 pass (`2611110255`, `2611110458`). Geoff ruled the order on
-2026-11-10: the plan's "Reordered to finish" section
-(`~/Projects/initiatives/cairn-setup/plans/2026-11-09-setup-tooling-plan.md`) and the conductor's prompt
-(`.../plans/2026-11-10-setup-tooling-day-conductor-3-prompt.txt`) carry it.
+Pass 3 of the cairn-setup run is paused at the owner install. `main` holds #239 (`b3d0c2062`). `create-cairn-site`
+2.0.0-dev.8 and its six platform packages are on `gate` (engine 0.99.0-dev.1), and `latest` and `next` have not
+moved. dev.8 is the candidate: its scripted run passed (`2611110722`, done screen "Setup took 1:47") and naive run 10
+passed on a regrade (`2611110815`, goal to signed in 3.8 minutes, no permission prompts), which ends the naive leg at
+10 of 15 runs with no cairn fix PR. Runs 9 and 10 first failed on the grader (#238, #239), never on cairn. The
+conductor's notes are `~/Projects/initiatives/cairn-setup/research/2026-11-09-conductor-end-packet-notes.md`.
 
-1. The owner runbook (`~/Projects/initiatives/cairn-setup/research/owner-install-runbook.md`, T3.6, pointed at dev.7)
-   and Geoff's install on it. His friction log outranks the naive lists, and its fixes ship as one PR per sitting.
-2. The naive leg, to its first pass (Geoff, 2026-11-10: an agent should set up a cairn site nearly every time unless
-   Cloudflare or GitHub misbehave, and one successful run is enough). Each run on dev.7 is graded and recorded as a
-   row in `proving/batch-1.md`, across any fix snapshot. A pass ends the leg and is the release gate's naive row, and its friction is filed,
-   not fixed. A fail traced to cairn (the tool, the refusal, the agent page, the skill, or `cairn help agents`) is a
-   defect: one PR fixes it with the friction that run showed, a snapshot publishes, and the next run uses it. A fail
-   traced to the harness, Cloudflare, or GitHub is traced and reported to the conductor, then rerun on the same build
-   with no fix. A cause that cannot be traced goes to the conductor before any rerun. The 15-run cap stays, with 8
-   used (about $11 of the $100, probes included). If no run has passed after the remaining runs or two fix PRs, the end packet asks
-   Geoff whether to ship.
-3. T3.4's close (#366 to `## Done`), T3.5 (the dependency sweep, the final candidate, a scripted leg on it, and one
-   naive run only if the sweep touched a rerun path), and the end packet.
+Geoff ruled on 2026-11-11 that the Survey theme is built first, so the owner install of 907.life uses it. Nothing is
+live from the harness, and no run or sweep is due.
+
+1. The Survey theme (theme-garden), then Geoff's install of 907.life on dev.8 or a later snapshot. Its prep is in
+   `~/.local/state/cairn-rehearsal/907-walkthrough/`: the picture walk-through (`index.html`), the DNS prep
+   (`dns-prep.md`: delete the apex `AAAA 100::` placeholder and the `www` CNAME by record id only when Geoff starts,
+   then drop `cloudflare/dns/apex` in `~/Projects/servers`), and `morning-message.md`. The text walk-through is
+   `~/Projects/initiatives/cairn-setup/research/907-live-walkthrough.md`. Recheck the record ids before deleting,
+   since the snapshot may change, and check the three `/.well-known` 308s to ward after setup. His friction log
+   outranks the naive lists, and its fixes ship as one PR per sitting.
+2. T3.4's close (#366 to `## Done`), T3.5 (the dependency sweep, the final candidate, a scripted leg on it, and one
+   naive run only if the sweep touched a rerun path), and the end packet. The end packet carries #461's done-screen
+   line (Cloudflare keeps a "cairn" Connected Applications row after the revoke, though the tokens are dead), the
+   open question of the Install step briefly granting All repositories, and #239's watcher match, which is not yet
+   seen on a live room.
 
 What a session needs to know:
 
@@ -59,7 +61,7 @@ What a session needs to know:
   name matcher, and `cleanroom`'s secret, environment, user, and stop code.
 - No release is cut until the tooling gates in `~/Projects/initiatives/cairn-setup/research/handoff-tooling.md`
   exist. The owner steps for the first tool tag are done (2026-11-09).
-- theme-garden: G1 (#207) and G2 (#208) are merged. G3's design session waits for Geoff to attach, and theme-garden
+- theme-garden: G1 (#207) and G2 (#208) are merged. G3's design session waits for Geoff to attach. The Survey theme is next (Geoff, 2026-11-11), and theme-garden
   launches hold during pass 3's T3.5 dependency sweep.
 
 ## Open decisions and watches

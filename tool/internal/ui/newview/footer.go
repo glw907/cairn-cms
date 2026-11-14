@@ -6,7 +6,6 @@ import (
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
-	"github.com/charmbracelet/x/ansi"
 )
 
 // Footer renders key hints through bubbles help at the margin: a bold key, a muted verb, and a
@@ -24,7 +23,7 @@ func (g Grid) Footer(bs ...key.Binding) string {
 	var line []key.Binding
 	for _, b := range bs {
 		next := append(slices.Clone(line), b)
-		if len(line) > 0 && ansi.StringWidth(h.ShortHelpView(next)) > g.ContentWidth() {
+		if len(line) > 0 && g.Styles.theme.Width(h.ShortHelpView(next)) > g.ContentWidth() {
 			lines = append(lines, margin+h.ShortHelpView(line))
 			line = []key.Binding{b}
 			continue

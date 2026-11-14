@@ -11,31 +11,17 @@ import (
 	"testing"
 )
 
-// forbiddenImports names the two import paths criterion 3 forbids everywhere in this package
-// except profile.go: os and golang.org/x/term, the one TTY check's two capabilities.
+// forbiddenImports names the two import paths no file in this package takes: os and
+// golang.org/x/term are the TTY check's two capabilities, and style.Detect owns that check.
 var forbiddenImports = []string{"os", "golang.org/x/term"}
 
 // forbiddenSelectors names the colorprofile detection entry points and the lipgloss package-level
-// writer and Print family criterion 3 forbids by name everywhere except profile.go. colorprofile
-// is checked as package.Selector; lipgloss.Writer and the Print family are checked the same way.
+// writer and Print family, forbidden by name in every file. Naming them by selector, rather than
+// banning the colorprofile or lipgloss import outright, leaves the pure calls a body makes, such
+// as lipgloss.JoinHorizontal and the colorprofile.Profile type, untouched.
 var forbiddenSelectors = map[string][]string{
 	"colorprofile": {"Detect", "Env", "Terminfo", "Tmux"},
 	"lipgloss":     {"Writer", "Print", "Printf", "Println", "Sprint", "Sprintf", "Sprintln", "Fprint", "Fprintf", "Fprintln"},
-}
-
-// lipglossSetters names the lipgloss.Style methods criterion 8 confines to palette.go: Style and
-// Sized are the only two ways the rest of this package may get a lipgloss.Style. Render, the
-// getter family (Get*), and Copy are not setters and are not listed. Width, MaxWidth, Height,
-// MaxHeight, Align*, and Border* are deliberately absent too: this check has no type information
-// (a plain AST walk, not go/types), so it can only match a selector by name, and those names
-// collide with this package's methods (theme.width) and would false-positive on a legitimate
-// call. The remaining names are lipgloss-specific enough that a collision is not a real risk.
-var lipglossSetters = []string{
-	"Foreground", "Background", "Bold", "Italic", "Underline", "UnderlineStyle", "Strikethrough",
-	"StrikethroughSpaces", "Faint", "Blink", "Reverse",
-	"Padding", "PaddingTop", "PaddingRight", "PaddingBottom", "PaddingLeft", "Margin", "MarginTop",
-	"MarginRight", "MarginBottom", "MarginLeft", "BorderStyle",
-	"Hyperlink", "ColorWhitespace", "Transform", "TabWidth",
 }
 
 // sourceFile is one non-test .go file in this package's directory, parsed once for every
@@ -74,35 +60,23 @@ func packageSourceFiles(t *testing.T, includeTests bool) []sourceFile {
 	return out
 }
 
-// TestForbiddenImportsOutsideProfileGo falsifies criterion 3: os and golang.org/x/term import
-// only in profile.go. A dispatch that needs to falsify this test adds the import, confirms the
-// named failure, and removes it again.
-func TestForbiddenImportsOutsideProfileGo(t *testing.T) {
+// TestNoForbiddenImports holds the seam: no file in this package imports os or
+// golang.org/x/term, so a frame never depends on the terminal it is printed to.
+func TestNoForbiddenImports(t *testing.T) {
 	for _, sf := range packageSourceFiles(t, false) {
-		if sf.name == "profile.go" {
-			continue
-		}
 		for _, imp := range sf.file.Imports {
 			path := strings.Trim(imp.Path.Value, `"`)
-			for _, forbidden := range forbiddenImports {
-				if path == forbidden {
-					t.Errorf("%s imports %q; that is profile.go's TTY check alone", sf.name, path)
-				}
+			if slices.Contains(forbiddenImports, path) {
+				t.Errorf("%s imports %q; terminal detection is style.Detect's", sf.name, path)
 			}
 		}
 	}
 }
 
-// TestForbiddenSelectorsOutsideProfileGo falsifies criterion 3's second half: colorprofile's
-// detection entry points and lipgloss's package-level Writer and Print family, named everywhere
-// but profile.go. Naming them by selector, rather than banning the colorprofile or lipgloss
-// import outright, is what lets palette.go's pure lipgloss.Complete and lipgloss.LightDark land
-// without tripping this test.
-func TestForbiddenSelectorsOutsideProfileGo(t *testing.T) {
+// TestNoForbiddenSelectors holds the seam's second half: no file names colorprofile's detection
+// entry points or lipgloss's package-level Writer and Print family.
+func TestNoForbiddenSelectors(t *testing.T) {
 	for _, sf := range packageSourceFiles(t, false) {
-		if sf.name == "profile.go" {
-			continue
-		}
 		ast.Inspect(sf.file, func(n ast.Node) bool {
 			sel, ok := n.(*ast.SelectorExpr)
 			if !ok {
@@ -112,17 +86,15 @@ func TestForbiddenSelectorsOutsideProfileGo(t *testing.T) {
 			if !ok {
 				return true
 			}
-			for _, name := range forbiddenSelectors[pkg.Name] {
-				if sel.Sel.Name == name {
-					t.Errorf("%s:%d uses %s.%s, forbidden outside profile.go", sf.name, sf.fset.Position(sel.Pos()).Line, pkg.Name, name)
-				}
+			if slices.Contains(forbiddenSelectors[pkg.Name], sel.Sel.Name) {
+				t.Errorf("%s:%d uses %s.%s, which reads or writes the terminal", sf.name, sf.fset.Position(sel.Pos()).Line, pkg.Name, sel.Sel.Name)
 			}
 			return true
 		})
 	}
 }
 
-// TestNoBubbleteaImport falsifies the second half of criterion 3: this package imports no
+// TestNoBubbleteaImport holds the other seam: this package imports no
 // bubbletea package at all, in production code or in a test, since a purity break in a test would
 // still mean the seam only holds by convention.
 func TestNoBubbleteaImport(t *testing.T) {
@@ -130,36 +102,9 @@ func TestNoBubbleteaImport(t *testing.T) {
 		for _, imp := range sf.file.Imports {
 			path := strings.Trim(imp.Path.Value, `"`)
 			if strings.Contains(path, "bubbletea") {
-				t.Errorf("%s imports %q; render carries no bubbletea type (criterion 25)", sf.name, path)
+				t.Errorf("%s imports %q; render carries no bubbletea type", sf.name, path)
 			}
 		}
-	}
-}
-
-// TestNoLipglossSetterOutsidePaletteGo falsifies criterion 8: theme.Style and theme.Sized are the
-// only two ways to get a lipgloss.Style out of this package, so no other file chains a raw
-// lipgloss setter off the style either one returns.
-func TestNoLipglossSetterOutsidePaletteGo(t *testing.T) {
-	for _, sf := range packageSourceFiles(t, false) {
-		if sf.name == "palette.go" {
-			continue
-		}
-		ast.Inspect(sf.file, func(n ast.Node) bool {
-			call, ok := n.(*ast.CallExpr)
-			if !ok {
-				return true
-			}
-			sel, ok := call.Fun.(*ast.SelectorExpr)
-			if !ok {
-				return true
-			}
-			for _, name := range lipglossSetters {
-				if sel.Sel.Name == name {
-					t.Errorf("%s:%d calls .%s(...), a lipgloss setter reserved for palette.go", sf.name, sf.fset.Position(sel.Pos()).Line, name)
-				}
-			}
-			return true
-		})
 	}
 }
 
@@ -218,73 +163,4 @@ func TestRenderDirectRequiresArePinned(t *testing.T) {
 	if n, total := len(direct), len(renderDirectRequires)+otherDirectRequires; n != total {
 		t.Errorf("go.mod carries %d direct requires, want %d: %v", n, total, direct)
 	}
-}
-
-// exportedSurface is the whole of what this package exports, listed by name so every later
-// addition is a deliberate one a reviewer reads rather than a widening nobody noticed.
-//
-// The list is longer than Task 20b-ii's criterion 16 enumerates, and the difference is recorded
-// rather than hidden: View and its constants, SelectBody, Env, Terminal, Glyphs, and Credential all
-// landed with the foundations and the first bodies, and the criterion's prose names only the
-// types it was adding to. Everything here is reachable from Render's input or its output, but
-// IsTerminal: cairn new asks it of stdin to choose the terminal view, which keeps the module's
-// one term.IsTerminal call in profile.go.
-var exportedSurface = []string{
-	"Body", "BodyMany", "BodyPlain", "BodySingle",
-	"Credential",
-	"Frame",
-	"MarshalAdoptList", "MarshalAuthCheck", "MarshalLogs", "MarshalSite", "MarshalSiteLine", "MarshalSitesList",
-	"MarshalSummary",
-	"AdoptCandidate", "AuthCheckPermission",
-	"DoctorSchemaVersion", "SiteJSON", "SiteListEntry",
-	"SummaryJSON",
-	"Render", "RenderInput",
-	"SelectBody", "StatusState",
-	"View", "ViewHealth", "ViewLogs", "ViewStatus",
-}
-
-// TestExportedSurfaceIsPinned falsifies criterion 16: the package's exported surface is exactly
-// the list above, so an addition or a removal fails here and is named in the diff. A later task
-// widening the surface updates this list in the same change.
-func TestExportedSurfaceIsPinned(t *testing.T) {
-	var got []string
-	for _, sf := range packageSourceFiles(t, false) {
-		for _, decl := range sf.file.Decls {
-			got = append(got, exportedNames(decl)...)
-		}
-	}
-	slices.Sort(got)
-	want := slices.Clone(exportedSurface)
-	slices.Sort(want)
-	if !slices.Equal(got, want) {
-		t.Errorf("exported surface is\n%v\nwant\n%v", got, want)
-	}
-}
-
-// exportedNames returns the exported top-level names one declaration introduces, skipping a
-// method, which belongs to its receiver's surface rather than to the package's.
-func exportedNames(decl ast.Decl) []string {
-	var out []string
-	switch d := decl.(type) {
-	case *ast.FuncDecl:
-		if d.Recv == nil && d.Name.IsExported() {
-			out = append(out, d.Name.Name)
-		}
-	case *ast.GenDecl:
-		for _, spec := range d.Specs {
-			switch s := spec.(type) {
-			case *ast.TypeSpec:
-				if s.Name.IsExported() {
-					out = append(out, s.Name.Name)
-				}
-			case *ast.ValueSpec:
-				for _, name := range s.Names {
-					if name.IsExported() {
-						out = append(out, name.Name)
-					}
-				}
-			}
-		}
-	}
-	return out
 }

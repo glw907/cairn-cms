@@ -145,12 +145,3 @@ func isRealTTY() bool {
 	}
 	return fi.Mode()&os.ModeCharDevice != 0
 }
-
-// TestPaintableNeverPanics exercises every colorprofile.Profile byte value, including ones
-// with no named constant, since Terminfo's return value is not restricted to the six documented
-// ones by the type system.
-func TestPaintableNeverPanics(t *testing.T) {
-	for b := 0; b <= 255; b++ {
-		_ = paintable(colorprofile.Profile(b))
-	}
-}

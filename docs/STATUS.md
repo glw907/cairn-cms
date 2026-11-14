@@ -26,12 +26,12 @@ on `gate`: engine 0.99.0-dev.2 and `create-cairn-site` 2.0.0-dev.9 with its six 
 (`2611140542`, 14 of the 15 naive runs used). The gate rows sit in the private record
 `~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`, and `verdict.mjs` lists only the `owner` row missing.
 
-1. The close PR (branch `setup-tooling-r22`): the stand-in's throttle fix, the grader's timing from background
-   output files, the `/exit` rule in `cairn-proving-setup`, and BACKLOG #469 and #470 from run 14.
-2. The owner-path proof on this candidate: a tokenless `cairn new` in the clean room, driven by Claude in its own
-   Chromium profile as the test account, every page screenshotted and read, then the 907.life walk-through refreshed.
-3. The end packet, which asks Geoff for his live 907.life setup and whether it also writes the `owner` row. The
-   Survey-or-Waymark question for that setup is in the packet, since Geoff said on 2026-11-11 that Survey comes first.
+1. The close PR (#244, branch `setup-tooling-r22`): the stand-in's throttle fix, the grader's timing from background
+   output files, the `/exit` rule in `cairn-proving-setup`, and BACKLOG #469 to #472.
+2. The end packet, which carries #244 and asks Geoff for his live 907.life setup and whether it also writes the
+   `owner` row. It also asks whether Claude proves the tokenless path on this candidate first. That path makes a
+   GitHub App on Geoff's own account and stops at his passkey, so it waits for his ruling. It last ran end to end
+   on dev.7. The Survey-or-Waymark question is in the packet, since Geoff said on 2026-11-11 that Survey comes first.
 
 What a session needs to know:
 

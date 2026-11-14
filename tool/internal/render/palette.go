@@ -10,21 +10,12 @@ import (
 // colour value, and every mark comes from marks, so no body chooses a tier.
 type theme struct {
 	style.Theme
-	widths widthTable
-	marks  style.Marks
+	marks style.Marks
 }
 
 // newTheme returns the theme for a background, a colour profile, and a glyph tier. Render is the
 // one production caller: it reads RenderInput.ASCII, which style.Detect alone fills, so the tier
 // never travels inside the profile.
 func newTheme(dark bool, p colorprofile.Profile, ascii bool) theme {
-	t := theme{
-		Theme:  style.NewTheme(dark, p, ascii),
-		widths: tableNarrow,
-		marks:  style.MarksFor(ascii),
-	}
-	if ascii {
-		t.widths = tableWide
-	}
-	return t
+	return theme{Theme: style.NewTheme(dark, p, ascii), marks: style.MarksFor(ascii)}
 }

@@ -7,40 +7,6 @@ import (
 	"github.com/charmbracelet/colorprofile"
 )
 
-// TestWidthRungConstants pins criterion 18's numbers: a floor of 40, a single-column threshold of
-// 60, and a wide cap of 120.
-func TestWidthRungConstants(t *testing.T) {
-	if widthFloor != 40 {
-		t.Errorf("widthFloor = %d, want 40", widthFloor)
-	}
-	if widthNarrow != 60 {
-		t.Errorf("widthNarrow = %d, want 60", widthNarrow)
-	}
-	if Width80 != 80 {
-		t.Errorf("Width80 = %d, want 80", Width80)
-	}
-	if width100 != 100 {
-		t.Errorf("width100 = %d, want 100", width100)
-	}
-	if widthCap != 120 {
-		t.Errorf("widthCap = %d, want 120", widthCap)
-	}
-}
-
-// TestContentClampsToCap is criterion 18's wide cap: content stops growing past widthCap.
-func TestContentClampsToCap(t *testing.T) {
-	tests := []struct {
-		in, want int
-	}{
-		{0, 1}, {1, 1}, {-5, 1}, {40, 40}, {120, 120}, {121, 120}, {2560, 120},
-	}
-	for _, tt := range tests {
-		if got := content(tt.in); got != tt.want {
-			t.Errorf("content(%d) = %d, want %d", tt.in, got, tt.want)
-		}
-	}
-}
-
 // TestRuleHonoursRequestedWidthExactly is the conductor's 2026-09-21 ruling on criterion 18: the
 // requested width is honoured exactly, the rungs are behavioural thresholds only, never a snap. A
 // render at width 90 is not byte-identical to one at width 80.
@@ -51,10 +17,10 @@ func TestRuleHonoursRequestedWidthExactly(t *testing.T) {
 	if r80 == r90 {
 		t.Fatal("rule(80) and rule(90) are byte-identical; width must be honoured exactly, not snapped to a rung")
 	}
-	if got := th.width(r80); got != 80 {
+	if got := th.Width(r80); got != 80 {
 		t.Errorf("width(rule(80)) = %d, want 80", got)
 	}
-	if got := th.width(r90); got != 90 {
+	if got := th.Width(r90); got != 90 {
 		t.Errorf("width(rule(90)) = %d, want 90", got)
 	}
 }
@@ -81,7 +47,7 @@ func TestDegenerateWidthsNeverPanic(t *testing.T) {
 					}
 				}()
 				got := th.clamp("a long line of dynamic content a site handed us", w)
-				if gotW := th.width(got); gotW > max(w, 1) {
+				if gotW := th.Width(got); gotW > max(w, 1) {
 					t.Errorf("clamp(..., %d) = %q, %d cells, want at most %d", w, got, gotW, max(w, 1))
 				}
 			}()
@@ -102,7 +68,7 @@ func TestClampNeverExceedsWidth(t *testing.T) {
 	for _, w := range sweepWidths {
 		for _, s := range []string{longLine, cjk} {
 			got := th.clamp(s, w)
-			if gotW := th.width(got); gotW > w {
+			if gotW := th.Width(got); gotW > w {
 				t.Errorf("clamp(%d) over width: got %d cells for width %d", w, gotW, w)
 			}
 		}

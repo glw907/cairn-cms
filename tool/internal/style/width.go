@@ -14,9 +14,9 @@ const DefaultWidth = 80
 // terminal's remainder is left empty, and left alignment holds at every width.
 const widthCap = 120
 
-// content clamps w to the range a frame composes into: never wider than widthCap, never
+// ContentWidth clamps w to the range a frame composes into: never wider than widthCap, never
 // narrower than one cell.
-func content(w int) int {
+func ContentWidth(w int) int {
 	return min(max(w, 1), widthCap)
 }
 
@@ -62,7 +62,7 @@ func (t Theme) Width(s string) int {
 // The break is the space and nothing else. A library word wrap also breaks after a hyphen, which
 // turns 2026-09-25 into two dates and a stray dash.
 func (t Theme) WrapGreedy(text string, width int) []string {
-	return t.wrap(text, content(width))
+	return t.wrap(text, ContentWidth(width))
 }
 
 // Wrap is WrapGreedy with one more rule: when the last line is a single word, it pulls one word
@@ -70,7 +70,7 @@ func (t Theme) WrapGreedy(text string, width int) []string {
 // where the line above has nothing to spare, which is the one shape where an orphan is the honest
 // result: a single token wider than the width has nowhere else to go.
 func (t Theme) Wrap(text string, width int) []string {
-	width = content(width)
+	width = ContentWidth(width)
 	lines := t.wrap(text, width)
 	if len(lines) < 2 {
 		return lines

@@ -286,10 +286,10 @@ func (t theme) verdictParts(v Verdict, subject, tally string, width int) (head s
 	if tally == "" {
 		return head, nil
 	}
-	if t.width(word)+2+t.width(subject)+2+t.width(tally) <= width {
+	if t.Width(word)+2+t.Width(subject)+2+t.Width(tally) <= width {
 		return head + "  " + t.Style(style.RoleMuted).Render(tally), nil
 	}
-	for _, l := range t.wrap(tally, width) {
+	for _, l := range t.WrapGreedy(tally, width) {
 		tallyLines = append(tallyLines, t.Style(style.RoleMuted).Render(l))
 	}
 	return head, tallyLines
@@ -299,7 +299,7 @@ func (t theme) verdictParts(v Verdict, subject, tally string, width int) (head s
 // rule. No box, no capitals, no coloured rail.
 func (t theme) insetRule(label string, width int) string {
 	lead := t.rule(2)
-	tail := max(width-t.width(lead)-t.width(label)-2, 0)
+	tail := max(width-t.Width(lead)-t.Width(label)-2, 0)
 	return t.Style(style.RoleRule).Render(lead) + " " + t.Style(style.RoleText).Render(label) + " " +
 		t.Style(style.RoleRule).Render(t.rule(tail))
 }
@@ -316,94 +316,10 @@ func row(cells ...string) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, cells...)
 }
 
-// wrap word-wraps text to width and returns the lines, never cutting a word that carries
-// meaning. A single token longer than width is hard-wrapped rather than truncated, since the
-// tokens that overflow here are URLs and domains, where the tail is the part that identifies it.
-//
-// The break is the space and nothing else. A library word wrap also breaks after a hyphen, which
-// turns 2026-09-25 into two dates and a stray dash.
-func (t theme) wrap(text string, width int) []string {
-	width = max(width, 1)
-	if text == "" {
-		return nil
-	}
-	var out []string
-	cur := ""
-	for i, tok := range strings.Split(text, " ") {
-		sep := ""
-		if i > 0 && cur != "" {
-			sep = " "
-		}
-		if cur != "" && t.width(cur)+t.width(sep)+t.width(tok) > width {
-			out = append(out, strings.TrimRight(cur, " "))
-			cur, sep = "", ""
-		}
-		for t.width(tok) > width {
-			head, tail := t.cutAt(tok, width)
-			out = append(out, head)
-			tok = tail
-		}
-		cur += sep + tok
-	}
-	if cur != "" {
-		out = append(out, strings.TrimRight(cur, " "))
-	}
-	return out
-}
-
-// Wrap word-wraps text to width and returns the lines, the writer every body composes its
-// prose with, down to the guard that pulls a word onto the last line rather than leaving one
-// alone there. A caller printing an operator-facing line outside a frame, a command's stderr
-// notice above all, reaches it here rather than leaving the terminal to fold the line wherever
-// its edge falls.
-func (t theme) Wrap(text string, width int) []string {
-	return t.wrapNoOrphan(text, content(width))
-}
-
-// wrapNoOrphan wraps text to width and then pulls one word down from the line above whenever the
-// last line is a single word, so a sentence never ends on a stray verb sitting alone. It gives
-// up where the line above has nothing to spare, which is the only shape where an orphan is the
-// honest result: a single token wider than the width has nowhere else to go.
-func (t theme) wrapNoOrphan(text string, width int) []string {
-	lines := t.wrap(text, width)
-	if len(lines) < 2 {
-		return lines
-	}
-	last := len(lines) - 1
-	if len(strings.Fields(lines[last])) != 1 {
-		return lines
-	}
-	words := strings.Fields(lines[last-1])
-	if len(words) < 2 {
-		return lines
-	}
-	moved := words[len(words)-1]
-	if t.width(moved)+1+t.width(lines[last]) > width {
-		return lines
-	}
-	lines[last-1] = strings.Join(words[:len(words)-1], " ")
-	lines[last] = moved + " " + lines[last]
-	return lines
-}
-
-// cutAt splits s after width cells, returning the head and the remainder. It walks runes rather
-// than bytes so a multi-byte or double-width rune is never split down the middle.
-func (t theme) cutAt(s string, width int) (head, tail string) {
-	n := 0
-	for i, r := range s {
-		rw := t.width(string(r))
-		if n+rw > width && i > 0 {
-			return s[:i], s[i:]
-		}
-		n += rw
-	}
-	return s, ""
-}
-
 // hangingAt wraps text into the column at col, with lead printed before the first line, so a fix
 // wraps under itself and is never truncated.
 func (t theme) hangingAt(st lipgloss.Style, lead string, col int, text string, width int) []string {
-	return hangingLines(st, lead, col, t.wrap(text, width-col))
+	return hangingLines(st, lead, col, t.WrapGreedy(text, width-col))
 }
 
 // hangingLines lays already-wrapped body lines into the column at col, with lead before the first
@@ -424,7 +340,7 @@ func hangingLines(st lipgloss.Style, lead string, col int, body []string) []stri
 
 // indented renders text wrapped into the column at col, every line at that column.
 func (t theme) indented(st lipgloss.Style, col int, text string, width int) []string {
-	return atColumn(st, col, t.wrap(text, width-col))
+	return atColumn(st, col, t.WrapGreedy(text, width-col))
 }
 
 // atColumn renders already-wrapped lines at col, each in st.
@@ -441,14 +357,14 @@ func atColumn(st lipgloss.Style, col int, lines []string) []string {
 // at the end of it, so a trailing field shares that line rather than taking a line by itself. It
 // reports false when no re-flow leaves the room, which is a width too narrow to carry both.
 func (t theme) wrapLeavingTail(text string, width, tailWidth int) (lines []string, ok bool) {
-	lines = t.wrap(text, width)
+	lines = t.WrapGreedy(text, width)
 	if len(lines) == 0 {
 		return nil, false
 	}
-	for t.width(lines[len(lines)-1])+tailWidth > width {
+	for t.Width(lines[len(lines)-1])+tailWidth > width {
 		words := strings.Fields(lines[len(lines)-1])
 		if len(words) < 2 {
-			return t.wrap(text, width), false
+			return t.WrapGreedy(text, width), false
 		}
 		lines[len(lines)-1] = strings.Join(words[:len(words)-1], " ")
 		lines = append(lines, words[len(words)-1])

@@ -204,9 +204,9 @@ func (t theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 func (t theme) detailLines(detail, tail string, col, width int) (lines []string, placed bool) {
 	avail := width - col
 	if tail == "" || width >= width100 {
-		return atColumn(t.Style(style.RoleSubtle), col, t.wrap(detail, avail)), false
+		return atColumn(t.Style(style.RoleSubtle), col, t.WrapGreedy(detail, avail)), false
 	}
-	wrapped, ok := t.wrapLeavingTail(detail, avail, t.width(tail))
+	wrapped, ok := t.wrapLeavingTail(detail, avail, t.Width(tail))
 	lines = atColumn(t.Style(style.RoleSubtle), col, wrapped)
 	if !ok || len(lines) == 0 {
 		return lines, false
@@ -233,7 +233,7 @@ func (t theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 	}
 	g := t.marks
 	indent := colIndent + colGlyph
-	col := indent + t.width(g.Fix) + 1
+	col := indent + t.Width(g.Fix) + 1
 	lead := strings.Repeat(" ", indent) + t.Style(style.RoleAccent).Render(g.Fix) + " "
 	out := t.hangingAt(t.Style(style.RoleSubtle), lead, col, sanitize(fix.Text), width)
 
@@ -278,7 +278,7 @@ func (t theme) placeCondition(detail, block []string, tail string, width int) {
 // and reports whether it found one.
 func attachTail(t theme, lines []string, tail string, width int) bool {
 	for i := len(lines) - 1; i >= 0; i-- {
-		if t.width(lines[i])+t.width(tail) <= width {
+		if t.Width(lines[i])+t.Width(tail) <= width {
 			lines[i] += tail
 			return true
 		}
@@ -297,7 +297,7 @@ func (t theme) foldLine(in RenderInput, passing []health.CheckResult, width int)
 	g := t.marks
 	label := count(len(passing), labelPassing)
 	lead := t.Style(passRole(in.Verdict)).Render(g.Pass) + " " + t.Style(style.RoleMuted).Render(label) + "  "
-	col := t.width(g.Pass) + 1 + t.width(label) + 2
+	col := t.Width(g.Pass) + 1 + t.Width(label) + 2
 	return t.hangingAt(t.Style(style.RoleMuted), lead, col, strings.Join(names, " "+g.Sep+" "), width)
 }
 

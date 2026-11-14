@@ -21,6 +21,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // Verdict is spine's run verdict, re-exported so a body names the vocabulary without a
@@ -53,10 +54,6 @@ const (
 	BodyPlain
 )
 
-// defaultWidth is the column budget a run composes into when the operator named none and stdout
-// is not a terminal to measure: the width a mail body, a CI log, and a paste all assume.
-const defaultWidth = 80
-
 // SelectBody returns the body a run of sites reports composes into. A pipe always takes the
 // plain body, at any scope: plain is the default for a pipe exactly as --json is, never a
 // variant an operator opts into. Colour never enters the choice, so forcing colour into a pipe
@@ -79,7 +76,7 @@ type RenderInput struct {
 	View View
 	// Body is the layout to compose into, from SelectBody.
 	Body Body
-	// Width is the terminal column budget a frame composes into. Zero means defaultWidth.
+	// Width is the terminal column budget a frame composes into. Zero means style.DefaultWidth.
 	Width int
 	// Dark reports whether the frame paints from the palette's dark branch.
 	Dark bool
@@ -110,12 +107,13 @@ type RenderInput struct {
 }
 
 // width returns the column budget this input composes into: the requested width honoured
-// exactly, capped at widthCap, with an unset width falling back to defaultWidth.
+// exactly, capped at style.ContentWidth's cap, with an unset width falling back to
+// style.DefaultWidth.
 func (in RenderInput) width() int {
 	if in.Width <= 0 {
-		return content(defaultWidth)
+		return style.ContentWidth(style.DefaultWidth)
 	}
-	return content(in.Width)
+	return style.ContentWidth(in.Width)
 }
 
 // Render composes in into a Frame. It is pure: no I/O, no clock, no environment, no terminal.

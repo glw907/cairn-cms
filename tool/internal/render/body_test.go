@@ -1,6 +1,7 @@
 package render
 
 import (
+	"math"
 	"reflect"
 	"regexp"
 	"slices"
@@ -580,8 +581,8 @@ func TestWidthDefaultAndExactHonouring(t *testing.T) {
 	if got := (RenderInput{Width: 90}).width(); got != 90 {
 		t.Errorf("width() = %d, want the requested 90 exactly", got)
 	}
-	if got := (RenderInput{Width: 200}).width(); got != widthCap {
-		t.Errorf("width() = %d, want the cap %d: content stops growing there", got, widthCap)
+	if got, want := (RenderInput{Width: 200}).width(), style.ContentWidth(math.MaxInt); got != want || want >= 200 {
+		t.Errorf("width() = %d, want the cap %d: content stops growing there", got, want)
 	}
 }
 
@@ -595,16 +596,16 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 		for _, width := range []int{20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400} {
 			for _, ascii := range []bool{false, true} {
 				theme := newTheme(true, colorprofile.TrueColor, ascii)
-				budget := min(width, widthCap)
+				budget := style.ContentWidth(width)
 				for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 					in := input(f.Reports, body, width, colorprofile.TrueColor, ascii, spine.VerdictCritical)
 					in.Status = sampleStatus()
 					for _, l := range Render(in).Lines() {
 						// The plain body is line-oriented by contract and depends on no width at
 						// all, so it is swept for the other two tables' sake and exempted here.
-						if body != BodyPlain && theme.width(l) > budget {
+						if body != BodyPlain && theme.Width(l) > budget {
 							t.Errorf("%s body %v at width %d ascii %v: line is %d cells: %q",
-								f.Name, body, width, ascii, theme.width(l), stripANSI(l))
+								f.Name, body, width, ascii, theme.Width(l), stripANSI(l))
 						}
 					}
 				}
@@ -622,16 +623,16 @@ func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
 	const ambiguous = "●"
 	narrow := newTheme(true, colorprofile.TrueColor, false)
 	wide := newTheme(true, colorprofile.TrueColor, true)
-	if got := narrow.width(ambiguous); got != 1 {
+	if got := narrow.Width(ambiguous); got != 1 {
 		t.Errorf("narrow table measures %q as %d cells, want 1", ambiguous, got)
 	}
-	if got := wide.width(ambiguous); got != 2 {
+	if got := wide.Width(ambiguous); got != 2 {
 		t.Errorf("wide table measures %q as %d cells, want 2", ambiguous, got)
 	}
 	// The tables agree on plain ASCII, which is the whole of the ASCII tier's glyph set.
 	for _, s := range []string{"+", "!", "*", "?", "o", ">", "-", "...", "my-site"} {
-		if narrow.width(s) != wide.width(s) {
-			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.width(s), wide.width(s))
+		if narrow.Width(s) != wide.Width(s) {
+			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.Width(s), wide.Width(s))
 		}
 	}
 }
@@ -1318,7 +1319,7 @@ func textOf(in RenderInput) string {
 // measured below.
 func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
 	theme := newTheme(true, colorprofile.TrueColor, false)
-	if got := theme.width(theme.cell(style.RoleFailing, "x", 8)); got != 8 {
+	if got := theme.Width(theme.cell(style.RoleFailing, "x", 8)); got != 8 {
 		t.Errorf("the cell measures %d cells, want the 8 its column budgeted", got)
 	}
 	ground := lipgloss.NewStyle().Background(lipgloss.Color("#123456")).Width(8).MaxWidth(8)
@@ -1336,7 +1337,7 @@ func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
 func TestFleetOnePassRule(t *testing.T) {
 	theme := newTheme(true, colorprofile.TrueColor, false)
 	ok := inkOf(theme, style.RoleOK)
-	for _, width := range []int{Width80, width100, widthCap} {
+	for _, width := range []int{style.DefaultWidth, width100, style.ContentWidth(math.MaxInt)} {
 		in := input(fixtures.TwelveSites(), BodyMany, width, colorprofile.TrueColor, false, spine.VerdictCritical)
 		in.Status = sampleStatus()
 		for _, sp := range frameSpans(Render(in)) {
@@ -1382,7 +1383,7 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 		}
 		tables++
 
-		_, columns := tableFit(theme.siteColWidth(reports), content(w))
+		_, columns := tableFit(theme.siteColWidth(reports), style.ContentWidth(w))
 		for i := range columns {
 			if !strings.Contains(head, tableColumns[i].heading) {
 				t.Fatalf("width %d: heading row %q is missing the %q column", w, head, tableColumns[i].heading)

@@ -242,7 +242,6 @@ var exportedSurface = []string{
 	"SelectBody", "StatusState",
 	"Verdict",
 	"View", "ViewHealth", "ViewLogs", "ViewStatus",
-	"Width80",
 }
 
 // TestExportedSurfaceIsPinned falsifies criterion 16: the package's exported surface is exactly

@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/colorprofile"
 )
 
-// TestContentClampsToCap: content stops growing past widthCap.
+// TestContentClampsToCap: ContentWidth stops growing past widthCap.
 func TestContentClampsToCap(t *testing.T) {
 	tests := []struct {
 		in, want int
@@ -16,8 +16,8 @@ func TestContentClampsToCap(t *testing.T) {
 		{0, 1}, {1, 1}, {-5, 1}, {40, 40}, {120, 120}, {121, 120}, {2560, 120},
 	}
 	for _, tt := range tests {
-		if got := content(tt.in); got != tt.want {
-			t.Errorf("content(%d) = %d, want %d", tt.in, got, tt.want)
+		if got := ContentWidth(tt.in); got != tt.want {
+			t.Errorf("ContentWidth(%d) = %d, want %d", tt.in, got, tt.want)
 		}
 	}
 }

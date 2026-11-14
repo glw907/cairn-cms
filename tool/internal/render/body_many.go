@@ -80,7 +80,7 @@ func (t theme) stripWidth(headings []string, siteCol, verdictCol int) int {
 		if i > 0 {
 			total += stripSep
 		}
-		total += t.width(h)
+		total += t.Width(h)
 	}
 	return total
 }
@@ -90,7 +90,7 @@ func (t theme) stripWidth(headings []string, siteCol, verdictCol int) int {
 func (t theme) siteColWidth(rs []health.Report) int {
 	n := siteColFloor
 	for _, r := range rs {
-		n = max(n, t.width(sanitize(r.Site)))
+		n = max(n, t.Width(sanitize(r.Site)))
 	}
 	return min(n, siteColCap)
 }
@@ -210,7 +210,7 @@ func (t theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 			head = append(head, " ")
 		}
 		heading := stripHeading(id)
-		head = append(head, t.cell(style.RoleMuted, heading, t.width(heading)))
+		head = append(head, t.cell(style.RoleMuted, heading, t.Width(heading)))
 	}
 	out := []string{strings.TrimRight(row(head...), " ")}
 
@@ -224,7 +224,7 @@ func (t theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 			if i > 0 {
 				cells = append(cells, " ")
 			}
-			n := t.width(stripHeading(id))
+			n := t.Width(stripHeading(id))
 			c, found := byID[id]
 			if !found {
 				cells = append(cells, t.centredCell(style.RoleMuted, t.marks.Sep, n))
@@ -246,11 +246,11 @@ func (t theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 // wrap would push every column beside it onto a second line.
 func (t theme) fitted(text string, n int) string {
 	text = sanitize(text)
-	if t.width(text) <= n {
+	if t.Width(text) <= n {
 		return text
 	}
 	ell := t.marks.Ellipsis
-	return t.clamp(text, max(n-t.width(ell), 0)) + ell
+	return t.clamp(text, max(n-t.Width(ell), 0)) + ell
 }
 
 // rowVerdictRole returns the ink one site's verdict word takes inside a frame whose verdict
@@ -266,7 +266,7 @@ func rowVerdictRole(row, frame Verdict) style.Role {
 // centredCell renders one mark centred in a column measured by the layout's width table, so
 // the marks form a grid under their headings rather than hugging each column's left edge.
 func (t theme) centredCell(role style.Role, text string, n int) string {
-	w := t.width(text)
+	w := t.Width(text)
 	if w >= n {
 		return t.cell(role, text, n)
 	}
@@ -696,10 +696,10 @@ func (t theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	// id is a greppable handle for nothing, and the id is the whole reason it is printed.
 	tail := f.tail
 	var tailLines []string
-	if tail != "" && min(fixCheckCol, room)+t.width(tail) > room {
+	if tail != "" && min(fixCheckCol, room)+t.Width(tail) > room {
 		// Below a width that holds the id whole on a line by itself it is not printed at all. A
 		// broken id is worse than an absent one, and --json carries it at every width.
-		if t.width(tail) <= width-fixSentence {
+		if t.Width(tail) <= width-fixSentence {
 			tailLines = atColumn(t.Style(style.RoleMuted), fixSentence, []string{tail})
 		}
 		tail = ""
@@ -710,7 +710,7 @@ func (t theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	// every golden would carry.
 	checkCol := fixCheckCol
 	if tail == "" {
-		checkCol = t.width(f.check)
+		checkCol = t.Width(f.check)
 	}
 	checkCol = min(checkCol, room)
 	nameCell := t.Sized(style.RoleMuted, checkCol)
@@ -726,17 +726,17 @@ func (t theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	)
 	out := append([]string{strings.TrimRight(head, " ")}, tailLines...)
 	out = append(out, atColumn(t.Style(style.RoleSubtle), fixSentence,
-		t.wrapNoOrphan(sanitize(f.fix.Text), width-fixSentence))...)
+		t.Wrap(sanitize(f.fix.Text), width-fixSentence))...)
 	// A merged entry can cover, or list "also on:", as many sites as the fleet holds: one shared
-	// token disables the same checks fleet-wide, so both lists below wrap through wrapNoOrphan
-	// rather than plain wrap, the same guard the sentence above already takes.
+	// token disables the same checks fleet-wide, so both lists below wrap through Wrap rather
+	// than WrapGreedy, the same guard the sentence above already takes.
 	if len(f.ids) > 1 {
 		out = append(out, atColumn(t.Style(style.RoleMuted), fixSentence,
-			t.wrapNoOrphan(keyFixFor+strings.Join(f.ids, ", "), width-fixSentence))...)
+			t.Wrap(keyFixFor+strings.Join(f.ids, ", "), width-fixSentence))...)
 	}
 	if len(f.alsoOn) > 0 {
 		lead := strings.Repeat(" ", fixSentence) + t.Style(style.RoleMuted).Render(labelAlsoOn)
-		col := fixSentence + t.width(labelAlsoOn)
+		col := fixSentence + t.Width(labelAlsoOn)
 		out = append(out, t.hangingAtNoOrphan(t.Style(style.RoleMuted), lead, col,
 			strings.Join(t.fittedEach(f.alsoOn, width-col), ", "), width)...)
 	}
@@ -754,9 +754,9 @@ func (t theme) fittedEach(names []string, n int) []string {
 	return out
 }
 
-// hangingAtNoOrphan is layout.go's hangingAt through wrapNoOrphan rather than wrap: a fleet-wide
+// hangingAtNoOrphan is layout.go's hangingAt through Wrap rather than WrapGreedy: a fleet-wide
 // "also on:" list is exactly the comma-joined shape a naive break can leave one site name
-// dangling on, which wrapNoOrphan already exists to prevent for the sentence above it.
+// dangling on, which Wrap already exists to prevent for the sentence above it.
 func (t theme) hangingAtNoOrphan(st lipgloss.Style, lead string, col int, text string, width int) []string {
-	return hangingLines(st, lead, col, t.wrapNoOrphan(text, width-col))
+	return hangingLines(st, lead, col, t.Wrap(text, width-col))
 }

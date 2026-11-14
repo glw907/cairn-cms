@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -17,6 +18,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // updateGolden regenerates every golden from the current renderer. `make -C tool golden` sets
@@ -26,9 +28,9 @@ var updateGolden = flag.Bool("update", false, "rewrite the golden frames from th
 // goldenDir is the committed corpus's root.
 const goldenDir = "testdata/golden"
 
-// goldenRungs are the widths every golden is cut at: the named rung constants, so a frame is
-// pinned at the floor, at the single-column threshold, and at each of the three rungs above it.
-var goldenRungs = []int{widthFloor, widthNarrow, Width80, width100, widthCap}
+// goldenRungs are the widths every golden is cut at, so a frame is pinned at the floor of 40, at
+// the single-column threshold, and at each of the three rungs above it, the widest being the cap.
+var goldenRungs = []int{40, widthNarrow, style.DefaultWidth, width100, style.ContentWidth(math.MaxInt)}
 
 // goldenCase is one frame cut and committed. The fields are the whole of what changes its bytes,
 // which is what lets goldenName carry every one of them in the file name.

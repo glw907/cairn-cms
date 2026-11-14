@@ -8,6 +8,17 @@ short how-to posts, and one post that shows every markdown element and each bloc
 ships with the site, so no page loads a picture from another host. The showcase keeps its own fixtures.
 The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/`.
 
+- **The admin stylesheet builds on daisyUI 5.8.0 and tailwindcss 4.3.5, and a new site pins both.**
+  daisyUI 5.8.0 rewrote its `.join` rule, so tailwindcss 4.3.5 compiles it, and the 4.3.3 pin the
+  last release asked for is lifted. The scaffold pins `tailwindcss` and every `@tailwindcss/*`
+  package at exactly `4.3.5` and takes `daisyui` `^5.8.0`, `@sveltejs/kit` `^3.2.0`, `vite`
+  `^8.3.8`, `wrangler` `^4.162.0`, and `prettier` `^3.10.1`. In the admin, a disabled switch that
+  is on now shows its knob in the text color at daisyUI's disabled opacity, where it was
+  transparent. The engine takes `@lucide/svelte` `^1.72.0` and `@codemirror/lint` `^6.9.8`, and its
+  peer ranges don't move. Building the `cairn` tool from source now needs Go 1.26.7 or newer.
+
+  Consumers must: nothing.
+
 - **The release gate is rebuilt around three legs, and the setup docs gain the token option.** The agent page and the `cairn-setting-up-a-site` plugin skill say how to run `cairn` as one bare background command and how `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval. They also say to run `npx create-cairn-site` with no npx option such as `--yes` in front of the name, no version or tag on it, and no `new` after it, since an option or a tag can keep the call inside the sandbox and the launcher already runs `cairn new`. `cairn new --plan`, `--apply`, and `--resume` now stop at once, with a message that says why, when the call runs inside Claude Code's sandbox, where the approval tab can't be reached. A subdomain given with `--host` is now checked for records on the subdomain, and no longer refused for the records on its zone's apex. The rulings ledger records the verdict.
 
   Consumers must: nothing.

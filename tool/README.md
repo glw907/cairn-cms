@@ -15,7 +15,7 @@ Both paths put a `cairn` binary on your `PATH`.
 go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest
 ```
 
-This needs Go 1.26 or newer. A `go install` build carries no commit, so `cairn --version` prints
+This needs Go 1.26.7 or newer. A `go install` build carries no commit, so `cairn --version` prints
 `none` where a release binary prints a short SHA. Go stamps no VCS revision into a
 `module@version` install, so that is the build's shape and not a fault.
 

@@ -129,8 +129,8 @@ func sampleStatus() StatusState {
 	}
 }
 
-// fixtureStatus is each named fixture's run state, matched to its creds row rather than
-// the one shared story every golden was cut against before this task (criterion 22). A
+// fixtureStatus is each named fixture's run state, matched to its creds row rather than to
+// one shared story for every golden. A
 // many-sites fixture ("twelve-site") carries one Status for the whole run, since the process
 // holds one set of provider tokens for every site it sweeps, and every site's creds row
 // (fillNine's default) agrees with it. Every entry carries one Credential per credential

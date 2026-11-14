@@ -6,9 +6,8 @@ import (
 	"testing"
 )
 
-// TestFrameSections is criterion 25: Frame is exactly the three sections the 2.0 HUD pins, each
-// a slice of lines, so a HUD can hold the header still and scroll the body without knowing what
-// a body composed.
+// TestFrameSections holds Frame to exactly three sections, each a slice of lines, in header,
+// body, footer order.
 func TestFrameSections(t *testing.T) {
 	lines := reflect.TypeFor[[]string]()
 	var got []string
@@ -23,7 +22,7 @@ func TestFrameSections(t *testing.T) {
 	}
 }
 
-// TestFrameLinesOrder is criterion 25's second half: Lines concatenates the three sections in
+// TestFrameLinesOrder: Lines concatenates the three sections in
 // header, body, footer order, which is the order every golden is cut in.
 func TestFrameLinesOrder(t *testing.T) {
 	f := Frame{

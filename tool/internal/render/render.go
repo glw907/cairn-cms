@@ -139,10 +139,9 @@ func renderStatus(t theme, in RenderInput) Frame {
 	return t.clampFrame(Frame{body: t.statusLines(in, 0, in.width())}, in.width())
 }
 
-// Frame is render.Render's result, sectioned the way the 2.0 HUD pins it: a header that never
-// scrolls, a body that does, and a footer that carries the verdict. Frame carries no bubbletea
-// type; a bubbletea Cursor here would break both the purity test and the seam, since the HUD
-// composes its tea.View from a Frame plus its cursor state.
+// Frame is render.Render's result, held as a header, a body, and a footer that carries the
+// verdict, and read out flat through Lines. Frame carries no bubbletea type, so the package
+// stays clear of the view that prints it.
 type Frame struct {
 	// header is the block every body leads with: the verdict, the subject, and when the run
 	// checked.

@@ -108,8 +108,8 @@ func TestDegradedIsStatedWhereNoMissingTokenIs(t *testing.T) {
 	}
 }
 
-// TestCredentialDetailSitsOnTheCredsRow is criterion 11's placement rule, from the design
-// brief's ruling 8: the credential and keyring detail leave the header block.
+// TestCredentialDetailSitsOnTheCredsRow: the credential and keyring detail sit on the creds row
+// and leave the header block.
 func TestCredentialDetailSitsOnTheCredsRow(t *testing.T) {
 	in := input(fixtures.OneSick(), BodySingle, 100, colorprofile.ASCII, true, spine.VerdictCritical)
 	in.Status = sampleStatus()

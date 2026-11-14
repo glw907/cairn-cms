@@ -1,6 +1,6 @@
 ---
 name: cairn-writing-docs
-description: Changes cairn-cms's editor and admin documentation the docs-as-code way: pages under docs/editors/ and docs/admin/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and go to Geoff as a docs review. Use when code changes behavior an editor or admin page describes (a screen, a command, a default, an error), when one of those pages is wrong or missing something, when writing, splitting, or restructuring one, or when queueing or answering a docs review. Not for export doc comments, the packaged skills, CHANGELOG entries, code comments, specs, plans, or site content.
+description: Changes cairn-cms's editor and admin documentation the docs-as-code way: pages under docs/editors/ and docs/admin/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and land with any disputed claim asked of Geoff. Use when code changes behavior an editor or admin page describes (a screen, a command, a default, an error), when one of those pages is wrong or missing something, when writing, splitting, or restructuring one, or when landing a docs pull request or acting on Geoff's answer about one. Not for export doc comments, the packaged skills, CHANGELOG entries, code comments, specs, plans, or site content.
 ---
 
 # Change cairn docs
@@ -16,7 +16,7 @@ steps in order.
 | A page states something false, or lacks something a reader needs | B |
 | A new page, a split, or a restructure | C, then `references/new-page.md` |
 
-Every case ends the same way: gate, fact-check, review (`references/review.md`).
+Every case ends the same way: gate, fact-check, hand-over (`references/review.md`).
 
 ## A. Code changed, so the docs change with it
 
@@ -67,11 +67,12 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 2. Dispatch `docs-fact-checker` in a fresh context, as `references/review.md` says. Do not
    fact-check your edit in the context that wrote it: a fresh context finds what the writing context cannot
    (<https://code.claude.com/docs/en/best-practices>, "A fresh context improves code review").
-3. Queue the review as `references/review.md` says. Geoff approves or sends the page back.
+3. Settle each finding and hand the pull request over as `references/review.md` says: land it
+   when no call is left, or ask each call in the pass's close packet.
 
 ## Where a correction lands
 
-- Geoff's edit in the review is final. Keep it.
+- Geoff's answer to a docs call is final. Act on it.
 - A correction to wording goes through the `survey` skill, which logs it.
 - A change to cairn's voice is a PR to `.claude/skills/cairn-writing-docs/references/docs-register.md`.
 - A change to a base standard (Google, Microsoft) is a PR to Survey.

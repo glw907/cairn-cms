@@ -57,4 +57,4 @@ other pages.
    for an admin page, the Google guide as the register's Google deviation rows modify it, then
    `~/.claude/docs/voice/technical-doc-web.md`.
 2. Link the new page from its track's index and from the pages that hand a reader to it.
-3. Run the checks in `SKILL.md`, then queue the review as `references/review.md` says.
+3. Run the checks in `SKILL.md`, then hand the pull request over as `references/review.md` says.

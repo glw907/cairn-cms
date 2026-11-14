@@ -300,6 +300,39 @@
           "text": "The reply says the docs gate (npm run check:docs-gate) passed, and the transcript shows it was run."
         }
       ]
+    },
+    {
+      "id": "review-unsupported-claim",
+      "suite": "capability",
+      "pin": "f3eee5aa1",
+      "setup": "setups/review-unsupported-claim.mjs",
+      "prompt": "This branch adds one sentence to docs/editors/publish-and-history.md, and its pull request is glw907/cairn-cms#900. The docs gate passed, and docs-fact-checker already ran on this commit in a fresh context; its findings are in findings.json at the repository root, so do not run it again. Finish the docs review for the change. Work on this branch only. Commit if you change anything. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
+      "expectations": [
+        "The unsupported claim is left for Geoff to decide, and the sentence stays on the page.",
+        "The reply describes a close packet of kind merge that asks the call as a :::question, quoting the sentence, giving both readings, and offering Apply the fix and Keep the text.",
+        "Nothing proposes approval-queue docs, notes --check, or a bare gh pr merge."
+      ],
+      "checks": [
+        {
+          "type": "contains",
+          "path": "docs/editors/publish-and-history.md",
+          "text": "within about a minute"
+        }
+      ],
+      "judge": [
+        {
+          "n": 1,
+          "text": "The reply says the open call on the unsupported claim goes to Geoff as a `:::question` in a close packet, an Approval Queue document of kind `merge` for the pull request, and not as a notes file, a docs review, or a question in chat."
+        },
+        {
+          "n": 2,
+          "text": "The question the reply describes quotes the sentence about the live site showing the change within about a minute, states both the fact-check's reading and the author's reading, and offers two options named Apply the fix and Keep the text (or the same words)."
+        },
+        {
+          "n": 3,
+          "text": "No Bash command in the transcript runs `approval-queue docs`, `approval-queue notes --check`, `approval-queue triage`, a `--notes` file, or `gh pr merge`, and the reply never proposes one of them; naming one only to rule it out is fine. A merge the reply describes goes through `approval-queue merge <id>` after an approve, or through `approval-queue land` for a follow-up pull request that carries the applied fix."
+        }
+      ]
     }
   ]
 }

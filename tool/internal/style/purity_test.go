@@ -102,7 +102,6 @@ func TestPurityDetection(t *testing.T) {
 }
 
 func TestPurity(t *testing.T) {
-	t.Skip("red until T3 (fang.go) and T4 (newview/theme.go) move their colours onto style; T4's last commit removes this skip")
 	root := filepath.Join("..", "..")
 	skip := filepath.Join(root, "internal", "style")
 	var bad []string

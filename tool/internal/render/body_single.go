@@ -235,7 +235,7 @@ func (t theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 	indent := colIndent + colGlyph
 	col := indent + t.Width(g.Fix) + 1
 	lead := strings.Repeat(" ", indent) + t.Style(style.RoleAccent).Render(g.Fix) + " "
-	out := t.hangingAt(t.Style(style.RoleSubtle), lead, col, sanitize(fix.Text), width)
+	out := t.hangingAt(t.Style(style.RoleSubtle), lead, col, sanitize(fix.Text), width, false)
 
 	url := fixURL(fix)
 	if url == "" {
@@ -298,7 +298,7 @@ func (t theme) foldLine(in RenderInput, passing []health.CheckResult, width int)
 	label := count(len(passing), labelPassing)
 	lead := t.Style(passRole(in.Verdict)).Render(g.Pass) + " " + t.Style(style.RoleMuted).Render(label) + "  "
 	col := t.Width(g.Pass) + 1 + t.Width(label) + 2
-	return t.hangingAt(t.Style(style.RoleMuted), lead, col, strings.Join(names, " "+g.Sep+" "), width)
+	return t.hangingAt(t.Style(style.RoleMuted), lead, col, strings.Join(names, " "+g.Sep+" "), width, false)
 }
 
 // clampFrame cuts every emitted line to the requested width, the last thing a terminal body

@@ -317,9 +317,14 @@ func row(cells ...string) string {
 }
 
 // hangingAt wraps text into the column at col, with lead printed before the first line, so a fix
-// wraps under itself and is never truncated.
-func (t theme) hangingAt(st lipgloss.Style, lead string, col int, text string, width int) []string {
-	return hangingLines(st, lead, col, t.WrapGreedy(text, width-col))
+// wraps under itself and is never truncated. noOrphan wraps through Wrap rather than WrapGreedy,
+// for a comma-joined list a naive break can leave one name dangling on.
+func (t theme) hangingAt(st lipgloss.Style, lead string, col int, text string, width int, noOrphan bool) []string {
+	wrap := t.WrapGreedy
+	if noOrphan {
+		wrap = t.Wrap
+	}
+	return hangingLines(st, lead, col, wrap(text, width-col))
 }
 
 // hangingLines lays already-wrapped body lines into the column at col, with lead before the first

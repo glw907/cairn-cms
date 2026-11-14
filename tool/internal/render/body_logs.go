@@ -65,7 +65,7 @@ func renderLogs(t theme, in RenderInput) Frame {
 		}
 		lead := row(cells...)
 		if wide {
-			body = append(body, t.hangingAt(t.Style(style.RoleSubtle), lead, fieldCol, logFieldText(e), width)...)
+			body = append(body, t.hangingAt(t.Style(style.RoleSubtle), lead, fieldCol, logFieldText(e), width, false)...)
 			continue
 		}
 		body = append(body, strings.TrimRight(lead, " "))

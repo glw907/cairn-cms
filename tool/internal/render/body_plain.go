@@ -152,24 +152,3 @@ func fixLines(fix health.Fix) []string {
 	}
 	return out
 }
-
-// fixGroup is one fix and every check that could not run for the same reason it names.
-type fixGroup struct {
-	ids []string
-	fix health.Fix
-}
-
-// groupFixes collects the fixes for a run's unobservable checks, one entry per distinct fix,
-// naming every check it covers. Where one missing input caused several skips, the group carries
-// one fix under its key rather than letting the last skipped row appear to own a fix that
-// covers two: ambiguity costs more than duplication.
-// It groups exactly as groupBlockedFixes does, and drops the two fields only the fleet body's
-// head line reads.
-func groupFixes(skipped []health.CheckResult) []fixGroup {
-	blocked := groupBlockedFixes(skipped)
-	out := make([]fixGroup, 0, len(blocked))
-	for _, g := range blocked {
-		out = append(out, fixGroup{ids: g.ids, fix: g.fix})
-	}
-	return out
-}

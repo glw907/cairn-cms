@@ -540,7 +540,7 @@ func collectFleetFixes(in RenderInput, rs []health.Report) []fleetFix {
 				class: severityClass(c.ID), severity: c.Outcome.State.Severity(), fix: fix,
 			})
 		}
-		for _, g := range groupBlockedFixes(s.CouldNotRun) {
+		for _, g := range groupFixes(s.CouldNotRun) {
 			check := g.ids[0]
 			if g.credMissing {
 				switch vars := missingVariables(in.Status); len(vars) {
@@ -604,10 +604,12 @@ type blockedGroup struct {
 	fix health.Fix
 }
 
-// groupBlockedFixes collects the fixes for one site's unobservable checks, one entry per
-// distinct fix, naming every check it covers. A site whose whole sweep was skipped for one
-// missing token is one entry, not nine: the token is what the operator fixes, once.
-func groupBlockedFixes(blocked []health.CheckResult) []blockedGroup {
+// groupFixes collects the fixes for one site's unobservable checks, one entry per distinct fix,
+// naming every check it covers. A site whose whole sweep was skipped for one missing token is one
+// entry, not nine: the token is what the operator fixes, once. Where one missing input caused
+// several skips, the entry carries the one fix under its key rather than letting the last skipped
+// row appear to own a fix that covers two: ambiguity costs more than duplication.
+func groupFixes(blocked []health.CheckResult) []blockedGroup {
 	var out []blockedGroup
 	for _, c := range blocked {
 		fix, ok := health.FixFor(c.Outcome)
@@ -737,8 +739,8 @@ func (t theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	if len(f.alsoOn) > 0 {
 		lead := strings.Repeat(" ", fixSentence) + t.Style(style.RoleMuted).Render(labelAlsoOn)
 		col := fixSentence + t.Width(labelAlsoOn)
-		out = append(out, t.hangingAtNoOrphan(t.Style(style.RoleMuted), lead, col,
-			strings.Join(t.fittedEach(f.alsoOn, width-col), ", "), width)...)
+		out = append(out, t.hangingAt(t.Style(style.RoleMuted), lead, col,
+			strings.Join(t.fittedEach(f.alsoOn, width-col), ", "), width, true)...)
 	}
 	return out
 }
@@ -752,11 +754,4 @@ func (t theme) fittedEach(names []string, n int) []string {
 		out = append(out, t.fitted(name, n))
 	}
 	return out
-}
-
-// hangingAtNoOrphan is layout.go's hangingAt through Wrap rather than WrapGreedy: a fleet-wide
-// "also on:" list is exactly the comma-joined shape a naive break can leave one site name
-// dangling on, which Wrap already exists to prevent for the sentence above it.
-func (t theme) hangingAtNoOrphan(st lipgloss.Style, lead string, col int, text string, width int) []string {
-	return hangingLines(st, lead, col, t.Wrap(text, width-col))
 }

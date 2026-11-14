@@ -91,8 +91,8 @@ Three widths bound a frame:
 | 120 | Content stops growing here, and a wider terminal keeps the rest empty | `widthCap`, `internal/style/width.go` |
 
 Text is left-aligned at every width. A value longer than its cell wraps to a continuation line in a
-report, and a table cell truncates with the Ellipsis mark. Below 60 columns, a table drops its
-rightmost columns in a fixed order.
+report, and a table cell truncates with the Ellipsis mark. When a table runs out of width, it
+drops its rightmost columns in a fixed order.
 
 ## Blocks
 
@@ -108,7 +108,7 @@ reverse.
 | Mark row | `MarkRow` | A mark at column 2, a name at column 4, and its detail at column 20 |
 | Label row | `LabelRow` | A label at the margin and its value at column 20 |
 | Continuation line | `ContinuationLine` | More of a row's value, starting at column 20 |
-| Fix line | `FixLine` | A fix: the Fix mark at column 18, and the fix at column 20 |
+| Fix line | `FixLine` | A fix: the Fix mark, then the fix itself at column 20 |
 | Table | `Table` | Rows of named things compared across columns, with the name column up to 32 cells |
 | Progress line | `ProgressLine` | One line that shows a run is working: the spinner and what is under way |
 | Error block | `ErrorBlock` | An error: the Failing mark, the message, and a fix line when the error carries a fix |

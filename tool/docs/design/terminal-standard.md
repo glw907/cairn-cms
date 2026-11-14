@@ -67,9 +67,9 @@ Two marks are still moving:
 - A held row in `render` still draws the NotStarted mark, `○`, so no report changes in pass 1.
   Pass 2 switches it to Held.
 
-The Held glyph is settled in pass 1 task 7; this page records the outcome.
+The Held glyph was checked in Kitty, in JetBrains Mono and Adwaita Mono on a dark and a light ground. It is drawn whole, one cell wide, in all four, so it stays `◌` and no fallback to `○` applies.
 
-Held: pending
+Held: `◌`
 
 ## The grid
 

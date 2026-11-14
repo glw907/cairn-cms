@@ -152,7 +152,7 @@ func TestLabelRow(t *testing.T) {
 func TestContinuationLine(t *testing.T) {
 	eachCase(t, func(t *testing.T, th Theme, m Marks, width int) {
 		col := th.DetailColumn("creds", width)
-		text := "CAIRN_CF_READ_TOKEN read from the keyring, expires 2026-09-26, in six days from now"
+		text := "CAIRN_CF_READ_TOKEN read from the keyring, expires on the 26th, in six days from now"
 		lines := ContinuationLine(th, RoleMuted, text, col, width)
 		fits(t, th, lines, width)
 		for _, l := range lines {

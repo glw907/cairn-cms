@@ -10,6 +10,9 @@ per that ruling; amended a third time on 2026-09-22 to record `go.yaml.in/yaml/v
 own promotion to direct, below; amended a fourth time on 2026-09-22 to record
 `github.com/spf13/pflag`'s own promotion to direct, below.
 
+ADR-0005 moves the palette, the marks, the width measure, and detection into `internal/style`,
+which imports no Bubble Tea, so `render` keeps this record's rule.
+
 ## Addendum: YAML promoted to a direct require
 
 `internal/doctor/siteconfig.go` parses `site.config.yaml` for `config.site-config`, and needs a

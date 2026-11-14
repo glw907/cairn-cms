@@ -251,6 +251,10 @@
 
 ## Low
 
+- [ ] **#472** A template fetch that finds no template tells the owner to check their internet connection `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-14)*
+  `cairn new` with no `--tag` and no `npm_config_tag` fetches the engine's `latest` (0.98.x today), whose tarball has no `template/`. Setup then prints `tmplNewTemplateFetch` (`tool/cmd/cairn/messages.go:892`): "setup couldn't download the site template from npm: scaffold: the tarball carries no template. Check your internet connection". The download worked, so the advice sends the owner the wrong way. Met painting dev.9's screens from the bare binary on 2026-11-14; `npm create cairn-site` passes the tag, so no owner meets it before the release puts a template on `latest`. Fix: give a version with no template its own sentence that names the version and says to run `npm create cairn-site`, and keep the connection advice for network errors.
+  Placement: the next pass that changes `tool/cmd/cairn/messages.go`.
+
 - [ ] **#426** `bump.mjs` moves `packages/create-cairn-site` off its manifest in the lockfile `#bug` `#cairn-cms` `#harness` `#initiative:cairn-setup` *(2026-11-09)* *(swept 2026-11-13)*
   The lockfile step replaces every `"version": "<current>"` line and requires exactly four, and one of the four is the launcher's workspace entry, which versions with the Go tool. A cut therefore bumps that entry to the engine version while `packages/create-cairn-site/package.json` stays put. Installs are unaffected, and the next `npm install` shows a diff. Fix: leave the launcher's entry out and expect three.
   Placement: with #425.

@@ -21,7 +21,7 @@
     ],
     "harness": [".claude/"],
     "toolTestdata": ["tool/testdata/flags.json"],
-    "showcase": ["examples/showcase/", "themes/", "templates/", "packages/create-cairn-site/"],
+    "showcase": ["examples/showcase/", "themes/", "templates/", "sets/", "packages/create-cairn-site/"],
     "engine": [
       "src/lib/",
       "scripts/build/",
@@ -68,6 +68,7 @@
     "scripts/checks/shipped-anchors.json"
   ],
   "scriptsTestOnly": [
+    "scripts/catalog/",
     "scripts/ci/",
     "scripts/test/",
     "scripts/checks/gate-table.json",
@@ -111,6 +112,7 @@
     "check:public-tokens": ["engine", "showcase"],
     "check:tool-heuristics": ["engine"],
     "test:emit": ["showcase", "engine", "harness"],
+    "test:catalog": ["scripts", "showcase"],
     "showcase:test:unit": ["showcase", "engine"],
     "check:tellgrader": ["docs"],
     "check:vale-rules": ["docs"]
@@ -118,6 +120,7 @@
   "extraCommands": {
     "check:tool-heuristics": "npm run check:tool-heuristics",
     "test:emit": "npm run test:emit",
+    "test:catalog": "npm run test:catalog",
     "showcase:test:unit": "npm --prefix examples/showcase run test:unit",
     "check:tellgrader": "node scripts/checks/check-tellgrader.mjs",
     "check:vale-rules": "vale --config=.vale/tests/vale.ini test .vale/styles/Cairn/Headings.test.yml .vale/styles/Cairn/ProseProcedure.test.yml"

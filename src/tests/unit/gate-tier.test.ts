@@ -59,6 +59,7 @@ describe('the table', () => {
     ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
     ['showcase', 'themes/', 'themes/waymark/theme.css'],
     ['showcase', 'templates/', 'templates/waymark/package.json'],
+    ['showcase', 'sets/', 'sets/kinds.json'],
     ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
     ['engine', 'src/lib/', 'src/lib/log/index.ts'],
     ['engine', 'scripts/build/', 'scripts/build/build-admin-css.mjs'],
@@ -243,6 +244,13 @@ describe('static check selection', () => {
     expect(labelsFor('scripts/checks/normalize-signature.mjs')).toEqual(expect.arrayContaining(['check:surface']));
     expect(selectChecks(['scripts/checks/orphaned-new-script.mjs'], context).all).toBe(true);
     expect(selectChecks(['scripts/ci/retries-notice.mjs'], context).all).toBe(false);
+  });
+
+  it('selects the test:catalog leg for a catalog script, without the every-check fallback', () => {
+    const picked = selectChecks(['scripts/catalog/index.mjs'], context);
+    expect(picked.all).toBe(false);
+    expect(picked.labels).toContain('test:catalog');
+    expect(table.extraCommands['test:catalog']).toBe('npm run test:catalog');
   });
 
   it('hands the runner labels it accepts', () => {

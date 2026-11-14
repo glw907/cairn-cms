@@ -5,6 +5,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import postcss from 'postcss';
+import semver from 'semver';
 import { repoRoot } from '../repo-root.mjs';
 import { buildTheme, orphanedOptionSheets, validateManifest, validateTokens } from './build-tokens.mjs';
 import { CONTRACT, declaredByMode, filesUnder, globRegExp, picksOf } from './theme-contract.mjs';
@@ -15,6 +16,10 @@ const ROOT = repoRoot(import.meta.url);
 const CHASSIS = path.join(ROOT, 'examples/showcase/src/chassis');
 const ENGINE_PUBLIC_CSS = path.join(ROOT, 'src/lib/public/cairn-public.css');
 const FONT_PAIRING_LIMIT = 400 * 1024;
+/** The two forms an `engine` range may take, read from the manifest schema so the two never differ. */
+const ENGINE_FORM = new RegExp(
+  JSON.parse(readFileSync(path.join(ROOT, 'schema/cairn-theme-1.schema.json'), 'utf8')).properties.engine.pattern,
+);
 
 /**
  * What a rule reads.
@@ -71,6 +76,15 @@ export const STATIC_RULES = {
   'contract-version'({ manifest }) {
     if (!manifest || manifest.contract === CONTRACT.contract) return [];
     return [{ file: MANIFEST, message: `contract ${manifest.contract} is not the version this check reads (${CONTRACT.contract})` }];
+  },
+
+  'engine-range'({ manifest }) {
+    // A range outside the two forms is `manifest-schema`'s to report, so this rule judges only the
+    // engine version the range must admit. Plain precedence applies, so `>=0.99.0-0` admits a prerelease.
+    if (typeof manifest?.engine !== 'string' || !ENGINE_FORM.test(manifest.engine)) return [];
+    const engine = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
+    if (semver.satisfies(engine, manifest.engine, { includePrerelease: true })) return [];
+    return [{ file: MANIFEST, message: `engine "${manifest.engine}" does not admit this repository's engine ${engine}` }];
   },
 
   'tokens-schema'({ dir }) {

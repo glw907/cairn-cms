@@ -23,8 +23,8 @@ The check prints `check:theme: <id> pass` or `fail`, then one line per failure w
 and message. `--json` prints the verdict as one document that validates against
 `schema/cairn-theme-check.schema.json`: a `failures` list of `file`, `rule`, and `message`, and a
 `notes` list of what a passing rule measured. `--rules` runs only the named rules. `--catalog` checks
-every theme in `templates/catalog.json` and fails when the catalog names no theme, an entry is not an engine
-theme, or an entry's directory is missing. In CI, the `test` job runs `--catalog` on every pull request and on each push to `main`. A release
+every directory under `themes/` and fails when `themes/` holds no theme or a directory has no
+`cairn-theme.json`. In CI, the `test` job runs `--catalog` on every pull request and on each push to `main`. A release
 waits on that job, and a failing catalog theme blocks it.
 
 Each rule covers one kind of defect, and the rules don't overlap. A file under `fonts/`, for example,
@@ -34,6 +34,7 @@ answers to `fonts`, not to `paths-unlisted`.
 |---|---|
 | `manifest-schema` | `cairn-theme.json` is missing, is not JSON, or breaks `schema/cairn-theme-1.schema.json`. |
 | `contract-version` | The manifest's `contract` is not the version the check reads. |
+| `engine-range` | The manifest's `engine` range, a form that `manifest-schema` already accepts, does not admit the engine version in this repository's `package.json`. Versions compare by SemVer precedence with prereleases included, so `>=0.99.0-0` admits `0.99.0-rc.4`. |
 | `tokens-schema` | `tokens/tokens.json` or `tokens/resolver.json` is not JSON, breaks the DTCG 2025.10 schema, or the resolver cannot resolve. |
 | `resolver-options` | A resolver modifier has no manifest option, an option has no modifier, or an option's values and the modifier's contexts differ. |
 | `paths-required` | A path the contract requires, or a file the manifest names, is missing. |
@@ -54,8 +55,8 @@ Run all of them before you call a theme finished.
 `npm run theme:view` renders the standard content and the conformance set under any theme, option,
 color mode, and width. It needs no Cloudflare account. It builds a scratch copy of the showcase, runs
 its D1, R2, and email bindings locally, and never calls a Cloudflare API or reads a wrangler login. It
-finds themes only through `templates/catalog.json` and each theme's manifest, or a directory passed
-to `--theme`. Without `--theme`, it renders the first theme in the catalog, which is Waymark.
+finds themes only as directories under `themes/` that hold a manifest, or as a directory passed
+to `--theme`. Without `--theme`, it renders the first theme by id, which is Waymark.
 
 ```bash
 npm run theme:view -- --theme themes/waymark

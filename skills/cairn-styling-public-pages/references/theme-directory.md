@@ -53,9 +53,14 @@ is its schema, and the tokens build validates the manifest against it.
 | `name` | Yes | The theme's display name. |
 | `description` | Yes | A summary of at most 60 characters. |
 | `version`, `license`, `author` | Yes | The theme's release and attribution. |
+| `engine` | Yes | The engine versions the theme works with, as `>=1.2.0` or `>=1.2.0 <2.0.0` and no other form. State the minimum. While the engine is a prerelease, `>=0.99.0-0` admits every prerelease of 0.99.0. |
+| `kinds` | Yes | One to three kinds of site the theme suits, from `blog`, `portfolio`, `docs`, `landing`, and `organization`. The first is the kind it was designed for. |
+| `notes` | Yes | One line, at most 200 characters, on what this version changed. |
 | `contract` | Yes | The contract version, `1`. |
 | `colorModes` | Yes | The daisyUI theme name of the `light` block and of the `dark` block. |
 | `options` | Yes | Zero to four choices an owner makes. |
+| `summary` | No | A few sentences, at most 300 characters, for the theme's catalog page. |
+| `repository` | No | The URL of the theme's source. |
 | `fonts` | No | Each face, with its license, source, and files. |
 | `screenshots` | No | Each image, with its `path` and what it `shows`. A listed image that is missing fails the theme check's `paths-required` rule. |
 | `derivedFrom` | No | The design system the theme was built from, as a `repository` and a `commit`. |

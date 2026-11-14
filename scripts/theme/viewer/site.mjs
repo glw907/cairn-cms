@@ -4,7 +4,7 @@
 // `vite dev` runs its platform proxy locally (the showcase config sets `remoteBindings: false`), so a
 // workstation with no account runs every step.
 import { spawn, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { stripMarkedBlocks } from '../../build/emit-template.mjs';
@@ -37,18 +37,20 @@ export function readManifest(dir) {
 }
 
 /**
- * The themes in the catalog, each read through its manifest.
+ * The themes in the catalog: every directory under `themes/` that holds a manifest, read through it.
  * @param {string} root the repository root
  * @returns {ThemeRef[]}
  */
 export function catalogThemes(root) {
-  const catalog = JSON.parse(readFileSync(path.join(root, 'templates/catalog.json'), 'utf8'));
-  // A catalog theme lives at `themes/<id>/`; the entry's `path` names its template, not the theme.
-  return catalog.themes.map((/** @type {{ id: string }} */ entry) => {
-    const dir = path.join(root, 'themes', entry.id);
-    const manifest = readManifest(dir);
-    return { id: manifest.id, name: manifest.name, dir };
-  });
+  const themes = path.join(root, 'themes');
+  return readdirSync(themes, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(path.join(themes, entry.name, 'cairn-theme.json')))
+    .map((entry) => {
+      const dir = path.join(themes, entry.name);
+      const manifest = readManifest(dir);
+      return { id: manifest.id, name: manifest.name, dir };
+    })
+    .sort((a, b) => a.id.localeCompare(b.id));
 }
 
 /**
@@ -66,7 +68,7 @@ export function resolveTheme(root, spec) {
   }
   const themes = catalogThemes(root);
   const found = spec ? themes.find((theme) => theme.id === spec) : themes[0];
-  if (!found) throw new Error(`viewer: no theme "${spec}" in templates/catalog.json and no directory by that name`);
+  if (!found) throw new Error(`viewer: no theme "${spec}" under themes/ and no directory by that name`);
   return found;
 }
 

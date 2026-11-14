@@ -115,6 +115,36 @@ test('the manifest schema accepts the fixture and rejects each bound the plan na
   );
 });
 
+test('the manifest schema takes the catalog fields and refuses what the design excludes', async () => {
+  const manifest = await readJson(path.join(FIXTURE, 'cairn-theme.json'));
+  const mutate = (fn) => {
+    const copy = structuredClone(manifest);
+    fn(copy);
+    return validateManifest(copy);
+  };
+  assert.ok(mutate((m) => delete m.engine).length > 0, 'no engine');
+  assert.ok(mutate((m) => (m.engine = '^1.0.0')).length > 0, 'a caret range');
+  assert.ok(mutate((m) => (m.engine = '>=1.0.0 <2.0.0 <3.0.0')).length > 0, 'three comparators');
+  for (const engine of ['>=1.2.0', '>=1.2.0 <2.0.0', '>=0.99.0-0']) {
+    assert.deepEqual(mutate((m) => (m.engine = engine)), [], `engine ${engine}`);
+  }
+  assert.ok(mutate((m) => delete m.kinds).length > 0, 'no kinds');
+  assert.ok(mutate((m) => (m.kinds = [])).length > 0, 'zero kinds');
+  assert.ok(mutate((m) => (m.kinds = ['blog', 'docs', 'landing', 'portfolio'])).length > 0, 'four kinds');
+  assert.ok(mutate((m) => (m.kinds = ['blog', 'blog'])).length > 0, 'a repeated kind');
+  assert.ok(mutate((m) => (m.kinds = ['wiki'])).length > 0, 'an unknown kind');
+  assert.deepEqual(mutate((m) => (m.kinds = ['blog', 'docs', 'landing'])), [], 'three kinds');
+  assert.ok(mutate((m) => delete m.notes).length > 0, 'no notes');
+  assert.ok(mutate((m) => (m.notes = 'x'.repeat(201))).length > 0, '201-character notes');
+  assert.deepEqual(mutate((m) => (m.notes = 'x'.repeat(200))), [], '200 characters is allowed');
+  assert.ok(mutate((m) => (m.summary = 'x'.repeat(301))).length > 0, '301-character summary');
+  assert.deepEqual(mutate((m) => { m.summary = 'x'.repeat(300); m.repository = 'https://example.com/r'; }), [], 'summary and repository');
+
+  const schema = await readJson(path.join(ROOT, 'schema/cairn-theme-1.schema.json'));
+  const kinds = await readJson(path.join(ROOT, 'sets/kinds.json'));
+  assert.deepEqual(schema.properties.kinds.items.enum, kinds.kinds.map((kind) => kind.id));
+});
+
 test('the manifest schema states that an option key is a contract', async () => {
   const schema = await readJson(path.join(ROOT, 'schema/cairn-theme-1.schema.json'));
   assert.match(JSON.stringify(schema), /option key is a contract/i);

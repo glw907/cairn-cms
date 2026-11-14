@@ -211,13 +211,15 @@ function eventKey(event) {
  * The shell command that prints every background command's output file in the clean room, run as the
  * room's user through `cleanroom shell`. An agent that runs setup in the background may read only its
  * last lines, so the transcript can lack the apply's events while the output file holds all of them.
+ * `awk 1` ends every file's last line with a newline, so one file's last line never runs into the
+ * next file's first event.
  */
-export const TASK_OUTPUT_READ = 'find "${TMPDIR:-$HOME/tmp}" -path "*/tasks/*.output" -type f -exec cat {} + 2>/dev/null; true';
+export const TASK_OUTPUT_READ = 'find "${TMPDIR:-$HOME/tmp}" -path "*/tasks/*.output" -type f -exec awk 1 {} + 2>/dev/null; true';
 
 /**
  * The events to time setup by: the transcript's events, plus any event only a background output file
- * holds, in time order. Only the timing reads these. The relay check needs the transcript line an
- * event was read on, which an output file's event lacks, so it records line 0.
+ * holds, in time order. Only the timing reads these. An event from an output file carries line 0,
+ * since no transcript line read it, so the relay check keeps reading the transcript's events.
  * @param {SetupEvent[]} transcriptEvents
  * @param {string} taskOutput the text of every background output file
  * @returns {SetupEvent[]}

@@ -20,35 +20,26 @@ the Go tool is `tool/v1.1.0`. The newest candidate is **`0.99.0-rc.4`** (cut com
 
 ## Immediate next action
 
-Pass 3 of the cairn-setup run is finishing the proving loop for `cairn new`. `main` holds #235 (`6ddcf7102`).
-`create-cairn-site` 2.0.0-dev.7 and its six platform packages are on `gate` (engine 0.99.0-dev.1), and `latest` and
-`next` have not moved. Scripted runs on dev.6 and dev.7 pass (`2611110255`, `2611110458`). Geoff ruled the order on
-2026-11-10: the plan's "Reordered to finish" section
-(`~/Projects/initiatives/cairn-setup/plans/2026-11-09-setup-tooling-plan.md`) and the conductor's prompt
-(`.../plans/2026-11-10-setup-tooling-day-conductor-3-prompt.txt`) carry it.
+Pass 3 of the cairn-setup run is closing. `main` holds the dependency sweep (#243, `34b614466`). Its dev snapshots are
+on `gate`: engine 0.99.0-dev.2 and `create-cairn-site` 2.0.0-dev.9 with its six platform packages. `latest` and
+`next` have not moved. On that candidate the scripted leg passed (`2611140406`) and the naive leg passed
+(`2611140542`, 14 of the 15 naive runs used). The gate rows sit in the private record
+`~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`, and `verdict.mjs` lists only the `owner` row missing.
 
-1. The owner runbook (`~/Projects/initiatives/cairn-setup/research/owner-install-runbook.md`, T3.6, pointed at dev.7)
-   and Geoff's install on it. His friction log outranks the naive lists, and its fixes ship as one PR per sitting.
-2. The naive leg, to its first pass (Geoff, 2026-11-10: an agent should set up a cairn site nearly every time unless
-   Cloudflare or GitHub misbehave, and one successful run is enough). Each run on dev.7 is graded and recorded as a
-   row in `proving/batch-1.md`, across any fix snapshot. A pass ends the leg and is the release gate's naive row, and its friction is filed,
-   not fixed. A fail traced to cairn (the tool, the refusal, the agent page, the skill, or `cairn help agents`) is a
-   defect: one PR fixes it with the friction that run showed, a snapshot publishes, and the next run uses it. A fail
-   traced to the harness, Cloudflare, or GitHub is traced and reported to the conductor, then rerun on the same build
-   with no fix. A cause that cannot be traced goes to the conductor before any rerun. The 15-run cap stays, with 8
-   used (about $11 of the $100, probes included). If no run has passed after the remaining runs or two fix PRs, the end packet asks
-   Geoff whether to ship.
-3. T3.4's close (#366 to `## Done`), T3.5 (the dependency sweep, the final candidate, a scripted leg on it, and one
-   naive run only if the sweep touched a rerun path), and the end packet.
+1. The close PR (branch `setup-tooling-r22`): the stand-in's throttle fix, the grader's timing from background
+   output files, the `/exit` rule in `cairn-proving-setup`, and BACKLOG #469 and #470 from run 14.
+2. The owner-path proof on this candidate: a tokenless `cairn new` in the clean room, driven by Claude in its own
+   Chromium profile as the test account, every page screenshotted and read, then the 907.life walk-through refreshed.
+3. The end packet, which asks Geoff for his live 907.life setup and whether it also writes the `owner` row. The
+   Survey-or-Waymark question for that setup is in the packet, since Geoff said on 2026-11-11 that Survey comes first.
 
 What a session needs to know:
 
 - The clean room: the approved template's sha256 is `5975706c2e4524371c3c743ec7b59aa31811c6e75951cb389a830e38e8871386`
   (glw907/workstation#226, Geoff, Approval Queue item `20261110T200035-16373`): `allowUnsandboxedCommands` is on, with
-  the ask rule `Bash(dangerouslyDisableSandbox:true)` so every unsandboxed retry raises a prompt. The part-one probe
-  passed on it with no leak. `cairn-proving-setup` says how the executor answers that prompt.
-- Not yet proved live: #233's dead-tab mail sign-in; #234's retry and authority wait (unit tests only).
-  Open on the lists: #453 (no HTTPS-wait time on a scripted grade), #454, #456.
+  the ask rule `Bash(dangerouslyDisableSandbox:true)` so every unsandboxed retry raises a prompt. `cairn-proving-setup`
+  says how the conductor answers that prompt, and that a finished run ends with `/exit`, never `cleanroom stop`.
+- Run 14's HTTPS wait took 11.4 minutes because an early lookup cached "no such host" on this host (#469, #470).
 - A scripted run: `bash scripts/gate/run-gate.sh sweep`; `resolvectl flush-caches`, and never query the new host
   yourself before the run; `run-gate.sh scripted` (no `--cairn-bin` for the published path); a Monitor of `grep
   --line-buffered` alone on `<run dir>/scripted.jsonl`; then `cleanroom stop geoff`, `grade` on the run dir the
@@ -59,8 +50,8 @@ What a session needs to know:
   name matcher, and `cleanroom`'s secret, environment, user, and stop code.
 - No release is cut until the tooling gates in `~/Projects/initiatives/cairn-setup/research/handoff-tooling.md`
   exist. The owner steps for the first tool tag are done (2026-11-09).
-- theme-garden: G1 (#207) and G2 (#208) are merged. G3's design session waits for Geoff to attach, and theme-garden
-  launches hold during pass 3's T3.5 dependency sweep.
+- theme-garden: G1 (#207) and G2 (#208) are merged. G3's design session waits for Geoff to attach. The T3.5
+  dependency sweep that theme-garden launches held for merged as #243.
 
 ## Open decisions and watches
 

@@ -31,7 +31,7 @@ func renderSingle(t theme, in RenderInput) Frame {
 	report := firstReport(in)
 	s := split(report)
 	subject := sanitize(report.Site)
-	tally := s.tally(" " + t.glyphs(in.ASCII).Sep + " ")
+	tally := s.tally(" " + t.marks.Sep + " ")
 
 	f := Frame{Header: t.verdictLines(in.Verdict, subject, tally, width)}
 	f.Header = append(f.Header, t.indented(t.Style(style.RoleMuted), 0,
@@ -42,7 +42,7 @@ func renderSingle(t theme, in RenderInput) Frame {
 		if len(cs) == 0 {
 			return
 		}
-		body = append(body, "", t.insetRule(in.ASCII, label, width))
+		body = append(body, "", t.insetRule(label, width))
 		for _, c := range cs {
 			body = append(body, t.checkRows(in, c, width)...)
 		}
@@ -77,15 +77,6 @@ func firstReport(in RenderInput) health.Report {
 	return in.Reports[0]
 }
 
-// glyphs returns the tier a body draws from. render.Render never re-derives the tier: it reads
-// RenderInput.ASCII, which style.Detect alone fills.
-func (t theme) glyphs(ascii bool) Glyphs {
-	if ascii {
-		return t.GlyphSet.ASCII
-	}
-	return t.GlyphSet.Unicode
-}
-
 // mark returns the glyph and ink one check's state takes.
 //
 // A held failure is always the held glyph, never the filled or outlined fail mark: the
@@ -94,16 +85,17 @@ func (t theme) glyphs(ascii bool) Glyphs {
 // carry the run to CRITICAL and the outlined mark when it would only reach WARNING, from the
 // same predicate the verdict uses, so a mark can never disagree with its row.
 func (t theme) mark(in RenderInput, c health.CheckResult) (glyph string, role style.Role) {
-	g := t.glyphs(in.ASCII)
+	g := t.marks
 	switch {
 	case c.Outcome.State == spine.Failing && c.Acknowledged:
-		return g.Held, style.RoleUnknown
+		// WATCH: pass 2 item 8 switches this to Held; every golden with a held row changes then.
+		return g.NotStarted, style.RoleUnknown
 	case c.Outcome.State == spine.Failing && criticalFailure(c.ID):
-		return g.Fail, style.RoleFailing
+		return g.Failing, style.RoleFailing
 	case c.Outcome.State == spine.Failing:
-		return g.FailWarn, style.RoleUnknown
+		return g.FailingWarn, style.RoleUnknown
 	case c.Outcome.State == spine.Unknown:
-		return g.Skip, style.RoleUnknown
+		return g.CouldNotRun, style.RoleUnknown
 	default:
 		return g.Pass, passRole(in.Verdict)
 	}
@@ -239,10 +231,10 @@ func (t theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 	if !hasFix || fix.Text == "" {
 		return nil
 	}
-	g := t.glyphs(in.ASCII)
+	g := t.marks
 	indent := colIndent + colGlyph
-	col := indent + t.width(g.Arrow) + 1
-	lead := strings.Repeat(" ", indent) + t.Style(style.RoleAccent).Render(g.Arrow) + " "
+	col := indent + t.width(g.Fix) + 1
+	lead := strings.Repeat(" ", indent) + t.Style(style.RoleAccent).Render(g.Fix) + " "
 	out := t.hangingAt(t.Style(style.RoleSubtle), lead, col, sanitize(fix.Text), width)
 
 	url := fixURL(fix)
@@ -302,7 +294,7 @@ func (t theme) foldLine(in RenderInput, passing []health.CheckResult, width int)
 	for _, c := range passing {
 		names = append(names, sanitize(c.ID))
 	}
-	g := t.glyphs(in.ASCII)
+	g := t.marks
 	label := count(len(passing), labelPassing)
 	lead := t.Style(passRole(in.Verdict)).Render(g.Pass) + " " + t.Style(style.RoleMuted).Render(label) + "  "
 	col := t.width(g.Pass) + 1 + t.width(label) + 2

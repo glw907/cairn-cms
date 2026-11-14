@@ -233,7 +233,6 @@ var exportedSurface = []string{
 	"Body", "BodyMany", "BodyPlain", "BodySingle",
 	"Credential",
 	"Frame",
-	"GlyphSet", "Glyphs",
 	"MarshalAdoptList", "MarshalAuthCheck", "MarshalLogs", "MarshalSite", "MarshalSiteLine", "MarshalSitesList",
 	"MarshalSummary",
 	"AdoptCandidate", "AuthCheckPermission",

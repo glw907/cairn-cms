@@ -128,7 +128,7 @@ func renderMany(t theme, in RenderInput) Frame {
 	if len(ranked) == 1 {
 		subject = count(1, "site")
 	}
-	tally := t.fleetTally(ranked, " "+t.glyphs(in.ASCII).Sep+" ")
+	tally := t.fleetTally(ranked, " "+t.marks.Sep+" ")
 
 	f := Frame{Header: t.verdictLines(in.Verdict, subject, tally, width)}
 	if len(ranked) > 0 {
@@ -146,7 +146,7 @@ func renderMany(t theme, in RenderInput) Frame {
 		body = append(body, lines...)
 	}
 	if fixes := t.fleetFixes(in, ranked, width); len(fixes) > 0 {
-		body = append(body, "", t.insetRule(in.ASCII, labelWhatToFix, width))
+		body = append(body, "", t.insetRule(labelWhatToFix, width))
 		body = append(body, fixes...)
 	}
 	f.Body = body
@@ -219,7 +219,7 @@ func (t theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 		for _, c := range r.Checks {
 			byID[c.ID] = c
 		}
-		cells := []string{t.SizedStrong(style.RoleText, siteCol).Render(t.fitted(in.ASCII, r.Site, siteCol)), " "}
+		cells := []string{t.SizedStrong(style.RoleText, siteCol).Render(t.fitted(r.Site, siteCol)), " "}
 		for i, id := range ids {
 			if i > 0 {
 				cells = append(cells, " ")
@@ -227,7 +227,7 @@ func (t theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 			n := t.width(stripHeading(id))
 			c, found := byID[id]
 			if !found {
-				cells = append(cells, t.centredCell(style.RoleMuted, t.glyphs(in.ASCII).Sep, n))
+				cells = append(cells, t.centredCell(style.RoleMuted, t.marks.Sep, n))
 				continue
 			}
 			glyph, role := t.mark(in, c)
@@ -244,12 +244,12 @@ func (t theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 // fitted returns text sanitized and cut to n cells, marked with the tier's ellipsis where it
 // was cut, so a fixed column holds one line whatever a site chose to name itself. A cell left to
 // wrap would push every column beside it onto a second line.
-func (t theme) fitted(ascii bool, text string, n int) string {
+func (t theme) fitted(text string, n int) string {
 	text = sanitize(text)
 	if t.width(text) <= n {
 		return text
 	}
-	ell := t.glyphs(ascii).Ellipsis
+	ell := t.marks.Ellipsis
 	return t.clamp(text, max(n-t.width(ell), 0)) + ell
 }
 
@@ -375,7 +375,7 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 		v := siteVerdict(r)
 		verdicts = append(verdicts, v)
 		row := []string{
-			t.fitted(in.ASCII, r.Site, siteCol), v.String(), blankZero(len(s.Failing)), blankZero(len(s.CouldNotRun)),
+			t.fitted(r.Site, siteCol), v.String(), blankZero(len(s.Failing)), blankZero(len(s.CouldNotRun)),
 			blankZero(len(s.Held)), engineVersion(r), relative(in.Now.Sub(checkedAt(r, in.Now))) + " ago",
 		}
 		rows = append(rows, row[:columns])
@@ -719,9 +719,9 @@ func (t theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	}
 	head := row(
 		strings.Repeat(" ", fixIndent),
-		t.cell(style.RoleAccent, t.glyphs(in.ASCII).Arrow, fixArrowCol),
-		t.SizedStrong(style.RoleText, siteCol).Render(t.fitted(in.ASCII, f.site, siteCol-fixGutter)),
-		nameCell.Render(t.fitted(in.ASCII, f.check, checkCol)),
+		t.cell(style.RoleAccent, t.marks.Fix, fixArrowCol),
+		t.SizedStrong(style.RoleText, siteCol).Render(t.fitted(f.site, siteCol-fixGutter)),
+		nameCell.Render(t.fitted(f.check, checkCol)),
 		t.Style(style.RoleMuted).Render(tail),
 	)
 	out := append([]string{strings.TrimRight(head, " ")}, tailLines...)
@@ -738,7 +738,7 @@ func (t theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 		lead := strings.Repeat(" ", fixSentence) + t.Style(style.RoleMuted).Render(labelAlsoOn)
 		col := fixSentence + t.width(labelAlsoOn)
 		out = append(out, t.hangingAtNoOrphan(t.Style(style.RoleMuted), lead, col,
-			strings.Join(t.fittedEach(in.ASCII, f.alsoOn, width-col), ", "), width)...)
+			strings.Join(t.fittedEach(f.alsoOn, width-col), ", "), width)...)
 	}
 	return out
 }
@@ -746,10 +746,10 @@ func (t theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 // fittedEach returns names each cut to n cells and marked where it was cut. A name wider than
 // the column it wraps into would otherwise be hard-wrapped in the middle, which turns one site
 // into two strings that name none.
-func (t theme) fittedEach(ascii bool, names []string, n int) []string {
+func (t theme) fittedEach(names []string, n int) []string {
 	out := make([]string, 0, len(names))
 	for _, name := range names {
-		out = append(out, t.fitted(ascii, name, n))
+		out = append(out, t.fitted(name, n))
 	}
 	return out
 }

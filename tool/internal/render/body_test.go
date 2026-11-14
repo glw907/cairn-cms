@@ -252,20 +252,20 @@ func TestNoGlyphOnlySetting(t *testing.T) {
 // mark reads the same predicate the verdict does, so the two can never disagree.
 func TestTwoSeverityMark(t *testing.T) {
 	theme := newTheme(true, colorprofile.TrueColor, false)
-	g := theme.GlyphSet.Unicode
+	g := theme.marks
 
 	warn := plainLines(input(fixtures.WarningOnly(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictWarning))
 	for _, l := range warn {
-		if strings.Contains(l, g.Fail) {
+		if strings.Contains(l, g.Failing) {
 			t.Errorf("a WARNING-only run drew the filled fail mark: %q", l)
 		}
 	}
-	if !strings.Contains(strings.Join(warn, "\n"), g.FailWarn) {
+	if !strings.Contains(strings.Join(warn, "\n"), g.FailingWarn) {
 		t.Error("a WARNING-only run drew no outlined fail mark at all")
 	}
 
 	sick := strings.Join(plainLines(input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)), "\n")
-	if !strings.Contains(sick, g.Fail) {
+	if !strings.Contains(sick, g.Failing) {
 		t.Error("a run with a broken deploy drew no filled fail mark")
 	}
 	// The plain body says the same thing in words: engine is the WARNING-class failure.
@@ -400,7 +400,7 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 	in := input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
 
 	text := strings.Join(plainLines(in), "\n")
-	if !strings.Contains(text, theme.GlyphSet.Unicode.Held) {
+	if !strings.Contains(text, theme.marks.NotStarted) {
 		t.Error("the held row carries no held glyph")
 	}
 	if !strings.Contains(text, "held until 2026-09-25, 5 days left") {
@@ -512,7 +512,7 @@ func TestPlainBodyKeys(t *testing.T) {
 // no padding, and no dependence on the width at all.
 func TestPlainBodyReadsWithoutColumns(t *testing.T) {
 	theme := newTheme(true, colorprofile.ASCII, false)
-	g := theme.GlyphSet.Unicode
+	g := theme.marks
 	base := strings.Join(plainLines(input(fixtures.OneSick(), BodyPlain, 40, colorprofile.ASCII, true, spine.VerdictCritical)), "\n")
 	for _, width := range []int{40, 60, 80, 100, 120, 200, 400} {
 		lines := plainLines(input(fixtures.OneSick(), BodyPlain, width, colorprofile.ASCII, true, spine.VerdictCritical))
@@ -520,7 +520,7 @@ func TestPlainBodyReadsWithoutColumns(t *testing.T) {
 			t.Errorf("width %d changed the plain body", width)
 		}
 		for _, l := range lines {
-			for _, glyph := range []string{g.Pass, g.Fail, g.FailWarn, g.Held, g.Arrow, g.Rule, g.Sep} {
+			for _, glyph := range []string{g.Pass, g.Failing, g.FailingWarn, g.NotStarted, g.Fix, g.Rule, g.Sep} {
 				if strings.Contains(l, glyph) {
 					t.Errorf("line %q carries the meaning-bearing glyph %q", l, glyph)
 				}
@@ -617,8 +617,8 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 // by tier, not a package-level setting, and the two tables disagree on an East Asian Ambiguous
 // rune exactly as their names promise.
 func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
-	// U+25CF is the Unicode tier's pass mark and is EAW=Ambiguous (glyph.go's
-	// ambiguousRunes), so it is the one rune that separates the two tables.
+	// U+25CF is the Unicode tier's pass mark and is EAW=Ambiguous, so it is the one rune that
+	// separates the two tables.
 	const ambiguous = "●"
 	narrow := newTheme(true, colorprofile.TrueColor, false)
 	wide := newTheme(true, colorprofile.TrueColor, true)
@@ -782,11 +782,11 @@ func TestStripMarksAgreeWithTheRowVerdict(t *testing.T) {
 		for _, c := range r.Checks {
 			glyph, _ := theme.mark(in, c)
 			switch glyph {
-			case theme.GlyphSet.Unicode.Fail:
+			case theme.marks.Failing:
 				if v != spine.VerdictCritical {
 					t.Errorf("%s %s: filled mark on a %s row", r.Site, c.ID, v)
 				}
-			case theme.GlyphSet.Unicode.FailWarn, theme.GlyphSet.Unicode.Held:
+			case theme.marks.FailingWarn, theme.marks.NotStarted:
 				if v == spine.VerdictOK {
 					t.Errorf("%s %s: fail mark on an OK row", r.Site, c.ID)
 				}
@@ -804,7 +804,7 @@ func TestHeldFailureKeepsTheHeldMarkInTheStrip(t *testing.T) {
 		if !c.Acknowledged {
 			continue
 		}
-		if glyph, _ := theme.mark(in, c); glyph != theme.GlyphSet.Unicode.Held {
+		if glyph, _ := theme.mark(in, c); glyph != theme.marks.NotStarted {
 			t.Errorf("%s: held failure drew %q, want the held glyph", c.ID, glyph)
 		}
 	}
@@ -837,9 +837,9 @@ func TestFallbackTableCarriesTheEngineVersionAndTheDataAge(t *testing.T) {
 // escape stripped, the two fail marks are still different characters.
 func TestStripMarksAreDistinguishableWithoutColour(t *testing.T) {
 	for _, ascii := range []bool{false, true} {
-		g := newTheme(true, colorprofile.ASCII, false).glyphs(ascii)
-		if g.Fail == g.FailWarn {
-			t.Errorf("ascii %v: both fail marks are %q", ascii, g.Fail)
+		g := newTheme(true, colorprofile.ASCII, ascii).marks
+		if g.Failing == g.FailingWarn {
+			t.Errorf("ascii %v: both fail marks are %q", ascii, g.Failing)
 		}
 	}
 }
@@ -872,7 +872,7 @@ func TestEveryFixIsPrintedAndNoneTwice(t *testing.T) {
 			}
 		}
 	}
-	if got := strings.Count(text, "  "+newTheme(true, colorprofile.ASCII, false).glyphs(false).Arrow+" "); got < want {
+	if got := strings.Count(text, "  "+newTheme(true, colorprofile.ASCII, false).marks.Fix+" "); got < want {
 		t.Errorf("%d fix entries, want at least the %d failures resolve to", got, want)
 	}
 	if strings.Contains(text, "more fix") || strings.Contains(text, "more ·") {
@@ -1180,7 +1180,7 @@ func TestFixListEndsNoLineInACutToken(t *testing.T) {
 				continue
 			}
 			last := fields[len(fields)-1]
-			if whole(last) || strings.HasSuffix(last, newTheme(true, colorprofile.ASCII, false).GlyphSet.Unicode.Ellipsis) {
+			if whole(last) || strings.HasSuffix(last, newTheme(true, colorprofile.ASCII, false).marks.Ellipsis) {
 				continue
 			}
 			for _, tok := range tokens {

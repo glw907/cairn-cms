@@ -297,11 +297,11 @@ func (t theme) verdictParts(v Verdict, subject, tally string, width int) (head s
 
 // insetRule is the one section device this design uses: a lowercase label inset two cells into a
 // rule. No box, no capitals, no coloured rail.
-func (t theme) insetRule(ascii bool, label string, width int) string {
-	lead := t.rule(ascii, 2)
+func (t theme) insetRule(label string, width int) string {
+	lead := t.rule(2)
 	tail := max(width-t.width(lead)-t.width(label)-2, 0)
 	return t.Style(style.RoleRule).Render(lead) + " " + t.Style(style.RoleText).Render(label) + " " +
-		t.Style(style.RoleRule).Render(t.rule(ascii, tail))
+		t.Style(style.RoleRule).Render(t.rule(tail))
 }
 
 // cell renders one fixed-width field. theme.Sized pads inside the styled block and cuts there,

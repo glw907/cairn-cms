@@ -46,8 +46,8 @@ func TestContentClampsToCap(t *testing.T) {
 // render at width 90 is not byte-identical to one at width 80.
 func TestRuleHonoursRequestedWidthExactly(t *testing.T) {
 	th := newTheme(true, colorprofile.ASCII, false)
-	r80 := th.rule(false, 80)
-	r90 := th.rule(false, 90)
+	r80 := th.rule(80)
+	r90 := th.rule(90)
 	if r80 == r90 {
 		t.Fatal("rule(80) and rule(90) are byte-identical; width must be honoured exactly, not snapped to a rung")
 	}
@@ -62,17 +62,17 @@ func TestRuleHonoursRequestedWidthExactly(t *testing.T) {
 // TestDegenerateWidthsNeverPanic is criterion 20: 0, 1, 2, 5, 19, and a negative value each render
 // without panicking, on both rule and clamp.
 func TestDegenerateWidthsNeverPanic(t *testing.T) {
-	th := newTheme(true, colorprofile.TrueColor, false)
 	widths := []int{0, 1, 2, 5, 19, -1, -400}
 	for _, w := range widths {
 		for _, ascii := range []bool{false, true} {
+			th := newTheme(true, colorprofile.TrueColor, ascii)
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
 						t.Errorf("rule(%v, %d) panicked: %v", ascii, w, r)
 					}
 				}()
-				_ = th.rule(ascii, w)
+				_ = th.rule(w)
 			}()
 			func() {
 				defer func() {

@@ -63,9 +63,9 @@ func (w widthTable) measure(s string) int {
 }
 
 // width measures s in the cells a layout budgets, under the width table the theme's tier
-// chose: Ambiguous=narrow for the Unicode tier, Ambiguous=wide for the ASCII tier. Every glyph in
-// render's glyph set is exactly one cell under the narrow table (glyph_test.go's parity
-// test), and the ASCII tier's glyphs are plain ASCII and exact under both.
+// chose: Ambiguous=narrow for the Unicode tier, Ambiguous=wide for the ASCII tier. Every
+// single-character Unicode mark is one cell under the narrow table, and the ASCII tier's marks
+// are plain ASCII and exact under both.
 func (t theme) width(s string) int {
 	return t.widths.measure(s)
 }
@@ -90,14 +90,11 @@ func (t theme) clamp(s string, width int) string {
 
 // rule returns a horizontal rule of n cells in the tier's rule glyph. A negative or zero n
 // returns the empty string, so a degenerate width never panics.
-func (t theme) rule(ascii bool, n int) string {
+func (t theme) rule(n int) string {
 	if n <= 0 {
 		return ""
 	}
-	g := t.GlyphSet.Unicode.Rule
-	if ascii {
-		g = t.GlyphSet.ASCII.Rule
-	}
+	g := t.marks.Rule
 	out := make([]byte, 0, n*len(g))
 	for range n {
 		out = append(out, g...)

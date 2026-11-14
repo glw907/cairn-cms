@@ -45,7 +45,7 @@ func renderLogs(t theme, in RenderInput) Frame {
 
 	earliest, latest := logSpan(in.Entries)
 	label := strings.TrimSpace(logLabel + "  " + site + "  " + earliest.Format("2006-01-02 MST"))
-	f := Frame{Header: []string{t.insetRule(in.ASCII, label, width)}}
+	f := Frame{Header: []string{t.insetRule(label, width)}}
 
 	// The field column only pays for itself where it leaves the fields a readable share of the
 	// line. Below that the record names itself on one line and its fields follow at the time
@@ -74,7 +74,7 @@ func renderLogs(t theme, in RenderInput) Frame {
 	f.Body = body
 
 	f.Footer = []string{"", t.Style(style.RoleMuted).Render(count(len(in.Entries), "records") +
-		" " + t.glyphs(in.ASCII).Sep + " " +
+		" " + t.marks.Sep + " " +
 		earliest.Format("15:04") + " to " + latest.Format("15:04 MST"))}
 	return t.clampFrame(f, width)
 }

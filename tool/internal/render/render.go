@@ -6,11 +6,11 @@
 // package. The environment and the terminal are read by style.Detect, never here.
 //
 // The foundations a body is built out of are the theme (palette.go), which paints through
-// style's Warm Stone palette, the glyph set (glyph.go), the named width rungs (width.go), and the
-// sanitizer every dynamic string passes through (sanitize.go). One shared layer
-// (layout.go, rank.go) supplies the header, the section grammar, the fix format, and the one
-// severity ranking, and the four bodies compose them into the frames an operator reads: one site
-// on a terminal (body_single.go), more than one (body_many.go), a pipe or any non-terminal
+// style's Warm Stone palette and draws style's marks at one tier, the named width rungs
+// (width.go), and the sanitizer every dynamic string passes through (sanitize.go). One shared
+// layer (layout.go, rank.go) supplies the header, the section grammar, the fix format, and the
+// one severity ranking, and the four bodies compose them into the frames an operator reads: one
+// site on a terminal (body_single.go), more than one (body_many.go), a pipe or any non-terminal
 // consumer (body_plain.go), and a log excerpt (body_logs.go).
 package render
 

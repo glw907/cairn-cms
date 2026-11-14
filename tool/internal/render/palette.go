@@ -5,13 +5,13 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
-// theme is the style.Theme a frame paints with, plus both glyph tiers a body chooses between.
-// Every ink a body spends resolves through the embedded style.Theme, so no file in this package
-// writes a colour value.
+// theme is the style.Theme a frame paints with, plus the one glyph tier it draws. Every ink a
+// body spends resolves through the embedded style.Theme, so no file in this package writes a
+// colour value, and every mark comes from marks, so no body chooses a tier.
 type theme struct {
 	style.Theme
-	widths   widthTable
-	GlyphSet GlyphSet
+	widths widthTable
+	marks  style.Marks
 }
 
 // newTheme returns the theme for a background, a colour profile, and a glyph tier. Render is the
@@ -19,9 +19,9 @@ type theme struct {
 // never travels inside the profile.
 func newTheme(dark bool, p colorprofile.Profile, ascii bool) theme {
 	t := theme{
-		Theme:    style.NewTheme(dark, p, ascii),
-		widths:   tableNarrow,
-		GlyphSet: GlyphSet{Unicode: unicodeGlyphs, ASCII: asciiGlyphs},
+		Theme:  style.NewTheme(dark, p, ascii),
+		widths: tableNarrow,
+		marks:  style.MarksFor(ascii),
 	}
 	if ascii {
 		t.widths = tableWide

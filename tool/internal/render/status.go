@@ -11,7 +11,7 @@ import (
 // provider tokens it read and through what, which it could not find and which checks that cost,
 // and whether a missing token degraded the run.
 //
-// None of it is header material (iteration-2-brief.md ruling 8). The credential and keyring
+// None of it is header material. The credential and keyring
 // detail sit on the `creds` row of a health frame, where the check they describe already is, and
 // stand alone only where there is no creds row to sit on, which is the site listing.
 

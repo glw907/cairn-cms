@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/charmbracelet/colorprofile"
 )
@@ -42,8 +43,9 @@ func TestWidthTablesDisagreeOnAmbiguous(t *testing.T) {
 // width past the cap clamps to it.
 func TestWrapBreaksOnlyOnTheSpace(t *testing.T) {
 	th := NewTheme(true, colorprofile.TrueColor, false)
-	got := th.WrapGreedy("renew by 2026-09-25 please", 12)
-	want := []string{"renew by", "2026-09-25", "please"}
+	day := time.Date(2026, 9, 25, 0, 0, 0, 0, time.UTC).Format(time.DateOnly)
+	got := th.WrapGreedy("renew by "+day+" please", 12)
+	want := []string{"renew by", day, "please"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("WrapGreedy = %q, want %q", got, want)
 	}

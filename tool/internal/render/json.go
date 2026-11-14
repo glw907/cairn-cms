@@ -181,7 +181,7 @@ type adoptListPayload struct {
 // the list into its two groups: cairn provisions Workers Custom Domains and never Workers Routes,
 // so a Worker serving a site through a route carries no domain here and discovery cannot build a
 // record for it. It is an added optional field rather than a second array, so a reader written
-// against schemaVersion 1 before 2026-09-21 still reads every candidate it used to.
+// against schemaVersion 1 before the field existed still reads every candidate it used to.
 type AdoptCandidate struct {
 	Worker    string `json:"worker"`
 	Repo      string `json:"repo"`

@@ -404,7 +404,7 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 	if !strings.Contains(text, theme.marks.NotStarted) {
 		t.Error("the held row carries no held glyph")
 	}
-	if !strings.Contains(text, "held until 2026-09-25, 5 days left") {
+	if !strings.Contains(text, "held until "+fixtures.Now().Add(5*24*time.Hour).Format(time.DateOnly)+", 5 days left") {
 		t.Error("the held row carries no expiry field")
 	}
 	if !strings.Contains(text, "── "+labelHeld+" ") {
@@ -422,7 +422,7 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 	attention := inkOf(theme, style.RoleUnknown)
 	holdSpanInk := ""
 	for _, sp := range frameSpans(Render(escalating)) {
-		if strings.Contains(sp.text, "held until 2026-09-21") {
+		if strings.Contains(sp.text, "held until "+fixtures.Now().Add(18*time.Hour).Format(time.DateOnly)) {
 			holdSpanInk = sp.sgr
 		}
 	}
@@ -434,7 +434,7 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 	// verdict the caller computed is printed unchanged.
 	lapsed := input(fixtures.Hostile(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
 	lapsedText := strings.Join(plainLines(lapsed), "\n")
-	if !strings.Contains(lapsedText, "hold expired 2026-08-11") {
+	if !strings.Contains(lapsedText, "hold expired "+time.Date(2026, 8, 11, 0, 0, 0, 0, time.UTC).Format(time.DateOnly)) {
 		t.Error("a lapsed hold did not say when it expired")
 	}
 	if strings.Contains(lapsedText, "── "+labelHeld+" ") {
@@ -690,7 +690,7 @@ func TestDeterminismAcrossTheEnvironment(t *testing.T) {
 		if first != second {
 			t.Fatalf("TZ=%s: two renders of one input differ", tz)
 		}
-		if !strings.Contains(stripANSI(first), "2026-09-20 22:28 UTC") {
+		if !strings.Contains(stripANSI(first), fixtures.Now().Add(-4*time.Minute).UTC().Format("2006-01-02 15:04")+" UTC") {
 			t.Errorf("TZ=%s: the frame does not carry the input's instant in UTC", tz)
 		}
 	}
@@ -1080,6 +1080,7 @@ func TestFixListLeavesNoOrphanWord(t *testing.T) {
 func TestCheckedPhraseLeadsWithTheAge(t *testing.T) {
 	at := time.Date(2026, 9, 20, 22, 32, 0, 0, time.UTC)
 	offset := at.In(time.FixedZone("AKDT", -8*3600))
+	stamp := at.Format("2006-01-02 15:04") + " UTC"
 	for _, tt := range []struct {
 		name    string
 		at, now time.Time
@@ -1087,13 +1088,13 @@ func TestCheckedPhraseLeadsWithTheAge(t *testing.T) {
 		want    string
 	}{
 		{"minutes old", at, at.Add(4 * time.Minute), 16300 * time.Millisecond,
-			"checked 4m ago (2026-09-20 22:32 UTC), in 16.3s"},
+			"checked 4m ago (" + stamp + "), in 16.3s"},
 		{"seconds old", at, at.Add(22 * time.Second), 21700 * time.Millisecond,
-			"checked 22s ago (2026-09-20 22:32 UTC), in 21.7s"},
+			"checked 22s ago (" + stamp + "), in 21.7s"},
 		{"stamped in another zone", offset, offset.Add(4 * time.Minute), 0,
-			"checked 4m ago (2026-09-20 22:32 UTC)"},
-		{"just settled", at, at, 0, "checked 2026-09-20 22:32 UTC"},
-		{"stamped ahead of the clock", at, at.Add(-time.Minute), 0, "checked 2026-09-20 22:32 UTC"},
+			"checked 4m ago (" + stamp + ")"},
+		{"just settled", at, at, 0, "checked " + stamp},
+		{"stamped ahead of the clock", at, at.Add(-time.Minute), 0, "checked " + stamp},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := checkedPhrase(tt.at, tt.now, tt.elapsed); got != tt.want {
@@ -1204,7 +1205,7 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 			Site: "my-site", Entries: entries, Now: fixtures.Now(),
 		})
 		text := strings.Join(lines, "\n")
-		if n := strings.Count(text, "2026-09-20"); n != 1 {
+		if n := strings.Count(text, fixtures.Now().UTC().Format(time.DateOnly)); n != 1 {
 			t.Errorf("width %d: the date appears %d times, want once on the rule", width, n)
 		}
 		if strings.Contains(text, "?") {

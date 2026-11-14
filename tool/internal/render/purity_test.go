@@ -108,10 +108,10 @@ func TestNoBubbleteaImport(t *testing.T) {
 	}
 }
 
-// renderDirectRequires is ADR-0002's pin policy, now four: the three libraries the record took at
-// Task 20a plus displaywidth, promoted from indirect at segment 3 so both width tables come from
-// the one library x/ansi's narrow measure already rests on. A fifth is a decision, not an
-// import, so it fails here first.
+// renderDirectRequires is ADR-0002's pin policy for the terminal output render and style draw:
+// lipgloss, colorprofile, and x/ansi, plus displaywidth, which style measures with so both width
+// tables come from the one library x/ansi's narrow measure already rests on. A fifth is a
+// decision, not an import, so it fails here first.
 var renderDirectRequires = []string{
 	"charm.land/lipgloss/v2",
 	"github.com/charmbracelet/colorprofile",

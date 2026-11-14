@@ -7,9 +7,9 @@ import (
 	"github.com/charmbracelet/colorprofile"
 )
 
-// TestRuleHonoursRequestedWidthExactly is the conductor's 2026-09-21 ruling on criterion 18: the
-// requested width is honoured exactly, the rungs are behavioural thresholds only, never a snap. A
-// render at width 90 is not byte-identical to one at width 80.
+// TestRuleHonoursRequestedWidthExactly holds the width contract: the requested width is honoured
+// exactly, and the rungs are behavioural thresholds only, never a snap. A render at width 90 is
+// not byte-identical to one at width 80.
 func TestRuleHonoursRequestedWidthExactly(t *testing.T) {
 	th := newTheme(true, colorprofile.ASCII, false)
 	r80 := th.rule(80)
@@ -55,11 +55,8 @@ func TestDegenerateWidthsNeverPanic(t *testing.T) {
 	}
 }
 
-// TestClampNeverExceedsWidth is the nearest sound form of criterion 19 that this task's
-// primitives can prove: 20a has no body compositor yet (Task 20b-i), so this exercises clamp,
-// the primitive every dynamic field passes through, across the plan's sweep widths, over
-// long and CJK content rather than a full frame. width.go's doc comment records the
-// deviation from criterion 19's two-table sweep (Task 20b-ii's scope).
+// TestClampNeverExceedsWidth sweeps clamp, the primitive every dynamic field passes through,
+// across the sweep widths over long and CJK content, so no field it cuts outgrows its budget.
 func TestClampNeverExceedsWidth(t *testing.T) {
 	th := newTheme(true, colorprofile.TrueColor, false)
 	sweepWidths := []int{20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400}

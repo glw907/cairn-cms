@@ -235,8 +235,8 @@ func statusFor(fixture string) StatusState {
 }
 
 // goldenLogEntries is the log excerpt the log view's goldens are cut from. It lives here rather
-// than in the fixtures package because that package's corpus is health reports and Task 20b-i
-// owns its shape: this half adds no fixture to it.
+// than in the fixtures package because that package's corpus is health reports, and this file
+// adds no fixture to it.
 func goldenLogEntries() []logs.Entry {
 	// The zone is built rather than parsed. time.Parse resolves an offset that matches the
 	// machine's location to that location, so a parsed stamp formats its zone differently on
@@ -445,8 +445,7 @@ func TestGoldenFooterLeadsWithItsVerdict(t *testing.T) {
 	}
 }
 
-// TestGoldenPrintsNoRemedyTwice is the conductor's 2026-09-21 ruling on criterion 9: a fix
-// sentence appears at most once in a frame, whatever the fleet's shape, with the sites it
+// TestGoldenPrintsNoRemedyTwice holds that a fix sentence appears at most once in a frame, whatever the fleet's shape, with the sites it
 // applies to named in the one entry. The many-site goldens are the corpus that carries the case,
 // twelve sites of which three share a remedy.
 func TestGoldenPrintsNoRemedyTwice(t *testing.T) {

@@ -60,7 +60,7 @@ func (t Theme) Width(s string) int {
 // the tail is the part that identifies it.
 //
 // The break is the space and nothing else. A library word wrap also breaks after a hyphen, which
-// turns 2026-09-25 into two dates and a stray dash.
+// turns an ISO date into two numbers and a stray dash.
 func (t Theme) WrapGreedy(text string, width int) []string {
 	return t.wrap(text, ContentWidth(width))
 }

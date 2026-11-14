@@ -71,7 +71,8 @@ func TestPresentCredentialNamesItsProviderAndExpiry(t *testing.T) {
 	if !strings.Contains(text, "CAIRN_GH_READ_TOKEN read from the keyring") {
 		t.Errorf("a found token does not name the store it resolved through:\n%s", text)
 	}
-	if !strings.Contains(text, "expires 2026-09-26, in 6 days") {
+	expiry := fixtures.Now().Add(6 * 24 * time.Hour).Format(time.DateOnly)
+	if !strings.Contains(text, "expires "+expiry+", in 6 days") {
 		t.Errorf("the token's expiry date is missing:\n%s", text)
 	}
 
@@ -83,7 +84,7 @@ func TestPresentCredentialNamesItsProviderAndExpiry(t *testing.T) {
 		Provider: providerEnvironment,
 		Expires:  fixtures.Now().Add(6 * 24 * time.Hour),
 	}}}
-	want := "CAIRN_CF_READ_TOKEN read from the environment, expires 2026-09-26, in 6 days"
+	want := "CAIRN_CF_READ_TOKEN read from the environment, expires " + expiry + ", in 6 days"
 	if got := strings.Join(plainLines(in), "\n"); !strings.Contains(got, want) {
 		t.Errorf("status line = %q, want it to carry %q", got, want)
 	}
@@ -157,8 +158,8 @@ func TestElapsedRidesTheCheckedLine(t *testing.T) {
 	}
 }
 
-// TestNoDoThisNextDevice is criterion 12: the fix sits under the row it repairs and needs no
-// heading, so the block the 2026-09-14 plan called `do this next` is not implemented at all.
+// TestNoDoThisNextDevice: the fix sits under the row it repairs and needs no heading, so no frame
+// carries a separate `do this next` block.
 func TestNoDoThisNextDevice(t *testing.T) {
 	for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 		in := input(fixtures.OneSick(), body, 100, colorprofile.ASCII, true, spine.VerdictCritical)

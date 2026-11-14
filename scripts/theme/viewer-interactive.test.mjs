@@ -67,10 +67,12 @@ test('the control page lists the routes, values, and widths, and a token edit re
       body: new URLSearchParams({ theme: 'waymark', page: '/', width: '1440' }),
       redirect: 'manual',
     });
-    assert.equal(pick.status, 303);
+    // A failed pick answers 500 with the handler's error as the body, which the message carries.
+    assert.equal(pick.status, 303, `the pick answered ${pick.status}: ${await pick.text()}`);
     const state = await (await fetch(`${viewer.controlUrl}/api/state`)).json();
     assert.equal(state.theme.id, 'waymark');
-    assert.equal((await fetch(`${viewer.siteUrl}/`)).status, 200);
+    const home = await fetch(`${viewer.siteUrl}/`);
+    assert.equal(home.status, 200, `the site answered ${home.status}: ${(await home.text()).slice(0, 2000)}`);
   } finally {
     await browser.close();
     viewer.stop();

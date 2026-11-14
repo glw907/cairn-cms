@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { findSignInMessage } from '../../../scripts/gate/mail.mjs';
 import { gateFetch } from '../../../scripts/gate/fetch-check.mjs';
-import { LIVE_ORIGIN, REGISTRY_READ, grade, isRunWatcher, missedRelays, parseTranscript, permissionPrompts, setupEvents, stepRows } from '../../../scripts/gate/grade.mjs';
+import { LIVE_ORIGIN, REGISTRY_READ, TASK_OUTPUT_READ, grade, isRunWatcher, missedRelays, parseTranscript, permissionPrompts, setupEvents, stepRows, timingEvents } from '../../../scripts/gate/grade.mjs';
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -46,6 +46,8 @@ interface Options {
   noNpx?: boolean;
   /** Delivers the apply's events as the agent's Read tool prints a file, each line behind its number. */
   numberedEvents?: boolean;
+  /** Leaves the apply's events out of the transcript and serves them from a background output file, as when the agent read only its summary. */
+  applyInTaskOutput?: boolean;
   /** The clean room holds no registry record. */
   noRecord?: boolean;
   /** What the registry read prints instead of the record. */
@@ -65,6 +67,12 @@ async function makeRun(opts: Options = {}) {
   await mkdir(path.join(home, '.local', 'share', 'keyrings'), { recursive: true });
   await writeFile(path.join(home, '.local', 'share', 'keyrings', 'login.keyring'), 'x');
   await writeFile(path.join(runDir, 'harness.json'), JSON.stringify({ leg: 'naive', id, siteName: `Cairn gate ${id}`, begin: at(0), commit: 'abc1234def', candidate: { engine: '0.99.0-rc.4', tool: opts.local ? 'local build at abc1234def' : '2.0.0-rc.4' }, ...(opts.local ? { local: true } : {}) }));
+  const applyEvents: [number, unknown[]][] = [
+    [3.5, [event('step_done', 3.5, { step: 'approve-install-repo' }), event('step_started', 4, { step: 'first-deploy' })]],
+    [8, [event('step_done', 8, { step: 'first-deploy' }), event('step_started', 8, { step: 'domains' })]],
+    [10, [event('step_done', 10, { step: 'domains' })]],
+  ];
+  const taskOutput = opts.applyInTaskOutput ? `${applyEvents.flatMap(([, events]) => events).map((e) => JSON.stringify(e)).join('\n')}\n` : '';
   const transcript: unknown[] = [
     { type: 'user', timestamp: at(GOAL), message: { role: 'user', content: 'Set up a new cairn site and sign in as owner.' } },
     assistantText(0.5, 'I will read the README first.', 'a1'),
@@ -76,11 +84,9 @@ async function makeRun(opts: Options = {}) {
       assistantText(2.2, `Please do this next. ${SENTENCE_RELAYED}`, 'a2'),
       resultLine(3, [event('step_done', 3, { step: 'approve-create-app' }), event('step_started', 3, { step: 'approve-install-repo' }), event('waiting', 3, { step: 'approve-install-repo', waiting: 'approve-install-repo', sentence: SENTENCE_MISSED })]),
       assistantText(3.2, 'Still waiting on the browser.', 'a3'),
-      resultLine(3.5, [event('step_done', 3.5, { step: 'approve-install-repo' }), event('step_started', 4, { step: 'first-deploy' })], opts.numberedEvents),
-      resultLine(8, [event('step_done', 8, { step: 'first-deploy' }), event('step_started', 8, { step: 'domains' })], opts.numberedEvents),
-      resultLine(10, [event('step_done', 10, { step: 'domains' })], opts.numberedEvents),
-      assistantText(11, 'Setup is done.', 'a4'),
     );
+    if (!opts.applyInTaskOutput) transcript.push(...applyEvents.map(([minute, events]) => resultLine(minute, events, opts.numberedEvents)));
+    transcript.push(assistantText(11, 'Setup is done.', 'a4'));
   }
   await writeFile(path.join(runDir, 'transcript.jsonl'), `${transcript.map((line) => JSON.stringify(line)).join('\n')}\n`);
   const standIn = withStandIn ? [{ kind: 'consent', action: 'click link', at: at(GOAL + 2) }, { kind: 'admin', action: 'signed-in', at: at(GOAL + 12) }] : [];
@@ -123,6 +129,7 @@ async function makeRun(opts: Options = {}) {
     cleanroomCalls.push(args);
     if (args[0] === 'cost') return { code: 0, stdout: '$0.50\n' };
     if (args[0] === 'scan') return { code: opts.scanCode ?? 0, stdout: opts.scanCode ? `${args[2]}\n` : '' };
+    if (args[0] === 'shell' && args[3] === TASK_OUTPUT_READ) return { code: 0, stdout: taskOutput };
     if (args[0] === 'shell' && args[3] === REGISTRY_READ) return { code: opts.recordCode ?? 0, stdout: opts.recordCode || opts.noRecord ? '' : (opts.recordText ?? recordJson) };
     return { code: 0, stdout: 'cairn-gate: finished at live\n' };
   };
@@ -232,6 +239,13 @@ describe('the live origin', () => {
   it('is the gate subdomain, never the bare domain, where any record is a standing stop', () => {
     expect(new URL(LIVE_ORIGIN).hostname).toBe('gate.carin-test.org');
   });
+
+  it('is the host the owner card gives the naive agent', async () => {
+    // A conductor answers only from the card, so a card that names another host voids the run.
+    const card = await readFile(path.join(import.meta.dirname, '../../../.claude/skills/cairn-proving-setup/references/owner-card.md'), 'utf8');
+    const row = card.split('\n').find((line) => line.startsWith('| Address (host) |'));
+    expect(row).toContain(`\`${new URL(LIVE_ORIGIN).hostname}\``);
+  });
 });
 
 describe('the record on a known fixture', () => {
@@ -292,6 +306,15 @@ describe('the apply stage of an agent run', () => {
   it('times the HTTPS wait from events the agent read with its Read tool, each behind a line number', async () => {
     const run = await makeRun({ numberedEvents: true });
     const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(record.httpsWaitMinutes).toBe(2);
+    expect(record.timing).toMatchObject({ ok: true, source: 'setup events' });
+    expect(record.outcome).toEqual({ result: 'pass' });
+  });
+
+  it('times the HTTPS wait from a background output file when the agent read only the summary', async () => {
+    const run = await makeRun({ applyInTaskOutput: true });
+    const record = await grade({ runDir: run.runDir, deps: run.deps });
+    expect(run.cleanroomCalls).toContainEqual(['shell', '2611091200', '-c', TASK_OUTPUT_READ]);
     expect(record.httpsWaitMinutes).toBe(2);
     expect(record.timing).toMatchObject({ ok: true, source: 'setup events' });
     expect(record.outcome).toEqual({ result: 'pass' });
@@ -596,6 +619,18 @@ describe('the transcript readers', () => {
     // to a later line, where a relay that came before it would read as missed.
     expect(stepRows(setupEvents(lines)).filter((row) => row.step === 'scaffold')).toHaveLength(1);
     expect(setupEvents(lines).find((e) => e.kind === 'waiting')?.line).toBe(lines[0].index);
+  });
+
+  it('adds only the events a background output file alone holds, in time order', () => {
+    const read = [event('step_started', 5, { step: 'scaffold' }), event('step_done', 6, { step: 'scaffold' })];
+    const fromTranscript = setupEvents(parseTranscript(JSON.stringify(resultLine(6, read))));
+    const output = [...read, event('step_started', 8, { step: 'domains' }), event('step_done', 10, { step: 'domains' })].map((e) => JSON.stringify(e));
+    const timed = timingEvents(fromTranscript, ['setup is running', ...output, ''].join('\n'));
+    expect(timed.map((e) => `${e.kind}:${e.step}`)).toEqual(['step_started:scaffold', 'step_done:scaffold', 'step_started:domains', 'step_done:domains']);
+    expect(stepRows(timed).find((row) => row.step === 'domains')).toMatchObject({ result: 'done', minutes: 2 });
+    // The transcript's own events keep the line they were read on, which the relay check reads.
+    expect(timed[0].line).toBe(fromTranscript[0].line);
+    expect(timingEvents(fromTranscript, '')).toBe(fromTranscript);
   });
 
   it('reads a command from a redrawn prompt once', () => {

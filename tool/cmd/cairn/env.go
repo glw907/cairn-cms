@@ -64,7 +64,7 @@ func setupToken(envFn func(string) string) (providers.Credential, error) {
 	return tok, nil
 }
 
-// varNoColor and varTerm are the two variables loadEnv reads for render.DetectProfile. Neither
+// varNoColor and varTerm are the two variables loadEnv reads for style.Detect. Neither
 // is a credential: they carry no Missing entry and are read directly from envFn rather than
 // through secrets.Resolve's provider chain, which is for the three CAIRN_ variables above alone.
 const (
@@ -114,7 +114,7 @@ type resolution struct {
 }
 
 // env holds every variable loadEnv resolved, keyed by name, plus three plain environment reads
-// no secrets.Provider ever sees: noColor and term, the pair render.DetectProfile takes to pick a
+// no secrets.Provider ever sees: noColor and term, the pair style.Detect takes to pick a
 // color profile, and publicOrigin, which the doctor's config.public-origin check reads straight
 // instead of through a Provider since it names no credential. All three come straight from
 // envFn.

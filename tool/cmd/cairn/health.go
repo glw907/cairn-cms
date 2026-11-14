@@ -11,6 +11,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 	"github.com/glw907/cairn-cms/tool/v2/internal/store"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 	"github.com/spf13/cobra"
 )
 
@@ -204,9 +205,9 @@ func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.V
 }
 
 // detectTerminal reads the one TTY-and-colour answer every command's render input is built from.
-func detectTerminal(d deps, rf *rootFlags) render.Terminal {
+func detectTerminal(d deps, rf *rootFlags) style.Terminal {
 	resolved, _ := loadEnv(d.env)
-	return render.DetectProfile(d.stdout, render.Env{
+	return style.Detect(d.stdout, style.Env{
 		NoColor: resolved.noColorValue(),
 		Term:    resolved.termValue(),
 		Color:   rf.color,

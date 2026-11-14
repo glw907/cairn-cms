@@ -166,7 +166,7 @@ func (g Grid) Pack(w int, items ...string) []string {
 		switch {
 		case cur == "":
 			cur = it
-		case ansi.StringWidth(cur+sep+it) <= w:
+		case g.Styles.theme.Width(cur+sep+it) <= w:
 			cur += sep + it
 		default:
 			out = append(out, cur)

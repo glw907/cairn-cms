@@ -7,9 +7,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	"charm.land/lipgloss/v2"
-	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 )
 
 // TestThemedHelpCarriesNoEscapeUnderNoColor runs the root's help through fang, which paints a
@@ -32,37 +29,6 @@ func TestThemedHelpCarriesNoEscapeUnderNoColor(t *testing.T) {
 	}
 	if strings.Contains(out.String(), "\x1b") {
 		t.Errorf("help carries an escape under NO_COLOR: %q", out.String())
-	}
-}
-
-// TestHelpInksMatchRendersPalette ties the help's copied Warm Stone hexes to render's palette,
-// read through the TrueColor foreground render.Theme.Style resolves each role to.
-func TestHelpInksMatchRendersPalette(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		ink  warmStoneInk
-		role render.Role
-	}{
-		{"text", inkText, render.RoleText},
-		{"muted", inkMuted, render.RoleMuted},
-		{"failing", inkFailing, render.RoleFailing},
-		{"unknown", inkUnknown, render.RoleUnknown},
-		{"accent", inkAccent, render.RoleAccent},
-	} {
-		for _, side := range []struct {
-			dark bool
-			hex  string
-		}{{false, tc.ink.light}, {true, tc.ink.dark}} {
-			got := render.NewTheme(side.dark, render.ProfileTrueColor).Style(tc.role).GetForeground()
-			if got == nil {
-				t.Fatalf("%s (dark %v): render's style has no foreground", tc.name, side.dark)
-			}
-			gr, gg, gb, _ := got.RGBA()
-			wr, wg, wb, _ := lipgloss.Color(side.hex).RGBA()
-			if gr != wr || gg != wg || gb != wb {
-				t.Errorf("%s (dark %v): help ink %s differs from render's palette", tc.name, side.dark, side.hex)
-			}
-		}
 	}
 }
 

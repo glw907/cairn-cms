@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // The log body's column budget. The date and the zone are stated once, on the section rule,
@@ -35,16 +36,16 @@ const logEmpty = "no records"
 // reserved for the whole excerpt spends twenty-three cells of blank on every one of them. A row
 // with no event starts its fields against the level instead, and the rows that do carry one
 // still line up with each other.
-func renderLogs(t Theme, in RenderInput) Frame {
+func renderLogs(t theme, in RenderInput) Frame {
 	width := in.width()
 	site := sanitize(in.Site)
 	if len(in.Entries) == 0 {
-		return Frame{Header: []string{t.Style(RoleMuted).Render(logEmpty)}}
+		return Frame{header: []string{t.Style(style.RoleMuted).Render(logEmpty)}}
 	}
 
 	earliest, latest := logSpan(in.Entries)
 	label := strings.TrimSpace(logLabel + "  " + site + "  " + earliest.Format("2006-01-02 MST"))
-	f := Frame{Header: []string{t.insetRule(in.ASCII, label, width)}}
+	f := Frame{header: []string{t.insetRule(label, width)}}
 
 	// The field column only pays for itself where it leaves the fields a readable share of the
 	// line. Below that the record names itself on one line and its fields follow at the time
@@ -54,26 +55,26 @@ func renderLogs(t Theme, in RenderInput) Frame {
 	for _, e := range in.Entries {
 		cells := []string{
 			strings.Repeat(" ", logIndent),
-			t.cell(RoleMuted, e.At.Format("15:04:05"), logTime),
+			t.cell(style.RoleMuted, e.At.Format("15:04:05"), logTime),
 			t.cell(logLevelRole(e.Level), sanitize(e.Level), logLevel),
 		}
 		fieldCol := logIndent + logTime + logLevel
 		if e.Event != "" {
-			cells = append(cells, t.sizedStrong(RoleText, logEvent).Render(sanitize(e.Event)))
+			cells = append(cells, t.SizedStrong(style.RoleText, logEvent).Render(sanitize(e.Event)))
 			fieldCol += logEvent
 		}
 		lead := row(cells...)
 		if wide {
-			body = append(body, t.hangingAt(t.Style(RoleSubtle), lead, fieldCol, logFieldText(e), width)...)
+			body = append(body, t.hangingAt(t.Style(style.RoleSubtle), lead, fieldCol, logFieldText(e), width, false)...)
 			continue
 		}
 		body = append(body, strings.TrimRight(lead, " "))
-		body = append(body, t.indented(t.Style(RoleSubtle), logIndent+logTime, logFieldText(e), width)...)
+		body = append(body, t.indented(t.Style(style.RoleSubtle), logIndent+logTime, logFieldText(e), width)...)
 	}
-	f.Body = body
+	f.body = body
 
-	f.Footer = []string{"", t.Style(RoleMuted).Render(count(len(in.Entries), "records") +
-		" " + t.glyphs(in.ASCII).Sep + " " +
+	f.footer = []string{"", t.Style(style.RoleMuted).Render(count(len(in.Entries), "records") +
+		" " + t.marks.Sep + " " +
 		earliest.Format("15:04") + " to " + latest.Format("15:04 MST"))}
 	return t.clampFrame(f, width)
 }
@@ -96,14 +97,14 @@ func logSpan(es []logs.Entry) (earliest, latest time.Time) {
 
 // logLevelRole returns the ink a level word takes. The two levels that mean something went wrong
 // take the state inks the rest of the design already spends on those meanings.
-func logLevelRole(level string) Role {
+func logLevelRole(level string) style.Role {
 	switch level {
 	case "error":
-		return RoleFailing
+		return style.RoleFailing
 	case "warn":
-		return RoleUnknown
+		return style.RoleUnknown
 	default:
-		return RoleMuted
+		return style.RoleMuted
 	}
 }
 

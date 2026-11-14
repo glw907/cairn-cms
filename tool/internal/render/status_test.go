@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
@@ -12,7 +13,7 @@ import (
 // statusInput builds the input a status line is read from, with one token found and one missing.
 func statusInput() RenderInput {
 	return RenderInput{
-		View: ViewStatus, Width: width100, Dark: true, Profile: ProfileNoColor,
+		View: ViewStatus, Width: width100, Dark: true, Profile: colorprofile.ASCII,
 		Status: sampleStatus(), Now: fixtures.Now(),
 	}
 }
@@ -49,7 +50,7 @@ func TestMissingCredentialNamesTheChecksItDisables(t *testing.T) {
 // checks did run, the line stays in the past tense, since a missing token there is a cost the
 // run already paid.
 func TestHealthFrameKeepsThePastTenseMissingTokenLine(t *testing.T) {
-	in := input(fixtures.OneSick(), BodySingle, width100, ProfileNoColor, false, spine.VerdictCritical)
+	in := input(fixtures.OneSick(), BodySingle, width100, colorprofile.ASCII, false, spine.VerdictCritical)
 	in.Status = StatusState{Credentials: []Credential{{
 		Variable: "CAIRN_GH_READ_TOKEN",
 		Disables: []string{"deploy", "engine", "publish-path"},
@@ -70,7 +71,8 @@ func TestPresentCredentialNamesItsProviderAndExpiry(t *testing.T) {
 	if !strings.Contains(text, "CAIRN_GH_READ_TOKEN read from the keyring") {
 		t.Errorf("a found token does not name the store it resolved through:\n%s", text)
 	}
-	if !strings.Contains(text, "expires 2026-09-26, in 6 days") {
+	expiry := fixtures.Now().Add(6 * 24 * time.Hour).Format(time.DateOnly)
+	if !strings.Contains(text, "expires "+expiry+", in 6 days") {
 		t.Errorf("the token's expiry date is missing:\n%s", text)
 	}
 
@@ -82,7 +84,7 @@ func TestPresentCredentialNamesItsProviderAndExpiry(t *testing.T) {
 		Provider: providerEnvironment,
 		Expires:  fixtures.Now().Add(6 * 24 * time.Hour),
 	}}}
-	want := "CAIRN_CF_READ_TOKEN read from the environment, expires 2026-09-26, in 6 days"
+	want := "CAIRN_CF_READ_TOKEN read from the environment, expires " + expiry + ", in 6 days"
 	if got := strings.Join(plainLines(in), "\n"); !strings.Contains(got, want) {
 		t.Errorf("status line = %q, want it to carry %q", got, want)
 	}
@@ -106,19 +108,19 @@ func TestDegradedIsStatedWhereNoMissingTokenIs(t *testing.T) {
 	}
 }
 
-// TestCredentialDetailSitsOnTheCredsRow is criterion 11's placement rule, from the design
-// brief's ruling 8: the credential and keyring detail leave the header block.
+// TestCredentialDetailSitsOnTheCredsRow: the credential and keyring detail sit on the creds row
+// and leave the header block.
 func TestCredentialDetailSitsOnTheCredsRow(t *testing.T) {
-	in := input(fixtures.OneSick(), BodySingle, 100, ProfileNoColor, true, spine.VerdictCritical)
+	in := input(fixtures.OneSick(), BodySingle, 100, colorprofile.ASCII, true, spine.VerdictCritical)
 	in.Status = sampleStatus()
 	frame := Render(in)
-	for _, l := range frame.Header {
+	for _, l := range frame.header {
 		if strings.Contains(stripANSI(l), "CAIRN_") {
 			t.Errorf("the header block carries credential detail: %q", stripANSI(l))
 		}
 	}
 
-	lines := frame.Body
+	lines := frame.body
 	credsRow := -1
 	for i, l := range lines {
 		if strings.Contains(stripANSI(l), " "+credsRowID+" ") {
@@ -142,7 +144,7 @@ func TestCredentialDetailSitsOnTheCredsRow(t *testing.T) {
 // TestElapsedRidesTheCheckedLine is criterion 11's first fact: the run's wall time, on the
 // line that already says when the run happened, and absent where the caller measured none.
 func TestElapsedRidesTheCheckedLine(t *testing.T) {
-	in := input(fixtures.OneSick(), BodySingle, 100, ProfileNoColor, true, spine.VerdictCritical)
+	in := input(fixtures.OneSick(), BodySingle, 100, colorprofile.ASCII, true, spine.VerdictCritical)
 	in.Status = StatusState{Elapsed: 16300 * time.Millisecond}
 	if text := strings.Join(plainLines(in), "\n"); !strings.Contains(text, "), in 16.3s") {
 		t.Errorf("the checked line does not carry the run's time:\n%s", text)
@@ -156,11 +158,11 @@ func TestElapsedRidesTheCheckedLine(t *testing.T) {
 	}
 }
 
-// TestNoDoThisNextDevice is criterion 12: the fix sits under the row it repairs and needs no
-// heading, so the block the 2026-09-14 plan called `do this next` is not implemented at all.
+// TestNoDoThisNextDevice: the fix sits under the row it repairs and needs no heading, so no frame
+// carries a separate `do this next` block.
 func TestNoDoThisNextDevice(t *testing.T) {
 	for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
-		in := input(fixtures.OneSick(), body, 100, ProfileNoColor, true, spine.VerdictCritical)
+		in := input(fixtures.OneSick(), body, 100, colorprofile.ASCII, true, spine.VerdictCritical)
 		in.Status = sampleStatus()
 		if text := strings.Join(plainLines(in), "\n"); strings.Contains(text, "do this next") {
 			t.Errorf("body %v still carries a do-this-next device:\n%s", body, text)

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -12,10 +13,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // updateGolden regenerates every golden from the current renderer. `make -C tool golden` sets
@@ -25,9 +28,9 @@ var updateGolden = flag.Bool("update", false, "rewrite the golden frames from th
 // goldenDir is the committed corpus's root.
 const goldenDir = "testdata/golden"
 
-// goldenRungs are the widths every golden is cut at: the named rung constants, so a frame is
-// pinned at the floor, at the single-column threshold, and at each of the three rungs above it.
-var goldenRungs = []int{widthFloor, widthNarrow, Width80, width100, widthCap}
+// goldenRungs are the widths every golden is cut at, so a frame is pinned at the floor of 40, at
+// the single-column threshold, and at each of the three rungs above it, the widest being the cap.
+var goldenRungs = []int{40, widthNarrow, style.DefaultWidth, width100, style.ContentWidth(math.MaxInt)}
 
 // goldenCase is one frame cut and committed. The fields are the whole of what changes its bytes,
 // which is what lets goldenName carry every one of them in the file name.
@@ -44,14 +47,14 @@ type goldenCase struct {
 	body Body
 	// width, profile, dark, and ascii are the four presentation axes.
 	width   int
-	profile Profile
+	profile colorprofile.Profile
 	dark    bool
 	ascii   bool
 }
 
 // goldenName is the sole source of a golden's path, for writing one and for recognising an
 // orphan, so the corpus cannot drift into two naming schemes.
-func goldenName(view, fixture string, width int, profile Profile, dark, ascii bool) string {
+func goldenName(view, fixture string, width int, profile colorprofile.Profile, dark, ascii bool) string {
 	parts := []string{fixture, fmt.Sprintf("w%03d", width), profileName(profile), groundName(dark), tableName(ascii)}
 	return filepath.Join(goldenDir, view, strings.Join(parts, "_")+".txt")
 }
@@ -62,13 +65,13 @@ func (c goldenCase) path() string {
 }
 
 // profileName names a colour profile for a golden's file name.
-func profileName(p Profile) string {
+func profileName(p colorprofile.Profile) string {
 	switch p {
-	case ProfileANSI16:
+	case colorprofile.ANSI:
 		return "ansi16"
-	case ProfileANSI256:
+	case colorprofile.ANSI256:
 		return "ansi256"
-	case ProfileTrueColor:
+	case colorprofile.TrueColor:
 		return "truecolor"
 	default:
 		return "nocolor"
@@ -95,7 +98,7 @@ func tableName(ascii bool) string {
 
 // verdictFor returns the verdict spine's arithmetic settles for a fixture, so a golden's
 // verdict word is the one the exit code would carry rather than one the test chose.
-func verdictFor(reports []health.Report) Verdict {
+func verdictFor(reports []health.Report) spine.Verdict {
 	sites := make([]spine.SiteVerdicts, 0, len(reports))
 	for _, r := range reports {
 		sites = append(sites, health.Verdicts(r))
@@ -126,8 +129,8 @@ func sampleStatus() StatusState {
 	}
 }
 
-// fixtureStatus is each named fixture's run state, matched to its creds row rather than
-// the one shared story every golden was cut against before this task (criterion 22). A
+// fixtureStatus is each named fixture's run state, matched to its creds row rather than to
+// one shared story for every golden. A
 // many-sites fixture ("twelve-site") carries one Status for the whole run, since the process
 // holds one set of provider tokens for every site it sweeps, and every site's creds row
 // (fillNine's default) agrees with it. Every entry carries one Credential per credential
@@ -232,8 +235,8 @@ func statusFor(fixture string) StatusState {
 }
 
 // goldenLogEntries is the log excerpt the log view's goldens are cut from. It lives here rather
-// than in the fixtures package because that package's corpus is health reports and Task 20b-i
-// owns its shape: this half adds no fixture to it.
+// than in the fixtures package because that package's corpus is health reports, and this file
+// adds no fixture to it.
 func goldenLogEntries() []logs.Entry {
 	// The zone is built rather than parsed. time.Parse resolves an offset that matches the
 	// machine's location to that location, so a parsed stamp formats its zone differently on
@@ -311,7 +314,7 @@ func goldenCases() []goldenCase {
 			for _, width := range goldenRungs {
 				out = append(out, goldenCase{
 					view: b.view, fixture: f.Name, reports: f.Reports, body: b.body,
-					width: width, profile: ProfileTrueColor, dark: true,
+					width: width, profile: colorprofile.TrueColor, dark: true,
 				})
 			}
 		}
@@ -319,19 +322,19 @@ func goldenCases() []goldenCase {
 	for _, width := range goldenRungs {
 		out = append(out, goldenCase{
 			view: "logs", fixture: "excerpt", entries: goldenLogEntries(),
-			width: width, profile: ProfileTrueColor, dark: true,
+			width: width, profile: colorprofile.TrueColor, dark: true,
 		})
 		out = append(out, goldenCase{
 			view: "logs", fixture: "mixed", entries: goldenMixedLogEntries(),
-			width: width, profile: ProfileTrueColor, dark: true,
+			width: width, profile: colorprofile.TrueColor, dark: true,
 		})
 	}
 
 	base := goldenCase{
 		view: "single", fixture: "one-sick", reports: fixtures.OneSick(), body: BodySingle,
-		width: width100, profile: ProfileTrueColor, dark: true,
+		width: width100, profile: colorprofile.TrueColor, dark: true,
 	}
-	for _, p := range []Profile{ProfileNoColor, ProfileANSI16, ProfileANSI256} {
+	for _, p := range []colorprofile.Profile{colorprofile.ASCII, colorprofile.ANSI, colorprofile.ANSI256} {
 		targeted := base
 		targeted.profile = p
 		out = append(out, targeted)
@@ -442,8 +445,7 @@ func TestGoldenFooterLeadsWithItsVerdict(t *testing.T) {
 	}
 }
 
-// TestGoldenPrintsNoRemedyTwice is the conductor's 2026-09-21 ruling on criterion 9: a fix
-// sentence appears at most once in a frame, whatever the fleet's shape, with the sites it
+// TestGoldenPrintsNoRemedyTwice holds that a fix sentence appears at most once in a frame, whatever the fleet's shape, with the sites it
 // applies to named in the one entry. The many-site goldens are the corpus that carries the case,
 // twelve sites of which three share a remedy.
 func TestGoldenPrintsNoRemedyTwice(t *testing.T) {

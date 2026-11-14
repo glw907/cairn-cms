@@ -33,12 +33,12 @@ const (
 //
 // Nothing here depends on the width: a body that pads or wraps is a body whose meaning depends
 // on a column position, which is what the other two readers cannot follow.
-func renderPlain(t Theme, in RenderInput) Frame {
+func renderPlain(t theme, in RenderInput) Frame {
 	report := firstReport(in)
 	s := split(report)
 	verdict := t.verdictKeyLine(in.Verdict, sanitize(report.Site), s.tally(", "))
 
-	f := Frame{Header: []string{
+	f := Frame{header: []string{
 		verdict,
 		keyChecked + checkedPhraseValue(checkedAt(report, in.Now), in.Now, in.Status.Elapsed),
 	}}
@@ -72,17 +72,17 @@ func renderPlain(t Theme, in RenderInput) Frame {
 		passing = append(passing, plainCheck(c, in.Now)...)
 	}
 	block(passing)
-	f.Body = body
+	f.body = body
 
-	f.Footer = []string{"", verdict, keyExit + strconv.Itoa(int(in.Verdict))}
+	f.footer = []string{"", verdict, keyExit + strconv.Itoa(int(in.Verdict))}
 	return f
 }
 
 // verdictKeyLine is the line the plain body opens and closes with. The verdict word carries the
 // frame's one piece of ink, so an operator who forced colour into a pipe still sees it and a
 // reader of the raw bytes still reads the word.
-func (t Theme) verdictKeyLine(v Verdict, site, tally string) string {
-	line := keyVerdict + t.strong(verdictRole(v)).Render(v.String())
+func (t theme) verdictKeyLine(v spine.Verdict, site, tally string) string {
+	line := keyVerdict + t.Strong(verdictRole(v)).Render(v.String())
 	if site != "" {
 		line += " - " + site
 	}
@@ -149,27 +149,6 @@ func fixLines(fix health.Fix) []string {
 	out := []string{keyFix + sanitize(fix.Text), keyFixActor + actorPhrase(fix)}
 	if url := fixURL(fix); url != "" {
 		out = append(out, keyDocs+url)
-	}
-	return out
-}
-
-// fixGroup is one fix and every check that could not run for the same reason it names.
-type fixGroup struct {
-	ids []string
-	fix health.Fix
-}
-
-// groupFixes collects the fixes for a run's unobservable checks, one entry per distinct fix,
-// naming every check it covers. Where one missing input caused several skips, the group carries
-// one fix under its key rather than letting the last skipped row appear to own a fix that
-// covers two: ambiguity costs more than duplication.
-// It groups exactly as groupBlockedFixes does, and drops the two fields only the fleet body's
-// head line reads.
-func groupFixes(skipped []health.CheckResult) []fixGroup {
-	blocked := groupBlockedFixes(skipped)
-	out := make([]fixGroup, 0, len(blocked))
-	for _, g := range blocked {
-		out = append(out, fixGroup{ids: g.ids, fix: g.fix})
 	}
 	return out
 }

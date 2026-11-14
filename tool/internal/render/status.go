@@ -3,13 +3,15 @@ package render
 import (
 	"strings"
 	"time"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // This file carries the run's state beside the checks: how long the sweep took, which
 // provider tokens it read and through what, which it could not find and which checks that cost,
 // and whether a missing token degraded the run.
 //
-// None of it is header material (iteration-2-brief.md ruling 8). The credential and keyring
+// None of it is header material. The credential and keyring
 // detail sit on the `creds` row of a health frame, where the check they describe already is, and
 // stand alone only where there is no creds row to sit on, which is the site listing.
 
@@ -60,7 +62,7 @@ type StatusState struct {
 // names the checks it disabled, since the cost of the absence is the part an operator acts on; a
 // present one names where it came from, so an operator who rotated a token in the environment
 // and still sees the old one can tell which store answered.
-func (t Theme) statusLines(in RenderInput, col, width int) []string {
+func (t theme) statusLines(in RenderInput, col, width int) []string {
 	var out []string
 	named := false
 	for _, c := range in.Status.Credentials {
@@ -73,7 +75,7 @@ func (t Theme) statusLines(in RenderInput, col, width int) []string {
 	// already named with the checks it disabled, that line has already said it, in more detail
 	// than a second line could.
 	if in.Status.Degraded && !named {
-		out = append(out, t.indented(t.Style(RoleUnknown), col, statusDegraded, width)...)
+		out = append(out, t.indented(t.Style(style.RoleUnknown), col, statusDegraded, width)...)
 	}
 	return out
 }
@@ -81,7 +83,7 @@ func (t Theme) statusLines(in RenderInput, col, width int) []string {
 // statusLine renders one token's fact. listing selects the phrasing for a frame where no
 // check was attempted: a site listing runs none, so the past tense would tell the operator that
 // checks failed to run when nothing ran at all.
-func (t Theme) statusLine(c Credential, now time.Time, listing bool, col, width int) []string {
+func (t theme) statusLine(c Credential, now time.Time, listing bool, col, width int) []string {
 	variable := sanitize(c.Variable)
 	if variable == "" {
 		return nil
@@ -91,14 +93,14 @@ func (t Theme) statusLine(c Credential, now time.Time, listing bool, col, width 
 		if listing {
 			tail = statusUnsetTailListing
 		}
-		return t.indented(t.Style(RoleUnknown), col,
+		return t.indented(t.Style(style.RoleUnknown), col,
 			variable+statusUnsetJoin+joinWords(sanitizeAll(c.Disables))+tail, width)
 	}
 	line := variable + statusReadJoin + sanitize(c.Provider)
 	if !c.Expires.IsZero() {
 		line += statusExpiresJoin + isoDate(c.Expires) + ", in " + remainingDays(c.Expires.Sub(now))
 	}
-	return t.indented(t.Style(RoleMuted), col, line, width)
+	return t.indented(t.Style(style.RoleMuted), col, line, width)
 }
 
 // The status line's fragments. They are the strings this file composes a status line from,
@@ -112,8 +114,6 @@ const (
 	// statusUnsetTailListing closes it where no check was attempted, which is the site listing.
 	// The past tense would report a failure that did not happen: the listing ran nothing, and
 	// what the missing token costs is the next health run, not this one.
-	//
-	// Drafted to the copy standard's grammar (section 4.7) rather than copied from elsewhere.
 	statusUnsetTailListing = " cannot run"
 	// statusReadJoin opens a present token's line, which then names the store it came from.
 	statusReadJoin = " read from the "

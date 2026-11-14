@@ -14,8 +14,8 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/logx"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
-	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // processStdout returns the stdout handle render's terminal detection probes. It is the
@@ -28,7 +28,7 @@ func processStdout() *os.File {
 // stdioTerminal reports whether stdin and stdout are both a terminal, deps.interactive in
 // production.
 func stdioTerminal() bool {
-	return render.IsTerminal(os.Stdin) && render.IsTerminal(os.Stdout)
+	return style.IsTerminal(os.Stdin) && style.IsTerminal(os.Stdout)
 }
 
 // notifyContext returns a context cancelled on SIGINT or SIGTERM. Windows delivers neither the

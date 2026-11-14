@@ -444,7 +444,7 @@ func TestNoTUILaunchPredicateExists(t *testing.T) {
 // branch on a terminal is a behaviour an operator cannot reproduce in a pipeline. The echo-off
 // password read is the single allowed exception, in auth.go.
 func TestTerminalChecksAreConfinedToTheColourProfile(t *testing.T) {
-	const profile = "internal/render/profile.go"
+	const profile = "internal/style/detect.go"
 
 	for _, rel := range toolGoFiles(t) {
 		body := readToolFile(t, rel)

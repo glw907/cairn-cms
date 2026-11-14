@@ -6,45 +6,25 @@ import (
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/colorprofile"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
-// Role is a semantic ink role. The view paints through a role and never writes a colour
-// value outside this file.
-type Role int
+// Role is a semantic ink role, the table internal/style carries. The view paints through a role
+// and never writes a colour value.
+type Role = style.Role
 
-// The Warm Stone roles, the same table internal/render carries.
+// The Warm Stone roles.
 const (
-	RoleText Role = iota
-	RoleMuted
-	RoleSubtle
-	RoleOK
-	RoleFailing
-	RoleUnknown
-	RoleAccent
-	RoleRule
+	RoleText    = style.RoleText
+	RoleMuted   = style.RoleMuted
+	RoleSubtle  = style.RoleSubtle
+	RoleOK      = style.RoleOK
+	RoleFailing = style.RoleFailing
+	RoleUnknown = style.RoleUnknown
+	RoleAccent  = style.RoleAccent
+	RoleRule    = style.RoleRule
 )
-
-// ink carries one role at every rung a terminal offers: a hex pair for TrueColor, an xterm-256
-// pair, and one ANSI-16 slot. An empty slot means the terminal's own foreground, because slot 8
-// is the background on Solarized Dark and faint text measures under 2:1 on common themes.
-type ink struct {
-	lightHex, darkHex string
-	light256, dark256 string
-	ansi16            string
-}
-
-// warmStone repeats internal/render's table value for value. render keeps its own copy
-// unexported, and exporting it would widen a surface that package pins by name.
-var warmStone = map[Role]ink{
-	RoleText:    {"#28231d", "#eae7e3", "235", "255", ""},
-	RoleMuted:   {"#615d57", "#a8a49e", "243", "246", ""},
-	RoleSubtle:  {"#504c47", "#c1bdb8", "240", "250", "7"},
-	RoleOK:      {"#197037", "#7ccd8e", "28", "114", "2"},
-	RoleFailing: {"#b71824", "#ff8e86", "160", "210", "1"},
-	RoleUnknown: {"#915200", "#f7ac4d", "130", "215", "3"},
-	RoleAccent:  {"#7246cf", "#9d84ec", "97", "141", "5"},
-	RoleRule:    {"#c9c3bb", "#4a443b", "251", "238", "8"},
-}
 
 // Styles is the view's palette, resolved once for one background and one colour profile. The
 // root builds it at start and passes it to components; nothing recomputes it per frame.
@@ -60,12 +40,13 @@ type Styles struct {
 	AccentStrong lipgloss.Style
 
 	profile colorprofile.Profile
+	theme   style.Theme
 }
 
-// NewStyles resolves every role for a background and a colour profile. At NoTTY and Ascii the
-// styles carry no colour and no weight, so a pipe or NO_COLOR reader gets no escape bytes.
+// NewStyles resolves every role for a background and a colour profile. At no colour the styles
+// carry no colour and no weight, so a pipe or NO_COLOR reader gets no escape bytes.
 func NewStyles(dark bool, p colorprofile.Profile) Styles {
-	s := Styles{Dark: dark, profile: p}
+	s := Styles{Dark: dark, profile: p, theme: style.NewTheme(dark, p, false)}
 	s.Text = s.Style(RoleText)
 	s.Muted = s.Style(RoleMuted)
 	s.Subtle = s.Style(RoleSubtle)
@@ -81,51 +62,21 @@ func NewStyles(dark bool, p colorprofile.Profile) Styles {
 }
 
 // NoColor reports whether the profile carries no colour at all.
-func (s Styles) NoColor() bool {
-	return s.profile == colorprofile.NoTTY || s.profile == colorprofile.Ascii
-}
+func (s Styles) NoColor() bool { return style.NoColor(s.profile) }
 
-func (s Styles) color(r Role) color.Color {
-	v := warmStone[r]
-	ld := lipgloss.LightDark(s.Dark)
-	c16 := lipgloss.Color(v.ansi16)
-	return lipgloss.Complete(s.profile)(
-		ld(c16, c16),
-		ld(lipgloss.Color(v.light256), lipgloss.Color(v.dark256)),
-		ld(lipgloss.Color(v.lightHex), lipgloss.Color(v.darkHex)),
-	)
-}
-
-// Fg returns the role's colour, or NoColor where the role falls back to the terminal's own
-// foreground: no colour at all, or an ANSI-16 terminal and a role with no slot.
-func (s Styles) Fg(r Role) color.Color {
-	if s.NoColor() || (s.profile == colorprofile.ANSI && warmStone[r].ansi16 == "") {
-		return lipgloss.NoColor{}
-	}
-	return s.color(r)
-}
+// Fg returns the role's colour, or lipgloss.NoColor where the role falls back to the terminal's
+// own foreground: no colour at all, or an ANSI-16 terminal and a role with no slot.
+func (s Styles) Fg(r Role) color.Color { return s.theme.Color(r) }
 
 // Style returns the role at regular weight.
-func (s Styles) Style(r Role) lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(s.Fg(r))
-}
+func (s Styles) Style(r Role) lipgloss.Style { return s.theme.Style(r) }
 
 // Strong returns the role at bold weight, plain at no colour.
-func (s Styles) Strong(r Role) lipgloss.Style {
-	if s.NoColor() {
-		return lipgloss.NewStyle()
-	}
-	return s.Style(r).Bold(true)
-}
+func (s Styles) Strong(r Role) lipgloss.Style { return s.theme.Strong(r) }
 
 // Link returns the role carrying url as an OSC 8 hyperlink, plain at no colour. Callers pass
 // the URL itself as the text where it fits, so a terminal without OSC 8 still shows it.
-func (s Styles) Link(r Role, url string) lipgloss.Style {
-	if s.NoColor() {
-		return lipgloss.NewStyle()
-	}
-	return s.Style(r).Hyperlink(url)
-}
+func (s Styles) Link(r Role, url string) lipgloss.Style { return s.theme.Link(r, url) }
 
 // Glyphs is one tier of marks. Every mark is one cell wide, followed by exactly one space.
 type Glyphs struct {
@@ -136,10 +87,12 @@ type Glyphs struct {
 
 // GlyphsFor returns the Unicode tier, or the ASCII tier for a terminal that cannot show it.
 func GlyphsFor(ascii bool) Glyphs {
+	m := style.MarksFor(ascii)
+	g := Glyphs{Pass: m.Pass, Fail: m.Failing, Pending: m.NotStarted, Sep: m.Sep, Ellipsis: m.Ellipsis, Arrows: "↑↓"}
 	if ascii {
-		return Glyphs{Pass: "+", Fail: "!", Pending: "o", Sep: "-", Ellipsis: "...", Arrows: "Up/Down"}
+		g.Arrows = "Up/Down"
 	}
-	return Glyphs{Pass: "●", Fail: "■", Pending: "○", Sep: "·", Ellipsis: "…", Arrows: "↑↓"}
+	return g
 }
 
 // HuhTheme is the Warm Stone huh theme. Huh asks for the light or the dark variant when it

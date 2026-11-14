@@ -4,6 +4,9 @@
 
 Proposed, 2026-11-08.
 
+ADR-0005 moves the view's palette and marks into `internal/style`, which the view and `render`
+share.
+
 ## Context
 
 ADR-0001 kept the spine free of any view and deferred how a Bubble Tea view is

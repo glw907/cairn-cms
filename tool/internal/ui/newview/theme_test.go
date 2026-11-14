@@ -6,6 +6,8 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/colorprofile"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 func sameColor(a, b color.Color) bool {
@@ -14,32 +16,33 @@ func sameColor(a, b color.Color) bool {
 	return ar == br && ag == bg && ab == bb && aa == ba
 }
 
-func TestStylesResolveWarmStoneForBothBackgrounds(t *testing.T) {
+// TestStylesMapEachFieldToItsRole pins which role each named style paints in. The hex values
+// themselves are style's to test.
+func TestStylesMapEachFieldToItsRole(t *testing.T) {
 	tests := []struct {
 		name string
-		dark bool
 		get  func(Styles) lipgloss.Style
-		want string
+		role Role
 	}{
-		{"light text", false, func(s Styles) lipgloss.Style { return s.Text }, "#28231d"},
-		{"dark text", true, func(s Styles) lipgloss.Style { return s.Text }, "#eae7e3"},
-		{"light muted", false, func(s Styles) lipgloss.Style { return s.Muted }, "#615d57"},
-		{"dark muted", true, func(s Styles) lipgloss.Style { return s.Muted }, "#a8a49e"},
-		{"light ok", false, func(s Styles) lipgloss.Style { return s.OK }, "#197037"},
-		{"dark ok", true, func(s Styles) lipgloss.Style { return s.OK }, "#7ccd8e"},
-		{"light failing", false, func(s Styles) lipgloss.Style { return s.Failing }, "#b71824"},
-		{"dark failing", true, func(s Styles) lipgloss.Style { return s.Failing }, "#ff8e86"},
-		{"light warn", false, func(s Styles) lipgloss.Style { return s.Warn }, "#915200"},
-		{"dark accent", true, func(s Styles) lipgloss.Style { return s.Accent }, "#9d84ec"},
-		{"light title", false, func(s Styles) lipgloss.Style { return s.Title }, "#28231d"},
+		{"text", func(s Styles) lipgloss.Style { return s.Text }, RoleText},
+		{"muted", func(s Styles) lipgloss.Style { return s.Muted }, RoleMuted},
+		{"subtle", func(s Styles) lipgloss.Style { return s.Subtle }, RoleSubtle},
+		{"ok", func(s Styles) lipgloss.Style { return s.OK }, RoleOK},
+		{"failing", func(s Styles) lipgloss.Style { return s.Failing }, RoleFailing},
+		{"warn", func(s Styles) lipgloss.Style { return s.Warn }, RoleUnknown},
+		{"accent", func(s Styles) lipgloss.Style { return s.Accent }, RoleAccent},
+		{"rule", func(s Styles) lipgloss.Style { return s.Rule }, RoleRule},
+		{"title", func(s Styles) lipgloss.Style { return s.Title }, RoleText},
+		{"accent strong", func(s Styles) lipgloss.Style { return s.AccentStrong }, RoleAccent},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.get(NewStyles(tt.dark, colorprofile.TrueColor)).GetForeground()
-			if !sameColor(got, lipgloss.Color(tt.want)) {
-				t.Errorf("foreground = %v, want %s", got, tt.want)
+	for _, dark := range []bool{false, true} {
+		th := style.NewTheme(dark, colorprofile.TrueColor, false)
+		s := NewStyles(dark, colorprofile.TrueColor)
+		for _, tt := range tests {
+			if got, want := tt.get(s).GetForeground(), th.Color(tt.role); !sameColor(got, want) {
+				t.Errorf("dark=%v %s: foreground = %v, want %v", dark, tt.name, got, want)
 			}
-		})
+		}
 	}
 }
 
@@ -75,26 +78,22 @@ func TestANSI16FallsBackToTheTerminalForegroundWithoutASlot(t *testing.T) {
 
 func TestHuhThemeExistsForLightAndDark(t *testing.T) {
 	th := HuhTheme(NewStyles(true, colorprofile.TrueColor))
-	for _, tt := range []struct {
-		dark       bool
-		text, fail string
-	}{
-		{true, "#eae7e3", "#ff8e86"},
-		{false, "#28231d", "#b71824"},
-	} {
-		hs := th.Theme(tt.dark)
+	for _, dark := range []bool{true, false} {
+		ref := style.NewTheme(dark, colorprofile.TrueColor, false)
+		text, fail := ref.Color(RoleText), ref.Color(RoleFailing)
+		hs := th.Theme(dark)
 		f := hs.Focused
-		if !f.Title.GetBold() || !sameColor(f.Title.GetForeground(), lipgloss.Color(tt.text)) {
-			t.Errorf("dark=%v: title bold=%v fg=%v, want bold %s", tt.dark, f.Title.GetBold(), f.Title.GetForeground(), tt.text)
+		if !f.Title.GetBold() || !sameColor(f.Title.GetForeground(), text) {
+			t.Errorf("dark=%v: title bold=%v fg=%v, want bold %v", dark, f.Title.GetBold(), f.Title.GetForeground(), text)
 		}
-		if !sameColor(f.ErrorMessage.GetForeground(), lipgloss.Color(tt.fail)) {
-			t.Errorf("dark=%v: error fg = %v, want %s", tt.dark, f.ErrorMessage.GetForeground(), tt.fail)
+		if !sameColor(f.ErrorMessage.GetForeground(), fail) {
+			t.Errorf("dark=%v: error fg = %v, want %v", dark, f.ErrorMessage.GetForeground(), fail)
 		}
 		if got := f.SelectSelector.Value(); got != "> " {
-			t.Errorf("dark=%v: selector = %q, want %q", tt.dark, got, "> ")
+			t.Errorf("dark=%v: selector = %q, want %q", dark, got, "> ")
 		}
 		if hs.Blurred.Title.GetBold() != f.Title.GetBold() {
-			t.Errorf("dark=%v: blurred styles diverge from focused", tt.dark)
+			t.Errorf("dark=%v: blurred styles diverge from focused", dark)
 		}
 	}
 }

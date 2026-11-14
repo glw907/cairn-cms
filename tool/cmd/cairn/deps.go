@@ -57,10 +57,10 @@ type deps struct {
 	// a field here, not a package-level variable, so a test can supply a fixture stream without
 	// touching the process's real stdin.
 	stdin io.Reader
-	// stdout is the process stream render.DetectProfile probes for its colour profile, its
-	// column count, and its TTY-ness. Nothing writes to it: a command still writes through
+	// stdout is the process stream style.Detect probes for its colour profile, its column
+	// count, and its TTY-ness. Nothing writes to it: a command still writes through
 	// cmd.OutOrStdout, and the detection needs a file descriptor that an io.Writer cannot
-	// carry. main.go fills it; a test leaves it nil, which DetectProfile reads as a pipe.
+	// carry. main.go fills it; a test leaves it nil, which Detect reads as a pipe.
 	stdout *os.File
 	// interactive reports whether stdin and stdout are both a terminal, which sends a mode-less
 	// cairn new to the terminal view. main fills it; a test leaves it nil, which reads as a pipe.

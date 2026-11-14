@@ -1,6 +1,7 @@
 package render
 
 import (
+	"math"
 	"reflect"
 	"regexp"
 	"slices"
@@ -9,13 +10,15 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // input builds one RenderInput over a fixture, with the clock every fixture is built against.
-func input(reports []health.Report, body Body, width int, p Profile, ascii bool, v Verdict) RenderInput {
+func input(reports []health.Report, body Body, width int, p colorprofile.Profile, ascii bool, v spine.Verdict) RenderInput {
 	return RenderInput{
 		View:    ViewHealth,
 		Body:    body,
@@ -41,7 +44,7 @@ func plainLines(in RenderInput) []string {
 }
 
 // TestSelectBody is criterion 1's six-row table: two scopes times three TTY-and-colour states.
-// Colour beyond ProfileNoColor never changes the body, only the ink, so no row multiplies.
+// Colour beyond colorprofile.ASCII never changes the body, only the ink, so no row multiplies.
 func TestSelectBody(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -71,7 +74,7 @@ func TestPlainBodyForcedColour(t *testing.T) {
 	if got := SelectBody(1, false); got != BodyPlain {
 		t.Fatalf("SelectBody into a pipe = %v, want BodyPlain", got)
 	}
-	f := Render(input(fixtures.OneSick(), BodyPlain, 80, ProfileTrueColor, true, spine.VerdictCritical))
+	f := Render(input(fixtures.OneSick(), BodyPlain, 80, colorprofile.TrueColor, true, spine.VerdictCritical))
 	if !strings.Contains(strings.Join(f.Lines(), "\n"), "\x1b[") {
 		t.Error("the plain body emitted no escape sequence under a forced colour profile")
 	}
@@ -81,9 +84,9 @@ func TestPlainBodyForcedColour(t *testing.T) {
 func TestSharedLayer(t *testing.T) {
 	reports := fixtures.OneSick()
 	bodies := map[string]RenderInput{
-		"single unicode": input(reports, BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical),
-		"single ascii":   input(reports, BodySingle, 120, ProfileNoColor, true, spine.VerdictCritical),
-		"plain":          input(reports, BodyPlain, 120, ProfileNoColor, true, spine.VerdictCritical),
+		"single unicode": input(reports, BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical),
+		"single ascii":   input(reports, BodySingle, 120, colorprofile.ASCII, true, spine.VerdictCritical),
+		"plain":          input(reports, BodyPlain, 120, colorprofile.ASCII, true, spine.VerdictCritical),
 	}
 	facts := []string{
 		"CRITICAL", "blog-site",
@@ -107,7 +110,7 @@ func TestSharedLayer(t *testing.T) {
 // word and its closing block opens on it too, for all four verdicts and both bodies, and the
 // plain body's exit code follows its last verdict line.
 func TestVerdictFirstAndLast(t *testing.T) {
-	for _, v := range []Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
+	for _, v := range []spine.Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
 		for _, tc := range []struct {
 			body  Body
 			width int
@@ -121,7 +124,7 @@ func TestVerdictFirstAndLast(t *testing.T) {
 			{BodyPlain, 100},
 		} {
 			body, width := tc.body, tc.width
-			lines := plainLines(input(fixtures.OneSick(), body, width, ProfileTrueColor, false, v))
+			lines := plainLines(input(fixtures.OneSick(), body, width, colorprofile.TrueColor, false, v))
 			var live []string
 			for _, l := range lines {
 				if strings.TrimSpace(l) != "" {
@@ -175,20 +178,20 @@ func closingBlock(lines []string) []string {
 // TestOnePassRule is criterion 4: in a frame whose verdict is anything but OK, no span carries
 // the ok role's saturated ink. Green means this run is OK.
 func TestOnePassRule(t *testing.T) {
-	theme := NewTheme(true, ProfileTrueColor)
-	okInk := inkOf(theme, RoleOK)
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	okInk := inkOf(theme, style.RoleOK)
 	if okInk == "" {
 		t.Fatal("the ok role resolved to no ink, so this test could not fail")
 	}
-	for _, v := range []Verdict{spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
-		f := Render(input(fixtures.OneSick(), BodySingle, 120, ProfileTrueColor, false, v))
+	for _, v := range []spine.Verdict{spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
+		f := Render(input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, v))
 		for _, sp := range frameSpans(f) {
 			if sp.sgr == okInk {
 				t.Errorf("verdict %v: %q carries the ok role's saturated ink", v, sp.text)
 			}
 		}
 	}
-	f := Render(input(fixtures.Healthy(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictOK))
+	f := Render(input(fixtures.Healthy(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictOK))
 	found := false
 	for _, sp := range frameSpans(f) {
 		if sp.sgr == okInk {
@@ -203,7 +206,7 @@ func TestOnePassRule(t *testing.T) {
 // TestNoRail is criterion 6: the failing group carries no rail. Its edge comes from the inset
 // rule above it, so no vertical mark runs down the left of any row.
 func TestNoRail(t *testing.T) {
-	for _, l := range plainLines(input(fixtures.OneSick(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical)) {
+	for _, l := range plainLines(input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)) {
 		if strings.ContainsAny(l, "▌│┃|┆┊") {
 			t.Errorf("line %q carries a vertical rail", l)
 		}
@@ -211,17 +214,17 @@ func TestNoRail(t *testing.T) {
 }
 
 // TestStateWordKeptWhereHueCannotCarryIt is criterion 7. The word is dropped only in the colour
-// Unicode tier; the ASCII tier, the plain body, and any ProfileNoColor terminal keep it.
+// Unicode tier; the ASCII tier, the plain body, and any colorprofile.ASCII terminal keep it.
 func TestStateWordKeptWhereHueCannotCarryIt(t *testing.T) {
 	tests := []struct {
 		name string
 		in   RenderInput
 		want bool
 	}{
-		{"colour unicode", input(fixtures.OneSick(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical), false},
-		{"ascii tier", input(fixtures.OneSick(), BodySingle, 120, ProfileTrueColor, true, spine.VerdictCritical), true},
-		{"no colour on a unicode terminal", input(fixtures.OneSick(), BodySingle, 120, ProfileNoColor, false, spine.VerdictCritical), true},
-		{"plain body", input(fixtures.OneSick(), BodyPlain, 120, ProfileTrueColor, false, spine.VerdictCritical), true},
+		{"colour unicode", input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical), false},
+		{"ascii tier", input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, true, spine.VerdictCritical), true},
+		{"no colour on a unicode terminal", input(fixtures.OneSick(), BodySingle, 120, colorprofile.ASCII, false, spine.VerdictCritical), true},
+		{"plain body", input(fixtures.OneSick(), BodyPlain, 120, colorprofile.TrueColor, false, spine.VerdictCritical), true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -249,21 +252,21 @@ func TestNoGlyphOnlySetting(t *testing.T) {
 // WARNING renders outlined, in both bodies, and a CRITICAL-class failure renders filled. The
 // mark reads the same predicate the verdict does, so the two can never disagree.
 func TestTwoSeverityMark(t *testing.T) {
-	theme := NewTheme(true, ProfileTrueColor)
-	g := theme.GlyphSet.Unicode
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	g := theme.marks
 
-	warn := plainLines(input(fixtures.WarningOnly(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictWarning))
+	warn := plainLines(input(fixtures.WarningOnly(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictWarning))
 	for _, l := range warn {
-		if strings.Contains(l, g.Fail) {
+		if strings.Contains(l, g.Failing) {
 			t.Errorf("a WARNING-only run drew the filled fail mark: %q", l)
 		}
 	}
-	if !strings.Contains(strings.Join(warn, "\n"), g.FailWarn) {
+	if !strings.Contains(strings.Join(warn, "\n"), g.FailingWarn) {
 		t.Error("a WARNING-only run drew no outlined fail mark at all")
 	}
 
-	sick := strings.Join(plainLines(input(fixtures.OneSick(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical)), "\n")
-	if !strings.Contains(sick, g.Fail) {
+	sick := strings.Join(plainLines(input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)), "\n")
+	if !strings.Contains(sick, g.Failing) {
 		t.Error("a run with a broken deploy drew no filled fail mark")
 	}
 	// The plain body says the same thing in words: engine is the WARNING-class failure.
@@ -275,7 +278,7 @@ func TestTwoSeverityMark(t *testing.T) {
 // TestSectionLabels is criterion 9: lowercase labels inset into a rule, everything passing
 // folded to one line in a non-OK run, and no domain case-folded anywhere.
 func TestSectionLabels(t *testing.T) {
-	lines := plainLines(input(fixtures.OneSick(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical))
+	lines := plainLines(input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical))
 	text := strings.Join(lines, "\n")
 	for _, label := range []string{labelFailing, labelCouldNotRun, labelHeld} {
 		if !strings.Contains(text, "── "+label+" ") {
@@ -293,7 +296,7 @@ func TestSectionLabels(t *testing.T) {
 			t.Errorf("line %q case-folded a domain", l)
 		}
 	}
-	ok := strings.Join(plainLines(input(fixtures.Healthy(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictOK)), "\n")
+	ok := strings.Join(plainLines(input(fixtures.Healthy(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictOK)), "\n")
 	if !strings.Contains(ok, "── "+labelPassing+" ") {
 		t.Error("an OK run did not show its work under a passing section")
 	}
@@ -307,7 +310,7 @@ func TestFixIsNeverTruncated(t *testing.T) {
 		t.Fatal("the fix table carries no line for a failed build")
 	}
 	for _, width := range []int{40, 60, 80, 100, 120, 200} {
-		text := strings.Join(plainLines(input(fixtures.OneSick(), BodySingle, width, ProfileTrueColor, false, spine.VerdictCritical)), " ")
+		text := strings.Join(plainLines(input(fixtures.OneSick(), BodySingle, width, colorprofile.TrueColor, false, spine.VerdictCritical)), " ")
 		for word := range strings.FieldsSeq(fix.Text) {
 			if !strings.Contains(text, word) {
 				t.Errorf("width %d: the fix lost the word %q", width, word)
@@ -323,11 +326,11 @@ func TestFixIsNeverTruncated(t *testing.T) {
 // documentation URL becomes an OSC 8 link where colour is on, and no row of the hostile URL
 // corpus ever does.
 func TestHyperlinkOnlyForConstrainedTargets(t *testing.T) {
-	joined := strings.Join(Render(input(fixtures.OneSick(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical)).Lines(), "\n")
+	joined := strings.Join(Render(input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)).Lines(), "\n")
 	if !strings.Contains(joined, "\x1b]8;;https://cairn.pub/") {
 		t.Error("no fix URL was emitted as an OSC 8 hyperlink on a colour terminal")
 	}
-	noColour := strings.Join(Render(input(fixtures.OneSick(), BodySingle, 120, ProfileNoColor, false, spine.VerdictCritical)).Lines(), "\n")
+	noColour := strings.Join(Render(input(fixtures.OneSick(), BodySingle, 120, colorprofile.ASCII, false, spine.VerdictCritical)).Lines(), "\n")
 	if strings.Contains(noColour, "\x1b]8;;") {
 		t.Error("a no-colour frame emitted an OSC 8 hyperlink")
 	}
@@ -343,7 +346,7 @@ func TestHyperlinkOnlyForConstrainedTargets(t *testing.T) {
 func TestConditionIDNeverAloneOnALine(t *testing.T) {
 	for width := 40; width <= 400; width++ {
 		for _, ascii := range []bool{false, true} {
-			for _, l := range plainLines(input(fixtures.OneSick(), BodySingle, width, ProfileTrueColor, ascii, spine.VerdictCritical)) {
+			for _, l := range plainLines(input(fixtures.OneSick(), BodySingle, width, colorprofile.TrueColor, ascii, spine.VerdictCritical)) {
 				if strings.TrimSpace(l) == string(spine.ConditionEdgeHTTPSNotForced) {
 					t.Fatalf("width %d ascii %v: the condition id took a line by itself", width, ascii)
 				}
@@ -379,7 +382,7 @@ func TestConditionIDPlacementByBand(t *testing.T) {
 func lineCarrying(t *testing.T, width int, want string) string {
 	t.Helper()
 	var found []string
-	for _, l := range plainLines(input(fixtures.OneSick(), BodySingle, width, ProfileTrueColor, false, spine.VerdictCritical)) {
+	for _, l := range plainLines(input(fixtures.OneSick(), BodySingle, width, colorprofile.TrueColor, false, spine.VerdictCritical)) {
 		if strings.Contains(l, want) {
 			found = append(found, l)
 		}
@@ -394,14 +397,14 @@ func lineCarrying(t *testing.T, width int, want string) string {
 // glyph, the word, and its trailing field; a hold inside 48 hours takes the attention ink;
 // and a lapsed hold holds nothing, leaving the verdict exactly as the caller computed it.
 func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
-	theme := NewTheme(true, ProfileTrueColor)
-	in := input(fixtures.OneSick(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical)
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	in := input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
 
 	text := strings.Join(plainLines(in), "\n")
-	if !strings.Contains(text, theme.GlyphSet.Unicode.Held) {
+	if !strings.Contains(text, theme.marks.NotStarted) {
 		t.Error("the held row carries no held glyph")
 	}
-	if !strings.Contains(text, "held until 2026-09-25, 5 days left") {
+	if !strings.Contains(text, "held until "+fixtures.Now().Add(5*24*time.Hour).Format(time.DateOnly)+", 5 days left") {
 		t.Error("the held row carries no expiry field")
 	}
 	if !strings.Contains(text, "── "+labelHeld+" ") {
@@ -415,11 +418,11 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 			soon[0].Checks[i].AckExpires = fixtures.Now().Add(18 * time.Hour)
 		}
 	}
-	escalating := input(soon, BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical)
-	attention := inkOf(theme, RoleUnknown)
+	escalating := input(soon, BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
+	attention := inkOf(theme, style.RoleUnknown)
 	holdSpanInk := ""
 	for _, sp := range frameSpans(Render(escalating)) {
-		if strings.Contains(sp.text, "held until 2026-09-21") {
+		if strings.Contains(sp.text, "held until "+fixtures.Now().Add(18*time.Hour).Format(time.DateOnly)) {
 			holdSpanInk = sp.sgr
 		}
 	}
@@ -429,9 +432,9 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 
 	// A lapsed hold: the check is back among the failures, says when the hold expired, and the
 	// verdict the caller computed is printed unchanged.
-	lapsed := input(fixtures.Hostile(), BodySingle, 120, ProfileTrueColor, false, spine.VerdictCritical)
+	lapsed := input(fixtures.Hostile(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
 	lapsedText := strings.Join(plainLines(lapsed), "\n")
-	if !strings.Contains(lapsedText, "hold expired 2026-08-11") {
+	if !strings.Contains(lapsedText, "hold expired "+time.Date(2026, 8, 11, 0, 0, 0, 0, time.UTC).Format(time.DateOnly)) {
 		t.Error("a lapsed hold did not say when it expired")
 	}
 	if strings.Contains(lapsedText, "── "+labelHeld+" ") {
@@ -465,7 +468,7 @@ func TestHoldFieldOnlyOnFailures(t *testing.T) {
 	}{{"single", BodySingle}, {"plain", BodyPlain}}
 	for _, b := range bodies {
 		t.Run(b.name, func(t *testing.T) {
-			for _, l := range plainLines(input(reports, b.body, 120, ProfileTrueColor, false, spine.VerdictCritical)) {
+			for _, l := range plainLines(input(reports, b.body, 120, colorprofile.TrueColor, false, spine.VerdictCritical)) {
 				if !strings.Contains(l, "serving") && !strings.Contains(l, "errors") {
 					continue
 				}
@@ -485,7 +488,7 @@ var plainKey = regexp.MustCompile(`^[a-z][a-z0-9 .,-]*: `)
 func TestPlainBodyKeys(t *testing.T) {
 	for _, f := range fixtures.All() {
 		t.Run(f.Name, func(t *testing.T) {
-			lines := plainLines(input(f.Reports, BodyPlain, 80, ProfileNoColor, true, spine.VerdictCritical))
+			lines := plainLines(input(f.Reports, BodyPlain, 80, colorprofile.ASCII, true, spine.VerdictCritical))
 			for i, l := range lines {
 				if l == "" {
 					continue
@@ -509,16 +512,16 @@ func TestPlainBodyKeys(t *testing.T) {
 // TestPlainBodyReadsWithoutColumns is criterion 14: no box drawing, no glyph carrying meaning,
 // no padding, and no dependence on the width at all.
 func TestPlainBodyReadsWithoutColumns(t *testing.T) {
-	theme := NewTheme(true, ProfileNoColor)
-	g := theme.GlyphSet.Unicode
-	base := strings.Join(plainLines(input(fixtures.OneSick(), BodyPlain, 40, ProfileNoColor, true, spine.VerdictCritical)), "\n")
+	theme := newTheme(true, colorprofile.ASCII, false)
+	g := theme.marks
+	base := strings.Join(plainLines(input(fixtures.OneSick(), BodyPlain, 40, colorprofile.ASCII, true, spine.VerdictCritical)), "\n")
 	for _, width := range []int{40, 60, 80, 100, 120, 200, 400} {
-		lines := plainLines(input(fixtures.OneSick(), BodyPlain, width, ProfileNoColor, true, spine.VerdictCritical))
+		lines := plainLines(input(fixtures.OneSick(), BodyPlain, width, colorprofile.ASCII, true, spine.VerdictCritical))
 		if got := strings.Join(lines, "\n"); got != base {
 			t.Errorf("width %d changed the plain body", width)
 		}
 		for _, l := range lines {
-			for _, glyph := range []string{g.Pass, g.Fail, g.FailWarn, g.Held, g.Arrow, g.Rule, g.Sep} {
+			for _, glyph := range []string{g.Pass, g.Failing, g.FailingWarn, g.NotStarted, g.Fix, g.Rule, g.Sep} {
 				if strings.Contains(l, glyph) {
 					t.Errorf("line %q carries the meaning-bearing glyph %q", l, glyph)
 				}
@@ -540,7 +543,7 @@ func TestPlainBodyGroupsOneFixOverSeveralSkips(t *testing.T) {
 		health.CheckResult{ID: "deploy", Outcome: spine.Outcome{
 			State: spine.Unknown, Reason: spine.ReasonNotObservable, Condition: spine.ConditionConfigObservabilityOff}},
 	)
-	text := strings.Join(plainLines(input(reports, BodyPlain, 80, ProfileNoColor, true, spine.VerdictWarning)), "\n")
+	text := strings.Join(plainLines(input(reports, BodyPlain, 80, colorprofile.ASCII, true, spine.VerdictWarning)), "\n")
 	if !strings.Contains(text, keyFixFor+"deploy, email, errors") {
 		t.Errorf("the skip group carries no shared fix line:\n%s", text)
 	}
@@ -552,7 +555,7 @@ func TestPlainBodyGroupsOneFixOverSeveralSkips(t *testing.T) {
 // TestPlainBodyBlankLinesBetweenBlocks is criterion 17: a blank line before each check block, so
 // a block is one greppable unit for both of this body's readers.
 func TestPlainBodyBlankLinesBetweenBlocks(t *testing.T) {
-	lines := plainLines(input(fixtures.OneSick(), BodyPlain, 80, ProfileNoColor, true, spine.VerdictCritical))
+	lines := plainLines(input(fixtures.OneSick(), BodyPlain, 80, colorprofile.ASCII, true, spine.VerdictCritical))
 	for i, l := range lines {
 		if !strings.HasPrefix(l, "deploy: ") && !strings.HasPrefix(l, "engine: ") {
 			continue
@@ -566,20 +569,20 @@ func TestPlainBodyBlankLinesBetweenBlocks(t *testing.T) {
 // TestWidthDefaultAndExactHonouring is criterion 18: an unset width composes at 80, and a width
 // the caller detected is honoured exactly rather than snapped to a rung.
 func TestWidthDefaultAndExactHonouring(t *testing.T) {
-	zero := Render(input(fixtures.OneSick(), BodySingle, 0, ProfileTrueColor, false, spine.VerdictCritical)).Lines()
-	eighty := Render(input(fixtures.OneSick(), BodySingle, 80, ProfileTrueColor, false, spine.VerdictCritical)).Lines()
+	zero := Render(input(fixtures.OneSick(), BodySingle, 0, colorprofile.TrueColor, false, spine.VerdictCritical)).Lines()
+	eighty := Render(input(fixtures.OneSick(), BodySingle, 80, colorprofile.TrueColor, false, spine.VerdictCritical)).Lines()
 	if strings.Join(zero, "\n") != strings.Join(eighty, "\n") {
 		t.Error("a zero width did not render identically to width 80")
 	}
-	ninety := Render(input(fixtures.OneSick(), BodySingle, 90, ProfileTrueColor, false, spine.VerdictCritical)).Lines()
+	ninety := Render(input(fixtures.OneSick(), BodySingle, 90, colorprofile.TrueColor, false, spine.VerdictCritical)).Lines()
 	if strings.Join(ninety, "\n") == strings.Join(eighty, "\n") {
 		t.Error("width 90 rendered identically to width 80, so the width was snapped to a rung")
 	}
 	if got := (RenderInput{Width: 90}).width(); got != 90 {
 		t.Errorf("width() = %d, want the requested 90 exactly", got)
 	}
-	if got := (RenderInput{Width: 200}).width(); got != widthCap {
-		t.Errorf("width() = %d, want the cap %d: content stops growing there", got, widthCap)
+	if got, want := (RenderInput{Width: 200}).width(), style.ContentWidth(math.MaxInt); got != want || want >= 200 {
+		t.Errorf("width() = %d, want the cap %d: content stops growing there", got, want)
 	}
 }
 
@@ -592,17 +595,17 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 	for _, f := range fixtures.All() {
 		for _, width := range []int{20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400} {
 			for _, ascii := range []bool{false, true} {
-				theme := NewTheme(true, ProfileTrueColor).forTier(ascii)
-				budget := min(width, widthCap)
+				theme := newTheme(true, colorprofile.TrueColor, ascii)
+				budget := style.ContentWidth(width)
 				for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
-					in := input(f.Reports, body, width, ProfileTrueColor, ascii, spine.VerdictCritical)
+					in := input(f.Reports, body, width, colorprofile.TrueColor, ascii, spine.VerdictCritical)
 					in.Status = sampleStatus()
 					for _, l := range Render(in).Lines() {
 						// The plain body is line-oriented by contract and depends on no width at
 						// all, so it is swept for the other two tables' sake and exempted here.
-						if body != BodyPlain && theme.width(l) > budget {
+						if body != BodyPlain && theme.Width(l) > budget {
 							t.Errorf("%s body %v at width %d ascii %v: line is %d cells: %q",
-								f.Name, body, width, ascii, theme.width(l), stripANSI(l))
+								f.Name, body, width, ascii, theme.Width(l), stripANSI(l))
 						}
 					}
 				}
@@ -611,25 +614,25 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 	}
 }
 
-// TestWidthTableFollowsTheGlyphTier is criterion 12: the width table is a field on Theme chosen
+// TestWidthTableFollowsTheGlyphTier is criterion 12: the width table is a field on theme chosen
 // by tier, not a package-level setting, and the two tables disagree on an East Asian Ambiguous
 // rune exactly as their names promise.
 func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
-	// U+25CF is the Unicode tier's pass mark and is EAW=Ambiguous (glyph.go's
-	// ambiguousRunes), so it is the one rune that separates the two tables.
+	// U+25CF is the Unicode tier's pass mark and is EAW=Ambiguous, so it is the one rune that
+	// separates the two tables.
 	const ambiguous = "●"
-	narrow := NewTheme(true, ProfileTrueColor).forTier(false)
-	wide := NewTheme(true, ProfileTrueColor).forTier(true)
-	if got := narrow.width(ambiguous); got != 1 {
+	narrow := newTheme(true, colorprofile.TrueColor, false)
+	wide := newTheme(true, colorprofile.TrueColor, true)
+	if got := narrow.Width(ambiguous); got != 1 {
 		t.Errorf("narrow table measures %q as %d cells, want 1", ambiguous, got)
 	}
-	if got := wide.width(ambiguous); got != 2 {
+	if got := wide.Width(ambiguous); got != 2 {
 		t.Errorf("wide table measures %q as %d cells, want 2", ambiguous, got)
 	}
 	// The tables agree on plain ASCII, which is the whole of the ASCII tier's glyph set.
 	for _, s := range []string{"+", "!", "*", "?", "o", ">", "-", "...", "my-site"} {
-		if narrow.width(s) != wide.width(s) {
-			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.width(s), wide.width(s))
+		if narrow.Width(s) != wide.Width(s) {
+			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.Width(s), wide.Width(s))
 		}
 	}
 }
@@ -666,7 +669,7 @@ func TestEveryFixtureRendersInEveryBody(t *testing.T) {
 	for _, f := range fixtures.All() {
 		for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 			for _, width := range []int{0, 1, 2, 5, 19, 40, 120, 400, -10} {
-				in := input(f.Reports, body, width, ProfileTrueColor, false, spine.VerdictUnknown)
+				in := input(f.Reports, body, width, colorprofile.TrueColor, false, spine.VerdictUnknown)
 				if got := Render(in); len(got.Lines()) == 0 {
 					t.Errorf("%s body %v width %d rendered nothing", f.Name, body, width)
 				}
@@ -681,13 +684,13 @@ func TestEveryFixtureRendersInEveryBody(t *testing.T) {
 func TestDeterminismAcrossTheEnvironment(t *testing.T) {
 	for _, tz := range []string{"UTC", "America/Anchorage", "Asia/Tokyo"} {
 		t.Setenv("TZ", tz)
-		in := input(fixtures.OneSick(), BodySingle, 100, ProfileTrueColor, false, spine.VerdictCritical)
+		in := input(fixtures.OneSick(), BodySingle, 100, colorprofile.TrueColor, false, spine.VerdictCritical)
 		first := strings.Join(Render(in).Lines(), "\n")
 		second := strings.Join(Render(in).Lines(), "\n")
 		if first != second {
 			t.Fatalf("TZ=%s: two renders of one input differ", tz)
 		}
-		if !strings.Contains(stripANSI(first), "2026-09-20 22:28 UTC") {
+		if !strings.Contains(stripANSI(first), fixtures.Now().Add(-4*time.Minute).UTC().Format("2006-01-02 15:04")+" UTC") {
 			t.Errorf("TZ=%s: the frame does not carry the input's instant in UTC", tz)
 		}
 	}
@@ -706,7 +709,7 @@ func endsWithSuffixOf(line, text string) bool {
 
 // manyInput builds one RenderInput over a fleet, with the run state the strip's tests read.
 func manyInput(reports []health.Report, width int, ascii bool) RenderInput {
-	in := input(reports, BodyMany, width, ProfileNoColor, ascii, verdictFor(reports))
+	in := input(reports, BodyMany, width, colorprofile.ASCII, ascii, verdictFor(reports))
 	in.Status = sampleStatus()
 	return in
 }
@@ -722,7 +725,7 @@ func nineCheckFleet() []health.Report {
 func TestStripWidthFormulaIsExact(t *testing.T) {
 	reports := nineCheckFleet()
 	ids := stripColumns()
-	theme := NewTheme(true, ProfileNoColor)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	siteCol := theme.siteColWidth(reports)
 	// 9 for "blog-site", the widest of the two sites, plus a gutter, plus the nine headings
 	// (creds serving delegation https email deploy publish-path engine errors) with eight
@@ -758,7 +761,7 @@ func TestStripHeadingsAbbreviateOnlyHTTPS(t *testing.T) {
 	if got := stripHeadingsFor(ids); !reflect.DeepEqual(got, wantHeadings) {
 		t.Fatalf("headings = %v, want %v", got, wantHeadings)
 	}
-	single := strings.Join(plainLines(input(fixtures.OneSick(), BodySingle, 100, ProfileNoColor, true, spine.VerdictCritical)), "\n")
+	single := strings.Join(plainLines(input(fixtures.OneSick(), BodySingle, 100, colorprofile.ASCII, true, spine.VerdictCritical)), "\n")
 	if !strings.Contains(single, "https-forced") {
 		t.Error("the single-site body abbreviated the check id; only the strip heading may")
 	}
@@ -774,17 +777,17 @@ func TestStripHeadingsAbbreviateOnlyHTTPS(t *testing.T) {
 func TestStripMarksAgreeWithTheRowVerdict(t *testing.T) {
 	reports := append(fixtures.TwelveSites(), fixtures.OneSick()...)
 	in := manyInput(reports, 120, false)
-	theme := NewTheme(true, ProfileNoColor)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	for _, r := range rankReports(reports) {
 		v := siteVerdict(r)
 		for _, c := range r.Checks {
 			glyph, _ := theme.mark(in, c)
 			switch glyph {
-			case theme.GlyphSet.Unicode.Fail:
+			case theme.marks.Failing:
 				if v != spine.VerdictCritical {
 					t.Errorf("%s %s: filled mark on a %s row", r.Site, c.ID, v)
 				}
-			case theme.GlyphSet.Unicode.FailWarn, theme.GlyphSet.Unicode.Held:
+			case theme.marks.FailingWarn, theme.marks.NotStarted:
 				if v == spine.VerdictOK {
 					t.Errorf("%s %s: fail mark on an OK row", r.Site, c.ID)
 				}
@@ -797,12 +800,12 @@ func TestStripMarksAgreeWithTheRowVerdict(t *testing.T) {
 // two-severity fill: a held failure is the held glyph in the strip cell too.
 func TestHeldFailureKeepsTheHeldMarkInTheStrip(t *testing.T) {
 	in := manyInput(fixtures.OneSick(), 120, false)
-	theme := NewTheme(true, ProfileNoColor)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	for _, c := range fixtures.OneSick()[0].Checks {
 		if !c.Acknowledged {
 			continue
 		}
-		if glyph, _ := theme.mark(in, c); glyph != theme.GlyphSet.Unicode.Held {
+		if glyph, _ := theme.mark(in, c); glyph != theme.marks.NotStarted {
 			t.Errorf("%s: held failure drew %q, want the held glyph", c.ID, glyph)
 		}
 	}
@@ -835,9 +838,9 @@ func TestFallbackTableCarriesTheEngineVersionAndTheDataAge(t *testing.T) {
 // escape stripped, the two fail marks are still different characters.
 func TestStripMarksAreDistinguishableWithoutColour(t *testing.T) {
 	for _, ascii := range []bool{false, true} {
-		g := NewTheme(true, ProfileNoColor).glyphs(ascii)
-		if g.Fail == g.FailWarn {
-			t.Errorf("ascii %v: both fail marks are %q", ascii, g.Fail)
+		g := newTheme(true, colorprofile.ASCII, ascii).marks
+		if g.Failing == g.FailingWarn {
+			t.Errorf("ascii %v: both fail marks are %q", ascii, g.Failing)
 		}
 	}
 }
@@ -845,11 +848,11 @@ func TestStripMarksAreDistinguishableWithoutColour(t *testing.T) {
 // TestStripMarksAreCentred is criterion 4: a mark sits centred in its heading's column, so the
 // marks form a grid rather than hugging each column's left edge.
 func TestStripMarksAreCentred(t *testing.T) {
-	theme := NewTheme(true, ProfileNoColor)
-	if got := theme.centredCell(RoleOK, "x", 5); got != "  x  " {
+	theme := newTheme(true, colorprofile.ASCII, false)
+	if got := theme.centredCell(style.RoleOK, "x", 5); got != "  x  " {
 		t.Errorf("centredCell = %q, want %q", got, "  x  ")
 	}
-	if got := theme.centredCell(RoleOK, "x", 4); got != " x  " {
+	if got := theme.centredCell(style.RoleOK, "x", 4); got != " x  " {
 		t.Errorf("centredCell = %q, want %q", got, " x  ")
 	}
 }
@@ -870,7 +873,7 @@ func TestEveryFixIsPrintedAndNoneTwice(t *testing.T) {
 			}
 		}
 	}
-	if got := strings.Count(text, "  "+NewTheme(true, ProfileNoColor).glyphs(false).Arrow+" "); got < want {
+	if got := strings.Count(text, "  "+newTheme(true, colorprofile.ASCII, false).marks.Fix+" "); got < want {
 		t.Errorf("%d fix entries, want at least the %d failures resolve to", got, want)
 	}
 	if strings.Contains(text, "more fix") || strings.Contains(text, "more ·") {
@@ -1077,6 +1080,7 @@ func TestFixListLeavesNoOrphanWord(t *testing.T) {
 func TestCheckedPhraseLeadsWithTheAge(t *testing.T) {
 	at := time.Date(2026, 9, 20, 22, 32, 0, 0, time.UTC)
 	offset := at.In(time.FixedZone("AKDT", -8*3600))
+	stamp := at.Format("2006-01-02 15:04") + " UTC"
 	for _, tt := range []struct {
 		name    string
 		at, now time.Time
@@ -1084,13 +1088,13 @@ func TestCheckedPhraseLeadsWithTheAge(t *testing.T) {
 		want    string
 	}{
 		{"minutes old", at, at.Add(4 * time.Minute), 16300 * time.Millisecond,
-			"checked 4m ago (2026-09-20 22:32 UTC), in 16.3s"},
+			"checked 4m ago (" + stamp + "), in 16.3s"},
 		{"seconds old", at, at.Add(22 * time.Second), 21700 * time.Millisecond,
-			"checked 22s ago (2026-09-20 22:32 UTC), in 21.7s"},
+			"checked 22s ago (" + stamp + "), in 21.7s"},
 		{"stamped in another zone", offset, offset.Add(4 * time.Minute), 0,
-			"checked 4m ago (2026-09-20 22:32 UTC)"},
-		{"just settled", at, at, 0, "checked 2026-09-20 22:32 UTC"},
-		{"stamped ahead of the clock", at, at.Add(-time.Minute), 0, "checked 2026-09-20 22:32 UTC"},
+			"checked 4m ago (" + stamp + ")"},
+		{"just settled", at, at, 0, "checked " + stamp},
+		{"stamped ahead of the clock", at, at.Add(-time.Minute), 0, "checked " + stamp},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := checkedPhrase(tt.at, tt.now, tt.elapsed); got != tt.want {
@@ -1116,7 +1120,7 @@ func TestNoBodyPrintsAReasonCode(t *testing.T) {
 		}}}}
 		for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 			for _, width := range []int{40, 80, 120} {
-				text := textOf(input(reports, body, width, ProfileNoColor, false, verdictFor(reports)))
+				text := textOf(input(reports, body, width, colorprofile.ASCII, false, verdictFor(reports)))
 				for line := range strings.SplitSeq(text, "\n") {
 					if strings.Contains(line, "reason.") {
 						t.Errorf("reason %q, body %v, width %d: the line %q carries the code itself",
@@ -1178,7 +1182,7 @@ func TestFixListEndsNoLineInACutToken(t *testing.T) {
 				continue
 			}
 			last := fields[len(fields)-1]
-			if whole(last) || strings.HasSuffix(last, NewTheme(true, ProfileNoColor).GlyphSet.Unicode.Ellipsis) {
+			if whole(last) || strings.HasSuffix(last, newTheme(true, colorprofile.ASCII, false).marks.Ellipsis) {
 				continue
 			}
 			for _, tok := range tokens {
@@ -1197,11 +1201,11 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 	entries := goldenLogEntries()
 	for _, width := range []int{60, 80, 100, 120} {
 		lines := plainLines(RenderInput{
-			View: ViewLogs, Width: width, Dark: true, Profile: ProfileNoColor,
+			View: ViewLogs, Width: width, Dark: true, Profile: colorprofile.ASCII,
 			Site: "my-site", Entries: entries, Now: fixtures.Now(),
 		})
 		text := strings.Join(lines, "\n")
-		if n := strings.Count(text, "2026-09-20"); n != 1 {
+		if n := strings.Count(text, fixtures.Now().UTC().Format(time.DateOnly)); n != 1 {
 			t.Errorf("width %d: the date appears %d times, want once on the rule", width, n)
 		}
 		if strings.Contains(text, "?") {
@@ -1239,7 +1243,7 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 func TestLogRowWithNoEventDropsTheEventColumn(t *testing.T) {
 	for _, width := range []int{60, 80, 100, 120} {
 		lines := plainLines(RenderInput{
-			View: ViewLogs, Width: width, Dark: true, Profile: ProfileNoColor,
+			View: ViewLogs, Width: width, Dark: true, Profile: colorprofile.ASCII,
 			Site: "blog-site", Entries: goldenMixedLogEntries(), Now: fixtures.Now(),
 		})
 		text := strings.Join(lines, "\n")
@@ -1287,8 +1291,8 @@ func TestNeverColourAlone(t *testing.T) {
 	for _, f := range fixtures.All() {
 		for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 			for _, width := range []int{60, 80, 100, 120} {
-				colour := textOf(input(f.Reports, body, width, ProfileTrueColor, false, verdictFor(f.Reports)))
-				bare := textOf(input(f.Reports, body, width, ProfileNoColor, false, verdictFor(f.Reports)))
+				colour := textOf(input(f.Reports, body, width, colorprofile.TrueColor, false, verdictFor(f.Reports)))
+				bare := textOf(input(f.Reports, body, width, colorprofile.ASCII, false, verdictFor(f.Reports)))
 				for _, w := range words {
 					if strings.Contains(colour, w) && !strings.Contains(bare, w) {
 						t.Errorf("%s body %v width %d: %q appears only in the colour render",
@@ -1310,13 +1314,13 @@ func textOf(in RenderInput) string {
 // such cells can take a ground across its whole width rather than painting striped gaps, which
 // is what the 2.0 HUD's selected row needs.
 //
-// The ground is applied here rather than through a Role, because the terminal owns the
+// The ground is applied here rather than through a style.Role, because the terminal owns the
 // background and this palette names no ground token. With a foreground alone lipgloss leaves the
 // padding unstyled, which is invisible and costs nothing; the property that matters is the one
 // measured below.
 func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
-	theme := NewTheme(true, ProfileTrueColor)
-	if got := theme.width(theme.cell(RoleFailing, "x", 8)); got != 8 {
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	if got := theme.Width(theme.cell(style.RoleFailing, "x", 8)); got != 8 {
 		t.Errorf("the cell measures %d cells, want the 8 its column budgeted", got)
 	}
 	ground := lipgloss.NewStyle().Background(lipgloss.Color("#123456")).Width(8).MaxWidth(8)
@@ -1332,10 +1336,10 @@ func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
 // break: a site reporting OK inside a failing sweep is muted like every other passing mark, so
 // the only saturated ink on the screen belongs to what failed.
 func TestFleetOnePassRule(t *testing.T) {
-	theme := NewTheme(true, ProfileTrueColor)
-	ok := inkOf(theme, RoleOK)
-	for _, width := range []int{Width80, width100, widthCap} {
-		in := input(fixtures.TwelveSites(), BodyMany, width, ProfileTrueColor, false, spine.VerdictCritical)
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	ok := inkOf(theme, style.RoleOK)
+	for _, width := range []int{style.DefaultWidth, width100, style.ContentWidth(math.MaxInt)} {
+		in := input(fixtures.TwelveSites(), BodyMany, width, colorprofile.TrueColor, false, spine.VerdictCritical)
 		in.Status = sampleStatus()
 		for _, sp := range frameSpans(Render(in)) {
 			// Containment, not equality: a bold cell carries the weight parameter ahead of the
@@ -1369,18 +1373,18 @@ func tableHeadingLine(lines []string) string {
 // the "engine" heading as "e" over a "0" that was once "0.84.4".
 func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 	reports := fixtures.TwelveSites()
-	theme := NewTheme(true, ProfileNoColor)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	tables := 0
 
 	for w := 20; w <= 1000; w++ {
-		lines := plainLines(input(reports, BodyMany, w, ProfileNoColor, false, verdictFor(reports)))
+		lines := plainLines(input(reports, BodyMany, w, colorprofile.ASCII, false, verdictFor(reports)))
 		head := tableHeadingLine(lines)
 		if head == "" {
 			continue
 		}
 		tables++
 
-		_, columns := tableFit(theme.siteColWidth(reports), content(w))
+		_, columns := tableFit(theme.siteColWidth(reports), style.ContentWidth(w))
 		for i := range columns {
 			if !strings.Contains(head, tableColumns[i].heading) {
 				t.Fatalf("width %d: heading row %q is missing the %q column", w, head, tableColumns[i].heading)

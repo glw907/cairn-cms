@@ -502,8 +502,8 @@ func sameScalar(value, want any) bool {
 	return fmt.Sprint(value) == fmt.Sprint(want)
 }
 
-// TestSkipAndUnknownRequireAReason covers the conditional the health schema gained on
-// 2026-09-21 and the doctor schema was written with: the payload contract promises every
+// TestSkipAndUnknownRequireAReason covers the conditional the health and doctor schemas both
+// carry: the payload contract promises every
 // skip and every unknown carries a reason, and "required" alone cannot say so, because it
 // applies to every state. Both halves are asserted against both schemas, since a validator
 // that ignored the conditional would pass the whole golden corpus silently.
@@ -523,7 +523,7 @@ func TestSkipAndUnknownRequireAReason(t *testing.T) {
 			"checkId":   "errors",
 			"state":     "pass",
 			"tier":      "cloudflare",
-			"checkedAt": "2026-09-20T12:00:00Z",
+			"checkedAt": time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC).Format(time.RFC3339),
 		}},
 		{"cairn-doctor.schema.json", map[string]any{
 			"checkId": "config.bindings",

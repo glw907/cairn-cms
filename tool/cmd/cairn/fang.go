@@ -8,49 +8,33 @@ import (
 
 	"charm.land/fang/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-)
-
-// warmStoneInk is one Warm Stone role's light and dark hex, copied from render's palette table.
-// render keeps that table unexported and this file is the only other place a help colour is
-// chosen, so the values are repeated here rather than widening render's surface; a change to
-// the palette is a change to both, and fang_test.go fails when the two differ.
-type warmStoneInk struct{ light, dark string }
-
-var (
-	inkText    = warmStoneInk{"#28231d", "#eae7e3"}
-	inkMuted   = warmStoneInk{"#615d57", "#a8a49e"}
-	inkFailing = warmStoneInk{"#b71824", "#ff8e86"}
-	inkUnknown = warmStoneInk{"#915200", "#f7ac4d"}
-	inkAccent  = warmStoneInk{"#7246cf", "#9d84ec"}
 )
 
 // fangColorScheme paints Cobra's help in the Warm Stone palette. Fang decides light or dark from
 // the terminal and supplies the choice as pick; no colour reaches a stream that is not a
 // terminal, or one with NO_COLOR set, because fang writes through a colorprofile writer.
 func fangColorScheme(pick lipgloss.LightDarkFunc) fang.ColorScheme {
-	ink := func(i warmStoneInk) color.Color {
-		return pick(lipgloss.Color(i.light), lipgloss.Color(i.dark))
-	}
+	ink := func(r style.Role) color.Color { return pick(style.Pair(r)) }
 	return fang.ColorScheme{
-		Base:           ink(inkText),
-		Title:          ink(inkAccent),
-		Description:    ink(inkText),
+		Base:           ink(style.RoleText),
+		Title:          ink(style.RoleAccent),
+		Description:    ink(style.RoleText),
 		Codeblock:      lipgloss.NoColor{},
-		Program:        ink(inkText),
-		DimmedArgument: ink(inkMuted),
-		Comment:        ink(inkMuted),
-		Flag:           ink(inkAccent),
-		FlagDefault:    ink(inkMuted),
-		Command:        ink(inkAccent),
-		QuotedString:   ink(inkUnknown),
-		Argument:       ink(inkText),
-		Help:           ink(inkMuted),
-		Dash:           ink(inkMuted),
-		ErrorHeader:    [2]color.Color{ink(inkText), ink(inkFailing)},
-		ErrorDetails:   ink(inkFailing),
+		Program:        ink(style.RoleText),
+		DimmedArgument: ink(style.RoleMuted),
+		Comment:        ink(style.RoleMuted),
+		Flag:           ink(style.RoleAccent),
+		FlagDefault:    ink(style.RoleMuted),
+		Command:        ink(style.RoleAccent),
+		QuotedString:   ink(style.RoleUnknown),
+		Argument:       ink(style.RoleText),
+		Help:           ink(style.RoleMuted),
+		Dash:           ink(style.RoleMuted),
+		ErrorHeader:    [2]color.Color{ink(style.RoleText), ink(style.RoleFailing)},
+		ErrorDetails:   ink(style.RoleFailing),
 	}
 }
 
@@ -83,7 +67,7 @@ func (t ttyWriter) Fd() uintptr { return t.term.Fd() }
 // text is the contract a program reads, and cmd/mangen harvests the man pages from it.
 func executeThemed(ctx context.Context, d deps, root *cobra.Command, args []string) error {
 	term := detectTerminal(d, &rootFlags{color: colorArg(args)})
-	if !term.TTY || term.Profile == render.ProfileNoColor {
+	if !term.TTY || style.NoColor(term.Profile) {
 		return root.ExecuteContext(ctx)
 	}
 	root.SetOut(ttyWriter{term: d.stdout, out: root.OutOrStdout()})

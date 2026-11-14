@@ -19,6 +19,7 @@ The gate rows sit in the private record `~/.local/state/cairn-gate/records/gate-
 missing.
 
 1. Round `tui-language` is running under `conductor-cairn-cms` (prompt `initiatives/cairn-setup/plans/2026-11-13-tui-language-conductor-prompt.txt`).
+   Pass 1 `style` is executed by session `cairn-cms-tui-language-1` (cdc9fb8d-7d0b-43ec-afb3-f7459f63d928), draft PR #245.
 2. Geoff's 907.life live setup waits for Survey (his ruling, 2026-11-14): theme-garden G3 in the theme round he
    starts, probably after cairn.pub work so the site can show themes, then an installer step with no plan yet. That setup writes the release's `owner` row. It runs on
    the candidate that installs Survey, with the wide All-repositories grant accepted (#473 looks for a narrower

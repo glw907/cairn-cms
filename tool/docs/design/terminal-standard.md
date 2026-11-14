@@ -10,7 +10,7 @@ the same as before the language existed.
 
 ## Roles
 
-A role names what a piece of text is, and the theme turns it into a color. No file outside
+A role names what a piece of text is, and the theme turns it into a color. No non-test Go file outside
 `internal/style` writes a color value, and a test fails on one. Color never carries meaning
 alone.
 
@@ -29,7 +29,8 @@ which also carries each role's xterm-256 value and its ANSI-16 slot.
 | Rule | `#c9c3bb` | `#4a443b` | A horizontal rule |
 
 Accent is narrow on purpose. A fix arrow points at the next step, so it takes Accent. Help text and
-the spinner are neither a cursor nor a step, which is why both lose Accent in this round.
+the spinner are neither a cursor nor a step, which is why both lose Accent in this round. The help text still paints Title, Flag and Command in Accent today and
+loses it in a later pass.
 
 The pass mark is green only when the whole run passed. Below a failure it is Muted, so no green
 cell sits under the last failing row.
@@ -67,9 +68,9 @@ Two marks are still moving:
 - A held row in `render` still draws the NotStarted mark, `○`, so no report changes in pass 1.
   Pass 2 switches it to Held.
 
-The Held glyph was checked in Kitty, in JetBrains Mono and Adwaita Mono on a dark and a light ground. It is drawn whole, one cell wide, in all four, so it stays `◌` and no fallback to `○` applies.
-
-Held: `◌`
+The Held glyph was checked in Kitty, in JetBrains Mono and Adwaita Mono on a dark and a light
+ground. It is drawn whole, one cell wide, in all four, so it stays `◌` and no fallback to `○`
+applies.
 
 ## The grid
 
@@ -86,13 +87,13 @@ Three widths bound a frame:
 
 | Width | Rule | Where it is set |
 | --- | --- | --- |
-| 60 | Below this, a report drops to one column | `widthNarrow`, `internal/render/width.go` |
+| 60 | Below this, a report drops to one column | `widthNarrow` in `internal/render/width.go` and `oneColumnBelow` in `internal/style/blocks.go` |
 | 80 | A command composes at this width when the terminal reports none | `DefaultWidth`, `internal/style/width.go` |
 | 120 | Content stops growing here, and a wider terminal keeps the rest empty | `widthCap`, `internal/style/width.go` |
 
 Text is left-aligned at every width. A value longer than its cell wraps to a continuation line in a
-report, and a table cell truncates with the Ellipsis mark. When a table runs out of width, it
-drops its rightmost columns in a fixed order.
+report. In a table, the name column truncates with the Ellipsis mark, and the other columns
+drop from the right when the table runs out of width. The name column always stays.
 
 ## Blocks
 

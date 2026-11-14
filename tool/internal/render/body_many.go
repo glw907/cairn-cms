@@ -163,15 +163,11 @@ const labelWhatToFix = "what to fix"
 // labelAlsoOn opens the line naming the other sites one repair applies to, after the site its
 // head line names. The list is never cut: a site left off it is a site the operator does not
 // know needs the same work.
-//
-// Drafted to the copy standard's grammar rather than copied, since the catalogue carries no row
-// for a repair's second site.
 const labelAlsoOn = "also on: "
 
 // wordTokens is the blocked-group head's collective word for a group more than one missing
-// token together explains, since no single token's name would cover what stopped it.
-// copy-standard.md's section 2.9 fixes "token" as the word for one credential; this is its
-// plural rather than a fresh coinage.
+// token together explains, since no single token's name would cover what stopped it. It is the
+// plural of "token", the word for one credential.
 const wordTokens = "tokens"
 
 // freshest returns the instant the most recently checked site settled, the one clock the fleet

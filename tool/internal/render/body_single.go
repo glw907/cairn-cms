@@ -22,10 +22,6 @@ const (
 
 // renderSingle draws one site's health: the rows grouped by what the operator must do, in the
 // order they must do it, under lowercase inset rules, with each fix under the row it repairs.
-//
-// There is no rail down the failing group. The failing group is always first and always under
-// its rule, so its edge is never in question; a rail buys an edge the reader already has and
-// spends a fourth ink on it.
 func renderSingle(t theme, in RenderInput) Frame {
 	width := in.width()
 	report := firstReport(in)

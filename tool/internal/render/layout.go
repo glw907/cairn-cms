@@ -305,8 +305,7 @@ func (t theme) insetRule(label string, width int) string {
 }
 
 // cell renders one fixed-width field. theme.Sized pads inside the styled block and cuts there,
-// so the padding carries the field's style and a 2.0 HUD can later paint a selected row's
-// ground across a whole row without striped gaps.
+// so the padding carries the field's style and a row's ground can span it without gaps.
 func (t theme) cell(role style.Role, text string, n int) string {
 	return t.Sized(role, n).Render(text)
 }

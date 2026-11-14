@@ -114,8 +114,6 @@ const (
 	// statusUnsetTailListing closes it where no check was attempted, which is the site listing.
 	// The past tense would report a failure that did not happen: the listing ran nothing, and
 	// what the missing token costs is the next health run, not this one.
-	//
-	// Drafted to the copy standard's grammar (section 4.7) rather than copied from elsewhere.
 	statusUnsetTailListing = " cannot run"
 	// statusReadJoin opens a present token's line, which then names the store it came from.
 	statusReadJoin = " read from the "

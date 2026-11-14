@@ -84,7 +84,7 @@ func (t theme) mark(in RenderInput, c health.CheckResult) (glyph string, role st
 	g := t.marks
 	switch {
 	case c.Outcome.State == spine.Failing && c.Acknowledged:
-		// WATCH: pass 2 item 8 switches this to Held; every golden with a held row changes then.
+		// WATCH: the held mark switches to Held here; every golden with a held row changes then.
 		return g.NotStarted, style.RoleUnknown
 	case c.Outcome.State == spine.Failing && criticalFailure(c.ID):
 		return g.Failing, style.RoleFailing
@@ -253,7 +253,7 @@ func (t theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 // At 100 columns and above it trails the fix block's last line, so the handle and the page that
 // documents it share a line. Below that the URL has already taken the width, so the id trails
 // the check's detail and wraps with it. Where no line has room for it at all, which happens
-// only at the narrowest widths, it is not printed: a bare line is the defect this corrects, and
+// only at the narrowest widths, it is not printed, and
 // --json carries the id at every width.
 func (t theme) placeCondition(detail, block []string, tail string, width int) {
 	if tail == "" {

@@ -50,7 +50,7 @@ var unicodeMarks = Marks{
 }
 
 // asciiMarks degrades each Unicode mark to ASCII. NotStarted stays "o", the same character as
-// Held, until the installer moves it.
+// Held.
 var asciiMarks = Marks{
 	Pass:        "+",
 	Failing:     "!",

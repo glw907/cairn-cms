@@ -11,7 +11,7 @@ import (
 	"github.com/charmbracelet/colorprofile"
 )
 
-// groundHex is the reference ground from family.md, light and dark. It names no Role: the
+// groundHex is the reference ground, light and dark. It names no Role: the
 // terminal owns the background, and this pair exists only so the contrast test can measure every
 // role against it.
 var groundHex = struct{ light, dark string }{"#fdfbf9", "#221f1a"}

@@ -19,7 +19,7 @@ import (
 // Every strip column is a check id spelled out, so the strip answers "which check" as well as
 // "how many" with no legend and no two-letter cipher under it. The table is not a rival
 // direction: it is the same information without the grid, for a terminal too narrow to carry the
-// labels, which is why choosing the strip ships both. Neither prints a legend.
+// labels. Neither prints a legend.
 
 // The strip's column budget.
 const (
@@ -652,7 +652,7 @@ func missingVariables(s StatusState) []string {
 
 // rankFleetFixes orders the list by the one severity key, with every fix for a check that could
 // not run listed after the failures: a check blocked by a missing setting is a thing the
-// operator can fix, and it was invisible on the fleet screen before it was listed at all.
+// operator can fix.
 func rankFleetFixes(fs []fleetFix) []fleetFix {
 	out := slices.Clone(fs)
 	slices.SortStableFunc(out, func(a, b fleetFix) int {

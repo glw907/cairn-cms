@@ -14,7 +14,7 @@ import (
 // file outside this one writes a colour value.
 type Role int
 
-// The CLI's roles, the Warm Stone token table from docs/design/reviews/family.md. There is no
+// The CLI's roles, the Warm Stone token table. There is no
 // role for the reference ground: the terminal owns the background, and the two ground hexes
 // appear only in the contrast test.
 const (

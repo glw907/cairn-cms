@@ -2,7 +2,7 @@ package render
 
 import "github.com/charmbracelet/x/ansi"
 
-// The named width rungs (docs/design/render-reference/measurements.txt). A terminal narrower than
+// The named width rungs. A terminal narrower than
 // widthNarrow drops to a single column; content stops growing at style.ContentWidth's cap and a
 // wider terminal keeps its unused margin rather than receiving a stretched layout. Left alignment
 // holds at every width: a centred block would float away from the prompt on a maximized terminal

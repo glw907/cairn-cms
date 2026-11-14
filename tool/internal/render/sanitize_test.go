@@ -109,7 +109,7 @@ func TestSanitizeInvalidUTF8(t *testing.T) {
 // fix, a 300-character fix, a 60-character domain, an IDN, punycode, CJK, a ZWJ emoji, and a 2 KB
 // log field all sanitize without panic. The count- and site-shaped half of criterion 23 (zero
 // sites, zero checks, fifty sites, counts of 0 and 100000) describes a body's fixtures rather
-// than a string sanitize takes, and is out of this task's scope; see the task report.
+// than a string sanitize takes, so it is not tested here.
 func TestSanitizeDegenerateInputs(t *testing.T) {
 	inputs := map[string]string{
 		"empty":            "",

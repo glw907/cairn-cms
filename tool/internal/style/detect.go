@@ -98,7 +98,7 @@ func detect(isTTY, vtOK bool, env Env) (profile colorprofile.Profile, ascii bool
 		profile = colorprofile.ASCII
 	default:
 		// colorprofile.Terminfo only ever distinguishes NoTTY, ANSI, or TrueColor (Tc/RGB
-		// capabilities): it never reports ANSI256 (verified local, colorprofile@v0.4.3/env.go),
+		// capabilities): it never reports ANSI256,
 		// so the named 256 rung is unreachable through it. colorprofile.Env reads TERM's
 		// "-256color" convention instead, which is the one signal a 256-colour terminal
 		// actually advertises there.

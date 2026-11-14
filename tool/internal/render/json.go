@@ -159,7 +159,7 @@ type logsPayload struct {
 
 // logEntry is one engine log record on the wire. Its fields are an object for the same reason a
 // check's are, and they are all copied from the site's record, which is what the payload's
-// containsPersonalData flag and json-output.md say in place of a per-field source.
+// containsPersonalData flag says in place of a per-field source.
 type logEntry struct {
 	At     string                     `json:"at"`
 	Level  string                     `json:"level"`

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/logx"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/glw907/cairn-cms/tool/v2/internal/version"
@@ -34,7 +35,7 @@ const (
 const defaultTimeout = 480 * time.Second
 
 // The three --color values. cairn health passes the chosen value into detectTerminal, which
-// hands it to render.DetectProfile as Env.Color: a non-empty NO_COLOR means no colour under all
+// hands it to style.Detect as Env.Color: a non-empty NO_COLOR means no colour under all
 // three, and otherwise auto defers to the terminal's colour support, always forces a coloured
 // frame regardless of the terminal, and never paints none. cairn doctor's report is plain text.
 const (
@@ -74,10 +75,10 @@ type rootFlags struct {
 	// is independent of color: NO_COLOR and --color decide whether a frame is painted at all, and
 	// this decides which palette it is painted from.
 	theme string
-	// width overrides the terminal column count render/profile.go's DetectProfile would
-	// otherwise read. Zero means unset: the operator's terminal width applies. cairn health
-	// reads the value in renderInput, falling back to the detected terminal's column count when
-	// the operator set none, and passes it straight into the frame render.Render composes.
+	// width overrides the terminal column count style.Detect would otherwise read. Zero means
+	// unset: the operator's terminal width applies. cairn health reads the value in renderInput,
+	// falling back to the detected terminal's column count when the operator set none, and
+	// passes it straight into the frame render.Render composes.
 	width int
 	// widthSet reports whether the operator passed --width explicitly, the same Changed-bit
 	// pattern timeoutSet uses: zero is both the flag's default and a value an operator could
@@ -141,7 +142,7 @@ func writeNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error
 	if width <= 0 {
 		width = render.Width80
 	}
-	theme := render.NewTheme(rf.theme != themeLight, render.ProfileNoColor)
+	theme := render.NewTheme(rf.theme != themeLight, colorprofile.ASCII)
 	for paragraph := range strings.SplitSeq(notice, "\n") {
 		for _, line := range theme.Wrap(paragraph, width) {
 			if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {

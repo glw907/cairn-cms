@@ -12,6 +12,7 @@ import (
 	"charm.land/lipgloss/v2/table"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // The many-sites body is the labelled status strip, with the plain table as its narrow fallback.
@@ -713,7 +714,7 @@ func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	}
 	checkCol = min(checkCol, room)
 	nameCell := t.Sized(RoleMuted, checkCol)
-	if url := fixURL(f.fix); url != "" && in.Profile != ProfileNoColor && linkable(url) {
+	if url := fixURL(f.fix); url != "" && !style.NoColor(in.Profile) && linkable(url) {
 		nameCell = t.sizedLink(RoleMuted, url, checkCol)
 	}
 	head := row(

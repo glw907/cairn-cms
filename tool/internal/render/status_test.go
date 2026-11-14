@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
@@ -12,7 +13,7 @@ import (
 // statusInput builds the input a status line is read from, with one token found and one missing.
 func statusInput() RenderInput {
 	return RenderInput{
-		View: ViewStatus, Width: width100, Dark: true, Profile: ProfileNoColor,
+		View: ViewStatus, Width: width100, Dark: true, Profile: colorprofile.ASCII,
 		Status: sampleStatus(), Now: fixtures.Now(),
 	}
 }
@@ -49,7 +50,7 @@ func TestMissingCredentialNamesTheChecksItDisables(t *testing.T) {
 // checks did run, the line stays in the past tense, since a missing token there is a cost the
 // run already paid.
 func TestHealthFrameKeepsThePastTenseMissingTokenLine(t *testing.T) {
-	in := input(fixtures.OneSick(), BodySingle, width100, ProfileNoColor, false, spine.VerdictCritical)
+	in := input(fixtures.OneSick(), BodySingle, width100, colorprofile.ASCII, false, spine.VerdictCritical)
 	in.Status = StatusState{Credentials: []Credential{{
 		Variable: "CAIRN_GH_READ_TOKEN",
 		Disables: []string{"deploy", "engine", "publish-path"},
@@ -109,7 +110,7 @@ func TestDegradedIsStatedWhereNoMissingTokenIs(t *testing.T) {
 // TestCredentialDetailSitsOnTheCredsRow is criterion 11's placement rule, from the design
 // brief's ruling 8: the credential and keyring detail leave the header block.
 func TestCredentialDetailSitsOnTheCredsRow(t *testing.T) {
-	in := input(fixtures.OneSick(), BodySingle, 100, ProfileNoColor, true, spine.VerdictCritical)
+	in := input(fixtures.OneSick(), BodySingle, 100, colorprofile.ASCII, true, spine.VerdictCritical)
 	in.Status = sampleStatus()
 	frame := Render(in)
 	for _, l := range frame.Header {
@@ -142,7 +143,7 @@ func TestCredentialDetailSitsOnTheCredsRow(t *testing.T) {
 // TestElapsedRidesTheCheckedLine is criterion 11's first fact: the run's wall time, on the
 // line that already says when the run happened, and absent where the caller measured none.
 func TestElapsedRidesTheCheckedLine(t *testing.T) {
-	in := input(fixtures.OneSick(), BodySingle, 100, ProfileNoColor, true, spine.VerdictCritical)
+	in := input(fixtures.OneSick(), BodySingle, 100, colorprofile.ASCII, true, spine.VerdictCritical)
 	in.Status = StatusState{Elapsed: 16300 * time.Millisecond}
 	if text := strings.Join(plainLines(in), "\n"); !strings.Contains(text, "), in 16.3s") {
 		t.Errorf("the checked line does not carry the run's time:\n%s", text)
@@ -160,7 +161,7 @@ func TestElapsedRidesTheCheckedLine(t *testing.T) {
 // heading, so the block the 2026-09-14 plan called `do this next` is not implemented at all.
 func TestNoDoThisNextDevice(t *testing.T) {
 	for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
-		in := input(fixtures.OneSick(), body, 100, ProfileNoColor, true, spine.VerdictCritical)
+		in := input(fixtures.OneSick(), body, 100, colorprofile.ASCII, true, spine.VerdictCritical)
 		in.Status = sampleStatus()
 		if text := strings.Join(plainLines(in), "\n"); strings.Contains(text, "do this next") {
 			t.Errorf("body %v still carries a do-this-next device:\n%s", body, text)

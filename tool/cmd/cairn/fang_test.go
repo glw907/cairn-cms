@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 )
 
@@ -53,7 +54,7 @@ func TestHelpInksMatchRendersPalette(t *testing.T) {
 			dark bool
 			hex  string
 		}{{false, tc.ink.light}, {true, tc.ink.dark}} {
-			got := render.NewTheme(side.dark, render.ProfileTrueColor).Style(tc.role).GetForeground()
+			got := render.NewTheme(side.dark, colorprofile.TrueColor).Style(tc.role).GetForeground()
 			if got == nil {
 				t.Fatalf("%s (dark %v): render's style has no foreground", tc.name, side.dark)
 			}

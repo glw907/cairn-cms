@@ -4,6 +4,8 @@ import (
 	"image/color"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/colorprofile"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // Role is a semantic ink role. Every style a body paints resolves through one of these, so no
@@ -61,12 +63,12 @@ var groundHex = struct{ light, dark string }{"#fdfbf9", "#221f1a"}
 // Theme resolves a role to a style for one background and one colour profile, and carries both
 // glyph tiers a body chooses between. It is the seam the 2.0 HUD imports unchanged: NewTheme
 // takes exactly a background and a profile, never a third parameter, because Profile alone does
-// not encode which glyph tier to draw (ProfileNoColor is not the same axis as ASCII); the tier
+// not encode which glyph tier to draw (no colour is not the same axis as ASCII); the tier
 // lives on GlyphSet instead, and render.Render picks a side by reading RenderInput.ASCII, which
-// profile.go's detector alone fills.
+// style.Detect alone fills.
 type Theme struct {
 	dark     bool
-	profile  Profile
+	profile  colorprofile.Profile
 	widths   widthTable
 	GlyphSet GlyphSet
 }
@@ -75,7 +77,7 @@ type Theme struct {
 // width table. It reads nothing else: profile_test.go asserts the signature and glyph_test.go
 // asserts GlyphSet carries both tiers. The tier is applied afterwards by forTier, which is what
 // keeps the glyph tier off this signature and out of Profile.
-func NewTheme(dark bool, p Profile) Theme {
+func NewTheme(dark bool, p colorprofile.Profile) Theme {
 	return Theme{
 		dark:     dark,
 		profile:  p,
@@ -85,7 +87,7 @@ func NewTheme(dark bool, p Profile) Theme {
 }
 
 // forTier returns t measuring under the width table the glyph tier implies. Render is the one
-// caller: it reads RenderInput.ASCII, which profile.go's detector alone fills.
+// caller: it reads RenderInput.ASCII, which style.Detect alone fills.
 func (t Theme) forTier(ascii bool) Theme {
 	t.widths = tableNarrow
 	if ascii {
@@ -103,24 +105,24 @@ func (t Theme) color(role Role) color.Color {
 	v := warmStone[role]
 	ld := lipgloss.LightDark(t.dark)
 	ansi16 := lipgloss.Color(v.ansi16)
-	return lipgloss.Complete(t.profile.ColorProfile())(
+	return lipgloss.Complete(t.profile)(
 		ld(ansi16, ansi16),
 		ld(lipgloss.Color(v.light256), lipgloss.Color(v.dark256)),
 		ld(lipgloss.Color(v.lightHex), lipgloss.Color(v.darkHex)),
 	)
 }
 
-// Style returns role's style: the zero style at ProfileNoColor, so a body that leans on colour
+// Style returns role's style: the zero style at no colour, so a body that leans on colour
 // alone fails visibly rather than in production; a foreground with no explicit colour at
-// ProfileANSI16 for RoleText and RoleMuted, the terminal's default; and role's resolved
+// ANSI-16 for RoleText and RoleMuted, the terminal's default; and role's resolved
 // colour at every other rung. Style and Sized are the only two ways to get a lipgloss.Style from
 // this package (purity_test.go's grep test forbids a raw lipgloss setter outside this file).
 func (t Theme) Style(role Role) lipgloss.Style {
 	s := lipgloss.NewStyle()
-	if t.profile == ProfileNoColor {
+	if style.NoColor(t.profile) {
 		return s
 	}
-	if t.profile == ProfileANSI16 && warmStone[role].ansi16 == "" {
+	if t.profile == colorprofile.ANSI && warmStone[role].ansi16 == "" {
 		return s
 	}
 	return s.Foreground(t.color(role))
@@ -130,11 +132,11 @@ func (t Theme) Style(role Role) lipgloss.Style {
 // word and the subject it names. It is a Theme method rather than a setter a body chains, which
 // is what keeps this file's rule intact: Style and Sized are the only ways out of here.
 //
-// At ProfileNoColor it returns the zero style unchanged, bold included: that rung is what
+// At no colour it returns the zero style unchanged, bold included: that rung is what
 // NO_COLOR, --color=never, and a plain pipe all resolve to, and its readers (a cron mail, a CI
 // log, an agent) get no escape bytes at all, not merely no colour.
 func (t Theme) strong(role Role) lipgloss.Style {
-	if t.profile == ProfileNoColor {
+	if style.NoColor(t.profile) {
 		return t.Style(role)
 	}
 	return t.Style(role).Bold(true)

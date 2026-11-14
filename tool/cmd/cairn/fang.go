@@ -8,7 +8,7 @@ import (
 
 	"charm.land/fang/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -83,7 +83,7 @@ func (t ttyWriter) Fd() uintptr { return t.term.Fd() }
 // text is the contract a program reads, and cmd/mangen harvests the man pages from it.
 func executeThemed(ctx context.Context, d deps, root *cobra.Command, args []string) error {
 	term := detectTerminal(d, &rootFlags{color: colorArg(args)})
-	if !term.TTY || term.Profile == render.ProfileNoColor {
+	if !term.TTY || style.NoColor(term.Profile) {
 		return root.ExecuteContext(ctx)
 	}
 	root.SetOut(ttyWriter{term: d.stdout, out: root.OutOrStdout()})

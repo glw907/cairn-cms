@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
@@ -44,14 +45,14 @@ type goldenCase struct {
 	body Body
 	// width, profile, dark, and ascii are the four presentation axes.
 	width   int
-	profile Profile
+	profile colorprofile.Profile
 	dark    bool
 	ascii   bool
 }
 
 // goldenName is the sole source of a golden's path, for writing one and for recognising an
 // orphan, so the corpus cannot drift into two naming schemes.
-func goldenName(view, fixture string, width int, profile Profile, dark, ascii bool) string {
+func goldenName(view, fixture string, width int, profile colorprofile.Profile, dark, ascii bool) string {
 	parts := []string{fixture, fmt.Sprintf("w%03d", width), profileName(profile), groundName(dark), tableName(ascii)}
 	return filepath.Join(goldenDir, view, strings.Join(parts, "_")+".txt")
 }
@@ -62,13 +63,13 @@ func (c goldenCase) path() string {
 }
 
 // profileName names a colour profile for a golden's file name.
-func profileName(p Profile) string {
+func profileName(p colorprofile.Profile) string {
 	switch p {
-	case ProfileANSI16:
+	case colorprofile.ANSI:
 		return "ansi16"
-	case ProfileANSI256:
+	case colorprofile.ANSI256:
 		return "ansi256"
-	case ProfileTrueColor:
+	case colorprofile.TrueColor:
 		return "truecolor"
 	default:
 		return "nocolor"
@@ -311,7 +312,7 @@ func goldenCases() []goldenCase {
 			for _, width := range goldenRungs {
 				out = append(out, goldenCase{
 					view: b.view, fixture: f.Name, reports: f.Reports, body: b.body,
-					width: width, profile: ProfileTrueColor, dark: true,
+					width: width, profile: colorprofile.TrueColor, dark: true,
 				})
 			}
 		}
@@ -319,19 +320,19 @@ func goldenCases() []goldenCase {
 	for _, width := range goldenRungs {
 		out = append(out, goldenCase{
 			view: "logs", fixture: "excerpt", entries: goldenLogEntries(),
-			width: width, profile: ProfileTrueColor, dark: true,
+			width: width, profile: colorprofile.TrueColor, dark: true,
 		})
 		out = append(out, goldenCase{
 			view: "logs", fixture: "mixed", entries: goldenMixedLogEntries(),
-			width: width, profile: ProfileTrueColor, dark: true,
+			width: width, profile: colorprofile.TrueColor, dark: true,
 		})
 	}
 
 	base := goldenCase{
 		view: "single", fixture: "one-sick", reports: fixtures.OneSick(), body: BodySingle,
-		width: width100, profile: ProfileTrueColor, dark: true,
+		width: width100, profile: colorprofile.TrueColor, dark: true,
 	}
-	for _, p := range []Profile{ProfileNoColor, ProfileANSI16, ProfileANSI256} {
+	for _, p := range []colorprofile.Profile{colorprofile.ASCII, colorprofile.ANSI, colorprofile.ANSI256} {
 		targeted := base
 		targeted.profile = p
 		out = append(out, targeted)

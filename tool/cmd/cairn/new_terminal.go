@@ -83,7 +83,7 @@ func runTerminal(cmd *cobra.Command, d deps, rf *rootFlags, f newFlags) error {
 
 	term := detectTerminal(d, rf)
 	m := l.model(ctx, newview.Config{
-		Styles: newview.NewStyles(rf.theme != themeLight, term.Profile.ColorProfile()),
+		Styles: newview.NewStyles(rf.theme != themeLight, term.Profile),
 		Glyphs: newview.GlyphsFor(term.ASCII),
 		Themes: l.tmpl.Themes,
 		Remote: remote,

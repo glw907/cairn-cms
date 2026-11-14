@@ -3,10 +3,9 @@
 // bytes on every machine and on every run, which is what makes a golden test possible.
 // purity_test.go enforces the seam: os, golang.org/x/term, colorprofile's detection entry
 // points, and lipgloss's package-level Writer and Print family are forbidden everywhere in this
-// package except profile.go, the one file that reads the environment and queries the terminal.
+// package. The environment and the terminal are read by style.Detect, never here.
 //
-// The foundations a body is built out of are the colour Profile (profile.go), the Warm Stone
-// Theme and its palette (palette.go), the glyph set (glyph.go), the named width rungs (width.go),
+// The foundations a body is built out of are the Warm Stone Theme and its palette (palette.go), the glyph set (glyph.go), the named width rungs (width.go),
 // and the sanitizer every dynamic string passes through (sanitize.go). One shared layer
 // (layout.go, rank.go) supplies the header, the section grammar, the fix format, and the one
 // severity ranking, and the four bodies compose them into the frames an operator reads: one site
@@ -17,6 +16,7 @@ package render
 import (
 	"time"
 
+	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
@@ -59,7 +59,7 @@ const defaultWidth = 80
 // SelectBody returns the body a run of sites reports composes into. A pipe always takes the
 // plain body, at any scope: plain is the default for a pipe exactly as --json is, never a
 // variant an operator opts into. Colour never enters the choice, so forcing colour into a pipe
-// yields the plain body in colour, and a ProfileNoColor terminal still gets a terminal body.
+// yields the plain body in colour, and a no-colour terminal still gets a terminal body.
 func SelectBody(sites int, tty bool) Body {
 	switch {
 	case !tty:
@@ -83,10 +83,10 @@ type RenderInput struct {
 	// Dark reports whether Theme should read the palette's dark branch.
 	Dark bool
 	// Profile is the colour profile to paint with.
-	Profile Profile
-	// ASCII selects the ASCII glyph tier over Unicode. profile.go's DetectProfile is the only
-	// function that fills it; render.Render reads the field and never re-derives it, since
-	// purity forbids a second TTY check anywhere else in this package.
+	Profile colorprofile.Profile
+	// ASCII selects the ASCII glyph tier over Unicode. style.Detect is the only function that
+	// fills it; render.Render reads the field and never re-derives it, since purity forbids a
+	// second TTY check anywhere else in this package.
 	ASCII bool
 	// Reports holds the health sweep's settled reports, in the order the sweep ran them. The
 	// render owns the ranking; nothing upstream re-orders.

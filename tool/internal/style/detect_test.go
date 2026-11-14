@@ -1,4 +1,4 @@
-package render
+package style
 
 import (
 	"os"
@@ -18,11 +18,11 @@ import (
 // and pinning the Unix one everywhere is what made the Windows CI leg red. Verified by reading
 // the dependency's source, not by running on Windows: only the CI leg can confirm the build
 // number the runner reports.
-func emptyTermProfile() Profile {
+func emptyTermProfile() colorprofile.Profile {
 	if runtime.GOOS == "windows" {
-		return ProfileTrueColor
+		return colorprofile.TrueColor
 	}
-	return ProfileNoColor
+	return colorprofile.ASCII
 }
 
 // TestDetectColourOrder covers criterion 14's detection table: NO_COLOR beats --color=always,
@@ -33,16 +33,16 @@ func TestDetectColourOrder(t *testing.T) {
 		name  string
 		isTTY bool
 		env   Env
-		want  Profile
+		want  colorprofile.Profile
 	}{
-		{"no_color_wins_over_always", true, Env{NoColor: "1", Color: "always", Term: "xterm-256color"}, ProfileNoColor},
-		{"no_color_non_empty_string", true, Env{NoColor: "0", Color: "auto", Term: "xterm-256color"}, ProfileNoColor},
-		{"color_never", true, Env{Color: "never", Term: "xterm-256color"}, ProfileNoColor},
-		{"color_always_forces_truecolor", false, Env{Color: "always", Term: "dumb"}, ProfileTrueColor},
-		{"auto_term_dumb", true, Env{Color: "auto", Term: "dumb"}, ProfileNoColor},
-		{"auto_non_tty", false, Env{Color: "auto", Term: "xterm-256color"}, ProfileNoColor},
-		{"auto_ansi256", true, Env{Color: "auto", Term: "xterm-256color"}, ProfileANSI256},
-		{"auto_ansi16", true, Env{Color: "auto", Term: "xterm"}, ProfileANSI16},
+		{"no_color_wins_over_always", true, Env{NoColor: "1", Color: "always", Term: "xterm-256color"}, colorprofile.ASCII},
+		{"no_color_non_empty_string", true, Env{NoColor: "0", Color: "auto", Term: "xterm-256color"}, colorprofile.ASCII},
+		{"color_never", true, Env{Color: "never", Term: "xterm-256color"}, colorprofile.ASCII},
+		{"color_always_forces_truecolor", false, Env{Color: "always", Term: "dumb"}, colorprofile.TrueColor},
+		{"auto_term_dumb", true, Env{Color: "auto", Term: "dumb"}, colorprofile.ASCII},
+		{"auto_non_tty", false, Env{Color: "auto", Term: "xterm-256color"}, colorprofile.ASCII},
+		{"auto_ansi256", true, Env{Color: "auto", Term: "xterm-256color"}, colorprofile.ANSI256},
+		{"auto_ansi16", true, Env{Color: "auto", Term: "xterm"}, colorprofile.ANSI},
 		{"auto_empty_term", true, Env{Color: "auto", Term: ""}, emptyTermProfile()},
 	}
 	for _, tt := range tests {
@@ -89,21 +89,21 @@ func TestNoColorAloneForcesNoColorProfile(t *testing.T) {
 	for _, tty := range []bool{true, false} {
 		for _, color := range []string{"auto", "always", "never"} {
 			got, _ := detect(tty, true, Env{NoColor: "1", Color: color, Term: "xterm-256color"})
-			if got != ProfileNoColor {
-				t.Errorf("detect(tty=%v, color=%s) with NO_COLOR set = %v, want ProfileNoColor", tty, color, got)
+			if got != colorprofile.ASCII {
+				t.Errorf("detect(tty=%v, color=%s) with NO_COLOR set = %v, want colorprofile.ASCII", tty, color, got)
 			}
 		}
 	}
 }
 
-// TestDetectProfileRealStdout is a smoke test over the impure wrapper itself: a test binary's
-// stdout is not a terminal, so with no NO_COLOR set the profile is ProfileNoColor and the tier is
+// TestDetectRealStdout is a smoke test over the impure wrapper itself: a test binary's
+// stdout is not a terminal, so with no NO_COLOR set the profile is colorprofile.ASCII and the tier is
 // ASCII, and the function does not panic reading a real *os.File.
-func TestDetectProfileRealStdout(t *testing.T) {
-	got := DetectProfile(os.Stdout, Env{Color: "auto"})
+func TestDetectRealStdout(t *testing.T) {
+	got := Detect(os.Stdout, Env{Color: "auto"})
 	if os.Getenv("NO_COLOR") == "" && !isRealTTY() {
-		if got.Profile != ProfileNoColor {
-			t.Errorf("Profile = %v, want ProfileNoColor for a non-TTY stdout", got.Profile)
+		if got.Profile != colorprofile.ASCII {
+			t.Errorf("Profile = %v, want colorprofile.ASCII for a non-TTY stdout", got.Profile)
 		}
 		if !got.ASCII {
 			t.Error("ASCII = false, want true for a non-TTY stdout")
@@ -117,10 +117,10 @@ func TestDetectProfileRealStdout(t *testing.T) {
 	}
 }
 
-// TestDetectProfileNilStdout covers the stream-less caller: a command built with no process
+// TestDetectNilStdout covers the stream-less caller: a command built with no process
 // stdout must read as a pipe rather than probing a nil file descriptor.
-func TestDetectProfileNilStdout(t *testing.T) {
-	got := DetectProfile(nil, Env{Color: "always"})
+func TestDetectNilStdout(t *testing.T) {
+	got := Detect(nil, Env{Color: "always"})
 	if got.TTY {
 		t.Error("TTY = true, want false with no stdout")
 	}
@@ -130,13 +130,13 @@ func TestDetectProfileNilStdout(t *testing.T) {
 	if !got.ASCII {
 		t.Error("ASCII = false, want true with no stdout")
 	}
-	if got.Profile != ProfileTrueColor {
-		t.Errorf("Profile = %v, want ProfileTrueColor: --color=always forces colour", got.Profile)
+	if got.Profile != colorprofile.TrueColor {
+		t.Errorf("Profile = %v, want colorprofile.TrueColor: --color=always forces colour", got.Profile)
 	}
 }
 
 // isRealTTY reports whether this test process itself has a real terminal on stdout, so
-// TestDetectProfileRealStdout can skip its assertion under `go test` run interactively rather
+// TestDetectRealStdout can skip its assertion under `go test` run interactively rather
 // than assume every CI and every desk always pipes stdout.
 func isRealTTY() bool {
 	fi, err := os.Stdout.Stat()
@@ -146,38 +146,11 @@ func isRealTTY() bool {
 	return fi.Mode()&os.ModeCharDevice != 0
 }
 
-// TestBodyFollowsTheTerminalFactAloneNotTheTier is criterion 15: the one TTY predicate selects
-// the body, and the ASCII tier never does. A dumb but real terminal takes a styled body while
-// rendering at the ASCII tier; a pipe takes the plain body under the same tier. Reading the tier
-// instead would give the real terminal a cron mail's body.
-func TestBodyFollowsTheTerminalFactAloneNotTheTier(t *testing.T) {
-	tests := []struct {
-		name      string
-		isTTY     bool
-		wantASCII bool
-		wantBody  Body
-	}{
-		{"dumb_but_real_terminal", true, true, BodySingle},
-		{"pipe", false, true, BodyPlain},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, ascii := detect(tt.isTTY, true, Env{Color: "auto", Term: "dumb"})
-			if ascii != tt.wantASCII {
-				t.Errorf("ascii = %v, want %v", ascii, tt.wantASCII)
-			}
-			if got := SelectBody(1, tt.isTTY); got != tt.wantBody {
-				t.Errorf("SelectBody(1, tty=%v) = %v, want %v", tt.isTTY, got, tt.wantBody)
-			}
-		})
-	}
-}
-
-// TestFromColorprofileNeverPanics exercises every colorprofile.Profile byte value, including ones
+// TestPaintableNeverPanics exercises every colorprofile.Profile byte value, including ones
 // with no named constant, since Terminfo's return value is not restricted to the six documented
 // ones by the type system.
-func TestFromColorprofileNeverPanics(t *testing.T) {
+func TestPaintableNeverPanics(t *testing.T) {
 	for b := 0; b <= 255; b++ {
-		_ = fromColorprofile(colorprofile.Profile(b))
+		_ = paintable(colorprofile.Profile(b))
 	}
 }

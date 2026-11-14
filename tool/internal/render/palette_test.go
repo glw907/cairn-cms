@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/colorprofile"
 )
 
 // zeroStyleRender is lipgloss.NewStyle().Render("x"): GetForeground() on a style that never had
@@ -117,20 +118,20 @@ func TestANSI16Slots(t *testing.T) {
 
 // TestMutedNeverSlotOrFaint is criterion 5's owner override: muted, and by inheritance the folded
 // acknowledged role (which is muted itself, per criterion 4), carries no ANSI-16 slot and no
-// SGR 2. Theme.Style at ProfileANSI16 returns the zero style for it, never a Faint style.
+// SGR 2. Theme.Style at colorprofile.ANSI returns the zero style for it, never a Faint style.
 func TestMutedNeverSlotOrFaint(t *testing.T) {
 	if warmStone[RoleMuted].ansi16 != "" {
 		t.Fatalf("RoleMuted carries ANSI-16 slot %q, want none (the terminal's default)", warmStone[RoleMuted].ansi16)
 	}
 	zero := zeroStyleRender
 	for _, dark := range []bool{true, false} {
-		th := NewTheme(dark, ProfileANSI16)
+		th := NewTheme(dark, colorprofile.ANSI)
 		s := th.Style(RoleMuted)
 		if s.GetFaint() {
-			t.Error("Theme.Style(RoleMuted) at ProfileANSI16 sets Faint, want the zero style")
+			t.Error("Theme.Style(RoleMuted) at colorprofile.ANSI sets Faint, want the zero style")
 		}
 		if got := s.Render("x"); got != zero {
-			t.Errorf("Theme.Style(RoleMuted) at ProfileANSI16 renders %q, want the zero style's %q", got, zero)
+			t.Errorf("Theme.Style(RoleMuted) at colorprofile.ANSI renders %q, want the zero style's %q", got, zero)
 		}
 	}
 }
@@ -146,8 +147,8 @@ func TestNewThemeSignature(t *testing.T) {
 	if typ.In(0).Kind() != reflect.Bool {
 		t.Errorf("NewTheme's first parameter is %s, want bool", typ.In(0))
 	}
-	if typ.In(1) != reflect.TypeOf(ProfileNoColor) {
-		t.Errorf("NewTheme's second parameter is %s, want render.Profile", typ.In(1))
+	if typ.In(1) != reflect.TypeOf(colorprofile.ASCII) {
+		t.Errorf("NewTheme's second parameter is %s, want colorprofile.Profile", typ.In(1))
 	}
 }
 
@@ -155,7 +156,7 @@ func TestNewThemeSignature(t *testing.T) {
 // glyph tiers, so a body can select between them by reading RenderInput.ASCII without Theme
 // itself ever choosing.
 func TestThemeGlyphSetExposesBothTiers(t *testing.T) {
-	th := NewTheme(true, ProfileTrueColor)
+	th := NewTheme(true, colorprofile.TrueColor)
 	if th.GlyphSet.Unicode.Pass != unicodeGlyphs.Pass {
 		t.Error("Theme.GlyphSet.Unicode is not the Unicode tier")
 	}
@@ -167,21 +168,21 @@ func TestThemeGlyphSetExposesBothTiers(t *testing.T) {
 // TestANSI256RungIsNamed is criterion 6: a 256-colour profile receives a distinct, named SGR
 // rather than falling through to 24-bit truecolor.
 func TestANSI256RungIsNamed(t *testing.T) {
-	th256 := NewTheme(true, ProfileANSI256)
-	thTrue := NewTheme(true, ProfileTrueColor)
+	th256 := NewTheme(true, colorprofile.ANSI256)
+	thTrue := NewTheme(true, colorprofile.TrueColor)
 	got256 := th256.Style(RoleFailing).Render("x")
 	gotTrue := thTrue.Style(RoleFailing).Render("x")
 	if got256 == gotTrue {
-		t.Fatal("ProfileANSI256 rendered the same bytes as ProfileTrueColor; the 256 rung is not named")
+		t.Fatal("colorprofile.ANSI256 rendered the same bytes as colorprofile.TrueColor; the 256 rung is not named")
 	}
 }
 
 // TestStyleZeroAtNoColor is the rung's rule: every way out of this file returns the zero
-// style at ProfileNoColor, so a body leaning on colour alone fails visibly here rather than in
+// style at colorprofile.ASCII, so a body leaning on colour alone fails visibly here rather than in
 // production, and no reader of the plain body (a cron mail, a CI log, an agent) receives an
 // escape byte. Strong and SizedStrong are covered because bold is an escape sequence too.
 func TestStyleZeroAtNoColor(t *testing.T) {
-	th := NewTheme(true, ProfileNoColor)
+	th := NewTheme(true, colorprofile.ASCII)
 	ways := []struct {
 		name  string
 		style func(Role) lipgloss.Style
@@ -194,7 +195,7 @@ func TestStyleZeroAtNoColor(t *testing.T) {
 		t.Run(w.name, func(t *testing.T) {
 			for role := RoleText; role <= RoleRule; role++ {
 				if got := w.style(role).Render("x"); got != zeroStyleRender {
-					t.Errorf("role %d at ProfileNoColor renders %q, want the zero style's %q", role, got, zeroStyleRender)
+					t.Errorf("role %d at colorprofile.ASCII renders %q, want the zero style's %q", role, got, zeroStyleRender)
 				}
 			}
 		})
@@ -204,7 +205,7 @@ func TestStyleZeroAtNoColor(t *testing.T) {
 // TestSizedPadsAndCuts is the construction go-conventions names for this package:
 // Style.Width(n).MaxWidth(n).
 func TestSizedPadsAndCuts(t *testing.T) {
-	th := NewTheme(true, ProfileTrueColor)
+	th := NewTheme(true, colorprofile.TrueColor)
 	s := th.Sized(RoleText, 10)
 	if s.GetWidth() != 10 || s.GetMaxWidth() != 10 {
 		t.Errorf("Sized(RoleText, 10) width/maxwidth = %d/%d, want 10/10", s.GetWidth(), s.GetMaxWidth())

@@ -6,6 +6,7 @@ import (
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // The single-site column budget. A glyph never sets a column: it sits in a measured field, so a
@@ -77,7 +78,7 @@ func firstReport(in RenderInput) health.Report {
 }
 
 // glyphs returns the tier a body draws from. render.Render never re-derives the tier: it reads
-// RenderInput.ASCII, which profile.go's detector alone fills.
+// RenderInput.ASCII, which style.Detect alone fills.
 func (t Theme) glyphs(ascii bool) Glyphs {
 	if ascii {
 		return t.GlyphSet.ASCII
@@ -111,11 +112,11 @@ func (t Theme) mark(in RenderInput, c health.CheckResult) (glyph string, role Ro
 // keepsWord reports whether a row prints its state word beside the glyph. The word is dropped
 // only where hue carries the state: at the Unicode tier in colour, where the check id is the
 // row's subject and belongs as close to the margin as the glyph allows. The ASCII tier and any
-// ProfileNoColor terminal keep it unconditionally, since with no hue and no filled glyph the
+// no-colour terminal keep it unconditionally, since with no hue and no filled glyph the
 // word is the state's last carrier. It is decided here rather than by a flag: there is nothing
 // an operator can pass to remove the word from a frame that needs it.
 func keepsWord(in RenderInput) bool {
-	return in.ASCII || in.Profile == ProfileNoColor
+	return in.ASCII || style.NoColor(in.Profile)
 }
 
 // wordRole returns the ink a state word takes. A held row keeps full-strength ink on its word
@@ -250,11 +251,11 @@ func (t Theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 	}
 	// The link's text is the URL itself, so a terminal that renders the hyperlink and one that
 	// prints the text show the same destination.
-	style := t.Style(RoleMuted)
-	if in.Profile != ProfileNoColor && linkable(url) {
-		style = t.link(RoleMuted, url)
+	st := t.Style(RoleMuted)
+	if !style.NoColor(in.Profile) && linkable(url) {
+		st = t.link(RoleMuted, url)
 	}
-	return append(out, t.indented(style, col, url, width)...)
+	return append(out, t.indented(st, col, url, width)...)
 }
 
 // placeCondition writes the condition id onto the tail of a line it shares, in place. The id

@@ -10,7 +10,8 @@ in the run's friction list.
 | Owner email | `cairn-gate@probe.907.life` |
 | Let AI crawlers read the site | No |
 | GitHub account (in the browser) | `glw907-test` |
-| Cloudflare account | `glw907`, with the zone `carin-test.org` and the bare address |
+| Cloudflare account | `glw907`, with the zone `carin-test.org` |
+| Address (host) | `gate.carin-test.org`, in the zone `carin-test.org`. Never the bare `carin-test.org`: the stand-in and the grader read only `gate.carin-test.org` (`LIVE_ORIGIN` in `scripts/gate/grade.mjs`) |
 | Theme | The default |
 | Workers Paid | Yes, the account has it |
 | Plugins the docs suggest | Yes |

@@ -51,6 +51,11 @@ site's state the way the grader does with `cairn new status`. A run with no new 
 stalled: capture the pane, say what it waits on, and either answer as the owner or end the run with
 `run-gate.sh grade <run dir> --end stall`.
 
+A run is finished when the agent's last message reports setup done and the stand-in has written its
+`signed-in` line. End it by sending `/exit` to the agent's pane, then wait for `state.json` to read
+`exited` before you grade. Never end a finished run with `cleanroom stop`: the watcher records that
+as `stopped:manual`, which grades as a fail whatever the end state shows (naive run 13, 2611140524).
+
 ## Play the owner
 
 The executor of the polish loop is the conductor of the run and answers the agent from

@@ -573,10 +573,18 @@ export async function publishViaAdmin(context, { origin, marker, adminPath = '/a
 }
 
 /**
- * Ask the install for a sign-in link, as a visitor with no session.
+ * The engine's per-address send cooldown (`SEND_COOLDOWN_MS` in `src/lib/auth/crypto.ts`), plus a
+ * margin for the mail server's clock.
+ */
+const SEND_COOLDOWN_MS = 60_000 + 5_000;
+
+/**
+ * Ask the install for a sign-in link, as a visitor with no session. A throttled answer means a link
+ * went to the address inside the cooldown (setup sends one after its HTTPS wait), so the time
+ * returned then is one cooldown before the submit, and a mail search from it finds that link.
  * @param {import('playwright').BrowserContext} context a fresh context
  * @param {{ origin: string, email: string, pauseMs?: number }} options
- * @returns {Promise<number>} the request time, epoch milliseconds, taken just before the submit
+ * @returns {Promise<number>} the time to search the mailbox from, epoch milliseconds: just before the submit, or one cooldown earlier when throttled
  */
 export async function requestSignInLink(context, { origin, email, pauseMs = 500 }) {
   const page = await context.newPage();
@@ -588,6 +596,13 @@ export async function requestSignInLink(context, { origin, email, pauseMs = 500 
   await settle(page, pauseMs);
   const sent = page.getByRole('heading', { name: 'Check your email' });
   if (!(await sent.first().waitFor({ state: 'visible', timeout: 15_000 }).then(() => true, () => false))) {
+    // Run 2611140447 met this: the stand-in's mail search ended seconds before setup's link arrived,
+    // its own request was throttled, and the throw ended a run whose setup had passed.
+    const throttled = page.getByRole('status').filter({ hasText: /requested a link recently/i });
+    if (await visible(throttled)) {
+      await page.close();
+      return requestedAt - SEND_COOLDOWN_MS;
+    }
     const shown = (await page.locator('.alert').first().innerText({ timeout: 1000 }).catch(() => '')) || (await pageText(page));
     throw new Error(`The sign-in link was not sent: ${where(page.url())} shows ${JSON.stringify(shown.replace(/\s+/g, ' ').trim().slice(0, 200))}.`);
   }

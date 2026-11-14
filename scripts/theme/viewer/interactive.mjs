@@ -60,7 +60,11 @@ export async function startInteractive({ root, theme, endpoints = {} }) {
     context.options = chooseOptions(manifest);
     context.mode = Object.keys(manifest.colorModes).includes(context.mode) ? context.mode : Object.keys(manifest.colorModes)[0];
     writeSheet();
+    // A sync still pending from the last theme would run against this one: it would copy the theme
+    // again while Vite reloads, and a pending token edit would rebuild this theme's tokens in place.
     watcher?.close();
+    clearTimeout(timer);
+    pending = new Set();
     watcher = watch(ref.dir, { recursive: true }, (_event, name) => {
       if (name) pending.add(name.split(path.sep).join('/'));
       clearTimeout(timer);

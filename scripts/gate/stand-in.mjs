@@ -351,6 +351,21 @@ export async function runStandIn({ runDir, browser, creds, mail, signal, signInO
   if (failure) throw failure;
 }
 
+/**
+ * The `stand-in.jsonl` line for a stand-in that stopped. It carries the error's first line, since the
+ * stand-in's terminal goes with its tmux session (run 2611140447 lost its reason that way). A
+ * Playwright navigation error quotes the whole address, and a sign-in link's carries its token, so
+ * every query string is cut.
+ * @param {unknown} error what the stand-in threw
+ * @param {Date} at when it stopped
+ * @returns {string} one JSON line, without the newline
+ */
+export function failureLine(error, at) {
+  const message = error instanceof Error ? error.message : String(error);
+  const reason = message.split('\n')[0].replace(/(https?:\/\/[^\s?"]+)\?[^\s"]*/g, '$1?[query removed]').slice(0, 400);
+  return JSON.stringify({ kind: 'stand-in', action: 'failed', reason, at: at.toISOString() });
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const runDir = process.argv[2];
   const env = process.env;
@@ -367,7 +382,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       console.error(`stand-in failed: ${error instanceof Error ? error.message : String(error)}`);
       // A line in stand-in.jsonl too, so whoever watches that file sees the stand-in stop. Round four's
       // stand-in failed on a GitHub page and the run waited twelve minutes before anyone knew.
-      const line = JSON.stringify({ kind: 'stand-in', action: 'failed', at: new Date().toISOString() });
+      const line = failureLine(error, new Date());
       await appendFile(path.join(runDir, 'stand-in.jsonl'), `${line}\n`, { mode: 0o600 }).catch(() => {});
       process.exitCode = 1;
     } finally {

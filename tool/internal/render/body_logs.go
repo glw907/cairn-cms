@@ -40,12 +40,12 @@ func renderLogs(t theme, in RenderInput) Frame {
 	width := in.width()
 	site := sanitize(in.Site)
 	if len(in.Entries) == 0 {
-		return Frame{Header: []string{t.Style(style.RoleMuted).Render(logEmpty)}}
+		return Frame{header: []string{t.Style(style.RoleMuted).Render(logEmpty)}}
 	}
 
 	earliest, latest := logSpan(in.Entries)
 	label := strings.TrimSpace(logLabel + "  " + site + "  " + earliest.Format("2006-01-02 MST"))
-	f := Frame{Header: []string{t.insetRule(label, width)}}
+	f := Frame{header: []string{t.insetRule(label, width)}}
 
 	// The field column only pays for itself where it leaves the fields a readable share of the
 	// line. Below that the record names itself on one line and its fields follow at the time
@@ -71,9 +71,9 @@ func renderLogs(t theme, in RenderInput) Frame {
 		body = append(body, strings.TrimRight(lead, " "))
 		body = append(body, t.indented(t.Style(style.RoleSubtle), logIndent+logTime, logFieldText(e), width)...)
 	}
-	f.Body = body
+	f.body = body
 
-	f.Footer = []string{"", t.Style(style.RoleMuted).Render(count(len(in.Entries), "records") +
+	f.footer = []string{"", t.Style(style.RoleMuted).Render(count(len(in.Entries), "records") +
 		" " + t.marks.Sep + " " +
 		earliest.Format("15:04") + " to " + latest.Format("15:04 MST"))}
 	return t.clampFrame(f, width)

@@ -113,13 +113,13 @@ func TestCredentialDetailSitsOnTheCredsRow(t *testing.T) {
 	in := input(fixtures.OneSick(), BodySingle, 100, colorprofile.ASCII, true, spine.VerdictCritical)
 	in.Status = sampleStatus()
 	frame := Render(in)
-	for _, l := range frame.Header {
+	for _, l := range frame.header {
 		if strings.Contains(stripANSI(l), "CAIRN_") {
 			t.Errorf("the header block carries credential detail: %q", stripANSI(l))
 		}
 	}
 
-	lines := frame.Body
+	lines := frame.body
 	credsRow := -1
 	for i, l := range lines {
 		if strings.Contains(stripANSI(l), " "+credsRowID+" ") {

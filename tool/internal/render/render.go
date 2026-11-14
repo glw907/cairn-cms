@@ -24,10 +24,6 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
-// Verdict is spine's run verdict, re-exported so a body names the vocabulary without a
-// second declaration of it. The spine computes a verdict; this package only paints one.
-type Verdict = spine.Verdict
-
 // View names which of the tool's surfaces a frame renders.
 type View int
 
@@ -99,7 +95,7 @@ type RenderInput struct {
 	Status StatusState
 	// Verdict is the run's aggregate verdict, computed by spine.ExitCode at the call site, so an
 	// operator reading the word and a routine reading the exit code cannot disagree.
-	Verdict Verdict
+	Verdict spine.Verdict
 	// Now is the instant every timestamp in the frame is formatted against. A caller wanting
 	// "now" passes time.Now() itself: render never calls the system clock, which is what keeps
 	// a replay of the same input byte-identical regardless of when it runs.
@@ -140,7 +136,7 @@ func Render(in RenderInput) Frame {
 
 // renderStatus draws the run's state and nothing else.
 func renderStatus(t theme, in RenderInput) Frame {
-	return t.clampFrame(Frame{Body: t.statusLines(in, 0, in.width())}, in.width())
+	return t.clampFrame(Frame{body: t.statusLines(in, 0, in.width())}, in.width())
 }
 
 // Frame is render.Render's result, sectioned the way the 2.0 HUD pins it: a header that never
@@ -148,20 +144,21 @@ func renderStatus(t theme, in RenderInput) Frame {
 // type; a bubbletea Cursor here would break both the purity test and the seam, since the HUD
 // composes its tea.View from a Frame plus its cursor state.
 type Frame struct {
-	// Header is the block every body leads with: the verdict, the subject, and when the run
+	// header is the block every body leads with: the verdict, the subject, and when the run
 	// checked.
-	Header []string
-	// Body is the scrollable content a body composed: rows, sections, or a log's entries.
-	Body []string
-	// Footer carries the verdict repeated, the last line of every run.
-	Footer []string
+	header []string
+	// body is the scrollable content a body composed: rows, sections, or a log's entries.
+	body []string
+	// footer carries the verdict repeated, the last line of every run.
+	footer []string
 }
 
-// Lines joins Header, Body, and Footer into the flat screen the CLI prints, in that order.
+// Lines joins the header, the body, and the footer into the flat screen the CLI prints, in that
+// order.
 func (f Frame) Lines() []string {
-	out := make([]string, 0, len(f.Header)+len(f.Body)+len(f.Footer))
-	out = append(out, f.Header...)
-	out = append(out, f.Body...)
-	out = append(out, f.Footer...)
+	out := make([]string, 0, len(f.header)+len(f.body)+len(f.footer))
+	out = append(out, f.header...)
+	out = append(out, f.body...)
+	out = append(out, f.footer...)
 	return out
 }

@@ -98,19 +98,19 @@ func (t theme) siteColWidth(rs []health.Report) int {
 // siteVerdict folds one site's checks into the verdict its row carries, through health's
 // conversion and spine's arithmetic alone: the render paints a verdict and never computes one,
 // so an operator reading a row and a routine reading the exit code cannot disagree.
-func siteVerdict(r health.Report) Verdict {
+func siteVerdict(r health.Report) spine.Verdict {
 	return health.Verdicts(r).Verdict()
 }
 
 // fleetTally counts the sites by the verdict each reports, worst first, omitting a verdict no
 // site carries.
 func (t theme) fleetTally(rs []health.Report, sep string) string {
-	byVerdict := map[Verdict]int{}
+	byVerdict := map[spine.Verdict]int{}
 	for _, r := range rs {
 		byVerdict[siteVerdict(r)]++
 	}
 	var parts []string
-	for _, v := range []Verdict{spine.VerdictCritical, spine.VerdictUnknown, spine.VerdictWarning, spine.VerdictOK} {
+	for _, v := range []spine.Verdict{spine.VerdictCritical, spine.VerdictUnknown, spine.VerdictWarning, spine.VerdictOK} {
 		if n := byVerdict[v]; n > 0 {
 			parts = append(parts, count(n, v.String()))
 		}
@@ -130,9 +130,9 @@ func renderMany(t theme, in RenderInput) Frame {
 	}
 	tally := t.fleetTally(ranked, " "+t.marks.Sep+" ")
 
-	f := Frame{Header: t.verdictLines(in.Verdict, subject, tally, width)}
+	f := Frame{header: t.verdictLines(in.Verdict, subject, tally, width)}
 	if len(ranked) > 0 {
-		f.Header = append(f.Header, t.indented(t.Style(style.RoleMuted), 0,
+		f.header = append(f.header, t.indented(t.Style(style.RoleMuted), 0,
 			checkedPhrase(freshest(ranked, in.Now), in.Now, in.Status.Elapsed), width)...)
 	}
 
@@ -149,9 +149,9 @@ func renderMany(t theme, in RenderInput) Frame {
 		body = append(body, "", t.insetRule(labelWhatToFix, width))
 		body = append(body, fixes...)
 	}
-	f.Body = body
+	f.body = body
 
-	f.Footer = append([]string{""}, t.verdictLines(in.Verdict, subject, tally, width)...)
+	f.footer = append([]string{""}, t.verdictLines(in.Verdict, subject, tally, width)...)
 	return t.clampFrame(f, width)
 }
 
@@ -256,7 +256,7 @@ func (t theme) fitted(text string, n int) string {
 // rowVerdictRole returns the ink one site's verdict word takes inside a frame whose verdict
 // is frame. A site reporting OK inside a failing sweep is muted like every other passing mark:
 // the only saturated ink on a failing screen belongs to what failed.
-func rowVerdictRole(row, frame Verdict) style.Role {
+func rowVerdictRole(row, frame spine.Verdict) style.Role {
 	if row == spine.VerdictOK {
 		return passRole(frame)
 	}
@@ -368,7 +368,7 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 		headings[i] = tableColumns[i].heading
 	}
 
-	verdicts := make([]Verdict, 0, len(rs))
+	verdicts := make([]spine.Verdict, 0, len(rs))
 	rows := make([][]string, 0, len(rs))
 	for _, r := range rs {
 		s := split(r)
@@ -413,7 +413,7 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 // tableRole returns the ink one table cell takes and whether it is set bold: the site and the
 // verdict carry the row, a non-empty failing or could-not-run count takes the ink of the state
 // it counts, and everything else is muted.
-func tableRole(r, c int, rows [][]string, verdicts []Verdict, frame Verdict) (role style.Role, strong bool) {
+func tableRole(r, c int, rows [][]string, verdicts []spine.Verdict, frame spine.Verdict) (role style.Role, strong bool) {
 	if r == table.HeaderRow {
 		return style.RoleMuted, false
 	}

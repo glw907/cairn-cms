@@ -241,7 +241,7 @@ func actorPhrase(f health.Fix) string {
 // passRole returns the ink every passing mark takes in a frame whose verdict is v. Green means
 // this run is OK: anywhere else a pass is muted, so the only saturated ink on a failing screen
 // belongs to what failed.
-func passRole(v Verdict) style.Role {
+func passRole(v spine.Verdict) style.Role {
 	if v == spine.VerdictOK {
 		return style.RoleOK
 	}
@@ -250,7 +250,7 @@ func passRole(v Verdict) style.Role {
 
 // verdictRole returns the ink a verdict word takes. Full saturation belongs to CRITICAL alone,
 // and OK is green only inside a run that is itself OK.
-func verdictRole(v Verdict) style.Role {
+func verdictRole(v spine.Verdict) style.Role {
 	switch v {
 	case spine.VerdictCritical:
 		return style.RoleFailing
@@ -269,7 +269,7 @@ func verdictRole(v Verdict) style.Role {
 // block wherever it appears, so a reader who has learned the device at the top of the screen
 // reads the bottom the same way, and a frame whose footer wrapped does not state its counts
 // before the word they belong to.
-func (t theme) verdictLines(v Verdict, subject, tally string, width int) []string {
+func (t theme) verdictLines(v spine.Verdict, subject, tally string, width int) []string {
 	head, tallyLines := t.verdictParts(v, subject, tally, width)
 	return append([]string{head}, tallyLines...)
 }
@@ -277,7 +277,7 @@ func (t theme) verdictLines(v Verdict, subject, tally string, width int) []strin
 // verdictParts renders the verdict block's two pieces: the head line, and the tally lines where
 // the tally did not fit beside it. An empty tally slice means the tally rode the head line, or
 // that the run had nothing to count at all, which is the empty registry's frame.
-func (t theme) verdictParts(v Verdict, subject, tally string, width int) (head string, tallyLines []string) {
+func (t theme) verdictParts(v spine.Verdict, subject, tally string, width int) (head string, tallyLines []string) {
 	word := v.String()
 	head = t.Strong(verdictRole(v)).Render(word)
 	if subject != "" {

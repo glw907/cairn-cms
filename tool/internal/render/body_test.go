@@ -18,7 +18,7 @@ import (
 )
 
 // input builds one RenderInput over a fixture, with the clock every fixture is built against.
-func input(reports []health.Report, body Body, width int, p colorprofile.Profile, ascii bool, v Verdict) RenderInput {
+func input(reports []health.Report, body Body, width int, p colorprofile.Profile, ascii bool, v spine.Verdict) RenderInput {
 	return RenderInput{
 		View:    ViewHealth,
 		Body:    body,
@@ -110,7 +110,7 @@ func TestSharedLayer(t *testing.T) {
 // word and its closing block opens on it too, for all four verdicts and both bodies, and the
 // plain body's exit code follows its last verdict line.
 func TestVerdictFirstAndLast(t *testing.T) {
-	for _, v := range []Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
+	for _, v := range []spine.Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
 		for _, tc := range []struct {
 			body  Body
 			width int
@@ -183,7 +183,7 @@ func TestOnePassRule(t *testing.T) {
 	if okInk == "" {
 		t.Fatal("the ok role resolved to no ink, so this test could not fail")
 	}
-	for _, v := range []Verdict{spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
+	for _, v := range []spine.Verdict{spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
 		f := Render(input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, v))
 		for _, sp := range frameSpans(f) {
 			if sp.sgr == okInk {

@@ -98,7 +98,7 @@ func tableName(ascii bool) string {
 
 // verdictFor returns the verdict spine's arithmetic settles for a fixture, so a golden's
 // verdict word is the one the exit code would carry rather than one the test chose.
-func verdictFor(reports []health.Report) Verdict {
+func verdictFor(reports []health.Report) spine.Verdict {
 	sites := make([]spine.SiteVerdicts, 0, len(reports))
 	for _, r := range reports {
 		sites = append(sites, health.Verdicts(r))

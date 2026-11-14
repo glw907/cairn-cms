@@ -240,7 +240,6 @@ var exportedSurface = []string{
 	"SummaryJSON",
 	"Render", "RenderInput",
 	"SelectBody", "StatusState",
-	"Verdict",
 	"View", "ViewHealth", "ViewLogs", "ViewStatus",
 }
 

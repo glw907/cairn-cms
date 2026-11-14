@@ -33,8 +33,8 @@ func renderSingle(t theme, in RenderInput) Frame {
 	subject := sanitize(report.Site)
 	tally := s.tally(" " + t.marks.Sep + " ")
 
-	f := Frame{Header: t.verdictLines(in.Verdict, subject, tally, width)}
-	f.Header = append(f.Header, t.indented(t.Style(style.RoleMuted), 0,
+	f := Frame{header: t.verdictLines(in.Verdict, subject, tally, width)}
+	f.header = append(f.header, t.indented(t.Style(style.RoleMuted), 0,
 		checkedPhrase(checkedAt(report, in.Now), in.Now, in.Status.Elapsed), width)...)
 
 	var body []string
@@ -62,9 +62,9 @@ func renderSingle(t theme, in RenderInput) Frame {
 		body = append(body, "")
 		body = append(body, t.foldLine(in, s.Passing, width)...)
 	}
-	f.Body = body
+	f.body = body
 
-	f.Footer = append([]string{""}, t.verdictLines(in.Verdict, subject, tally, width)...)
+	f.footer = append([]string{""}, t.verdictLines(in.Verdict, subject, tally, width)...)
 	return t.clampFrame(f, width)
 }
 
@@ -305,7 +305,7 @@ func (t theme) foldLine(in RenderInput, passing []health.CheckResult, width int)
 // passes through. It fires only on a line data made too long, never on one the layout composed,
 // which is what keeps a hostile detail from wrapping a row onto a line by itself.
 func (t theme) clampFrame(f Frame, width int) Frame {
-	for _, section := range [][]string{f.Header, f.Body, f.Footer} {
+	for _, section := range [][]string{f.header, f.body, f.footer} {
 		for i, l := range section {
 			section[i] = t.clamp(l, width)
 		}

@@ -38,7 +38,7 @@ func renderPlain(t theme, in RenderInput) Frame {
 	s := split(report)
 	verdict := t.verdictKeyLine(in.Verdict, sanitize(report.Site), s.tally(", "))
 
-	f := Frame{Header: []string{
+	f := Frame{header: []string{
 		verdict,
 		keyChecked + checkedPhraseValue(checkedAt(report, in.Now), in.Now, in.Status.Elapsed),
 	}}
@@ -72,16 +72,16 @@ func renderPlain(t theme, in RenderInput) Frame {
 		passing = append(passing, plainCheck(c, in.Now)...)
 	}
 	block(passing)
-	f.Body = body
+	f.body = body
 
-	f.Footer = []string{"", verdict, keyExit + strconv.Itoa(int(in.Verdict))}
+	f.footer = []string{"", verdict, keyExit + strconv.Itoa(int(in.Verdict))}
 	return f
 }
 
 // verdictKeyLine is the line the plain body opens and closes with. The verdict word carries the
 // frame's one piece of ink, so an operator who forced colour into a pipe still sees it and a
 // reader of the raw bytes still reads the word.
-func (t theme) verdictKeyLine(v Verdict, site, tally string) string {
+func (t theme) verdictKeyLine(v spine.Verdict, site, tally string) string {
 	line := keyVerdict + t.Strong(verdictRole(v)).Render(v.String())
 	if site != "" {
 		line += " - " + site

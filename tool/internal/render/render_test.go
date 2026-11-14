@@ -18,7 +18,7 @@ func TestFrameSections(t *testing.T) {
 		}
 		got = append(got, f.Name)
 	}
-	if want := []string{"Header", "Body", "Footer"}; !slices.Equal(got, want) {
+	if want := []string{"header", "body", "footer"}; !slices.Equal(got, want) {
 		t.Errorf("Frame's fields are %v, want %v in that order", got, want)
 	}
 }
@@ -27,9 +27,9 @@ func TestFrameSections(t *testing.T) {
 // header, body, footer order, which is the order every golden is cut in.
 func TestFrameLinesOrder(t *testing.T) {
 	f := Frame{
-		Header: []string{"h1", "h2"},
-		Body:   []string{"b1"},
-		Footer: []string{"f1", "f2"},
+		header: []string{"h1", "h2"},
+		body:   []string{"b1"},
+		footer: []string{"f1", "f2"},
 	}
 	want := []string{"h1", "h2", "b1", "f1", "f2"}
 	if got := f.Lines(); !slices.Equal(got, want) {

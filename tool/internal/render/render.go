@@ -5,8 +5,9 @@
 // points, and lipgloss's package-level Writer and Print family are forbidden everywhere in this
 // package. The environment and the terminal are read by style.Detect, never here.
 //
-// The foundations a body is built out of are the Warm Stone Theme and its palette (palette.go), the glyph set (glyph.go), the named width rungs (width.go),
-// and the sanitizer every dynamic string passes through (sanitize.go). One shared layer
+// The foundations a body is built out of are the theme (palette.go), which paints through
+// style's Warm Stone palette, the glyph set (glyph.go), the named width rungs (width.go), and the
+// sanitizer every dynamic string passes through (sanitize.go). One shared layer
 // (layout.go, rank.go) supplies the header, the section grammar, the fix format, and the one
 // severity ranking, and the four bodies compose them into the frames an operator reads: one site
 // on a terminal (body_single.go), more than one (body_many.go), a pipe or any non-terminal
@@ -80,7 +81,7 @@ type RenderInput struct {
 	Body Body
 	// Width is the terminal column budget a frame composes into. Zero means defaultWidth.
 	Width int
-	// Dark reports whether Theme should read the palette's dark branch.
+	// Dark reports whether the frame paints from the palette's dark branch.
 	Dark bool
 	// Profile is the colour profile to paint with.
 	Profile colorprofile.Profile
@@ -124,7 +125,7 @@ func (in RenderInput) width() int {
 // a pipe prints its line-oriented form for those two rather than asking for a column layout
 // nothing will read.
 func Render(in RenderInput) Frame {
-	t := NewTheme(in.Dark, in.Profile).forTier(in.ASCII)
+	t := newTheme(in.Dark, in.Profile, in.ASCII)
 	switch {
 	case in.View == ViewStatus:
 		return renderStatus(t, in)
@@ -140,7 +141,7 @@ func Render(in RenderInput) Frame {
 }
 
 // renderStatus draws the run's state and nothing else.
-func renderStatus(t Theme, in RenderInput) Frame {
+func renderStatus(t theme, in RenderInput) Frame {
 	return t.clampFrame(Frame{Body: t.statusLines(in, 0, in.width())}, in.width())
 }
 

@@ -3,6 +3,8 @@ package render
 import (
 	"regexp"
 	"strings"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // This file is the one test-only ANSI span parser the package shares. Every assertion about what
@@ -55,7 +57,7 @@ func frameSpans(f Frame) []span {
 
 // inkOf returns the SGR parameters a theme spends on one role, read from a probe render rather
 // than hard-coded, so a palette edit moves the assertion with it instead of stranding it.
-func inkOf(t Theme, role Role) string {
+func inkOf(t theme, role style.Role) string {
 	spans := parseSpans(t.Style(role).Render("probe"))
 	for _, sp := range spans {
 		if strings.Contains(sp.text, "probe") {

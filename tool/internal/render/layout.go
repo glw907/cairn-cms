@@ -8,6 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // This file is the layer every body shares: the way a report splits into sections, the section
@@ -240,23 +241,23 @@ func actorPhrase(f health.Fix) string {
 // passRole returns the ink every passing mark takes in a frame whose verdict is v. Green means
 // this run is OK: anywhere else a pass is muted, so the only saturated ink on a failing screen
 // belongs to what failed.
-func passRole(v Verdict) Role {
+func passRole(v Verdict) style.Role {
 	if v == spine.VerdictOK {
-		return RoleOK
+		return style.RoleOK
 	}
-	return RoleMuted
+	return style.RoleMuted
 }
 
 // verdictRole returns the ink a verdict word takes. Full saturation belongs to CRITICAL alone,
 // and OK is green only inside a run that is itself OK.
-func verdictRole(v Verdict) Role {
+func verdictRole(v Verdict) style.Role {
 	switch v {
 	case spine.VerdictCritical:
-		return RoleFailing
+		return style.RoleFailing
 	case spine.VerdictOK:
 		return passRole(v)
 	default:
-		return RoleUnknown
+		return style.RoleUnknown
 	}
 }
 
@@ -268,7 +269,7 @@ func verdictRole(v Verdict) Role {
 // block wherever it appears, so a reader who has learned the device at the top of the screen
 // reads the bottom the same way, and a frame whose footer wrapped does not state its counts
 // before the word they belong to.
-func (t Theme) verdictLines(v Verdict, subject, tally string, width int) []string {
+func (t theme) verdictLines(v Verdict, subject, tally string, width int) []string {
 	head, tallyLines := t.verdictParts(v, subject, tally, width)
 	return append([]string{head}, tallyLines...)
 }
@@ -276,37 +277,37 @@ func (t Theme) verdictLines(v Verdict, subject, tally string, width int) []strin
 // verdictParts renders the verdict block's two pieces: the head line, and the tally lines where
 // the tally did not fit beside it. An empty tally slice means the tally rode the head line, or
 // that the run had nothing to count at all, which is the empty registry's frame.
-func (t Theme) verdictParts(v Verdict, subject, tally string, width int) (head string, tallyLines []string) {
+func (t theme) verdictParts(v Verdict, subject, tally string, width int) (head string, tallyLines []string) {
 	word := v.String()
-	head = t.strong(verdictRole(v)).Render(word)
+	head = t.Strong(verdictRole(v)).Render(word)
 	if subject != "" {
-		head += "  " + t.strong(RoleText).Render(subject)
+		head += "  " + t.Strong(style.RoleText).Render(subject)
 	}
 	if tally == "" {
 		return head, nil
 	}
 	if t.width(word)+2+t.width(subject)+2+t.width(tally) <= width {
-		return head + "  " + t.Style(RoleMuted).Render(tally), nil
+		return head + "  " + t.Style(style.RoleMuted).Render(tally), nil
 	}
 	for _, l := range t.wrap(tally, width) {
-		tallyLines = append(tallyLines, t.Style(RoleMuted).Render(l))
+		tallyLines = append(tallyLines, t.Style(style.RoleMuted).Render(l))
 	}
 	return head, tallyLines
 }
 
 // insetRule is the one section device this design uses: a lowercase label inset two cells into a
 // rule. No box, no capitals, no coloured rail.
-func (t Theme) insetRule(ascii bool, label string, width int) string {
+func (t theme) insetRule(ascii bool, label string, width int) string {
 	lead := t.rule(ascii, 2)
 	tail := max(width-t.width(lead)-t.width(label)-2, 0)
-	return t.Style(RoleRule).Render(lead) + " " + t.Style(RoleText).Render(label) + " " +
-		t.Style(RoleRule).Render(t.rule(ascii, tail))
+	return t.Style(style.RoleRule).Render(lead) + " " + t.Style(style.RoleText).Render(label) + " " +
+		t.Style(style.RoleRule).Render(t.rule(ascii, tail))
 }
 
-// cell renders one fixed-width field. Theme.Sized pads inside the styled block and cuts there,
+// cell renders one fixed-width field. theme.Sized pads inside the styled block and cuts there,
 // so the padding carries the field's style and a 2.0 HUD can later paint a selected row's
 // ground across a whole row without striped gaps.
-func (t Theme) cell(role Role, text string, n int) string {
+func (t theme) cell(role style.Role, text string, n int) string {
 	return t.Sized(role, n).Render(text)
 }
 
@@ -321,7 +322,7 @@ func row(cells ...string) string {
 //
 // The break is the space and nothing else. A library word wrap also breaks after a hyphen, which
 // turns 2026-09-25 into two dates and a stray dash.
-func (t Theme) wrap(text string, width int) []string {
+func (t theme) wrap(text string, width int) []string {
 	width = max(width, 1)
 	if text == "" {
 		return nil
@@ -355,7 +356,7 @@ func (t Theme) wrap(text string, width int) []string {
 // alone there. A caller printing an operator-facing line outside a frame, a command's stderr
 // notice above all, reaches it here rather than leaving the terminal to fold the line wherever
 // its edge falls.
-func (t Theme) Wrap(text string, width int) []string {
+func (t theme) Wrap(text string, width int) []string {
 	return t.wrapNoOrphan(text, content(width))
 }
 
@@ -363,7 +364,7 @@ func (t Theme) Wrap(text string, width int) []string {
 // last line is a single word, so a sentence never ends on a stray verb sitting alone. It gives
 // up where the line above has nothing to spare, which is the only shape where an orphan is the
 // honest result: a single token wider than the width has nowhere else to go.
-func (t Theme) wrapNoOrphan(text string, width int) []string {
+func (t theme) wrapNoOrphan(text string, width int) []string {
 	lines := t.wrap(text, width)
 	if len(lines) < 2 {
 		return lines
@@ -387,7 +388,7 @@ func (t Theme) wrapNoOrphan(text string, width int) []string {
 
 // cutAt splits s after width cells, returning the head and the remainder. It walks runes rather
 // than bytes so a multi-byte or double-width rune is never split down the middle.
-func (t Theme) cutAt(s string, width int) (head, tail string) {
+func (t theme) cutAt(s string, width int) (head, tail string) {
 	n := 0
 	for i, r := range s {
 		rw := t.width(string(r))
@@ -401,7 +402,7 @@ func (t Theme) cutAt(s string, width int) (head, tail string) {
 
 // hangingAt wraps text into the column at col, with lead printed before the first line, so a fix
 // wraps under itself and is never truncated.
-func (t Theme) hangingAt(st lipgloss.Style, lead string, col int, text string, width int) []string {
+func (t theme) hangingAt(st lipgloss.Style, lead string, col int, text string, width int) []string {
 	return hangingLines(st, lead, col, t.wrap(text, width-col))
 }
 
@@ -422,7 +423,7 @@ func hangingLines(st lipgloss.Style, lead string, col int, body []string) []stri
 }
 
 // indented renders text wrapped into the column at col, every line at that column.
-func (t Theme) indented(st lipgloss.Style, col int, text string, width int) []string {
+func (t theme) indented(st lipgloss.Style, col int, text string, width int) []string {
 	return atColumn(st, col, t.wrap(text, width-col))
 }
 
@@ -439,7 +440,7 @@ func atColumn(st lipgloss.Style, col int, lines []string) []string {
 // wrapLeavingTail wraps text to width and re-flows its last line until tailWidth cells are free
 // at the end of it, so a trailing field shares that line rather than taking a line by itself. It
 // reports false when no re-flow leaves the room, which is a width too narrow to carry both.
-func (t Theme) wrapLeavingTail(text string, width, tailWidth int) (lines []string, ok bool) {
+func (t theme) wrapLeavingTail(text string, width, tailWidth int) (lines []string, ok bool) {
 	lines = t.wrap(text, width)
 	if len(lines) == 0 {
 		return nil, false

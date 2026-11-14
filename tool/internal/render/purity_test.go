@@ -28,7 +28,7 @@ var forbiddenSelectors = map[string][]string{
 // getter family (Get*), and Copy are not setters and are not listed. Width, MaxWidth, Height,
 // MaxHeight, Align*, and Border* are deliberately absent too: this check has no type information
 // (a plain AST walk, not go/types), so it can only match a selector by name, and those names
-// collide with this package's methods (Theme.width) and would false-positive on a legitimate
+// collide with this package's methods (theme.width) and would false-positive on a legitimate
 // call. The remaining names are lipgloss-specific enough that a collision is not a real risk.
 var lipglossSetters = []string{
 	"Foreground", "Background", "Bold", "Italic", "Underline", "UnderlineStyle", "Strikethrough",
@@ -136,7 +136,7 @@ func TestNoBubbleteaImport(t *testing.T) {
 	}
 }
 
-// TestNoLipglossSetterOutsidePaletteGo falsifies criterion 8: Theme.Style and Theme.Sized are the
+// TestNoLipglossSetterOutsidePaletteGo falsifies criterion 8: theme.Style and theme.Sized are the
 // only two ways to get a lipgloss.Style out of this package, so no other file chains a raw
 // lipgloss setter off the style either one returns.
 func TestNoLipglossSetterOutsidePaletteGo(t *testing.T) {
@@ -239,23 +239,11 @@ var exportedSurface = []string{
 	"AdoptCandidate", "AuthCheckPermission",
 	"DoctorSchemaVersion", "SiteJSON", "SiteListEntry",
 	"SummaryJSON",
-	"NewTheme",
 	"Render", "RenderInput",
-	"Role", "RoleAccent", "RoleFailing", "RoleMuted", "RoleOK", "RoleRule", "RoleSubtle",
-	"RoleText", "RoleUnknown",
 	"SelectBody", "StatusState",
-	"Theme",
 	"Verdict",
 	"View", "ViewHealth", "ViewLogs", "ViewStatus",
 	"Width80",
-}
-
-// exportedThemeMethods is Theme's exported method set: the seams table names Style, Sized,
-// and Wrap as the 2.0 HUD's seam, and every other method the cut found reachable only from
-// this package's bodies and tests is unexported instead, so a later widening is a deliberate
-// one a reviewer reads rather than a name nobody noticed had gone public.
-var exportedThemeMethods = []string{
-	"Sized", "Style", "Wrap",
 }
 
 // TestExportedSurfaceIsPinned falsifies criterion 16: the package's exported surface is exactly
@@ -302,37 +290,4 @@ func exportedNames(decl ast.Decl) []string {
 		}
 	}
 	return out
-}
-
-// TestThemeMethodSetIsPinned holds the other half of the surface: a Theme method is as public as
-// a package function, since Theme is what the HUD will hold.
-func TestThemeMethodSetIsPinned(t *testing.T) {
-	var got []string
-	for _, sf := range packageSourceFiles(t, false) {
-		for _, decl := range sf.file.Decls {
-			fn, ok := decl.(*ast.FuncDecl)
-			if !ok || fn.Recv == nil || !fn.Name.IsExported() || receiverName(fn) != "Theme" {
-				continue
-			}
-			got = append(got, fn.Name.Name)
-		}
-	}
-	slices.Sort(got)
-	want := slices.Clone(exportedThemeMethods)
-	slices.Sort(want)
-	if !slices.Equal(got, want) {
-		t.Errorf("Theme's exported methods are %v, want %v", got, want)
-	}
-}
-
-// receiverName returns the type name fn is a method on, following one pointer.
-func receiverName(fn *ast.FuncDecl) string {
-	expr := fn.Recv.List[0].Type
-	if star, ok := expr.(*ast.StarExpr); ok {
-		expr = star.X
-	}
-	if ident, ok := expr.(*ast.Ident); ok {
-		return ident.Name
-	}
-	return ""
 }

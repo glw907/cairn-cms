@@ -32,8 +32,8 @@ func content(w int) int {
 	return min(max(w, 1), widthCap)
 }
 
-// widthTable is one East Asian Width reading of the Unicode width data, the two a Theme
-// measures under. It is a value a Theme carries rather than a package-level setting, so two
+// widthTable is one East Asian Width reading of the Unicode width data, the two a theme
+// measures under. It is a value a theme carries rather than a package-level setting, so two
 // frames at two tiers can be composed in one process without either one moving the other's
 // arithmetic; x/ansi's tables are the counter-example, switched once at init from
 // RUNEWIDTH_EASTASIAN and shared by every caller in the binary.
@@ -62,11 +62,11 @@ func (w widthTable) measure(s string) int {
 	return w.options().String(ansi.Strip(s))
 }
 
-// width measures s in the cells a layout budgets, under the width table the Theme's tier
+// width measures s in the cells a layout budgets, under the width table the theme's tier
 // chose: Ambiguous=narrow for the Unicode tier, Ambiguous=wide for the ASCII tier. Every glyph in
 // render's glyph set is exactly one cell under the narrow table (glyph_test.go's parity
 // test), and the ASCII tier's glyphs are plain ASCII and exact under both.
-func (t Theme) width(s string) int {
+func (t theme) width(s string) int {
 	return t.widths.measure(s)
 }
 
@@ -74,7 +74,7 @@ func (t Theme) width(s string) int {
 // string passes through before it reaches a fixed-width field: a line the layout composed is
 // already within budget, so clamp only ever fires on data a site handed us. A width below 1 is
 // treated as 1, so a degenerate width never panics and never returns text wider than requested.
-func (t Theme) clamp(s string, width int) string {
+func (t theme) clamp(s string, width int) string {
 	width = max(width, 1)
 	if t.width(s) <= width {
 		return s
@@ -90,7 +90,7 @@ func (t Theme) clamp(s string, width int) string {
 
 // rule returns a horizontal rule of n cells in the tier's rule glyph. A negative or zero n
 // returns the empty string, so a degenerate width never panics.
-func (t Theme) rule(ascii bool, n int) string {
+func (t theme) rule(ascii bool, n int) string {
 	if n <= 0 {
 		return ""
 	}

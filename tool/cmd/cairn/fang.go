@@ -13,10 +13,8 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// warmStoneInk is one Warm Stone role's light and dark hex, copied from render's palette table.
-// render keeps that table unexported and this file is the only other place a help colour is
-// chosen, so the values are repeated here rather than widening render's surface; a change to
-// the palette is a change to both, and fang_test.go fails when the two differ.
+// warmStoneInk is one Warm Stone role's light and dark hex, copied from style's palette table,
+// so a change to the palette is a change to both.
 type warmStoneInk struct{ light, dark string }
 
 var (

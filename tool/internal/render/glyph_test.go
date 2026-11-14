@@ -34,7 +34,7 @@ func eachGlyphPair(t *testing.T, f func(t *testing.T, field string, u, a string)
 // TestGlyphWidthParity is criterion 11: every ASCII glyph is exactly as wide, in cells, as its
 // Unicode counterpart, so a degrade substitution never shifts a column budget.
 func TestGlyphWidthParity(t *testing.T) {
-	th := NewTheme(true, colorprofile.TrueColor)
+	th := newTheme(true, colorprofile.TrueColor, false)
 	eachGlyphPair(t, func(t *testing.T, field, u, a string) {
 		uw, aw := th.width(u), th.width(a)
 		if uw != aw {

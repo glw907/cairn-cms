@@ -13,6 +13,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // input builds one RenderInput over a fixture, with the clock every fixture is built against.
@@ -176,8 +177,8 @@ func closingBlock(lines []string) []string {
 // TestOnePassRule is criterion 4: in a frame whose verdict is anything but OK, no span carries
 // the ok role's saturated ink. Green means this run is OK.
 func TestOnePassRule(t *testing.T) {
-	theme := NewTheme(true, colorprofile.TrueColor)
-	okInk := inkOf(theme, RoleOK)
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	okInk := inkOf(theme, style.RoleOK)
 	if okInk == "" {
 		t.Fatal("the ok role resolved to no ink, so this test could not fail")
 	}
@@ -250,7 +251,7 @@ func TestNoGlyphOnlySetting(t *testing.T) {
 // WARNING renders outlined, in both bodies, and a CRITICAL-class failure renders filled. The
 // mark reads the same predicate the verdict does, so the two can never disagree.
 func TestTwoSeverityMark(t *testing.T) {
-	theme := NewTheme(true, colorprofile.TrueColor)
+	theme := newTheme(true, colorprofile.TrueColor, false)
 	g := theme.GlyphSet.Unicode
 
 	warn := plainLines(input(fixtures.WarningOnly(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictWarning))
@@ -395,7 +396,7 @@ func lineCarrying(t *testing.T, width int, want string) string {
 // glyph, the word, and its trailing field; a hold inside 48 hours takes the attention ink;
 // and a lapsed hold holds nothing, leaving the verdict exactly as the caller computed it.
 func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
-	theme := NewTheme(true, colorprofile.TrueColor)
+	theme := newTheme(true, colorprofile.TrueColor, false)
 	in := input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
 
 	text := strings.Join(plainLines(in), "\n")
@@ -417,7 +418,7 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 		}
 	}
 	escalating := input(soon, BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
-	attention := inkOf(theme, RoleUnknown)
+	attention := inkOf(theme, style.RoleUnknown)
 	holdSpanInk := ""
 	for _, sp := range frameSpans(Render(escalating)) {
 		if strings.Contains(sp.text, "held until 2026-09-21") {
@@ -510,7 +511,7 @@ func TestPlainBodyKeys(t *testing.T) {
 // TestPlainBodyReadsWithoutColumns is criterion 14: no box drawing, no glyph carrying meaning,
 // no padding, and no dependence on the width at all.
 func TestPlainBodyReadsWithoutColumns(t *testing.T) {
-	theme := NewTheme(true, colorprofile.ASCII)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	g := theme.GlyphSet.Unicode
 	base := strings.Join(plainLines(input(fixtures.OneSick(), BodyPlain, 40, colorprofile.ASCII, true, spine.VerdictCritical)), "\n")
 	for _, width := range []int{40, 60, 80, 100, 120, 200, 400} {
@@ -593,7 +594,7 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 	for _, f := range fixtures.All() {
 		for _, width := range []int{20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400} {
 			for _, ascii := range []bool{false, true} {
-				theme := NewTheme(true, colorprofile.TrueColor).forTier(ascii)
+				theme := newTheme(true, colorprofile.TrueColor, ascii)
 				budget := min(width, widthCap)
 				for _, body := range []Body{BodySingle, BodyMany, BodyPlain} {
 					in := input(f.Reports, body, width, colorprofile.TrueColor, ascii, spine.VerdictCritical)
@@ -612,15 +613,15 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 	}
 }
 
-// TestWidthTableFollowsTheGlyphTier is criterion 12: the width table is a field on Theme chosen
+// TestWidthTableFollowsTheGlyphTier is criterion 12: the width table is a field on theme chosen
 // by tier, not a package-level setting, and the two tables disagree on an East Asian Ambiguous
 // rune exactly as their names promise.
 func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
 	// U+25CF is the Unicode tier's pass mark and is EAW=Ambiguous (glyph.go's
 	// ambiguousRunes), so it is the one rune that separates the two tables.
 	const ambiguous = "●"
-	narrow := NewTheme(true, colorprofile.TrueColor).forTier(false)
-	wide := NewTheme(true, colorprofile.TrueColor).forTier(true)
+	narrow := newTheme(true, colorprofile.TrueColor, false)
+	wide := newTheme(true, colorprofile.TrueColor, true)
 	if got := narrow.width(ambiguous); got != 1 {
 		t.Errorf("narrow table measures %q as %d cells, want 1", ambiguous, got)
 	}
@@ -723,7 +724,7 @@ func nineCheckFleet() []health.Report {
 func TestStripWidthFormulaIsExact(t *testing.T) {
 	reports := nineCheckFleet()
 	ids := stripColumns()
-	theme := NewTheme(true, colorprofile.ASCII)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	siteCol := theme.siteColWidth(reports)
 	// 9 for "blog-site", the widest of the two sites, plus a gutter, plus the nine headings
 	// (creds serving delegation https email deploy publish-path engine errors) with eight
@@ -775,7 +776,7 @@ func TestStripHeadingsAbbreviateOnlyHTTPS(t *testing.T) {
 func TestStripMarksAgreeWithTheRowVerdict(t *testing.T) {
 	reports := append(fixtures.TwelveSites(), fixtures.OneSick()...)
 	in := manyInput(reports, 120, false)
-	theme := NewTheme(true, colorprofile.ASCII)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	for _, r := range rankReports(reports) {
 		v := siteVerdict(r)
 		for _, c := range r.Checks {
@@ -798,7 +799,7 @@ func TestStripMarksAgreeWithTheRowVerdict(t *testing.T) {
 // two-severity fill: a held failure is the held glyph in the strip cell too.
 func TestHeldFailureKeepsTheHeldMarkInTheStrip(t *testing.T) {
 	in := manyInput(fixtures.OneSick(), 120, false)
-	theme := NewTheme(true, colorprofile.ASCII)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	for _, c := range fixtures.OneSick()[0].Checks {
 		if !c.Acknowledged {
 			continue
@@ -836,7 +837,7 @@ func TestFallbackTableCarriesTheEngineVersionAndTheDataAge(t *testing.T) {
 // escape stripped, the two fail marks are still different characters.
 func TestStripMarksAreDistinguishableWithoutColour(t *testing.T) {
 	for _, ascii := range []bool{false, true} {
-		g := NewTheme(true, colorprofile.ASCII).glyphs(ascii)
+		g := newTheme(true, colorprofile.ASCII, false).glyphs(ascii)
 		if g.Fail == g.FailWarn {
 			t.Errorf("ascii %v: both fail marks are %q", ascii, g.Fail)
 		}
@@ -846,11 +847,11 @@ func TestStripMarksAreDistinguishableWithoutColour(t *testing.T) {
 // TestStripMarksAreCentred is criterion 4: a mark sits centred in its heading's column, so the
 // marks form a grid rather than hugging each column's left edge.
 func TestStripMarksAreCentred(t *testing.T) {
-	theme := NewTheme(true, colorprofile.ASCII)
-	if got := theme.centredCell(RoleOK, "x", 5); got != "  x  " {
+	theme := newTheme(true, colorprofile.ASCII, false)
+	if got := theme.centredCell(style.RoleOK, "x", 5); got != "  x  " {
 		t.Errorf("centredCell = %q, want %q", got, "  x  ")
 	}
-	if got := theme.centredCell(RoleOK, "x", 4); got != " x  " {
+	if got := theme.centredCell(style.RoleOK, "x", 4); got != " x  " {
 		t.Errorf("centredCell = %q, want %q", got, " x  ")
 	}
 }
@@ -871,7 +872,7 @@ func TestEveryFixIsPrintedAndNoneTwice(t *testing.T) {
 			}
 		}
 	}
-	if got := strings.Count(text, "  "+NewTheme(true, colorprofile.ASCII).glyphs(false).Arrow+" "); got < want {
+	if got := strings.Count(text, "  "+newTheme(true, colorprofile.ASCII, false).glyphs(false).Arrow+" "); got < want {
 		t.Errorf("%d fix entries, want at least the %d failures resolve to", got, want)
 	}
 	if strings.Contains(text, "more fix") || strings.Contains(text, "more ·") {
@@ -1179,7 +1180,7 @@ func TestFixListEndsNoLineInACutToken(t *testing.T) {
 				continue
 			}
 			last := fields[len(fields)-1]
-			if whole(last) || strings.HasSuffix(last, NewTheme(true, colorprofile.ASCII).GlyphSet.Unicode.Ellipsis) {
+			if whole(last) || strings.HasSuffix(last, newTheme(true, colorprofile.ASCII, false).GlyphSet.Unicode.Ellipsis) {
 				continue
 			}
 			for _, tok := range tokens {
@@ -1311,13 +1312,13 @@ func textOf(in RenderInput) string {
 // such cells can take a ground across its whole width rather than painting striped gaps, which
 // is what the 2.0 HUD's selected row needs.
 //
-// The ground is applied here rather than through a Role, because the terminal owns the
+// The ground is applied here rather than through a style.Role, because the terminal owns the
 // background and this palette names no ground token. With a foreground alone lipgloss leaves the
 // padding unstyled, which is invisible and costs nothing; the property that matters is the one
 // measured below.
 func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
-	theme := NewTheme(true, colorprofile.TrueColor)
-	if got := theme.width(theme.cell(RoleFailing, "x", 8)); got != 8 {
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	if got := theme.width(theme.cell(style.RoleFailing, "x", 8)); got != 8 {
 		t.Errorf("the cell measures %d cells, want the 8 its column budgeted", got)
 	}
 	ground := lipgloss.NewStyle().Background(lipgloss.Color("#123456")).Width(8).MaxWidth(8)
@@ -1333,8 +1334,8 @@ func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
 // break: a site reporting OK inside a failing sweep is muted like every other passing mark, so
 // the only saturated ink on the screen belongs to what failed.
 func TestFleetOnePassRule(t *testing.T) {
-	theme := NewTheme(true, colorprofile.TrueColor)
-	ok := inkOf(theme, RoleOK)
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	ok := inkOf(theme, style.RoleOK)
 	for _, width := range []int{Width80, width100, widthCap} {
 		in := input(fixtures.TwelveSites(), BodyMany, width, colorprofile.TrueColor, false, spine.VerdictCritical)
 		in.Status = sampleStatus()
@@ -1370,7 +1371,7 @@ func tableHeadingLine(lines []string) string {
 // the "engine" heading as "e" over a "0" that was once "0.84.4".
 func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 	reports := fixtures.TwelveSites()
-	theme := NewTheme(true, colorprofile.ASCII)
+	theme := newTheme(true, colorprofile.ASCII, false)
 	tables := 0
 
 	for w := 20; w <= 1000; w++ {

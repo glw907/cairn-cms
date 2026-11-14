@@ -9,7 +9,7 @@ import (
 
 	"github.com/charmbracelet/colorprofile"
 	"github.com/glw907/cairn-cms/tool/v2/internal/logx"
-	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 	"github.com/glw907/cairn-cms/tool/v2/internal/version"
 	"github.com/spf13/cobra"
 )
@@ -140,11 +140,10 @@ func writeNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error
 		width = detectTerminal(d, rf).Columns
 	}
 	if width <= 0 {
-		width = render.Width80
+		width = style.DefaultWidth
 	}
-	theme := render.NewTheme(rf.theme != themeLight, colorprofile.ASCII)
 	for paragraph := range strings.SplitSeq(notice, "\n") {
-		for _, line := range theme.Wrap(paragraph, width) {
+		for _, line := range style.NewTheme(rf.theme != themeLight, colorprofile.ASCII, false).Wrap(paragraph, width) {
 			if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
 				return err
 			}

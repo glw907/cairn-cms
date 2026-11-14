@@ -2,7 +2,7 @@ package render
 
 // Glyphs is one tier's glyph tokens: the marks a body paints for a check's state, a fix, a rule,
 // and a separator. render never chooses between tiers; render.Render reads RenderInput.ASCII
-// (filled by style.Detect, see NewTheme's doc comment) and a body picks the field it
+// (filled by style.Detect, see newTheme's doc comment) and a body picks the field it
 // draws from.
 type Glyphs struct {
 	// Pass marks a check that passed.
@@ -30,8 +30,8 @@ type Glyphs struct {
 	Ellipsis string
 }
 
-// GlyphSet holds both glyph tiers a Theme carries. render.Render is the only caller that picks
-// between them, by reading RenderInput.ASCII; Theme itself never re-derives a tier.
+// GlyphSet holds both glyph tiers a theme carries. render.Render is the only caller that picks
+// between them, by reading RenderInput.ASCII; theme itself never re-derives a tier.
 type GlyphSet struct {
 	// Unicode is the default tier: one glyph per state, chosen 2026-09-20.
 	Unicode Glyphs

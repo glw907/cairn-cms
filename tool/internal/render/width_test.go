@@ -45,7 +45,7 @@ func TestContentClampsToCap(t *testing.T) {
 // requested width is honoured exactly, the rungs are behavioural thresholds only, never a snap. A
 // render at width 90 is not byte-identical to one at width 80.
 func TestRuleHonoursRequestedWidthExactly(t *testing.T) {
-	th := NewTheme(true, colorprofile.ASCII)
+	th := newTheme(true, colorprofile.ASCII, false)
 	r80 := th.rule(false, 80)
 	r90 := th.rule(false, 90)
 	if r80 == r90 {
@@ -62,7 +62,7 @@ func TestRuleHonoursRequestedWidthExactly(t *testing.T) {
 // TestDegenerateWidthsNeverPanic is criterion 20: 0, 1, 2, 5, 19, and a negative value each render
 // without panicking, on both rule and clamp.
 func TestDegenerateWidthsNeverPanic(t *testing.T) {
-	th := NewTheme(true, colorprofile.TrueColor)
+	th := newTheme(true, colorprofile.TrueColor, false)
 	widths := []int{0, 1, 2, 5, 19, -1, -400}
 	for _, w := range widths {
 		for _, ascii := range []bool{false, true} {
@@ -95,7 +95,7 @@ func TestDegenerateWidthsNeverPanic(t *testing.T) {
 // long and CJK content rather than a full frame. width.go's doc comment records the
 // deviation from criterion 19's two-table sweep (Task 20b-ii's scope).
 func TestClampNeverExceedsWidth(t *testing.T) {
-	th := NewTheme(true, colorprofile.TrueColor)
+	th := newTheme(true, colorprofile.TrueColor, false)
 	sweepWidths := []int{20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400}
 	longLine := strings.Repeat("the quick brown fox jumps over the lazy dog ", 20)
 	cjk := strings.Repeat("你好世界", 40)

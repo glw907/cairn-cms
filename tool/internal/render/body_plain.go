@@ -33,7 +33,7 @@ const (
 //
 // Nothing here depends on the width: a body that pads or wraps is a body whose meaning depends
 // on a column position, which is what the other two readers cannot follow.
-func renderPlain(t Theme, in RenderInput) Frame {
+func renderPlain(t theme, in RenderInput) Frame {
 	report := firstReport(in)
 	s := split(report)
 	verdict := t.verdictKeyLine(in.Verdict, sanitize(report.Site), s.tally(", "))
@@ -81,8 +81,8 @@ func renderPlain(t Theme, in RenderInput) Frame {
 // verdictKeyLine is the line the plain body opens and closes with. The verdict word carries the
 // frame's one piece of ink, so an operator who forced colour into a pipe still sees it and a
 // reader of the raw bytes still reads the word.
-func (t Theme) verdictKeyLine(v Verdict, site, tally string) string {
-	line := keyVerdict + t.strong(verdictRole(v)).Render(v.String())
+func (t theme) verdictKeyLine(v Verdict, site, tally string) string {
+	line := keyVerdict + t.Strong(verdictRole(v)).Render(v.String())
 	if site != "" {
 		line += " - " + site
 	}

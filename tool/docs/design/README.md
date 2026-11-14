@@ -12,6 +12,9 @@ release archive.
   mechanism (one messages table per package, `make copy-list`, `make check-copy`). An implementer
   reads section 2 and section 4.6 before writing any string, and never invents copy: a string the
   catalogue lacks is listed in the task report for an editor.
+- [`terminal-standard.md`](terminal-standard.md) is the terminal language every command paints
+  with: the eight color roles, the marks at both glyph tiers, the grid, the blocks with the
+  `internal/style` function for each, and the three output tiers.
 - [`charm-v2-capabilities.md`](charm-v2-capabilities.md) is the Charm v2 capability survey the
   render dependencies were chosen from.
 - [`reviews/`](reviews/) holds the six adversarial design reviews of the mockups (beauty,

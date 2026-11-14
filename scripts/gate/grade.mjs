@@ -174,22 +174,64 @@ export function setupEvents(lines) {
       for (const text of resultText(block).split('\n')) {
         // The agent's Read tool prints a file with a line number and a tab before each line, which is how
         // the apply's events reach the transcript when the agent reads the background task's output file.
-        const body = text.replace(/^\s*\d+\t/, '');
-        if (!body.trim().startsWith('{')) continue;
-        try {
-          const event = JSON.parse(body);
-          const key = `${event?.kind}|${event?.step}|${event?.waiting}|${event?.timestamp}`;
-          if (event && typeof event.schemaVersion === 'number' && EVENT_KINDS.has(event.kind) && !seen.has(key)) {
-            seen.add(key);
-            events.push({ kind: event.kind, step: event.step, waiting: event.waiting, sentence: event.sentence, at: ms(event.timestamp), line: entry.index });
-          }
-        } catch {
-          /* not an event line */
+        const event = eventLine(text.replace(/^\s*\d+\t/, ''), entry.index);
+        if (event && !seen.has(eventKey(event))) {
+          seen.add(eventKey(event));
+          events.push(event);
         }
       }
     }
   }
   return events;
+}
+
+/**
+ * One setup event from a line of setup's output, or null for any other line.
+ * @param {string} body
+ * @param {number} line
+ * @returns {SetupEvent | null}
+ */
+function eventLine(body, line) {
+  if (!body.trim().startsWith('{')) return null;
+  try {
+    const event = JSON.parse(body);
+    if (!event || typeof event.schemaVersion !== 'number' || !EVENT_KINDS.has(event.kind)) return null;
+    return { kind: event.kind, step: event.step, waiting: event.waiting, sentence: event.sentence, at: ms(event.timestamp), line };
+  } catch {
+    return null;
+  }
+}
+
+/** @param {SetupEvent} event @returns {string} what makes two readings of one event the same event */
+function eventKey(event) {
+  return `${event.kind}|${event.step}|${event.waiting}|${event.at}`;
+}
+
+/**
+ * The shell command that prints every background command's output file in the clean room, run as the
+ * room's user through `cleanroom shell`. An agent that runs setup in the background may read only its
+ * last lines, so the transcript can lack the apply's events while the output file holds all of them.
+ */
+export const TASK_OUTPUT_READ = 'find "${TMPDIR:-$HOME/tmp}" -path "*/tasks/*.output" -type f -exec cat {} + 2>/dev/null; true';
+
+/**
+ * The events to time setup by: the transcript's events, plus any event only a background output file
+ * holds, in time order. Only the timing reads these. The relay check needs the transcript line an
+ * event was read on, which an output file's event lacks, so it records line 0.
+ * @param {SetupEvent[]} transcriptEvents
+ * @param {string} taskOutput the text of every background output file
+ * @returns {SetupEvent[]}
+ */
+export function timingEvents(transcriptEvents, taskOutput) {
+  const seen = new Set(transcriptEvents.map(eventKey));
+  const extra = taskOutput.split('\n').flatMap((text) => {
+    const event = eventLine(text, 0);
+    if (!event || seen.has(eventKey(event))) return [];
+    seen.add(eventKey(event));
+    return [event];
+  });
+  if (extra.length === 0) return transcriptEvents;
+  return [...transcriptEvents, ...extra].sort((a, b) => a.at - b.at);
 }
 
 /**
@@ -536,6 +578,9 @@ export async function grade({ runDir, deps, end, reason }) {
   // launcher serves a version of, and the read exits 1 from npm before `cairn new status` runs.
   const status = await cleanroom(['shell', name, '-c', 'npm_config_tag=gate npx --yes create-cairn-site status']);
   note('cairn new status', status.code === 0, status.code === 0 ? status.stdout.split('\n')[0].slice(0, 120) : `exited ${status.code}`);
+  const taskRead = await cleanroom(['shell', name, '-c', TASK_OUTPUT_READ]);
+  note('background output', taskRead.code === 0, taskRead.code === 0 ? 'read' : `exited ${taskRead.code}`);
+  const timed = timingEvents(events, taskRead.code === 0 ? taskRead.stdout : '');
 
   // Installed versions, against the candidate the run recorded.
   const installed = await npxVersions(home).catch(() => /** @type {{ launcher?: string, platform?: string }} */ ({}));
@@ -646,7 +691,7 @@ export async function grade({ runDir, deps, end, reason }) {
   const versions = candidate.engine && candidate.tool ? { ok: versionsOk, evidence: versionsOk ? `engine ${engine}, launcher ${installed.launcher}, platform ${installed.platform}` : mismatches.join('; ') } : { ok: false, evidence: 'harness.json records no candidate to compare with' };
 
   // Timing: setup's events, else the stand-in's lines, else state.json.
-  const rows = stepRows(events);
+  const rows = stepRows(timed);
   /** @type {'setup events' | 'stand-in.jsonl' | 'state.json' | 'none'} */
   let timingSource = 'none';
   if (rows.length > 0) timingSource = 'setup events';

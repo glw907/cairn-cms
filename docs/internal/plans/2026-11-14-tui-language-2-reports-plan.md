@@ -70,11 +70,13 @@ so the plan offers no such choice.
 
 1. A non-UTF-8 locale behaves as `TERM=dumb` does: ASCII marks and no colour under
    `--color auto`. `--color always` still paints, as it does under `TERM=dumb`, and `NO_COLOR`
-   is unchanged. Item 4 holds as written. The cost: a POSIX shell with `LANG`, `LC_CTYPE`, and
-   `LC_ALL` all unset is the C locale, so it loses colour as well as the Unicode marks.
+   is unchanged. Item 4 holds as written. The tier rule names the locale in one clause with
+   `TERM=dumb` and a non-terminal stream, and both of those already drop colour, which supports
+   this reading. The cost: a POSIX shell with `LANG`, `LC_CTYPE`, and `LC_ALL` all unset is the C
+   locale, so it loses colour as well as the Unicode marks.
 2. Amend item 4 for `LC_ALL=C` alone to "no byte at or above 0x80", with colour escapes allowed.
    `TERM=dumb` keeps the item's wording, which today's code already meets. The locale then
-   decides the marks and never the colour, as the tier rule reads.
+   decides the marks and never the colour.
 
 The plan recommends choice 2. A locale names a character set, and a C-locale shell on a colour
 terminal still shows colour. Either way the test drives the environment through the `cmd/cairn`
@@ -296,6 +298,7 @@ From the round design. A stop with none parks the pass.
 
 1. Retry up to twice the approved path minutes (400) while each retry fixes a traced cause. The
    round stops new launches past 1,160.
+2. Applies to pass 1 only.
 3. A pipe golden changes: a defect. Fix the code, never the golden.
 4. Did not fire in pass 1 (M1). Held draws `◌`.
 5. A missing copy string (the doctor group titles, the progress text): draft it into
@@ -565,7 +568,8 @@ Added checks:
   pairs did not match reliably; two of five differed.
 - `[design-gap]` Item 4 asks no `ESC` byte under `LC_ALL=C`, but the design's tier rule gives a
   non-UTF-8 locale ASCII marks only, and colour is a separate axis (M21). Question 2. Found by
-  the plan reviewer. `[advisor]` The advisor confirmed it holds and set the order of the choices.
+  the plan reviewer. `[advisor]` The advisor confirmed it holds, put the as-written reading first, and asked
+  that its cost be stated. The recommendation is the planner's.
 - `[file-list]` The row has no room for the locale and progress code: `health.go` is at 292 of
   300 lines (M11). New `cmd/cairn/report_terminal.go` and four test files.
 - `[file-list]` Only `main.go` may name `os.Stderr` (M8), so `deps.go` and `main.go` change for

@@ -10,9 +10,9 @@ the same as before the language existed.
 
 ## Roles
 
-A role names what a piece of text is, and the theme turns it into a color. No non-test Go file outside
-`internal/style` writes a color value, and a test fails on one. Color never carries meaning
-alone.
+A role names what a piece of text is, and the theme turns it into a color. No non-test Go file
+outside `internal/style` writes a color value, and a test fails on one. Color never carries
+meaning alone.
 
 The eight roles are the Warm Stone table. The hex values are from `internal/style/palette.go`,
 which also carries each role's xterm-256 value and its ANSI-16 slot.
@@ -28,9 +28,9 @@ which also carries each role's xterm-256 value and its ANSI-16 slot.
 | Accent | `#7246cf` | `#9d84ec` | A cursor or a next step, and nothing else |
 | Rule | `#c9c3bb` | `#4a443b` | A horizontal rule |
 
-Accent is narrow on purpose. A fix arrow points at the next step, so it takes Accent. Help text and
-the spinner are neither a cursor nor a step, which is why both lose Accent in this round. The help text still paints Title, Flag and Command in Accent today and
-loses it in a later pass.
+Accent is narrow on purpose. A fix arrow points at the next step, so it takes Accent. The spinner
+is neither a cursor nor a step, so it takes Muted. Help text is neither either, but it still paints
+Title, Flag and Command in Accent today and loses that in a later pass.
 
 The pass mark is green only when the whole run passed. Below a failure it is Muted, so no green
 cell sits under the last failing row.

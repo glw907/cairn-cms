@@ -453,38 +453,30 @@ type authCheckPayload struct {
 	// Site is the registered site the run confirmed its zone-scoped and repository-scoped
 	// permissions against, and empty when the operator named none.
 	Site        string                `json:"site,omitempty"`
-	Permissions []authCheckPermission `json:"permissions"`
+	Permissions []AuthCheckPermission `json:"permissions"`
 }
 
-// authCheckPermission is one permission row on the wire: the label the provider's token page
-// uses, the credential variable it belongs to, the state word the run settled, and the reason
-// text beside anything other than a pass.
-type authCheckPermission struct {
-	Label      string `json:"label"`
-	Credential string `json:"credential"`
-	State      string `json:"state"`
-	Reason     string `json:"reason,omitempty"`
-}
-
-// AuthCheckPermission carries one row cmd/cairn's auth check command settled, the caller-facing
-// shape MarshalAuthCheck builds its payload from.
+// AuthCheckPermission is one row cmd/cairn's auth check command settled, as it goes on the wire.
 type AuthCheckPermission struct {
-	Label      string
-	Credential string
+	// Label is the permission's name as the provider's token page shows it.
+	Label string `json:"label"`
+	// Credential is the credential variable the permission belongs to.
+	Credential string `json:"credential"`
 	// State is the row's wire word, from spine.StateWord: "pass", "fail", "skip", or
 	// "unknown". A permission row never reads "held", the fifth word, since a hold covers a
 	// site's failing check and not a token's permissions.
-	State string
+	State string `json:"state"`
 	// Reason is the row's display text, empty for a pass.
-	Reason string
+	Reason string `json:"reason,omitempty"`
 }
 
 // MarshalAuthCheck writes cairn auth check's payload: site is the registered site the run named,
 // empty when it named none, and verdict is the run's exit verdict.
 func MarshalAuthCheck(site string, permissions []AuthCheckPermission, verdict spine.Verdict) ([]byte, error) {
-	rows := make([]authCheckPermission, 0, len(permissions))
-	for _, p := range permissions {
-		rows = append(rows, authCheckPermission(p))
+	// A nil slice would marshal as null; the payload's contract is a list, empty or not.
+	rows := permissions
+	if rows == nil {
+		rows = []AuthCheckPermission{}
 	}
 	return json.Marshal(authCheckPayload{
 		SchemaVersion: authCheckSchemaVersion,

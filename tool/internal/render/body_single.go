@@ -3,6 +3,7 @@ package render
 import (
 	"cmp"
 	"slices"
+	"strings"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
@@ -144,22 +145,25 @@ func checkDetail(c health.CheckResult) string {
 }
 
 // fixBlock renders one fix under the row it repairs, at the row's detail column: the imperative
-// sentence on the fix mark, then the full documentation URL on a line by itself, clickable where
+// sentence on the fix mark, then the documentation address on a line by itself, clickable where
 // the terminal supports OSC 8 and the address passes linkable. A fix is never truncated.
 //
-// A URL too long for the detail column moves left to the name column rather than breaking, since
-// an address split across two lines cannot be copied whole. Only one too long for that column
-// as well breaks.
+// The address is shown without its scheme, which keeps the documentation pages' addresses on the
+// detail column at 80 columns; the OSC 8 target is still the full URL. One too long for the
+// detail column even so moves left to the name column rather than breaking, since an address
+// split across two lines cannot be copied whole. Only one too long for that column as well
+// breaks.
 func (t theme) fixBlock(fix health.Fix, hasFix bool, col, width int) []string {
 	if !hasFix {
 		return nil
 	}
-	return t.fixLines(fix.Text, fixURL(fix), col, width)
+	return t.fixLines(fix.Text, fixURL(fix), true, col, width)
 }
 
 // fixLines is fixBlock's layout for a fix sentence and its resolved address, the form a doctor
 // failure's fix shares. An empty text draws nothing and an empty url draws the sentence alone.
-func (t theme) fixLines(text, url string, col, width int) []string {
+// bare prints the address without its scheme, measured as printed, while the link keeps it.
+func (t theme) fixLines(text, url string, bare bool, col, width int) []string {
 	if text == "" {
 		return nil
 	}
@@ -167,16 +171,20 @@ func (t theme) fixLines(text, url string, col, width int) []string {
 	if url == "" {
 		return out
 	}
+	shown := url
+	if bare {
+		shown = strings.TrimPrefix(strings.TrimPrefix(url, "https://"), "http://")
+	}
 	ink := t.Style(style.RoleMuted)
 	if linkable(url) {
 		ink = t.Link(style.RoleMuted, url)
 	} else {
-		url = sanitize(url)
+		shown = sanitize(shown)
 	}
-	if col+t.Width(url) > width {
+	if col+t.Width(shown) > width {
 		col = min(col, colIndent+2)
 	}
-	return append(out, t.indented(ink, col, url, width)...)
+	return append(out, t.indented(ink, col, shown, width)...)
 }
 
 // placeCondition writes the condition id onto the tail of a line it shares, in place. The id

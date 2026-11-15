@@ -149,7 +149,7 @@ func (t theme) doctorFailRows(cr doctor.CheckedResult, glyph string, role style.
 		return out
 	}
 	out = append(out, style.ContinuationLine(t.Theme, style.RoleMuted, sanitize(text.Why), col, width)...)
-	return append(out, t.fixLines(text.Remediation, doctorDocsURL(text.DocsAnchor), col, width)...)
+	return append(out, t.fixLines(text.Remediation, doctorDocsURL(text.DocsAnchor), false, col, width)...)
 }
 
 // doctorDocsURL resolves a doctor condition's docs anchor, shaped "<page>.md#<fragment>", to its

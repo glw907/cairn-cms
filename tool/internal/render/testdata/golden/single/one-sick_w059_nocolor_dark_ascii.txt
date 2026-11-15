@@ -34,8 +34,8 @@
     held until 2026-09-25, 5 days left
   > Turn on Always Use HTTPS for the zone under SSL/TLS,
     Edge Certificates.
-    https://cairn.pub/docs/admin/is-it-working#force-https-
-    at-the-edge
+    cairn.pub/docs/admin/is-it-working#force-https-at-the-e
+    dge
 
   + 3 passing
     serving - delegation - publish-path

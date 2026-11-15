@@ -42,8 +42,8 @@
   [38;2;157;132;236m→[m [38;2;193;189;184mTurn on Always Use HTTPS for the[m
     [38;2;193;189;184mzone under SSL/TLS, Edge[m
     [38;2;193;189;184mCertificates.[m
-    ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;168;164;158mhttps://cairn.pub/docs/admin/is-it-w[m]8;;
-    ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;168;164;158morking#force-https-at-the-edge[m]8;;
+    ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;168;164;158mcairn.pub/docs/admin/is-it-working#f[m]8;;
+    ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;168;164;158morce-https-at-the-edge[m]8;;
 
   [38;2;168;164;158m●[m [38;2;234;231;227m3 passing[m
     [38;2;193;189;184mserving · delegation ·[m

@@ -19,7 +19,7 @@
   [38;2;145;82;0m◌[m [38;2;40;35;29mhttps-forced[m    [38;2;80;76;71mAlways Use HTTPS is off for the zone[m[38;2;97;93;87m  edge.https-not-forced[m
                     [38;2;97;93;87mheld until 2026-09-25, 5 days left[m
                   [38;2;114;70;207m→[m [38;2;80;76;71mTurn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.[m
-                    ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;97;93;87mhttps://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[m]8;;
+                    ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[38;2;97;93;87mcairn.pub/docs/admin/is-it-working#force-https-at-the-edge[m]8;;
 
   [38;2;97;93;87m●[m [38;2;40;35;29m3 passing[m       [38;2;80;76;71mserving · delegation · publish-path[m
 

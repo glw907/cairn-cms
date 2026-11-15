@@ -357,6 +357,38 @@ func TestHyperlinkOnlyForConstrainedTargets(t *testing.T) {
 	}
 }
 
+// TestTheDocLinkSitsAtColumn20WhenItFits draws the one-site report at 80 columns, where the
+// address without its scheme fits on the fix's column 20 hang, and at 59, where the frame is one
+// column and the address sits at the name column. The OSC 8 target keeps the scheme either way.
+func TestTheDocLinkSitsAtColumn20WhenItFits(t *testing.T) {
+	shown := strings.TrimPrefix(fixAnchorBase, "https://")
+	for _, tt := range []struct {
+		width, col int
+	}{{80, 20}, {59, 4}} {
+		frame := Render(input(fixtures.OneSick(), BodySingle, tt.width, colorprofile.TrueColor, false, spine.VerdictCritical)).Lines()
+		found := false
+		for i, l := range plainLines(input(fixtures.OneSick(), BodySingle, tt.width, colorprofile.TrueColor, false, spine.VerdictCritical)) {
+			at := strings.Index(l, shown)
+			if at < 0 {
+				continue
+			}
+			found = true
+			if at != tt.col || strings.TrimSpace(l[:at]) != "" {
+				t.Errorf("width %d: the link starts at cell %d in %q, want cell %d", tt.width, at, l, tt.col)
+			}
+			if strings.Contains(l, "https://") {
+				t.Errorf("width %d: the printed link %q carries its scheme", tt.width, l)
+			}
+			if !strings.Contains(frame[i], "\x1b]8;;"+fixAnchorBase) {
+				t.Errorf("width %d: the link line %q does not target the full URL", tt.width, frame[i])
+			}
+		}
+		if !found {
+			t.Fatalf("width %d: no line carries %q", tt.width, shown)
+		}
+	}
+}
+
 // TestConditionIDNeverAloneOnALine is criterion 11: across the whole 40-to-400 sweep, no line
 // consists of nothing but a condition id.
 func TestConditionIDNeverAloneOnALine(t *testing.T) {
@@ -375,18 +407,20 @@ func TestConditionIDNeverAloneOnALine(t *testing.T) {
 // trails the fix block's URL line, and below that it trails the check's detail instead.
 func TestConditionIDPlacementByBand(t *testing.T) {
 	cond := string(spine.ConditionEdgeHTTPSNotForced)
+	// The terminal prints the address without its scheme.
+	shown := strings.TrimPrefix(fixAnchorBase, "https://")
 	// At 100 the URL line, at the detail column, has no room left for the id, so it falls back
 	// to the detail.
 	for _, width := range []int{120, 200} {
 		line := lineCarrying(t, width, cond)
-		if !strings.Contains(line, fixAnchorBase) {
+		if !strings.Contains(line, shown) {
 			t.Errorf("width %d: the id sits on %q, want the fix block's URL line", width, line)
 		}
 	}
 	const detail = "Always Use HTTPS is off for the zone"
 	for _, width := range []int{60, 80, 100} {
 		line := lineCarrying(t, width, cond)
-		if strings.Contains(line, fixAnchorBase) {
+		if strings.Contains(line, shown) {
 			t.Errorf("width %d: the id sits on the URL line %q, want the detail line", width, line)
 		}
 		carrier := strings.TrimSpace(strings.TrimSuffix(line, "  "+cond))

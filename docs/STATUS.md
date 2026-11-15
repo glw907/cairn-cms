@@ -76,4 +76,4 @@ What a session needs to know:
 ## Pass 2 executor
 
 Pass 2 `reports` of round `tui-language` sits in PR #247 (review accept), waiting on the conductor; pass 3 follows its merge.
-Open filings: #487 to #489 and #491 to #494.
+Open filings: #491 to #497.

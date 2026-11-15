@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, lstatSync, readlinkSync, statSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -41,7 +41,7 @@ test('a lay-in copies the theme, writes the generated names, and leaves the scre
   assert.match(names, /light: 'cairn'/);
 });
 
-test('a lay-in replaces the target wholesale, so a stale file is gone afterward', async (t) => {
+test('a lay-in removes a file the theme lacks, so a stale file is gone afterward', async (t) => {
   const site = await scratchSite(t);
   await mkdir(path.join(site, 'src/theme'), { recursive: true });
   await writeFile(path.join(site, 'src/theme/stale.css'), '/* stale */');
@@ -49,6 +49,41 @@ test('a lay-in replaces the target wholesale, so a stale file is gone afterward'
   assert.equal(run.status, 0, run.stderr);
   assert.ok(!existsSync(path.join(site, 'src/theme/stale.css')));
   assert.ok(existsSync(path.join(site, 'src/theme/theme.css')));
+});
+
+test('a lay-in over a laid-in theme rewrites only the files that changed', async (t) => {
+  const site = await scratchSite(t);
+  const theme = await mkdtemp(path.join(tmpdir(), 'cairn-lay-in-edit-'));
+  t.after(() => rm(theme, { recursive: true, force: true }));
+  await cp(WAYMARK, theme, { recursive: true });
+  assert.equal(layIn(theme, site).status, 0);
+  const stamp = (/** @type {string} */ rel) => statSync(path.join(site, 'src/theme', rel), { bigint: true }).mtimeNs;
+  const before = { theme: stamp('theme.css'), header: stamp('components/SiteHeader.svelte') };
+  await writeFile(path.join(theme, 'site.css'), '/* edited */\n');
+  const run = layIn(theme, site);
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(await readFile(path.join(site, 'src/theme/site.css'), 'utf8'), '/* edited */\n');
+  assert.equal(stamp('theme.css'), before.theme, 'an unchanged stylesheet is not rewritten');
+  assert.equal(stamp('components/SiteHeader.svelte'), before.header, 'an unchanged component is not rewritten');
+  assert.ok(existsSync(path.join(site, 'src/theme/theme-names.ts')));
+});
+
+test('a lay-in copies a symlink as a link with the same target, and a second lay-in keeps it', async (t) => {
+  const site = await scratchSite(t);
+  const theme = await mkdtemp(path.join(tmpdir(), 'cairn-lay-in-link-'));
+  t.after(() => rm(theme, { recursive: true, force: true }));
+  await cp(WAYMARK, theme, { recursive: true });
+  symlinkSync('site.css', path.join(theme, 'linked.css'));
+  symlinkSync('components', path.join(theme, 'linked-components'));
+  for (let pass = 1; pass <= 2; pass++) {
+    const run = layIn(theme, site);
+    assert.equal(run.status, 0, `lay-in ${pass}: ${run.stderr}`);
+    for (const [name, target] of [['linked.css', 'site.css'], ['linked-components', 'components']]) {
+      const laid = path.join(site, 'src/theme', name);
+      assert.ok(lstatSync(laid).isSymbolicLink(), `lay-in ${pass}: ${name} is not a link`);
+      assert.equal(readlinkSync(laid), target, `lay-in ${pass}: ${name} points elsewhere`);
+    }
+  }
 });
 
 test('a manifest with a bad color-mode name is refused before the site copy is touched', async (t) => {

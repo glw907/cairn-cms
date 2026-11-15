@@ -291,8 +291,12 @@ A `decline` or `retire` entry with a live reopen condition is a heading and its 
   so the reopening condition above stands unaltered.
 - **Note (SvelteKit 3 upgrade, 2026-10-06):** verdict unchanged. SvelteKit 3's origin check now runs on every route before any `handle` hook, so the guard no longer calls `originMatches`: its non-admin Origin rule is deleted. `createAuthChannel`'s first-step origin check in `assertOriginAndScheme` is the remaining caller, which keeps a member action's own CSRF floor under `vite dev` (where SvelteKit skips its check) and under a widened `csrf.trustedOrigins`. The "no second CSRF layer" premise above now rests on SvelteKit's check for those routes.
 
-## ical-builder: iCal feed builder  (decline, 2026-08-05, ASC consumer-brief scope check)
-- **Reopens on:** Deliberate reopening of the fixed-concepts model by an events-content decision.
+## ical-builder: iCal feed builder  (accept, 2026-11-14, events design 20261115-055827-bbcf02)
+
+- **Verdict:** accept, in a narrow form. Geoff ruled "Reverse it in this narrow form" (design document `20261115-055827-bbcf02`, ruling 3): the engine gains the feed builder and nothing else. `/delivery` exports `buildICalendarResponse` and its input types `ICalendar` and `ICalendarEvent`.
+- **Shape:** one response helper over plain events, each starting on a date or at a UTC instant. The engine does no time zone math and writes no `RRULE`, `RECURRENCE-ID`, or `SEQUENCE`. It gains no events concept and no time or repeat field; those stay site code.
+- **Reopens on:** A site needs a repeat rule, a time zone, or a sequence number in the feed, shown in code it has built, or a design proposes an events concept for the engine.
+- **Record:** Reverses the 2026-08-05 decline (ASC consumer-brief scope check), which reopened on "Deliberate reopening of the fixed-concepts model by an events-content decision". The events design is that decision.
 
 ## xcathletes-multi-team-isolation: per-team scoping of content visibility  (defer, 2026-08-05, xcathletes requirements)
 

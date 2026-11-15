@@ -56,6 +56,14 @@ What a session needs to know:
   `catalog` run published Waymark 1.1.0: index https://catalog.cairn.pub/index.json, demo
   https://demo-waymark.cairn.pub/. Nothing reads the catalog yet, and BACKLOG #486 comes before a second theme joins
   `themes/`.
+- Round `events` (`conductor-events`): pass 1 `feed` is merged (#250, `buildICalendarResponse` in `/delivery`; no
+  engine release). Passes 2 and 3 wait on Pennant pass 4's accepted review. Resume from
+  `initiatives/theme-garden/plans/2026-11-14-events-conductor-prompt.txt`.
+- Round `pennant` (`conductor-pennant`): pass 1 `cards` is PR #251 (checks green, review `escalate` with one open
+  finding on the `scripts/checks/gate-table.json` runner path, two calls for Geoff) and waits for the close packet. Pass 2
+  `home` is draft PR #253, executor `cairn-cms-pennant-2` relaunched after the 2026-11-15 12:40Z API outage. Passes 3 and
+  4 follow; pass 4 waits for a close packet. Resume from
+  `initiatives/theme-garden/plans/2026-11-14-pennant-conductor-prompt.txt`.
 
 ## Open decisions and watches
 

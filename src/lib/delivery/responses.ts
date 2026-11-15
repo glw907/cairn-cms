@@ -4,6 +4,7 @@
 import { buildRssFeed, buildJsonFeed, type FeedChannel, type FeedItem } from './feeds.js';
 import { buildSitemap, type SitemapUrl } from './sitemap.js';
 import { buildRobots } from './robots.js';
+import { buildICalendar, type ICalendar } from './icalendar.js';
 import type { AiPosture } from '../content/types.js';
 
 /**
@@ -36,6 +37,18 @@ export function buildJsonFeedResponse(channel: FeedChannel, items: FeedItem[]): 
 export function buildSitemapResponse(urls: SitemapUrl[]): Response {
   return new Response(buildSitemap(urls), {
     headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+  });
+}
+
+/**
+ * An iCalendar feed response a calendar app can subscribe to, served as `text/calendar; charset=utf-8` on a
+ *  Worker-rendered route and with no cache header, so a site that wants one sets it at the route. The input
+ *  contract (dates, UTC instants, the inclusive all-day end) is on {@link ICalendar} and its `ICalendarEvent` entries.
+ * @public
+ */
+export function buildICalendarResponse(calendar: ICalendar): Response {
+  return new Response(buildICalendar(calendar), {
+    headers: { 'Content-Type': 'text/calendar; charset=utf-8' },
   });
 }
 

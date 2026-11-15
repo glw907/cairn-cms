@@ -1,0 +1,100 @@
+{
+  "$schema": "https://cairn.pub/schemas/cairn-catalog/1.json",
+  "format": 1,
+  "generated": "2026-11-14T12:00:00Z",
+  "kinds": [
+    { "id": "blog", "label": "Blog", "description": "Dated posts, newest first. For a journal, a newsletter, or news." },
+    { "id": "portfolio", "label": "Portfolio", "description": "Collections of your work, mostly images. For a photographer, a designer, or a maker." }
+  ],
+  "themes": [
+    {
+      "id": "alder",
+      "name": "Alder",
+      "description": "A quiet serif look for long reading.",
+      "summary": "Alder sets long posts in a calm serif column with wide margins. Its headings stay small, so the writing carries the page.",
+      "author": { "name": "glw907", "url": "https://github.com/glw907" },
+      "license": "MIT",
+      "repository": "https://github.com/glw907/cairn-cms",
+      "kinds": ["blog"],
+      "demo": "{{origin}}/demo/alder/",
+      "card": { "url": "{{origin}}/themes/alder/2.0.0/card.svg", "width": 720, "height": 480 },
+      "releases": [
+        {
+          "version": "2.0.0",
+          "date": "2026-11-12",
+          "notes": "Needs engine 1.0 for the new menu tokens.",
+          "engine": ">=1.0.0",
+          "contract": 1,
+          "url": "{{origin}}/themes/alder/2.0.0.tgz",
+          "integrity": "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+          "size": 220000,
+          "colorModes": { "light": "alder-light", "dark": "alder-dark" },
+          "options": [
+            {
+              "key": "accent",
+              "label": "Accent color",
+              "values": [
+                { "value": "moss", "label": "Moss" },
+                { "value": "clay", "label": "Clay" }
+              ],
+              "default": "moss"
+            }
+          ],
+          "fonts": [{ "name": "Source Serif 4", "license": "OFL-1.1", "source": "https://fontsource.org/fonts/source-serif-4", "files": ["fonts/source-serif-4.woff2"] }],
+          "screenshots": [
+            { "url": "{{origin}}/themes/alder/2.0.0/home-light.svg", "shows": "The home page in the light color mode at 1440 pixels wide", "width": 1440, "height": 960 },
+            { "url": "{{origin}}/themes/alder/2.0.0/home-dark.svg", "shows": "The home page in the dark color mode at 1440 pixels wide", "width": 1440, "height": 960 }
+          ]
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-01",
+          "notes": "First release.",
+          "engine": ">=0.9.0-0 <1.0.0",
+          "contract": 1,
+          "url": "{{origin}}/themes/alder/1.0.0.tgz",
+          "integrity": "sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB==",
+          "size": 210000,
+          "colorModes": { "light": "alder-light", "dark": "alder-dark" },
+          "options": [],
+          "fonts": [],
+          "screenshots": [
+            { "url": "{{origin}}/themes/alder/1.0.0/home-light.svg", "shows": "The first release's home page in the light color mode", "width": 1440, "height": 960 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "birch",
+      "name": "Birch",
+      "description": "A bright grid for pictures.",
+      "summary": "Birch lays images out in an even grid and keeps captions short.",
+      "author": { "name": "glw907", "url": "https://github.com/glw907" },
+      "license": "MIT",
+      "kinds": ["portfolio"],
+      "demo": "{{origin}}/demo/birch/",
+      "card": { "url": "{{origin}}/themes/birch/1.0.0/card.svg", "width": 720, "height": 480 },
+      "releases": [
+        {
+          "version": "1.0.0",
+          "date": "2026-11-10",
+          "notes": "First release.",
+          "engine": ">=0.95.0",
+          "contract": 1,
+          "url": "{{origin}}/themes/birch/1.0.0.tgz",
+          "integrity": "sha512-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC==",
+          "size": 180000,
+          "colorModes": { "light": "birch", "dark": "birch-night" },
+          "options": [],
+          "screenshots": [
+            { "url": "{{origin}}/themes/birch/1.0.0/home-light.svg", "shows": "The home page with a grid of six photographs", "width": 1440, "height": 960 }
+          ]
+        }
+      ]
+    }
+  ],
+  "sets": [
+    { "kind": "blog", "releases": [{ "version": "1.0.0", "date": "2026-11-01", "notes": "First release.", "engine": ">=0.9.0-0", "url": "{{origin}}/sets/blog/1.0.0.tgz", "integrity": "sha512-DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD==", "size": 90000 }] },
+    { "kind": "portfolio", "releases": [{ "version": "1.0.0", "date": "2026-11-01", "notes": "First release.", "engine": ">=0.9.0-0", "url": "{{origin}}/sets/portfolio/1.0.0.tgz", "integrity": "sha512-EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE==", "size": 90000 }] }
+  ]
+}

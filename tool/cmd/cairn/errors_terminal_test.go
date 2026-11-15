@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -46,6 +47,43 @@ func TestErrorBlockDrawsAnArrowOnlyForAFix(t *testing.T) {
 			if got := fixLines > 0; got != c.wantFix {
 				t.Errorf("%s (ascii %v): fix line drawn = %v, want %v:\n%s", c.name, ascii, got, c.wantFix, strings.Join(lines, "\n"))
 			}
+		}
+	}
+}
+
+// TestEveryRunLineErrorCarriesItsFix holds that each error ending in a Run line hands the printer
+// that line as its fix, so the block draws it on the fix mark rather than as muted text, and that
+// the message and fix rejoin to the bytes a pipe receives.
+func TestEveryRunLineErrorCarriesItsFix(t *testing.T) {
+	cases := map[string]error{
+		"flag":                     flagError("cairn health", errors.New("unknown flag: --bogus")),
+		"unknown command":          unknownCommandError("healt"),
+		"auth no subcommand":       authNoSubcommandError(),
+		"unknown site":             unknownSiteError("my-site-a1b2c3"),
+		"health arity":             healthTooManyArgsError(),
+		"doctor arity":             doctorTooManyArgsError(),
+		"adopt no domain":          adoptNoDomainError("my-site"),
+		"adopt no worker":          adoptNoWorkerError(),
+		"adopt unknown worker":     adoptUnknownWorkerError("my-site"),
+		"no cloudflare credential": noCloudflareCredentialError(),
+		"new requires":             newRequiresError("--email", "--plan"),
+		"new conflict":             newConflictError("--plan", "--apply"),
+		"new bad posture":          newBadPostureError("maybe"),
+		"new usage":                newUsageError("cairn: --name: too long"),
+		"new host outside zone":    newHostOutsideZoneError("a.example.org", "example.com"),
+		"new unfinished":           newUnfinishedError("abc123"),
+		"new several unfinished":   newSeveralUnfinishedError([]string{"abc123", "def456"}),
+		"new no setup":             newNoSetupError("abc123"),
+		"new no run for plan":      newNoRunForPlanError("run-1"),
+		"new plan unreadable":      newPlanUnreadableError(errors.New("open plan.json: no such file or directory")),
+	}
+	for name, err := range cases {
+		message, fix := splitFix(err)
+		if !strings.HasPrefix(fix, "Run `") {
+			t.Errorf("%s: fix = %q, want its Run line", name, fix)
+		}
+		if message+"\n"+fix != err.Error() {
+			t.Errorf("%s: message and fix rejoin to %q, want %q", name, message+"\n"+fix, err.Error())
 		}
 	}
 }

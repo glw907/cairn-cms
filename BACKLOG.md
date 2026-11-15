@@ -6,6 +6,10 @@
 
 ## Medium
 
+- [ ] **#490** Stop the grammar rewriting `&`, `*`, and brackets in a repeatable item on a guided edit `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `readListItems` (`src/lib/render/component-grammar.ts:273`) re-reads each list item through remark-stringify, so a bare `&` in a URL comes back as `\&`, a bare `*` as `\*`, and brackets inside link text escaped. `componentRoundTripSafety` still returns `safe: true`, since the values are lossless, but the markdown is not byte-identical: an editor who opens a `cards` or callout-points item in the insert form and presses Update gets a changed line and a noisy diff in the commit. Found probing the `cards` block in pass `pennant-1`; the behavior predates it. Fix: serialize list items with the escapes those characters need only where they would change the parse, or keep the source slice of an unedited item.
+  Placement: the next pass that touches `src/lib/render/component-grammar.ts`.
+
 - [ ] **#489** Three unit tests fail when the machine has no DNS, so a network outage turns the fast lane red `#bug` `#cairn-cms` `#tooling` *(2026-11-14)*
   `src/tests/unit/workflow-yaml.test.ts:471` runs actionlint through `go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12`, which fetches the module from `proxy.golang.org` when the Go cache lacks it. Two tests in `src/tests/unit/gate-mail.test.ts` failed in the same run with `the JMAP session read failed: fetch failed` (the message is built at `scripts/gate/mail.mjs:105`), so they reach a real host. During a local DNS outage on 2026-11-14 a fast lane failed on all three and passed on rerun with the code unchanged. Fix: find which two mail tests make a real request and stub it, and have the actionlint test skip with a printed reason when the module can't be fetched, or run a pinned binary.
   Placement: the next pass that touches `scripts/gate/` or the workflow tests.

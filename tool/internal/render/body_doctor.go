@@ -138,16 +138,13 @@ func renderDoctor(t theme, in RenderInput) Frame {
 
 // doctorFailRows draws one failing check: the mark and the check's title, its detail under the
 // title, the condition's why muted under that, and the fix with its documentation address.
-// doctor.Check.Title has already panicked for a failing check with no registry entry, so the
-// lookup's miss branch only keeps this function total.
 func (t theme) doctorFailRows(cr doctor.CheckedResult, glyph string, role style.Role, width int) []string {
 	name := sanitize(cr.Check.Title(cr.Result.Status))
 	col := t.DetailColumn(name, width)
 	out := style.MarkRow(t.Theme, glyph, role, name, sanitize(cr.Result.Detail), width)
-	text, ok := spine.TextFor(cr.Check.Condition)
-	if !ok {
-		return out
-	}
+	// The lookup cannot miss: Title above has already panicked for a failing check whose
+	// condition has no registry entry.
+	text, _ := spine.TextFor(cr.Check.Condition)
 	out = append(out, style.ContinuationLine(t.Theme, style.RoleMuted, sanitize(text.Why), col, width)...)
 	return append(out, t.fixLines(text.Remediation, doctor.DocsURL(text.DocsAnchor), false, col, width)...)
 }

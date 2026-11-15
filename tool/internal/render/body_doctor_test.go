@@ -273,6 +273,23 @@ func TestDoctorFailureLinksTheAddressThePipePrints(t *testing.T) {
 	}
 }
 
+// TestDoctorFailureWithNoRegistryEntryPanics pins the invariant doctorFailRows leans on to read
+// its condition text without a miss branch: a failing check whose condition has no registry
+// entry panics in the doctor package's registry lookup before any row is drawn.
+func TestDoctorFailureWithNoRegistryEntryPanics(t *testing.T) {
+	checked := []doctor.CheckedResult{{
+		Check:  doctor.Check{ID: "x.unregistered", Condition: spine.Condition("x.unregistered")},
+		Result: doctor.Result{Status: doctor.StatusFail, Detail: "detail"},
+	}}
+	defer func() {
+		if recover() == nil {
+			t.Error("a failing check with no registry entry rendered without panicking")
+		}
+	}()
+	Render(RenderInput{View: ViewDoctor, Width: 80, Dark: true, Profile: colorprofile.TrueColor,
+		Site: "my-site", Checked: checked, Verdict: spine.VerdictCritical, Now: fixtures.Now()})
+}
+
 // TestDoctorFailureMarkFollowsItsConditionSeverity holds a failing doctor row to the filled mark
 // when its condition is critical and the outlined mark when it is a warning.
 func TestDoctorFailureMarkFollowsItsConditionSeverity(t *testing.T) {

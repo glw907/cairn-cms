@@ -68,3 +68,7 @@ What a session needs to know:
   (`trig_0193pPNoyxsTGeUhF1xx7woa`).
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries).
+
+## Pass 2 executor
+
+Session `cairn-cms-tui-language-2` (id 33ef0207) runs pass 2 `reports` of round `tui-language` on this branch. First execution commit: 2026-11-14T15:45 -09:00.

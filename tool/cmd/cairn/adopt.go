@@ -142,6 +142,9 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 // one tab-separated line each, so a shell reading it keeps working; the blank line is the group
 // boundary and the notice explaining it goes to stderr, beside the paste notice already there.
 func writeAdoptListPlain(cmd *cobra.Command, d deps, rf *rootFlags, lines []render.AdoptCandidate) error {
+	if v, ok := listView(d, rf); ok {
+		return writeAdoptListTerminal(cmd, d, rf, v, lines)
+	}
 	write := func(c render.AdoptCandidate) error {
 		_, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%s\n", c.Worker, c.Domain, c.Repo)
 		return err
@@ -230,6 +233,5 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprint(cmd.OutOrStdout(), adoptAddedMessage(rec.Name, rec.Domain))
-	return err
+	return writeReceipt(cmd, d, adoptAddedMessage(rec.Name, rec.Domain))
 }

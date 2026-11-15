@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve, relative, join } from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
 import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
@@ -34,6 +34,22 @@ This note proves the role default reaches the build.
 
 :::banner{message="New waymarks post to the trail log every Friday." expires="2999-01-01"}
 :::`;
+}
+
+/** The titles of the three newest published showcase posts, read from the content on disk. */
+function newestPostTitles(count: number): string[] {
+  const dir = resolve(process.cwd(), 'src', 'content', 'posts');
+  return readdirSync(dir)
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => {
+      const text = readFileSync(join(dir, f), 'utf8');
+      const field = (name: string) =>
+        new RegExp(`^${name}: (.+)$`, 'm').exec(text.split(/^---$/m)[1] ?? '')?.[1]?.trim();
+      return { title: field('title') ?? '', date: field('date') ?? '' };
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, count)
+    .map((p) => p.title);
 }
 
 /** The five headers loadPreview sets on every response, refusals and the ended page included. */
@@ -411,7 +427,11 @@ test.describe('public preview for a non-editor', () => {
 
   test('the home page previews with the news list between the parts its rule splits', async ({
     page,
+    request,
   }) => {
+    // An unpublished admin draft must not reach the list: it holds the post the corpus lacks.
+    await ensureHelloDraft(page);
+    const draftTitle = 'Hello, cairn';
     // Idempotent: a run that stopped before its discard leaves the `home` draft behind, so reuse it.
     const editPath = '/admin/pages/home';
     const existing = await page.goto(editPath);
@@ -429,12 +449,26 @@ test.describe('public preview for a non-editor', () => {
     await save(page);
     const { url } = await mintPreview(page);
 
+    // The preview link is a capability: a bare request, no session, reads it and gets the
+    // no-referrer and no-store headers with the list in its body.
+    const bare = await request.get(url);
+    expect(bare.status()).toBe(200);
+    expect(bare.headers()['referrer-policy']).toBe('no-referrer');
+    expect(bare.headers()['cache-control']).toContain('no-store');
+    const bareHtml = await bare.text();
+    expect(bareHtml).toContain('class="news');
+    expect(bareHtml).toContain('Before the news.');
+
     await page.goto(url);
     const article = page.locator('article.prose');
     const news = article.locator('section.news');
     await expect(news.getByRole('heading', { name: 'Latest news' })).toBeVisible();
     const rows = news.locator('[data-cairn-post]');
     await expect(rows).toHaveCount(3);
+    // Exactly the three newest published posts, newest first, and never the draft.
+    await expect(rows.locator('.site-entry__title')).toHaveText(newestPostTitles(3));
+    await expect(news).not.toContainText(draftTitle);
+    for (const title of newestPostTitles(3)) expect(bareHtml).toContain(title);
     await expect(rows.locator('.site-entry__date')).toHaveCount(3);
     for (const date of await rows.locator('.site-entry__date').all()) {
       await expect(date).toHaveText(/\S/);
@@ -455,6 +489,13 @@ test.describe('public preview for a non-editor', () => {
       };
     });
     expect(order).toEqual({ beforeFirst: true, afterLast: true, rules: 0 });
+
+    // A non-home preview (the hello draft) renders no news section.
+    await page.goto(HELLO_EDIT_PATH);
+    const helloPreview = await mintPreview(page);
+    await page.goto(helloPreview.url);
+    await expect(page.locator('article.prose')).toBeVisible();
+    await expect(page.locator('section.news')).toHaveCount(0);
 
     await page.goto(editPath);
     await discard(page, false, '/admin/pages');

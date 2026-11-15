@@ -71,6 +71,9 @@ as it did before the prop existed. -->
 
   let { data, preview = false, titleTemplate, home }: Props = $props();
 
+  // A per-instance id, so the news heading never collides with a rehype-slug id from an editor heading.
+  const newsId = $props.id();
+
   // Belt and suspenders: loadPreview already strips canonical/og:url/jsonLd.url from data.seo, so
   // this filter is a no-op against that caller. It stays so this component's contract does not
   // depend on the specific caller's behavior, and so a site rendering preview data from any other
@@ -175,11 +178,13 @@ as it did before the prop existed. -->
   {#if home}
     {@html home.before}
     {#if home.posts.length}
-      <section class="news" aria-labelledby="latest-news">
-        <h2 id="latest-news">Latest news</h2>
-        {#each home.posts as post (post.id)}
-          <EntryRow {post} />
-        {/each}
+      <section class="news" aria-labelledby={newsId}>
+        <h2 id={newsId}>Latest news</h2>
+        <ul class="news__list" role="list">
+          {#each home.posts as post (post.id)}
+            <li><EntryRow {post} /></li>
+          {/each}
+        </ul>
         <p><a href={home.archiveUrl}>All news</a></p>
       </section>
     {/if}
@@ -201,6 +206,16 @@ as it did before the prop existed. -->
 </article>
 
 <style>
+  /* The news rows are a list for assistive tech only: no bullets, indent, or prose list spacing. */
+  .news__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .news__list > li {
+    margin: 0;
+    padding: 0;
+  }
   /* The article's one meta line: the archive index's date/muted register (step--1, tabular
      figures) so the two surfaces read as one shared vocabulary rather than two independent
      treatments. `.prose > h1 + *`'s spacing rule (prose.css) already gives this its air below the

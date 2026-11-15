@@ -3,6 +3,10 @@
 // scanner walks the rendered HTML instead. It tracks element depth so a rule nested in a
 // blockquote, a list, or a block's markup never counts, and it reads attribute values with their
 // quotes so a `>` inside one never ends a tag early.
+//
+// WATCH: the quote handling in `tagEnd` assumes the render pipeline's stringify step always quotes
+// attribute values (src/lib/render/pipeline.ts, `rehypeStringify`). If its options ever allow
+// unquoted values, a `>` or quote inside one would miscount the depth here.
 
 import type { HomeData, HomePost } from '#theme/components/ArticleView.svelte';
 
@@ -54,7 +58,9 @@ function tagEnd(html: string, start: number): number {
  * @remarks
  * A rule inside any element (a blockquote, a list, a block's markup) is not a split point. With no
  * top-level rule, `before` is the whole body and `after` is empty, so the list follows the body.
- * Whitespace at the split is trimmed, so a rule that ends the body leaves `after` empty.
+ * Whitespace at the split is trimmed, so a rule that ends the body leaves `after` empty. When the
+ * scan ends with elements still open, or a closing tag has nothing to close, the markup cannot be
+ * trusted, so the whole body is returned as `before`.
  */
 export function splitAtLastRule(html: string): SplitBody {
   let depth = 0;
@@ -83,7 +89,9 @@ export function splitAtLastRule(html: string): SplitBody {
     const end = tagEnd(html, lt);
 
     if (closing) {
-      depth = Math.max(0, depth - 1);
+      // A close with nothing open means the scan lost count: list-after-body, never a wrong split.
+      if (depth === 0) return { before: html, after: '' };
+      depth--;
       i = end;
       continue;
     }
@@ -103,7 +111,8 @@ export function splitAtLastRule(html: string): SplitBody {
     i = end;
   }
 
-  if (!rule) return { before: html, after: '' };
+  // An unbalanced scan (elements left open) is as untrustworthy as an underflow.
+  if (!rule || depth !== 0) return { before: html, after: '' };
   return { before: html.slice(0, rule.start).trimEnd(), after: html.slice(rule.end).trimStart() };
 }
 

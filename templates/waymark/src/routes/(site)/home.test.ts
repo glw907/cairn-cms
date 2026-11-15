@@ -8,6 +8,16 @@ describe('splitAtLastRule', () => {
     expect(splitAtLastRule(html)).toEqual({ before: html, after: '' });
   });
 
+  it('degrades to list-after-body when an element is left open', () => {
+    const html = '<p>A.</p>\n<hr>\n<div><p>B.</p>';
+    expect(splitAtLastRule(html)).toEqual({ before: html, after: '' });
+  });
+
+  it('degrades to list-after-body when a closing tag underflows the depth', () => {
+    const html = '<p>A.</p>\n<hr>\n</div><p>B.</p>';
+    expect(splitAtLastRule(html)).toEqual({ before: html, after: '' });
+  });
+
   it('splits at one top-level rule and drops it', () => {
     expect(splitAtLastRule('<p>Intro.</p>\n<hr>\n<p>Outro.</p>\n')).toEqual({
       before: '<p>Intro.</p>',

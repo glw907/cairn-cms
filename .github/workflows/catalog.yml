@@ -80,9 +80,6 @@ jobs:
         timeout-minutes: 22
         with:
           command: npx playwright install --with-deps chromium
-      # The publish script runs `npx wrangler deploy` from a scratch directory outside the
-      # checkout, where npx would fetch the newest Wrangler; on PATH, the locked one runs instead.
-      - run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Publish to the emptied proving target
         if: github.event_name == 'pull_request'
         env:

@@ -347,7 +347,9 @@ export async function run({
  */
 function wranglerDeploy({ dir, worker }) {
   return new Promise((resolve, reject) => {
-    const child = spawn('npx', ['wrangler', 'deploy'], { cwd: dir, stdio: 'inherit', env: process.env });
+    // The checkout's locked Wrangler, by path: `dir` is a scratch directory where npx would fetch the newest release.
+    const wrangler = path.join(REPO, 'node_modules', '.bin', 'wrangler');
+    const child = spawn(wrangler, ['deploy'], { cwd: dir, stdio: 'inherit', env: process.env });
     child.on('error', reject);
     child.on('exit', (code, signal) => {
       if (code === 0) resolve();

@@ -314,6 +314,10 @@ func (t theme) centredCell(role style.Role, text string, n int) string {
 // whole. A column that cannot be drawn whole is dropped rather than squeezed, because the table
 // is already the strip's fallback and a second fallback that shortens "errors" to "e" and
 // pushes a count off the edge prints a fact no reader can use.
+//
+// Below widthNarrow the three count columns fold into one labelChecks cell and the columns after
+// them drop, so a narrow table reads site, verdict, and checks; foldedCounts says what that cell
+// carries.
 var tableColumns = []struct {
 	heading string
 	width   int
@@ -400,6 +404,16 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 	for i := range widths {
 		headings[i] = tableColumns[i].heading
 	}
+	folded := width < widthNarrow
+	room := 0
+	if folded {
+		widths, headings = widths[:tableMandatoryColumns], headings[:tableMandatoryColumns]
+		room = width - siteLead - widths[0] - widths[1]
+		if room >= t.Width(labelChecks) {
+			widths, headings = append(widths, room), append(headings, labelChecks)
+		}
+		columns = len(widths)
+	}
 
 	verdicts := make([]spine.Verdict, 0, len(rs))
 	rows := make([][]string, 0, len(rs))
@@ -411,7 +425,20 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 			t.fitted(r.Site, siteCol), v.String(), blankZero(len(s.Failing)), blankZero(len(s.CouldNotRun)),
 			blankZero(len(s.Held)), engineVersion(r), relative(in.Now.Sub(checkedAt(r, in.Now))) + " ago",
 		}
-		rows = append(rows, row[:columns])
+		if folded {
+			cell := t.foldedCounts(s, room)
+			// A blank cell reads as a site with nothing to count, so a room too narrow for one
+			// site's first count drops the column for every site.
+			if cell == "" && len(s.Failing)+len(s.CouldNotRun)+len(s.Held) > 0 {
+				columns = min(columns, tableMandatoryColumns)
+			}
+			row = []string{row[0], row[1], cell}
+		}
+		rows = append(rows, row)
+	}
+	widths, headings = widths[:columns], headings[:columns]
+	for i := range rows {
+		rows[i] = rows[i][:columns]
 	}
 
 	total := 0
@@ -426,7 +453,7 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 		Width(min(total, width-siteLead)).
 		Wrap(false).
 		StyleFunc(func(r, c int) lipgloss.Style {
-			role, strong := tableRole(r, c, rows, verdicts, in.Verdict)
+			role, strong := tableRole(r, c, rows, verdicts, in.Verdict, folded)
 			if strong {
 				return t.SizedStrong(role, widths[c])
 			}
@@ -445,8 +472,9 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 
 // tableRole returns the ink one table cell takes and whether it is set bold: the site and the
 // verdict carry the row, a non-empty failing or could-not-run count takes the ink of the state
-// it counts, and everything else is muted.
-func tableRole(r, c int, rows [][]string, verdicts []spine.Verdict, frame spine.Verdict) (role style.Role, strong bool) {
+// it counts, and everything else is muted. A folded checks cell mixes the states in one string,
+// so it takes the text ink rather than any one state's.
+func tableRole(r, c int, rows [][]string, verdicts []spine.Verdict, frame spine.Verdict, folded bool) (role style.Role, strong bool) {
 	if r == table.HeaderRow {
 		return style.RoleMuted, false
 	}
@@ -455,6 +483,8 @@ func tableRole(r, c int, rows [][]string, verdicts []spine.Verdict, frame spine.
 		return style.RoleText, true
 	case c == 1:
 		return rowVerdictRole(verdicts[r], frame), true
+	case folded:
+		return style.RoleText, false
 	case c == 2 && rows[r][c] != "":
 		return style.RoleFailing, false
 	case c == 3 && rows[r][c] != "":
@@ -462,6 +492,35 @@ func tableRole(r, c int, rows [][]string, verdicts []spine.Verdict, frame spine.
 	default:
 		return style.RoleMuted, false
 	}
+}
+
+// labelChecks heads the folded counts column a table narrower than widthNarrow draws.
+const labelChecks = "checks"
+
+// foldedCounts joins a site's non-zero failing, could-not-run, and held counts with the tier's
+// separator, in that order, keeping only the leading counts that fit room whole. A count that
+// does not fit is dropped with every count after it, the same rule the wide table gives its
+// columns, since the row is one line and a count cut in half is no count at all.
+func (t theme) foldedCounts(s sections, room int) string {
+	sep := " " + t.marks.Sep + " "
+	var out string
+	for _, part := range []struct {
+		n    int
+		word string
+	}{{len(s.Failing), labelFailing}, {len(s.CouldNotRun), labelCouldNotRun}, {len(s.Held), labelHeld}} {
+		if part.n == 0 {
+			continue
+		}
+		next := count(part.n, part.word)
+		if out != "" {
+			next = out + sep + next
+		}
+		if t.Width(next) > room {
+			break
+		}
+		out = next
+	}
+	return out
 }
 
 // blankZero renders a count, and renders a zero as nothing at all.

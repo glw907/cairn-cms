@@ -1404,6 +1404,10 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 		}
 		tables++
 
+		if style.ContentWidth(w) < widthNarrow {
+			assertFoldedTable(t, w, head)
+			continue
+		}
 		_, columns := tableFit(theme.siteColWidth(reports), style.ContentWidth(w))
 		for i := range columns {
 			if !strings.Contains(head, tableColumns[i].heading) {
@@ -1431,6 +1435,83 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 
 	if tables == 0 {
 		t.Fatal("no width in the supported range drew the plain table, so nothing was asserted")
+	}
+}
+
+// assertFoldedTable checks a narrow table's heading row: site, verdict, and at most the one
+// folded checks column, with no count, engine, or checked heading of its own.
+func assertFoldedTable(t *testing.T, w int, head string) {
+	t.Helper()
+	got := strings.Join(strings.Fields(head), " ")
+	if got != "site verdict checks" && got != "site verdict" {
+		t.Fatalf("width %d: narrow heading row %q, want site, verdict, and checks", w, head)
+	}
+}
+
+// TestATableNarrowerThan60FoldsItsCounts draws the grader's two-site fleet below and at the
+// one-column threshold. Below it the counts share one checks cell joined by the separator, each
+// count whole, and the count columns are gone; at 60 the count columns draw as before.
+func TestATableNarrowerThan60FoldsItsCounts(t *testing.T) {
+	reports := fixtures.Degraded()
+	for _, w := range []int{59, 50} {
+		lines := plainLines(input(reports, BodyMany, w, colorprofile.ASCII, false, verdictFor(reports)))
+		head := tableHeadingLine(lines)
+		if got := strings.Join(strings.Fields(head), " "); got != "site verdict checks" {
+			t.Fatalf("width %d: heading %q, want site verdict checks", w, head)
+		}
+		// Every heading cell is ASCII, so its byte index is its cell; the row carries a Unicode
+		// mark and is measured in runes.
+		col := strings.Index(head, labelChecks)
+		row := []rune(lines[slices.Index(lines, head)+1])
+		if len(row) <= col {
+			t.Fatalf("width %d: site row %q has no checks cell", w, string(row))
+		}
+		cell := string(row[col:])
+		if cell != "1 failing · 3 could not run" {
+			t.Errorf("width %d: checks cell %q, want %q", w, cell, "1 failing · 3 could not run")
+		}
+		if len(row) > w {
+			t.Errorf("width %d: site row %q is %d cells", w, string(row), len(row))
+		}
+	}
+
+	head := tableHeadingLine(plainLines(input(reports, BodyMany, 60, colorprofile.ASCII, false, verdictFor(reports))))
+	if strings.Contains(head, labelChecks) || !strings.Contains(head, labelCouldNotRun) {
+		t.Errorf("width 60: heading %q, want the count columns unfolded", head)
+	}
+
+	// Twelve long site names leave no room at 40 for one whole count, and a column of blank
+	// cells would read as twelve sites with nothing wrong.
+	twelve := fixtures.TwelveSites()
+	head = tableHeadingLine(plainLines(input(twelve, BodyMany, 40, colorprofile.ASCII, false, verdictFor(twelve))))
+	if strings.Contains(head, labelChecks) {
+		t.Errorf("width 40: heading %q draws a checks column no count fits", head)
+	}
+}
+
+// TestFoldedCountsDropWhatDoesNotFitWhole asserts the checks cell gives up its trailing counts
+// rather than cutting one: a count either prints whole or not at all.
+func TestFoldedCountsDropWhatDoesNotFitWhole(t *testing.T) {
+	theme := newTheme(true, colorprofile.ASCII, false)
+	s := sections{
+		Failing:     make([]health.CheckResult, 1),
+		CouldNotRun: make([]health.CheckResult, 2),
+		Held:        make([]health.CheckResult, 1),
+	}
+	sep := " " + theme.marks.Sep + " "
+	tests := []struct {
+		room int
+		want string
+	}{
+		{100, "1 failing" + sep + "2 could not run" + sep + "1 held"},
+		{35, "1 failing" + sep + "2 could not run"},
+		{9, "1 failing"},
+		{8, ""},
+	}
+	for _, tt := range tests {
+		if got := theme.foldedCounts(s, tt.room); got != tt.want {
+			t.Errorf("foldedCounts(room %d) = %q, want %q", tt.room, got, tt.want)
+		}
 	}
 }
 

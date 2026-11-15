@@ -270,38 +270,7 @@ func verdictRole(v spine.Verdict) style.Role {
 // reads the bottom the same way, and a frame whose footer wrapped does not state its counts
 // before the word they belong to.
 func (t theme) verdictLines(v spine.Verdict, subject, tally string, width int) []string {
-	head, tallyLines := t.verdictParts(v, subject, tally, width)
-	return append([]string{head}, tallyLines...)
-}
-
-// verdictParts renders the verdict block's two pieces: the head line, and the tally lines where
-// the tally did not fit beside it. An empty tally slice means the tally rode the head line, or
-// that the run had nothing to count at all, which is the empty registry's frame.
-func (t theme) verdictParts(v spine.Verdict, subject, tally string, width int) (head string, tallyLines []string) {
-	word := v.String()
-	head = t.Strong(verdictRole(v)).Render(word)
-	if subject != "" {
-		head += "  " + t.Strong(style.RoleText).Render(subject)
-	}
-	if tally == "" {
-		return head, nil
-	}
-	if t.Width(word)+2+t.Width(subject)+2+t.Width(tally) <= width {
-		return head + "  " + t.Style(style.RoleMuted).Render(tally), nil
-	}
-	for _, l := range t.WrapGreedy(tally, width) {
-		tallyLines = append(tallyLines, t.Style(style.RoleMuted).Render(l))
-	}
-	return head, tallyLines
-}
-
-// insetRule is the one section device this design uses: a lowercase label inset two cells into a
-// rule. No box, no capitals, no coloured rail.
-func (t theme) insetRule(label string, width int) string {
-	lead := t.rule(2)
-	tail := max(width-t.Width(lead)-t.Width(label)-2, 0)
-	return t.Style(style.RoleRule).Render(lead) + " " + t.Style(style.RoleText).Render(label) + " " +
-		t.Style(style.RoleRule).Render(t.rule(tail))
+	return style.VerdictLine(t.Theme, v.String(), verdictRole(v), subject, tally, width)
 }
 
 // cell renders one fixed-width field. theme.Sized pads inside the styled block and cuts there,
@@ -347,16 +316,6 @@ func (t theme) indented(st lipgloss.Style, col int, text string, width int) []st
 	return atColumn(st, col, t.WrapGreedy(text, width-col))
 }
 
-// atColumn renders already-wrapped lines at col, each in st.
-func atColumn(st lipgloss.Style, col int, lines []string) []string {
-	pad := strings.Repeat(" ", col)
-	out := make([]string, 0, len(lines))
-	for _, l := range lines {
-		out = append(out, pad+st.Render(l))
-	}
-	return out
-}
-
 // wrapLeavingTail wraps text to width and re-flows its last line until tailWidth cells are free
 // at the end of it, so a trailing field shares that line rather than taking a line by itself. It
 // reports false when no re-flow leaves the room, which is a width too narrow to carry both.
@@ -374,4 +333,14 @@ func (t theme) wrapLeavingTail(text string, width, tailWidth int) (lines []strin
 		lines = append(lines, words[len(words)-1])
 	}
 	return lines, true
+}
+
+// atColumn renders already-wrapped lines at col, each in st.
+func atColumn(st lipgloss.Style, col int, lines []string) []string {
+	pad := strings.Repeat(" ", col)
+	out := make([]string, 0, len(lines))
+	for _, l := range lines {
+		out = append(out, pad+st.Render(l))
+	}
+	return out
 }

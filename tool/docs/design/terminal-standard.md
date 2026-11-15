@@ -61,12 +61,9 @@ Every single-character mark measures one cell under the narrow width table, and 
 spinner frame taken by itself. A test in `internal/style/marks_test.go` checks this through the same width
 function `render` uses. The ASCII ellipsis and spinner are three cells.
 
-Two marks are still moving:
-
-- NotStarted's ASCII mark is `o`, the same character as Held's. It becomes `.` in the installer
-  round, since `internal/ui/newview` owns that mark today.
-- A held row in `render` still draws the NotStarted mark, `○`, so no report changes in pass 1.
-  Pass 2 switches it to Held.
+One mark is still moving: NotStarted's ASCII mark is `o`, the same character as Held's. It becomes
+`.` in the installer round, since `internal/ui/newview` owns that mark today. A held row in
+`render` draws the Held mark.
 
 The Held glyph was checked in Kitty, in JetBrains Mono and Adwaita Mono on a dark and a light
 ground. It is drawn whole, one cell wide, in all four, so it stays `◌` and no fallback to `○`

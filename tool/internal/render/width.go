@@ -33,17 +33,3 @@ func (t theme) clamp(s string, width int) string {
 	}
 	return ""
 }
-
-// rule returns a horizontal rule of n cells in the tier's rule glyph. A negative or zero n
-// returns the empty string, so a degenerate width never panics.
-func (t theme) rule(n int) string {
-	if n <= 0 {
-		return ""
-	}
-	g := t.marks.Rule
-	out := make([]byte, 0, n*len(g))
-	for range n {
-		out = append(out, g...)
-	}
-	return string(out)
-}

@@ -339,6 +339,14 @@ func goldenCases() []goldenCase {
 		targeted.profile = p
 		out = append(out, targeted)
 	}
+	// The grid's two narrow bands at no colour, where the frame's alignment is the only thing
+	// carrying it: 80 is the two-column band and 59 the stacked one.
+	for _, width := range []int{widthNarrow - 1, style.DefaultWidth} {
+		bare := base
+		bare.profile = colorprofile.ASCII
+		bare.width = width
+		out = append(out, bare)
+	}
 	light := base
 	light.dark = false
 	ascii := base

@@ -200,29 +200,20 @@ func TestLinkCarriesURLWithColor(t *testing.T) {
 	}
 }
 
-// TestDocLinkIsTextInkUnderlinedInMuted: a documentation link keeps its OSC 8 target, takes the
-// Text ink with an underline, and colours the underline Muted where Muted has an ink. At ANSI-16,
-// where Muted has no slot, the underline is plain.
-func TestDocLinkIsTextInkUnderlinedInMuted(t *testing.T) {
+// TestDocLinkIsTextInkWithPlainUnderline: a documentation link keeps its OSC 8 target and takes
+// the Text ink with a plain underline at every colour tier, and sets no underline colour.
+func TestDocLinkIsTextInkWithPlainUnderline(t *testing.T) {
 	const url = "https://example.test"
-	th := NewTheme(true, colorprofile.TrueColor, false)
-	got := th.DocLink(url).Render("x")
-	want := th.Link(RoleText, url).Underline(true).UnderlineColor(th.Color(RoleMuted)).Render("x")
-	if got != want {
-		t.Errorf("DocLink at TrueColor renders %q, want %q", got, want)
-	}
-	for _, sub := range []string{url, "\x1b[4;", ";58;2;"} {
-		if !strings.Contains(got, sub) {
-			t.Errorf("DocLink at TrueColor renders %q, want it to contain %q", got, sub)
+	for _, p := range []colorprofile.Profile{colorprofile.TrueColor, colorprofile.ANSI256, colorprofile.ANSI} {
+		th := NewTheme(true, p, false)
+		got := th.DocLink(url).Render("x")
+		want := th.Link(RoleText, url).Underline(true).Render("x")
+		if got != want {
+			t.Errorf("DocLink at %v renders %q, want %q", p, got, want)
 		}
-	}
-	if strings.Contains(th.Link(RoleText, url).Render("x"), "58;") {
-		t.Fatal("a plain Link carries an underline colour; the probe above proves nothing")
-	}
-
-	ansi := NewTheme(true, colorprofile.ANSI, false).DocLink(url).Render("x")
-	if strings.Contains(ansi, "58;") || !strings.Contains(ansi, "\x1b[4") {
-		t.Errorf("DocLink at ANSI renders %q, want a plain underline and no underline colour", ansi)
+		if !strings.Contains(got, url) || !strings.Contains(got, "\x1b[4") || strings.Contains(got, "58;") {
+			t.Errorf("DocLink at %v renders %q, want the URL and a plain underline and no SGR 58", p, got)
+		}
 	}
 }
 

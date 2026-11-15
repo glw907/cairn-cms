@@ -82,12 +82,16 @@ const (
 
 // showsProgress reports whether a health run draws its progress line. Both streams must be
 // terminals, since the line is drawn on stderr and is noise in a pipe or a log file; CI must be
-// empty, since a CI log keeps every redrawn frame; and --json, --quiet, and --verbose each keep
-// it off: --json promises streams an agent parses, --quiet promises a green run writes nothing,
-// and --verbose prints checkProgress's per-check lines in its place.
+// empty, since a CI log keeps every redrawn frame; TERM must not be dumb, since such a terminal
+// prints the line's erase as literal junk on every frame; and --json, --quiet, and --verbose
+// each keep it off: --json promises streams an agent parses, --quiet promises a green run writes
+// nothing, and --verbose prints checkProgress's per-check lines in its place.
+//
+// The ASCII tier is no guard here: a non-UTF-8 locale also selects it, and that terminal handles
+// the erase and still draws the line with the ASCII spinner.
 func showsProgress(d deps, rf *rootFlags, f healthFlags) bool {
 	return style.IsTerminal(d.stdout) && style.IsTerminal(d.stderr) && d.env("CI") == "" &&
-		!f.asJSON && !rf.quiet && !rf.verbose
+		d.env("TERM") != "dumb" && !f.asJSON && !rf.quiet && !rf.verbose
 }
 
 // startHealthProgress starts the progress line for a health run over the site id and returns

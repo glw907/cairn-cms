@@ -322,6 +322,24 @@ func TestReportE2EProgressLineAbsent(t *testing.T) {
 		}
 	})
 
+	t.Run("TERM=dumb", func(t *testing.T) {
+		t.Parallel()
+		f := newFixture(t, siteDelay)
+		out, errOut := openTerminal(t), openTerminal(t)
+		c := start(t, f, out.tty, errOut.tty, map[string]string{"TERM": "dumb"}, "health", siteID)
+		c.wait(t, out, errOut)
+		raw := errOut.bytes()
+		if bytes.Contains(raw, []byte(progressText)) {
+			t.Errorf("stderr recorded a progress line under TERM=dumb: %q", raw)
+		}
+		if bytes.IndexByte(raw, 0x1b) >= 0 {
+			t.Errorf("stderr recorded an ESC byte under TERM=dumb: %q", raw)
+		}
+		if !strings.Contains(out.screen(), siteName) || !f.served() {
+			t.Errorf("the run printed no report or never reached the site host:\n%s", out.screen())
+		}
+	})
+
 	t.Run("stderr a file", func(t *testing.T) {
 		t.Parallel()
 		f := newFixture(t, siteDelay)

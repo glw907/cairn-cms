@@ -172,4 +172,14 @@ A banner announces something for a limited time. It removes itself after its exp
 :::banner{message="This banner is a sample, and it shows until the year 2999." expires="2999-01-01"}
 :::
 
+Cards lay out a few related items in a row, each with a title that links and a line of text. They suit a short list of places to go next.
+
+::::cards{columns="3"}
+:::items
+- [Add an image](cairn:posts/2026-11-05-add-an-image) Place a picture in a post and describe it for readers who can't see it.
+- [Add a page](cairn:posts/2026-11-06-add-a-page) Create a page that isn't part of the posts feed.
+- [Invite an editor](cairn:posts/2026-11-03-invite-an-editor) Give someone else access to write here.
+:::
+::::
+
 An include places a fragment, a piece of text you write once on the **Fragments** screen, wherever you want it. The sample content note near the top of this post is one. To add one, select **Include a fragment** in the toolbar.

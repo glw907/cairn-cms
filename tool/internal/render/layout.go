@@ -24,11 +24,13 @@ const docsBase = "https://cairn.pub/docs/"
 // and the admin arm's is-it-working page is the one page those anchors are written for.
 const fixAnchorBase = docsBase + "admin/is-it-working#"
 
-// The section labels, the four labels a run's checks are grouped under. They are their fixed
-// vocabulary and no body invents a fifth: the check-result words are five, and the two that mean
-// a check did not settle, "skip" and "unknown", share the one "could not run" section, since the
-// operator's next move is the same for both and a section per word would split a group of two
-// rows into two groups of one.
+// The section labels, the four labels a health run's checks are grouped under. They are their
+// fixed vocabulary and no health body invents a fifth: the check-result words are five, and the
+// two that mean a check did not settle, "skip" and "unknown", share the one "could not run"
+// section, since the operator's next move is the same for both and a section per word would
+// split a group of two rows into two groups of one. A doctor run's skip means its precondition
+// did not hold rather than that it could not run, so body_doctor.go adds two group words of its
+// own.
 const (
 	labelFailing     = "failing"
 	labelCouldNotRun = "could not run"

@@ -1441,13 +1441,14 @@ func failRow(g style.Marks, l string) bool {
 
 // TestNothingGreenBelowAFailure is the rule a failing run's ink follows: from the first failing
 // row down, no span carries the OK ink, so the eye that finds the failure finds nothing green
-// after it. It walks every terminal golden case with a failure in it. A healthy run is the
-// positive control that the ink searched for is the one the frame really spends, and the
-// no-colour cases assert the passing count still sits below the failure with no escape at all.
+// after it. It walks every terminal golden case with a failure in it, the doctor frames
+// included. A healthy run is the positive control that the ink searched for is the one the frame
+// really spends, and the no-colour cases assert the passing count still sits below the failure
+// with no escape at all.
 func TestNothingGreenBelowAFailure(t *testing.T) {
 	failing, controlled := 0, false
 	for _, c := range goldenCases() {
-		if c.view != "single" && c.view != "many" {
+		if c.view != "single" && c.view != "many" && c.view != "doctor" {
 			continue
 		}
 		th := newTheme(c.dark, c.profile, c.ascii)
@@ -1458,7 +1459,7 @@ func TestNothingGreenBelowAFailure(t *testing.T) {
 			if strings.Contains(frame, "\x1b") {
 				t.Errorf("%s: a no-colour frame carries an escape", c.path())
 			}
-			if first >= 0 && c.view == "single" && !slices.ContainsFunc(lines[first:], func(l string) bool {
+			if first >= 0 && c.view != "many" && !slices.ContainsFunc(lines[first:], func(l string) bool {
 				return strings.HasPrefix(l, "  "+th.marks.Pass+" ") && strings.Contains(l, " passing")
 			}) {
 				t.Errorf("%s: no passing count below the failing row", c.path())

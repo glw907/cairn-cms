@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/colorprofile"
+	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
@@ -35,6 +36,9 @@ const (
 	// ViewStatus renders the run's state alone, the frame a site listing ends on: it has no
 	// creds row for the credential detail to sit on, and the detail is not header material.
 	ViewStatus
+	// ViewDoctor renders a cairn doctor run on a terminal. It has one form: a pipe prints
+	// doctor.Format instead, whose lines are a contract this view does not reproduce.
+	ViewDoctor
 )
 
 // Body names the layout a frame composes into. SelectBody picks one from the run's scope and
@@ -87,8 +91,11 @@ type RenderInput struct {
 	Reports []health.Report
 	// Entries holds a log query's records, newest first, for ViewLogs.
 	Entries []logs.Entry
-	// Site names the subject a view that carries no report still has to name, which is the log
-	// excerpt's section rule. A health view reads the name off its report instead.
+	// Checked holds a doctor run's settled results, in the order the checks ran, for ViewDoctor.
+	Checked []doctor.CheckedResult
+	// Site names the subject a view that carries no report still has to name: the log
+	// excerpt's title, and the directory a doctor run checked. A health view reads the name off
+	// its report instead.
 	Site string
 	// Status carries the run's state beside its checks: the wall time, the provider tokens,
 	// and whether a missing one degraded the run.
@@ -117,7 +124,7 @@ func (in RenderInput) width() int {
 // The view decides first and the body second. ViewLogs and ViewStatus each have one form, since
 // neither carries the per-check grammar the three health bodies differ over; a caller writing to
 // a pipe prints its line-oriented form for those two rather than asking for a column layout
-// nothing will read.
+// nothing will read. ViewDoctor is terminal-only and ignores Body.
 func Render(in RenderInput) Frame {
 	t := newTheme(in.Dark, in.Profile, in.ASCII)
 	switch {
@@ -125,6 +132,8 @@ func Render(in RenderInput) Frame {
 		return renderStatus(t, in)
 	case in.View == ViewLogs:
 		return renderLogs(t, in)
+	case in.View == ViewDoctor:
+		return renderDoctor(t, in)
 	case in.Body == BodyPlain:
 		return renderPlain(t, in)
 	case in.Body == BodyMany:

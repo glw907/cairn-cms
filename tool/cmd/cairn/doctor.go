@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 	"github.com/spf13/cobra"
 )
 
@@ -91,8 +94,40 @@ func writeDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap 
 	if quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
-	_, err := fmt.Fprintln(cmd.OutOrStdout(), doctor.Format(checked))
-	return err
+	return writeDoctorReport(cmd.OutOrStdout(), reportTerminal(d, rf), rf, snap.Dir, checked, verdict)
+}
+
+// writeDoctorReport writes the run as text: the terminal body when stdout is a terminal, and
+// doctor.Format's lines, unchanged, on a pipe. The terminal body names the run by the checked
+// directory's base name, made absolute first so a run on "." still names its directory.
+func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dir string, checked []doctor.CheckedResult, verdict spine.Verdict) error {
+	if !term.TTY {
+		_, err := fmt.Fprintln(w, doctor.Format(checked))
+		return err
+	}
+	if abs, err := filepath.Abs(dir); err == nil {
+		dir = abs
+	}
+	width := rf.width
+	if width <= 0 {
+		width = term.Columns
+	}
+	frame := render.Render(render.RenderInput{
+		View:    render.ViewDoctor,
+		Width:   width,
+		Dark:    rf.theme != themeLight,
+		Profile: term.Profile,
+		ASCII:   term.ASCII,
+		Checked: checked,
+		Site:    filepath.Base(dir),
+		Verdict: verdict,
+	})
+	for _, line := range frame.Lines() {
+		if _, err := fmt.Fprintln(w, line); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // writeDoctorJSON writes the cairn-doctor.schema.json payload.

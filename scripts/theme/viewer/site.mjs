@@ -245,9 +245,56 @@ export async function answers(url) {
 }
 
 /**
+ * One answer from the site's home page.
+ * @typedef {object} SiteAnswer
+ * @property {number} status the HTTP status, or 0 when the request failed or ran out of time
+ * @property {string} body the response body, or the request's failure
+ */
+
+/** The consecutive 200 answers that count as a settled site. */
+const SETTLED_ANSWERS = 3;
+
+/**
+ * How long one probe waits for an answer. Vite fails a module fetch after 60 seconds, so a request
+ * still open past that margin is abandoned and a fresh one sent rather than spending the whole wait.
+ */
+const PROBE_MS = 90_000;
+
+/**
+ * Wait until the site's home page answers 200 several times in a row, each request sent half a
+ * second after the last one answered. One 200 is not enough after files change under `vite dev`:
+ * a request can be answered before the watcher has seen the change, and a request in flight while
+ * Vite reloads can answer 500 when its module fetch outlasts Vite's fixed 60-second limit, while a
+ * request sent after it answers 200.
+ * @param {string} url the site's origin
+ * @param {number} timeoutMs how long to wait in all
+ * @returns {Promise<{ settled: true } | { settled: false, last: SiteAnswer }>}
+ */
+export async function settles(url, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  let streak = 0;
+  /** @type {SiteAnswer} */
+  let last = { status: 0, body: 'no request was sent' };
+  while (Date.now() < deadline) {
+    try {
+      const limit = Math.max(1, Math.min(PROBE_MS, deadline - Date.now()));
+      const response = await fetch(`${url}/`, { signal: AbortSignal.timeout(limit) });
+      last = { status: response.status, body: await response.text() };
+    } catch (error) {
+      last = { status: 0, body: error instanceof Error ? error.message : String(error) };
+    }
+    streak = last.status === 200 ? streak + 1 : 0;
+    if (streak === SETTLED_ANSWERS) return { settled: true };
+    await new Promise((done) => setTimeout(done, 500));
+  }
+  return { settled: false, last };
+}
+
+/**
  * A running Vite server.
  * @typedef {object} SiteServer
  * @property {string} url the origin, no trailing slash
+ * @property {() => string} output everything the server has printed so far
  * @property {() => void} stop
  */
 
@@ -333,6 +380,7 @@ async function launch(siteDir, command, port) {
     if (ready.test(output) && (await answers(url))) {
       return {
         url,
+        output: () => output,
         stop: () => {
           process.removeListener('exit', stop);
           stop();

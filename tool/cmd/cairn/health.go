@@ -185,7 +185,7 @@ func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, ver
 // The ground is --theme alone, which nothing detects: --color and NO_COLOR choose whether to
 // paint, and --theme chooses which palette to paint from.
 func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict, status render.StatusState) render.RenderInput {
-	term := detectTerminal(d, rf)
+	term := reportTerminal(d, rf)
 	width := rf.width
 	if width <= 0 {
 		width = term.Columns

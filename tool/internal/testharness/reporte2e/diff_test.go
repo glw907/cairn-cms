@@ -356,6 +356,10 @@ type errorCase struct {
 	overrides map[string]string
 }
 
+// promptNewlineRow is the one row whose stderr differs from the base by design: a piped
+// `auth set` ends its `NAME: ` prompt line, which the base left open so the error joined it.
+const promptNewlineRow = "emptyPipedValueError"
+
 // errorCases returns the error differential's table. Every installer line refuses before setup
 // starts, so no row reaches the network or the loopback port. ackDir holds the hold files the
 // --ack-file rows read.
@@ -433,7 +437,12 @@ func TestReportE2EDiffErrors(t *testing.T) {
 					t.Fatalf("%s printed no error: exit %d, stdout %q, stderr %q", name, r[i].code, r[i].stdout, r[i].stderr)
 				}
 			}
-			compareRuns(t, "base and branch", r[0], r[1])
+			baseRun := r[0]
+			if tt.err == promptNewlineRow {
+				// The one approved stderr difference from the base: the prompt line now ends.
+				baseRun.stderr = bytes.Replace(baseRun.stderr, []byte("CAIRN_GH_READ_TOKEN: "), []byte("CAIRN_GH_READ_TOKEN: \n"), 1)
+			}
+			compareRuns(t, "base and branch", baseRun, r[1])
 			compareRuns(t, "the control pair of base runs", r[0], r[2])
 		})
 	}

@@ -93,6 +93,11 @@ func promptPassword(cmd *cobra.Command, name string, stdin io.Reader) (string, e
 	}
 	b, err := term.ReadPassword(fd)
 	if err != nil {
+		// The terminal path's Enter ends the prompt line; a pipe has no Enter, so the line is
+		// ended here and a receipt or error never joins the prompt. The value is not echoed.
+		if _, ferr := fmt.Fprintln(cmd.ErrOrStderr()); ferr != nil {
+			return "", ferr
+		}
 		return readPipedValue(stdin, name)
 	}
 	if _, ferr := fmt.Fprintln(cmd.ErrOrStderr()); ferr != nil {

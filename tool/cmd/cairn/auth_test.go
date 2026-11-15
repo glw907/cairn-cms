@@ -333,6 +333,21 @@ func TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails(t *testing.T) {
 	}
 }
 
+// TestPromptPasswordEndsThePromptLineOnAPipe: with no Enter to end the prompt line, the fallback
+// writes the newline itself, so a piped run's stderr reads `NAME: \n` and never carries the value.
+func TestPromptPasswordEndsThePromptLineOnAPipe(t *testing.T) {
+	var errOut bytes.Buffer
+	cmd := &cobra.Command{}
+	cmd.SetErr(&errOut)
+
+	if _, err := promptPassword(cmd, "CAIRN_GH_READ_TOKEN", strings.NewReader("s3cr3t\n")); err != nil {
+		t.Fatalf("promptPassword() = %v, want nil", err)
+	}
+	if want := "CAIRN_GH_READ_TOKEN: \n"; errOut.String() != want {
+		t.Errorf("stderr = %q, want %q", errOut.String(), want)
+	}
+}
+
 // TestPromptPasswordRefusesAnEmptyPipedValue covers the last sentence of criterion 6: an empty
 // value is an error, and it never appears in the error text.
 func TestPromptPasswordRefusesAnEmptyPipedValue(t *testing.T) {

@@ -6,6 +6,8 @@
 
 ## Medium
 
+- [ ] **#512** `cairn auth set` prints no newline after its prompt when stdin is a pipe `#bug` `#cairn-cms` *(2026-11-14)*
+  `tool/cmd/cairn/auth.go:94-101` writes the newline after `term.ReadPassword` succeeds, but `readPipedValue` (`auth.go:108`) writes none, so with stdin piped and stderr at a terminal the receipt's mark lands at the end of the `NAME: ` prompt, not at the margin. The final visual grade read this on both grounds (the shot piped the token). A typed prompt is unaffected. Decision 11 also lets the label lines around the prompt take the language, which `lists_terminal.go` does not draw. A fix changes stderr bytes on a pipe, so it needs the byte-identity ruling. Found by pass 3's visual grade (PR #249). Placement: the next pass on `tool/cmd/cairn`.
 - [ ] **#511** Pass 3 left four formatting and coverage nits `#improvement` `#cairn-cms` *(2026-11-14)*
   `ground_test.go` has no row for `doctor`'s call to `stdoutGround` (`doctor.go:97`), and the differential's forced-colour pipe row covers `health` only. Three lines run past their file's wrap width: `terminal-standard.md:169`, `MIGRATION-NOTES.md:90`, and `report_terminal.go:84`. Found by pass 3's task-scope review (PR #249). Placement: the next pass on `tool/cmd/cairn`.
 - [ ] **#510** `adopt.go` joins a repository's owner and name without checking for an empty owner `#bug` `#cairn-cms` *(2026-11-14)*

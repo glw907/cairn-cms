@@ -148,7 +148,8 @@
           "admin-nav-layout.spec.ts",
           "admin-referrer.spec.ts",
           "admin-sheet.spec.ts",
-          "theme-kit.spec.ts"
+          "theme-kit.spec.ts",
+          "cards-admin.spec.ts"
         ]
       },
       {

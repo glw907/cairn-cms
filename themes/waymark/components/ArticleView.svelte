@@ -206,6 +206,14 @@ as it did before the prop existed. -->
 </article>
 
 <style>
+  /* The news section is a peer of the body's h2 sections, so it takes the h2's space above it
+     (prose.css sets `--flow-space` on an h2 itself, which a wrapping section does not inherit). */
+  .news {
+    --flow-space: var(--spacing-xl);
+  }
+  .news > p {
+    margin-top: var(--spacing-s);
+  }
   /* The news rows are a list for assistive tech only: no bullets, indent, or prose list spacing. */
   .news__list {
     list-style: none;

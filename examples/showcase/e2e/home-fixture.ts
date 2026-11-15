@@ -185,10 +185,14 @@ export async function removeCopy(output: string): Promise<void> {
  * Four things vary: the content hash in a name under `/_app/immutable/`, the app `version`
  * string, the per-build `__sveltekit_<id>` global, and the hash-named comments Svelte writes for
  * head hydration. Each becomes a placeholder rather than being dropped, so a file's base name
- * (`ArticleView.HASH.css`) and every tag that names a file stay in place.
+ * (`ArticleView.HASH.css`) and every tag that names a file stay in place. The
+ * `rel="modulepreload"` link lines are dropped whole: they are hints for the bundler's chunk
+ * graph, which moves whenever any module the build reaches changes (a theme component, say),
+ * while the page itself does not.
  */
 export function normalizeBuildNoise(html: string): string {
   return html
+    .replace(/^[ \t]*<link [^>\n]*rel="modulepreload"[^>\n]*>\r?\n/gm, '')
     .replace(
       /(_app\/immutable\/[a-z]+\/)(?:([^/"'.\s]+)\.)?[A-Za-z0-9_-]{6,12}\.(js|css)/g,
       (_match, dir: string, name: string | undefined, ext: string) =>

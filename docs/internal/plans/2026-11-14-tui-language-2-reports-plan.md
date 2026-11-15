@@ -14,84 +14,35 @@ base `e5f4a4e6e` (pass 1's merge, PR #245). PR base `main`. Class `ordinary`. Pl
 minutes against the design's 200. The park line and the retry ceiling are both 400, twice the
 approved 200.
 
-## Stop at planning: two acceptance items cannot be met as written
+## Stop at planning: answered
 
-This plan parks before any code is written, under `round.md` "Parking at planning": two
-acceptance items cannot be planned for as written. The advisor was asked first on each. For
-item 2 it set the deciding probe (M3), and the probe settled that the condition holds. For item
-4 it confirmed the plan reviewer's finding against the code (M21). Every other item is planned
-below, and the pass launches as soon as both questions have answers.
+This plan parked before any code was written, under `round.md` "Parking at planning", because
+two acceptance items could not be planned for as written (draft PR #247). Geoff answered the
+`decide` document `20261114-235707-dd8b14` with both recommended options, and "Rulings" at the
+end of this plan records them. The plan below builds both answers.
 
-### Question 1: item 2 and the clock line
-
-Item 2 asks a harness test to run the `main` and branch binaries against the same fakes and find
-`cairn health | cat` byte-identical. The pipe body of `cairn health` prints
-`checked: <age> ago (<minute stamp> UTC), in <elapsed>`, from the real clock, and `main`'s binary
-has no clock hook to fix it. Two runs of one binary differ whenever the elapsed time crosses a
-0.1 second boundary. How should the test treat that line?
-
-**What was tried.** Five pairs of concurrent runs of one `cairne2e` binary against the live
-proxy, the fake site host delayed a fixed 1.25 s (M3). Pairs 2, 3, and 4 matched. Pairs 1 and 5
-differed on elapsed alone (`in 12.5s` against `in 12.6s`). Most of the 12 seconds is the real
-DNS lookup of the delegation and email checks, which the `cairne2e` hook cannot fake (M6), so
-the gap moves with the network the test runs on. The doctor half of item 2 has no clock field
-and is planned as written (T8).
-
-**The choices.**
-
-1. Mask the clock spans (recommended). The test compares every byte except each `checked:`
-   line's age, minute stamp, and elapsed, replaced by a fixed token in both outputs. A control
-   run of `main` against `main` shows the mask is what two runs of one binary need, and no more.
-   Every other byte of `cairn health | cat` is compared across the two binaries, for one site
-   and for the every-site sweep.
-2. Doctor only through both binaries. `cairn doctor | cat` is compared byte for byte, and
-   `cairn health`'s pipe output rests on its fixed-clock pipe goldens (the item's first clause).
-3. A bounded retry. Compare the whole output and retry up to five times. The probe matched 3 of
-   5, so a false red stays possible, and its rate depends on the CI network.
-
-Pass 3's item 4 (`CAIRN_PLAIN=1 cairn health` equals the pipe bytes) meets the same clock line,
-so one answer covers both passes.
-
-### Question 2: item 4 under `LC_ALL=C`
-
-Item 4 asks that with `LC_ALL=C` the goldens "hold no `ESC` byte and only bytes from 0x20 to
-0x7E, plus newline". The design's tier rule (line 105) names three tiers: colour on a terminal,
-one ink under `NO_COLOR` or `--color never`, and "ASCII marks where `TERM=dumb`, the stream is
-not a terminal, or the locale is not UTF-8". Only the one-ink tier promises no escape bytes. The
-code keeps colour and the ASCII tier on separate axes (M21): the truecolor ASCII golden
-`single/*_truecolor_dark_ascii.txt` holds 21 `ESC` bytes. A C locale on a colour terminal would
-paint ASCII marks in colour and fail the item. Which should hold?
-
-**What was tried.** The plan reviewer found it; the advisor and the code confirmed it. A
-golden built at a hand-picked no-colour profile would pass the item without testing the locale,
-so the plan offers no such choice.
-
-**The choices.**
-
-1. A non-UTF-8 locale behaves as `TERM=dumb` does: ASCII marks and no colour under
-   `--color auto`. `--color always` still paints, as it does under `TERM=dumb`, and `NO_COLOR`
-   is unchanged. Item 4 holds as written. The tier rule names the locale in one clause with
-   `TERM=dumb` and a non-terminal stream, and both of those already drop colour, which supports
-   this reading. The cost: a POSIX shell with `LANG`, `LC_CTYPE`, and `LC_ALL` all unset is the C
-   locale, so it loses colour as well as the Unicode marks.
-2. Amend item 4 for `LC_ALL=C` alone to "no byte at or above 0x80", with colour escapes allowed.
-   `TERM=dumb` keeps the item's wording, which today's code already meets. The locale then
-   decides the marks and never the colour.
-
-The plan recommends choice 2. A locale names a character set, and a C-locale shell on a colour
-terminal still shows colour. Either way the test drives the environment through the `cmd/cairn`
-read to a profile and a tier (T5), never a golden with a chosen profile.
+1. Item 2's clock line (M2, M3). The pipe body of `cairn health` prints its `checked:` line from
+   the real clock, and `main`'s binary has no clock hook, so two runs of one binary differ when
+   the elapsed time crosses a 0.1 second boundary. Ruled: mask the clock spans. T8 compares every
+   byte except each `checked:` line's age, stamp, and elapsed, for one site and for the
+   every-site sweep, with a `main` against `main` control run. The same ruling covers pass 3's
+   item 4.
+2. Item 4 under `LC_ALL=C` (M21). Colour and the ASCII tier are separate axes in the code, so a C
+   locale on a colour terminal paints ASCII marks in colour. Ruled: for `LC_ALL=C` alone, item 4
+   reads "no byte at or above 0x80", with colour allowed. The locale decides the marks and never
+   the colour. `TERM=dumb` keeps item 4 as written.
 
 ### Budget line
 
-The path re-totals at 345 minutes after the review fold, against the approved 200. Standing
-answer 1's retry ceiling is 400, which leaves 55 minutes of retry. The plan keeps 400 and parks
-past it as standing answer 1 says. Geoff may raise it in the same answer.
+The path totals 345 minutes against the approved 200. Standing answer 1's retry ceiling stays at
+400, as Geoff's answer confirmed, which leaves 55 minutes of retry. Past 400 the pass stops as
+standing answer 1 says.
 
 ## Pre-flight
 
-Owner steps: the two questions above, sent by the conductor as a `decide` document. Nothing else
-in this pass needs a sign-in, a secret, a dialog, or a permission rule. The `gh pr status`
+Owner steps: the two parked questions, done. Check: the `decide` document
+`20261114-235707-dd8b14` is answered, and "Rulings" records the answer. Nothing else in this pass
+needs a sign-in, a secret, a dialog, or a permission rule. The `gh pr status`
 capture uses the host's existing `gh` sign-in (M22).
 
 - Permissions checked: every task's commands were read against the denials log
@@ -103,8 +54,8 @@ capture uses the host's existing `gh` sign-in (M22).
   Deploy 1, Secret-Store Writes 1, DNS/Domain/Cert 1, Bot Check Circumvention 1, Code from
   External 1, Shared Scratch Sweep 1, Safety Bypass Flag 1, Out-of-Place Publication 1, PII Data
   Handling 1, Undermining Oversight 1. The pass writes only repo files under `tool/`, `docs/`,
-  `CHANGELOG.md`, `MIGRATION-NOTES.md`, and one line of `.github/workflows/tool.yml`, no
-  `.claude/` path and no credential. The routes for the refused classes its commands could meet
+  `CHANGELOG.md`, and `MIGRATION-NOTES.md`, no `.github/` or `.claude/` path, and no
+  credential. The routes for the refused classes its commands could meet
   are below.
 - Reviewed: one `standards:plan-reviewer` read (Opus, `medium`), folded under "Plan review fold".
 - Evidence: the mechanism table and the recorded searches below. Every row is a probe run at
@@ -143,7 +94,7 @@ until-loop on the same command, never kill the holder.
 | --- | --- | --- | --- |
 | M1 | Pass 1's held-mark result | PR #245 body; `internal/render/body_single.go:86-88` | `◌` drew whole in Kitty in both fonts, so standing answer 4 did not fire. Render still returns `g.NotStarted` for a held row, under `// WATCH: the held mark switches to Held here; every golden with a held row changes then.` PR #245 carries no `[advisor]` lines. |
 | M2 | Health pipe body's clock fields | `internal/render/body_plain.go:43`, `layout.go:121` `checkedPhrase` | `checked: <relative> ago (<stamp, UTC minute>), in <elapsed>`; elapsed is ms under 1 s, else one decimal of seconds. Every field comes from `RenderInput.Now` and `StatusState.Elapsed`, which `cmd/cairn/health.go:100,112,203` read off `d.now()`. |
-| M3 | Two runs of one binary through the fixture | `go build -tags cairne2e`; live `testharness.NewProxy` with `alpineclub.example` delayed 1.25 s; five pairs of concurrent `cairn health alpine-club-a1b2c3` runs, `cmp` per pair | Pairs 2 to 4 identical; pairs 1 and 5 differ on line 2 only: `checked: 12s ago (2026-11-14 23:30 UTC), in 12.5s` against `in 12.6s`. Question 1. |
+| M3 | Two runs of one binary through the fixture | `go build -tags cairne2e`; live `testharness.NewProxy` with `alpineclub.example` delayed 1.25 s; five pairs of concurrent `cairn health alpine-club-a1b2c3` runs, `cmp` per pair | Pairs 2 to 4 identical; pairs 1 and 5 differ on line 2 only: `checked: 12s ago (2026-11-14 23:30 UTC), in 12.5s` against `in 12.6s`. Ruled: mask the clock spans (Rulings 1, T8). |
 | M4 | Doctor pipe body | `internal/doctor/report.go:28` `Format`; `internal/doctor/fetchrobots.go:40-45` | No clock. One network call: the posture check fetches `/robots.txt` when a public origin resolves. With no `PUBLIC_ORIGIN` in the site directory that check is unchecked and the output is a function of the directory alone. |
 | M5 | Screenshot through the fixture | Throwaway `cmd/cairn/zz_probe_test.go` (removed; `git status` clean): `NewProxy`, CA and proxy URL written to a scratch dir, then `kitty-headless-shot -o <dir> -t dark -s 80x50 -c 'env -i PATH=/usr/bin TERM=xterm-kitty LANG=C.UTF-8 HTTPS_PROXY=<url> SSL_CERT_FILE=<dir>/ca.pem CAIRN_STATE_DIR=<dir>/state CAIRN_E2E_KEYRING_DIR=<dir>/kr HOME=<dir> <bin> health alpine-club-a1b2c3' shot:health80` | Painted today's layout, with serving failing through the proxy. The proxy and HOME must be set only inside the child's `env -i`: exported in the outer shell, kitty's own update check went through the proxy and was refused. The CA must be copied out of `/tmp` into the shot directory. |
 | M6 | Which health rows the fixture can fix | `internal/health/check_email.go:90,117,136` `probe.LookupTXT`; `internal/providers/probe.go:13-18`; `cmd/cairn/new_e2e_hook.go` (sets `siteAuthority` and `gitConfigPairs`); `internal/secrets/keyring_e2e.go:31` (the keyring dir) | DNS goes through `deps.resolver` (`*net.Resolver`), which no `cairne2e` hook replaces. Delegation and email reach real DNS and settle as could not run. Creds, serving, https-forced, deploy, publish-path, engine, and errors go over HTTPS and are fixed by the proxy's fakes. A held row is `--ack serving=<date>` on a failing serving check. |
@@ -158,10 +109,10 @@ until-loop on the same command, never kill the holder.
 | M15 | Doctor's shape today | `internal/doctor/report.go:28` `Format`, sole caller `cmd/cairn/doctor.go:94`; five goldens in `internal/doctor/testdata/golden/` incl. `every-status.txt`; `result.go:104` `Verdicts`; `spine/exit.go:67-75` the severity constants | `Format` prints `PASS`/`FAIL`/`SKIP`/`INFO`/`UNCHECKED` rows. It stays as the pipe body (Decision 4). |
 | M16 | `DoctorSchemaVersion` | `render/json.go:33,37`; readers `doctor/json.go:90`, `render/json_schema_test.go:449` | One export, one non-test reader, in `doctor`. `go list -deps ./internal/doctor \| grep -c internal/render` prints 1 today. D8 moves it, which frees `render` to import `doctor`. |
 | M17 | Pty modules and the require pin | `go list -m -versions`; `internal/render/purity_test.go:132` `otherDirectRequires = 12`, `:137-166` `TestRenderDirectRequiresArePinned` | `github.com/creack/pty` v1.1.24; `github.com/charmbracelet/x/xpty` v0.1.4; `github.com/charmbracelet/x/vt` v0.1.0. `x/vt` and `xpty` require only versions older than `go.mod`'s, so minimal version selection moves nothing. Two new direct requires fail the pin until the count becomes 14 and its comment names them. |
-| M18 | CI's verbose legs and time limit | `.github/workflows/tool.yml:83` `timeout-minutes: 15`, `:150-159` | Only `go test -count=1 -v ./internal/testharness/...` and `go test -count=1 -v -run 'TestNewE2E' ./cmd/cairn/` run with `-v`, Linux only. A new pty test shows a `-v` line only if the second pattern names it (Decision 9). Each fixture health run takes about 12 s of real DNS (M3). |
+| M18 | CI's verbose legs and time limit | `.github/workflows/tool.yml:83` `timeout-minutes: 15`, `:150-159` | Only `go test -count=1 -v ./internal/testharness/...` and `go test -count=1 -v -run 'TestNewE2E' ./cmd/cairn/` run with `-v`, Linux only. The first leg's `...` takes in any package under `internal/testharness`, so a test there gets a `-v` line with no workflow change (Decision 9). Each fixture health run takes about 12 s of real DNS (M3). |
 | M19 | Harness | `internal/testharness`: `Binary(t, pkg)` builds with `cairne2e`; `NewProxy(t, hosts)` returns `URL`, `CAFile`; `NewCase` skips off Linux; `Case.Env` sets no `LANG` | A terminal test through the harness sets `LANG=C.UTF-8` itself, or it lands on the ASCII tier once T5 lands. |
 | M20 | Registry for the fixture | `internal/store`; `internal/record/testdata/v1-adopted.json` | `CAIRN_STATE_DIR` must be mode 0700 with 0600 files. A site id must pass validation (`my-site-a1b2c3` passes, `my-site` fails). |
-| M21 | Colour and the ASCII tier are separate | `internal/style/detect.go:85-108` `detect`; `grep -c $'\x1b'` over `internal/render/testdata/golden/single/*ascii*` | `ascii = !isTTY \|\| env.Term == "dumb" \|\| !vtOK`; colour is a separate switch where `NO_COLOR` and `--color never` give none, `--color always` gives TrueColor even under `TERM=dumb`, and `TERM=dumb` or a pipe gives none. The truecolor ASCII golden holds 21 `ESC` bytes. Question 2. |
+| M21 | Colour and the ASCII tier are separate | `internal/style/detect.go:85-108` `detect`; `grep -c $'\x1b'` over `internal/render/testdata/golden/single/*ascii*` | `ascii = !isTTY \|\| env.Term == "dumb" \|\| !vtOK`; colour is a separate switch where `NO_COLOR` and `--color never` give none, `--color always` gives TrueColor even under `TERM=dumb`, and `TERM=dumb` or a pipe gives none. The truecolor ASCII golden holds 21 `ESC` bytes. Ruled: under `LC_ALL=C` the locale sets the marks only (Rulings 2, T5). |
 | M22 | Exemplar captures | `gh auth status`; `command -v brew` | `gh` is signed in on the host (account `glw907`, keyring). `brew` is at `/home/linuxbrew/.linuxbrew/bin/brew`. Both frames can be shot on the host. |
 | M23 | Doctor's comment on stderr | `cmd/cairn/doctor.go:85-86` | "Nothing reaches stderr on either path": it stays true, since the progress line is health's alone (Decision 6). |
 | M24 | `cairn sites` today | `cmd/cairn/sites.go:110-122` `writeSitesStatus` (renders `render.ViewStatus`), `:155-162` `writeSites` (tab-separated listing); design pass table row 3 ("the list and receipt commands"), pass 3 item 1 (screenshots `cairn sites`) | Pass 2 owns the status block and pass 3 owns the listing (Decision 8). |
@@ -199,10 +150,12 @@ The plan adds these, each recorded under "Planning misses":
   292 of 300 lines (M11).
 - `cmd/cairn/deps.go` and `cmd/cairn/main.go`: one `stderr *os.File` field, set in `main.go`
   beside `d.stdout` (M8).
-- New test files in `cmd/cairn`: `report_terminal_test.go`, `report_pty_e2e_test.go` (the pty
-  tests), `report_diff_e2e_test.go` (T8), `report_shots_e2e_test.go` (T9, env-gated).
-- `.github/workflows/tool.yml:159`: the `-run` pattern widens to `'TestNewE2E|TestReportE2E'` so
-  the Linux job prints the pty tests' `-v` lines (Decision 9). One pattern.
+- `cmd/cairn/report_terminal_test.go`: the locale and progress unit tests.
+- `internal/testharness/reporte2e/` (new, test files only): the shared fixture builder with its
+  own `TestMain`, `pty_test.go` (T6), `diff_test.go` (T8), and `shots_test.go` (T9, env-gated).
+  Its package comment says it drives the built binary. CI's Linux leg already runs
+  `./internal/testharness/...` with `-v`, so the PR shows each test's line with no workflow
+  change (Decision 9).
 - `tool/docs/adr/0002-render-dependencies.md`: an addendum naming the two test-only modules,
   which the pin's comment points to (M17).
 - `tool/docs/design/terminal-standard.md`: the grading checklist, which item 9 names.
@@ -222,8 +175,8 @@ never done.
 Each is a reading of the design the executor builds on. A reviewer who disagrees raises it in the
 PR; the executor does not re-argue it.
 
-1. **Item 2's clock line** waits on question 1. T8 builds whichever choice comes back; the
-   doctor half is the same under all three.
+1. **Item 2's clock line** is masked, as Rulings 1 says. T8 builds the mask and its control run;
+   the doctor half is compared byte for byte.
 2. **Held draws `◌`** (M1). `body_single.go:88` returns `g.Held`, the WATCH comment goes, and
    every terminal golden with a held row changes once, in T3. The PR says which mark held checks
    use, quoting PR #245's result.
@@ -231,9 +184,8 @@ PR; the executor does not re-argue it.
    `localeIsUTF8(env func(string) string, goos string) bool`. It reads `LC_ALL`, then
    `LC_CTYPE`, then `LANG`, takes the first non-empty value, and answers true when it names
    `UTF-8` or `utf8` in any case. With all three unset, it answers true on Windows and false
-   elsewhere. A wrapper, `reportTerminal(d, rf)`, calls `detectTerminal` and applies the answer
-   by question 2's choice: under choice 2 a false answer sets `Terminal.ASCII`; under choice 1 it
-   also drops the profile to no colour unless `--color always` is set. Only `renderInput` and
+   elsewhere. A wrapper, `reportTerminal(d, rf)`, calls `detectTerminal` and, on a false answer,
+   sets `Terminal.ASCII` and leaves the profile as `detectTerminal` chose it (Rulings 2). Only `renderInput` and
    doctor's terminal branch call `reportTerminal`. `detectTerminal` itself is unchanged, so the
    installer, help, and `--width` keep today's behaviour. Pass 3 reuses `reportTerminal` for its
    commands. The read goes through `d.env` (M10).
@@ -265,8 +217,12 @@ PR; the executor does not re-argue it.
    table) belongs to pass 3's list commands, and its bytes stay as they are. Item 1's `cairn
    sites` shots are graded on the credentials block, and the grader is told the listing above it
    is pass 3's (`[ambiguous]`).
-9. **CI's `-v` line.** The pty tests are named `TestReportE2E...`, and `tool.yml:159`'s pattern
-   widens to name them, so the Linux job's log shows each ran. One line outside the row, recorded.
+9. **CI's `-v` line.** The pty, differential, and shot tests live in one test-only package,
+   `internal/testharness/reporte2e`, and are named `TestReportE2E...`. `tool.yml:158` already runs
+   `go test -count=1 -v ./internal/testharness/...` on Linux, so the job's log shows each ran with
+   no workflow change. They need nothing from package `main`: `cmd/cairn`'s end-to-end `TestMain`
+   only calls `testharness.Main`, and the binary comes from `testharness.Cairn`. A task that
+   finds it needs a `.github/**` edit parks the pass, since that path is `runner`.
    The pty tests run with `t.Parallel()`, a per-test timeout, and a site host whose delay is the
    only wait, so the Linux leg stays inside its 15 minutes (M18). The first pty test written is
    timed, and the timing goes in the task report. The T8 differential test is gated on
@@ -279,7 +235,7 @@ PR; the executor does not re-argue it.
     addendum.
 11. **Standing answer 3's "two named exceptions".** The design never names them. The plan reads
     them as none in pass 2: no pipe golden changes (`[ambiguous]`).
-12. **The screenshot fixture** is a `cmd/cairn` test gated on `CAIRN_SHOTS_DIR`. It starts the
+12. **The screenshot fixture** is a `reporte2e` test gated on `CAIRN_SHOTS_DIR`. It starts the
     proxy with fakes for the Cloudflare and GitHub hosts and the site host, writes a registry of
     two sites (`my-site-a1b2c3` and one more valid id, M20), a logs fake holding at least three
     entries (M25), a doctor site directory, and the CA into that directory, then waits for a
@@ -394,12 +350,15 @@ Keep the passages the debt read names worth keeping (`jsonc.go:26-35`, `fetchrob
 ### T5. The locale check (10 min)
 
 Before T4, since T4's `LC_ALL=C` golden needs it. `localeIsUTF8` and `reportTerminal` in
-`cmd/cairn/report_terminal.go` (Decision 3), with question 2's choice applied. A table test in
+`cmd/cairn/report_terminal.go` (Decision 3), with Rulings 2 applied: the locale sets the ASCII
+tier and never the profile. A table test in
 `report_terminal_test.go` calls `localeIsUTF8` directly: `LC_ALL=C` over `LANG=en_US.UTF-8`
 gives false; `LC_ALL` unset with `LC_CTYPE=C.UTF-8` gives true; `LANG=en_US.utf8` gives true; all
 unset gives false for `linux` and `darwin` and true for `windows`. A second table drives
-`reportTerminal`'s env through to its (profile, ASCII) answer for a terminal stdout, under
-question 2's choice. One pty case in T6 confirms `LC_ALL=C` on a pty paints ASCII marks.
+`reportTerminal`'s env through to its (profile, ASCII) answer for a terminal stdout: `LC_ALL=C`
+with `TERM=xterm-256color` gives ASCII true and the same colour profile as `LANG=C.UTF-8` with
+that `TERM`, so a read that drops colour fails it, and so does a missing read. One pty case in T6
+confirms `LC_ALL=C` on a pty paints ASCII marks.
 
 ### T4. Doctor's terminal body (35 min)
 
@@ -411,9 +370,11 @@ question 2's choice. One pty case in T6 confirms `LC_ALL=C` on a pty paints ASCI
   truecolor, `NO_COLOR` (no colour profile), and the profile and tier `reportTerminal` returns for
   `TERM=dumb` and for `LC_ALL=C`, at 80 and 59 columns. Add `health` goldens for `TERM=dumb` and
   `LC_ALL=C` the same way if T3 left none.
-- Tests: no `ESC` byte in the no-colour goldens, and the item 4 byte check on the `TERM=dumb`
-  and `LC_ALL=C` ones as question 2 settles it (items 3, 4); each verdict word, section name, and
-  mark present under no colour (item 3).
+- Tests: no `ESC` byte in the no-colour goldens (item 3); each verdict word, section name, and
+  mark present under no colour (item 3). The `TERM=dumb` goldens hold no `ESC` byte and only bytes
+  0x20 to 0x7E plus newline. The `LC_ALL=C` goldens are built at the profile `reportTerminal`
+  returns for `LC_ALL=C` with `TERM=xterm-256color`, so they carry colour, and hold no byte at or
+  above 0x80 (item 4 as ruled). Each test states its rule in its name.
 - Item 5's grep runs over `tool/internal/render/testdata/golden` with SGR sequences stripped
   first, and prints nothing. The same command run against
   `tool/internal/doctor/testdata/golden/every-status.txt` prints its rows, which shows it can
@@ -427,7 +388,7 @@ question 2's choice. One pty case in T6 confirms `LC_ALL=C` on a pty paints ASCI
 - `deps.stderr` and the `main.go` line (Decision 7).
 - `report_terminal.go` gains the progress line (Decision 7), wired into `runHealthSingle` and the
   sweep beside `checkProgress`, which keeps the `--verbose` path.
-- Pty tests in `report_pty_e2e_test.go`, named `TestReportE2E...`, through `testharness.Binary`
+- Pty tests in `internal/testharness/reporte2e/pty_test.go`, named `TestReportE2E...`, through `testharness.Cairn`
   and a proxy whose site host sleeps long enough to pass 200 ms. Every child gets
   `LANG=C.UTF-8` (M19).
   - "Appears on stderr": stdout on pty A and stderr on pty B. The line shows on B during the run,
@@ -437,7 +398,6 @@ question 2's choice. One pty case in T6 confirms `LC_ALL=C` on a pty paints ASCI
   - Absent when stdout is a pipe; absent when stderr is a file, and that file holds no `ESC`
     byte; absent with `CI=1`, `--quiet`, `--json`, and `--verbose`.
   - `LC_ALL=C` on a pty paints ASCII marks (T5).
-- `tool.yml:159` gets the widened pattern (Decision 9).
 
 ### T7. `cairn sites` status block (15 min)
 
@@ -448,7 +408,7 @@ through standing answer 5.
 
 ### T8. Pipe differential through both binaries (25 min)
 
-`report_diff_e2e_test.go`, gated on `CAIRN_E2E_BASE_BIN`. The session builds the base from the
+`internal/testharness/reporte2e/diff_test.go`, gated on `CAIRN_E2E_BASE_BIN`. The session builds the base from the
 merge base, never a moving `origin/main`:
 `git worktree add --detach $CLAUDE_JOB_DIR/tmp/base "$(git merge-base HEAD origin/main)"`, then
 `go build -tags cairne2e -o $CLAUDE_JOB_DIR/tmp/base-bin/cairn ./cmd/cairn` from its `tool/`,
@@ -457,7 +417,21 @@ then `git worktree remove $CLAUDE_JOB_DIR/tmp/base`. The test builds the branch 
 compares:
 
 - `cairn doctor` over a fixture site directory with no `PUBLIC_ORIGIN` (M4), byte for byte;
-- `cairn health <site>` and the every-site `cairn health`, as question 1's answer sets out.
+- `cairn health <site>` and the every-site `cairn health`, with the clock spans masked
+  (Rulings 1). In both outputs, each line that begins `checked: ` keeps that prefix and has the
+  rest of the line, which `checkedPhrase` (`render/layout.go:121`) fills with the age, the stamp,
+  and the elapsed time and nothing else, replaced by one fixed token. Every other byte is
+  compared. The age is absent under one second and the elapsed part is optional, so the mask
+  keys on the line prefix, never on the phrase's shape.
+- The control: the same two health commands run twice through the base binary and compared under
+  the same mask. Both runs must match after masking, which shows the mask covers the whole
+  run-to-run difference. The test also asserts the masked line count is equal across all four
+  outputs, so a mask that swallows a different line fails.
+- Outside `checked: ` lines, the pipe body holds no clock text but whole-day counts: a held
+  row's days left (`render/layout.go:187`) and the creds expiry days (`health/messages.go:275`).
+  A pipe sweep prints one plain block per site (`health_sweep.go:76`), so the same mask covers
+  it. A control diff outside `checked: ` lines is a stop, never a wider mask. A day count that
+  changed between the two runs reruns once under Decision 14, and a second diff stops.
 
 The PR shows the local `-v` run.
 
@@ -493,7 +467,8 @@ Every pass:
 - `make -C tool check` passes, the tool's CI passes on Linux, macOS, and Windows (`.github/workflows/tool.yml`), and a fresh `standards:go-architecture-reader`, handed the text of the pass's debt items, reports none of them still open in the packages the pass cleaned. A pty test that skips on an OS counts only where it ran: the PR shows its `-v` line from the Linux job.
   - Close. Evidence: the gate's last line, `ci-green <sha> --pr <n> --wait` exit 0, the reader's
     verdict over `internal/doctor` with D1 to D8's text and Decision 4's note, and the Linux
-    job's `-v` lines for `TestReportE2E...` (Decision 9).
+    job's `-v` lines for `TestReportE2E...` from the `./internal/testharness/...` leg
+    (Decision 9).
 - The fixture is the test harness (`tool/internal/testharness`): the binary built with the `cairne2e` tag, a proxy that fakes the Cloudflare and GitHub hosts, and a site registry in a scratch home. Screenshots run through it. Goldens come from tests that build a report with a fixed `Options.Now`, since the binary reads the real clock.
   - T9 (Decision 12), T3, T4. Evidence: the shot test's file and run line; the goldens' tests.
 
@@ -504,13 +479,18 @@ Pass 2:
      column test. `my-site` runs as `my-site-a1b2c3` (M20); `cairn sites` is graded on its
      status block (Decision 8).
 2. The pipe goldens are unchanged, and a harness test runs the `main` and branch binaries against the same fakes and finds `cairn health | cat` and `cairn doctor | cat` byte-identical.
-   - Question 1. T8 and every task's plain check. Evidence: `git diff --stat main...HEAD --
+   - Ruled (Geoff, `decide` document `20261114-235707-dd8b14`): mask the clock spans; the
+     comparison covers every byte except each `checked:` line's age, stamp, and elapsed, for one
+     site and for the every-site sweep, with a `main` against `main` control run. T8 and every
+     task's plain check. Evidence: `git diff --stat main...HEAD --
      tool/internal/render/testdata/golden/plain tool/internal/doctor/testdata/golden` empty, and
      T8's local `-v` run.
 3. With `NO_COLOR=1`, the terminal `health` and `doctor` goldens hold no `ESC` byte, and each verdict word, section name, and mark is present.
    - T3, T4. Evidence: the tests' `-v` lines.
 4. With `TERM=dumb`, and separately with `LC_ALL=C`, the goldens hold no `ESC` byte and only bytes from 0x20 to 0x7E, plus newline.
-   - Question 2. T5, T4. Evidence: the tests' `-v` lines and T5's env-to-profile table.
+   - Ruled (Geoff, `decide` document `20261114-235707-dd8b14`): for `LC_ALL=C` alone the item
+     reads "no byte at or above 0x80", with colour allowed. `TERM=dumb` holds as written. T5, T4.
+     Evidence: the tests' `-v` lines and T5's env-to-profile table.
 5. A `doctor` golden covers one run holding a failing, a warning, an unchecked, a skipped, an info, and a passing check, and each state renders as "Command by command" says. `grep -rnE '^ *(PASS|FAIL|SKIP|INFO|UNCHECKED)  ' ` over the terminal goldens prints nothing.
    - T4. Evidence: the golden's path and text, the grep with its empty output, and the same grep
      printing rows from `every-status.txt`.
@@ -563,19 +543,21 @@ Added checks:
 ## Planning misses
 
 - `[design-gap]` Item 2 asks byte-identity of `cairn health | cat` across two binaries, but its
-  `checked:` line reads the real clock and `main`'s binary has no clock hook (M2, M3). Question 1.
+  `checked:` line reads the real clock and `main`'s binary has no clock hook (M2, M3). Parked; ruled in Rulings 1.
   `[advisor]` The advisor set the deciding probe (pairs of one binary) and said to park if the
   pairs did not match reliably; two of five differed.
 - `[design-gap]` Item 4 asks no `ESC` byte under `LC_ALL=C`, but the design's tier rule gives a
-  non-UTF-8 locale ASCII marks only, and colour is a separate axis (M21). Question 2. Found by
+  non-UTF-8 locale ASCII marks only, and colour is a separate axis (M21). Parked; ruled in Rulings 2. Found by
   the plan reviewer. `[advisor]` The advisor confirmed it holds, put the as-written reading first, and asked
   that its cost be stated. The recommendation is the planner's.
 - `[file-list]` The row has no room for the locale and progress code: `health.go` is at 292 of
-  300 lines (M11). New `cmd/cairn/report_terminal.go` and four test files.
+  300 lines (M11). New `cmd/cairn/report_terminal.go`, its test file, and the test-only
+  `internal/testharness/reporte2e` package.
 - `[file-list]` Only `main.go` may name `os.Stderr` (M8), so `deps.go` and `main.go` change for
   the stderr terminal check. Found by the plan reviewer.
-- `[file-list]` The pty tests' `-v` line needs `tool.yml:159`'s pattern widened (M18,
-  Decision 9).
+- `[file-list]` The pty tests' `-v` line needs a package CI runs with `-v`. The first plan widened
+  `tool.yml:159`'s pattern, which is a `runner` path the round was not approved for; the relaunched
+  planner moved the tests under `internal/testharness/` instead (M18, Decision 9).
 - `[file-list]` Two test-only requires move the pin in `purity_test.go` and add an ADR-0002
   addendum, which is out of row (M17). Found by the plan reviewer.
 - `[file-list]` `copy-standard.md` (standing answer 5) and `MIGRATION-NOTES.md` (every pass) sit
@@ -599,7 +581,7 @@ spot-checks of the citations held, except those in F11.
 | Finding | Disposition |
 | --- | --- |
 | F1 High: `report_terminal.go` cannot name `os.Stderr` or `os.Stdout` (`TestOnlyMainNamesTheProcessStreams`) | Folded: `deps.stderr` set in `main.go`, `d.stdout` used (M8, Decision 7, misses). |
-| F2 High, design-changing: item 4's no-`ESC` under `LC_ALL=C` against the tier rule | Question 2 in the park. |
+| F2 High, design-changing: item 4's no-`ESC` under `LC_ALL=C` against the tier rule | Parked as question 2; ruled in Rulings 2. |
 | F3 Medium: the locale in `detectTerminal` reaches the installer | Folded: `reportTerminal`, called only by `renderInput` and doctor (Decision 3). |
 | F4 Medium: the require pin fails on two new requires | Folded into T6 and Decision 10, with the ADR addendum. |
 | F5 Medium: T5's test could pass with the read missing | Folded: pure-function table, env-to-profile table, and a pty case (T5). |
@@ -622,4 +604,12 @@ Geoff answered the `decide` document `20261114-235707-dd8b14` on 2026-11-15 (app
 1. Item 2 and the clock line: mask the clock spans. The harness test compares every byte except each `checked:` line's age, stamp, and elapsed, for one site and for the every-site sweep, with a `main` against `main` control run. The same ruling covers pass 3's item 4 (`CAIRN_PLAIN=1`).
 2. Item 4 under `LC_ALL=C`: amend the item for `LC_ALL=C` alone to "no byte at or above 0x80", with colour allowed. The locale decides the marks and never the colour. `TERM=dumb` keeps item 4 as written.
 
-Planner relaunch: this plan is already written and reviewed. Do not re-plan. Fold these two rulings into items 2 and 4 and the tasks that test them, update the `## Stop at planning` section to say it is answered, write the executor prompt, and launch the executor as for pass 1.
+The relaunched planner folded both rulings into Decisions 1 and 3, T4, T5, T8, and items 2 and 4
+under "Acceptance". The acceptance items keep their approved wording, and each carries its
+ruling beneath it.
+
+Geoff's note on the document asked whether the new Fable escalation was tried. The record
+shows the parking planner called the advisor tool, a Fable reader, once on each question before
+it parked, as the two `[advisor]` lines under "Planning misses" say. `advisor.md` puts a change
+to an acceptance item under "What always stops", and at planning lets the advisor be asked only
+whether a park condition holds. The reply to the note is the conductor's.

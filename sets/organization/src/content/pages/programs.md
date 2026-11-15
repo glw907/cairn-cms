@@ -3,7 +3,7 @@ title: Programs
 description: Map night, summer field days, the junior program, and the lending shelf.
 image:
   src: /images/chugach-front.webp
-  alt: Part of the 1951 USGS Anchorage map, with Eklutna and Pioneer Peak labeled among the mountains
+  alt: Part of the 1951 USGS Anchorage map, with Eklutna and Pioneer Peak labeled
 ---
 The society runs four programs: a monthly map night, summer field days, a junior program for ages 10 to 16, and a lending shelf of topographic sheets. Members take part in all of them, from students to retired surveyors.
 

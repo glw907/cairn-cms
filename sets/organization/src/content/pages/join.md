@@ -12,7 +12,7 @@ If you can't come in person, write to info@turnagain-geographic.example, and a v
 
 ## What members get
 
-Members come to every map night and field day, borrow sheets from the lending shelf, and get the field-day plan by mail before each one. A member can also sign up a young person for the junior program.
+Members come to every map night and field day, borrow sheets from the lending shelf, and get the field-day plan by email before each one. A member can also sign up a young person for the junior program.
 
 ## Young members
 

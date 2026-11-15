@@ -14,7 +14,7 @@ We publish a photo of a young member only with a parent's written consent. We ne
 
 ## Members' details
 
-We keep each member's name and mail address, and for a young member, a parent's contact details. We use them only to run the society: to send the plans for map nights and field days, and to reach a parent during a junior session. We never sell them or share them with anyone.
+We keep each member's name and email address, and for a young member, a parent's contact details. We use them only to run the society: to send the plans for map nights and field days, and to reach a parent during a junior session. We never sell them or share them with anyone.
 
 To have your details deleted, write to info@turnagain-geographic.example. A volunteer will delete them and write back to confirm.
 

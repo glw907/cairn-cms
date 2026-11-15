@@ -15,4 +15,4 @@ Each pair carried a copy of the 1951 USGS Seward sheet at 1:250,000. At that sca
 
 Portage Glacier lies next to Turnagain Arm, 50 miles southeast of downtown Anchorage. Hundreds of years ago, the glacier filled the whole of Portage Valley, a distance of 14 miles.
 
-The exercise was the one we use on every field day. Each pair picked three labeled points on the sheet, took a bearing to each from the map, and checked it with a compass. A junior member held the compass for every bearing. The field-day lead's notes are on the lending shelf for anyone who wants to try the same exercise on another sheet.
+The exercise was the one we use on every field day. Each pair picked three labeled points on the sheet, took a bearing to each from the map, and checked it with a compass. The six junior members each held the compass for at least one bearing. The field-day lead's notes are on the lending shelf for anyone who wants to try the same exercise on another sheet.

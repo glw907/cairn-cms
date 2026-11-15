@@ -2,7 +2,7 @@
 title: Contact
 description: How to reach the society, and where and when it meets.
 ---
-Write to the society at [info@turnagain-geographic.example](mailto:info@turnagain-geographic.example). A volunteer reads the mail and answers within a week.
+Write to the society at [info@turnagain-geographic.example](mailto:info@turnagain-geographic.example). A volunteer reads the email and answers within a week.
 
 If your question is about one program, write to the volunteer who runs it:
 
@@ -14,4 +14,4 @@ If your question is about one program, write to the volunteer who runs it:
 
 We meet at Kittiwake Hall, Spenard, Anchorage, on the second Tuesday of each month at 7 p.m. Visitors are welcome, and your first map night is free.
 
-The society has no office and no phone, so mail is the way to reach us between meetings.
+The society has no office and no phone, so email is the way to reach us between meetings.

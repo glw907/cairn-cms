@@ -147,7 +147,7 @@ func credentialLine(name string, side credentialSide) string {
 }
 
 // detailForCredCode renders the two credential-rejection codes ReasonToOutcome can set, in the
-// generic form catalogue section 3.4 calls for: ReasonToOutcome carries no provider name,
+// generic form: ReasonToOutcome carries no provider name,
 // so this stays provider-neutral and credentialLine supplies the provider as the line's
 // leading word.
 func detailForCredCode(code spine.Code) string {

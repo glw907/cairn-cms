@@ -64,19 +64,13 @@ func reportWidth(rf *rootFlags, term style.Terminal) int {
 // writePasteNotice writes pasteNotice to stderr ahead of the report it warns about. Where both
 // streams are terminals the notice sits over a drawn frame, so it takes the frame's margin and
 // muted ink, wraps with every line at cell 2, and is parted from the frame by one blank line.
-// Anywhere else it is writeNotice's plain line, the bytes a script reading stderr already sees.
+// Anywhere else, CAIRN_PLAIN included, it is writeNotice's plain line, the bytes a script reading
+// stderr already sees.
 func writePasteNotice(cmd *cobra.Command, d deps, rf *rootFlags) error {
-	if !style.IsTerminal(d.stdout) || !style.IsTerminal(d.stderr) {
+	if stdout, stderr := styledStreams(d, rf); !style.IsTerminal(stdout) || !style.IsTerminal(stderr) {
 		return writeNotice(cmd, d, rf, pasteNotice)
 	}
-	term := reportTerminal(d, rf)
-	theme := style.NewTheme(rf.theme != themeLight, term.Profile, term.ASCII)
-	for _, line := range append(style.ContinuationLine(theme, style.RoleMuted, pasteNotice, 2, style.ContentWidth(reportWidth(rf, term))), "") {
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeTerminalNotice(cmd, d, rf, pasteNotice)
 }
 
 // The progress line's timing: it first draws once a run has lasted progressDelay, so a run that
@@ -87,7 +81,7 @@ const (
 )
 
 // showsProgress reports whether a health run draws its progress line. Both streams must be
-// terminals, since the line is drawn on stderr and is noise in a pipe or a log file; CI must be
+// terminals and CAIRN_PLAIN unset, since the line is drawn on stderr and is noise in a pipe or a log file; CI must be
 // empty, since a CI log keeps every redrawn frame; TERM must not be dumb, since such a terminal
 // prints the line's erase as literal junk on every frame; and --json, --quiet, and --verbose
 // each keep it off: --json promises streams an agent parses, --quiet promises a green run writes
@@ -96,7 +90,8 @@ const (
 // The ASCII tier is no guard here: a non-UTF-8 locale also selects it, and that terminal handles
 // the erase and still draws the line with the ASCII spinner.
 func showsProgress(d deps, rf *rootFlags, f healthFlags) bool {
-	return style.IsTerminal(d.stdout) && style.IsTerminal(d.stderr) && d.env("CI") == "" &&
+	stdout, stderr := styledStreams(d, rf)
+	return style.IsTerminal(stdout) && style.IsTerminal(stderr) && d.env("CI") == "" &&
 		d.env("TERM") != "dumb" && !f.asJSON && !rf.quiet && !rf.verbose
 }
 
@@ -110,7 +105,7 @@ func startHealthProgress(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlag
 	}
 	term := reportTerminal(d, rf)
 	width := reportWidth(rf, term)
-	theme := style.NewTheme(rf.theme != themeLight, term.Profile, term.ASCII)
+	theme := style.NewTheme(resolveGround(d, rf).dark, term.Profile, term.ASCII)
 	text := healthProgressText(id)
 	return drawProgress(cmd.ErrOrStderr(), progressDelay, progressFrame, func(frame int) string {
 		return style.ProgressLine(theme, frame, text, width)
@@ -177,4 +172,24 @@ func checkProgress(cmd *cobra.Command, rf *rootFlags, f healthFlags) func(health
 	return func(c health.CheckResult) {
 		_, _ = fmt.Fprint(errOut, checkProgressLine(c.ID, spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)))
 	}
+}
+
+// writeLines writes each line of a rendered frame to w on its own line.
+func writeLines(w io.Writer, lines []string) error {
+	for _, line := range lines {
+		if _, err := fmt.Fprintln(w, line); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// writeListErrors writes each registry listing error to w, prefixed as the one-line stderr form.
+func writeListErrors(w io.Writer, errs []error) error {
+	for _, e := range errs {
+		if _, err := fmt.Fprintln(w, "cairn:", e); err != nil {
+			return err
+		}
+	}
+	return nil
 }

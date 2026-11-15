@@ -158,7 +158,7 @@ const (
 	doneTook     = "Setup took <time>."
 
 	doneScriptsSkipped = "To protect your computer, setup didn't run dependency install scripts. If a dependency needs its script, go to <folder> and run npm rebuild."
-	// doneRevokeFailed names the place and the name read live on 2026-11-10: Cloudflare's consent
+	// doneRevokeFailed names the place and the name read live: Cloudflare's consent
 	// page says the grant can be revoked in My Profile, Access Management, Connected Applications,
 	// and the grant is listed as cairn. Cloudflare's docs page names a "Manage OAuth authorizations"
 	// link instead, and the live path wins. The Revoke button's label has not been read.

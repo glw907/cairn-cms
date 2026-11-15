@@ -51,11 +51,8 @@ type Fix struct {
 
 // fixesByCondition is the fix table's engine-Condition half: the three condition ids this tool
 // can ever print (spine.Conditions() carries the engine's whole registry, but this tool's checks
-// declare only these three; see health's TestFixTableCoversDeclaredConditions). Two of the three
-// entries' Text and Command are copied from tool/docs/design/copy-standard.md section 3.5;
-// ConditionConfigObservabilityOff's is not in the catalogue (grep for "observability" and
-// "wrangler.jsonc" in section 3.5 finds no fix row for it), so its line is written directly here
-// to the same section 2.5 grammar, the same as fixesByCode's uncatalogued rows below.
+// declare only these three; see health's TestFixTableCoversDeclaredConditions). ConditionConfigObservabilityOff's
+// line is written for this tool alone, in the same plain form as fixesByCode's rows below.
 var fixesByCondition = map[spine.Condition]Fix{
 	spine.ConditionEdgeHTTPSNotForced: {
 		Text:    "Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.",
@@ -70,7 +67,7 @@ var fixesByCondition = map[spine.Condition]Fix{
 		Outward: true,
 		Command: "wrangler email sending enable <domain>",
 	},
-	// Not in the catalogue; the plainest fragment satisfying section 2.5.
+	// The plainest fragment that names the action.
 	spine.ConditionConfigObservabilityOff: {
 		Text:    "Turn on observability for the Worker in wrangler.jsonc, then deploy again.",
 		Anchor:  "turn-on-observability",
@@ -80,9 +77,7 @@ var fixesByCondition = map[spine.Condition]Fix{
 }
 
 // fixesByCode is the fix table's tool-owned half, one line per spine.Code health's checks can
-// declare. None of these carries an Anchor yet. A line marked "not in the catalogue" is written
-// directly under tool/docs/design/copy-standard.md section 4.6 rather than copied from an existing
-// row.
+// declare. None of these carries an Anchor yet.
 var fixesByCode = map[spine.Code]Fix{
 	// Copied from the catalogue.
 	spine.CodeServingMismatch: {
@@ -101,7 +96,7 @@ var fixesByCode = map[spine.Code]Fix{
 		Outward: true,
 	},
 
-	// Not in the catalogue; the plainest fragment satisfying section 2.5.
+	// The plainest fragment that names the action.
 	spine.CodeServingNotCairn: {
 		Text:    "Confirm this hostname serves the cairn site, not another Worker or origin.",
 		Actor:   ActorOperator,

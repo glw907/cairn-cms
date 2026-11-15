@@ -1,6 +1,5 @@
-// health_sweep.go is split out of health.go, which the 300-line-per-file bound
-// (root_test.go's TestNoCommandFileExceedsItsBound) would otherwise exceed: one file for the
-// single-site path, one for the multi-site sweep.
+// health_sweep.go holds the multi-site sweep; health.go holds the single-site path.
+
 package main
 
 import (
@@ -44,7 +43,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 		listErrs = append(listErrs, spine.ErrExpectSites)
 	}
 
-	envelope, cancel := sweepDeadline(commandContext(cmd), rf, len(entries))
+	envelope, cancel := sweepDeadline(cmd.Context(), rf, len(entries))
 	defer cancel()
 
 	// A sweep's verdict is only known once every site has settled, and --quiet turns on that
@@ -103,12 +102,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 		siteCtx, siteCancel := siteBudget(envelope, rf, len(entries)-i)
 		siteStarted := d.now()
 		stop := startHealthProgress(cmd, d, rf, f, e.ID)
-		report, err := health.Run(siteCtx, e.Record, clients, d.checks, health.Options{
-			ErrorThreshold: f.errorThreshold,
-			LogWindow:      window,
-			Now:            d.now,
-			OnCheck:        checkProgress(cmd, rf, f),
-		}, acks)
+		report, err := health.Run(siteCtx, e.Record, clients, d.checks, healthOptions(cmd, d, rf, f, window), acks)
 		stop()
 		siteCancel()
 		if err != nil {
@@ -185,10 +179,8 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 			return err
 		}
 	}
-	for _, e := range listErrs {
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "cairn:", e); err != nil {
-			return err
-		}
+	if err := writeListErrors(cmd.ErrOrStderr(), listErrs); err != nil {
+		return err
 	}
 
 	d.exit(int(verdict))
@@ -253,4 +245,14 @@ func perSiteTimeout(rf *rootFlags) time.Duration {
 		return defaultTimeout
 	}
 	return rf.timeout
+}
+
+// healthOptions builds the options both the single-site run and the sweep pass to health.Run.
+func healthOptions(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, window time.Duration) health.Options {
+	return health.Options{
+		ErrorThreshold: f.errorThreshold,
+		LogWindow:      window,
+		Now:            d.now,
+		OnCheck:        checkProgress(cmd, rf, f),
+	}
 }

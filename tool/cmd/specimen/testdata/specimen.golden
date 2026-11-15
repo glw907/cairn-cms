@@ -1,57 +1,57 @@
 
-  [1;38;2;234;231;227mroles[m
-  [38;2;234;231;227mText[m  [38;2;168;164;158mMuted[m  [38;2;193;189;184mSubtle[m  [38;2;124;205;142mOK[m  [38;2;255;142;134mFailing[m  [38;2;247;172;77mUnknown[m  [38;2;157;132;236mAccent[m  [38;2;74;68;59mRule[m
+  [1mroles[m
+  Text  [38;2;168;164;158mMuted[m  [38;2;193;189;184mSubtle[m  [38;2;124;205;142mOK[m  [38;2;255;142;134mFailing[m  [38;2;247;172;77mUnknown[m  [38;2;157;132;236mAccent[m  [38;2;74;68;59mRule[m
   [38;2;74;68;59m────────────────────────────────────────────────────────────────────────────[m
 
-  [1;38;2;234;231;227mmarks[m
+  [1mmarks[m
   [38;2;168;164;158mmark[m                [38;2;168;164;158municode[m   [38;2;168;164;158mascii[m
-  [38;2;234;231;227mpass[m                [38;2;234;231;227m●[m         [38;2;234;231;227m+[m
-  [38;2;234;231;227mfailing[m             [38;2;234;231;227m■[m         [38;2;234;231;227m![m
-  [38;2;234;231;227mfailing at warning[m  [38;2;234;231;227m□[m         [38;2;234;231;227m*[m
-  [38;2;234;231;227mcould not run[m       [38;2;234;231;227m?[m         [38;2;234;231;227m?[m
-  [38;2;234;231;227mheld[m                [38;2;234;231;227m◌[m         [38;2;234;231;227mo[m
-  [38;2;234;231;227mnot started[m         [38;2;234;231;227m○[m         [38;2;234;231;227mo[m
-  [38;2;234;231;227mwarning[m             [38;2;234;231;227m▲[m         [38;2;234;231;227m^[m
-  [38;2;234;231;227mfix[m                 [38;2;234;231;227m→[m         [38;2;234;231;227m>[m
-  [38;2;234;231;227mrule[m                [38;2;234;231;227m─[m         [38;2;234;231;227m-[m
-  [38;2;234;231;227mseparator[m           [38;2;234;231;227m·[m         [38;2;234;231;227m-[m
-  [38;2;234;231;227mellipsis[m            [38;2;234;231;227m…[m         [38;2;234;231;227m...[m
-  [38;2;234;231;227mspinner[m             [38;2;234;231;227m⣾⣽⣻⢿⡿⣟⣯⣷[m  [38;2;234;231;227m...[m
+  pass                ●         +
+  failing             ■         !
+  failing at warning  □         *
+  could not run       ?         ?
+  held                ◌         o
+  not started         ○         o
+  warning             ▲         ^
+  fix                 →         >
+  rule                ─         -
+  separator           ·         -
+  ellipsis            …         ...
+  spinner             ⣾⣽⣻⢿⡿⣟⣯⣷  ...
 
-  [1;38;2;234;231;227mverdict line[m
-  [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227mmy-site[m  [38;2;168;164;158m1 failing · 3 could not run · 5 passing[m
+  [1mverdict line[m
+  [1;38;2;255;142;134mCRITICAL[m  [1mmy-site[m  [38;2;168;164;158m1 failing · 3 could not run · 5 passing[m
 
-  [1;38;2;234;231;227mtitle[m
-  [1;38;2;234;231;227mcould not run[m
+  [1mtitle[m
+  [1mcould not run[m
 
-  [1;38;2;234;231;227mmark row, continuation line, fix line[m
-  [38;2;247;172;77m□[m [38;2;234;231;227mcreds[m           [38;2;193;189;184mthe token was rejected[m
+  [1mmark row, continuation line, fix line[m
+  [38;2;247;172;77m□[m creds           [38;2;193;189;184mthe token was rejected[m
                     [38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the keyring[m
                   [38;2;157;132;236m→[m [38;2;193;189;184mCreate a new token, then run `cairn auth set` naming the[m
                     [38;2;193;189;184mcredential.[m
-                    ]8;;https://cairn.pub/docs/admin/is-it-working#creds[4;38;2;234;231;227;4mh[m[4;38;2;234;231;227;4mt[m[4;38;2;234;231;227;4mt[m[4;38;2;234;231;227;4mp[m[4;38;2;234;231;227;4ms[m[4;38;2;234;231;227;4m:[m[4;38;2;234;231;227;4m/[m[4;38;2;234;231;227;4m/[m[4;38;2;234;231;227;4mc[m[4;38;2;234;231;227;4ma[m[4;38;2;234;231;227;4mi[m[4;38;2;234;231;227;4mr[m[4;38;2;234;231;227;4mn[m[4;38;2;234;231;227;4m.[m[4;38;2;234;231;227;4mp[m[4;38;2;234;231;227;4mu[m[4;38;2;234;231;227;4mb[m[4;38;2;234;231;227;4m/[m[4;38;2;234;231;227;4md[m[4;38;2;234;231;227;4mo[m[4;38;2;234;231;227;4mc[m[4;38;2;234;231;227;4ms[m[4;38;2;234;231;227;4m/[m[4;38;2;234;231;227;4ma[m[4;38;2;234;231;227;4md[m[4;38;2;234;231;227;4mm[m[4;38;2;234;231;227;4mi[m[4;38;2;234;231;227;4mn[m[4;38;2;234;231;227;4m/[m[4;38;2;234;231;227;4mi[m[4;38;2;234;231;227;4ms[m[4;38;2;234;231;227;4m-[m[4;38;2;234;231;227;4mi[m[4;38;2;234;231;227;4mt[m[4;38;2;234;231;227;4m-[m[4;38;2;234;231;227;4mw[m[4;38;2;234;231;227;4mo[m[4;38;2;234;231;227;4mr[m[4;38;2;234;231;227;4mk[m[4;38;2;234;231;227;4mi[m[4;38;2;234;231;227;4mn[m[4;38;2;234;231;227;4mg[m[4;38;2;234;231;227;4m#[m[4;38;2;234;231;227;4mc[m[4;38;2;234;231;227;4mr[m[4;38;2;234;231;227;4me[m[4;38;2;234;231;227;4md[m[4;38;2;234;231;227;4ms[m]8;;
-  [38;2;247;172;77m?[m [38;2;234;231;227memail[m           [38;2;193;189;184mthe token this check reads is not set[m
-  [38;2;247;172;77m◌[m [38;2;234;231;227mengine[m          [38;2;193;189;184m0.76.0 is two releases behind 0.78.0[m
+                    ]8;;https://cairn.pub/docs/admin/is-it-working#creds[4;4mh[m[4;4mt[m[4;4mt[m[4;4mp[m[4;4ms[m[4;4m:[m[4;4m/[m[4;4m/[m[4;4mc[m[4;4ma[m[4;4mi[m[4;4mr[m[4;4mn[m[4;4m.[m[4;4mp[m[4;4mu[m[4;4mb[m[4;4m/[m[4;4md[m[4;4mo[m[4;4mc[m[4;4ms[m[4;4m/[m[4;4ma[m[4;4md[m[4;4mm[m[4;4mi[m[4;4mn[m[4;4m/[m[4;4mi[m[4;4ms[m[4;4m-[m[4;4mi[m[4;4mt[m[4;4m-[m[4;4mw[m[4;4mo[m[4;4mr[m[4;4mk[m[4;4mi[m[4;4mn[m[4;4mg[m[4;4m#[m[4;4mc[m[4;4mr[m[4;4me[m[4;4md[m[4;4ms[m]8;;
+  [38;2;247;172;77m?[m email           [38;2;193;189;184mthe token this check reads is not set[m
+  [38;2;247;172;77m◌[m engine          [38;2;193;189;184m0.76.0 is two releases behind 0.78.0[m
 
-  [1;38;2;234;231;227mmark row with a long name, and its fix line[m
-  [38;2;255;142;134m■[m [38;2;234;231;227mSession secret is missing from the Worker[m
+  [1mmark row with a long name, and its fix line[m
+  [38;2;255;142;134m■[m Session secret is missing from the Worker
     [38;2;193;189;184mSESSION_SECRET is not set[m
   [38;2;157;132;236m→[m [38;2;193;189;184mRun `wrangler secret put SESSION_SECRET`, then deploy again.[m
 
-  [1;38;2;234;231;227mlabel row[m
-  [38;2;193;189;184mDomain[m            [38;2;234;231;227mdocs.example.org[m
-  [38;2;193;189;184mRepository[m        [38;2;234;231;227mglw/trail-docs[m
+  [1mlabel row[m
+  [38;2;193;189;184mDomain[m            docs.example.org
+  [38;2;193;189;184mRepository[m        glw/trail-docs
 
-  [1;38;2;234;231;227mtable[m
+  [1mtable[m
   [38;2;168;164;158msite[m       [38;2;168;164;158mname[m          [38;2;168;164;158mdomain[m
-  [38;2;234;231;227mmy-site[m    [38;2;234;231;227mField Notes[m   [38;2;234;231;227mfieldnotes.example.org[m
-  [38;2;234;231;227mdocs-site[m  [38;2;234;231;227mTrail Docs[m    [38;2;234;231;227mdocs.example.org[m
-  [38;2;234;231;227mshop-site[m  [38;2;234;231;227mRidge Supply[m  [38;2;234;231;227mshop.example.org[m
+  my-site    Field Notes   fieldnotes.example.org
+  docs-site  Trail Docs    docs.example.org
+  shop-site  Ridge Supply  shop.example.org
 
-  [1;38;2;234;231;227mprogress line[m
+  [1mprogress line[m
   [38;2;168;164;158m⣽[m [38;2;168;164;158mChecking my-site…  4 of 9[m
 
-  [1;38;2;234;231;227merror block[m
-  [38;2;255;142;134m■[m [1;38;2;234;231;227m--since takes a duration, such as 2h or 30m.[m
+  [1merror block[m
+  [38;2;255;142;134m■[m [1m--since takes a duration, such as 2h or 30m.[m
     [38;2;168;164;158mIt got "tuesday".[m
   [38;2;157;132;236m→[m [38;2;193;189;184mRun `cairn logs --help` for the forms it takes.[m

@@ -296,7 +296,7 @@ func TestDoctorPrintsTheTerminalBodyOnATerminalAndFormatOnAPipe(t *testing.T) {
 	verdict := spine.ExitCode([]spine.SiteVerdicts{doctor.Verdicts(checked)}, nil, 0)
 
 	var pipe, tty strings.Builder
-	if err := writeDoctorReport(&pipe, style.Terminal{TTY: false}, &rootFlags{}, snap.Dir, checked, verdict); err != nil {
+	if err := writeDoctorReport(&pipe, style.Terminal{TTY: false}, &rootFlags{}, true, snap.Dir, checked, verdict); err != nil {
 		t.Fatal(err)
 	}
 	if want := doctor.Format(checked) + "\n"; pipe.String() != want {
@@ -304,7 +304,7 @@ func TestDoctorPrintsTheTerminalBodyOnATerminalAndFormatOnAPipe(t *testing.T) {
 	}
 
 	term := style.Terminal{Profile: colorprofile.ASCII, TTY: true, Columns: 80}
-	if err := writeDoctorReport(&tty, term, &rootFlags{}, snap.Dir, checked, verdict); err != nil {
+	if err := writeDoctorReport(&tty, term, &rootFlags{}, true, snap.Dir, checked, verdict); err != nil {
 		t.Fatal(err)
 	}
 	out := tty.String()

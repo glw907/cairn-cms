@@ -15,7 +15,7 @@ import (
 
 // TestRenderMatchesCommittedGolden asserts a fresh render() equals the committed
 // tool/testdata/copy.golden.md, so a new operator-facing string cannot land invisibly: it shows
-// up as a one-line diff in review (tool/docs/design/copy-standard.md section 4.3). Run
+// up as a one-line diff in review. Run
 // `make copy-list` and commit the diff when this test fails for a real reason.
 func TestRenderMatchesCommittedGolden(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)

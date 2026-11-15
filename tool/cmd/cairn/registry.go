@@ -8,8 +8,8 @@ import (
 )
 
 // registryDirAndSource is the one place store.Dir's three arguments are assembled, so
-// defaultRegistryDir and defaultRegistrySource cannot drift into resolving two different
-// directories.
+// defaultRegistryDir and the source report deps.go wires cannot drift into resolving two
+// different directories.
 func registryDirAndSource() (string, store.Source, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -23,12 +23,6 @@ func registryDirAndSource() (string, store.Source, error) {
 func defaultRegistryDir() (string, error) {
 	dir, _, err := registryDirAndSource()
 	return dir, err
-}
-
-// defaultRegistrySource resolves the same directory as defaultRegistryDir, alongside the
-// store.Source that chose it, for sites list --verbose.
-func defaultRegistrySource() (string, store.Source, error) {
-	return registryDirAndSource()
 }
 
 // openRegistry opens the registry d points at. It is the one path from a command to the store,

@@ -109,22 +109,39 @@ func (d deps) secretProviders() []secrets.Provider {
 // or reads a credential itself, so this is the one place a resolved value becomes a client.
 func buildClients(d deps) health.Clients {
 	resolved, missing := loadEnv(d.env, d.secretProviders()...)
+	return clientsFrom(d, resolved, missing)
+}
 
+// clientsFrom is buildClients over an environment the caller already resolved, so a command
+// that needs the resolution for its own output resolves once.
+func clientsFrom(d deps, resolved env, missing []providers.Missing) health.Clients {
 	c := health.Clients{
 		NPM:   providers.NewNPM(d.transport),
 		Probe: providers.NewProbe(d.transport, d.resolver),
 	}
-	if !isMissing(missing, varCFAccountID) && !isMissing(missing, varCFReadToken) {
+	if len(unsetAmong(missing, varCFAccountID, varCFReadToken)) == 0 {
 		c.CF = providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), d.transport)
 		c.HaveCF = true
 		c.CFFrom = credentialSource(resolved, varCFReadToken)
 	}
-	if !isMissing(missing, varGHReadToken) {
+	if len(unsetAmong(missing, varGHReadToken)) == 0 {
 		c.GH = providers.NewGitHub(resolved.ghToken(), d.transport)
 		c.HaveGH = true
 		c.GHFrom = credentialSource(resolved, varGHReadToken)
 	}
 	return c
+}
+
+// requireCF resolves the credentials once and returns the Cloudflare client with the
+// resolution it was built from, or the no-Cloudflare-credential refusal when either Cloudflare
+// variable is unset. It is the one gate every command that needs Cloudflare passes.
+func requireCF(d deps) (*providers.Cloudflare, env, error) {
+	resolved, missing := loadEnv(d.env, d.secretProviders()...)
+	clients := clientsFrom(d, resolved, missing)
+	if !clients.HaveCF {
+		return nil, env{}, noCloudflareCredentialError()
+	}
+	return clients.CF, resolved, nil
 }
 
 // credentialSource names the provider that answered one variable, never the value.
@@ -149,7 +166,7 @@ func newDeps() deps {
 		transport:      http.DefaultTransport,
 		resolver:       net.DefaultResolver,
 		registryDir:    defaultRegistryDir,
-		registrySource: defaultRegistrySource,
+		registrySource: registryDirAndSource,
 		now:            time.Now,
 		stdin:          os.Stdin,
 		exit:           os.Exit,

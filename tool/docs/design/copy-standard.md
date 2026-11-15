@@ -661,7 +661,14 @@ from the code comments marking them instead, not from this section alone.
 | status line under a site listing, a token the run could not find | `CAIRN_CF_READ_TOKEN is not set, so creds, email and errors cannot run` | a listing attempts no check, so the past tense above would report a failure that did not happen; this says what the absence will cost |
 | fleet fix list, one remedy covering several sites | `also on: xcathletes.org, cairn.pub` | one remedy is printed once per frame, and the sites it applies to are named in that one entry, ranked, never truncated |
 | `cairn doctor` terminal body, the info results' title | `notes` | an info result is a passing check carrying a note, which no health section word names (3.2) |
+| `cairn --help`, the root's long text (one sentence added) | `Set CAIRN_PLAIN=1 to print plain output at a terminal, the same output a pipe receives.` | the plain-mode ruling asks for `CAIRN_PLAIN` to be documented in `cairn --help`; the sentence names it alone, since no ruling puts `CAIRN_THEME` or `COLORFGBG` in help |
 | `cairn doctor` terminal body, the skipped checks folded to one line | `1 does not apply`, `<n> do not apply` (the verb agrees with the count) | a doctor skip is a precondition that did not hold, not a check that could not run, so 2.9's `could not run` would misreport it (3.2) |
+| `cairn sites` terminal view, the title and the count beside it | `sites`, `3 known` | the title is a bare lowercase noun (2.3); the count is a muted fact on the title's line, never part of the label, so 2.3's no-count rule holds for the label |
+| `cairn sites` and `cairn adopt list` terminal tables, column headers | `site`, `name`, `domain`, `worker`, `repository` | the table block needs a header row, and each is the noun the column holds |
+| `cairn adopt list` terminal view, the two group titles | `ready to adopt`, `no Custom Domain` | a Worker with a domain can be adopted from the listing and one with none cannot, and the titles name that state where the piped listing uses a blank line |
+| `cairn auth list` terminal view, the title | `credentials` | the same noun 3.2 keeps over the credential rows under a site listing |
+| `cairn auth check` terminal report, the section titles | `failing`, `could not run`, `passing` | the section vocabulary of 2.9 over permission rows, in the order health uses |
+| `cairn auth check` terminal report, the fix under a permission the token lacks | `Add the Workers Scripts permission to the token in CAIRN_CF_READ_TOKEN, then run the command again.` | the imperative fix line of 2.5, naming the permission and the variable, since no fix table entry covers a permission |
 
 ---
 

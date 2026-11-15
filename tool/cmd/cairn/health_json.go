@@ -1,6 +1,5 @@
-// health_json.go is split out of health.go and health_sweep.go, which the 300-line-per-file
-// bound (root_test.go's TestNoCommandFileExceedsItsBound) would otherwise exceed: one file for
-// the --json contract both health shapes write through.
+// health_json.go holds the --json contract both health shapes write through.
+
 package main
 
 import (

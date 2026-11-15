@@ -18,13 +18,6 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
-// processStdout returns the stdout handle render's terminal detection probes. It is the
-// *os.File rather than the io.Writer below because a colour profile, a column count, and a TTY
-// check each need the file descriptor. Nothing writes through it.
-func processStdout() *os.File {
-	return os.Stdout
-}
-
 // stdioTerminal reports whether stdin and stdout are both a terminal, deps.interactive in
 // production.
 func stdioTerminal() bool {
@@ -76,7 +69,7 @@ func scrubTargets(d deps) []providers.Credential {
 
 func main() {
 	d := newDeps()
-	d.stdout = processStdout()
+	d.stdout = os.Stdout
 	d.stderr = os.Stderr
 	d.interactive = stdioTerminal
 
@@ -107,7 +100,7 @@ func main() {
 func runTree(parent context.Context, d deps, out, errOut io.Writer, args []string) (code int) {
 	defer func() {
 		if p := recover(); p != nil {
-			_, _ = fmt.Fprintln(errOut, commandCrashedMessage(commandPath(args), fmt.Sprintf("%T", p)))
+			writeError(d, errOut, args, errors.New(commandCrashedMessage(commandPath(args), fmt.Sprintf("%T", p))))
 			code = int(spine.VerdictUnknown)
 		}
 	}()
@@ -127,7 +120,7 @@ func runTree(parent context.Context, d deps, out, errOut io.Writer, args []strin
 	// A coded error carries a verdict and no message: the command that returned one has already
 	// printed everything the operator needs, so printing again would double it.
 	if _, coded := errors.AsType[codedError](err); !coded {
-		_, _ = fmt.Fprintln(errOut, translateError(err))
+		writeError(d, errOut, args, translateError(err))
 	}
 	return int(exitVerdict(err))
 }

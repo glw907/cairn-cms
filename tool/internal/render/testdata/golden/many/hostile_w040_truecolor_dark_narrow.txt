@@ -1,29 +1,29 @@
-  [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 CRITICAL[m
+  [1;38;2;255;142;134mCRITICAL[m  [1m1 site[m  [38;2;168;164;158m1 CRITICAL[m
   [38;2;168;164;158mchecked 4m ago (2026-09-20 22:28 UTC),[m
   [38;2;168;164;158min 16.3s[m
 
     [38;2;168;164;158msite[m                      [38;2;168;164;158mverdict[m
-  [38;2;255;142;134m■[m [38;2;234;231;227ma-very-long-site-name-n…[m  [1;38;2;255;142;134mCRITICAL[m
+  [38;2;255;142;134m■[m a-very-long-site-name-n…  [1;38;2;255;142;134mCRITICAL[m
 
   [38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the[m
   [38;2;168;164;158mkeyring[m
   [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the[m
   [38;2;168;164;158mkeyring[m
 
-  [1;38;2;234;231;227mwhat to fix[m
-  [38;2;255;142;134m■[m [38;2;234;231;227ma-very-long-site-name-nobody-would-…[m
+  [1mwhat to fix[m
+  [38;2;255;142;134m■[m a-very-long-site-name-nobody-would-…
     [38;2;193;189;184mserving[m
   [38;2;157;132;236m→[m [38;2;193;189;184mConfirm the Worker route and the[m
     [38;2;193;189;184mzone's DNS record point at[m
     [38;2;193;189;184mthis site.[m
-  [38;2;255;142;134m■[m [38;2;234;231;227ma-very-long-site-name-nobody-would-…[m
+  [38;2;255;142;134m■[m a-very-long-site-name-nobody-would-…
     [38;2;193;189;184mdeploy[m
   [38;2;157;132;236m→[m [38;2;193;189;184mRead the build log in the Cloudflare[m
     [38;2;193;189;184mdashboard, then push a fix.[m
-  [38;2;255;142;134m■[m [38;2;234;231;227ma-very-long-site-name-nobody-would-…[m
-    ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[4;38;2;234;231;227;4mh[m[4;38;2;234;231;227;4mt[m[4;38;2;234;231;227;4mt[m[4;38;2;234;231;227;4mp[m[4;38;2;234;231;227;4ms[m[4;38;2;234;231;227;4m-[m[4;38;2;234;231;227;4mf[m[4;38;2;234;231;227;4mo[m[4;38;2;234;231;227;4mr[m[4;38;2;234;231;227;4mc[m[4;38;2;234;231;227;4me[m[4;38;2;234;231;227;4md[m]8;;  [38;2;168;164;158medge.https-not-forced[m
+  [38;2;255;142;134m■[m a-very-long-site-name-nobody-would-…
+    ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[4;4mh[m[4;4mt[m[4;4mt[m[4;4mp[m[4;4ms[m[4;4m-[m[4;4mf[m[4;4mo[m[4;4mr[m[4;4mc[m[4;4me[m[4;4md[m]8;;  [38;2;168;164;158medge.https-not-forced[m
   [38;2;157;132;236m→[m [38;2;193;189;184mTurn on Always Use HTTPS for the[m
     [38;2;193;189;184mzone under SSL/TLS,[m
     [38;2;193;189;184mEdge Certificates.[m
 
-  [1;38;2;255;142;134mCRITICAL[m  [1;38;2;234;231;227m1 site[m  [38;2;168;164;158m1 CRITICAL[m
+  [1;38;2;255;142;134mCRITICAL[m  [1m1 site[m  [38;2;168;164;158m1 CRITICAL[m

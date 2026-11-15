@@ -164,12 +164,30 @@ profile and the glyph tier for a stream.
 forces TrueColor. Color and the glyph tier are separate choices, so forcing color into a pipe
 still gives the ASCII marks there.
 
+## Plain mode and the ground
+
+`CAIRN_PLAIN=1` makes every styled path except `cairn new`'s terminal view treat standard output and standard error as not terminals.
+A run prints the bytes a pipe receives, with the progress line off and help as plain cobra output.
+Only the exact value `1` counts. A screen reader needs this linear form, and `cairn --help` names the
+variable in one sentence.
+
+The ground, dark or light, is the first of these that names one:
+
+1. The `--theme` flag. An explicit `--theme dark` counts, so it beats `CAIRN_THEME=light`.
+2. `CAIRN_THEME`, when its value is `dark` or `light`.
+3. `COLORFGBG`, read for its last semicolon field: `7` or `15` is light and any other number is dark.
+4. Dark.
+
+`CAIRN_THEME` and `COLORFGBG` apply at a terminal only. A run that paints a pipe, as `--color always`
+does, takes `--theme` or else dark.
+
+A variable cairn cannot read is ignored and the next source decides, never an error. An unknown
+`--theme` value keeps its error. cairn never queries the terminal for its background, since a
+terminal that does not answer would leave the run waiting.
+
+Body text is the terminal's own foreground. The Text role emits no color code at any profile, so
+body text reads on any ground and the ground choice moves only the roles that paint.
+
 These rulings are made and land in later passes:
 
 - Pass 2 adds a locale check: a locale that is not UTF-8 takes the ASCII marks.
-- Pass 3 adds `CAIRN_PLAIN=1`. On a terminal it selects the plain output a pipe gets and turns off
-  the progress line, for a reader such as a screen reader that needs a linear form. The standard
-  and `cairn --help` both document it.
-- Pass 3 makes body text use the terminal's foreground color, which is readable on any
-  ground. It reads `COLORFGBG` and a new `CAIRN_THEME` variable to choose the light or dark
-  palette, and makes help follow `--theme` instead of asking the terminal.

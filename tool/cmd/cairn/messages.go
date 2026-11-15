@@ -1,12 +1,14 @@
-// Package main's messages.go is the one reviewable place tool/docs/design/copy-standard.md
-// section 4.1 asks for: every string cmd/cairn prints to an operator, as a named constant or a
-// named format template plus the function that renders it. No other file under cmd/cairn holds
+// Package main's messages.go is the one reviewable place for every string cmd/cairn prints to an
+// operator, as a named constant or a named format template plus the function that renders it. No other file under cmd/cairn holds
 // operator prose at a call site or in a bare format string; TestNoLongProseLiteralOutsideMessages
 // enforces the length half of that rule and this file's doc comments carry the rest.
 //
 // A template constant is named `tmplXxx`; the function beside it renders the template and, for
 // an error, wraps the result in translatedError so main's boundary (translateError, in
 // main.go) knows the message already carries this table's shape and does not wrap it twice.
+// An error whose last line is a Run line is split in two beside its constructor: the message
+// (`whatXxx`, or a template) and the fix (`fixXxx`, or `tmplXxxFix` when it is a template), both
+// stored without the cairn: prefix, which fixed adds.
 // `make copy-list` (cmd/copylist) reads every string-valued const this file declares at the
 // package level, by parsing the source rather than importing it: cmd/cairn is package main, and
 // Go forbids importing a main package, so the golden generator statically extracts the same
@@ -20,10 +22,6 @@
 // outside the binary: they are not listed by
 // `copy-list`, and they are linted by the repository's Vale configuration instead. Do not
 // route a doc sentence through this table.
-//
-// A comment reading "new to this table" marks a string the catalogue in copy-standard.md
-// carries no row for: it is drafted to the standard's sections 2.4 through 2.7 rather than
-// copied.
 package main
 
 import (
@@ -42,6 +40,25 @@ func translated(err error) error {
 	return translatedError{err}
 }
 
+// fixError is a table error whose last line is the command that repairs it, held apart from the
+// message so a terminal can draw it on the fix mark. Error joins the two with a newline: the bytes
+// a pipe, a log file, and a script reading stderr have always received.
+type fixError struct {
+	message string
+	fix     string
+}
+
+// Error returns the message, then the fix on its own line.
+func (e fixError) Error() string {
+	return e.message + "\n" + e.fix
+}
+
+// fixed builds a fixError from what, given the cairn: prefix every table error carries, and the
+// fix that repairs it, wrapped as a translatedError like every other constructor's result.
+func fixed(what, fix string) error {
+	return translated(fixError{message: fmt.Sprintf(tmplFallback, what), fix: fix})
+}
+
 // The persistent flags' help text, root.go's PersistentFlags declarations.
 const (
 	flagVersionHelp = "print the version and exit"
@@ -50,70 +67,74 @@ const (
 	flagQuietHelp   = "print nothing when the run is OK"
 	flagColorHelp   = "when to colour the output: auto, always, or never"
 	flagAckFileHelp = "path to a JSON file of holds (default: acknowledgements.json in the registry directory)"
-	// flagWidthHelp is new to this table: copy-standard.md carries no row for a --width flag, so
-	// this is drafted to section 2.4's grammar (what the flag does, in the operator's terms)
-	// rather than copied.
+	// flagWidthHelp says what the flag does, in the operator's terms.
 	flagWidthHelp = "columns to render at, instead of the terminal's width"
-	// flagThemeHelp is new to this table: the catalogue carries no row for a --theme flag, so it
-	// is drafted to section 2.4's grammar and shaped after flagColorHelp, the sibling flag an
-	// operator reads it beside.
+	// flagThemeHelp is shaped after flagColorHelp, the sibling flag an operator reads it beside.
 	flagThemeHelp = "the ground to render for: dark or light"
 )
 
 // tmplVersion is cairn --version's line, cobra's Version field composed by root.go's
 // versionLine: the tool version, the commit it built from, the Go toolchain, and the platform.
-// New to this table.
 const tmplVersion = "%s (%s), go%s, %s/%s"
 
 // The root command's Short, Long, and Example. The Long is the contract a program that
 // reached only `cairn --help` still needs: where the whole contract is, how to ask for a
 // machine-readable payload, and what the process exit codes mean. It names no address outside
 // the binary, since `go install` puts it on a machine that holds no cairn-cms checkout and
-// `cairn help agents` carries the whole contract. New to this table.
+// `cairn help agents` carries the whole contract.
 const (
 	shortRoot = "Operate a cairn-cms production site"
 	longRoot  = "Operate a cairn-cms production site.\n\n" +
 		"To set up a new site, run `cairn new`. `cairn new --help` covers running it at a terminal and from an agent.\n" +
 		"Run `cairn help agents` for the contract a program reads.\n" +
 		"Pass --json to a reporting command for a machine-readable payload on stdout.\n" +
+		"Set CAIRN_PLAIN=1 to print plain output at a terminal, the same output a pipe receives.\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN."
 	exampleRoot = "  # Check a site's health\n  $ cairn health my-site-a1b2c3\n\n  # Set up a new site\n  $ cairn new"
 )
 
 // tmplFlagError is the shape every flag parse failure reaches the operator in: cobra's
-// refusal, then the help of the command the flag was given to rather than the root's. Adapted
-// from catalogue section 3.8's usage row, whose second line is already "Run `cairn health
-// --help` for usage". New to this table.
-const tmplFlagError = "cairn: %v.\nRun `%s --help` for usage"
+// refusal, then the help of the command the flag was given to rather than the root's. Its second
+// line is "Run `cairn health --help` for usage".
+const (
+	tmplFlagError    = "%v."
+	tmplFlagErrorFix = "Run `%s --help` for usage"
+)
 
 // flagError renders tmplFlagError for cobra's message and the full command path the flag
 // was given to, which cobra reports already carrying the binary name.
 func flagError(path string, cause error) error {
-	return translated(fmt.Errorf(tmplFlagError, cause, path))
+	return fixed(fmt.Sprintf(tmplFlagError, cause), fmt.Sprintf(tmplFlagErrorFix, path))
 }
 
 // tmplUnknownCommand is the root command's refusal of a word that names no command. Cobra's
-// NoArgs message is one line, and the usage-error row of catalogue section 3.8 is two: the
-// refusal, then where to read what the tool does accept.
-const tmplUnknownCommand = "cairn: %q is not a cairn command.\nRun `cairn --help` for the commands"
+// NoArgs message is one line, and this one is two: the refusal, then where to read what the tool
+// does accept.
+const (
+	tmplUnknownCommand = "%q is not a cairn command."
+	fixUnknownCommand  = "Run `cairn --help` for the commands"
+)
 
 // unknownCommandError renders tmplUnknownCommand for the word the operator gave.
 func unknownCommandError(word string) error {
-	return translated(fmt.Errorf(tmplUnknownCommand, word))
+	return fixed(fmt.Sprintf(tmplUnknownCommand, word), fixUnknownCommand)
 }
 
-// tmplAuthNoSubcommand is cairn auth's refusal of a run naming no subcommand. A command group
+// whatAuthNoSubcommand and fixAuthNoSubcommand are cairn auth's refusal of a run naming no subcommand. A command group
 // with nothing to run is a usage error rather than a help request, so it exits 3 and writes its
-// help to stderr. New to this table.
-const tmplAuthNoSubcommand = "cairn: cairn auth names a subcommand.\nRun `cairn auth --help` for the subcommands"
+// help to stderr.
+const (
+	whatAuthNoSubcommand = "cairn auth names a subcommand."
+	fixAuthNoSubcommand  = "Run `cairn auth --help` for the subcommands"
+)
 
-// authNoSubcommandError renders tmplAuthNoSubcommand.
+// authNoSubcommandError renders whatAuthNoSubcommand and its fix.
 func authNoSubcommandError() error {
-	return translated(errors.New(tmplAuthNoSubcommand))
+	return fixed(whatAuthNoSubcommand, fixAuthNoSubcommand)
 }
 
-// tmplCommandCrashed is main.go's recovered-panic line, catalogue section 3.8's "a crashed
-// check" row written for a command rather than a check. The panic value's type is named and the
+// tmplCommandCrashed is main.go's recovered-panic line, written for a
+// command rather than a check. The panic value's type is named and the
 // value itself never is: a panic raised in a credential-carrying frame can carry a token.
 const tmplCommandCrashed = "cairn: %s crashed with a %s.\nThis is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues"
 
@@ -125,8 +146,7 @@ func commandCrashedMessage(path, valueType string) string {
 
 // tmplCheckProgress is the --verbose per-check line health prints to stderr as each check
 // settles, so a slow sweep is visibly progressing rather than apparently hung. Two identifiers
-// and no prose, the form section 2.3 asks for where a label would add nothing. New to this
-// table.
+// and no prose, the form where a label would add nothing.
 const tmplCheckProgress = "%s %s\n"
 
 // checkProgressLine renders tmplCheckProgress for one settled check's id and its wire word.
@@ -135,7 +155,7 @@ func checkProgressLine(id, word string) string {
 }
 
 // tmplHealthProgress is the progress line's text while cairn health checks one site, filled
-// with the site's id. New to this table.
+// with the site's id.
 const tmplHealthProgress = "Checking %s"
 
 // healthProgressText renders tmplHealthProgress for one site's id.
@@ -145,8 +165,7 @@ func healthProgressText(id string) string {
 
 // tmplScrubSkipped is the --verbose notice naming credentials too short for the output scrubber
 // to match. Redacting a very short value would replace ordinary words throughout the report, so
-// the scrubber leaves it and says so rather than silently dropping the protection. New to this
-// table.
+// the scrubber leaves it and says so rather than silently dropping the protection.
 const tmplScrubSkipped = "cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them"
 
 // scrubSkippedNotice renders tmplScrubSkipped for the count of skipped values and the minimum
@@ -157,7 +176,7 @@ func scrubSkippedNotice(count, minLength int) string {
 
 // pasteNotice is the stderr line the two implicitly verbose commands, adopt list and logs, print
 // before their output. Neither command has a --verbose flag to hide behind: the whole of what
-// they print is identifiers, so the notice is unconditional. New to this table.
+// they print is identifiers, so the notice is unconditional.
 const pasteNotice = "cairn: this output carries identifiers and is not safe to paste in public."
 
 // tmplColorInvalid is root.go's refusal of a --color value outside the three.
@@ -168,9 +187,8 @@ func colorInvalidError(color string) error {
 	return translated(fmt.Errorf(tmplColorInvalid, color, colorAuto, colorAlways, colorNever))
 }
 
-// tmplWidthInvalid is root.go's refusal of a --width value outside widthMin to widthMax. New to
-// this table: copy-standard.md carries no row for a --width value error, so this is drafted to
-// sections 2.4 through 2.7 rather than copied.
+// tmplWidthInvalid is root.go's refusal of a --width value outside widthMin to widthMax:
+// what is wrong, then the range that works.
 const tmplWidthInvalid = "cairn: --width %d is not a width cairn can render.\nUse a whole number from %d to %d"
 
 // widthInvalidError renders tmplWidthInvalid for the value the operator gave.
@@ -178,9 +196,8 @@ func widthInvalidError(width int) error {
 	return translated(fmt.Errorf(tmplWidthInvalid, width, widthMin, widthMax))
 }
 
-// tmplThemeInvalid is root.go's refusal of a --theme value outside the two. New to this table:
-// the catalogue carries no row for it, so it follows tmplWidthInvalid's two-line shape, the
-// refusal and then an instruction opening with "Use".
+// tmplThemeInvalid is root.go's refusal of a --theme value outside the two. It follows
+// tmplWidthInvalid's two-line shape, the refusal and then an instruction opening with "Use".
 const tmplThemeInvalid = "cairn: --theme %q is not a theme cairn renders.\nUse %s or %s"
 
 // themeInvalidError renders tmplThemeInvalid for the value the operator gave.
@@ -199,8 +216,8 @@ const (
 
 // help_agents.go's Short, Example, and the page itself. The page is verbatim in the binary
 // because `go install` reaches no tool/docs tree, so --help is the only contract surface an
-// agent can discover in band. Every line is new to this table, drafted to section 2.2's person
-// and mood and section 2.9's fixed vocabulary.
+// agent can discover in band. Every line is written in the
+// imperative and the fixed vocabulary the rest of the tool uses.
 const (
 	shortAgents   = "Print the contract a program or an agent reads"
 	exampleAgents = "cairn help agents"
@@ -272,7 +289,7 @@ To check every site cairn knows, run: cairn health --json`
 
 // health.go's Short, Long, Example, and flag help. The Long's second paragraph repeats the
 // exit codes and the --json pointer so an agent that reached only this command still meets the
-// contract. New to this table.
+// contract.
 const (
 	longHealth = "Run the read-only health checks against one site, or every site when none is named.\n\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
@@ -287,16 +304,19 @@ const (
 )
 
 // tmplUnknownSite is health.go's and logs.go's shared refusal of a site id the registry does not
-// hold, catalogue section 3.8's "unknown site" row.
-const tmplUnknownSite = "cairn: no site named %q.\nRun `cairn sites list` to see the sites cairn knows"
+// hold.
+const (
+	tmplUnknownSite = "no site named %q."
+	fixUnknownSite  = "Run `cairn sites list` to see the sites cairn knows"
+)
 
 // unknownSiteError renders tmplUnknownSite for id.
 func unknownSiteError(id string) error {
-	return translated(fmt.Errorf(tmplUnknownSite, id))
+	return fixed(fmt.Sprintf(tmplUnknownSite, id), fixUnknownSite)
 }
 
 // tmplInvalidSince is health.go's and logs.go's shared refusal of a --since value ParseSince does
-// not accept, catalogue section 3.8's "invalid --since" row.
+// not accept.
 const tmplInvalidSince = "cairn: --since %q is not a duration.\nUse a whole number of minutes, hours, or days: 90m, 24h, 7d"
 
 // invalidSinceError renders tmplInvalidSince for the value the operator gave.
@@ -304,20 +324,19 @@ func invalidSinceError(s string) error {
 	return translated(fmt.Errorf(tmplInvalidSince, s))
 }
 
-// tmplHealthTooManyArgs is cairn health's refusal of more than one positional site argument,
-// catalogue section 3.8's arity example rewritten for this command's noun. New to this
-// table.
-const tmplHealthTooManyArgs = "cairn: cairn health takes at most one site.\nRun `cairn health --help` for usage"
+// whatHealthTooManyArgs and fixHealthTooManyArgs are cairn health's refusal of more than one positional site argument.
+const (
+	whatHealthTooManyArgs = "cairn health takes at most one site."
+	fixHealthTooManyArgs  = "Run `cairn health --help` for usage"
+)
 
-// healthTooManyArgsError renders tmplHealthTooManyArgs.
+// healthTooManyArgsError renders whatHealthTooManyArgs and its fix.
 func healthTooManyArgsError() error {
-	return translated(errors.New(tmplHealthTooManyArgs))
+	return fixed(whatHealthTooManyArgs, fixHealthTooManyArgs)
 }
 
 // doctor.go's Short, Long, and Example. The Long names what cairn health does not, so an
-// operator reading either command's --help learns which one to reach for. New to this table,
-// drafted to section 2.4's grammar (what the command needs and what it never touches) rather
-// than copied, since the catalogue carries no row for a credential-less directory preflight.
+// operator reading either command's --help learns which one to reach for. It says what the command needs and what it never touches.
 const (
 	shortDoctor = "Check a cairn-cms site's configuration, no credential or deploy needed"
 	longDoctor  = "Check a cairn-cms site's checked-in configuration, read straight off the directory. " +
@@ -347,13 +366,16 @@ const (
 	flagDoctorJSONHelp = "print the report as JSON"
 )
 
-// tmplDoctorTooManyArgs is cairn doctor's refusal of more than one positional directory
-// argument, catalogue section 3.8's arity example rewritten for this command's noun.
-const tmplDoctorTooManyArgs = "cairn: cairn doctor takes at most one directory.\nRun `cairn doctor --help` for usage"
+// whatDoctorTooManyArgs and fixDoctorTooManyArgs are cairn doctor's refusal of more than one positional
+// directory argument.
+const (
+	whatDoctorTooManyArgs = "cairn doctor takes at most one directory."
+	fixDoctorTooManyArgs  = "Run `cairn doctor --help` for usage"
+)
 
-// doctorTooManyArgsError renders tmplDoctorTooManyArgs.
+// doctorTooManyArgsError renders whatDoctorTooManyArgs and its fix.
 func doctorTooManyArgsError() error {
-	return translated(errors.New(tmplDoctorTooManyArgs))
+	return fixed(whatDoctorTooManyArgs, fixDoctorTooManyArgs)
 }
 
 // tmplNotACairnSite is cairn doctor's one-line report when dir carries neither a wrangler
@@ -386,9 +408,8 @@ const (
 	shortAdoptList        = "List the Workers on the account that cairn could adopt"
 	exampleAdoptList      = "cairn adopt list"
 	flagAdoptListJSONHelp = "print the candidates as JSON"
-	// flagAdoptDomainHelp is new to this table, owed to the 2026-09-21 live verification: a
-	// Worker serving a site through a Workers Route carries no Custom Domain for discovery to
-	// read, and this is how an operator supplies the one value that is missing.
+	// flagAdoptDomainHelp is how an operator supplies the domain of a Worker served through a
+	// Workers Route, which carries no Custom Domain for discovery to read.
 	flagAdoptDomainHelp = "the domain the Worker serves, for a Worker with no Custom Domain"
 )
 
@@ -396,41 +417,41 @@ const (
 // Worker with no Custom Domain. cairn provisions Workers Custom Domains and never Workers
 // Routes, so discovery reads the Custom Domains route alone and those Workers cannot be adopted
 // from it; naming them and saying how to adopt one anyway is what keeps a route-served site from
-// disappearing out of the listing in silence. New to this table, owed to the 2026-09-21 live
-// verification.
+// disappearing out of the listing in silence.
 const tmplAdoptListRouteOnly = "cairn: the Workers after the blank line serve no Custom Domain, so cairn cannot adopt them from what it discovered.\nRun `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the domain it serves"
-
-// adoptListRouteOnlyNotice renders tmplAdoptListRouteOnly.
-func adoptListRouteOnlyNotice() string {
-	return tmplAdoptListRouteOnly
-}
 
 // tmplAdoptNoDomain is cairn adopt's refusal of a Worker discovery found no Custom Domain for,
 // with no --domain given. It replaces a raw "record: domain is empty" from the validator, which
-// named neither the Worker nor the flag that resolves it. New to this table, owed to the
-// 2026-09-21 live verification.
-const tmplAdoptNoDomain = "cairn: no Custom Domain attached to Worker %q.\nRun `cairn adopt --worker %s --domain <domain>` naming the domain it serves"
+// named neither the Worker nor the flag that resolves it.
+const (
+	tmplAdoptNoDomain    = "no Custom Domain attached to Worker %q."
+	tmplAdoptNoDomainFix = "Run `cairn adopt --worker %s --domain <domain>` naming the domain it serves"
+)
 
 // adoptNoDomainError renders tmplAdoptNoDomain for the Worker the operator named.
 func adoptNoDomainError(worker string) error {
-	return translated(fmt.Errorf(tmplAdoptNoDomain, worker, worker))
+	return fixed(fmt.Sprintf(tmplAdoptNoDomain, worker), fmt.Sprintf(tmplAdoptNoDomainFix, worker))
 }
 
-// tmplAdoptNoWorker is cairn adopt's refusal of a run with no --worker named. New to this table.
-const tmplAdoptNoWorker = "cairn: cairn adopt names one Worker.\nRun `cairn adopt list` to see the Workers on the account"
+// whatAdoptNoWorker is cairn adopt's refusal of a run with no --worker named. fixAdoptNoWorker is
+// its fix, which tmplAdoptUnknownWorker shares.
+const (
+	whatAdoptNoWorker = "cairn adopt names one Worker."
+	fixAdoptNoWorker  = "Run `cairn adopt list` to see the Workers on the account"
+)
 
-// adoptNoWorkerError renders tmplAdoptNoWorker.
+// adoptNoWorkerError renders whatAdoptNoWorker and its fix.
 func adoptNoWorkerError() error {
-	return translated(errors.New(tmplAdoptNoWorker))
+	return fixed(whatAdoptNoWorker, fixAdoptNoWorker)
 }
 
 // tmplAdoptUnknownWorker is cairn adopt's refusal of a --worker name absent from the account's
-// Workers. New to this table.
-const tmplAdoptUnknownWorker = "cairn: no Worker named %q on this account.\nRun `cairn adopt list` to see the Workers on the account"
+// Workers.
+const tmplAdoptUnknownWorker = "no Worker named %q on this account."
 
 // adoptUnknownWorkerError renders tmplAdoptUnknownWorker for the name the operator gave.
 func adoptUnknownWorkerError(worker string) error {
-	return translated(fmt.Errorf(tmplAdoptUnknownWorker, worker))
+	return fixed(fmt.Sprintf(tmplAdoptUnknownWorker, worker), fixAdoptNoWorker)
 }
 
 // tmplAdoptAdded is cairn adopt's success line.
@@ -441,16 +462,18 @@ func adoptAddedMessage(name, domain string) string {
 	return fmt.Sprintf(tmplAdoptAdded, name, domain)
 }
 
-// tmplNoCloudflareCredential is the error cairn adopt and cairn logs both return when
-// buildClients resolved no Cloudflare credential at all, catalogue section 3.8's "no
-// credentials" row narrowed to the one provider these two commands need. One function, so the
-// two commands cannot drift into naming a different variable from each other's copy of the same
+// whatNoCloudflareCredential is the error cairn adopt and cairn logs both return when
+// buildClients resolved no Cloudflare credential at all, narrowed to the one provider these two
+// commands need. One function, so the two commands cannot drift into naming a different variable from each other's copy of the same
 // message.
-const tmplNoCloudflareCredential = "cairn: no Cloudflare credentials found.\nRun `cairn auth set %s` to store one"
+const (
+	whatNoCloudflareCredential    = "no Cloudflare credentials found."
+	tmplNoCloudflareCredentialFix = "Run `cairn auth set %s` to store one"
+)
 
-// noCloudflareCredentialError renders tmplNoCloudflareCredential naming varCFReadToken.
+// noCloudflareCredentialError renders whatNoCloudflareCredential, its fix naming varCFReadToken.
 func noCloudflareCredentialError() error {
-	return translated(fmt.Errorf(tmplNoCloudflareCredential, varCFReadToken))
+	return fixed(whatNoCloudflareCredential, fmt.Sprintf(tmplNoCloudflareCredentialFix, varCFReadToken))
 }
 
 // auth.go's Short and Example, for auth and its four subcommands.
@@ -491,13 +514,11 @@ func authNotStoredMessage(name string) string {
 // keyringUnavailableDisplay is auth list's line for a variable the keyring holds no answer for
 // because the keyring itself could not be reached, distinct from "not set": the operator's
 // credential may well be sitting in the keyring, unreadable right now rather than absent.
-// Adapted from copy-standard.md section 3.8's "keyring unavailable" row for one status-line word
-// rather than that row's three-line boundary error. New to this table.
+// It is one status-line word, not a three-line boundary error.
 const keyringUnavailableDisplay = "the OS keyring did not open"
 
 // tmplKeyringUnavailable is the error auth set and auth unset return when the keyring itself
-// could not be reached, naming the environment-variable fallback the way copy-standard.md
-// section 3.8's "keyring unavailable" row does.
+// could not be reached, naming the environment-variable fallback.
 const tmplKeyringUnavailable = "cairn: the OS keyring did not open.\nSet %s in the environment instead"
 
 // keyringUnavailableError renders tmplKeyringUnavailable naming name as the fallback.
@@ -505,7 +526,7 @@ func keyringUnavailableError(name string) error {
 	return translated(fmt.Errorf(tmplKeyringUnavailable, name))
 }
 
-// tmplEmptyPipedValue is auth set's refusal of an empty piped value. New to this table.
+// tmplEmptyPipedValue is auth set's refusal of an empty piped value.
 const tmplEmptyPipedValue = "cairn: %s is empty.\nPipe a non-empty value: printf %%s \"$v\" | cairn auth set %s"
 
 // emptyPipedValueError renders tmplEmptyPipedValue for the variable name the operator was
@@ -515,15 +536,19 @@ func emptyPipedValueError(name string) error {
 }
 
 // tmplNotACredential is auth set's and auth unset's shared refusal of a name outside the three
-// credential variables, catalogue section 3.8's "usage error" row.
+// credential variables.
 const tmplNotACredential = "cairn: %q is not a credential cairn stores.\nThe names are %s"
 
 // notACredentialError renders tmplNotACredential for name against the real credentialVars list.
 func notACredentialError(name string) error {
-	return translated(fmt.Errorf(tmplNotACredential, name, strings.Join(authVariables, ", ")))
+	names := make([]string, len(credentialVars))
+	for i, v := range credentialVars {
+		names[i] = v.name
+	}
+	return translated(fmt.Errorf(tmplNotACredential, name, strings.Join(names, ", ")))
 }
 
-// probe_token.go's Short, Long, and Example for cairn auth check (and its Hidden alias
+// auth_check.go's Short, Long, and Example for cairn auth check (and its Hidden alias
 // cairn auth probe), plus its skip wording: "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not
 // set" and its GitHub sibling name the word and the missing variable, the same shape every
 // site-scoped row's skip reason follows below. Cloudflare reads two variables, so its
@@ -535,26 +560,26 @@ const (
 
 	// tmplAuthCheckCFSkipped and tmplAuthCheckGHSkipped are auth check's credential-group
 	// notices, printed once per provider whose credentials the run found unset, ahead of the
-	// Permissions section. New to this table.
+	// Permissions section.
 	tmplAuthCheckCFSkipped = "Cloudflare: skip, %s"
 	tmplAuthCheckGHSkipped = "GitHub: skip, %s"
 
 	// authCheckCredentialsHeading and authCheckPermissionsHeading head auth check's two
-	// sections. New to this table.
+	// sections.
 	authCheckCredentialsHeading = "Credentials:"
 	authCheckPermissionsHeading = "Permissions:"
 
 	// authCheckSiteRequiredReason is a site-scoped row's skip reason when the run was given
-	// no positional site id to confirm it against. New to this table.
+	// no positional site id to confirm it against.
 	authCheckSiteRequiredReason = "run `cairn auth check <site>` to confirm this permission"
 
-	// flagAuthCheckJSONHelp is cairn auth check's --json flag help. New to this table.
+	// flagAuthCheckJSONHelp is cairn auth check's --json flag help.
 	flagAuthCheckJSONHelp = "print the permission report as JSON"
 )
 
 // tmplAuthCheckCredMissing and tmplAuthCheckCredsMissing name the variables a run could not
 // find, one clause both the group notice and each affected row's skip reason are built
-// from, so the two can never name different variables. New to this table.
+// from, so the two can never name different variables.
 const (
 	tmplAuthCheckCredMissing  = "%s is not set"
 	tmplAuthCheckCredsMissing = "%s and %s are not set"
@@ -581,8 +606,7 @@ func authCheckGHSkippedNotice(names []string) string {
 	return fmt.Sprintf(tmplAuthCheckGHSkipped, authCheckCredMissingReason(names))
 }
 
-// ack.go's seven refusals. The catalogue carries no row for an acknowledgement file or flag, since
-// acknowledgements are new to 1.0's grammar; every one is new to this table.
+// ack.go's seven refusals, one per way the --ack flag or the hold file can be malformed.
 const (
 	tmplAckFlagInvalid        = "cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.\nUse the check and an expiry date, for example deploy=2026-10-01"
 	tmplAckFileNotFound       = "cairn: --ack-file %s not found.\nUse a file that exists, or drop --ack-file to use the registry's default"
@@ -634,71 +658,13 @@ func ackFileUnreadableError(path string, cause error) error {
 	return translated(fmt.Errorf(tmplAckFileUnreadable, path, cause))
 }
 
-// The remaining four rows of copy-standard.md section 3.8 (no credentials, network down, rate
-// limited, and a crashed check) carry no reachable call site in cmd/cairn today: a missing
-// credential, an offline network, a rate limit, and a check panic are each classified inside
-// internal/health and internal/spine as a per-check Outcome rather than returned to this
-// package as a Go error, so cmd/cairn never observes one directly. They are kept here, as this
-// table's remaining catalogue entries, for the reviewable golden section 4.1 and 4.3 ask for and
-// for whichever future call site needs the exact wording; TestEveryEightSection38CaseHasATableEntry
-// exercises each one directly.
-
-// tmplNoCredentials is catalogue section 3.8's "no credentials" row.
-const tmplNoCredentials = "cairn: no credentials found.\nThe health checks read your Cloudflare and GitHub tokens from the OS keyring or the environment.\nRun `cairn auth set %s` to store one"
-
-// noCredentialsError renders tmplNoCredentials naming varCFReadToken as the example.
-func noCredentialsError() error {
-	return translated(fmt.Errorf(tmplNoCredentials, varCFReadToken))
-}
-
-// tmplNetworkDown is catalogue section 3.8's "network down" row.
-const tmplNetworkDown = "cairn: could not reach the network.\nNo check ran, so this run says nothing about the site.\nCheck your connection, then run the command again"
-
-// networkDownError renders tmplNetworkDown.
-func networkDownError() error {
-	return translated(errors.New(tmplNetworkDown))
-}
-
-// tmplRateLimited is catalogue section 3.8's "rate limited" row, its optional third line held
-// separate so a caller with no Retry-After value can omit it.
-const tmplRateLimited = "cairn: Cloudflare rate-limited this run.\nThe checks that need Cloudflare could not run; the others are reported above"
-
-// tmplRateLimitedRetry is the clause rateLimitedError appends when the response carried a
-// Retry-After value.
-const tmplRateLimitedRetry = "\nRun the command again in %s"
-
-// rateLimitedError renders tmplRateLimited, appending tmplRateLimitedRetry when retryAfter is
-// non-empty. The run's verdict is UNKNOWN, the value spine's arithmetic gives every Unknown
-// outside a missing credential: a throttled run did not observe the site, and WARNING would tell
-// an operator it was checked and found merely imperfect.
-func rateLimitedError(retryAfter string) error {
-	if retryAfter == "" {
-		return translated(errors.New(tmplRateLimited))
-	}
-	return translated(fmt.Errorf(tmplRateLimited+tmplRateLimitedRetry, retryAfter))
-}
-
-// tmplCrashedCheck is catalogue section 3.8's "a crashed check" row.
-const tmplCrashedCheck = "cairn: the %s check crashed.\nThis is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues"
-
-// crashedCheckError renders tmplCrashedCheck naming the check id that panicked.
-func crashedCheckError(id string) error {
-	return translated(fmt.Errorf(tmplCrashedCheck, id))
-}
-
-// tmplFallback is main.go's last resort, copy-standard.md section 4.2's "falling back to
-// cairn: <err> only for an error the table does not know."
+// tmplFallback is main.go's last resort, for an error the table does not know. A fix error's
+// message takes the same prefix, so its halves are stored without it.
 const tmplFallback = "cairn: %v"
 
-// fallbackError renders tmplFallback for a raw error none of this table's constructors
-// built.
-func fallbackError(err error) error {
-	return fmt.Errorf(tmplFallback, err)
-}
-
-// translateError is main.go's one call into this table, copy-standard.md section 4.2's boundary:
-// "one translation function maps a sentinel or wrapped error onto a message from the table,
-// falling back to cairn: <err> only for an error the table does not know." Every command below
+// translateError is main.go's one call into this table: it maps a sentinel or
+// wrapped error onto a message from the table, falling back to cairn: <err> only for an error
+// the table does not know. Every command below
 // main already builds its failure through one of this file's constructors, each of which
 // returns a translatedError, so this function's real job is the fallback clause: a raw Go error
 // that reached main without going through one of them (a store or filesystem failure, for
@@ -708,10 +674,10 @@ func translateError(err error) error {
 	if _, ok := err.(translatedError); ok {
 		return err
 	}
-	return fallbackError(err)
+	return fmt.Errorf(tmplFallback, err)
 }
 
-// cairn new's Short, Example, and flag help. Every line is new to this table.
+// cairn new's Short, Example, and flag help.
 const (
 	shortNew = "Set up a new cairn site"
 	longNew  = `Create a site's GitHub repository, Cloudflare Worker, database, and media bucket, and
@@ -762,19 +728,23 @@ resolver remember the name as missing, for up to 30 minutes.`
 
 // tmplNewRequires is the refusal of a run that leaves out a flag its mode needs, or that gives
 // a flag only another flag allows. It names the missing flag and the one that needs it.
-const tmplNewRequires = "cairn: %s is required with %s.\nRun `cairn new --help` for the flags"
+const (
+	tmplNewRequires = "%s is required with %s."
+	// fixNewFlags is the fix line every cairn new flag refusal shares.
+	fixNewFlags = "Run `cairn new --help` for the flags"
+)
 
 // newRequiresError renders tmplNewRequires.
 func newRequiresError(missing, with string) error {
-	return translated(fmt.Errorf(tmplNewRequires, missing, with))
+	return fixed(fmt.Sprintf(tmplNewRequires, missing, with), fixNewFlags)
 }
 
 // tmplNewConflict is the refusal of two flags that cannot be given together. It names both.
-const tmplNewConflict = "cairn: %s and %s cannot be used together.\nRun `cairn new --help` for the flags"
+const tmplNewConflict = "%s and %s cannot be used together."
 
 // newConflictError renders tmplNewConflict.
 func newConflictError(first, second string) error {
-	return translated(fmt.Errorf(tmplNewConflict, first, second))
+	return fixed(fmt.Sprintf(tmplNewConflict, first, second), fixNewFlags)
 }
 
 // tmplNewSandboxed is the refusal of a setup that runs inside a sandbox. Setup serves its approval
@@ -799,11 +769,11 @@ func newSandboxedError() error {
 }
 
 // tmplNewBadPosture is the refusal of a --posture outside the two values setup writes.
-const tmplNewBadPosture = "cairn: --posture takes decline or invite, not %q.\nRun `cairn new --help` for the flags"
+const tmplNewBadPosture = "--posture takes decline or invite, not %q."
 
 // newBadPostureError renders tmplNewBadPosture.
 func newBadPostureError(value string) error {
-	return translated(fmt.Errorf(tmplNewBadPosture, value))
+	return fixed(fmt.Sprintf(tmplNewBadPosture, value), fixNewFlags)
 }
 
 // newExitCodes is cairn new's exit code table, which the agent guide prints and a golden holds.
@@ -839,9 +809,6 @@ func newSetupTokenSpaceError() error {
 	return translated(fmt.Errorf(tmplSetupTokenSpace, varCFSetupToken))
 }
 
-// tmplNewUsage renders a refusal the agent view found in the flags or the plan file.
-const tmplNewUsage = "%s\nRun `cairn new --help` for the flags"
-
 // tmplNewHostOutsideZone is the refusal of a --host that is not the --zone or a subdomain of it.
 const tmplNewHostOutsideZone = "cairn: --host %s must be the zone %s or a subdomain of it"
 
@@ -850,49 +817,56 @@ func newHostOutsideZoneError(host, zone string) error {
 	return newUsageError(fmt.Sprintf(tmplNewHostOutsideZone, host, zone))
 }
 
-// newUsageError renders tmplNewUsage.
+// newUsageError renders a refusal the agent view found in the flags or the plan file, which
+// problem states whole, cairn: prefix included, with fixNewFlags under it.
 func newUsageError(problem string) error {
-	return translated(fmt.Errorf(tmplNewUsage, problem))
+	return translated(fixError{message: problem, fix: fixNewFlags})
 }
 
 // tmplNewUnfinished is the refusal of --plan while one unfinished setup exists.
-const tmplNewUnfinished = "cairn: an unfinished setup exists: %s.\nContinue it with --resume %s, or start a new site with --new.\nRun `cairn new --help` for the flags"
+const tmplNewUnfinished = "an unfinished setup exists: %s.\nContinue it with --resume %s, or start a new site with --new."
 
 // newUnfinishedError renders tmplNewUnfinished.
 func newUnfinishedError(id string) error {
-	return translated(fmt.Errorf(tmplNewUnfinished, id, id))
+	return fixed(fmt.Sprintf(tmplNewUnfinished, id, id), fixNewFlags)
 }
 
 // tmplNewSeveralUnfinished is the refusal of --plan while several unfinished setups exist.
-const tmplNewSeveralUnfinished = "cairn: several unfinished setups exist: %s.\nContinue one with --resume <id>, or start a new site with --new.\nRun `cairn new --help` for the flags"
+const tmplNewSeveralUnfinished = "several unfinished setups exist: %s.\nContinue one with --resume <id>, or start a new site with --new."
 
 // newSeveralUnfinishedError renders tmplNewSeveralUnfinished.
 func newSeveralUnfinishedError(ids []string) error {
-	return translated(fmt.Errorf(tmplNewSeveralUnfinished, strings.Join(ids, ", ")))
+	return fixed(fmt.Sprintf(tmplNewSeveralUnfinished, strings.Join(ids, ", ")), fixNewFlags)
 }
 
 // tmplNewNoSetup is the refusal of --resume with an id that names no unfinished setup.
-const tmplNewNoSetup = "cairn: no unfinished setup is named %s.\nRun `cairn new status` to list them"
+const (
+	tmplNewNoSetup = "no unfinished setup is named %s."
+	fixNewNoSetup  = "Run `cairn new status` to list them"
+)
 
 // newNoSetupError renders tmplNewNoSetup.
 func newNoSetupError(id string) error {
-	return translated(fmt.Errorf(tmplNewNoSetup, id))
+	return fixed(fmt.Sprintf(tmplNewNoSetup, id), fixNewNoSetup)
 }
 
 // tmplNewNoRunForPlan is the refusal of --apply with a plan whose run has no unfinished setup.
-const tmplNewNoRunForPlan = "cairn: the plan's runId is %s, and no unfinished setup has that run.\nRun `cairn new status` to list them, or run --plan again"
+const (
+	tmplNewNoRunForPlan = "the plan's runId is %s, and no unfinished setup has that run."
+	fixNewNoRunForPlan  = "Run `cairn new status` to list them, or run --plan again"
+)
 
 // newNoRunForPlanError renders tmplNewNoRunForPlan.
 func newNoRunForPlanError(runID string) error {
-	return translated(fmt.Errorf(tmplNewNoRunForPlan, runID))
+	return fixed(fmt.Sprintf(tmplNewNoRunForPlan, runID), fixNewNoRunForPlan)
 }
 
 // tmplNewPlanUnreadable is the refusal of a plan file that cannot be read.
-const tmplNewPlanUnreadable = "cairn: %v.\nRun `cairn new --help` for the flags"
+const tmplNewPlanUnreadable = "%v."
 
 // newPlanUnreadableError renders tmplNewPlanUnreadable.
 func newPlanUnreadableError(err error) error {
-	return translated(fmt.Errorf(tmplNewPlanUnreadable, err))
+	return fixed(fmt.Sprintf(tmplNewPlanUnreadable, err), fixNewFlags)
 }
 
 // tmplNewTemplateFetch is the stop of a terminal run whose template fetch failed before the
@@ -996,3 +970,29 @@ Other flags:
 
 A usage error exits 3, before anything ran, and writes nothing to stdout. An unfinished run
 takes --account and --zone with --resume. The exit codes follow.`
+
+// The titles, count, and column headers a terminal draws for the list commands and for auth
+// check's report. Off a terminal none of them prints, so the piped bytes stay what they were.
+const (
+	// labelSites titles the site listing, and tmplSitesCount is the count beside it.
+	labelSites     = "sites"
+	tmplSitesCount = "%d known"
+	// labelCredentialsList titles auth list's variables.
+	labelCredentialsList = "credentials"
+	// labelReadyToAdopt and labelNoCustomDomain title the two groups adopt list draws.
+	labelReadyToAdopt   = "ready to adopt"
+	labelNoCustomDomain = "no Custom Domain"
+	// The column headers of the site and adopt tables.
+	colSite       = "site"
+	colName       = "name"
+	colDomain     = "domain"
+	colWorker     = "worker"
+	colRepository = "repository"
+	// The three section words auth check's report groups its permissions under.
+	labelCheckFailing     = "failing"
+	labelCheckCouldNotRun = "could not run"
+	labelCheckPassing     = "passing"
+	// tmplAuthCheckFix is the fix under a permission the token lacks, naming the permission and
+	// the variable whose token should carry it.
+	tmplAuthCheckFix = "Add the %s permission to the token in %s, then run the command again."
+)

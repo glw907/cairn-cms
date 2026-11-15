@@ -85,16 +85,14 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	// none, so the count is compared here and reaches the arithmetic as the sentinel the
 	// listing is meant to return. Nothing below re-derives the mapping from sentinel to code.
 	verdict := spine.ExitCode(nil, listErrs, 0)
-	if err := writeSites(cmd, entries, f, rf, verdict, listErrs); err != nil {
+	if err := writeSites(cmd, d, entries, f, rf, verdict, listErrs); err != nil {
 		return err
 	}
-	if err := writeSitesStatus(cmd, d, rf, f, verdict, len(entries) > 0 || rf.verbose); err != nil {
+	if err := writeSitesStatus(cmd, d, rf, f, verdict, len(entries) > 0 || rf.verbose || listTerminal(d, rf)); err != nil {
 		return err
 	}
-	for _, e := range listErrs {
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "cairn:", e); err != nil {
-			return err
-		}
+	if err := writeListErrors(cmd.ErrOrStderr(), listErrs); err != nil {
+		return err
 	}
 
 	d.exit(int(verdict))
@@ -110,7 +108,7 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 // the same reason the listing is. below reports whether stdout already carries a line; with
 // none, the terminal block's opening blank line has nothing to part it from and is not printed.
 func writeSitesStatus(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags, verdict spine.Verdict, below bool) error {
-	if f.asJSON || (rf.quiet && verdict == spine.VerdictOK) {
+	if f.asJSON || quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
 	in := renderInput(d, rf, nil, verdict, runStatus(buildClients(d), 0, false, nil))
@@ -119,12 +117,7 @@ func writeSitesStatus(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags, v
 	if !below && len(lines) > 0 && lines[0] == "" {
 		lines = lines[1:]
 	}
-	for _, line := range lines {
-		if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeLines(cmd.OutOrStdout(), lines)
 }
 
 // printRegistrySource writes the directory the listing read and the store.Source that chose it,
@@ -141,7 +134,7 @@ func printRegistrySource(cmd *cobra.Command, d deps) error {
 
 // writeSites writes the listing itself, honouring --json over --quiet: under --json the payload
 // is the output, so suppressing it would hand an agent an empty stdout.
-func writeSites(cmd *cobra.Command, entries []store.Entry, f sitesFlags, rf *rootFlags, verdict spine.Verdict, listErrs []error) error {
+func writeSites(cmd *cobra.Command, d deps, entries []store.Entry, f sitesFlags, rf *rootFlags, verdict spine.Verdict, listErrs []error) error {
 	if f.asJSON {
 		lines := make([]render.SiteListEntry, 0, len(entries))
 		for _, e := range entries {
@@ -157,8 +150,11 @@ func writeSites(cmd *cobra.Command, entries []store.Entry, f sitesFlags, rf *roo
 		}
 		return writeJSONPayload(cmd.OutOrStdout(), data)
 	}
-	if rf.quiet && verdict == spine.VerdictOK {
+	if quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
+	}
+	if drew, err := writeSitesTerminal(cmd, d, rf, entries); drew || err != nil {
+		return err
 	}
 	for _, e := range entries {
 		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%s\n", e.ID, e.Record.Name, e.Record.Domain); err != nil {

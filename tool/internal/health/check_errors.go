@@ -16,9 +16,8 @@ import (
 // site-down signal, which is why zero through the threshold is OK rather than Failing.
 //
 // It counts engine records alone, never every error-level line the Worker logged. On a public site
-// the Worker's 404 logging runs to thousands a day, which is what the count reported until
-// 2026-09-21: a live run against a healthy site returned 1000 errors in 24 hours, the query's
-// limit, made up of crawler 404s and holding no cairn record at all. logs.FetchRecords carries the
+// the Worker's 404 logging runs to thousands a day, which is what the count once reported: a live run
+// against a healthy site returned 1000 errors in 24 hours, the query's limit, made up of crawler 404s and holding no cairn record at all. logs.FetchRecords carries the
 // distinction.
 type errorsCheck struct{}
 

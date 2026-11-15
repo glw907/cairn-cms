@@ -9,79 +9,69 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
-// This file is the messages table tool/docs/design/copy-standard.md section 4.1 requires: every
-// detail and skip fragment health's checks print, so no check body composes operator-facing
-// prose at its call site. A check returns its measured values; a function here renders the
-// line. Every string is written to the standard's section 2 grammar (2.4 for a detail line, 2.6
-// for a skip reason) and copied from its section 3 catalogue entry where one exists; a function
-// whose comment says so renders a string the catalogue does not cover instead, under section
-// 4.6's rule for that case.
+// This file is the messages table: every detail and skip fragment health's checks print, so no
+// check body composes operator-facing prose at its call site. A check returns its measured
+// values; a function here renders the line.
 
-// detailHTTPSAlwaysUseHTTPSOff renders the https-forced check's Always Use HTTPS half, catalogue
-// section 3.4.
+// detailHTTPSAlwaysUseHTTPSOff renders the https-forced check's Always Use HTTPS half.
 func detailHTTPSAlwaysUseHTTPSOff() string {
 	return "Always Use HTTPS is off for the zone"
 }
 
-// detailHTTPSHSTSOff renders the https-forced check's HSTS half alone, catalogue section 3.4.
+// detailHTTPSHSTSOff renders the https-forced check's HSTS half alone.
 func detailHTTPSHSTSOff() string {
 	return "HSTS is off for the zone"
 }
 
-// detailHTTPSBothOff renders both halves off at once, catalogue section 3.4.
+// detailHTTPSBothOff renders both halves off at once.
 func detailHTTPSBothOff() string {
 	return "Always Use HTTPS and HSTS are both off for the zone"
 }
 
-// detailHTTPSNoAlwaysUseHTTPSSetting renders the https-forced check's unobservable-zone verdict,
-// catalogue section 3.4.
+// detailHTTPSNoAlwaysUseHTTPSSetting renders the https-forced check's unobservable-zone verdict.
 func detailHTTPSNoAlwaysUseHTTPSSetting() string {
 	return "Cloudflare returned no Always Use HTTPS setting for the zone"
 }
 
-// detailDelegationWrongNameservers renders the delegation check's Failing verdict, catalogue
-// section 3.4.
+// detailDelegationWrongNameservers renders the delegation check's Failing verdict.
 func detailDelegationWrongNameservers() string {
 	return "the domain points at nameservers outside this Cloudflare zone"
 }
 
-// detailDelegationNoAssignedNS renders the delegation check's unobservable verdict,
-// catalogue section 3.4.
+// detailDelegationNoAssignedNS renders the delegation check's unobservable verdict.
 func detailDelegationNoAssignedNS() string {
 	return "no assigned nameservers recorded for this site"
 }
 
-// detailDelegationNoZone renders the delegation check's unobservable verdict, catalogue
-// section 3.4.
+// detailDelegationNoZone renders the delegation check's unobservable verdict.
 func detailDelegationNoZone() string {
 	return "Cloudflare reports no zone for this domain"
 }
 
 // detailServingHostnameMismatch renders the serving check's Failing verdict for a hostname that
-// answers something other than a home page, catalogue section 3.4.
+// answers something other than a home page.
 func detailServingHostnameMismatch() string {
 	return "the hostname does not answer"
 }
 
 // detailServingNotCairn renders the serving check's Failing verdict for a hostname whose home
-// page answers but whose /admin is not cairn's. The catalogue folds this case into the line
-// above, which tells an operator the opposite of what the probe found; this is the plainest
-// fragment satisfying section 2.4.
+// page answers but whose /admin is not cairn's. It is its own line because the serving
+// mismatch line above would tell an operator the opposite of what the probe found.
 func detailServingNotCairn() string {
 	return "the hostname answers, but /admin is not cairn's sign-in page"
 }
 
-// detailEmailDMARCMissing renders the email check's no-record verdict, catalogue section 3.4.
+// detailEmailDMARCMissing renders the email check's no-record verdict.
 func detailEmailDMARCMissing() string {
 	return "no DMARC record published for the domain"
 }
 
-// detailEmailDMARCPolicyNone renders the email check's p=none verdict, catalogue section 3.4.
+// detailEmailDMARCPolicyNone renders the email check's p=none verdict.
 func detailEmailDMARCPolicyNone() string {
 	return "the DMARC record allows every sender (p=none)"
 }
 
-// detailEmailDMARCNoPolicy renders the email check's missing-tag verdict, catalogue section 3.4.
+// detailEmailDMARCNoPolicy renders the email check's missing-tag verdict.
 func detailEmailDMARCNoPolicy() string {
 	return "the DMARC record carries no p= policy"
 }
@@ -90,48 +80,44 @@ func detailEmailDMARCNoPolicy() string {
 // can print the template rather than inventing an example include mechanism.
 const tmplEmailSPFMissing = "the sending subdomain's SPF record omits %s"
 
-// detailEmailSPFMissing renders the email check's SPF verdict, catalogue section 3.4, naming the
+// detailEmailSPFMissing renders the email check's SPF verdict, naming the
 // specific include mechanism the check looked for.
 func detailEmailSPFMissing(include string) string {
 	return fmt.Sprintf(tmplEmailSPFMissing, include)
 }
 
-// detailEmailDKIMMissing renders the email check's DKIM verdict, catalogue section 3.4.
+// detailEmailDKIMMissing renders the email check's DKIM verdict.
 func detailEmailDKIMMissing() string {
 	return "no DKIM record found for the sending subdomain"
 }
 
-// detailEmailSenderNotOnboarded renders the email check's onboarding verdict, catalogue section
-// 3.4.
+// detailEmailSenderNotOnboarded renders the email check's onboarding verdict.
 func detailEmailSenderNotOnboarded() string {
 	return "the sending subdomain is not onboarded"
 }
 
-// detailDeployWorkerNotFound renders the deploy check's absent-Worker verdict. The catalogue
-// carries no row for this case; this is the plainest fragment satisfying section 2.4.
+// detailDeployWorkerNotFound renders the deploy check's absent-Worker verdict.
 func detailDeployWorkerNotFound() string {
 	return "the Worker does not exist in this account"
 }
 
-// detailDeployBuildsNotConnected renders the deploy check's disconnected-Builds verdict,
-// catalogue section 3.4, with an added clause: the bare catalogue line reads as a fault, and the
-// state it names is a site deployed some other way.
+// detailDeployBuildsNotConnected renders the deploy check's disconnected-Builds verdict.
+// A bare "not connected" would read as a fault, and the state it names is a site deployed some
+// other way.
 func detailDeployBuildsNotConnected() string {
 	return "Workers Builds is not connected to this Worker, so there is no deployment to read"
 }
 
 // detailNoRepoRecorded renders the skipped verdict every repository-reading check returns
 // against a record that names none. One fragment serves all three: the fact is the record's, not
-// the check's, and three wordings for one fact would read as three different problems. The
-// catalogue carries no row; this is the plainest fragment satisfying section 2.6.
+// the check's, and three wordings for one fact would read as three different problems.
 func detailNoRepoRecorded() string {
 	return "no GitHub repository recorded for this site"
 }
 
-// detailDeployBuildFailed renders the deploy check's failed-build verdict. The catalogue's
-// build-failed row composes the commit and branch position (3.4's "build failed 26m ago
-// (3f0ba18), main is 2 commits ahead"), which belongs to the render layer reading Fields, not to
-// this bare Detail fallback; this is the plainest fragment satisfying section 2.4.
+// detailDeployBuildFailed renders the deploy check's failed-build verdict. The commit and
+// branch position ("build failed 26m ago (3f0ba18), main is 2 commits ahead") belong to the render
+// layer reading Fields, not to this bare Detail fallback.
 func detailDeployBuildFailed() string {
 	return "the last build did not succeed"
 }
@@ -143,18 +129,15 @@ func detailDeployNoDeployment() string {
 }
 
 // detailPublishNothingWaiting renders the publish-path check's quiet-state verdict: no open
-// edit branch, so nothing is waiting on an editor. The catalogue's row for this state words
-// it as an absence of observations ("no cairn branches or publish commits observed"), which
-// reads as a failure to measure rather than the ordinary state it names; this is the plainest
-// fragment satisfying section 2.4.
+// edit branch, so nothing is waiting on an editor. It is worded as the
+// ordinary state it names, since "no branches observed" would read as a failure to measure.
 func detailPublishNothingWaiting() string {
 	return "no edits are waiting to publish"
 }
 
-// detailPublishStaleBranches renders the publish-path check's stale-branch verdict. The
-// catalogue's publish-path rows assume an App-installation check this package does not run; this
-// is the plainest fragment satisfying section 2.4 for the branch-staleness verdict this package
-// actually measures.
+// detailPublishStaleBranches renders the publish-path check's stale-branch verdict. It
+// words the branch-staleness verdict this package actually measures, and assumes no
+// App-installation check.
 const (
 	tmplPublishStaleBranchSingular = "1 cairn branch is older than 14 days with no later publish"
 	tmplPublishStaleBranchesPlural = "%d cairn branches are older than 14 days with no later publish"
@@ -167,19 +150,17 @@ func detailPublishStaleBranches(count int) string {
 	return fmt.Sprintf(tmplPublishStaleBranchesPlural, count)
 }
 
-// detailEngineNoCairnDependency renders the engine check's unobservable verdict, catalogue
-// section 3.4.
+// detailEngineNoCairnDependency renders the engine check's unobservable verdict.
 func detailEngineNoCairnDependency() string {
 	return "the site's package.json carries no " + cairnPackageName + " dependency"
 }
 
-// detailEngineVersionNotFound renders the engine check's unobservable verdict, catalogue
-// section 3.4.
+// detailEngineVersionNotFound renders the engine check's unobservable verdict.
 func detailEngineVersionNotFound() string {
 	return "the installed or latest version is not in the published version list"
 }
 
-// detailEngineCurrent renders the engine check's up-to-date verdict, catalogue section 3.4.
+// detailEngineCurrent renders the engine check's up-to-date verdict.
 func detailEngineCurrent(installed string) string {
 	return installed + " is current"
 }
@@ -187,7 +168,7 @@ func detailEngineCurrent(installed string) string {
 // tmplEngineBehind is detailEngineBehind's format template.
 const tmplEngineBehind = "%s installed, %s latest, %d releases behind"
 
-// detailEngineBehind renders the engine check's behind-latest verdict, catalogue section 3.4.
+// detailEngineBehind renders the engine check's behind-latest verdict.
 func detailEngineBehind(installed, latest string, releasesBehind int) string {
 	return fmt.Sprintf(tmplEngineBehind, installed, latest, releasesBehind)
 }
@@ -197,14 +178,13 @@ func detailEngineBehind(installed, latest string, releasesBehind int) string {
 const tmplEngineBehindActionableSuffix = ", with a required change"
 
 // detailEngineBehindActionable renders the engine check's Failing verdict, when a skipped
-// release carries an actionable "Consumers must:" change. The catalogue's behind-latest row
-// does not distinguish this case from the OK behind-latest one; this appends the one fact that
-// does.
+// release carries an actionable "Consumers must:" change. It appends to the behind-latest line the one
+// fact that distinguishes this case from the OK one.
 func detailEngineBehindActionable(installed, latest string, releasesBehind int) string {
 	return detailEngineBehind(installed, latest, releasesBehind) + tmplEngineBehindActionableSuffix
 }
 
-// errorsWindow renders d the way the catalogue's count fields do ("0 errors in 24h"): a
+// errorsWindow renders d the way a count field reads ("0 errors in 24h"): a
 // whole number of hours renders bare, and anything else falls back to Go's duration format
 // rather than inventing a second notation.
 func errorsWindow(d time.Duration) string {
@@ -214,18 +194,16 @@ func errorsWindow(d time.Duration) string {
 	return d.String()
 }
 
-// detailErrorsObservabilityOff renders the errors check's missing-dataset verdict, catalogue
-// section 3.4.
+// detailErrorsObservabilityOff renders the errors check's missing-dataset verdict.
 func detailErrorsObservabilityOff() string {
 	return "the Worker has no observability dataset"
 }
 
 // detailAPIRequestRejected renders the Detail every check carries when a provider answered a
-// request with HTTP 400. The catalogue carries no row for it: the condition did not exist before
-// 2026-09-21, when a live run found cairn's Workers Logs query body rejected and reported to
-// the operator as a site setting they had never turned off. It names cairn as the faulty party
-// and points at the one place a report belongs, the shape tmplCommandCrashed already uses for the
-// other fault that is never the operator's.
+// request with HTTP 400. A rejected request once reached the operator as a site setting they
+// had never turned off, so this line names cairn as the faulty party and points at the one place a
+// report belongs, the shape tmplCommandCrashed already uses for the other fault that is never the
+// operator's.
 func detailAPIRequestRejected() string {
 	return "the provider refused the request cairn sent; this is a bug in cairn, reportable at https://github.com/glw907/cairn-cms/issues"
 }
@@ -233,8 +211,7 @@ func detailAPIRequestRejected() string {
 // The format templates detailErrorsCount and detailErrorsAboveThreshold render from. The two
 // "at least" forms carry a count the fetch truncated at its limit: the window holds that many
 // records and possibly more, so the line says what was measured rather than passing a floor off as
-// an exact number. They extend the catalogue's section 3.4 rows, under section 4.6's rule for
-// a template the catalogue does not carry.
+// an exact number. Each extends the plain count line.
 const (
 	tmplErrorsCount                 = "%d errors in %s"
 	tmplErrorsCountAtLeast          = "at least %d errors in %s"
@@ -242,7 +219,7 @@ const (
 	tmplErrorsAtLeastAboveThreshold = "at least %d errors in %s, above the %d the check allows"
 )
 
-// detailErrorsCount renders the errors check's OK verdict, catalogue section 3.4, carrying the
+// detailErrorsCount renders the errors check's OK verdict, carrying the
 // count and window a trusting reader needs rather than a judgment on them.
 func detailErrorsCount(count int, truncated bool, window time.Duration) string {
 	if truncated {
@@ -251,7 +228,7 @@ func detailErrorsCount(count int, truncated bool, window time.Duration) string {
 	return fmt.Sprintf(tmplErrorsCount, count, errorsWindow(window))
 }
 
-// detailErrorsAboveThreshold renders the errors check's Failing verdict, catalogue section 3.4.
+// detailErrorsAboveThreshold renders the errors check's Failing verdict.
 func detailErrorsAboveThreshold(count int, truncated bool, window time.Duration, threshold int) string {
 	if truncated {
 		return fmt.Sprintf(tmplErrorsAtLeastAboveThreshold, count, errorsWindow(window), threshold)
@@ -259,8 +236,7 @@ func detailErrorsAboveThreshold(count int, truncated bool, window time.Duration,
 	return fmt.Sprintf(tmplErrorsAboveThreshold, count, errorsWindow(window), threshold)
 }
 
-// detailCredsGitHubNoExpiry renders the creds check's non-expiring-token verdict, catalogue
-// section 3.4.
+// detailCredsGitHubNoExpiry renders the creds check's non-expiring-token verdict.
 func detailCredsGitHubNoExpiry() string {
 	return "GitHub reports no expiry for this token"
 }
@@ -268,23 +244,20 @@ func detailCredsGitHubNoExpiry() string {
 // tmplCredsGitHubExpiring is detailCredsGitHubExpiring's format template.
 const tmplCredsGitHubExpiring = "the GitHub token expires %s, in %d days"
 
-// detailCredsGitHubExpiring renders the creds check's expiring-soon verdict, catalogue section
-// 3.4, carrying the expiry date and the days remaining rather than the raw timestamp and reason
+// detailCredsGitHubExpiring renders the creds check's expiring-soon verdict, carrying the expiry date and the days remaining rather than the raw timestamp and reason
 // token the check measured internally.
 func detailCredsGitHubExpiring(expiry, now time.Time) string {
 	daysLeft := int(expiry.Sub(now).Hours() / 24)
 	return fmt.Sprintf(tmplCredsGitHubExpiring, expiry.Format("2006-01-02"), daysLeft)
 }
 
-// detailCredsUnauthorized renders a credential the provider rejected outright, catalogue section
-// 3.4's "Cloudflare rejected the token" generalized across providers: ReasonToOutcome carries no
+// detailCredsUnauthorized renders a credential the provider rejected outright's "Cloudflare rejected the token" generalized across providers: ReasonToOutcome carries no
 // provider name, so credentialLine supplies it as this line's leading word.
 func detailCredsUnauthorized() string {
 	return "the token was rejected"
 }
 
-// detailCredsForbidden renders a credential the provider accepted but refused to act on,
-// catalogue section 3.4's "the token lacks the Zone:Read permission" generalized across
+// detailCredsForbidden renders a credential the provider accepted but refused to act on's "the token lacks the Zone:Read permission" generalized across
 // providers, for the same reason detailCredsUnauthorized is generalized.
 func detailCredsForbidden() string {
 	return "the token lacks a required permission"
@@ -297,8 +270,7 @@ func detailCredsForbidden() string {
 // TestEveryReasonCodeHasAPhrase holds.
 //
 // The codes name a condition rather than a provider, so the prose does too: a check that fell
-// back to its reason has no measured detail to name one with. Each line is written to the copy
-// standard's 2.6 grammar for a skip reason; the catalogue carries no rows for these.
+// back to its reason has no measured detail to name one with. Each line is a skip reason.
 var reasonPhrases = map[spine.ReasonCode]string{
 	spine.ReasonCredMissing:     "the token this check reads is not set",
 	spine.ReasonCredForbidden:   "the token lacks a permission this check reads",
@@ -397,7 +369,7 @@ func Catalogue() []string {
 		ReasonPhrase("reason.unrecognized"),
 	}
 	// Every reason phrase is an operator-facing line like any other detail, so the whole table
-	// joins the catalogue rather than one example of it.
+	// joins the copy list rather than one example of it.
 	for _, r := range spine.ReasonCodes() {
 		out = append(out, ReasonPhrase(r))
 	}

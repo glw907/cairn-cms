@@ -19,7 +19,7 @@ import (
 // isAuthVariable reports whether name is one of the three variables cairn
 // auth operates on.
 func isAuthVariable(name string) bool {
-	return slices.Contains(authVariables, name)
+	return slices.ContainsFunc(credentialVars, func(v credentialVar) bool { return v.name == name })
 }
 
 // restoreOnCancel calls restore once, when ctx is done, and returns the function the caller
@@ -79,7 +79,7 @@ func promptPassword(cmd *cobra.Command, name string, stdin io.Reader) (string, e
 	// how that is learned: this is not a terminal test the run branches on, so the read path
 	// below is the same either way.
 	if state, err := term.GetState(fd); err == nil {
-		defer restoreOnCancel(commandContext(cmd), func() { _ = term.Restore(fd, state) })()
+		defer restoreOnCancel(cmd.Context(), func() { _ = term.Restore(fd, state) })()
 	}
 
 	if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "%s: ", name); err != nil {
@@ -93,6 +93,11 @@ func promptPassword(cmd *cobra.Command, name string, stdin io.Reader) (string, e
 	}
 	b, err := term.ReadPassword(fd)
 	if err != nil {
+		// The terminal path's Enter ends the prompt line; a pipe has no Enter, so the line is
+		// ended here and a receipt or error never joins the prompt. The value is not echoed.
+		if _, ferr := fmt.Fprintln(cmd.ErrOrStderr()); ferr != nil {
+			return "", ferr
+		}
 		return readPipedValue(stdin, name)
 	}
 	if _, ferr := fmt.Fprintln(cmd.ErrOrStderr()); ferr != nil {
@@ -161,8 +166,7 @@ func newAuthSetCmd(d deps) *cobra.Command {
 				}
 				return err
 			}
-			_, err = fmt.Fprint(cmd.OutOrStdout(), authStoredMessage(name))
-			return err
+			return writeReceipt(cmd, d, authStoredMessage(name))
 		},
 	}
 }
@@ -183,11 +187,9 @@ func newAuthUnsetCmd(d deps) *cobra.Command {
 			}
 			switch err := d.keyringDeleter.Delete(name); {
 			case err == nil:
-				_, ferr := fmt.Fprint(cmd.OutOrStdout(), authDeletedMessage(name))
-				return ferr
+				return writeReceipt(cmd, d, authDeletedMessage(name))
 			case errors.Is(err, secrets.ErrNotFound):
-				_, ferr := fmt.Fprint(cmd.OutOrStdout(), authNotStoredMessage(name))
-				return ferr
+				return writeReceipt(cmd, d, authNotStoredMessage(name))
 			case errors.Is(err, secrets.ErrKeyringUnavailable):
 				return keyringUnavailableError(name)
 			default:
@@ -205,7 +207,10 @@ func newAuthListCmd(d deps) *cobra.Command {
 		Example: exampleAuthList,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			resolved, _ := loadEnv(d.env, d.secretProviders()...)
+			resolved, missing := loadEnv(d.env, d.secretProviders()...)
+			if v, ok := listView(d, rootFlagsOf(cmd)); ok {
+				return writeLines(cmd.OutOrStdout(), credentialLines(v, credentialRows(d, resolved, missing)))
+			}
 			for _, r := range resolved.sourceLines() {
 				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", r.name, keyringAwareDisplay(d, r)); err != nil {
 					return err
@@ -221,7 +226,7 @@ func newAuthListCmd(d deps) *cobra.Command {
 // nothing did. loadEnv's resolution, and so credential-resolution behavior, is untouched:
 // this only refines what auth list prints for a variable Resolve already reported as a miss.
 func keyringAwareDisplay(d deps, r resolution) string {
-	if r.display != "not set" || d.keyringStatus == nil {
+	if r.display != "not set" {
 		return r.display
 	}
 	if _, err := d.keyringStatus(r.name); errors.Is(err, secrets.ErrKeyringUnavailable) {

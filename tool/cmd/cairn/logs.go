@@ -85,15 +85,15 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 		return unknownSiteError(site)
 	}
 
-	clients := buildClients(d)
-	if !clients.HaveCF {
-		return noCloudflareCredentialError()
+	cf, _, err := requireCF(d)
+	if err != nil {
+		return err
 	}
 
-	ctx, cancel := rf.deadline(commandContext(cmd))
+	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
-	entries, err := logs.Fetch(ctx, clients.CF, logs.Query{
+	entries, err := logs.Fetch(ctx, cf, logs.Query{
 		Worker: rec.Cloudflare.WorkerName,
 		Since:  window,
 		Event:  f.event,
@@ -120,12 +120,7 @@ func writeLogs(cmd *cobra.Command, d deps, rf *rootFlags, entries []logs.Entry, 
 	// into a separate column. A pipe keeps the tab-separated line, which is what a grep, an awk,
 	// and an agent read.
 	if in, ok := logsRenderInput(d, rf, entries, site); ok {
-		for _, line := range render.Render(in).Lines() {
-			if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeLines(cmd.OutOrStdout(), render.Render(in).Lines())
 	}
 	for _, e := range entries {
 		line := fmt.Sprintf("%s\t%s\t%s", e.At.UTC().Format(time.RFC3339), e.Level, e.Event)

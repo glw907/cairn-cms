@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
@@ -93,18 +93,13 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 		return unknownSiteError(id)
 	}
 
-	ctx, cancel := rf.deadline(commandContext(cmd))
+	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
 	clients := buildClients(d)
 	started := d.now()
 	stop := startHealthProgress(cmd, d, rf, f, id)
-	report, err := health.Run(ctx, rec, clients, d.checks, health.Options{
-		ErrorThreshold: f.errorThreshold,
-		LogWindow:      window,
-		Now:            d.now,
-		OnCheck:        checkProgress(cmd, rf, f),
-	}, acks)
+	report, err := health.Run(ctx, rec, clients, d.checks, healthOptions(cmd, d, rf, f, window), acks)
 	stop()
 	if err != nil {
 		return err
@@ -149,13 +144,7 @@ func quietSuppressesFrame(quiet bool, verdict spine.Verdict) bool {
 // writeHealthBody writes one report through the render seam, which owns every layout decision:
 // the body for the scope and the stream, the ranking, the section grammar, and the fix format.
 func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, verdict spine.Verdict, status render.StatusState) error {
-	frame := render.Render(renderInput(d, rf, rs, verdict, status))
-	for _, line := range frame.Lines() {
-		if _, err := fmt.Fprintln(w, line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeLines(w, render.Render(renderInput(d, rf, rs, verdict, status)).Lines())
 }
 
 // renderInput builds the one input the render seam reads. This function and the detector it
@@ -167,15 +156,15 @@ func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, ver
 // run's scope and whether stdout is a terminal, never the colour choice: an operator who forces
 // colour into a pipe still gets the plain body, in colour.
 //
-// The ground is --theme alone, which nothing detects: --color and NO_COLOR choose whether to
-// paint, and --theme chooses which palette to paint from.
+// The ground is stdoutGround's: --color and NO_COLOR choose whether to paint, and --theme,
+// CAIRN_THEME, or COLORFGBG chooses which palette to paint from, the last two at a terminal only.
 func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict, status render.StatusState) render.RenderInput {
 	term := reportTerminal(d, rf)
 	return render.RenderInput{
 		View:    render.ViewHealth,
 		Body:    render.SelectBody(len(reports), term.TTY),
 		Width:   reportWidth(rf, term),
-		Dark:    rf.theme != themeLight,
+		Dark:    stdoutGround(d, rf).dark,
 		Profile: term.Profile,
 		ASCII:   term.ASCII,
 		Reports: reports,
@@ -186,11 +175,18 @@ func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.V
 }
 
 // detectTerminal reads the one TTY-and-colour answer every command's render input is built from.
+// Under CAIRN_PLAIN it probes no stream, so the answer is a pipe's.
 func detectTerminal(d deps, rf *rootFlags) style.Terminal {
-	resolved, _ := loadEnv(d.env)
-	return style.Detect(d.stdout, style.Env{
-		NoColor: resolved.noColorValue(),
-		Term:    resolved.termValue(),
+	stdout, _ := styledStreams(d, rf)
+	return detectOn(d, rf, stdout)
+}
+
+// detectOn measures f against the environment and the operator's --color, the one place the
+// style.Env is built. Callers choose the stream: a report reads stdout, an error reads stderr.
+func detectOn(d deps, rf *rootFlags, f *os.File) style.Terminal {
+	return style.Detect(f, style.Env{
+		NoColor: d.env(varNoColor),
+		Term:    d.env(varTerm),
 		Color:   rf.color,
 	})
 }

@@ -57,7 +57,7 @@ type Entry struct {
 // query answers 404. Every other classified reason passes through unchanged, so a caller reports
 // it the same way every sibling check does.
 //
-// A live check on 2026-09-21 narrowed this sharply. Two Workers on the verification account
+// A live check narrowed this sharply. Two Workers on the verification account
 // whose settings carry no observability object at all answered the same query 200 with zero
 // events, as did a Worker name that does not exist, so a Worker with observability off is not
 // distinguishable from one that simply logged nothing over the window, and this sentinel does not
@@ -80,7 +80,7 @@ const defaultLimit = 200
 
 // recordLimit bounds FetchRecords's query. A page that fills to it is reported truncated
 // rather than counted as exact: the endpoint publishes no total of its own, and its
-// result.events.count saturates at the limit the query asked for. Measured live on 2026-09-21,
+// result.events.count saturates at the limit the query asked for. Measured live,
 // where a 24 hour level: error query against a healthy production Worker answered with count 1000
 // against a limit of 1000.
 const recordLimit = 1000
@@ -125,7 +125,7 @@ func clampSince(since time.Duration) time.Duration {
 // filterType is the "type" every leaf filter in a telemetry query must declare, one of the
 // API's "string", "number", or "boolean". Every key cairn filters on ($metadata.service, event,
 // level) holds a string. A filter without it is refused: the endpoint answers HTTP 400 with a
-// ZodError naming the missing key, which is exactly what cairn sent until 2026-09-21
+// ZodError naming the missing key, which is exactly what cairn once sent
 // (tool/testdata/fixtures/cloudflare/observability-telemetry-query.filter-rejected.400.json).
 const filterType = "string"
 
@@ -145,7 +145,7 @@ type filter struct {
 //
 // The endpoint's filter schema is a union: an entry is either a group node carrying "kind":
 // "group" and a "filterCombination", or a leaf carrying "key", "type", "operation", and "value".
-// cairn sends leaves, which a live call on 2026-09-21 confirmed the endpoint accepts as a bare
+// cairn sends leaves, which a live call confirmed the endpoint accepts as a bare
 // array, combined with AND; wrapping them in a group would add a node with nothing to say.
 func buildQuery(worker string, since time.Duration, now time.Time, extra []filter, limit int) map[string]any {
 	if limit <= 0 {
@@ -325,8 +325,8 @@ type Records struct {
 // An engine record is one a site's cairn engine wrote through src/lib/log, recognized by the
 // "event" key of its level/event/timestamp envelope; every other line a Worker logs, a bare
 // console call above all, carries no such key. The query asks the endpoint for the two conditions
-// directly, an equality filter on "level" and an existence filter on "event", which a live call on
-// 2026-09-21 confirmed it applies to the parsed record: the same 24 hour window answered with 1000
+// directly, an equality filter on "level" and an existence filter on "event", which a live call
+// confirmed it applies to the parsed record: the same 24 hour window answered with 1000
 // console error lines under the level filter alone and none at all once "event" had to exist. Each
 // returned entry is rechecked here anyway, the posture Fetch states about its narrowing.
 //

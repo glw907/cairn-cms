@@ -64,7 +64,7 @@ func runDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, args []
 		return writeOutsideCairnSite(cmd, d, rf, f, snap, dir)
 	}
 
-	ctx, cancel := rf.deadline(commandContext(cmd))
+	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
 	snap.PublicOrigin = resolvePublicOrigin(d, snap)
@@ -94,13 +94,14 @@ func writeDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap 
 	if quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
-	return writeDoctorReport(cmd.OutOrStdout(), reportTerminal(d, rf), rf, snap.Dir, checked, verdict)
+	return writeDoctorReport(cmd.OutOrStdout(), reportTerminal(d, rf), rf, stdoutGround(d, rf).dark, snap.Dir, checked, verdict)
 }
 
 // writeDoctorReport writes the run as text: the terminal body when stdout is a terminal, and
 // doctor.Format's lines, unchanged, on a pipe. The terminal body names the run by the checked
-// directory's base name, made absolute first so a run on "." still names its directory.
-func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dir string, checked []doctor.CheckedResult, verdict spine.Verdict) error {
+// directory's base name, made absolute first so a run on "." still names its directory, and is
+// painted on the dark ground or the light one.
+func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dark bool, dir string, checked []doctor.CheckedResult, verdict spine.Verdict) error {
 	if !term.TTY {
 		_, err := fmt.Fprintln(w, doctor.Format(checked))
 		return err
@@ -111,19 +112,14 @@ func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dir stri
 	frame := render.Render(render.RenderInput{
 		View:    render.ViewDoctor,
 		Width:   reportWidth(rf, term),
-		Dark:    rf.theme != themeLight,
+		Dark:    dark,
 		Profile: term.Profile,
 		ASCII:   term.ASCII,
 		Checked: checked,
 		Site:    filepath.Base(dir),
 		Verdict: verdict,
 	})
-	for _, line := range frame.Lines() {
-		if _, err := fmt.Fprintln(w, line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeLines(w, frame.Lines())
 }
 
 // writeDoctorJSON writes the cairn-doctor.schema.json payload.
@@ -168,8 +164,7 @@ func resolvePublicOrigin(d deps, s doctor.Snapshot) doctor.PublicOrigin {
 	if facts, found, err := doctor.ReadWranglerConfig(s); err == nil && found && facts.HasPublicOrigin {
 		return doctor.PublicOrigin{Value: facts.PublicOrigin, Source: doctor.OriginFromVars}
 	}
-	resolved, _ := loadEnv(d.env)
-	if origin := resolved.publicOriginValue(); origin != "" {
+	if origin := d.env(varPublicOrigin); origin != "" {
 		return doctor.PublicOrigin{Value: origin, Source: doctor.OriginFromEnv}
 	}
 	return doctor.PublicOrigin{}

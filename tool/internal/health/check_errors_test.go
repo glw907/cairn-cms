@@ -190,7 +190,7 @@ func errorsFieldValue[T any](t *testing.T, outcome spine.Outcome, key string) T 
 	return value
 }
 
-// TestErrorsCheckCountsEngineRecordsAndIgnoresConsoleLines pins the 2026-09-21 ruling: the count
+// TestErrorsCheckCountsEngineRecordsAndIgnoresConsoleLines pins that the count
 // is cairn's structured records at error level, never every error-level line the Worker
 // logged. The response here carries two engine records among six error-level lines, the shape a
 // public site produces once crawlers start probing it for WordPress.
@@ -260,8 +260,8 @@ func TestErrorsCheckOmitsTheTruncationFieldOnAnExactCount(t *testing.T) {
 	}
 }
 
-// TestErrorsCheckRejectedRequestIsNotObservabilityOff pins the misreport the 2026-09-21 live run
-// found: cairn's telemetry query body was malformed, the endpoint answered HTTP 400, and the
+// TestErrorsCheckRejectedRequestIsNotObservabilityOff pins the misreport a live run once
+// showed: cairn's telemetry query body was malformed, the endpoint answered HTTP 400, and the
 // check told four operators their Workers had no observability dataset. A 400 is cairn's fault,
 // so it keeps its reason and carries the Detail that says whose bug it is.
 func TestErrorsCheckRejectedRequestIsNotObservabilityOff(t *testing.T) {
@@ -288,7 +288,7 @@ func TestErrorsCheckRejectedRequestIsNotObservabilityOff(t *testing.T) {
 
 // TestErrorsCheckNotFoundIsObservabilityOff asserts a not-found response from the observability
 // endpoint settles as the missing-dataset condition. It is the only status that does: a live
-// check on 2026-09-21 found a Worker with observability unset answers 200 with zero events, so
+// check found a Worker with observability unset answers 200 with zero events, so
 // nothing else about the response distinguishes the condition.
 func TestErrorsCheckNotFoundIsObservabilityOff(t *testing.T) {
 	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}

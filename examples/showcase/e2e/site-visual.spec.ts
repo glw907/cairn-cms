@@ -5,6 +5,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   buildHomeCopy,
   HOME_GOLDEN_FILE,
+  HOME_TITLE,
   normalizeBuildNoise,
   removeCopy,
 } from './home-fixture.js';
@@ -205,16 +206,56 @@ for (const { label, path } of [
 // home routes existed, so a site without that page keeps the post list it had.
 test.describe('home page copies', () => {
   test.describe.configure({ mode: 'serial' });
+  const OPENING = 'Opening part.';
+  const CLOSING = 'Closing part.';
+  const NO_RULE = 'A body with no rule line.';
+  const ORIGIN = 'https://showcase.test';
   let noHome: string | undefined;
+  let withRule: string | undefined;
+  let noRuleNoPosts: string | undefined;
+  let noRule: string | undefined;
+  let baseRoutes: string | undefined;
 
+  // Copies share the showcase's `node_modules`, so they build one after another.
   test.beforeAll(async () => {
     test.setTimeout(300_000);
     noHome = await buildHomeCopy();
+    withRule = await buildHomeCopy({ home: `${OPENING}\n\n---\n\n${CLOSING}` });
+    noRuleNoPosts = await buildHomeCopy({ home: NO_RULE, posts: false });
+    noRule = await buildHomeCopy({ home: NO_RULE });
+    baseRoutes = await buildHomeCopy({ baseRoutes: true });
   });
 
   test.afterAll(async () => {
-    if (noHome) await removeCopy(noHome);
+    for (const output of [noHome, withRule, noRuleNoPosts, noRule, baseRoutes]) {
+      if (output) await removeCopy(output);
+    }
   });
+
+  /** Loads a built page into the test page, without its scripts and stylesheets. */
+  async function load(page: Page, output: string | undefined, file: string): Promise<void> {
+    const html = await readFile(path.join(output!, file), 'utf8');
+    await page.setContent(
+      html
+        .replace(/<script[\s\S]*?<\/script>/g, '')
+        .replace(/<link [^>]*rel="stylesheet"[^>]*>/g, ''),
+    );
+  }
+
+  /** Reads the `<loc>` addresses of a built sitemap, as paths. */
+  async function sitemapPaths(output: string | undefined): Promise<string[]> {
+    const xml = await readFile(path.join(output!, 'sitemap.xml'), 'utf8');
+    return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+  }
+
+  /** Lists the body's top-level parts in order: each paragraph's text, and `list` for the news list. */
+  function bodyOrder(page: Page): Promise<string[]> {
+    return page
+      .locator('article.prose > p, article.prose > section.news')
+      .evaluateAll((els) =>
+        els.map((el) => (el.tagName === 'SECTION' ? 'list' : (el.textContent ?? '').trim())),
+      );
+  }
 
   test('with no home page, `/` matches the golden and no `archive/1.html` is built', async () => {
     const built = normalizeBuildNoise(await readFile(path.join(noHome!, 'index.html'), 'utf8'));
@@ -228,5 +269,102 @@ test.describe('home page copies', () => {
     const withoutCss = lines.filter((line) => line !== articleViewCss[0]).join('\n');
     expect(withoutCss).toBe(await readFile(HOME_GOLDEN_FILE, 'utf8'));
     expect(existsSync(path.join(noHome!, 'archive', '1.html'))).toBe(false);
+  });
+
+  test('a home page is the `h1` of `/`, and `/archive/1` lists every post newest first', async ({
+    page,
+  }) => {
+    await load(page, withRule, 'index.html');
+    await expect(page.locator('h1')).toHaveText(HOME_TITLE);
+
+    expect(existsSync(path.join(withRule!, 'archive', '1.html'))).toBe(true);
+    await load(page, withRule, path.join('archive', '1.html'));
+    await expect(page.locator('.site-entry__title a')).toHaveText([
+      'The fourth report',
+      'The third report',
+      'The second report',
+      'The first report',
+    ]);
+  });
+
+  test('the home list shows the newest three published posts with dates and the archive link', async ({
+    page,
+  }) => {
+    await load(page, withRule, 'index.html');
+    const news = page.locator('section.news');
+    await expect(news.getByRole('heading', { level: 2 })).toHaveText('Latest news');
+    await expect(news.locator('.site-entry__title a')).toHaveText([
+      'The fourth report',
+      'The third report',
+      'The second report',
+    ]);
+    await expect(news.locator('.site-entry__date')).toHaveText([
+      '4 Oct 2026',
+      '3 Oct 2026',
+      '2 Oct 2026',
+    ]);
+    await expect(news.locator('a[href="/archive/1"]')).toHaveCount(1);
+    await expect(page.getByText('The unfinished draft')).toHaveCount(0);
+    await expect(page.getByText('The first report')).toHaveCount(0);
+  });
+
+  test('the home list sits between the two parts of a body with a rule line', async ({ page }) => {
+    await load(page, withRule, 'index.html');
+    expect(await bodyOrder(page)).toEqual([OPENING, 'list', CLOSING]);
+    await expect(page.locator('article.prose hr')).toHaveCount(0);
+  });
+
+  test('a body with no rule line has the home list after it', async ({ page }) => {
+    await load(page, noRule, 'index.html');
+    expect(await bodyOrder(page)).toEqual([NO_RULE, 'list']);
+  });
+
+  test('with no posts the home page shows no list, no heading for it, and no archive', async ({
+    page,
+  }) => {
+    await load(page, noRuleNoPosts, 'index.html');
+    await expect(page.locator('h1')).toHaveText(HOME_TITLE);
+    await expect(page.locator('section.news')).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 2 })).toHaveCount(0);
+    await expect(page.locator('a[href="/archive/1"]')).toHaveCount(0);
+    expect(await bodyOrder(page)).toEqual([NO_RULE]);
+    expect(existsSync(path.join(noRuleNoPosts!, 'archive', '1.html'))).toBe(false);
+    expect(await sitemapPaths(noRuleNoPosts)).not.toContain('/archive/1');
+  });
+
+  test('`/home` redirects to `/`, `/home.md` is absent, and the sitemap lists `/` once', async ({
+    page,
+  }) => {
+    const redirects = await readFile(path.join(withRule!, '_redirects'), 'utf8');
+    expect(redirects.split('\n')).toContain('/home / 308');
+    expect(existsSync(path.join(withRule!, 'home.md'))).toBe(false);
+
+    const paths = await sitemapPaths(withRule);
+    expect(paths.filter((p) => p === '/')).toHaveLength(1);
+    expect(paths.filter((p) => p === '/archive/1')).toHaveLength(1);
+    expect(paths).not.toContain('/home');
+    expect(paths).not.toContain('/home.md');
+
+    await load(page, withRule, 'index.html');
+    const hrefs = await page
+      .locator('[href]')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('href') ?? ''));
+    expect(
+      hrefs.filter((href) => /^\/home(\.md|\/)?$/.test(new URL(href, ORIGIN).pathname)),
+    ).toEqual([]);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${ORIGIN}/`);
+  });
+
+  test('a site on the frozen base routes with Waymark 1.2.0 renders `/` as before', async () => {
+    const root = path.resolve(baseRoutes!, '..', '..');
+    const theme = JSON.parse(
+      await readFile(path.join(root, 'src', 'theme', 'cairn-theme.json'), 'utf8'),
+    );
+    expect(theme.version).toBe('1.2.0');
+    expect(existsSync(path.join(baseRoutes!, 'home.html'))).toBe(false);
+    expect(existsSync(path.join(baseRoutes!, 'archive', '1.html'))).toBe(false);
+    // Build noise only: the frozen routes import nothing new, so no named difference applies.
+    const built = normalizeBuildNoise(await readFile(path.join(baseRoutes!, 'index.html'), 'utf8'));
+    expect(built).toBe(await readFile(HOME_GOLDEN_FILE, 'utf8'));
   });
 });

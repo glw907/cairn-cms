@@ -1668,3 +1668,68 @@ func TestNoColourRowsSitOnTheGrid(t *testing.T) {
 		}
 	}
 }
+
+// bold reports whether an SGR parameter list sets bold weight. lipgloss writes the weight ahead
+// of any colour, so a leading 1 is the bold parameter and never part of a colour value.
+func bold(sgr string) bool {
+	return sgr == "1" || strings.HasPrefix(sgr, "1;")
+}
+
+// TestNamesAndEventsTakePlainWeight: a site's name in the every-site strip and table, and an
+// event's name in the log body, are Text at plain weight, so bold stays with the verdict word.
+// In the log title only the word "logs" is bold: the site is plain Text and the date Muted.
+func TestNamesAndEventsTakePlainWeight(t *testing.T) {
+	reports := fixtures.TwelveSites()
+	sites := map[string]bool{}
+	for _, r := range reports {
+		sites[r.Site] = true
+	}
+	// 160 draws the labelled strip and 60 the plain table.
+	for _, width := range []int{60, 160} {
+		in := input(reports, BodyMany, width, colorprofile.TrueColor, false, verdictFor(reports))
+		seen := 0
+		for _, sp := range frameSpans(Render(in)) {
+			if !sites[strings.TrimSpace(sp.text)] {
+				continue
+			}
+			seen++
+			if bold(sp.sgr) {
+				t.Errorf("width %d: the site name %q is bold", width, sp.text)
+			}
+		}
+		if seen == 0 {
+			t.Fatalf("width %d: no span carries a site name", width)
+		}
+	}
+
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	f := Render(RenderInput{
+		View: ViewLogs, Width: 100, Dark: true, Profile: colorprofile.TrueColor,
+		Site: "my-site", Entries: goldenLogEntries(), Now: fixtures.Now(),
+	})
+	events := 0
+	for _, sp := range frameSpans(f) {
+		switch text := strings.TrimSpace(sp.text); {
+		case text == logLabel:
+			if !bold(sp.sgr) {
+				t.Errorf("the log title's %q is not bold", text)
+			}
+		case text == "my-site":
+			if sp.sgr != inkOf(theme, style.RoleText) {
+				t.Errorf("the log title's site carries %q, want plain Text", sp.sgr)
+			}
+		case strings.HasPrefix(text, "2026-"):
+			if sp.sgr != inkOf(theme, style.RoleMuted) {
+				t.Errorf("the log title's date carries %q, want Muted", sp.sgr)
+			}
+		case text == "commit.failed" || text == "entry.published":
+			events++
+			if bold(sp.sgr) {
+				t.Errorf("the event name %q is bold", text)
+			}
+		}
+	}
+	if events == 0 {
+		t.Fatal("no span carries an event name, so nothing was asserted")
+	}
+}

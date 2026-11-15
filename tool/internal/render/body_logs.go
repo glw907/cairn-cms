@@ -47,9 +47,10 @@ func renderLogs(t theme, in RenderInput) Frame {
 	// The title is the one label lowercased; the site and the zone keep the case they carry.
 	earliest, latest := logSpan(in.Entries)
 	title := style.Title(t.Theme, logLabel, width)[0]
-	if subject := strings.TrimSpace(site + "  " + earliest.Format("2006-01-02 MST")); subject != "" {
-		title += "  " + t.Strong(style.RoleText).Render(subject)
+	if site != "" {
+		title += "  " + t.Style(style.RoleText).Render(site)
 	}
+	title += "  " + t.Style(style.RoleMuted).Render(earliest.Format("2006-01-02 MST"))
 	f := Frame{header: []string{title, ""}}
 
 	// The field column only pays for itself where it leaves the fields a readable share of the
@@ -67,7 +68,7 @@ func renderLogs(t theme, in RenderInput) Frame {
 		}
 		fieldCol := logIndent + logTime + logLevel
 		if e.Event != "" {
-			cells = append(cells, t.SizedStrong(style.RoleText, logEvent).Render(sanitize(e.Event)))
+			cells = append(cells, t.cell(style.RoleText, sanitize(e.Event), logEvent))
 			fieldCol += logEvent
 		}
 		lead := row(cells...)

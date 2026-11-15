@@ -250,7 +250,7 @@ func (t theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 		for _, c := range r.Checks {
 			byID[c.ID] = c
 		}
-		cells := []string{t.SizedStrong(style.RoleText, siteCol).Render(t.fitted(r.Site, siteCol)), " "}
+		cells := []string{t.Sized(style.RoleText, siteCol).Render(t.fitted(r.Site, siteCol)), " "}
 		for i, id := range ids {
 			if i > 0 {
 				cells = append(cells, " ")
@@ -466,8 +466,8 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 	return out
 }
 
-// tableRole returns the ink one table cell takes and whether it is set bold: the site and the
-// verdict carry the row, a non-empty failing or could-not-run count takes the ink of the state
+// tableRole returns the ink one table cell takes and whether it is set bold: the site is plain
+// text, the verdict is the one bold cell in the row, a non-empty failing or could-not-run count takes the ink of the state
 // it counts, and everything else is muted. A folded checks cell mixes the states in one string,
 // so it takes the text ink rather than any one state's.
 func tableRole(r, c int, rows [][]string, verdicts []spine.Verdict, frame spine.Verdict, folded bool) (role style.Role, strong bool) {
@@ -476,7 +476,7 @@ func tableRole(r, c int, rows [][]string, verdicts []spine.Verdict, frame spine.
 	}
 	switch {
 	case c == 0:
-		return style.RoleText, true
+		return style.RoleText, false
 	case c == 1:
 		return rowVerdictRole(verdicts[r], frame), true
 	case folded:

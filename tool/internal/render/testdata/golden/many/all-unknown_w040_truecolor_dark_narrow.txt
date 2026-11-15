@@ -3,7 +3,7 @@
   [38;2;168;164;158min 16.3s[m
 
     [38;2;168;164;158msite[m       [38;2;168;164;158mverdict[m   [38;2;168;164;158mchecks[m
-  [38;2;247;172;77m?[m [1;38;2;234;231;227mdocs-site[m  [1;38;2;247;172;77mUNKNOWN[m   [38;2;234;231;227m9 could not run[m
+  [38;2;247;172;77m?[m [38;2;234;231;227mdocs-site[m  [1;38;2;247;172;77mUNKNOWN[m   [38;2;234;231;227m9 could not run[m
 
   [38;2;247;172;77mCAIRN_CF_READ_TOKEN is not set, so[m
   [38;2;247;172;77mdelegation, https-forced, email, and[m

@@ -155,7 +155,7 @@ func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, ver
 // run's scope and whether stdout is a terminal, never the colour choice: an operator who forces
 // colour into a pipe still gets the plain body, in colour.
 //
-// The ground is resolveGround's: --color and NO_COLOR choose whether to paint, and --theme,
+// The ground is stdoutGround's: --color and NO_COLOR choose whether to paint, and --theme,
 // CAIRN_THEME, or COLORFGBG chooses which palette to paint from, the last two at a terminal only.
 func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict, status render.StatusState) render.RenderInput {
 	term := reportTerminal(d, rf)

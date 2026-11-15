@@ -49,7 +49,6 @@ function tagEnd(html: string, start: number): number {
 
 /**
  * Splits rendered HTML at its last `<hr>` that is a direct child of the body.
- *
  * @remarks
  * A rule inside any element (a blockquote, a list, a block's markup) is not a split point. With no
  * top-level rule, `before` is the whole body and `after` is empty, so the list follows the body.

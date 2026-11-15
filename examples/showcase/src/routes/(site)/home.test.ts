@@ -22,7 +22,10 @@ describe('splitAtLastRule', () => {
   });
 
   it('leaves after empty when the rule is the last element', () => {
-    expect(splitAtLastRule('<p>Intro.</p>\n<hr>\n')).toEqual({ before: '<p>Intro.</p>', after: '' });
+    expect(splitAtLastRule('<p>Intro.</p>\n<hr>\n')).toEqual({
+      before: '<p>Intro.</p>',
+      after: '',
+    });
   });
 
   it('treats a rule only inside a blockquote as no rule', () => {

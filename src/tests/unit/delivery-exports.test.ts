@@ -15,7 +15,7 @@ describe('delivery exports', () => {
 
   it('keeps the feed, sitemap, and robots builders behind the response helpers', async () => {
     const barrel = await import('../../lib/delivery/index.js');
-    for (const name of ['buildRssFeed', 'buildJsonFeed', 'buildSitemap', 'buildRobots']) {
+    for (const name of ['buildRssFeed', 'buildJsonFeed', 'buildSitemap', 'buildRobots', 'buildICalendar']) {
       expect(name in barrel).toBe(false);
     }
   });
@@ -31,7 +31,7 @@ describe('delivery exports', () => {
 
   it('exposes the response helpers from the delivery entry', async () => {
     const barrel = await import('../../lib/delivery/index.js');
-    for (const name of ['buildRssResponse', 'buildJsonFeedResponse', 'buildSitemapResponse', 'buildRobotsResponse']) {
+    for (const name of ['buildRssResponse', 'buildJsonFeedResponse', 'buildSitemapResponse', 'buildRobotsResponse', 'buildICalendarResponse']) {
       expect(typeof (barrel as Record<string, unknown>)[name]).toBe('function');
     }
   });

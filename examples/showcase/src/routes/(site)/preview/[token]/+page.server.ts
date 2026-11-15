@@ -9,6 +9,8 @@ import { loadPreview } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '#chassis/cairn.server.js';
 import { publicRoutesConfig } from '#chassis/public-routes.js';
 import { withReferences } from '#chassis/entry-data.js';
+import { posts } from '#chassis/content.js';
+import { buildHomeData } from '../../home.js';
 
 // REQUIRED: a preview link is a bearer credential (whoever holds the URL can read the draft with no
 // session). Prerendering this route would bake a token into a static asset every build ships;
@@ -16,5 +18,13 @@ import { withReferences } from '#chassis/entry-data.js';
 // line stays the documented, load-bearing default rather than relying on that backstop alone.
 export const prerender = false;
 
-export const load: PageServerLoad = (event) =>
-  loadPreview(event, { runtime, publicRoutes: publicRoutesConfig }).then(withReferences);
+// The `home` page previews the way `/` renders it, with the news list set into its body. The list
+// reads the published index, never the preview backend, so a preview link shows no other draft. It
+// is attached only after loadPreview has verified the token, so a refusal stays a refusal.
+export const load: PageServerLoad = async (event) => {
+  const data = await loadPreview(event, { runtime, publicRoutes: publicRoutesConfig }).then(
+    withReferences,
+  );
+  if (data.concept !== 'pages' || data.entry.id !== 'home') return data;
+  return { ...data, home: buildHomeData(data.html, posts.all()) };
+};

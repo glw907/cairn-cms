@@ -221,13 +221,20 @@ func compareHealth(t *testing.T, ctx context.Context, f *fixture, base string, a
 	return b.String()
 }
 
-// doctorSite writes a cairn site directory every doctor check reads without the network: its
-// wrangler.jsonc declares no PUBLIC_ORIGIN, and the fixture's environment sets none, so the
-// posture check never fetches robots.txt. The site's own migrations lack one the engine ships,
-// so the report holds a failing row beside its passing ones.
+// doctorSite writes a doctor site directory under the test's temporary directory and returns it.
 func doctorSite(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
+	writeDoctorSite(t, dir)
+	return dir
+}
+
+// writeDoctorSite writes into dir a cairn site directory every doctor check reads without the
+// network: its wrangler.jsonc declares no PUBLIC_ORIGIN, and the fixture's environment sets none,
+// so the posture check never fetches robots.txt. The site's own migrations lack one the engine
+// ships, so the report holds a failing row beside its passing ones.
+func writeDoctorSite(t *testing.T, dir string) {
+	t.Helper()
 	for rel, content := range map[string]string{
 		"wrangler.jsonc":                                                 `{"send_email": [{"name": "EMAIL"}], "d1_databases": [{"binding": "AUTH_DB"}], "observability": {"enabled": true}}`,
 		"vite.config.ts":                                                 "import { sveltekit } from '@sveltejs/kit/vite';\nexport default { plugins: [sveltekit({})] };\n",
@@ -249,5 +256,4 @@ func doctorSite(t *testing.T) string {
 			t.Fatal(err)
 		}
 	}
-	return dir
 }

@@ -126,8 +126,7 @@ and commit the diff.
 -   keyring entries: %s
 -   repository: %s
 - %d in the registry
-- %s
-Run `cairn new --help` for the flags
+- %q is not a cairn command.
 - %s  finished  step %s
 - %s  unfinished  step %s
 - %s %s
@@ -136,14 +135,18 @@ Run `cairn new --help` for the flags
 - %s added as %s
 
 - %s and %s are not set
+- %s and %s cannot be used together.
 - %s deleted from the keyring
 
 - %s does not look like a cairn-cms site: no wrangler.jsonc, wrangler.toml, or @glw907/cairn-cms dependency in package.json
 - %s is not set
+- %s is required with %s.
 - %s stored in the keyring
 
 - %s was not stored in the keyring
 
+- %v.
+- --posture takes decline or invite, not %q.
 - Add a Cloudflare Worker to the registry as a site
 - Add the %s permission to %s, then run the command again.
 - Check a cairn-cms site's checked-in configuration, read straight off the directory. It needs no credential and no adopted site, and makes at most one network request, a credential-free GET of the declared origin's /robots.txt. <dir> is a filesystem path, never a registered site id, and defaults to the current directory.
@@ -237,6 +240,18 @@ Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 - Print the contract a program or an agent reads
 - Prompt for a value and store it in the keyring
 - Read one site's engine log records
+- Run `%s --help` for usage
+- Run `cairn --help` for the commands
+- Run `cairn adopt --worker %s --domain <domain>` naming the domain it serves
+- Run `cairn adopt list` to see the Workers on the account
+- Run `cairn auth --help` for the subcommands
+- Run `cairn auth set %s` to store one
+- Run `cairn doctor --help` for usage
+- Run `cairn health --help` for usage
+- Run `cairn new --help` for the flags
+- Run `cairn new status` to list them
+- Run `cairn new status` to list them, or run --plan again
+- Run `cairn sites list` to see the sites cairn knows
 - Run the read-only health checks against one site, or every site when none is named
 - Run the read-only health checks against one site, or every site when none is named.
 
@@ -255,14 +270,20 @@ Folder: %s
 Owner email: %s
 AI crawlers: %s
 Nothing was created.
+- an unfinished setup exists: %s.
+Continue it with --resume %s, or start a new site with --new.
 - cairn adopt --worker my-site
 - cairn adopt list
+- cairn adopt names one Worker.
 - cairn auth check my-site-a1b2c3
 - cairn auth list
+- cairn auth names a subcommand.
 - cairn auth set CAIRN_CF_READ_TOKEN
 - cairn auth unset CAIRN_CF_READ_TOKEN
 - cairn doctor ./my-site
+- cairn doctor takes at most one directory.
 - cairn health my-site-a1b2c3 --json
+- cairn health takes at most one site.
 - cairn help agents
 - cairn is a monitoring plugin. This page is its whole contract for a program.
 
@@ -398,12 +419,8 @@ takes --account and --zone with --resume. The exit codes follow.
 - cairn sites
 - cairn sites list --json
 - cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them
-- cairn: %q is not a cairn command.
-Run `cairn --help` for the commands
 - cairn: %q is not a credential cairn stores.
 The names are %s
-- cairn: %s and %s cannot be used together.
-Run `cairn new --help` for the flags
 - cairn: %s crashed with a %s.
 This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: %s has a space or a line break inside the token.
@@ -413,13 +430,7 @@ Pipe a non-empty value: printf %%s "$v" | cairn auth set %s
 - cairn: %s is not a valid hold file.
 %v
 Write the file as a JSON array of entries, each carrying checkId and expires
-- cairn: %s is required with %s.
-Run `cairn new --help` for the flags
 - cairn: %v
-- cairn: %v.
-Run `%s --help` for usage
-- cairn: %v.
-Run `cairn new --help` for the flags
 - cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.
 Use the check and an expiry date, for example deploy=2026-10-01
 - cairn: --ack-file %s not found.
@@ -428,43 +439,17 @@ Use a file that exists, or drop --ack-file to use the registry's default
 - cairn: --email must be one email address, such as owner@example.com.
 Run `cairn new --help` for the flags
 - cairn: --host %s must be the zone %s or a subdomain of it
-- cairn: --posture takes decline or invite, not %q.
-Run `cairn new --help` for the flags
 - cairn: --since %q is not a duration.
 Use a whole number of minutes, hours, or days: 90m, 24h, 7d
 - cairn: --theme %q is not a theme cairn renders.
 Use %s or %s
 - cairn: --width %d is not a width cairn can render.
 Use a whole number from %d to %d
-- cairn: an unfinished setup exists: %s.
-Continue it with --resume %s, or start a new site with --new.
-Run `cairn new --help` for the flags
-- cairn: cairn adopt names one Worker.
-Run `cairn adopt list` to see the Workers on the account
-- cairn: cairn auth names a subcommand.
-Run `cairn auth --help` for the subcommands
-- cairn: cairn doctor takes at most one directory.
-Run `cairn doctor --help` for usage
-- cairn: cairn health takes at most one site.
-Run `cairn health --help` for usage
 - cairn: could not read %s.
 %v
 Give the file read permission, or drop --ack-file to use the registry's default
-- cairn: no Cloudflare credentials found.
-Run `cairn auth set %s` to store one
-- cairn: no Custom Domain attached to Worker %q.
-Run `cairn adopt --worker %s --domain <domain>` naming the domain it serves
-- cairn: no Worker named %q on this account.
-Run `cairn adopt list` to see the Workers on the account
-- cairn: no site named %q.
-Run `cairn sites list` to see the sites cairn knows
-- cairn: no unfinished setup is named %s.
-Run `cairn new status` to list them
 - cairn: setup couldn't download the site template from npm: %v.
 Check your internet connection, and then run cairn new again.
-- cairn: several unfinished setups exist: %s.
-Continue one with --resume <id>, or start a new site with --new.
-Run `cairn new --help` for the flags
 - cairn: the %q entry in %s has an expires date cairn cannot read: %q.
 Use YYYY-MM-DD, for example 2026-10-01
 - cairn: the %q entry in %s has no expires date.
@@ -475,8 +460,6 @@ Set %s in the environment instead
 Run `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the domain it serves
 - cairn: the entry at position %d in %s carries no checkId.
 Name the check that entry holds
-- cairn: the plan's runId is %s, and no unfinished setup has that run.
-Run `cairn new status` to list them, or run --plan again
 - cairn: this call runs inside a sandbox, so the owner's browser can't reach setup's approval page.
 1. Run the same call again, bare: drop any `cd`, pipe, redirect, `;`, `&&`, option before
    create-cairn-site, or version or tag. A `cd`, a redirect, or a chained command keeps even an
@@ -504,7 +487,12 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - lookback window: a whole number of m, h, or d
 - name
 - narrow the query to one engine event name
+- no Cloudflare credentials found.
+- no Custom Domain attached to Worker %q.
+- no Worker named %q on this account.
 - no custom domain
+- no site named %q.
+- no unfinished setup is named %s.
 - passing
 - path to a JSON file of holds (default: acknowledgements.json in the registry directory)
 - print nothing when the run is OK
@@ -520,6 +508,8 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - repository
 - run `cairn auth check <site>` to confirm this permission
 - run the questions and approvals, write the plan to this file, and create nothing
+- several unfinished setups exist: %s.
+Continue one with --resume <id>, or start a new site with --new.
 - site
 - sites
 - start a new site instead of continuing an unfinished one
@@ -532,6 +522,7 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - the first owner's email address; required with --plan and --dry-run
 - the ground to render for: dark or light
 - the number of sites the registry is expected to hold
+- the plan's runId is %s, and no unfinished setup has that run.
 - the repository the Worker deploys from, as owner/name
 - the site's address: a domain the account holds, or a subdomain of one
 - the site's name, from which the repository, Worker, and database names derive; required with --plan and --dry-run

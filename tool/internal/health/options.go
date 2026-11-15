@@ -24,9 +24,9 @@ type Options struct {
 	OnCheck func(CheckResult)
 }
 
-// Validate reports an error naming the first required field Options left at its zero value, so
+// validate reports an error naming the first required field Options left at its zero value, so
 // Run cannot silently sweep against a threshold or window of zero.
-func (o Options) Validate() error {
+func (o Options) validate() error {
 	if o.ErrorThreshold == 0 {
 		return errors.New("health: Options.ErrorThreshold must be set")
 	}

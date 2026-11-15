@@ -15,19 +15,19 @@ import (
 func TestResultCheckVerdictContributesTheDecidedTable(t *testing.T) {
 	tests := []struct {
 		name     string
-		result   Result
+		checked  CheckedResult
 		wantCode int
 	}{
-		{"pass", Result{ID: "a", Status: StatusPass}, 0},
-		{"fail blocker", Result{ID: "a", Status: StatusFail, Severity: spine.CriticalFailure}, 2},
-		{"fail warning", Result{ID: "a", Status: StatusFail, Severity: spine.WarningFailure}, 1},
-		{"skip", Result{ID: "a", Status: StatusSkip}, 0},
-		{"info", Result{ID: "a", Status: StatusInfo}, 0},
-		{"unchecked", Result{ID: "a", Status: StatusUnchecked}, 3},
+		{"pass", CheckedResult{Check: configBindings, Result: Result{Status: StatusPass}}, 0},
+		{"fail blocker", CheckedResult{Check: configBindings, Result: Result{Status: StatusFail}}, 2},
+		{"fail warning", CheckedResult{Check: configObservability, Result: Result{Status: StatusFail}}, 1},
+		{"skip", CheckedResult{Check: configBindings, Result: Result{Status: StatusSkip}}, 0},
+		{"info", CheckedResult{Check: configBindings, Result: Result{Status: StatusInfo}}, 0},
+		{"unchecked", CheckedResult{Check: configBindings, Result: Result{Status: StatusUnchecked}}, 3},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := int(tt.result.checkVerdict().Verdict()); got != tt.wantCode {
+			if got := int(tt.checked.checkVerdict().Verdict()); got != tt.wantCode {
 				t.Errorf("checkVerdict().Verdict() = %d, want %d", got, tt.wantCode)
 			}
 		})
@@ -38,9 +38,9 @@ func TestResultCheckVerdictContributesTheDecidedTable(t *testing.T) {
 // spine.VerdictOK, the spec's "today's exit-0 runs stay exit 0".
 func TestVerdictsOfPassSkipInfoIsOK(t *testing.T) {
 	checked := []CheckedResult{
-		{Result: Result{ID: "a", Status: StatusPass}},
-		{Result: Result{ID: "b", Status: StatusSkip}},
-		{Result: Result{ID: "c", Status: StatusInfo}},
+		{Check: Check{ID: "a"}, Result: Result{Status: StatusPass}},
+		{Check: Check{ID: "b"}, Result: Result{Status: StatusSkip}},
+		{Check: Check{ID: "c"}, Result: Result{Status: StatusInfo}},
 	}
 	if got := Verdicts(checked).Verdict(); got != spine.VerdictOK {
 		t.Errorf("Verdicts(...).Verdict() = %v, want %v", got, spine.VerdictOK)

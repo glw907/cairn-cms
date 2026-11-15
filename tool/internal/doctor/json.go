@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // kindDoctor is what this payload declares in its kind field, so a consumer reading a mixed
 // stream keys off a field rather than off the shape it happens to see.
 const kindDoctor = "doctor"
+
+// DoctorSchemaVersion versions cairn doctor's directory-preflight payload. A key is added
+// within a version and never removed or retyped within one.
+const DoctorSchemaVersion = 1
 
 // The wire state words this payload writes. They are five of the frozen vocabulary
 // the health payload writes, and the doctor adds none: its
@@ -87,7 +90,7 @@ func Marshal(in JSONInput) ([]byte, error) {
 		checks = append(checks, wireCheck(cr))
 	}
 	return json.Marshal(payload{
-		SchemaVersion: render.DoctorSchemaVersion,
+		SchemaVersion: DoctorSchemaVersion,
 		Kind:          kindDoctor,
 		Verdict:       in.Verdict.String(),
 		ExitCode:      int(in.Verdict),
@@ -97,32 +100,23 @@ func Marshal(in JSONInput) ([]byte, error) {
 	})
 }
 
-// wireCheck converts one settled result to its wire form.
-//
-// Two mappings are worth stating, since neither is visible in the status names. A skip takes
-// reason.not-run, the closest fit in the frozen vocabulary: the code says the check did not run,
-// which for a directory preflight means its precondition did not apply. An unchecked result
-// takes reason.not-observable, which names a check that tried and saw nothing.
+// wireCheck converts one settled result to its wire form. The state word and reason come from
+// statusTable; an info check's sentence travels as a note and a failure carries its fix.
 func wireCheck(cr CheckedResult) checkPayload {
-	out := checkPayload{CheckID: cr.Check.ID, Condition: conditionID(cr.Check.Condition)}
+	facts := statusTable[cr.Result.Status]
+	out := checkPayload{
+		CheckID:   cr.Check.ID,
+		State:     facts.wire,
+		Reason:    string(facts.reason),
+		Condition: conditionID(cr.Check.Condition),
+	}
 	switch cr.Result.Status {
+	case StatusInfo:
+		out.Note = cr.Result.Detail
 	case StatusFail:
-		out.State = stateWordFail
 		out.Detail = cr.Result.Detail
 		out.Fix = wireFix(cr.Check.Condition)
-	case StatusSkip:
-		out.State = stateWordSkip
-		out.Reason = string(spine.ReasonNotRun)
-		out.Detail = cr.Result.Detail
-	case StatusInfo:
-		out.State = stateWordPass
-		out.Note = cr.Result.Detail
-	case StatusUnchecked:
-		out.State = stateWordUnknown
-		out.Reason = string(spine.ReasonNotObservable)
-		out.Detail = cr.Result.Detail
 	default:
-		out.State = stateWordPass
 		out.Detail = cr.Result.Detail
 	}
 	return out
@@ -145,5 +139,5 @@ func wireFix(id spine.Condition) *fixPayload {
 		return nil
 	}
 	text := conditionText(id)
-	return &fixPayload{Summary: text.Remediation, URL: docsURL(text.DocsAnchor)}
+	return &fixPayload{Summary: text.Remediation, URL: DocsURL(text.DocsAnchor)}
 }

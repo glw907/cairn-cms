@@ -143,7 +143,7 @@ func assertOwnFlags(t *testing.T, c *cobra.Command, want ...string) {
 	}
 }
 
-// TestVerbsDeliberatelyAbsentIn1_0 pins the three verbs the 2026-08-20 spec names for 2.0: the
+// TestVerbsDeliberatelyAbsentIn1_0 pins the three verbs deferred past 1.0: the
 // TUI launch, the interactive adopt dialog, and the concurrent sweep. None has a command, a
 // flag, or a positional shape in 1.0's tree.
 func TestVerbsDeliberatelyAbsentIn1_0(t *testing.T) {

@@ -142,7 +142,7 @@ func TestConfigMigrations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := configMigrations.Run(snapshotWithFiles(t, tt.files))
+			result := configMigrations.run(snapshotWithFiles(t, tt.files))
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -162,7 +162,7 @@ func TestConfigMigrationsRequiresAFutureFileByDefault(t *testing.T) {
 		"migrations/0000_auth.sql":                                "--",
 		"migrations/0004_login_nonce.sql":                         "--",
 	})
-	result := configMigrations.Run(snapshotWithFiles(t, files))
+	result := configMigrations.run(snapshotWithFiles(t, files))
 	if result.Status != StatusFail || !strings.Contains(result.Detail, "0005_next.sql") {
 		t.Errorf("result = %v %q, want a fail naming 0005_next.sql", result.Status, result.Detail)
 	}
@@ -175,7 +175,7 @@ func TestConfigMigrationsSymlinkedPackageIsUnchecked(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "wrangler.jsonc"), []byte(authWrangler), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	result := configMigrations.Run(Snapshot{Dir: dir})
+	result := configMigrations.run(Snapshot{Dir: dir})
 	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsPackage {
 		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsPackage)
 	}
@@ -188,7 +188,7 @@ func TestConfigMigrationsFileAsFolderIsUnchecked(t *testing.T) {
 		t.Skip("os.ReadDir on a file reports not-exist on Windows")
 	}
 	files := withPkg(map[string]string{"wrangler.jsonc": authWrangler, "migrations": "--"})
-	result := configMigrations.Run(snapshotWithFiles(t, files))
+	result := configMigrations.run(snapshotWithFiles(t, files))
 	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsUnreadable {
 		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsUnreadable)
 	}
@@ -199,7 +199,7 @@ func TestConfigMigrationsFileAsFolderIsUnchecked(t *testing.T) {
 func TestConfigMigrationsAbsoluteDirIsUnchecked(t *testing.T) {
 	abs := filepath.ToSlash(t.TempDir())
 	cfg := `{"d1_databases": [{"binding": "AUTH_DB", "migrations_dir": "` + abs + `"}]}`
-	result := configMigrations.Run(snapshotWithFiles(t, withPkg(map[string]string{"wrangler.jsonc": cfg})))
+	result := configMigrations.run(snapshotWithFiles(t, withPkg(map[string]string{"wrangler.jsonc": cfg})))
 	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsUnreadable {
 		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsUnreadable)
 	}
@@ -212,7 +212,7 @@ func TestConfigMigrationsSymlinkedSiteFolderIsUnchecked(t *testing.T) {
 	if err := os.Symlink(t.TempDir(), filepath.Join(snap.Dir, "migrations")); err != nil {
 		t.Fatal(err)
 	}
-	result := configMigrations.Run(snap)
+	result := configMigrations.run(snap)
 	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsUnreadable {
 		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsUnreadable)
 	}

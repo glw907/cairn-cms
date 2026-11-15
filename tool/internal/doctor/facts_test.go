@@ -18,7 +18,7 @@ func TestAbsentSiteFactsMakesAllThreeChecksUnknown(t *testing.T) {
 	checks := []Check{configMediaBucket, authRoleWiring, aiPostureEffective}
 	var checked []CheckedResult
 	for _, c := range checks {
-		result := c.Run(s)
+		result := c.run(s)
 		t.Run(c.ID, func(t *testing.T) {
 			if result.Status != StatusUnchecked {
 				t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
@@ -67,7 +67,7 @@ func TestSiteFactsVersionMismatchPropagatesAsUnchecked(t *testing.T) {
 		"src/content/.cairn/site-facts.json": `{"version": 3}`,
 	})
 
-	result := configMediaBucket.Run(s)
+	result := configMediaBucket.run(s)
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}

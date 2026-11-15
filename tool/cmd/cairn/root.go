@@ -37,7 +37,8 @@ const defaultTimeout = 480 * time.Second
 // The three --color values. cairn health passes the chosen value into detectTerminal, which
 // hands it to style.Detect as Env.Color: a non-empty NO_COLOR means no colour under all
 // three, and otherwise auto defers to the terminal's colour support, always forces a coloured
-// frame regardless of the terminal, and never paints none. cairn doctor's report is plain text.
+// frame regardless of the terminal, and never paints none. cairn doctor draws a themed,
+// width-aware frame on a terminal and plain text elsewhere.
 const (
 	colorAuto   = "auto"
 	colorAlways = "always"
@@ -48,7 +49,8 @@ const (
 //
 // There is no auto: querying a terminal for its background (OSC 11) is a write-then-read against
 // the operator's terminal, and a terminal that does not answer leaves the run waiting on one.
-// 1.0 takes the value the operator states, and dark when they state none.
+// resolveGround takes the value the operator states, then CAIRN_THEME and COLORFGBG, and dark
+// when none names one.
 const (
 	themeDark  = "dark"
 	themeLight = "light"
@@ -75,6 +77,9 @@ type rootFlags struct {
 	// is independent of color: NO_COLOR and --color decide whether a frame is painted at all, and
 	// this decides which palette it is painted from.
 	theme string
+	// themeSet reports whether the operator passed --theme, the Changed-bit pattern timeoutSet
+	// uses, so an explicit --theme dark outranks CAIRN_THEME.
+	themeSet bool
 	// width overrides the terminal column count style.Detect would otherwise read. Zero means
 	// unset: the operator's terminal width applies. cairn health reads the value in renderInput,
 	// falling back to the detected terminal's column count when the operator set none, and
@@ -135,30 +140,13 @@ func (f rootFlags) deadline(ctx context.Context) (context.Context, context.Cance
 // A notice carrying its line breaks keeps them: each line is wrapped on its own, so a
 // two-sentence notice does not reflow into one paragraph.
 func writeNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error {
-	width := rf.width
-	if width <= 0 {
-		width = detectTerminal(d, rf).Columns
-	}
-	if width <= 0 {
-		width = style.DefaultWidth
-	}
+	width := reportWidth(rf, detectTerminal(d, rf))
+	theme := style.NewTheme(rf.theme != themeLight, colorprofile.ASCII, false)
+	var lines []string
 	for paragraph := range strings.SplitSeq(notice, "\n") {
-		for _, line := range style.NewTheme(rf.theme != themeLight, colorprofile.ASCII, false).Wrap(paragraph, width) {
-			if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
-				return err
-			}
-		}
+		lines = append(lines, theme.Wrap(paragraph, width)...)
 	}
-	return nil
-}
-
-// commandContext returns cmd's context, or a background context when the command was run
-// without one. Only a test builds a command that way; main always executes with a context.
-func commandContext(cmd *cobra.Command) context.Context {
-	if ctx := cmd.Context(); ctx != nil {
-		return ctx
-	}
-	return context.Background()
+	return writeLines(cmd.ErrOrStderr(), lines)
 }
 
 // versionLine renders tmplVersion for the running binary's build identity: internal/version
@@ -193,12 +181,7 @@ func newRootCmd(d deps) *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
-			if flag := c.Flags().Lookup("timeout"); flag != nil {
-				f.timeoutSet = flag.Changed
-			}
-			if flag := c.Flags().Lookup("width"); flag != nil {
-				f.widthSet = flag.Changed
-			}
+			f.notePassed(c)
 			if err := f.validate(); err != nil {
 				return err
 			}
@@ -271,28 +254,4 @@ func newRootCmd(d deps) *cobra.Command {
 	})
 
 	return cmd
-}
-
-// completeSiteIDs is the ValidArgsFunction cairn health and cairn logs share for their
-// positional site argument. It reads the registry only, never the network: an error opening or
-// listing it answers no candidates rather than a printed error, since a completion script has
-// nowhere useful to show one.
-func completeSiteIDs(d deps) func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return func(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if len(args) > 0 {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-		st, err := openRegistry(d)
-		if err != nil {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-		entries, _ := st.List()
-		var ids []string
-		for _, e := range entries {
-			if strings.HasPrefix(e.ID, toComplete) {
-				ids = append(ids, e.ID)
-			}
-		}
-		return ids, cobra.ShellCompDirectiveNoFileComp
-	}
 }

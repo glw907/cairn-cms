@@ -405,3 +405,106 @@ func TestNoKeySwitchInParse(t *testing.T) {
 		t.Errorf("parse.go switches over a key-name literal; Parse must recognize a key only by looking it up in a field table:\n%s", data)
 	}
 }
+
+// TestSetNameServersOnABuiltRecord asserts a record built with no observed order, as adopt
+// builds it, writes the pair last under "cloudflare", the bytes the append path wrote before
+// the accessor existed.
+func TestSetNameServersOnABuiltRecord(t *testing.T) {
+	r := Record{
+		Name:       "s",
+		Step:       "live",
+		Domain:     "example.com",
+		Adopted:    true,
+		Cloudflare: Cloudflare{AccountID: "a", ZoneID: "z", WorkerName: "w"},
+	}
+	pair := []string{"ada.ns.cloudflare.com", "bob.ns.cloudflare.com"}
+	r.Cloudflare.SetNameServers(pair)
+
+	got, err := r.Marshal()
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	want := "{\n  \"name\": \"s\",\n  \"step\": \"live\",\n  \"domain\": \"example.com\",\n" +
+		"  \"schemaVersion\": 0,\n  \"adopted\": true,\n  \"github\": {\n    \"repo\": {\n" +
+		"      \"id\": 0,\n      \"owner\": \"\",\n      \"repo\": \"\",\n      \"defaultBranch\": \"\"\n" +
+		"    },\n    \"installationId\": 0\n  },\n  \"cloudflare\": {\n    \"accountId\": \"a\",\n" +
+		"    \"zoneId\": \"z\",\n    \"workerName\": \"w\",\n    \"nameServers\": [\n" +
+		"      \"ada.ns.cloudflare.com\",\n      \"bob.ns.cloudflare.com\"\n    ]\n  }\n}\n"
+	if string(got) != want {
+		t.Errorf("Marshal =\n%s\nwant:\n%s", got, want)
+	}
+
+	parsed, err := Parse(got)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if ns := parsed.Cloudflare.NameServers(); !reflect.DeepEqual(ns, pair) {
+		t.Errorf("NameServers = %v, want %v", ns, pair)
+	}
+}
+
+// TestSetNameServersReplacesInPlaceOnAParsedRecord asserts a parsed record that already carries
+// the key keeps one entry, at its observed position, when a different pair is set.
+func TestSetNameServersReplacesInPlaceOnAParsedRecord(t *testing.T) {
+	doc := "{\n  \"name\": \"s\",\n  \"step\": \"live\",\n  \"domain\": \"example.com\",\n" +
+		"  \"cloudflare\": {\n    \"zoneId\": \"z\",\n    \"nameServers\": [\n" +
+		"      \"ada.ns.cloudflare.com\",\n      \"bob.ns.cloudflare.com\"\n    ],\n" +
+		"    \"accountId\": \"a\"\n  }\n}\n"
+	want := "{\n  \"name\": \"s\",\n  \"step\": \"live\",\n  \"domain\": \"example.com\",\n" +
+		"  \"cloudflare\": {\n    \"zoneId\": \"z\",\n    \"nameServers\": [\n" +
+		"      \"cora.ns.cloudflare.com\",\n      \"dan.ns.cloudflare.com\"\n    ],\n" +
+		"    \"accountId\": \"a\"\n  }\n}\n"
+	r, err := Parse([]byte(doc))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	at := -1
+	for i, e := range r.Cloudflare.Extra {
+		if e.Key == "nameServers" {
+			at = i
+		}
+	}
+	if at < 0 {
+		t.Fatal("parsed record has no nameServers entry in Cloudflare.Extra")
+	}
+
+	pair := []string{"cora.ns.cloudflare.com", "dan.ns.cloudflare.com"}
+	r.Cloudflare.SetNameServers(pair)
+
+	count, now := 0, -1
+	for i, e := range r.Cloudflare.Extra {
+		if e.Key == "nameServers" {
+			count++
+			now = i
+		}
+	}
+	if count != 1 {
+		t.Errorf("nameServers entries = %d, want 1", count)
+	}
+	if now != at {
+		t.Errorf("nameServers index = %d, want its original %d", now, at)
+	}
+	if ns := r.Cloudflare.NameServers(); !reflect.DeepEqual(ns, pair) {
+		t.Errorf("NameServers = %v, want %v", ns, pair)
+	}
+	got, err := r.Marshal()
+	if err != nil {
+		t.Fatalf("Marshal after set: %v", err)
+	}
+	if string(got) != want {
+		t.Errorf("Marshal after set =\n%s\nwant:\n%s", got, want)
+	}
+}
+
+// TestNameServersIsNilWhenAbsentOrUndecodable asserts a record with no key, or a key that is
+// not a string array, reports no pair.
+func TestNameServersIsNilWhenAbsentOrUndecodable(t *testing.T) {
+	var absent Cloudflare
+	if ns := absent.NameServers(); ns != nil {
+		t.Errorf("absent key = %v, want nil", ns)
+	}
+	bad := Cloudflare{Extra: []ExtraField{{Key: "nameServers", Value: json.RawMessage(`"ada"`)}}}
+	if ns := bad.NameServers(); ns != nil {
+		t.Errorf("undecodable key = %v, want nil", ns)
+	}
+}

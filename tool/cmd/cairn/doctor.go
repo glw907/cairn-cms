@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 	"github.com/spf13/cobra"
 )
 
@@ -61,7 +64,7 @@ func runDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, args []
 		return writeOutsideCairnSite(cmd, d, rf, f, snap, dir)
 	}
 
-	ctx, cancel := rf.deadline(commandContext(cmd))
+	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
 	snap.PublicOrigin = resolvePublicOrigin(d, snap)
@@ -91,8 +94,32 @@ func writeDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap 
 	if quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
-	_, err := fmt.Fprintln(cmd.OutOrStdout(), doctor.Format(checked))
-	return err
+	return writeDoctorReport(cmd.OutOrStdout(), reportTerminal(d, rf), rf, stdoutGround(d, rf).dark, snap.Dir, checked, verdict)
+}
+
+// writeDoctorReport writes the run as text: the terminal body when stdout is a terminal, and
+// doctor.Format's lines, unchanged, on a pipe. The terminal body names the run by the checked
+// directory's base name, made absolute first so a run on "." still names its directory, and is
+// painted on the dark ground or the light one.
+func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dark bool, dir string, checked []doctor.CheckedResult, verdict spine.Verdict) error {
+	if !term.TTY {
+		_, err := fmt.Fprintln(w, doctor.Format(checked))
+		return err
+	}
+	if abs, err := filepath.Abs(dir); err == nil {
+		dir = abs
+	}
+	frame := render.Render(render.RenderInput{
+		View:    render.ViewDoctor,
+		Width:   reportWidth(rf, term),
+		Dark:    dark,
+		Profile: term.Profile,
+		ASCII:   term.ASCII,
+		Checked: checked,
+		Site:    filepath.Base(dir),
+		Verdict: verdict,
+	})
+	return writeLines(w, frame.Lines())
 }
 
 // writeDoctorJSON writes the cairn-doctor.schema.json payload.
@@ -137,8 +164,7 @@ func resolvePublicOrigin(d deps, s doctor.Snapshot) doctor.PublicOrigin {
 	if facts, found, err := doctor.ReadWranglerConfig(s); err == nil && found && facts.HasPublicOrigin {
 		return doctor.PublicOrigin{Value: facts.PublicOrigin, Source: doctor.OriginFromVars}
 	}
-	resolved, _ := loadEnv(d.env)
-	if origin := resolved.publicOriginValue(); origin != "" {
+	if origin := d.env(varPublicOrigin); origin != "" {
 		return doctor.PublicOrigin{Value: origin, Source: doctor.OriginFromEnv}
 	}
 	return doctor.PublicOrigin{}

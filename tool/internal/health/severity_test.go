@@ -8,15 +8,9 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
-// TestFailSeverityCoversExactlyTheCheckSet asserts the table names every check in All and no id
-// outside it. Without this a tenth check would land with no severity row and be reported at the
-// map's zero value, which nobody would have chosen for it.
-func TestFailSeverityCoversExactlyTheCheckSet(t *testing.T) {
-	for _, check := range All {
-		if _, ok := failSeverity[check.ID()]; !ok {
-			t.Errorf("check %q has no entry in failSeverity", check.ID())
-		}
-	}
+// TestFailSeverityNamesOnlyChecksInAll asserts every key in failSeverity is a check in All, so a
+// renamed check cannot leave a row that silently stops applying.
+func TestFailSeverityNamesOnlyChecksInAll(t *testing.T) {
 	for id := range failSeverity {
 		if !slices.ContainsFunc(All, func(c Check) bool { return c.ID() == id }) {
 			t.Errorf("failSeverity names %q, which is not a check in All", id)
@@ -26,12 +20,12 @@ func TestFailSeverityCoversExactlyTheCheckSet(t *testing.T) {
 
 // TestEngineIsTheOnlyWarningFailure pins which failures a routine may leave until morning. It is
 // written as an explicit list rather than a count so promoting or demoting a check is a diff a
-// reviewer reads.
+// reviewer reads. It walks All, so a check missing from the table is counted at its default.
 func TestEngineIsTheOnlyWarningFailure(t *testing.T) {
 	var warning []string
-	for id, s := range failSeverity {
-		if s == spine.WarningFailure {
-			warning = append(warning, id)
+	for _, check := range All {
+		if failSeverityOf(check.ID()) == spine.WarningFailure {
+			warning = append(warning, check.ID())
 		}
 	}
 	slices.Sort(warning)

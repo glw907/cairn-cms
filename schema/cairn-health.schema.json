@@ -72,7 +72,7 @@
         "url": { "type": "string" },
         "actor": {
           "type": "string",
-          "enum": ["operator", "developer", "provider-console", "registrar"]
+          "enum": ["operator", "developer", "registrar"]
         },
         "outward": { "type": "boolean" }
       }

@@ -54,15 +54,16 @@ func TestConfigBindings(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := runCheck(configBindings, s).Result
+			cr := runCheck(configBindings, s)
+			result := cr.Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			if result.Detail != tt.wantDetail {
 				t.Errorf("Detail = %q, want %q", result.Detail, tt.wantDetail)
 			}
-			if tt.wantStatus == StatusFail && result.Severity != spine.CriticalFailure {
-				t.Errorf("Severity = %v, want spine.CriticalFailure", result.Severity)
+			if tt.wantStatus == StatusFail && cr.checkVerdict().Severity != spine.CriticalFailure {
+				t.Errorf("Severity = %v, want spine.CriticalFailure", cr.checkVerdict().Severity)
 			}
 		})
 	}

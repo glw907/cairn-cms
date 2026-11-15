@@ -12,14 +12,14 @@ import (
 )
 
 // errorsCheck counts the error-level records the site's cairn engine wrote over Options.LogWindow,
-// warning at Options.ErrorThreshold and failing above it. A single record is a real signal, not a
-// site-down signal, which is why zero through the threshold is OK rather than Failing.
+// OK through Options.ErrorThreshold and Failing above it; there is no warning state. A single record
+// is a real signal, not a site-down signal, which is why zero through the threshold is OK rather
+// than Failing.
 //
 // It counts engine records alone, never every error-level line the Worker logged. On a public site
-// the Worker's 404 logging runs to thousands a day, which is what the count reported until
-// 2026-09-21: a live run against a healthy site returned 1000 errors in 24 hours, the query's
-// limit, made up of crawler 404s and holding no cairn record at all. logs.FetchRecords carries the
-// distinction.
+// the Worker's 404 logging runs to thousands a day, so a count of every error-level line fills the
+// query's 1000-record limit with crawler 404s and leaves no room for a cairn record.
+// logs.FetchRecords carries the distinction.
 type errorsCheck struct{}
 
 // ID implements Check.
@@ -29,9 +29,9 @@ func (errorsCheck) ID() string { return "errors" }
 func (errorsCheck) Needs() Tier { return TierCF }
 
 // errorsDetail is errorsCheck's internal measurement, flattened into Fields as a
-// non-verbose "errorCount" entry and a verbose-only "topEvents" entry, so a reverted
-// verboseField call on TopEvents goes red against TestCheckDetailFieldVisibility rather than
-// silently reaching a non-verbose render.
+// non-verbose "errorCount" entry and a verbose-only "topEvents" entry, so a TopEvents entry that
+// loses its Verbose flag goes red against TestCheckDetailFieldVisibility rather than silently
+// reaching a non-verbose render.
 type errorsDetail struct {
 	// Count is how many error-level engine records logs.FetchRecords returned over
 	// Options.LogWindow.
@@ -46,8 +46,8 @@ type errorsDetail struct {
 
 // fields flattens d into its ordered spine.OutcomeField entries: errorCount, non-verbose,
 // errorCountTruncated beside it only when the count is a floor, and topEvents, verbose-only since
-// it names the events a Worker actually logged. The truncation key is absent on an exact count, so
-// a payload written before it existed still reads the same.
+// it names the events a Worker actually logged. The truncation key is present only when the count is
+// a floor.
 func (d errorsDetail) fields() []spine.OutcomeField {
 	fields := []spine.OutcomeField{field("errorCount", d.Count)}
 	if d.Truncated {
@@ -89,7 +89,7 @@ func (errorsCheck) Run(ctx context.Context, r record.Record, c Clients, o Option
 				State:     spine.Unknown,
 				Reason:    spine.ReasonNotObservable,
 				Condition: spine.ConditionConfigObservabilityOff,
-				Detail:    detailErrorsObservabilityOff(),
+				Detail:    detailErrorsObservabilityOff,
 			}
 		}
 		return apiErrorOutcome(err)

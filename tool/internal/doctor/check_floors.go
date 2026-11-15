@@ -156,7 +156,7 @@ func npmLockedVersion(packages map[string]any, dep string) (string, bool) {
 }
 
 // npmDependencyFloors judges a package-lock.json. The no-lockfile case is not handled here: the
-// caller (configDependencyFloors's Run) resolved it by choosing to read package-lock.json at all.
+// caller (configDependencyFloors's run) resolved it by choosing to read package-lock.json at all.
 func npmDependencyFloors(lockText string, peers map[string]string) Result {
 	var root map[string]any
 	if err := json.Unmarshal([]byte(lockText), &root); err != nil {
@@ -346,7 +346,7 @@ var configDependencyFloors = Check{
 	PassTitle: "Framework dependencies meet the engine floor",
 	SkipTitle: "Framework dependency floors",
 	Condition: spine.ConditionConfigDependencyFloorsUnmet,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		peers, found, err := readEnginePeers(s)
 		if err != nil {
 			return uncheckedResult(err.Error())

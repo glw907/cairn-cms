@@ -1,6 +1,6 @@
 # Check that your site works
 
-The `cairn doctor` command checks a cairn site's configuration and prints one line for each check. When a line says FAIL, it also prints a link to the section of this page that explains the check. Each section covers one check, so a reader arrives from one result and needs only that section. `cairn doctor` reads the files in the site's folder, makes one request for the site's `robots.txt`, needs no credential, and changes nothing.
+The `cairn doctor` command checks a cairn site's configuration and prints a report of every check. When a check fails, the report also prints a link to the section of this page that explains the check. Each section covers one check, so a reader arrives from one result and needs only that section. `cairn doctor` reads the files in the site's folder, makes one request for the site's `robots.txt`, needs no credential, and changes nothing.
 
 The following list routes you to the right page for each situation.
 
@@ -18,6 +18,8 @@ The following list routes you to the right page for each situation.
    cairn doctor
    ```
 
+In a terminal, the report groups the checks under headings: failing checks first, each with its fix and link, then the checks that couldn't run, then any notes. The passing checks fold to one count line, such as `3 passing`, and the skipped ones to one line, such as `2 do not apply`, that names them. When the output goes to a pipe, a file, or a CI log, the report prints one line for each check instead, in the form that follows.
+
 The following report comes from a run against a site just after its first deploy. Every line passed except one skip, which the sections after the report explain.
 
 <!-- transcript: tool/testdata/transcripts/04-doctor-report.txt -->
@@ -33,13 +35,15 @@ PASS  The stated AI posture is the served one: no AI posture is stated (aiPostur
 10 passed, 0 failed, 1 skipped, 0 info, 0 unchecked
 ```
 
-Each line starts with one of five words:
+In this form, each line starts with one of five words:
 
 - `PASS`: the check ran and the site is fine.
 - `FAIL`: the check ran and found a problem. A blocker stops someone from signing in or the site from working. A warning is a real problem that blocks nobody today.
 - `SKIP`: the check doesn't apply, usually because there was nothing local to read.
 - `UNCHECKED`: the check applied but couldn't read the input it needed.
 - `INFO`: the check couldn't see enough to answer, or it carries an advisory.
+
+A terminal shows the same five results without the words. A `FAIL` check sits under `failing`, an `UNCHECKED` one under `could not run`, and an `INFO` one under `notes`. A `PASS` counts toward the `passing` line, and the skip line, which reads `1 does not apply` or `<n> do not apply`, names each `SKIP`. The rest of this page uses the five words for both forms.
 
 A skip is neither a pass nor a failure. The one in the preceding report belongs to a check that applies only to a site that declares custom roles. This site declares none, so the check had nothing to examine. The title reads like a problem even though the line reports that the check wasn't needed.
 
@@ -57,7 +61,7 @@ Workers Logs has no sink failed.
 9 passed, 1 failed, 1 skipped, 0 info, 0 unchecked
 ```
 
-The report prints a title for each check and never a condition id. This page files each check under its condition id, a name such as `config.bindings-missing`, because the id is how the rest of cairn's diagnostics refer to the same problem. A check's title changes with its result, so a passing line and a failing line word the same check differently. Each section heading names the remedy. The following table maps each title to its section.
+The report names a check by its title and never by its condition id. This page files each check under its condition id, a name such as `config.bindings-missing`, because the id is how the rest of cairn's diagnostics refer to the same problem. A check's title changes with its result, so a passing line and a failing line word the same check differently. Each section heading names the remedy. The following table maps each title to its section.
 
 A site that `cairn new` built starts with Workers Logs switched on and the `EMAIL`, `AUTH_DB`, and `MEDIA_BUCKET` bindings declared in its template, so the logging and bindings checks fail only after someone changes the site's configuration. The dependency check can still fail later as packages drift, with nothing customized.
 
@@ -226,7 +230,7 @@ To check, publish an edit and confirm that the newest commit on `main` names you
 
 ## Wire the admin mount
 
-**`admin.mount-incomplete`, a warning.** This is a best-effort text check that the site's `/admin` route renders cairn's admin shell. A site wired in an unusual way can trip it without being broken, so treat a result as a prompt to look, not a verdict. On a failure the report prints INFO and never FAIL.
+**`admin.mount-incomplete`, a warning.** This is a best-effort text check that the site's `/admin` route renders cairn's admin shell. A site wired in an unusual way can trip it without being broken, so treat a result as a prompt to look, not a verdict. On a failure the report lists it under `notes` in a terminal, and prints INFO and never FAIL in the one-line form.
 
 **Ask a developer:** compare the site's `/admin` mount with the canonical mount in the [admin mount guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-building-admin-screens/references/admin-mount.md).
 

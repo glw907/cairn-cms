@@ -20,7 +20,7 @@ func TestConfigPublicOrigin(t *testing.T) {
 	}{
 		{
 			name:       "skip: no wrangler config found and no origin resolved",
-			origin:     PublicOrigin{Source: OriginAbsent},
+			origin:     PublicOrigin{Source: originAbsent},
 			wantStatus: StatusSkip,
 			wantDetail: detailPublicOriginSkip,
 		},
@@ -29,7 +29,7 @@ func TestConfigPublicOrigin(t *testing.T) {
 			files: map[string]string{
 				"wrangler.jsonc": `{}`,
 			},
-			origin:     PublicOrigin{Source: OriginAbsent},
+			origin:     PublicOrigin{Source: originAbsent},
 			wantStatus: StatusFail,
 			wantDetail: detailPublicOriginUnconfigured,
 		},
@@ -80,7 +80,7 @@ func TestConfigPublicOrigin(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
 			s.PublicOrigin = tt.origin
-			result := configPublicOrigin.Run(s)
+			result := configPublicOrigin.run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}

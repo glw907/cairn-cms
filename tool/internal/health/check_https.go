@@ -36,7 +36,7 @@ func hstsEnabled(value any) bool {
 	return enabled
 }
 
-// httpsForcedCheck ports the zone's HTTPS posture, both halves off one settings read:
+// httpsForcedCheck checks the zone's HTTPS posture, both halves off one settings read:
 // "always_use_https", whose absence fails the admin's CSRF guard outright for an editor signing
 // in over an http origin, and the "security_header" strict_transport_security entry behind it.
 type httpsForcedCheck struct{}
@@ -63,19 +63,19 @@ func (httpsForcedCheck) Run(ctx context.Context, r record.Record, c Clients, _ O
 
 	forced, ok := zoneSettingByID(settings, "always_use_https")
 	if !ok {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailHTTPSNoAlwaysUseHTTPSSetting()}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailHTTPSNoAlwaysUseHTTPSSetting}
 	}
 	header, _ := zoneSettingByID(settings, "security_header")
 	hsts := hstsEnabled(header)
 
 	if on, _ := forced.(string); on != "on" {
 		if !hsts {
-			return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEdgeHTTPSNotForced, Detail: detailHTTPSBothOff()}
+			return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEdgeHTTPSNotForced, Detail: detailHTTPSBothOff}
 		}
-		return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEdgeHTTPSNotForced, Detail: detailHTTPSAlwaysUseHTTPSOff()}
+		return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEdgeHTTPSNotForced, Detail: detailHTTPSAlwaysUseHTTPSOff}
 	}
 	if !hsts {
-		return spine.Outcome{State: spine.Failing, Code: spine.CodeHTTPSHSTSOff, Detail: detailHTTPSHSTSOff()}
+		return spine.Outcome{State: spine.Failing, Code: spine.CodeHTTPSHSTSOff, Detail: detailHTTPSHSTSOff}
 	}
 	return spine.Outcome{State: spine.OK}
 }

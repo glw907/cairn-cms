@@ -80,34 +80,73 @@ func (t theme) statusLines(in RenderInput, col, width int) []string {
 	return out
 }
 
-// statusLine renders one token's fact. listing selects the phrasing for a frame where no
-// check was attempted: a site listing runs none, so the past tense would tell the operator that
-// checks failed to run when nothing ran at all.
+// statusLine renders one token's fact as one sentence: the variable, then credentialFact.
 func (t theme) statusLine(c Credential, now time.Time, listing bool, col, width int) []string {
 	variable := sanitize(c.Variable)
 	if variable == "" {
 		return nil
 	}
+	role := style.RoleMuted
+	if c.missing() {
+		role = style.RoleUnknown
+	}
+	return t.indented(t.Style(role), col, variable+" "+credentialFact(c, now, listing), width)
+}
+
+// credentialFact is what a status line says about one token after naming its variable. listing
+// selects the phrasing for a frame where no check was attempted: a site listing runs none, so
+// the past tense would tell the operator that checks failed to run when nothing ran at all.
+func credentialFact(c Credential, now time.Time, listing bool) string {
 	if c.missing() {
 		tail := statusUnsetTail
 		if listing {
 			tail = statusUnsetTailListing
 		}
-		return t.indented(t.Style(style.RoleUnknown), col,
-			variable+statusUnsetJoin+joinWords(sanitizeAll(c.Disables))+tail, width)
+		return statusUnsetJoin + joinWords(sanitizeAll(c.Disables)) + tail
 	}
-	line := variable + statusReadJoin + sanitize(c.Provider)
+	fact := statusReadJoin + sanitize(c.Provider)
 	if !c.Expires.IsZero() {
-		line += statusExpiresJoin + isoDate(c.Expires) + ", in " + remainingDays(c.Expires.Sub(now))
+		fact += statusExpiresJoin + isoDate(c.Expires) + ", in " + remainingDays(c.Expires.Sub(now))
 	}
-	return t.indented(t.Style(style.RoleMuted), col, line, width)
+	return fact
 }
+
+// listingLines is the site listing's credentials block on a terminal: a title, then one mark
+// row per token, the variable as the row's name and its fact as the detail. A missing token
+// takes the could-not-run mark, since the checks it gates cannot run; a present one takes the
+// pass mark in the frame's pass ink.
+func (t theme) listingLines(in RenderInput, width int) []string {
+	var rows []string
+	named := false
+	for _, c := range in.Status.Credentials {
+		variable := sanitize(c.Variable)
+		if variable == "" {
+			continue
+		}
+		mark, role := t.marks.Pass, passRole(in.Verdict)
+		if c.missing() {
+			named = true
+			mark, role = t.marks.CouldNotRun, style.RoleUnknown
+		}
+		rows = append(rows, style.MarkRow(t.Theme, mark, role, variable, credentialFact(c, in.Now, true), width)...)
+	}
+	if in.Status.Degraded && !named {
+		rows = append(rows, style.ContinuationLine(t.Theme, style.RoleUnknown, statusDegraded, colIndent, width)...)
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	return append(style.Title(t.Theme, labelCredentials, width), rows...)
+}
+
+// labelCredentials titles the site listing's credentials block.
+const labelCredentials = "credentials"
 
 // The status line's fragments. They are the strings this file composes a status line from,
 // stated once here rather than at the three call sites that print one.
 const (
-	// statusUnsetJoin opens a missing token's line, which then names the checks it disabled.
-	statusUnsetJoin = " is not set, so "
+	// statusUnsetJoin opens a missing token's fact, which then names the checks it disabled.
+	statusUnsetJoin = "is not set, so "
 	// statusUnsetTail closes it in the section vocabulary's words, for a frame whose checks
 	// did run.
 	statusUnsetTail = " could not run"
@@ -115,8 +154,8 @@ const (
 	// The past tense would report a failure that did not happen: the listing ran nothing, and
 	// what the missing token costs is the next health run, not this one.
 	statusUnsetTailListing = " cannot run"
-	// statusReadJoin opens a present token's line, which then names the store it came from.
-	statusReadJoin = " read from the "
+	// statusReadJoin opens a present token's fact, which then names the store it came from.
+	statusReadJoin = "read from the "
 	// statusExpiresJoin opens the expiry a provider publishes for a present token.
 	statusExpiresJoin = ", expires "
 	// statusDegraded is what is left to say when the run is degraded and no missing token was

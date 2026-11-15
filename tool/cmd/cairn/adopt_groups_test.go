@@ -13,8 +13,8 @@ import (
 )
 
 // twoGroupRoutes returns the Cloudflare routes for an account holding two Workers, one with a
-// Custom Domain and one without. The second is the shape the 2026-09-21 live run found on the
-// verification account: cairn provisions Workers Custom Domains and never Workers Routes, so a
+// Custom Domain and one without. The second is the shape a live verification account showed:
+// cairn provisions Workers Custom Domains and never Workers Routes, so a
 // Worker serving a site through a route carries no domain for discovery to read.
 func twoGroupRoutes() routeRoundTripper {
 	return routeRoundTripper{

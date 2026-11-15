@@ -48,6 +48,31 @@ func withLocale(t style.Terminal, utf8 bool) style.Terminal {
 	return t
 }
 
+// writePasteNotice writes pasteNotice to stderr ahead of the report it warns about. Where both
+// streams are terminals the notice sits over a drawn frame, so it takes the frame's margin and
+// muted ink, wraps with every line at cell 2, and is parted from the frame by one blank line.
+// Anywhere else it is writeNotice's plain line, the bytes a script reading stderr already sees.
+func writePasteNotice(cmd *cobra.Command, d deps, rf *rootFlags) error {
+	if !style.IsTerminal(d.stdout) || !style.IsTerminal(d.stderr) {
+		return writeNotice(cmd, d, rf, pasteNotice)
+	}
+	term := reportTerminal(d, rf)
+	width := rf.width
+	if width <= 0 {
+		width = term.Columns
+	}
+	if width <= 0 {
+		width = style.DefaultWidth
+	}
+	theme := style.NewTheme(rf.theme != themeLight, term.Profile, term.ASCII)
+	for _, line := range append(style.ContinuationLine(theme, style.RoleMuted, pasteNotice, 2, width), "") {
+		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // The progress line's timing: it first draws once a run has lasted progressDelay, so a run that
 // settles sooner never flickers, and then redraws one spinner frame every progressFrame.
 const (

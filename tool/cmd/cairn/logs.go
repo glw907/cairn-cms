@@ -71,7 +71,7 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 	// Under --json stderr carries nothing but an error, so the notice travels as the payload's
 	// containsPersonalData field instead of a line no agent reading stdout would see.
 	if !f.asJSON {
-		if err := writeNotice(cmd, d, rf, pasteNotice); err != nil {
+		if err := writePasteNotice(cmd, d, rf); err != nil {
 			return err
 		}
 	}

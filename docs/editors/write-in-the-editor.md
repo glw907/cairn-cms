@@ -177,7 +177,7 @@ If your site has a block named `cards`, you can use it to lay out a few similar 
 Each card is one line. The line can hold three parts, in this order:
 
 - A picture, which is optional. Start the line with an image.
-- A title. Write it as a link and the link becomes the card's title. Text in bold also works as a title, and it doesn't link anywhere.
+- A title. Start with a link, after the picture if there is one, and the link becomes the card's title. Bold text at the start also works as a title, and it doesn't link anywhere. If the line has both, the link is the title.
 - Text. Write the rest of the line after the title.
 
 For example, this line makes a card with a linked title and one sentence of text:

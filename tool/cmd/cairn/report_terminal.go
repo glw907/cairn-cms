@@ -65,7 +65,7 @@ func writePasteNotice(cmd *cobra.Command, d deps, rf *rootFlags) error {
 		width = style.DefaultWidth
 	}
 	theme := style.NewTheme(rf.theme != themeLight, term.Profile, term.ASCII)
-	for _, line := range append(style.ContinuationLine(theme, style.RoleMuted, pasteNotice, 2, width), "") {
+	for _, line := range append(style.ContinuationLine(theme, style.RoleMuted, pasteNotice, 2, style.ContentWidth(width)), "") {
 		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
 			return err
 		}

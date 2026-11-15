@@ -8,7 +8,8 @@ This pass moves `cairn --help`, the error printer, `cairn sites`, `cairn auth li
 `cairn auth check`, `cairn adopt list`, and the `auth` and `adopt` receipts onto the shared
 terminal language. It adds the two approved Decides: body text in the terminal's own foreground,
 with `--theme`, `CAIRN_THEME`, and `COLORFGBG` choosing the ground, and `CAIRN_PLAIN=1`. It closes
-debt items C1 to C11, less the `new_*.go` items. No pipe output changes. The design is
+debt items C1 to C11, less the `new_*.go` items. No pipe output changes, except one sentence
+naming `CAIRN_PLAIN` in `cairn --help`, by ruling (Decision 7a). The design is
 `~/Projects/initiatives/cairn-setup/specs/2026-11-13-tui-language-design.md`, approved through
 design packet `20261113-224909-04cfc7`. The debt read is
 `~/Projects/initiatives/cairn-setup/research/tool-debt-read-2026-11-13.md`. The frames are
@@ -136,7 +137,7 @@ goldens under `cmd/cairn/testdata/help/`.
 5. `[advisor]` Constructor signatures stay, so no `new_*.go` call site changes. The ten `tmplNew*` templates move onto the fix type inside their `messages.go` constructors.
 6. `[advisor]` `tmplAdoptListRouteOnly` is a notice written to stderr, never a returned error, so it stays text, unchanged on every stream. Method call; design line 111 covers errors.
 7. `[advisor]` `CAIRN_PLAIN=1` means "not a terminal" for styling, through one predicate that every styled path reads: the report detector (`detectTerminal`), the progress line (`showsProgress`, `report_terminal.go:98`), the paste notice (`writePasteNotice`, `report_terminal.go:69`), help (`executeThemed`), and the error printer. Under plain, each passes nil streams to `style.Detect` and `IsTerminal`, so plain is the pipe path byte for byte, never a terminal with its TTY bit cleared. Under it help is plain cobra output and errors print today's bytes. This refines the ruling's "plain body on terminal, progress line off, no new renderer" to every styled surface, since a screen-reader user meets help and errors too.
-7a. `[advisor]` `Call:` The one pipe output that changes is `cairn --help`, by ruling: "add `CAIRN_PLAIN=1`, documented in the standard and in `cairn --help`" (design line 63). `longRoot` (`messages.go:75`) gains one sentence naming `CAIRN_PLAIN` alone; `CAIRN_THEME` and `COLORFGBG` go in the docs only, since no ruling puts them in help. Passed over: the docs only, with no `longRoot` edit, which keeps every pipe byte but departs from the ruling. Reversing it drops one sentence and regenerates the man page, reference, and agent guide.
+7a. `[advisor]` `Call:` The one pipe output that changes is `cairn --help`, by ruling: "add `CAIRN_PLAIN=1`, documented in the standard and in `cairn --help`" (design line 63). `longRoot` (`messages.go:75`) gains one sentence naming `CAIRN_PLAIN` alone; `CAIRN_THEME` and `COLORFGBG` go in the docs only, since no ruling puts them in help. Passed over: the docs only, with no `longRoot` edit, which keeps every pipe byte but departs from the ruling. Reversing it drops one sentence and its copy-golden entry.
 8. `[advisor]` `Call:` Ground precedence: `--theme` > `CAIRN_THEME` > `COLORFGBG` > dark. `COLORFGBG` reads its last field; `7` or `15` means light, any other number dark. An unknown `CAIRN_THEME` value or an unparseable `COLORFGBG` is ignored, never an error, while an unknown `--theme` keeps its error. Passed over: error on a bad variable. Reversing it adds two error templates and their copy entries.
 9. `[advisor]` One function resolves the ground and the plain flag, in `report_terminal.go`, since `root.go` has no room under the bound. Reports, help, and errors call it.
 10. `[advisor]` The Text pin. `style` gains one exported role, `RoleInstallerText`, carrying today's Text pair, with `newview/theme.go` its one caller, through the function where `theme.go` resolves a newview role. A `// WATCH:` comment on the constant says the installer round removes it. Design line 123 names the pin. Passed over: a colour literal in `newview`, which the purity test forbids.
@@ -180,12 +181,13 @@ its sites first. The split keeps each file in one pair: T1a owns `messages.go` (
 notice), `env.go`, `registry.go`, `main.go`, `doctor.go`, and `ack.go`; T1b owns `probe_*.go`,
 `auth_check.go`, `permissions.go`, `adopt.go`, `root.go`, `args.go`, `agent_page.go`,
 `help_agents.go`, and `root_test.go`; T1c owns `health.go`, `health_sweep.go`, `health_json.go`,
-`logs.go`, `sites.go`, and `auth.go`. After the three merge, rerun `make -C tool copy-list` once
-and read the golden diff.
+`logs.go`, `sites.go`, and `auth.go`. After the three merge, one commit deletes `noColorValue`
+and its neighbours (`env.go`, from 129), which T1c's `detectTerminal` edit leaves with no caller.
+Then rerun `make -C tool copy-list` once and read the golden diff.
 
 - T1a: C1, C4's `doctor.go` and `env.go` parts, C7, C8 less two, C11 less three.
   - C1: delete `noCredentialsError`, `networkDownError`, `rateLimitedError`, `crashedCheckError`, their constants (`messages.go:640-690`, the block commented "The remaining four rows..."), and the test that calls them. Run `make -C tool copy-list`; the golden diff is exactly those entries. The PR lists it.
-  - C4: `resolvePublicOrigin` (`doctor.go:167`) reads `d.env` directly; delete `noColorValue` and its neighbours (`env.go:121-141` region, now from 129) once T1c's `detectTerminal` edit no longer calls it. If T1c has not merged, leave the deletion to the merge and note it.
+  - C4: `resolvePublicOrigin` (`doctor.go:167`) reads `d.env` directly. The `noColorValue` deletion is the post-merge commit above.
   - C7: inline the one-member `nonSecretVar` enum (`env.go:148`), `credentialNames` (`env.go:93`), and `defaultRegistrySource` (`registry.go:28`).
   - C8: inline `fallbackError` (`messages.go:695`) and `processStdout` (`main.go:24`). `newExitFor` and `new_dryrun.go:37` are installer items.
   - C11: the orphan comments at `env.go` (above `noCloudflareCredentialError`) and `ack.go:174-177`; the dated provenance at `messages.go` ("owed to the 2026-09-21 live verification", and the block near the adopt templates); every "New to this table" tag in T1a's files.
@@ -222,7 +224,7 @@ Accept:
 - `fang.go`: the scheme closes over the resolved ground (Decision 9) and takes each colour from a `style.Theme` built at the profile `fangExecute` is given (Decision 13): Title in bold Text, Flag and Command in Text, descriptions, defaults, and dashes in Muted, the error header in Failing. No field takes Accent. `executeThemed` reads the plain flag.
 - `style.Pair` loses its one caller (`fang.go:20`), so `TestEveryExportHasACaller` (`callers_test.go:63`) fails until `Pair` and its test row are deleted. Delete them in this task; the `style` edit is forced by the caller test, not new scope.
 - `--theme` reaches help through `colorArg`'s pre-parse.
-- `longRoot` (`messages.go:75`) gains one sentence naming `CAIRN_PLAIN` (Decision 7a), drafted to `copy-standard.md` and run past `cairn-register-editor` (standing answer 5). Any help golden or generated reference that moves (`make -C tool man`, `make -C tool agent-guide`, `make -C tool reference`, `make -C tool flags`) is regenerated and listed in the PR.
+- `longRoot` (`messages.go:75`) gains one sentence naming `CAIRN_PLAIN` (Decision 7a), drafted to `copy-standard.md` and run past `cairn-register-editor` (standing answer 5). The only committed file that quotes `longRoot` is `testdata/copy.golden.md` (`git grep -F 'machine-readable payload on stdout'`); man pages are not committed, and `flags`, `reference`, and `agent-guide` read no root help text. So `make -C tool copy-list` is the one regeneration.
 - A golden test writes `cmd/cairn/testdata/help/<profile>-<ground>.golden` for TrueColor, ANSI256, and ANSI16 on dark and light (Decision 13).
 - T3, T4, and T5 each touch `messages.go` and `copy.golden.md`. Append new constants at the end of `messages.go`, and rerun `make -C tool copy-list` after each merge rather than merging the golden by hand.
 

@@ -211,3 +211,22 @@ describe('over a set', () => {
     assert.equal(existsSync(path.join(scratch, 'untitled-out')), false);
   });
 });
+
+describe('over the organization set', () => {
+  /** @type {string} */
+  let setOut;
+  /** @type {string} */
+  let setAssets;
+
+  before(() => {
+    setOut = mkdtempSync(path.join(tmpdir(), 'cairn-demo-organization-'));
+    buildDemo({ root: ROOT, themeDir: WAYMARK, out: setOut, worker: 'cairn-demo-{id}', origin: ORIGIN, set: path.join(ROOT, 'sets/organization') });
+    setAssets = path.join(setOut, 'assets');
+  });
+
+  after(() => rmSync(setOut, { recursive: true, force: true }));
+
+  test('the origin is named in all five places and showcase.test in none', () => {
+    assertOrigin(setAssets, ORIGIN);
+  });
+});

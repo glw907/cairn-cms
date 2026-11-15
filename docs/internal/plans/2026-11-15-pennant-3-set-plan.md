@@ -10,9 +10,12 @@ page with no form. The pass runs in worktree `.claude/worktrees/pennant-3` on br
 based on `91b3738a3` (the head of `pennant-2`). The PR base is `main`. Until PRs #251 and #253
 merge, the PR's diff also shows passes 1 and 2; the review range is `91b3738a3..HEAD`. Class
 `ordinary`, `live-account`. The conductor is `conductor-pennant`. The design's path is 120 minutes,
-and this plan's is 230 (T0 20, group 1 75, T2 30, T3 50, Close 55; sum of all minutes 315). The
-pass parks at 240, so the path sits just under the line; the plan launches and flags it. The path
-ceiling is 460 minutes, twice the plan's path.
+and this plan's is 235 (T0 25, group 1 75, T2 30, T3 50, Close 55; sum of all minutes 320). The
+pass parks at planning over 240, twice the design's estimate (`round.md` "Parking at planning"),
+so the path sits just under the line; the plan launches and flags it. The design names no
+execution ceiling for a pass, only the round's: no launch past 1,280 minutes. The executor's
+path ceiling is 470 minutes, twice the plan's path, by analogy with the round clock (standing
+answer 7). [advisor]
 
 The executor loads `pass-core` (with `references/executor.md` and `references/round-run.md`),
 `cairn-pass`, `cairn-running-passes`, `cairn-writing-engine-code` for the scripts, `writing-voice`
@@ -85,7 +88,7 @@ lands on review as the design's "Rulings" say.
 | M16 | `publish.mjs:253`, `catalog.yml:13-20` and `46-51` | A demo is built only for a theme version the index doesn't list, so the live Waymark demo keeps `showcase.test` until Waymark's next release (#483 is reworded, not closed). Every push of `scripts/catalog/**` or `sets/**` fires the PR's `catalog` run, and a newer queued run drops an older one. |
 | M17 | `examples/showcase/src/site/site.config.yaml:1-12`, `site.mjs:142-143` | The showcase config carries `cairn-template:exclude` blocks (`/styleguide`) and `/admin` entries. `composeSite` strips the blocks before the set's config is copied, so the set's config must carry no marker and no styleguide entry. |
 | M18 | `examples/showcase/src/routes/(site)/+page.svelte:55` | The home `<title>` is `${title} · ${siteName}`, so with decision 2 the demo's home title reads "The Turnagain Geographic Society · The Turnagain Geographic Society". It is template behavior outside the row, filed through `standards:log-issue`. |
-| M19 | TNM API `tnmaccess.nationalmap.gov/api/v1/products?datasets=Historical%20Topographic%20Maps&prodFormats=GeoTIFF`; `naciscdn.org/naturalearth/10m/raster/SR_HR.zip` | The 1:250,000 Anchorage (1951, `AK_Anchorage_361712_1951_250000_geo.tif`, 14.2 MB, 9092 by 6938, RGB) and Seward (1951, `AK_Seward_361825_1951_250000_geo.tif`, 13.1 MB) sheets are GeoTIFFs on `prd-tnm.s3.amazonaws.com`. Natural Earth's shaded relief `SR_HR.zip` is 44.4 MB. `sharp` (a dependency) read the Anchorage TIFF with `limitInputPixels: false` and wrote a 1600 by 1067 WebP crop at quality 70 in 309,726 bytes; the crop showed the Knik River, Knik Glacier, and Pioneer Peak legibly. |
+| M19 | TNM API `tnmaccess.nationalmap.gov/api/v1/products?datasets=Historical%20Topographic%20Maps&prodFormats=GeoTIFF`; Natural Earth `naciscdn.org/naturalearth/10m/raster/SR_HR.zip` | The 1:250,000 Anchorage (1951, `AK_Anchorage_361712_1951_250000_geo.tif`, 14.2 MB, 9092 by 6938, RGB) and Seward (1951, `AK_Seward_361825_1951_250000_geo.tif`, 13.1 MB) sheets are GeoTIFFs on `prd-tnm.s3.amazonaws.com`. Natural Earth's shaded relief `SR_HR.zip` (44.4 MB) unzips to a 21600 by 10800 one-channel TIFF at 60 px per degree, so a south-central Alaska window is a few hundred pixels wide, far under the 1200 px floor; the set uses no Natural Earth raster. `sharp` (a dependency) read the Anchorage TIFF with `limitInputPixels: false` and wrote a 1600 by 1067 WebP crop at quality 70 in 309,726 bytes; the crop showed the Knik River, Knik Glacier, and Pioneer Peak legibly. |
 | M20 | `examples/showcase/src/chassis/directives/vocabulary.ts:344-390` | The banner's `expires` is required, and `isBannerExpired` hides it at build and at hydration. A dated notice would vanish from a permanent release, and pass 4's home needs the Notice. The conformance set uses `expires="2999-01-01"`. |
 | M21 | `examples/showcase/src/routes/(site)/+page.server.ts` | The home news list is `buildHomeData(data.html, posts.all())`; no future-date filter was found. Posts are dated on or before 2026-11-14 all the same, so none reads as scheduled. |
 | M22 | `index.mjs:102-108`, `reference-check.mjs` | A set's `engine` is only listed in the index; the reference check reads theme engines only. `>=0.99.0-rc.5` against engine `0.99.0-rc.4` fails nothing in the publish run. |
@@ -180,7 +183,12 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
      program for ages 10 to 16), each titled with a link to `/programs`, a `cards`
      `columns="3"` block of three text cards (where the society meets, when, and whom to
      write to), a `---` rule (pass 2's split, so the news list falls between), and a `cards`
-     `columns="4"` block of four invented supporters. No intro paragraph: the mockup has none,
+     `columns="4"` block of four invented supporters. The where-and-when cards carry no image
+     and no link, so Pennant styles them as the mockup's facts row (design "Fidelity"); the
+     "whom to write to" card gives the mail address as text, never a `/contact` link. The
+     supporters are names with one line each, also with no image (the set has no logo it may
+     use) and no link (no page to name), so they take the same style, as the design's call 2
+     says the two sections share one block. No intro paragraph: the mockup has none,
      and the hero carries the description. The lending shelf is described on the programs page.
      The supporters block is four across only in a wide container (M23); that layout is pass 1's.
    - `contact` says who to write to (by role), where and when the society meets, and that a
@@ -205,11 +213,11 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
    number, or name.
    Call: the ruling asked for "the club's address". The page gives a place without a street
    number, because any invented Anchorage street address could be someone's home.
-8. Images: at least four maps, each a WebP crop at 1600 px wide or less and under
-   `MAX_SET_IMAGE_BYTES` (400,000 bytes, decimal),
-   from the USGS Historical Topographic Map Collection (topoView) or Natural Earth. Candidates:
-   the Anchorage and Seward quadrangles for Turnagain Arm, Knik Arm, and Portage Valley, and a
-   Natural Earth relief raster for south-central Alaska. Each manifest `source` names the
+8. Images: five maps, each a WebP crop at 1600 px wide or less and under
+   `MAX_SET_IMAGE_BYTES` (400,000 bytes, decimal), all from the USGS Historical Topographic Map
+   Collection's 1:250,000 Anchorage and Seward sheets (M19): Turnagain Arm, Knik Arm, Portage
+   Valley, and the Chugach front as crops, and the Kenai Peninsula's north end as the whole
+   Seward sheet scaled down. Natural Earth's raster is too coarse (M19). Each manifest `source` names the
    collection, the sheet or dataset, its year, and its URL; each `license` is `Public Domain`.
    Each image's alt text says what the map shows.
 9. No `CHANGELOG.md` or `MIGRATION-NOTES.md` entry. `sets/` and `scripts/catalog/` don't ship
@@ -267,14 +275,16 @@ group's end, after its tasks merge.
    map, GNIS, the NPS, the state, or a named reference. Record each fact with its URL and a
    quoted excerpt that supports it. A fact with no source is dropped.
 3. Pick the sheets for the five maps (decision 8) through the TNM API query in M19: the
-   Anchorage and Seward 1:250,000 sheets cover Knik Arm, Turnagain Arm, Portage Valley, and the
-   Chugach front, and `SR_HR.zip` covers south-central Alaska. Record each download URL and its
+   Anchorage and Seward 1:250,000 sheets cover Knik Arm, Turnagain Arm, Portage Valley, the
+   Chugach front, and the Kenai Peninsula's north end. Note each crop's window in pixels. Record each download URL and its
    year, and read each USGS sheet's collar credit (its lower margin) for a licensed layer.
 4. Write the three lists to `$CLAUDE_JOB_DIR/tmp/pennant-3-t0.md`. They go to T4 and T5 in
    their dispatches, and into the PR at close.
 5. Dispatch one `web-fetch` agent in the background with the fact list: for each fact, fetch
    its URL and say whether the quoted excerpt appears there. It runs while group 1 works, off
-   the path. A fact it can't confirm is cut from the list and from T4's prose before T4 merges.
+   the path. A page that fails to load is retried through another public source for the same
+   fact. A fact whose excerpt isn't on its page is cut from the list and from T4's prose
+   before T4 merges.
 
 ### T1. `buildDemo` takes a set and an origin (30 min, Sonnet `medium`, group 1)
 
@@ -312,7 +322,7 @@ no other fact about a real place.
    `scripts/theme/conformance/src/content/pages/directives.md`. The image paths are the names
    T5 writes: `/images/turnagain-arm.webp`, `/images/knik-arm.webp`,
    `/images/portage-valley.webp`, `/images/chugach-front.webp`, and
-   `/images/southcentral-alaska.webp`.
+   `/images/kenai-peninsula.webp`.
 2. Write `sets/organization/src/site/site.config.yaml` with `siteName: Waymark` kept, a
    description, the three menus of decision 5 and nothing else in `menus`, the posts' tags in
    the vocabulary, and the showcase's `tidy` block. No marker comment (M17).
@@ -331,12 +341,11 @@ and config are committed and every link names a page the set holds.
 
 The dispatch carries T0's sheet URLs.
 
-1. Download the sheets into their own empty directory under the job's `tmp` with `curl`, and
-   unzip `SR_HR.zip` there.
+1. Download the two sheets into their own empty directory under the job's `tmp` with `curl`.
 2. Crop each to the five names T4 uses (decision 8) with `sharp`, as M19 did: a node script
    kept in a separate directory under the job's `tmp`, resolving `sharp` from the worktree's
    `package.json` through `createRequire`, reading with `limitInputPixels: false`, then
-   `extract`, `resize({ width: 1600 })`, and `webp({ quality: 70 })`. Each file is under
+   `extract`, `resize({ width: 1600, withoutEnlargement: true })`, and `webp({ quality: 70 })`. Each file is under
    400,000 bytes. Look at each crop before committing it.
 3. Write `sets/organization/cairn-set.json`: `$schema`, `kind: organization`,
    `version: 1.0.0`, `engine` and `license` per decision 10, `notes: First release.`, and one
@@ -433,7 +442,8 @@ Close is 55 minutes on the path. Run the `cairn-running-passes` close checklist.
   `npx wrangler dev --local --port 8799` from that out directory as a background task, wait for
   its "Ready on" line (up to 60 seconds), take Playwright screenshots at the five widths, and stop
   the server with `TaskStop`. Waymark renders no `actions` and no cards styling of its own; the
-  read checks that nothing breaks, overflows, or reads wrong.
+  read checks that nothing breaks, overflows, or reads wrong, and that each map's alt text
+  (written in T4 before the crops existed) says what its image shows.
 - In the same round as the reviewers, dispatch `standards:visual-verifier` (fresh context, no
   reference image) on those fifteen screenshots, asking for breakage, horizontal overflow,
   clipped text, and a missing image at each width. A STRUCTURAL item is fixed before ready.
@@ -462,10 +472,11 @@ Close is 55 minutes on the path. Run the `cairn-running-passes` close checklist.
 The planner's advisor read the plan before launch. Folded: the evergreen banner (decision 15,
 M20), post dates (M21), the home shape against the mockup (decision 5, M23), the design's
 contact and safeguarding wording (decision 5, T4 step 3), the text license as a call (decision
-10), the engine range (M22), the map probe and `sharp` (M19, T5), the full denials count and the
+10), the engine range (M22), the map probe and `sharp`, with Natural Earth dropped as too
+coarse (M19, decision 8, T5), the card styling rule (decision 5), the ceiling's source, the full denials count and the
 rerun alternative (Pre-flight, decision 14), the fresh visual grade and the fact fetch (Close,
-T0 step 5), the skills list, and the conflict merge (Close). The path stays 230: T0 lost five
-minutes to the planning probe, and Close gained five for the grade.
+T0 step 5), the skills list, the alt-text check, and the conflict merge (Close). The path rose
+from 230 to 235: Close gained five minutes for the grade.
 
 ## Plan review fold
 
@@ -485,7 +496,7 @@ minors. All were folded; none changes the approved design.
   read after the proving run.
 - M8, a push between groups would break the proving run: the `origin` argument lands in T1, and
   pushes happen at a group's end.
-- M9, the minutes: T0 added, T4, T5, T3, and Close re-estimated; the path is 230 of 240.
+- M9, the minutes: T0 added, T4, T5, T3, and Close re-estimated; the path was then 230 of 240 (235 after the advisor fold).
 - M10, the render read had no command: written out.
 - Minors: YAML-safe `siteName` and the doubled title (M18), the Ajv wording, the phone pattern,
   `contentDirs` replaced and absolute `set` paths, the CLI's `{id}`, the `notes` channel, the

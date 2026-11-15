@@ -83,6 +83,11 @@ there is no `src/params/` directory), a `[...path=md]/+server.ts` with
 - Feeds: map `posts.all()` to `FeedItem`s (render bodies with an origin-prefixing link resolver from
   `createLinkResolver(site)`), return `buildRssResponse(channel, items)` or `buildJsonFeedResponse`, and set
   `feeds` in the config so entry heads link them.
+- Calendar feed: a `+server.ts` `GET` returns `buildICalendarResponse({ name, productId, events })`.
+  Pass one event per occurrence. A date is a `YYYY-MM-DD` string, and an all-day `end` is the last
+  day, inclusive. A timed event takes a UTC `Date`, so turn a wall time and its zone into that
+  instant yourself, and write each repeat as its own event. Keep a cancelled occurrence in the feed
+  with `status: 'cancelled'` so subscribers' copies update. The charset note below applies.
 - Sitemap: `buildSitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn), origin, extraRoutes)`
   takes `lastmod` from `updated` then `date`, skips `noindex` entries, and adds non-entry pages.
 - Robots: `buildRobotsResponse({ sitemapUrl, disallow: ['/admin'], posture })`. Pass the adapter's
@@ -92,6 +97,21 @@ there is no `src/params/` directory), a `[...path=md]/+server.ts` with
 - The helpers' `; charset=utf-8` holds only on a Worker-rendered route. A prerendered route's
   `Content-Type` comes from Cloudflare's asset layer, which derives it from the file extension and
   documents no charset ([static asset headers](https://developers.cloudflare.com/workers/static-assets/headers/)).
+
+```ts
+import { buildICalendarResponse } from '@glw907/cairn-cms/delivery';
+
+export function GET(): Response {
+  return buildICalendarResponse({
+    name: 'Site events',
+    productId: '-//Example//Events//EN',
+    events: [
+      { uid: 'field-day-2027-06-05@example.com', summary: 'Field day', start: '2027-06-05', end: '2027-06-06' },
+      { uid: 'meeting-2027-06-09@example.com', summary: 'Meeting', start: new Date('2027-06-09T01:00:00Z'), status: 'cancelled' },
+    ],
+  });
+}
+```
 
 A second concept in the feed: the scaffold's `feedItemsFrom` reads `posts` only, takes no concept option,
 and throws when `posts` is absent. To feed another routable concept, such as `guides`, map it by hand into

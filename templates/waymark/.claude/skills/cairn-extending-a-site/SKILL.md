@@ -34,7 +34,7 @@ Read only the reference for the job at hand.
 | Add a concept or field, a cross-field rule, tags, ids, permalinks; delete, rename, link, include rules | `references/content-model.md` |
 | Write a markdown component or a hydrated island | `references/components-and-islands.md` |
 | Look up the exact signature of any export | `node_modules/@glw907/cairn-cms/scripts/checks/api-surface.md` |
-| Entry pages, head, feeds, sitemap, robots, archive, tags, menu | `references/public-routes.md` |
+| Entry pages, head, feeds, calendar feed, sitemap, robots, archive, tags, menu | `references/public-routes.md` |
 | Share a draft preview link | `references/draft-preview.md` |
 | Media upload limits, image URLs, media route | `references/media.md` |
 | A second audience: a role, or a token flow of your own on `/auth-crypto` | `references/second-sign-in-group.md` |

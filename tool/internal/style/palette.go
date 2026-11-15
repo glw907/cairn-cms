@@ -70,13 +70,6 @@ func NoColor(p colorprofile.Profile) bool {
 	return p <= colorprofile.ASCII
 }
 
-// Pair returns role's light and dark hex colours, for a caller that must hand both to a library
-// that picks the ground itself. RoleText has no ink, so both of its colours are lipgloss.NoColor.
-func Pair(r Role) (light, dark color.Color) {
-	v := warmStone[r]
-	return lipgloss.Color(v.lightHex), lipgloss.Color(v.darkHex)
-}
-
 // Theme resolves a role to a style for one background and one colour profile, and measures text
 // under one East Asian Width reading. Build it with NewTheme; the zero value is the light
 // background at no colour, measuring narrow.

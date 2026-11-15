@@ -73,3 +73,62 @@ func TestHelpOnATerminalFollowsTheColorFlag(t *testing.T) {
 		})
 	}
 }
+
+// TestHelpTakesTheGroundFromThemeAndTheVariables runs `cairn --help` on a terminal and reads the
+// ground from Muted's 256-colour code: --theme beats CAIRN_THEME in both directions, so an
+// explicit --theme dark wins over CAIRN_THEME=light although dark is the flag's default.
+func TestHelpTakesTheGroundFromThemeAndTheVariables(t *testing.T) {
+	t.Setenv("TERM", "xterm-256color")
+	t.Setenv("COLORTERM", "")
+	_ = os.Unsetenv("NO_COLOR")
+	const mutedDark, mutedLight = "38;5;246", "38;5;243"
+	for _, tc := range []struct {
+		name string
+		args []string
+		env  string
+		want string
+	}{
+		{"flag dark over CAIRN_THEME light", []string{"--theme", "dark", "--help"}, themeLight, mutedDark},
+		{"flag light over CAIRN_THEME dark", []string{"--help", "--theme", "light"}, themeDark, mutedLight},
+		{"CAIRN_THEME light alone", []string{"--help"}, themeLight, mutedLight},
+		{"nothing set", []string{"--help"}, "", mutedDark},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			d, _ := testDeps(t)
+			d.stdout = openPTY(t)
+			d.env = fakeEnv(map[string]string{"TERM": "xterm-256color", varTheme: tc.env})
+			var out bytes.Buffer
+			cmd := newRootCmd(d)
+			cmd.SetOut(&out)
+			cmd.SetErr(&out)
+			cmd.SetArgs(tc.args)
+			if err := executeThemed(context.Background(), d, cmd, tc.args); err != nil {
+				t.Fatal(err)
+			}
+			if codes := sgrCodes(out.String()); !codes[tc.want] {
+				t.Errorf("help carries no %q; codes: %v", tc.want, codes)
+			}
+		})
+	}
+}
+
+// TestPlainHelpOnATerminal holds that CAIRN_PLAIN=1 turns help to cobra's plain output even on a
+// terminal.
+func TestPlainHelpOnATerminal(t *testing.T) {
+	t.Setenv("TERM", "xterm-256color")
+	_ = os.Unsetenv("NO_COLOR")
+	d, _ := testDeps(t)
+	d.stdout = openPTY(t)
+	d.env = fakeEnv(map[string]string{"TERM": "xterm-256color", varPlain: "1"})
+	var out bytes.Buffer
+	cmd := newRootCmd(d)
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{"--help"})
+	if err := executeThemed(context.Background(), d, cmd, []string{"--help"}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "Usage:") || strings.Contains(out.String(), "\x1b") {
+		t.Errorf("CAIRN_PLAIN help is not plain cobra output: %q", out.String())
+	}
+}

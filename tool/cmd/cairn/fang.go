@@ -10,31 +10,34 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
-// fangColorScheme paints Cobra's help in the Warm Stone palette. Fang decides light or dark from
-// the terminal and supplies the choice as pick; no colour reaches a stream that is not a
-// terminal, or one with NO_COLOR set, because fang writes through a colorprofile writer.
-func fangColorScheme(pick lipgloss.LightDarkFunc) fang.ColorScheme {
-	ink := func(r style.Role) color.Color { return pick(style.Pair(r)) }
-	return fang.ColorScheme{
-		Base:           ink(style.RoleText),
-		Title:          ink(style.RoleAccent),
-		Description:    ink(style.RoleText),
-		Codeblock:      lipgloss.NoColor{},
-		Program:        ink(style.RoleText),
-		DimmedArgument: ink(style.RoleMuted),
-		Comment:        ink(style.RoleMuted),
-		Flag:           ink(style.RoleAccent),
-		FlagDefault:    ink(style.RoleMuted),
-		Command:        ink(style.RoleAccent),
-		QuotedString:   ink(style.RoleUnknown),
-		Argument:       ink(style.RoleText),
-		Help:           ink(style.RoleMuted),
-		Dash:           ink(style.RoleMuted),
-		ErrorHeader:    [2]color.Color{ink(style.RoleText), ink(style.RoleFailing)},
-		ErrorDetails:   ink(style.RoleFailing),
+// fangColorScheme paints Cobra's help in the Warm Stone palette, each colour taken from th: the
+// theme built for cairn's own ground and detected profile, so the rungs match the rest of the
+// tool. Fang's own light or dark guess, supplied as the function's argument, is ignored. Text is
+// the terminal's own foreground, so the structure carries in weight and in Muted, never in a
+// hue.
+func fangColorScheme(th style.Theme) func(lipgloss.LightDarkFunc) fang.ColorScheme {
+	return func(lipgloss.LightDarkFunc) fang.ColorScheme {
+		ink := th.Color
+		return fang.ColorScheme{
+			Base:           ink(style.RoleText),
+			Title:          ink(style.RoleText),
+			Description:    ink(style.RoleMuted),
+			Codeblock:      lipgloss.NoColor{},
+			Program:        ink(style.RoleText),
+			DimmedArgument: ink(style.RoleMuted),
+			Comment:        ink(style.RoleMuted),
+			Flag:           ink(style.RoleText),
+			FlagDefault:    ink(style.RoleMuted),
+			Command:        ink(style.RoleText),
+			QuotedString:   ink(style.RoleText),
+			Argument:       ink(style.RoleText),
+			Help:           ink(style.RoleMuted),
+			Dash:           ink(style.RoleMuted),
+			ErrorHeader:    [2]color.Color{ink(style.RoleText), ink(style.RoleFailing)},
+			ErrorDetails:   ink(style.RoleFailing),
+		}
 	}
 }
 
@@ -63,41 +66,29 @@ func (t ttyWriter) Fd() uintptr { return t.term.Fd() }
 // executeThemed runs the command tree over args, themed by fang when a person is reading it.
 //
 // A terminal with colour gets fang's help layout in Warm Stone. Every other run, a pipe, a
-// scheduler's log, NO_COLOR, TERM=dumb, --color never, takes cobra's plain help unchanged: that
-// text is the contract a program reads, and cmd/mangen harvests the man pages from it.
+// scheduler's log, NO_COLOR, CAIRN_PLAIN, TERM=dumb, --color never, takes cobra's plain help
+// unchanged: that text is the contract a program reads, and cmd/mangen harvests the man pages
+// from it. Cobra answers --help before any flag is parsed into the root's flags, so --color and
+// --theme are read from args here.
 func executeThemed(ctx context.Context, d deps, root *cobra.Command, args []string) error {
-	term := detectTerminal(d, &rootFlags{color: colorArg(args)})
+	rf := preParseFlags(args)
+	term := detectTerminal(d, rf)
 	if !term.TTY || style.NoColor(term.Profile) {
 		return root.ExecuteContext(ctx)
 	}
 	root.SetOut(ttyWriter{term: d.stdout, out: root.OutOrStdout()})
-	return fangExecute(ctx, root)
+	return fangExecute(ctx, root, style.NewTheme(resolveGround(d, rf).dark, term.Profile, term.ASCII))
 }
 
-// colorArg is the --color value args carry, read before cobra parses them because the help path
-// is chosen first. Every other flag is skipped, help included so a --color after it is still
-// read, and args with no --color, or one cobra will reject, read as colorAuto.
-func colorArg(args []string) string {
-	fs := pflag.NewFlagSet("color", pflag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	fs.ParseErrorsAllowlist.UnknownFlags = true
-	fs.BoolP("help", "h", false, "")
-	color := fs.String("color", colorAuto, "")
-	if err := fs.Parse(args); err != nil {
-		return colorAuto
-	}
-	return *color
-}
-
-// fangExecute runs root through fang so every command's help takes the theme.
+// fangExecute runs root through fang so every command's help takes th.
 //
 // Fang is configured to add nothing: cairn already has --version, its own completion command,
 // and mangen for man pages, so fang's version flag and hidden man command are off. Fang prints
 // a returned error by default; the handler here is a no-op because runTree is the only error
 // printer, and it translates the error and decides the exit code.
-func fangExecute(ctx context.Context, root *cobra.Command) error {
+func fangExecute(ctx context.Context, root *cobra.Command, th style.Theme) error {
 	return fang.Execute(ctx, root,
-		fang.WithColorSchemeFunc(fangColorScheme),
+		fang.WithColorSchemeFunc(fangColorScheme(th)),
 		fang.WithoutVersion(),
 		fang.WithoutManpage(),
 		fang.WithErrorHandler(func(io.Writer, fang.Styles, error) {}),

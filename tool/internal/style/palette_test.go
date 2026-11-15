@@ -255,14 +255,6 @@ func TestColorResolvesWarmStoneForBothBackgrounds(t *testing.T) {
 			if got := th.Style(tt.role).GetForeground(); !sameColor(got, lipgloss.Color(tt.want)) {
 				t.Errorf("Style foreground = %v, want %s", got, tt.want)
 			}
-			light, dark := Pair(tt.role)
-			pick := light
-			if tt.dark {
-				pick = dark
-			}
-			if !sameColor(pick, lipgloss.Color(tt.want)) {
-				t.Errorf("Pair = %v, want %s", pick, tt.want)
-			}
 		})
 	}
 }

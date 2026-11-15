@@ -188,15 +188,7 @@ func newRootCmd(d deps) *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
-			if flag := c.Flags().Lookup("timeout"); flag != nil {
-				f.timeoutSet = flag.Changed
-			}
-			if flag := c.Flags().Lookup("width"); flag != nil {
-				f.widthSet = flag.Changed
-			}
-			if flag := c.Flags().Lookup("theme"); flag != nil {
-				f.themeSet = flag.Changed
-			}
+			f.notePassed(c)
 			if err := f.validate(); err != nil {
 				return err
 			}

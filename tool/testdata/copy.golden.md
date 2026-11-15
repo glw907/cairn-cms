@@ -228,6 +228,7 @@ A stream of events that does not end with a summary is unfinished.
 To set up a new site, run `cairn new`. `cairn new --help` covers running it at a terminal and from an agent.
 Run `cairn help agents` for the contract a program reads.
 Pass --json to a reporting command for a machine-readable payload on stdout.
+Set CAIRN_PLAIN=1 for the plain output a pipe gets, even at a terminal.
 Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 - Permissions:
 - Plan written to %s. Nothing was created on Cloudflare. Edit the email or the address if you need to, and then run cairn new --apply %s.

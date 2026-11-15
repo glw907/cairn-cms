@@ -253,6 +253,11 @@ describe('static check selection', () => {
     expect(table.extraCommands['test:catalog']).toBe('npm run test:catalog');
   });
 
+  it('selects the version-rise leg for the showcase bucket, as a fixed no-range command', () => {
+    expect(labelsFor('examples/showcase/package.json')).toContain('check:version-rise');
+    expect(table.extraCommands['check:version-rise']).toBe('node scripts/catalog/version-rise.mjs');
+  });
+
   it('hands the runner labels it accepts', () => {
     const scripts = JSON.parse(readFileSync('package.json', 'utf8')).scripts;
     const steps = closeSteps(scripts);

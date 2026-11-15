@@ -113,6 +113,7 @@
     "check:tool-heuristics": ["engine"],
     "test:emit": ["showcase", "engine", "harness"],
     "test:catalog": ["scripts", "showcase"],
+    "check:version-rise": ["showcase"],
     "showcase:test:unit": ["showcase", "engine"],
     "check:tellgrader": ["docs"],
     "check:vale-rules": ["docs"]
@@ -121,6 +122,7 @@
     "check:tool-heuristics": "npm run check:tool-heuristics",
     "test:emit": "npm run test:emit",
     "test:catalog": "npm run test:catalog",
+    "check:version-rise": "node scripts/catalog/version-rise.mjs",
     "showcase:test:unit": "npm --prefix examples/showcase run test:unit",
     "check:tellgrader": "node scripts/checks/check-tellgrader.mjs",
     "check:vale-rules": "vale --config=.vale/tests/vale.ini test .vale/styles/Cairn/Headings.test.yml .vale/styles/Cairn/ProseProcedure.test.yml"

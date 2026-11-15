@@ -94,7 +94,7 @@ func writeDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap 
 	if quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
-	return writeDoctorReport(cmd.OutOrStdout(), reportTerminal(d, rf), rf, resolveGround(d, rf).dark, snap.Dir, checked, verdict)
+	return writeDoctorReport(cmd.OutOrStdout(), reportTerminal(d, rf), rf, stdoutGround(d, rf).dark, snap.Dir, checked, verdict)
 }
 
 // writeDoctorReport writes the run as text: the terminal body when stdout is a terminal, and

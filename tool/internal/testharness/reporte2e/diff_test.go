@@ -203,6 +203,42 @@ func TestReportE2EDiffHealthPipe(t *testing.T) {
 	}
 }
 
+// TestReportE2EDiffHealthForcedColorPipe runs cairn health for one site into a pipe with --color
+// always under CAIRN_THEME=light and under COLORFGBG=0;15, and finds the branch's bytes equal to
+// the base's once the clock lines are masked. Both variables choose a ground for a terminal, so
+// neither may repaint a pipe the operator forced into colour. Each output must carry an escape, so
+// a run that stopped painting cannot pass.
+func TestReportE2EDiffHealthForcedColorPipe(t *testing.T) {
+	t.Parallel()
+	base := baseBinary(t)
+	f := newFixture(t, 0)
+	for _, tt := range []struct {
+		name      string
+		overrides map[string]string
+	}{
+		{"CAIRN_THEME=light", map[string]string{"CAIRN_THEME": "light"}},
+		{"COLORFGBG=0;15", map[string]string{"COLORFGBG": "0;15"}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			ctx, cancel := context.WithTimeout(t.Context(), diffTimeout)
+			defer cancel()
+			r := runToFiles(t, ctx, f, []string{base, f.bin}, tt.overrides, "health", siteID, "--color", "always")
+			masked := make([][]byte, len(r))
+			for i, res := range r {
+				out, n := maskClock(res.stdout)
+				if n != 1 || !bytes.Contains(out, []byte("\x1b[")) || !bytes.Contains(out, []byte("verdict: ")) {
+					t.Fatalf("run %d masked %d checked lines, want 1 and a coloured report:\n%q", i, n, res.stdout)
+				}
+				masked[i] = out
+			}
+			if d := firstDiff(masked[0], masked[1]); d != "" {
+				t.Errorf("a forced-colour pipe under %s differs between base and branch at %s\nbase:\n%q\nbranch:\n%q", tt.name, d, masked[0], masked[1])
+			}
+		})
+	}
+}
+
 // compareHealth runs args through four children at once, a differential pair of base and branch
 // and a control pair of base and base, and returns a description of any difference left after
 // masking, or "". A masked line count that is not sites in every output fails the test outright,

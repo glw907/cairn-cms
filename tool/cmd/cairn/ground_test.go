@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
+	"github.com/creack/pty"
 	"github.com/spf13/cobra"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
@@ -110,15 +112,40 @@ func TestHelpIsAnsweredBeforeThemeIsParsed(t *testing.T) {
 	}
 }
 
-// TestGroundReachesTheRenderInput holds that the variables reach a report's frame, not only the
-// resolver: CAIRN_THEME=light with no flag renders on the light ground.
+// TestGroundReachesTheRenderInput holds that CAIRN_THEME and COLORFGBG reach a report's frame at
+// a terminal, and that a pipe forced into colour takes --theme or dark and nothing else, the
+// ground it has always had.
 func TestGroundReachesTheRenderInput(t *testing.T) {
-	d, _ := testDeps(t)
-	d.env = fakeEnv(map[string]string{varTheme: themeLight})
-	in := renderInput(d, &rootFlags{theme: themeDark, color: colorAlways, width: 80},
-		[]health.Report{failingReport()}, spine.VerdictCritical, render.StatusState{})
-	if in.Dark {
-		t.Error("CAIRN_THEME=light did not reach the render input's ground")
+	controller, tty, err := pty.Open()
+	if err != nil {
+		t.Skipf("no pty: %v", err)
+	}
+	t.Cleanup(func() { _ = controller.Close(); _ = tty.Close() })
+	tests := []struct {
+		name     string
+		stdout   *os.File
+		vars     map[string]string
+		rf       rootFlags
+		wantDark bool
+	}{
+		{"terminal CAIRN_THEME", tty, map[string]string{varTheme: themeLight}, rootFlags{theme: themeDark}, false},
+		{"terminal COLORFGBG", tty, map[string]string{varColorFGBG: "0;15"}, rootFlags{theme: themeDark}, false},
+		{"pipe ignores CAIRN_THEME", nil, map[string]string{varTheme: themeLight}, rootFlags{theme: themeDark}, true},
+		{"pipe ignores COLORFGBG", nil, map[string]string{varColorFGBG: "0;15"}, rootFlags{theme: themeDark}, true},
+		{"pipe obeys --theme", nil, map[string]string{varTheme: themeDark}, rootFlags{theme: themeLight, themeSet: true}, false},
+		{"CAIRN_PLAIN lands on the pipe side", tty, map[string]string{varTheme: themeLight, varPlain: "1"}, rootFlags{theme: themeDark}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d, _ := testDeps(t)
+			d.stdout = tt.stdout
+			d.env = fakeEnv(tt.vars)
+			tt.rf.color, tt.rf.width = colorAlways, 80
+			in := renderInput(d, &tt.rf, []health.Report{failingReport()}, spine.VerdictCritical, render.StatusState{})
+			if in.Dark != tt.wantDark {
+				t.Errorf("Dark = %v, want %v", in.Dark, tt.wantDark)
+			}
+		})
 	}
 }
 

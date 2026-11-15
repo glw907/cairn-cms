@@ -165,7 +165,7 @@ Three environment variables change how `cairn` prints in a terminal. None holds 
 3. `COLORFGBG`.
 4. Dark.
 
-`cairn` ignores a `CAIRN_THEME` value other than `dark` or `light`, and a `COLORFGBG` value whose last field isn't a number, and moves to the next source. An unknown `--theme` value is an error. The three variables don't change `--json` output. They change output to a pipe or a file only when you pass `--color always`.
+`cairn` ignores a `CAIRN_THEME` value other than `dark` or `light`, and a `COLORFGBG` value whose last field isn't a number, and moves to the next source. An unknown `--theme` value is an error. The three variables don't change `--json` output or output to a pipe or a file.
 
 Body text uses your terminal's own foreground color, so it reads on any background.
 

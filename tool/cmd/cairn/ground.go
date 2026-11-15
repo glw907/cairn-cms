@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -52,6 +53,18 @@ func resolveGround(d deps, rf *rootFlags) ground {
 		if light, ok := colorFGBGLight(d.env(varColorFGBG)); ok {
 			g.dark = !light
 		}
+	}
+	return g
+}
+
+// stdoutGround is the ground a report painted to stdout takes. At a terminal it is
+// resolveGround's. Anywhere else, CAIRN_PLAIN included, it is --theme or else dark, so a run that
+// forces colour into a pipe paints the bytes it always has whatever CAIRN_THEME or COLORFGBG
+// say: those two choose a ground for a person reading a terminal and nothing else.
+func stdoutGround(d deps, rf *rootFlags) ground {
+	g := resolveGround(d, rf)
+	if stdout, _ := styledStreams(d, rf); !style.IsTerminal(stdout) {
+		g.dark = !rf.themeSet || rf.theme != themeLight
 	}
 	return g
 }

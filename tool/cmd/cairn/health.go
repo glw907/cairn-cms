@@ -156,14 +156,14 @@ func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, ver
 // colour into a pipe still gets the plain body, in colour.
 //
 // The ground is resolveGround's: --color and NO_COLOR choose whether to paint, and --theme,
-// CAIRN_THEME, or COLORFGBG chooses which palette to paint from.
+// CAIRN_THEME, or COLORFGBG chooses which palette to paint from, the last two at a terminal only.
 func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict, status render.StatusState) render.RenderInput {
 	term := reportTerminal(d, rf)
 	return render.RenderInput{
 		View:    render.ViewHealth,
 		Body:    render.SelectBody(len(reports), term.TTY),
 		Width:   reportWidth(rf, term),
-		Dark:    resolveGround(d, rf).dark,
+		Dark:    stdoutGround(d, rf).dark,
 		Profile: term.Profile,
 		ASCII:   term.ASCII,
 		Reports: reports,

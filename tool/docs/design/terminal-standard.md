@@ -178,6 +178,9 @@ The ground, dark or light, is the first of these that names one:
 3. `COLORFGBG`, read for its last semicolon field: `7` or `15` is light and any other number is dark.
 4. Dark.
 
+`CAIRN_THEME` and `COLORFGBG` apply at a terminal only. A run that paints a pipe, as `--color always`
+does, takes `--theme` or else dark.
+
 A variable cairn cannot read is ignored and the next source decides, never an error. An unknown
 `--theme` value keeps its error. cairn never queries the terminal for its background, since a
 terminal that does not answer would leave the run waiting.

@@ -87,8 +87,7 @@ Only the release in this file has notes here. The notes of earlier releases live
 A new site's starter content is a standard set of pages and posts in place of the showcase's trail demo. This asks nothing of a site that already exists. A site you start after this lands replaces the sample content with its own, as [Make a scaffolded site yours](./skills/cairn-extending-a-site/references/make-it-yours.md) lists.
 
 A script that reads `cairn` output from a pipe, a file, or `--json` needs no change: those bytes are what
-they were, apart from one sentence in `cairn --help` that names `CAIRN_PLAIN`, and `--color always`
-output, which follows `CAIRN_THEME` and `COLORFGBG`. At a terminal, `cairn` now reads the ground from
+they were, apart from one sentence in `cairn --help` that names `CAIRN_PLAIN`. At a terminal, `cairn` now reads the ground from
 `--theme`, `CAIRN_THEME`, and `COLORFGBG`, and `CAIRN_PLAIN=1` prints the plain output, except in
 `cairn new`, which still opens its terminal view.
 

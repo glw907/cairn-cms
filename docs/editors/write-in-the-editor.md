@@ -170,14 +170,14 @@ If your site has a block named `cards`, you can use it to lay out a few similar 
 
 1. In the toolbar, select **Insert block**.
 2. Choose **Cards**.
-3. In **Columns**, choose 2, 3, or 4. If you leave it empty, the block uses 3.
-4. Under **Cards**, add one line for each card.
+3. In **Columns**, choose 2, 3, or 4. The form starts at 4. If you clear it, the block uses 3.
+4. Under **Cards**, the form lists four sample cards. Replace their text with your own, remove any you don't need, and add one line for each card you want.
 5. Select **Insert**.
 
 Each card is one line. The line can hold three parts, in this order:
 
 - A picture, which is optional. Start the line with an image.
-- A title. Start with a link, after the picture if there is one, and the link becomes the card's title. Bold text at the start also works as a title, and it doesn't link anywhere. If the line has both, the link is the title.
+- A title. Start with a link, after the picture if there is one, and the link becomes the card's title. Bold text at the start also works as a title, and it doesn't link anywhere. If the line starts with a link, the link is the title, and a link after a bold title stays in the text.
 - Text. Write the rest of the line after the title.
 
 For example, this line makes a card with a linked title and one sentence of text:

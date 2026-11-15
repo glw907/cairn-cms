@@ -2,7 +2,7 @@
 
 <!-- release-size: minor -->
 
-- **The chassis vocabulary gains a `cards` block.** A `cards` block lays out a few parallel items, such as programs or places, in a grid of two, three, or four columns. Each item is one line of markdown: an optional leading image, a link or bold run that becomes the title, and text. The chassis lays out and styles the grid, so a theme owes no rule for it, and the editor's insert form takes one text field per card. A site that re-emits its chassis gets the block, and a theme owes nothing because the chassis styles it.
+- **The chassis vocabulary gains a `cards` block.** A `cards` block lays out a few parallel items, such as programs or places, in a grid of two, three, or four columns. Each item is one line of markdown: an optional leading image, a link or bold run that becomes the title, and text. The chassis lays out and styles the grid, so a theme owes no rule for it, and the editor's insert form takes one text field per card. A site that re-emits its chassis gets the block.
 
   Consumers must: nothing.
 

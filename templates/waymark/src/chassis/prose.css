@@ -556,6 +556,9 @@
     line-height: var(--leading-tight);
     margin: 0 0 var(--spacing-3xs);
   }
+  .prose .cards-title a {
+    font-weight: inherit;
+  }
   .prose .cards-text {
     color: var(--color-muted);
   }

@@ -289,7 +289,8 @@
           "starter-outline-pin.spec.ts",
           "public-theme-equivalence.spec.ts",
           "fragments.spec.ts",
-          "cards.spec.ts"
+          "cards.spec.ts",
+          "cards-admin.spec.ts"
         ]
       },
       {

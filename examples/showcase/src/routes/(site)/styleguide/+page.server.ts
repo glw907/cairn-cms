@@ -11,8 +11,9 @@ export const prerender = true;
 // A sample that exercises every element the reading surface styles: the lead, headings, emphasis and
 // a link, an unordered list, an ordered list, a task list, a blockquote, inline code, two fenced
 // blocks in different languages (to show the highlighter across token kinds), a table, a horizontal
-// rule, a figure, and a three-item cards block. The directive components are not written here: the load below renders one
-// sample per registry entry, so a new component appears on the page without an edit to this route.
+// rule, a figure, and a three-item cards block. The directive components are not written here: the
+// load below renders one sample per registry entry, so a new component appears on the page without
+// an edit to this route.
 const SAMPLE = `<p class="lead">This is the reading surface. Every element below is rendered by the same theme a reader sees, so the styleguide shows the real prose output rather than an imitation of it.</p>
 
 You write in markdown, and the surface binds each element to the theme tokens. Change one token and the whole surface, this article included, re-skins in lockstep.

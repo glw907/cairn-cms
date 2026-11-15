@@ -56,7 +56,7 @@ describe('the cards build', () => {
       `![A trail map](${IMAGE}) [Junior program](/programs/junior) Ages 10 to 16. *Saturdays.*`,
     ]);
     expect(html).toBe(
-      '<div class="cards cards-cols-3" data-rise="0"><div class="cards-item">' +
+      '<div class="cards cards-cols-3" role="list" data-rise="0"><div class="cards-item" role="listitem">' +
         `<img src="${IMAGE}" alt="A trail map" class="cards-image">` +
         '<div class="cards-body">' +
         '<p class="cards-title"><a href="/programs/junior">Junior program</a></p>' +
@@ -72,7 +72,7 @@ describe('the cards build', () => {
     ]);
     expect(html.match(/<img/g)).toHaveLength(1);
     expect(html).toContain(
-      '<div class="cards-item"><div class="cards-body"><p class="cards-title"><a href="/map-night">',
+      '<div class="cards-item" role="listitem"><div class="cards-body"><p class="cards-title"><a href="/map-night">',
     );
   });
 
@@ -95,7 +95,7 @@ describe('the cards build', () => {
   it('renders an image-only card as the image alone', async () => {
     const html = await render([`![A trail map](${IMAGE})`]);
     expect(html).toBe(
-      '<div class="cards cards-cols-3" data-rise="0"><div class="cards-item">' +
+      '<div class="cards cards-cols-3" role="list" data-rise="0"><div class="cards-item" role="listitem">' +
         `<img src="${IMAGE}" alt="A trail map" class="cards-image">` +
         '</div></div>',
     );
@@ -123,7 +123,7 @@ describe('the cards build', () => {
 
   it('renders an empty block as a grid with no children', async () => {
     expect(await renderer.render({ body: ':::cards{columns="3"}\n:::' })).toBe(
-      '<div class="cards cards-cols-3" data-rise="0"></div>',
+      '<div class="cards cards-cols-3" role="list" data-rise="0"></div>',
     );
   });
 });

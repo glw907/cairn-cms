@@ -436,12 +436,14 @@ function card(line: ElementContent[]): Element {
   const children: ElementContent[] = [];
   if (image) children.push(h('img', { ...image.properties, className: ['cards-image'] }));
   if (body.length > 0) children.push(h('div', { className: ['cards-body'] }, body));
-  return h('div', { className: ['cards-item'] }, children);
+  return h('div', { className: ['cards-item'], role: 'listitem' }, children);
 }
 
 // A grid of cards, one per list item, laid out and given its default look by the chassis sheet, so
 // a theme owes no rule for it. Each item is one line of markdown, which keeps the insert form a
-// plain list of text fields. The grid is div-based: a ul would inherit the prose list markers.
+// plain list of text fields. The grid is div-based, since a ul would inherit the prose list
+// markers, so the `list` and `listitem` roles give assistive technology the list semantics a ul
+// would carry.
 const cards = () =>
   defineBlock({
     name: 'cards',
@@ -478,7 +480,7 @@ const cards = () =>
       const columns = CARD_COLUMNS.includes(requested) ? requested : '3';
       return h(
         'div',
-        { className: ['cards', `cards-cols-${columns}`] },
+        { className: ['cards', `cards-cols-${columns}`], role: 'list' },
         ctx.items('items').map(card),
       );
     },

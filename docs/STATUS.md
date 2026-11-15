@@ -52,6 +52,10 @@ What a session needs to know:
 - theme-garden: G1 (#207) and G2 (#208) are merged. G3's design is approved (item `20261109T194535-695594`) and its plan
   (`initiatives/theme-garden/plans/2026-11-09-theme-garden-3-plan.md`) has never launched. It was read at `68eb92ecf`,
   so its pre-flight re-check runs against `main` first. Geoff's theme round takes it up; no conductor holds it.
+- theme-catalog-1 is merged (#246, `ef9e37206`; `conductor-theme-catalog`, executor `cairn-cms-theme-catalog-1`). The
+  `catalog` run published Waymark 1.1.0: index https://catalog.cairn.pub/index.json, demo
+  https://demo-waymark.cairn.pub/. Nothing reads the catalog yet, and BACKLOG #486 comes before a second theme joins
+  `themes/`.
 
 ## Open decisions and watches
 

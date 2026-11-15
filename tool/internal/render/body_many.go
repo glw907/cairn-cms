@@ -316,8 +316,8 @@ func (t theme) centredCell(role style.Role, text string, n int) string {
 // pushes a count off the edge prints a fact no reader can use.
 //
 // Below widthNarrow the three count columns fold into one labelChecks cell and the columns after
-// them drop, so a narrow table reads site, verdict, and checks; foldedCounts says what that cell
-// carries.
+// them drop, so a narrow table reads site, verdict, and checks, provided every site's counts fit
+// that cell whole; foldedCounts says what the cell carries.
 var tableColumns = []struct {
 	heading string
 	width   int
@@ -404,37 +404,33 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 	for i := range widths {
 		headings[i] = tableColumns[i].heading
 	}
-	folded := width < widthNarrow
-	room := 0
-	if folded {
-		widths, headings = widths[:tableMandatoryColumns], headings[:tableMandatoryColumns]
-		room = width - siteLead - widths[0] - widths[1]
-		if room >= t.Width(labelChecks) {
-			widths, headings = append(widths, room), append(headings, labelChecks)
-		}
-		columns = len(widths)
-	}
-
 	verdicts := make([]spine.Verdict, 0, len(rs))
 	rows := make([][]string, 0, len(rs))
+	cells := make([]string, 0, len(rs))
 	for _, r := range rs {
 		s := split(r)
 		v := siteVerdict(r)
 		verdicts = append(verdicts, v)
-		row := []string{
+		rows = append(rows, []string{
 			t.fitted(r.Site, siteCol), v.String(), blankZero(len(s.Failing)), blankZero(len(s.CouldNotRun)),
 			blankZero(len(s.Held)), engineVersion(r), relative(in.Now.Sub(checkedAt(r, in.Now))) + " ago",
+		})
+		cells = append(cells, t.foldedCounts(s))
+	}
+
+	// The fold is all or nothing. A checks cell has no heading per count, so one that dropped a
+	// count would read as a site without it; where any site's counts do not fit whole, the table
+	// keeps the headed columns, which say by their headings what they leave out.
+	room := width - siteLead - widths[0] - widths[1]
+	folded := width < widthNarrow && room >= t.Width(labelChecks) &&
+		!slices.ContainsFunc(cells, func(c string) bool { return t.Width(c) > room })
+	if folded {
+		widths = append(widths[:tableMandatoryColumns], room)
+		headings = append(headings[:tableMandatoryColumns], labelChecks)
+		columns = len(widths)
+		for i := range rows {
+			rows[i] = []string{rows[i][0], rows[i][1], cells[i]}
 		}
-		if folded {
-			cell := t.foldedCounts(s, room)
-			// A blank cell reads as a site with nothing to count, so a room too narrow for one
-			// site's first count drops the column for every site.
-			if cell == "" && len(s.Failing)+len(s.CouldNotRun)+len(s.Held) > 0 {
-				columns = min(columns, tableMandatoryColumns)
-			}
-			row = []string{row[0], row[1], cell}
-		}
-		rows = append(rows, row)
 	}
 	widths, headings = widths[:columns], headings[:columns]
 	for i := range rows {
@@ -498,29 +494,18 @@ func tableRole(r, c int, rows [][]string, verdicts []spine.Verdict, frame spine.
 const labelChecks = "checks"
 
 // foldedCounts joins a site's non-zero failing, could-not-run, and held counts with the tier's
-// separator, in that order, keeping only the leading counts that fit room whole. A count that
-// does not fit is dropped with every count after it, the same rule the wide table gives its
-// columns, since the row is one line and a count cut in half is no count at all.
-func (t theme) foldedCounts(s sections, room int) string {
-	sep := " " + t.marks.Sep + " "
-	var out string
+// separator, in that order, for the one checks cell a table narrower than widthNarrow draws.
+func (t theme) foldedCounts(s sections) string {
+	var parts []string
 	for _, part := range []struct {
 		n    int
 		word string
 	}{{len(s.Failing), labelFailing}, {len(s.CouldNotRun), labelCouldNotRun}, {len(s.Held), labelHeld}} {
-		if part.n == 0 {
-			continue
+		if part.n > 0 {
+			parts = append(parts, count(part.n, part.word))
 		}
-		next := count(part.n, part.word)
-		if out != "" {
-			next = out + sep + next
-		}
-		if t.Width(next) > room {
-			break
-		}
-		out = next
 	}
-	return out
+	return strings.Join(parts, " "+t.marks.Sep+" ")
 }
 
 // blankZero renders a count, and renders a zero as nothing at all.

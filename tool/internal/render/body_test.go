@@ -1438,7 +1438,7 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 		}
 		tables++
 
-		if style.ContentWidth(w) < widthNarrow {
+		if strings.Contains(head, labelChecks) {
 			assertFoldedTable(t, w, head)
 			continue
 		}
@@ -1472,19 +1472,19 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 	}
 }
 
-// assertFoldedTable checks a narrow table's heading row: site, verdict, and at most the one
-// folded checks column, with no count, engine, or checked heading of its own.
+// assertFoldedTable checks a folded table's heading row: site, verdict, and the one checks
+// column, with no count, engine, or checked heading of its own.
 func assertFoldedTable(t *testing.T, w int, head string) {
 	t.Helper()
 	got := strings.Join(strings.Fields(head), " ")
-	if got != "site verdict checks" && got != "site verdict" {
+	if got != "site verdict checks" {
 		t.Fatalf("width %d: narrow heading row %q, want site, verdict, and checks", w, head)
 	}
 }
 
-// TestATableNarrowerThan60FoldsItsCounts draws the grader's two-site fleet below and at the
-// one-column threshold. Below it the counts share one checks cell joined by the separator, each
-// count whole, and the count columns are gone; at 60 the count columns draw as before.
+// TestATableNarrowerThan60FoldsItsCounts draws one site below and at the one-column threshold.
+// Below it the counts share one checks cell joined by the separator, each count whole, and the
+// count columns are gone; at 60 the count columns draw as before.
 func TestATableNarrowerThan60FoldsItsCounts(t *testing.T) {
 	reports := fixtures.Degraded()
 	for _, w := range []int{59, 50} {
@@ -1513,38 +1513,50 @@ func TestATableNarrowerThan60FoldsItsCounts(t *testing.T) {
 	if strings.Contains(head, labelChecks) || !strings.Contains(head, labelCouldNotRun) {
 		t.Errorf("width 60: heading %q, want the count columns unfolded", head)
 	}
+}
 
-	// Twelve long site names leave no room at 40 for one whole count, and a column of blank
-	// cells would read as twelve sites with nothing wrong.
+// TestATableFoldsOnlyWhenEverySitesCountsFitWhole draws twelve long site names at 59, where the
+// widest row's counts overrun the checks cell. A cell that dropped a count would read as a site
+// without it, so the table keeps its headed count columns and every count in them.
+func TestATableFoldsOnlyWhenEverySitesCountsFitWhole(t *testing.T) {
 	twelve := fixtures.TwelveSites()
+	lines := plainLines(input(twelve, BodyMany, 59, colorprofile.ASCII, false, verdictFor(twelve)))
+	head := tableHeadingLine(lines)
+	if got := strings.Join(strings.Fields(head), " "); got != "site verdict failing could not run" {
+		t.Fatalf("heading %q, want the headed failing and could not run columns", head)
+	}
+	row := strings.Fields(lines[slices.Index(lines, head)+1])
+	if len(row) < 2 || row[len(row)-2] != "1" || row[len(row)-1] != "4" {
+		t.Errorf("first row %q, want its failing and could-not-run counts", row)
+	}
+
 	head = tableHeadingLine(plainLines(input(twelve, BodyMany, 40, colorprofile.ASCII, false, verdictFor(twelve))))
 	if strings.Contains(head, labelChecks) {
-		t.Errorf("width 40: heading %q draws a checks column no count fits", head)
+		t.Errorf("width 40: heading %q draws a checks column the counts do not fit", head)
 	}
 }
 
-// TestFoldedCountsDropWhatDoesNotFitWhole asserts the checks cell gives up its trailing counts
-// rather than cutting one: a count either prints whole or not at all.
-func TestFoldedCountsDropWhatDoesNotFitWhole(t *testing.T) {
+// TestFoldedCountsJoinTheNonZeroCountsInOrder asserts the checks cell names failing, then could
+// not run, then held, and leaves out a state with nothing in it.
+func TestFoldedCountsJoinTheNonZeroCountsInOrder(t *testing.T) {
 	theme := newTheme(true, colorprofile.ASCII, false)
-	s := sections{
+	sep := " " + theme.marks.Sep + " "
+	all := sections{
 		Failing:     make([]health.CheckResult, 1),
 		CouldNotRun: make([]health.CheckResult, 2),
 		Held:        make([]health.CheckResult, 1),
 	}
-	sep := " " + theme.marks.Sep + " "
 	tests := []struct {
-		room int
+		s    sections
 		want string
 	}{
-		{100, "1 failing" + sep + "2 could not run" + sep + "1 held"},
-		{35, "1 failing" + sep + "2 could not run"},
-		{9, "1 failing"},
-		{8, ""},
+		{all, "1 failing" + sep + "2 could not run" + sep + "1 held"},
+		{sections{Held: make([]health.CheckResult, 3)}, "3 held"},
+		{sections{}, ""},
 	}
 	for _, tt := range tests {
-		if got := theme.foldedCounts(s, tt.room); got != tt.want {
-			t.Errorf("foldedCounts(room %d) = %q, want %q", tt.room, got, tt.want)
+		if got := theme.foldedCounts(tt.s); got != tt.want {
+			t.Errorf("foldedCounts = %q, want %q", got, tt.want)
 		}
 	}
 }

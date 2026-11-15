@@ -84,6 +84,21 @@ function physicalLines(text: string): string[] {
   return lines;
 }
 
+/** Split raw bytes on each CRLF pair, so every physical line is decoded on its own. */
+function splitOnCrlf(bytes: Uint8Array): Uint8Array[] {
+  const slices: Uint8Array[] = [];
+  let from = 0;
+  for (let i = 0; i < bytes.length - 1; i++) {
+    if (bytes[i] === 0x0d && bytes[i + 1] === 0x0a) {
+      slices.push(bytes.subarray(from, i));
+      from = i + 2;
+      i++;
+    }
+  }
+  expect(from).toBe(bytes.length);
+  return slices;
+}
+
 /** Undo RFC 5545 section 3.1 folding and return the named property's value. */
 function unfoldedValue(text: string, name: string): string | undefined {
   const line = text.replace(/\r\n /g, '').split('\r\n').find((l) => l.startsWith(`${name}:`));
@@ -122,12 +137,12 @@ describe('buildICalendarResponse: an RFC 5545 feed of plain events', () => {
     ['four-octet', '🎿'.repeat(30)],
   ])('folds a long %s summary within 75 octets without splitting a character', async (_label, summary) => {
     const bytes = await bodyBytes(oneEvent(allDay(summary)));
-    const text = new TextDecoder().decode(bytes);
-    for (const line of physicalLines(text)) {
-      const lineBytes = encoder.encode(line);
-      expect(lineBytes.length).toBeLessThanOrEqual(75);
-      expect(() => new TextDecoder('utf-8', { fatal: true }).decode(lineBytes)).not.toThrow();
+    const slices = splitOnCrlf(bytes);
+    for (const slice of slices) {
+      expect(slice.length).toBeLessThanOrEqual(75);
+      expect(() => new TextDecoder('utf-8', { fatal: true }).decode(slice)).not.toThrow();
     }
+    const text = new TextDecoder().decode(bytes);
     expect(physicalLines(text).filter((l) => l.startsWith(' ')).length).toBeGreaterThan(0);
     expect(unfoldedValue(text, 'SUMMARY')).toBe(summary);
   });

@@ -42,7 +42,7 @@ export type ICalendarEvent = {
 export interface ICalendar {
   /** The calendar's display name, written as both `NAME` and `X-WR-CALNAME` so subscribing apps that read either show it. */
   name: string;
-  /** The formal public identifier of the producer, such as `-//Example Club//Events//EN`. */
+  /** The formal public identifier of the producer, such as `-//Example//Events//EN`. */
   productId: string;
   /** The `DTSTAMP` every event carries; omitted, the build time. A fixed value makes the output reproducible. */
   stamp?: Date;
@@ -95,7 +95,7 @@ function formatDate(date: string, days = 0): string {
 }
 
 /** The DTSTART and DTEND lines; an all-day end becomes the exclusive next day (RFC 5545 section 3.8.2.2). */
-function timeLines(start: string | Date, end: string | Date | undefined): string[] {
+function buildTimeLines(start: string | Date, end: string | Date | undefined): string[] {
   if (typeof start === 'string') {
     const last = typeof end === 'string' ? end : start;
     return [`DTSTART;VALUE=DATE:${formatDate(start)}`, `DTEND;VALUE=DATE:${formatDate(last, 1)}`];
@@ -107,7 +107,6 @@ function timeLines(start: string | Date, end: string | Date | undefined): string
 
 /**
  * Build an iCalendar feed (RFC 5545) as a string with `CRLF` line ends.
- *
  * @remarks
  * Each event is one occurrence. A date is `YYYY-MM-DD`, and an all-day `end` is the last day,
  * inclusive and on or after `start`; the feed writes the exclusive next day. A timed `start` and
@@ -128,7 +127,7 @@ export function buildICalendar(calendar: ICalendar): string {
   ];
   for (const event of calendar.events) {
     lines.push('BEGIN:VEVENT', `UID:${escapeText(event.uid)}`, `DTSTAMP:${stamp}`);
-    lines.push(...timeLines(event.start, event.end));
+    lines.push(...buildTimeLines(event.start, event.end));
     lines.push(`SUMMARY:${escapeText(event.summary)}`);
     if (event.location !== undefined) lines.push(`LOCATION:${escapeText(event.location)}`);
     if (event.description !== undefined) lines.push(`DESCRIPTION:${escapeText(event.description)}`);

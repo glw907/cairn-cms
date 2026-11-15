@@ -1,0 +1,40 @@
+  [1;38;5;210mCRITICAL[m  [1;38;5;255mmy-site[m
+  [38;5;246m2 failing - 1 could not run - 3 passing[m
+
+  [1;38;5;255mfailing[m
+  [38;5;210m![m [38;5;255mWrangler bindings are missing[m
+    [38;5;250mmissing AUTH_DB (d1_databases)[m
+    [38;5;246mThe wrangler config declares no send_email binding[m
+    [38;5;246mnamed EMAIL or no D1 binding named AUTH_DB, so the[m
+    [38;5;246mmagic-link send or the session store has nothing to[m
+    [38;5;246mcall and no editor can sign in.[m
+  [38;5;141m>[m [38;5;250mDeclare the send_email binding as EMAIL and the[m
+    [38;5;250md1_databases binding as AUTH_DB in wrangler.jsonc (or[m
+    [38;5;250mwrangler.toml), then re-deploy.[m
+    ]8;;https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings[38;5;246mhttps://cairn.pub/docs/admin/is-it-working#deploy-the-w[m]8;;
+    ]8;;https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings[38;5;246morker-with-its-bindings[m]8;;
+  [38;5;215m*[m [38;5;255mWorkers Logs has no sink[m
+    [38;5;250mobservability.enabled is not true[m
+    [38;5;246mobservability.enabled is not true in the wrangler[m
+    [38;5;246mconfig, so the structured log records go nowhere and a[m
+    [38;5;246mruntime failure leaves nothing to read.[m
+  [38;5;141m>[m [38;5;250mSet observability.enabled to true in wrangler.jsonc,[m
+    [38;5;250mthen re-deploy.[m
+    ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;5;246mhttps://cairn.pub/docs/admin/is-it-working#turn-on-obse[m]8;;
+    ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;5;246mrvability[m]8;;
+
+  [1;38;5;255mcould not run[m
+  [38;5;215m?[m [38;5;255mThe stated AI posture is not the served one[m
+    [38;5;250mcould not reach the resolved origin's /robots.txt[m
+
+  [1;38;5;255mnotes[m
+    [38;5;246mCustom /admin mount looks incomplete[m
+    [38;5;246mno wired /admin mount detected; mount the shared[m
+    [38;5;246m/admin/+layout that renders CairnAdminShell[m
+
+  [38;5;246m+[m [38;5;255m3 passing[m
+  [38;5;246m2 does not apply[m
+    [38;5;246mMedia bucket binding - Guard role vocabulary[m
+
+  [1;38;5;210mCRITICAL[m  [1;38;5;255mmy-site[m
+  [38;5;246m2 failing - 1 could not run - 3 passing[m

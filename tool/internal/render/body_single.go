@@ -151,11 +151,19 @@ func checkDetail(c health.CheckResult) string {
 // an address split across two lines cannot be copied whole. Only one too long for that column
 // as well breaks.
 func (t theme) fixBlock(fix health.Fix, hasFix bool, col, width int) []string {
-	if !hasFix || fix.Text == "" {
+	if !hasFix {
 		return nil
 	}
-	out := style.FixLine(t.Theme, sanitize(fix.Text), "", col, width)
-	url := fixURL(fix)
+	return t.fixLines(fix.Text, fixURL(fix), col, width)
+}
+
+// fixLines is fixBlock's layout for a fix sentence and its resolved address, the form a doctor
+// failure's fix shares. An empty text draws nothing and an empty url draws the sentence alone.
+func (t theme) fixLines(text, url string, col, width int) []string {
+	if text == "" {
+		return nil
+	}
+	out := style.FixLine(t.Theme, sanitize(text), "", col, width)
 	if url == "" {
 		return out
 	}

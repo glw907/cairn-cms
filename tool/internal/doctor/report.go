@@ -25,7 +25,7 @@ func docsURL(anchor string) string {
 func Format(checked []CheckedResult) string {
 	lines := make([]string, 0, len(checked)+8)
 	for _, cr := range checked {
-		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.lineTitle(cr.Result.Status), cr.Result.Detail))
+		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.Title(cr.Result.Status), cr.Result.Detail))
 	}
 
 	for _, cr := range checked {

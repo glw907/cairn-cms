@@ -128,9 +128,10 @@ func (c Check) label() string {
 	return conditionText(c.Condition).Title
 }
 
-// lineTitle returns the title a report line prints for status: the PassTitle on a PASS or the
-// SkipTitle on a SKIP when the check declares one, otherwise the registry label.
-func (c Check) lineTitle(status Status) string {
+// Title returns the title a report line prints for status: the PassTitle on a PASS or the
+// SkipTitle on a SKIP when the check declares one, otherwise the registry label. Format and the
+// terminal body both read it, so a check reads the same on a pipe and on a terminal.
+func (c Check) Title(status Status) string {
 	if status == StatusPass && c.PassTitle != "" {
 		return c.PassTitle
 	}

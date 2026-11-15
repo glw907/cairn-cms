@@ -1,6 +1,6 @@
 # Check that your site works
 
-The `cairn doctor` command checks a cairn site's configuration and prints one line for each check. When a line says FAIL, it also prints a link to the section of this page that explains the check. Each section covers one check, so a reader arrives from one result and needs only that section. `cairn doctor` reads the files in the site's folder, makes one request for the site's `robots.txt`, needs no credential, and changes nothing.
+The `cairn doctor` command checks a cairn site's configuration and prints a report of every check. When a check fails, the report also prints a link to the section of this page that explains the check. Each section covers one check, so a reader arrives from one result and needs only that section. `cairn doctor` reads the files in the site's folder, makes one request for the site's `robots.txt`, needs no credential, and changes nothing.
 
 The following list routes you to the right page for each situation.
 
@@ -18,6 +18,8 @@ The following list routes you to the right page for each situation.
    cairn doctor
    ```
 
+In a terminal, the report groups the checks under headings: failing checks first, each with its fix and link, then the checks that couldn't run, then any notes. The passing checks fold to one count line, and the skipped ones to one line that names them. When the output goes to a pipe, a file, or a CI log, the report prints one line for each check instead, in the form that follows.
+
 The following report comes from a run against a site just after its first deploy. Every line passed except one skip, which the sections after the report explain.
 
 <!-- transcript: tool/testdata/transcripts/04-doctor-report.txt -->
@@ -33,7 +35,7 @@ PASS  The stated AI posture is the served one: no AI posture is stated (aiPostur
 10 passed, 0 failed, 1 skipped, 0 info, 0 unchecked
 ```
 
-Each line starts with one of five words:
+In this form, each line starts with one of five words:
 
 - `PASS`: the check ran and the site is fine.
 - `FAIL`: the check ran and found a problem. A blocker stops someone from signing in or the site from working. A warning is a real problem that blocks nobody today.

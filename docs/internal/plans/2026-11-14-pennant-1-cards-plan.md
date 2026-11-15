@@ -8,8 +8,8 @@ Design: `~/Projects/initiatives/theme-garden/specs/2026-11-14-pennant-design.md`
 Geoff through design packet `20261115-041501-ead5c5` on 2026-11-15 with the ruling "Keep it, as
 one `cards` block". Worktree `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/pennant-1`,
 branch `pennant-1`, base `4ebfb0e9e`. PR base `main`. Class `ordinary`. Conductor
-`conductor-pennant`. The design's path is 110 minutes; this plan's path is 115 with pairs (sum of
-task minutes 155). The park line at planning is 220, and the retry ceiling is 220, twice the
+`conductor-pennant`. The design's path is 110 minutes; this plan's path is 120 with pairs (sum of
+task minutes 160). The park line at planning is 220, and the retry ceiling is 220, twice the
 approved 110.
 
 ## Pre-flight
@@ -95,6 +95,8 @@ Added by this plan, each flagged under "Planning misses":
 - `templates/waymark/src/content/**`, written only by `npm run emit:template` from the starter
   overlay.
 - `examples/showcase/e2e/*-snapshots/**`, written only by the CI regeneration bot.
+- `BACKLOG.md`, written only by `standards:log-issue` (T1 step 4, standing answer 9).
+- This plan and its executor prompt, deleted at Close (`cairn-running-passes` SKILL.md:10).
 
 Never touched: `themes/**`, `src/lib/**`, `tool/**`, `docs/STATUS.md`, `.github/**`,
 `scripts/release/**`, `.claude/settings*`, `templates/catalog.json`, `guidance-hashes.json`. The
@@ -124,10 +126,12 @@ pass never runs `make -C tool check`. A task that needs a held or untouched path
 6. **Placement.** The block is the tenth export of `vocabulary.ts`, after `banner`, in the
    Structure group, with no `icon` (M13). The picker row shows no glyph, flagged for
    `## Decisions`.
-7. **Preview.** The registry preview is the three-item, `columns="3"` block of acceptance 1: one
+7. **Preview.** The registry preview is the four-item, `columns="4"` block of acceptance 1, text
+   and links only. The preview ships in every site's insert dialog, so it loads nothing from
+   another host. The three-item, `columns="3"` block goes into the styleguide's `SAMPLE`: one
    image and linked title (one-param image URL `?w=720`, no `&`), one linked title, one plain
-   text. The four-item, `columns="4"` block goes into the styleguide's `SAMPLE`, text and links
-   only.
+   text. `SAMPLE` already loads an Unsplash image (M15), so the styleguide gains no new host.
+   (Plan review finding 13; a method call, not an owner fork.)
 8. **CSS.** In `examples/showcase/src/chassis/prose.css` only, inside its `@layer components`, near
    the callout section. Mobile first: one column, then `repeat(N, minmax(0, 1fr))` from
    `min-width: 40rem`. The default look follows the mockup (`varsity-3.html`) in the public
@@ -188,12 +192,15 @@ After each task commits, from the pass worktree:
 npm run lane:fast -- --range 4ebfb0e9e..HEAD
 ```
 
-Local e2e runs from `examples/showcase` with `--grep-invert "site home|archive page 2"`. A
-worktree e2e run proves the main checkout's engine until reinstalled (durable gotchas); this pass
-changes no engine code, so the showcase's chassis is what the run proves.
+A task's local e2e runs only its own spec, from the pass worktree:
+`npm --prefix examples/showcase run test:e2e -- e2e/<spec>.ts`. The site-visual styleguide
+baselines fail locally from T2 on, because the block changes that page and CI owns the
+baselines (durable gotchas, "CI-canonical baselines"). That failure is expected until T7. In this
+worktree the showcase's `@glw907/cairn-cms` resolves to the worktree root, and the pass changes
+no engine code anyway.
 
-Path: T1 → T2 → (T3 beside T4) → (T5 beside T6) → T7. 25 + 15 + 25 + 25 + 25 = 115 minutes on the
-path; the sum of all tasks is 155.
+Path: T1 → T2 → (T3 beside T4) → (T5 beside T6) → T7. 25 + 20 + 25 + 25 + 25 = 120 minutes on the
+path; the sum of all tasks is 160.
 
 ### T1. The block, probed first (25 min, Opus)
 
@@ -208,8 +215,9 @@ path; the sum of all tasks is 155.
    "How it fails": no image among imaged cards, no link (plain-title and no-title items), one item,
    nine items, `columns` absent and `columns="7"` (both give `cards-cols-3`), and an empty block
    (a `div.cards` with no children).
-3. Add `"cards": "cards"` to `classes.json`, register the def in `compose.ts`, and update
-   `compose.test.ts:40` and `:88` (names and order, ten entries). Reword `compose.ts:17` and
+3. Add `"cards": "cards"` to `classes.json`. `compose.ts:31` derives the blocks from
+   `Object.keys(vocabulary)`, so it gets no registration line. Update `compose.test.ts:40` and
+   `:88` (names and order, ten entries). Reword `compose.ts:17` and
    `vocabulary.ts:393` to say "the vocabulary's blocks" without a count, and the two rows of
    `examples/showcase/src/chassis/README.md:37-38` the same way.
 4. File one `standards:log-issue` item for M3 (the `&`, `*`, and bracket normalization in
@@ -218,22 +226,25 @@ path; the sum of all tasks is 155.
 Done when the new tests pass and `npm run lane:fast` is green. Acceptance: 2 (grammar side), 4
 (chassis hits).
 
-### T2. The grid and its default look (15 min)
+### T2. The grid and its default look (20 min)
 
 1. Load `cairn-following-public-design` and `standards:daisyui`. Write the `cards` rules in
    `examples/showcase/src/chassis/prose.css` (Decision 8). The selector list includes a bare
    `.prose .cards` rule (M6).
 2. Update `scripts/theme/check.test.mjs:64` from 9 to 10 notes.
-3. Acceptance 3 evidence, on a detached HEAD: `git switch --detach`, delete the `cards` rules,
-   commit, run `npm run test:theme`, and save the failing output that names `directive-styled`
-   and Waymark. Then `git switch pennant-1`, run `npm run test:theme` again, and save the passing
-   summary. Record the throwaway commit id. Never `git reset --hard`.
+3. Acceptance 3's failing half, in the implementer's worktree after its task commit:
+   `git switch --detach`, delete the `cards` rules, commit, run `npm run test:theme` bare (about
+   six minutes on pavilion), and save the output lines that name `directive-styled` and Waymark.
+   Then `git switch -` to return to the task branch. Never `git reset --hard`. The implementer's
+   report gives the executor the throwaway commit id and the saved lines, and the executor puts
+   both in the PR. The passing half is CI's test job on the pass head, which runs
+   `npm run test:theme` (`test.yml:130`).
 
 Acceptance: 3.
 
 ### T3. The styleguide and its e2e (25 min, beside T4)
 
-1. Add the four-item `columns="4"` block to `SAMPLE` in
+1. Add the three-item `columns="3"` block to `SAMPLE` in
    `examples/showcase/src/routes/(site)/styleguide/+page.server.ts` (Decision 7). Update
    `load.test.ts` if it counts blocks.
 2. Add `examples/showcase/e2e/cards.spec.ts`. For each width in `[320, 390, 768, 1440, 2560]` and
@@ -243,18 +254,29 @@ Acceptance: 3.
    three items and one with four. Count columns as the number of distinct `offsetLeft` values of a
    block's `.cards-item`s, so the count does not depend on how the grid is written: at 1440 the
    first block has 3 and the second 4; at 320 both have 1.
-3. Confirm the two styleguide axe tests still pass in both schemes.
+3. Run `npm --prefix examples/showcase run test:e2e -- e2e/cards.spec.ts e2e/styleguide.spec.ts`
+   and confirm the two styleguide axe tests still pass in both schemes.
 
 Acceptance: 1.
 
 ### T4. The admin round trip (20 min, beside T3)
 
-Extend `examples/showcase/e2e/golden-path.spec.ts`, or add a spec beside it, on the model at
-`:480`: open an entry, Insert block, pick the `cards` row, fill two items with the T1 fixture
-strings and `columns` `4`, Insert, read `input[name="body"]`, click the opener line, Edit block,
-Update with no change, save, and assert the hidden body and the saved markdown are
-byte-identical to the read before the edit. The fixture holds no `&`, no bare `*`, and no
-brackets inside link text (M3).
+Add `examples/showcase/e2e/cards-admin.spec.ts` on the model at `golden-path.spec.ts:480`:
+
+1. Create a fresh post, never the shared `/admin/posts/2026-06-hello` that other specs overwrite:
+   the `openCreateDialog`, `fillTitleWhenHydrated`, navbar Save, `toHaveURL(/saved=1/)` pattern
+   from the golden path.
+2. Insert block and pick the `cards` row. The form seeds from `previewValues(def)`
+   (`src/lib/admin/ComponentForm.svelte:55`), so it opens with the preview's four items and
+   `columns` 4. Press `Remove item` until two remain, fill `Cards 1` and `Cards 2` with the T1
+   fixture strings (find the aria-label and button names in `ComponentForm.svelte` before
+   writing the locators), set the `Columns` select, and Insert.
+3. Read `input[name="body"]`. Click the opener line, Edit block, Update with no change, and
+   assert the hidden body is byte-identical to the first read.
+4. Save, reload the post, and assert the saved body is byte-identical too.
+
+The fixture holds no `&`, no bare `*`, and no brackets inside link text (M3). Run
+`npm --prefix examples/showcase run test:e2e -- e2e/cards-admin.spec.ts`.
 
 Acceptance: 2.
 
@@ -313,9 +335,12 @@ Acceptance: 5, every pass item 2.
 1. After the last commit that changes a rendered page, dispatch once:
    `gh workflow run e2e.yml --repo glw907/cairn-cms --ref pennant-1 -f update_snapshots=true`. Wait
    for the bot's "chore(e2e): regenerate..." commit, then `git pull --ff-only` before any further
-   push. Read every changed baseline: only the styleguide and the insert picker may change. A
-   refusal takes the "Auto-mode routes" alternative.
-2. The steps under "Close".
+   push. Read every changed baseline. Only the ten site-visual
+   `styleguide-{light,dark}-{320,390,768,1440,2560}-linux.png` files may change; any other changed
+   baseline is a finding. A refusal takes the "Auto-mode routes" alternative.
+2. The bot's commit gets no CI, because a push made with `GITHUB_TOKEN` starts no workflow run.
+   The Close steps end with a human commit on top of it, and that head is the one CI must pass.
+3. The steps under "Close".
 
 ## Acceptance
 
@@ -326,7 +351,7 @@ Copied verbatim from the design, each mapped to its task and its evidence.
 2. In the admin, the insert form adds a `cards` block with two items, one holding an image and a link. Editing that block and saving leaves the markdown byte-identical. A test asserts it.
    - T1 (grammar test), T4. Evidence: the e2e test's name and pass line in CI.
 3. With the `cards` rules removed from the chassis `prose.css`, `npm run test:theme` fails on `directive-styled` for Waymark. With them present it passes, and `git diff --stat` shows no file under `themes/`.
-   - T2. Evidence: the detached commit id and its failing output, the passing summary on `pennant-1`, and `git diff --stat main...HEAD -- themes/` printing nothing.
+   - T2. Evidence: the detached commit id and its failing `npm run test:theme` lines, CI's test job (which runs `npm run test:theme`) passing on the final head, and `git diff --stat main...HEAD -- themes/` printing nothing.
 4. `git grep -n -i -E "nine (blocks|directives)|9 (blocks|directives)"` over `templates/`, `examples/showcase/`, `skills/`, `scripts/`, `docs/`, `src/lib/`, and `MIGRATION-NOTES.md` returns nothing.
    - T1, T5. Amended check (advisor.md "Acceptance items", Decision 10): the same command with the pathspec `':!docs/internal/plans/2026-11-14-tui-language-1-style-plan.md'` added returns nothing. The excluded file is round `tui-language`'s pass 1 plan; its line 376 counts the Go tool's terminal blocks, not the directive vocabulary, and this pass may not edit it. The outcome (no stale count of the block list) holds. Evidence: the amended command and its empty output, and the unamended output showing only that line.
 5. `docs/editors/` gains a section on adding a card that names the `cards` block and its `columns` values, the fact-checker returns no finding on it, and `npm run check:docs-gate` passes.
@@ -348,17 +373,23 @@ Added checks:
 
 ## Close
 
-1. Whole-branch `standards:diff-reviewer` against this plan and the design; fold its findings
-   first.
+1. Whole-branch `standards:diff-reviewer` against this plan and the design, and in the same round
+   `standards:daisyui-a11y-reviewer` on the `prose.css` rules and the styleguide sample
+   (`cairn-running-passes` "Review checklists by path"). Fold their findings first.
 2. Fresh `standards:visual-verifier` on the styleguide screenshots (Added checks). The grader
    never built the work.
-3. `cairn-run-gate` on the full lane the fast lane names.
+3. The targeted gate, run bare from the pass worktree:
+   `cairn-run-gate "$(node scripts/checks/gate-tier.mjs --range 4ebfb0e9e..HEAD --class ordinary)"`.
 4. Push; the first push opens the draft PR against `main`, with a `Round: pennant` line.
-   `ci-green <sha> --pr <n> --wait` as a background task from the pass worktree.
-5. The PR body opens with a paragraph written per `~/.claude/docs/voice/written-for-people.md`,
+5. T7's regeneration, then `git pull --ff-only`.
+6. One commit deleting this plan and its executor prompt (`git rm` of the two files), pushed on
+   top of the bot's commit. Run `ci-green <that sha> --pr <n> --wait` as a background task from
+   the pass worktree. The land test needs a green CI verdict on this human head, never on the
+   bot's.
+7. The PR body opens with a paragraph written per `~/.claude/docs/voice/written-for-people.md`,
    then what landed, the acceptance evidence, every log-issue filing, `## Decisions` (Decisions 1,
-   3, and 6 at least), `## Planning misses`, and the score.
-6. Land through `approval-queue land <owner/repo#n> "<claim>"` once the land test in
+   3, 6, and 7 at least), `## Planning misses`, and the score.
+8. Land through `approval-queue land <owner/repo#n> "<claim>"` once the land test in
    `round-run.md` holds; otherwise send the packet through `approval-packet`.
 
 ## Planning misses
@@ -374,3 +405,29 @@ Added checks:
   Decision 10.
 - `[stale-fact]` The design's mockup titles a card with an `h3`; the plan uses a `p` (Decision 3,
   M5).
+- `[file-list]` The design's pass 1 row omits `BACKLOG.md`, which `standards:log-issue` writes;
+  its pass 3 and 4 rows carry it.
+
+## Plan review fold
+
+One `standards:plan-reviewer` read (Opus, `medium`) at `2f276b4b3` returned 2 blockers, 4 majors,
+and 7 minors. All are folded:
+
+1. Blocker: `git switch pennant-1` fails in an implementer worktree, since the pass worktree holds
+   that branch. T2 now uses `git switch -` and names who records the commit id.
+2. Blocker: the regeneration bot's commit gets no CI. Close step 6 pushes a human commit on top
+   and runs `ci-green` on it.
+3. `BACKLOG.md` added to the file list and to "Planning misses".
+4. `standards:daisyui-a11y-reviewer` added to Close step 1.
+5. T2 ran `npm run test:theme` twice (about six minutes each). The failing half stays local with
+   the verbatim command; the passing half is CI's test job. T2 is now 20 minutes, the path 120.
+6. Close step 6 deletes the plan and the prompt.
+7. T7 names the ten styleguide baselines that may change.
+8. Close step 3 writes the gate command out in full.
+9. Each task's local e2e runs only its own spec, and the styleguide baseline failure is named as
+   expected.
+10. T4 now creates a fresh post, trims the seeded items to two, and reloads before the last
+    assertion.
+11. T1 step 3 no longer asks for a registration line in `compose.ts`.
+12. The engine-resolution line now says the worktree install resolves to the worktree.
+13. The preview no longer hot-links an image; Decision 7 swaps the two blocks.

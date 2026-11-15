@@ -7,7 +7,7 @@ npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svel
 
 Risk class: `ordinary`. The pass touches nothing under `src/lib/`, `themes/`, or `tool/`; a task that needs one parks the pass.
 
-Base: `4ebfb0e9e`. Fast lane after each task: `npm run lane:fast -- --range 4ebfb0e9e..HEAD`. Gate: `cairn-run-gate`. Local e2e from `examples/showcase` with `--grep-invert "site home|archive page 2"`.
+Base: `4ebfb0e9e`. Fast lane after each task: `npm run lane:fast -- --range 4ebfb0e9e..HEAD`. Gate at close: `cairn-run-gate "$(node scripts/checks/gate-tier.mjs --range 4ebfb0e9e..HEAD --class ordinary)"`. A task's local e2e runs only its own spec: `npm --prefix examples/showcase run test:e2e -- e2e/<spec>.ts`. The site-visual styleguide baselines fail locally from T2 until CI regenerates them; that failure is expected.
 
 Push target: `glw907/cairn-cms`. The first push opens a draft PR against `main` whose body carries a `Round: pennant` line. CI watch: `ci-green <sha> --pr <n> --wait` as a background task from the worktree.
 
@@ -17,7 +17,7 @@ Held files: `docs/STATUS.md` is the conductor's. `.github/**`, `scripts/release/
 
 Load these skills before the work they cover: `pass-core` with `references/executor.md` and `references/round-run.md`, then `cairn-pass` and the repo's `cairn-running-passes`; `cairn-writing-engine-code` and `standards:ts-conventions` for TypeScript; `cairn-following-public-design` and `standards:daisyui` before any CSS; `cairn-writing-docs` and `writing-voice` before the editor page; `standards:visual-fidelity` before the closing visual read. Write the PR body's opening paragraph per `~/.claude/docs/voice/written-for-people.md`.
 
-Every change goes through `cairn-implementer` agents, each in its own worktree off the pass branch; run the plan's independent tasks as pairs (T3 beside T4, T5 beside T6). Name a model and effort on every dispatch. Dispatch `standards:diff-reviewer` on the whole branch before you mark the PR ready, and fold what it finds first.
+Every change goes through `cairn-implementer` agents, each in its own worktree off the pass branch; run the plan's independent tasks as pairs (T3 beside T4, T5 beside T6). Name a model and effort on every dispatch. Dispatch `standards:diff-reviewer` on the whole branch, with `standards:daisyui-a11y-reviewer` in the same round on the CSS and the styleguide sample, before you mark the PR ready, and fold what they find first.
 
 Rules that hold throughout:
 - Task 1 starts with the probe. If an item holding an image, a link, and text can't survive the insert form, an edit, and a save with the markdown byte-identical, apply the plan's standing answer 1 before anything else is built.
@@ -25,7 +25,8 @@ Rules that hold throughout:
 - Cleanup beyond the plan goes through `standards:log-issue` and is listed in the PR, never done.
 - A behavior change updates `CHANGELOG.md` under `## Unreleased` and `MIGRATION-NOTES.md`. No version bump, no publish.
 - Rendered evidence meets the five-viewport bar (320, 390, 768, 1440, 2560) and is graded by a fresh context. CI regenerates visual baselines; dispatch the regeneration once per head, as Task 7 says.
-- Never stop a process, never `git reset --hard`, never `--no-verify`, never `git add -A`. The acceptance 3 throwaway commit goes on a detached HEAD, then `git switch pennant-1`.
+- Never stop a process, never `git reset --hard`, never `--no-verify`, never `git add -A`. The acceptance 3 throwaway commit goes on a detached HEAD in the implementer's worktree, then `git switch -` back to its task branch (the pass worktree holds `pennant-1`, so switching to it fails).
+- The regeneration bot's commit gets no CI. Close ends with the plan-deletion commit pushed on top of it, and `ci-green` runs on that head; the land test needs a green verdict there.
 - Each accepted task's report names the CI verdict on that head, or says CI has not run on it.
 - After the whole-branch review, a Low finding from a delta read is folded once (checked by your own diff read and CI) or filed through `standards:log-issue`; it never starts another review round.
 - If an acceptance item becomes unreachable mid-run, every other item still runs; close the pass, report that item unmet with its cause in the PR, and say so first in the packet.

@@ -10,8 +10,14 @@ page with no form. The pass runs in worktree `.claude/worktrees/pennant-3` on br
 based on `91b3738a3` (the head of `pennant-2`). The PR base is `main`. Until PRs #251 and #253
 merge, the PR's diff also shows passes 1 and 2; the review range is `91b3738a3..HEAD`. Class
 `ordinary`, `live-account`. The conductor is `conductor-pennant`. The design's path is 120 minutes,
-and this plan's is 230 (T0 25, group 1 75, T2 30, T3 50, Close 50; sum of all minutes 315). The
-pass parks at 240, so the path sits just under the line; the plan launches and flags it.
+and this plan's is 230 (T0 20, group 1 75, T2 30, T3 50, Close 55; sum of all minutes 315). The
+pass parks at 240, so the path sits just under the line; the plan launches and flags it. The path
+ceiling is 460 minutes, twice the plan's path.
+
+The executor loads `pass-core` (with `references/executor.md` and `references/round-run.md`),
+`cairn-pass`, `cairn-running-passes`, `cairn-writing-engine-code` for the scripts, `writing-voice`
+before the set's prose and the PR body, and `standards:visual-fidelity` before the closing render
+read.
 
 Outcome: `sets/organization/`, written from the society sheet as the Turnagain Geographic
 Society's member site. The publish job picks a theme's set by the theme's first kind, builds each
@@ -23,10 +29,18 @@ lands on review as the design's "Rulings" say.
 
 - **Owner steps.** None. The proving bucket, the proving Worker `cairn-demo-proving`, and their
   tokens exist from the catalog round. No proving Worker is added.
-- **Permissions checked.** The denials log (`~/.local/state/claude-denials.jsonl`, 2026-11-01 to
-  2026-11-15, 71 rows) was read by class. The routes below avoid every class the pass could
-  meet. The pass deploys nothing by hand: the PR's `catalog` run deploys to the proving target
-  from CI.
+- **Permissions checked.** The denials log (`~/.local/state/claude-denials.jsonl`, 2026-11-01T00:55Z
+  to 2026-11-15T19:17Z, 72 rows) was read by class: Self-Modification 10, an unexplained
+  "judged dangerous" 10, Interfere With Workloads 9, Classifier unavailable 9, Destructive or
+  Unwanted 5, Merge Without Review 3, Auto-Mode Bypass 3, two each of Irreversible Local
+  Destruction, Git Destructive, Create Public Surface, Unverifiable Deletion Scope,
+  Sensitive-Source Provenance, Security Weaken, and Undermining Oversight, and one each of
+  Production Deploy, Secret-Store Writes, DNS/Domain/Cert, Bot Check Circumvention, Code from
+  External, Shared Scratch Sweep, Safety Bypass Flag, Out-of-Place Publication, and PII Data
+  Handling. Two Auto-Mode Bypass rows refused `gh workflow run e2e.yml`; the third
+  (2026-11-10T18:36Z, in `~/.dotfiles`) refused a shell variable line ahead of a launch, outside
+  this repo. The routes below avoid every class the pass could meet. The pass deploys nothing by
+  hand: the PR's `catalog` run deploys to the proving target from CI.
 - **Reviewed.** One `standards:plan-reviewer` read (Opus, `medium`), folded below. The class is
   `ordinary`, which needs none, but the pass changes the publish job of a permanent release.
 - **Evidence.** Probes ran in a scratch copy at `91b3738a3` with dependencies installed (M1 to
@@ -39,7 +53,10 @@ lands on review as the design's "Rulings" say.
 | Interfere With Workloads | Never `kill`, `pkill`, or `claude stop`. A background command stops with `TaskStop`. Tests start no server they don't close through their own handle. |
 | Classifier unavailable | Retry the same call once, then park with the call. |
 | Self-Modification, Security Weaken, Safety Bypass Flag | No edit to `.claude/settings*`, hooks, or agent files. Never `--no-verify`. |
-| Destructive or Unwanted, Git Destructive, Irreversible Local Destruction | No `git reset --hard`, no `git checkout -- .`, no `rm -rf` outside a path the task created under `$TMPDIR` or the job's `tmp`. |
+| Destructive or Unwanted, Git Destructive, Irreversible Local Destruction, Unverifiable Deletion Scope, Shared Scratch Sweep | No `git reset --hard`, no `git checkout -- .`, no `rm -rf` outside a path the task created under the job's `tmp`, never a glob under `/tmp`. |
+| Auto-Mode Bypass | The workflow is never dispatched by hand. Decision 14's one `gh run rerun` may meet the same class; if refused, the PR records the run id for the conductor and the pass goes on. |
+| Undermining Oversight | No `claude stop`, and no edit to the design or this plan's acceptance. An acceptance item that can't be met is amended per standing answer 12 and flagged. |
+| "Judged dangerous" with no class | Standing answer 2: the alternative the task names, once, then flag the task and go on. |
 | Merge Without Review | The executor never merges. Under the conductor it ends at PR-ready. |
 | Production Deploy, Create Public Surface, Out-of-Place Publication | No `wrangler deploy` and no R2 write from the workstation. The PR's `catalog` run uses the proving target only, and the workflow is never dispatched by hand. |
 | Secret-Store Writes, DNS/Domain/Cert Changes | None needed. On a 403, standing answer 5. |
@@ -68,7 +85,11 @@ lands on review as the design's "Rulings" say.
 | M16 | `publish.mjs:253`, `catalog.yml:13-20` and `46-51` | A demo is built only for a theme version the index doesn't list, so the live Waymark demo keeps `showcase.test` until Waymark's next release (#483 is reworded, not closed). Every push of `scripts/catalog/**` or `sets/**` fires the PR's `catalog` run, and a newer queued run drops an older one. |
 | M17 | `examples/showcase/src/site/site.config.yaml:1-12`, `site.mjs:142-143` | The showcase config carries `cairn-template:exclude` blocks (`/styleguide`) and `/admin` entries. `composeSite` strips the blocks before the set's config is copied, so the set's config must carry no marker and no styleguide entry. |
 | M18 | `examples/showcase/src/routes/(site)/+page.svelte:55` | The home `<title>` is `${title} · ${siteName}`, so with decision 2 the demo's home title reads "The Turnagain Geographic Society · The Turnagain Geographic Society". It is template behavior outside the row, filed through `standards:log-issue`. |
-| M19 | Map sources | Not probed at planning: the USGS sheets are GeoTIFF or GeoPDF, often tens of MB. T0 records one sheet URL and its size before T5 starts; T5's 40 minutes assume one download per map. |
+| M19 | TNM API `tnmaccess.nationalmap.gov/api/v1/products?datasets=Historical%20Topographic%20Maps&prodFormats=GeoTIFF`; `naciscdn.org/naturalearth/10m/raster/SR_HR.zip` | The 1:250,000 Anchorage (1951, `AK_Anchorage_361712_1951_250000_geo.tif`, 14.2 MB, 9092 by 6938, RGB) and Seward (1951, `AK_Seward_361825_1951_250000_geo.tif`, 13.1 MB) sheets are GeoTIFFs on `prd-tnm.s3.amazonaws.com`. Natural Earth's shaded relief `SR_HR.zip` is 44.4 MB. `sharp` (a dependency) read the Anchorage TIFF with `limitInputPixels: false` and wrote a 1600 by 1067 WebP crop at quality 70 in 309,726 bytes; the crop showed the Knik River, Knik Glacier, and Pioneer Peak legibly. |
+| M20 | `examples/showcase/src/chassis/directives/vocabulary.ts:344-390` | The banner's `expires` is required, and `isBannerExpired` hides it at build and at hydration. A dated notice would vanish from a permanent release, and pass 4's home needs the Notice. The conformance set uses `expires="2999-01-01"`. |
+| M21 | `examples/showcase/src/routes/(site)/+page.server.ts` | The home news list is `buildHomeData(data.html, posts.all())`; no future-date filter was found. Posts are dated on or before 2026-11-14 all the same, so none reads as scheduled. |
+| M22 | `index.mjs:102-108`, `reference-check.mjs` | A set's `engine` is only listed in the index; the reference check reads theme engines only. `>=0.99.0-rc.5` against engine `0.99.0-rc.4` fails nothing in the publish run. |
+| M23 | `varsity-3.html`; PR #251's `[advisor]` line | The mockup's programs row is three cards (`repeat(3)`), its facts row three, its logos row four. In pass 1's chassis a `columns="4"` block lays out two across inside the reading measure (`prose.css:507-570`), by an advisor's choice recorded on #251. |
 
 ## Recorded searches
 
@@ -153,11 +174,18 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
    changes nothing there. No flag is added, so the workflow (held) needs no edit.
 5. The set's pages: `home`, `programs`, `join`, `contact`, and `safeguarding` (titled
    "Safeguarding and privacy"), plus three posts dated in 2026.
-   - `home`: a `description` (the tagline), an `image` (a map), a banner, an intro, a
-     `cards` block of the four programs (monthly map night, summer field days, the junior
-     program for ages 10 to 16, the lending shelf), a `cards` block of text cards for where,
-     when, and questions, a `---` rule (pass 2's split, so the news list falls between), and
-     a `cards` block of four invented supporters.
+   - `home`, in the design's order ("The home page"): a `description` (the tagline), an
+     `image` (a map), then a body that opens with the banner (decision 15), a `cards`
+     `columns="3"` block of three programs (monthly map night, summer field days, the junior
+     program for ages 10 to 16), each titled with a link to `/programs`, a `cards`
+     `columns="3"` block of three text cards (where the society meets, when, and whom to
+     write to), a `---` rule (pass 2's split, so the news list falls between), and a `cards`
+     `columns="4"` block of four invented supporters. No intro paragraph: the mockup has none,
+     and the hero carries the description. The lending shelf is described on the programs page.
+     The supporters block is four across only in a wide container (M23); that layout is pass 1's.
+   - `contact` says who to write to (by role), where and when the society meets, and that a
+     volunteer answers within a week, as the design's contact page requires.
+   - Posts are dated on or before 2026-11-14 (M21).
    - `primary` menu: Programs, News (`/archive/1`), Contact. `footer` menu: Safeguarding and
      privacy (`/safeguarding`), Contact (`/contact`). `actions` menu: Join the society (`/join`),
      Contact us (`/contact`).
@@ -188,10 +216,11 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
    (M13), and neither file is in the row. The set's release is announced by the catalog, and its
    `notes` reads "First release.".
 10. The set's `engine` is `>=0.99.0-rc.5`, the narrowest range that excludes `0.99.0-rc.4`
-    and admits every later version (design call 15, standing answer 13). Its `license` is
-    `CC0-1.0`, as the archive fixture's is, so an owner can rewrite and keep the text with no
-    credit line. Neither design names a set text license. Each image's manifest `path` is
-    `static/images/<name>.webp`, the fixture's form.
+    and admits every later version (design call 15, standing answer 13); it fails nothing in
+    the publish run (M22). Its `license` is `CC0-1.0`, as the archive fixture's is, so an owner
+    can rewrite and keep the text with no credit line. [advisor]
+    Call: neither design names a set text license; CC0-1.0 lets every owner keep or change the
+    text freely. Each image's manifest `path` is `static/images/<name>.webp`, the fixture's form.
 11. Acceptance 1's test lives in `publish.test.mjs`, which is in the row, and validates the
     set with an `Ajv2020({ allErrors: true })` over the same schema file, as
     `publish.test.mjs:20` already does. Acceptance 3's test lives there too,
@@ -203,13 +232,22 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
     record that in the PR. The pass never runs `make -C tool check` and opens nothing under
     `tool/`.
 13. Backlog: #486 is closed with a line naming this pass. #483 is reworded to "What is left:
-    the live Waymark demo carries `showcase.test` until Waymark's next release" (M16). #481 is
-    reworded to "What is left: Waymark's demo falls back to the starter overlay until
-    `sets/blog/` exists." #471 is already closed, so it is left alone and the PR says so.
+    the live Waymark demo carries `showcase.test` until Waymark's next release" (M16). #481's
+    title and body already carry its reword (`BACKLOG.md:52-54`); T6 changes "pass 3 makes" to
+    "pass 3 made" and nothing else. #471 is already closed, so it is left alone and the PR says
+    so.
 14. The PR's `catalog` run shares the proving target with other rounds. A run that is cancelled
-    or superseded (M16) gets `gh run rerun <run-id>` once. After a green run, a read-only
+    or superseded (M16) gets `gh run rerun <run-id>` once. If auto mode refuses it, the PR
+    records the run id and the refusal for the conductor, and the pass goes on (standing answer
+    2). After a green run, a read-only
     `curl -s https://demo-proving.cairn.pub/ | grep -o '<link rel="canonical"[^>]*>'` must name
     `https://demo-proving.cairn.pub`, and the PR records the line.
+15. The home page's banner carries an evergreen notice (meetings are open to visitors, and the
+    first one is free) with `expires="2999-01-01"`, as the conformance set's banners do (M20).
+    A dated notice would disappear from a permanent release, and pass 4 needs the Notice
+    section to render. [advisor]
+    Call: the design's Notice is a dated announcement; the set's never expires, so every demo
+    shows one.
 
 ## Tasks
 
@@ -219,7 +257,7 @@ on every dispatch. Group 1 is T1, T4, and T5 side by side. Group 2 is T2 after g
 Group 3 is T3 beside T6. Each task ends with the fast lane as decision 12 sets out. Push only at a
 group's end, after its tasks merge.
 
-### T0. Names, facts, and map sources (25 min, the executor's session, before group 1)
+### T0. Names, facts, and map sources (20 min, the executor's session, before group 1)
 
 1. Search every invented name (decision 6) as an exact phrase, alone and with "Anchorage":
    the society, the hall, four supporters, and the mail domain. On a match, standing answer 6.
@@ -228,11 +266,15 @@ group's end, after its tasks merge.
    Peninsula, Portage Valley, the Matanuska Valley) and find a public source for each: a USGS
    map, GNIS, the NPS, the state, or a named reference. Record each fact with its URL and a
    quoted excerpt that supports it. A fact with no source is dropped.
-3. Find the five map sheets (decision 8) in topoView and Natural Earth. Record each download
-   URL, its format, and its size (M19), and read each USGS sheet's collar credit for a licensed
-   layer.
+3. Pick the sheets for the five maps (decision 8) through the TNM API query in M19: the
+   Anchorage and Seward 1:250,000 sheets cover Knik Arm, Turnagain Arm, Portage Valley, and the
+   Chugach front, and `SR_HR.zip` covers south-central Alaska. Record each download URL and its
+   year, and read each USGS sheet's collar credit (its lower margin) for a licensed layer.
 4. Write the three lists to `$CLAUDE_JOB_DIR/tmp/pennant-3-t0.md`. They go to T4 and T5 in
    their dispatches, and into the PR at close.
+5. Dispatch one `web-fetch` agent in the background with the fact list: for each fact, fetch
+   its URL and say whether the quoted excerpt appears there. It runs while group 1 works, off
+   the path. A fact it can't confirm is cut from the list and from T4's prose before T4 merges.
 
 ### T1. `buildDemo` takes a set and an origin (30 min, Sonnet `medium`, group 1)
 
@@ -275,9 +317,10 @@ no other fact about a real place.
    description, the three menus of decision 5 and nothing else in `menus`, the posts' tags in
    the vocabulary, and the showcase's `tidy` block. No marker comment (M17).
 3. The safeguarding page states plainly how the junior program is run (two adults present,
-   parents told the plan for each field day, photos only with consent) and how the society
-   handles members' details (used only to run the society, never sold or shared, deleted on
-   request). It gives no legal claim and names no law.
+   parents told the plan for each field day) and says, as the design requires, that photos of
+   children appear only with a parent's written consent and never beside a full name. It says
+   how the society handles members' details (used only to run the society, never sold or
+   shared, deleted on request). It gives no legal claim and names no law.
 4. Return the final list of sentences that state a fact about a real place, each matched to its
    T0 source, in the task report.
 
@@ -288,9 +331,13 @@ and config are committed and every link names a page the set holds.
 
 The dispatch carries T0's sheet URLs.
 
-1. Download the sheets into their own empty directory under the job's `tmp` with `curl`.
-2. Crop each to the five names T4 uses (decision 8) with `magick` or `cwebp`, at 1600 px wide or
-   less, each under 400,000 bytes.
+1. Download the sheets into their own empty directory under the job's `tmp` with `curl`, and
+   unzip `SR_HR.zip` there.
+2. Crop each to the five names T4 uses (decision 8) with `sharp`, as M19 did: a node script
+   kept in a separate directory under the job's `tmp`, resolving `sharp` from the worktree's
+   `package.json` through `createRequire`, reading with `limitInputPixels: false`, then
+   `extract`, `resize({ width: 1600 })`, and `webp({ quality: 70 })`. Each file is under
+   400,000 bytes. Look at each crop before committing it.
 3. Write `sets/organization/cairn-set.json`: `$schema`, `kind: organization`,
    `version: 1.0.0`, `engine` and `license` per decision 10, `notes: First release.`, and one
    `images` entry per file with `path`, `source`, and `license`.
@@ -344,7 +391,8 @@ Done when `npm run test:catalog` passes.
    decision 4 does, including that it changes nothing on the real catalog, and add the set
    lookup and the origin to the demo section. Line 113 ("The proving target needs nothing new")
    stays.
-2. In `BACKLOG.md`, apply decision 13 in the file's own format.
+2. In `BACKLOG.md`, apply decision 13 in the file's own format. Read each entry first, since
+   main's copy has moved since the base.
 
 Done when the fast lane passes.
 
@@ -366,7 +414,11 @@ in the PR.
 
 ## Close
 
-Close is 50 minutes on the path. Run the `cairn-running-passes` close checklist. Then:
+Close is 55 minutes on the path. Run the `cairn-running-passes` close checklist. Then:
+
+- If GitHub reports the PR as conflicting with `main` (main's `BACKLOG.md` has moved since the
+  base), merge `origin/main` into `pennant-3` with a merge commit, resolve keeping both sides'
+  entries, and rerun the fast lane. Never rebase a pushed branch.
 
 - The close gate is `node scripts/checks/gate-tier.mjs --range 91b3738a3..HEAD` through
   `cairn-run-gate`, with any `make -C tool check` leg dropped (decision 12).
@@ -382,8 +434,12 @@ Close is 50 minutes on the path. Run the `cairn-running-passes` close checklist.
   its "Ready on" line (up to 60 seconds), take Playwright screenshots at the five widths, and stop
   the server with `TaskStop`. Waymark renders no `actions` and no cards styling of its own; the
   read checks that nothing breaks, overflows, or reads wrong.
+- In the same round as the reviewers, dispatch `standards:visual-verifier` (fresh context, no
+  reference image) on those fifteen screenshots, asking for breakage, horizontal overflow,
+  clipped text, and a missing image at each width. A STRUCTURAL item is fixed before ready.
 - The PR body carries `Round: pennant`, `Pass: 3 set`, `Review: <verdict>, open findings <n>`,
-  `Calls:` (decisions 2 and 7), `## Decisions`, `## Planning misses`, `## Name searches`,
+  `Calls:` (decisions 2, 7, 10, and 15), `## Decisions` (naming #251's `[advisor]` line on
+  four-column cards beside decision 5), `## Planning misses`, `## Name searches`,
   `## Facts about real places`, the cleanups filed through `standards:log-issue`, and the
   catalog proving run's result.
 - The last commit deletes this plan and its executor prompt. Rerun `npm run check:docs-gate`
@@ -400,6 +456,16 @@ Close is 50 minutes on the path. Run the `cairn-running-passes` close checklist.
   lost. Decision 1.
 - [file-list] The design names no step for the web work (name searches, fact sources, map
   sheets), and no implementer has web tools (M14). T0 added at planning.
+
+## Advisor fold
+
+The planner's advisor read the plan before launch. Folded: the evergreen banner (decision 15,
+M20), post dates (M21), the home shape against the mockup (decision 5, M23), the design's
+contact and safeguarding wording (decision 5, T4 step 3), the text license as a call (decision
+10), the engine range (M22), the map probe and `sharp` (M19, T5), the full denials count and the
+rerun alternative (Pre-flight, decision 14), the fresh visual grade and the fact fetch (Close,
+T0 step 5), the skills list, and the conflict merge (Close). The path stays 230: T0 lost five
+minutes to the planning probe, and Close gained five for the grade.
 
 ## Plan review fold
 

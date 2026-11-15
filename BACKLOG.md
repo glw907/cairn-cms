@@ -294,6 +294,18 @@
 
 ## Low
 
+- [ ] **#494** Fix a loose list item's `p` nesting inside `p.cards-text` `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `card()` at `examples/showcase/src/chassis/directives/vocabulary.ts:435` wraps the item's remaining children in a `p`. A loose list item arrives with its own `p` child, so the output nests `p` in `p`, which the HTML parser splits and an axe run can flag. Found by the `pennant-1` whole-branch review. Fix: unwrap a lone `p` child before building the body.
+  Placement: the next pass that touches the chassis directive vocabulary.
+- [ ] **#493** Show the cards block's light-mode card edge more plainly `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `.prose .cards-item` in `examples/showcase/src/chassis/prose.css` draws a 1px `--color-card-border` on the page ground, about 1.18:1 composited in light mode against the mockup's 1.31:1. It stays visible at 1x but fades on a dim screen. Found by the `pennant-1` visual grade, graded cosmetic. Fix: one token step darker for the light edge, as a public-theme token change.
+  Placement: the next pass that touches `src/lib/public` tokens.
+- [ ] **#492** Guard a linked image that the cards block reads as a title `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `card()` at `examples/showcase/src/chassis/directives/vocabulary.ts:425` takes any leading `a` as the title, so `[![alt](src)](url)` becomes a title holding an image, not a card image. An editor who links a card's image gets a broken title row. Found by the `pennant-1` whole-branch review. Fix: treat a leading `a` whose only child is an `img` as the image, or say on `skills/cairn-styling-public-pages/references/directive-cards.md` that it is unsupported.
+  Placement: the next pass that touches the chassis directive vocabulary.
+- [ ] **#491** Lazy-load the cards block's images `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `card()` at `examples/showcase/src/chassis/directives/vocabulary.ts:437` emits `img` with no `loading` or `decoding`, so a block of nine cards below the fold fetches every image on page load. Found by the `pennant-1` a11y review. Fix: add `loading: 'lazy'` and `decoding: 'async'` to the image properties, with the test and skill page updated.
+  Placement: the next pass that touches the chassis directive vocabulary.
 - [ ] **#472** A template fetch that finds no template tells the owner to check their internet connection `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-14)*
   `cairn new` with no `--tag` and no `npm_config_tag` fetches the engine's `latest` (0.98.x today), whose tarball has no `template/`. Setup then prints `tmplNewTemplateFetch` (`tool/cmd/cairn/messages.go:892`): "setup couldn't download the site template from npm: scaffold: the tarball carries no template. Check your internet connection". The download worked, so the advice sends the owner the wrong way. Met painting dev.9's screens from the bare binary on 2026-11-14; `npm create cairn-site` passes the tag, so no owner meets it before the release puts a template on `latest`. Fix: give a version with no template its own sentence that names the version and says to run `npm create cairn-site`, and keep the connection advice for network errors.
   Placement: the next pass that changes `tool/cmd/cairn/messages.go`.

@@ -71,8 +71,5 @@ What a session needs to know:
 
 ## Pass 2 executor
 
-Pass 2 `reports` of round `tui-language` is built on branch `tui-language-2` and sits in PR #247 (session
-`cairn-cms-tui-language-2`, id 33ef0207), waiting on the conductor. `cairn health`, `logs`, the `sites` status block, and
-`doctor` draw the shared terminal layout; pipe and `--json` bytes match `main`. The closing review verdict is accept.
-Next: pass 3 (`CAIRN_PLAIN=1`, the theme variable, help) after the conductor merges #247. Open filings: #487 to #489 and
-#491 to #494.
+Pass 2 `reports` of round `tui-language` sits in PR #247 (review accept), waiting on the conductor; pass 3 follows its merge.
+Open filings: #487 to #489 and #491 to #494.

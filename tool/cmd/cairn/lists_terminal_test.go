@@ -103,6 +103,22 @@ func TestAdoptBlock(t *testing.T) {
 	}
 }
 
+func TestRouteOnlyNoticeLayout(t *testing.T) {
+	got := plainOf(noticeLines(trueColorView().t, tmplAdoptListRouteOnly, 80))
+	if len(got) < 3 || got[len(got)-1] != "" {
+		t.Fatalf("notice = %q, want its lines and a closing blank line", got)
+	}
+	for _, l := range got[:len(got)-1] {
+		if !strings.HasPrefix(l, "  ") || strings.HasPrefix(l, "   ") {
+			t.Errorf("notice line %q does not start at cell 2", l)
+		}
+	}
+	lines := append(got, plainOf(adoptLines(trueColorView(), []render.AdoptCandidate{{Worker: "a", Domain: "d", Repo: "r", Adoptable: true}}))...)
+	if title := lines[len(got)]; !strings.HasPrefix(title, "  ready to adopt") {
+		t.Errorf("line after the notice = %q, want the title", title)
+	}
+}
+
 func TestReceiptBlock(t *testing.T) {
 	raw := receiptLines(trueColorView(), "CAIRN_GH_READ_TOKEN stored in the keyring")
 	plain := plainOf(raw)

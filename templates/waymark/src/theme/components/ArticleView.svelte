@@ -130,7 +130,9 @@ as it did before the prop existed. -->
    * rather than re-reading frontmatter, so this agrees with whatever the head itself already decided.
    */
   const markdownUrl = $derived(
-    preview || home || data.seo.meta.some((m) => m.name === 'robots' && m.content.includes('noindex'))
+    preview ||
+      home ||
+      data.seo.meta.some((m) => m.name === 'robots' && m.content.includes('noindex'))
       ? undefined
       : data.canonicalUrl + '.md',
   );

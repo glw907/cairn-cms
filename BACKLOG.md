@@ -6,6 +6,28 @@
 
 ## Medium
 
+- [ ] **#486** Every theme's proving demo shares one address, so a second theme fails the proving reference check `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  The `catalog-proving` environment's `DEMO_WORKER` and `DEMO_ORIGIN` carry no `{id}`, so `scripts/catalog/publish.mjs:299-300` deploys every theme over `cairn-demo-proving` and records the one address `https://demo-proving.cairn.pub/` as each theme's `demo`. The last deploy wins, and `reference-check.mjs:125-129` then fails every other theme's marker. Waymark is the only theme today; the pull request that adds Survey goes red on the proving run. Fix candidates: a proving demo Worker per theme, or a proving reference check that reads only the last-deployed demo. Found in theme-catalog-1 (C1.9).
+  Placement: before the pass that adds Survey to `themes/`.
+- [ ] **#485** A change to `scripts/theme/viewer/site.mjs` runs every static check in the fast lane but not `test:theme` `#improvement` `#cairn-cms` `#tooling` `#initiative:theme-garden` *(2026-11-14)*
+  `scripts/theme/viewer/site.mjs` sits in the `scripts` bucket and no check reads it, so `scripts/checks/gate-tier.mjs` (the "read by no check" fallback near `:425`) runs every static check. `npm run test:theme`, whose tests cover the viewer, is in `CI_CHECKS` (`gate-tier.mjs:122`) but has no row in `gate-table.json`'s `checks` or `extraCommands`, so no lane runs it and a viewer break shows only in CI. Fix: make `test:theme` an `extraCommands` leg picked by a `scripts/theme/` change, and let `scripts/theme/` skip the every-check fallback, with a gate-tier test case. Found in theme-catalog-1.
+  Placement: the next pass that touches `scripts/theme/` or the gate table.
+- [ ] **#484** Two starter posts write `/admin` as inline code, which reads as a path an owner can't click `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `scripts/build/starter-overlay/src/content/posts/2026-11-07-write-your-first-post.md:9` and `2026-11-03-invite-an-editor.md:14` say "your site's `/admin`". A new site and every catalog demo show these as code, and a demo has no admin at that address. Reword as plain prose (for example "your site's admin, at /admin") in the editor voice. Found in theme-catalog-1.
+  Placement: the blog set's pass, or the next starter-content edit.
+- [ ] **#483** A catalog demo's canonical and feed links point at `https://showcase.test/` `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `scripts/catalog/demo.mjs` builds over the showcase copy, whose `publicOrigin` is `'https://showcase.test'` (`examples/showcase/src/site/cairn.config.ts:37`), so every demo page's canonical URL, `og:url`, feed, and sitemap name a placeholder host. Fix: have `buildDemo` write the theme's public origin, from `DEMO_ORIGIN` with `{id}` replaced, into the composed site's `publicOrigin` before the build, with a test on the built `index.html`. Found in theme-catalog-1.
+  Placement: the next catalog pass.
+- [ ] **#482** Serve the theme and catalog schemas at their `$id` addresses from the rebuilt cairn.pub `#feature` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `schema/cairn-theme-1.schema.json` and `schema/cairn-catalog-1.schema.json` declare `$id` `https://cairn.pub/schemas/cairn-theme/1.json` and `https://cairn.pub/schemas/cairn-catalog/1.json`, which answer nothing today. The design says the rebuilt cairn.pub serves both, so a reader that resolves a `$schema` or `$id` fails until it does. Found in theme-catalog-1 (design "The catalog file").
+  Placement: the cairn.pub rebuild.
+- [ ] **#481** Move Waymark's demo from the starter overlay to the blog set `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  `scripts/catalog/demo.mjs` `buildDemo` defaults `contentDirs` to `scripts/build/starter-overlay`, since no content set exists yet. The design builds a theme's demo over the set of its first kind, so once `sets/blog/` publishes, Waymark's demo (`kinds` `["blog"]`) shows the wrong content until the publish run passes the set. Found in theme-catalog-1 ("Calls settled here").
+  Placement: the pass that publishes the blog set.
+- [ ] **#480** Prove a theme's declared engine minimum, not only that it admits the current engine `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
+  The theme check's `engine-range` rule (`scripts/theme/check-rules.mjs`, `'engine-range'`) only proves the range admits the engine version in `package.json`. A theme that declares `>=1.2.0` while needing 1.3 passes, and an installer on engine 1.2 then picks a release that breaks. Proving the minimum needs an engine release that reads the catalog, and none exists. Found in theme-catalog-1 ("Calls settled here").
+  Placement: the installer round, once an engine release reads the catalog.
+
 - [ ] **#479** `style.MarkRow`, `VerdictLine` and `ErrorBlock` never wrap or clamp a name wider than the width `#bug` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-14)*
   `tool/internal/style/blocks.go`: a 40-cell `doctor` name at width 40 overflows the width, and no `blocks_test.go` case covers it. Only `cmd/specimen` calls the blocks today, so no output is wrong yet; pass 2 adopters would draw an overflowing row. Found by PR #245's whole-branch review. Placement: tui-language pass 2.
 - [ ] **#478** `tool/docs/**` is outside Vale's scope `#improvement` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-14)*

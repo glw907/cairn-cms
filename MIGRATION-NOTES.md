@@ -84,6 +84,8 @@ Only the release in this file has notes here. The notes of earlier releases live
 
 ## Unreleased
 
+The `/delivery` entry point adds `buildICalendarResponse`, with its input types `ICalendar` and `ICalendarEvent`. A site opts in by adding a route that returns the response, and nothing that exists changes.
+
 A new site's starter content is a standard set of pages and posts in place of the showcase's trail demo. This asks nothing of a site that already exists. A site you start after this lands replaces the sample content with its own, as [Make a scaffolded site yours](./skills/cairn-extending-a-site/references/make-it-yours.md) lists.
 
 A script that reads `cairn` output from a pipe, a file, or `--json` needs no change: those bytes are what

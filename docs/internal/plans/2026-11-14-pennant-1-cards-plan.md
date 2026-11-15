@@ -217,9 +217,10 @@ commits the generated tree before its lane.
 
 1. Probe, in a test that stays: in `examples/showcase/src/chassis/directives/` add the `cards` def
    (Decisions 1 to 7) and a unit test beside `compose.test.ts` that, for the preview block and for
-   the acceptance 2 fixture (two items: `![A trail map](https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=720)
-   [Junior program](/programs/junior) Ages 10 to 16.` and `[Map night](/map-night) Second
-   Tuesday.`), asserts `serializeComponent(parseComponent(md))` equals `md` and
+   the acceptance 2 fixture (two items, the first
+   `![A trail map](https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=720) [Junior program](/programs/junior) Ages 10 to 16.`
+   and the second
+   `[Map night](/map-night) Second Tuesday.`), asserts `serializeComponent(parseComponent(md))` equals `md` and
    `componentRoundTripSafety` is safe. The showcase has no static image, and M1 proved this URL.
    If the probe fails, standing answer 1 applies before anything else is built.
 2. `build`: the item rule and the columns clamp. Unit tests, one per failure row in the design's

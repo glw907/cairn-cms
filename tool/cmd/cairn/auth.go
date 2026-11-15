@@ -79,7 +79,7 @@ func promptPassword(cmd *cobra.Command, name string, stdin io.Reader) (string, e
 	// how that is learned: this is not a terminal test the run branches on, so the read path
 	// below is the same either way.
 	if state, err := term.GetState(fd); err == nil {
-		defer restoreOnCancel(commandContext(cmd), func() { _ = term.Restore(fd, state) })()
+		defer restoreOnCancel(cmd.Context(), func() { _ = term.Restore(fd, state) })()
 	}
 
 	if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "%s: ", name); err != nil {

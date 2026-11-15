@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
@@ -218,21 +219,11 @@ func printCheckRow(out io.Writer, row checkRow) {
 func unsetAmong(missing []providers.Missing, names ...string) []string {
 	var unset []string
 	for _, name := range names {
-		if isMissing(missing, name) {
+		if slices.ContainsFunc(missing, func(m providers.Missing) bool { return m.Var == name }) {
 			unset = append(unset, name)
 		}
 	}
 	return unset
-}
-
-// isMissing reports whether missing names the variable name.
-func isMissing(missing []providers.Missing, name string) bool {
-	for _, m := range missing {
-		if m.Var == name {
-			return true
-		}
-	}
-	return false
 }
 
 // printCredentialSources writes which provider answered each of the three variables loadEnv

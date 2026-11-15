@@ -152,12 +152,6 @@ func writeNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error
 	return nil
 }
 
-// commandContext returns cmd's context. Execute always sets one, and a test that calls RunE
-// directly passes a command built with a real context.
-func commandContext(cmd *cobra.Command) context.Context {
-	return cmd.Context()
-}
-
 // versionLine renders tmplVersion for the running binary's build identity: internal/version
 // resolves the tool version and the commit, and runtime reports the toolchain that built it and
 // the platform it targets.

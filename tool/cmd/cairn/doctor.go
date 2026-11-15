@@ -64,7 +64,7 @@ func runDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, args []
 		return writeOutsideCairnSite(cmd, d, rf, f, snap, dir)
 	}
 
-	ctx, cancel := rf.deadline(commandContext(cmd))
+	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
 	snap.PublicOrigin = resolvePublicOrigin(d, snap)
@@ -118,12 +118,7 @@ func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dir stri
 		Site:    filepath.Base(dir),
 		Verdict: verdict,
 	})
-	for _, line := range frame.Lines() {
-		if _, err := fmt.Fprintln(w, line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeLines(w, frame.Lines())
 }
 
 // writeDoctorJSON writes the cairn-doctor.schema.json payload.

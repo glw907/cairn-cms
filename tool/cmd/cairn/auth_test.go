@@ -211,7 +211,7 @@ func unsetDeps(del *fakeDeleter) deps {
 	return deps{keyringDeleter: del}
 }
 
-// TestAuthUnsetTable covers the four rows the ratified 2026-09-21 note asks for: a present entry,
+// TestAuthUnsetTable covers four rows: a present entry,
 // an absent one, an unavailable backend, and a name outside the known set.
 func TestAuthUnsetTable(t *testing.T) {
 	tests := []struct {
@@ -304,7 +304,7 @@ func TestRestoreOnCancelRestoresWhenTheContextCancels(t *testing.T) {
 	}
 }
 
-// TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails covers the ratified 2026-09-21
+// TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails covers the fallback
 // path: under `go test`, stdin is not a terminal, so term.ReadPassword fails and the fallback
 // below reads the injected stream instead of hanging or erroring.
 func TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails(t *testing.T) {

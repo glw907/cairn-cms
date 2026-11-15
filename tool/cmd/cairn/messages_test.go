@@ -146,8 +146,7 @@ func messageConstants(t *testing.T) []string {
 	return entries
 }
 
-// TestNoCAIRNPrefixedLiteralOutsideCredentialVars extends Task 19c-i's conflict test over this
-// table: every CAIRN_-prefixed literal messages.go carries is a member of authVariables (built
+// TestNoCAIRNPrefixedLiteralOutsideCredentialVars checks that every CAIRN_-prefixed literal messages.go carries is a member of authVariables (built
 // from credentialVars, env.go) or the setup token's variable, which
 // TestCredentialVariableNamesAreSpelledOnlyInEnvGo already exempts this file to allow.
 func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
@@ -173,8 +172,7 @@ func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 // pattern generalized from an allow-list check to a real-tree check.
 var cairnBacktickCommandPattern = regexp.MustCompile("`cairn [a-z][a-z -]*`")
 
-// TestNoMessageNamesAnUnknownCairnCommand extends Task 19c-i's conflict test the same way,
-// checked against the real cobra tree cairn builds rather than an allow-list: every backtick-
+// TestNoMessageNamesAnUnknownCairnCommand checks, against the real cobra tree cairn builds rather than an allow-list, that every backtick-
 // quoted "cairn ..." command mention messages.go carries resolves to a command somewhere in
 // newRootCmd's tree.
 func TestNoMessageNamesAnUnknownCairnCommand(t *testing.T) {

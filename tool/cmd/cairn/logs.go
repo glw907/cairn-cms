@@ -90,7 +90,7 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 		return noCloudflareCredentialError()
 	}
 
-	ctx, cancel := rf.deadline(commandContext(cmd))
+	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
 	entries, err := logs.Fetch(ctx, clients.CF, logs.Query{

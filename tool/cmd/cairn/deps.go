@@ -114,12 +114,12 @@ func buildClients(d deps) health.Clients {
 		NPM:   providers.NewNPM(d.transport),
 		Probe: providers.NewProbe(d.transport, d.resolver),
 	}
-	if !isMissing(missing, varCFAccountID) && !isMissing(missing, varCFReadToken) {
+	if len(unsetAmong(missing, varCFAccountID, varCFReadToken)) == 0 {
 		c.CF = providers.NewCloudflare(resolved.accountID(), resolved.cfToken(), d.transport)
 		c.HaveCF = true
 		c.CFFrom = credentialSource(resolved, varCFReadToken)
 	}
-	if !isMissing(missing, varGHReadToken) {
+	if len(unsetAmong(missing, varGHReadToken)) == 0 {
 		c.GH = providers.NewGitHub(resolved.ghToken(), d.transport)
 		c.HaveGH = true
 		c.GHFrom = credentialSource(resolved, varGHReadToken)
@@ -149,7 +149,7 @@ func newDeps() deps {
 		transport:      http.DefaultTransport,
 		resolver:       net.DefaultResolver,
 		registryDir:    defaultRegistryDir,
-		registrySource: defaultRegistrySource,
+		registrySource: registryDirAndSource,
 		now:            time.Now,
 		stdin:          os.Stdin,
 		exit:           os.Exit,

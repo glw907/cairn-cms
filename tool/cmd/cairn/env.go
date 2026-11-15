@@ -64,9 +64,9 @@ func setupToken(envFn func(string) string) (providers.Credential, error) {
 	return tok, nil
 }
 
-// varNoColor and varTerm are the two variables loadEnv reads for style.Detect. Neither
-// is a credential: they carry no Missing entry and are read directly from envFn rather than
-// through secrets.Resolve's provider chain, which is for the three CAIRN_ variables above alone.
+// varNoColor and varTerm are the two variables the report commands read for style.Detect. Neither
+// is a credential: they are read straight from the environment, never through secrets.Resolve's
+// provider chain, which is for the CAIRN_ credential variables above alone.
 const (
 	varNoColor = "NO_COLOR"
 	varTerm    = "TERM"
@@ -104,23 +104,9 @@ type resolution struct {
 	display    string
 }
 
-// env holds every variable loadEnv resolved, keyed by name, plus the two plain environment reads
-// no secrets.Provider ever sees: noColor and term, the pair style.Detect takes to pick a color
-// profile. Both come straight from envFn.
+// env holds every credential variable loadEnv resolved.
 type env struct {
 	resolutions []resolution
-	noColor     string
-	term        string
-}
-
-// noColorValue returns the resolved NO_COLOR value, empty when unset.
-func (e env) noColorValue() string {
-	return e.noColor
-}
-
-// termValue returns the resolved TERM value, empty when unset.
-func (e env) termValue() string {
-	return e.term
 }
 
 // accountID returns the resolved CAIRN_CF_ACCOUNT_ID value.
@@ -183,9 +169,6 @@ func loadEnv(envFn func(string) string, p ...secrets.Provider) (env, []providers
 
 	var out env
 	var missing []providers.Missing
-
-	out.noColor = envFn(varNoColor)
-	out.term = envFn(varTerm)
 
 	for _, cv := range credentialVars {
 		v, from, err := secrets.Resolve(cv.name, chain...)

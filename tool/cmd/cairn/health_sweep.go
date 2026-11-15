@@ -42,7 +42,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 		listErrs = append(listErrs, spine.ErrExpectSites)
 	}
 
-	envelope, cancel := sweepDeadline(commandContext(cmd), rf, len(entries))
+	envelope, cancel := sweepDeadline(cmd.Context(), rf, len(entries))
 	defer cancel()
 
 	// A sweep's verdict is only known once every site has settled, and --quiet turns on that

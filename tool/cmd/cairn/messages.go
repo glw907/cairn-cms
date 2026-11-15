@@ -383,8 +383,7 @@ const (
 // Worker with no Custom Domain. cairn provisions Workers Custom Domains and never Workers
 // Routes, so discovery reads the Custom Domains route alone and those Workers cannot be adopted
 // from it; naming them and saying how to adopt one anyway is what keeps a route-served site from
-// disappearing out of the listing in silence. New to this table, owed to the 2026-09-21 live
-// verification.
+// disappearing out of the listing in silence.
 const tmplAdoptListRouteOnly = "cairn: the Workers after the blank line serve no Custom Domain, so cairn cannot adopt them from what it discovered.\nRun `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the domain it serves"
 
 // tmplAdoptNoDomain is cairn adopt's refusal of a Worker discovery found no Custom Domain for,

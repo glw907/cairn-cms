@@ -556,9 +556,188 @@ describe('the theme check runs in the test job every release waits on', () => {
     expect(steps[at(run)]).not.toHaveProperty('if');
   });
 
+  it('runs the catalog tests and the version-rise check over the event range, on a full history', () => {
+    const checkout = steps.find((step) => (step.uses ?? '').startsWith('actions/checkout'));
+    expect(checkout?.with?.['fetch-depth']).toBe(0);
+    expect(at('npm run test:catalog')).toBeGreaterThan(showcaseInstall);
+    expect(steps[at('npm run test:catalog')]).not.toHaveProperty('if');
+    const rise = steps[at('node scripts/catalog/version-rise.mjs --range "$BASE..HEAD"')] as Step & { env?: Record<string, string> };
+    expect(rise, 'the version-rise step').toBeDefined();
+    expect(rise.env?.BASE).toBe(
+      "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}"
+    );
+    // A push that creates a branch carries an all-zeros `before`, which names no commit.
+    expect(rise.if).toBe("github.event.before != '0000000000000000000000000000000000000000'");
+  });
+
   it('keeps ci-green waiting on the test check run for a candidate and a stable', () => {
     const run = loadWorkflow('publish.yml').jobs?.['ci-green']?.steps?.map((step) => step.run ?? '').join('\n') ?? '';
     expect(run).toContain('NAMES="test"');
     expect(run).toContain('NAMES="test e2e"');
+  });
+});
+
+describe('catalog.yml proves a publish on a pull request and publishes for real from main', () => {
+  type CatalogStep = Step & { env?: Record<string, string> };
+  type CatalogJob = Job & {
+    environment?: unknown;
+    permissions?: unknown;
+    env?: Record<string, string>;
+    concurrency?: { group?: string; 'cancel-in-progress'?: unknown };
+    steps?: CatalogStep[];
+  };
+  const workflow = loadWorkflow('catalog.yml') as Workflow & { permissions?: Record<string, string> };
+  const jobs = Object.values(workflow.jobs ?? {}) as CatalogJob[];
+  const job = jobs[0] ?? {};
+  const steps = job.steps ?? [];
+  const PATHS = [
+    'themes/**',
+    'sets/**',
+    'schema/cairn-catalog-1.schema.json',
+    'scripts/catalog/**',
+    'scripts/theme/**',
+    'scripts/build/starter-overlay/**',
+    '.github/workflows/catalog.yml'
+  ];
+  const ON_PULL_REQUEST = "github.event_name == 'pull_request'";
+  const ENVIRONMENT = "${{ github.event_name == 'pull_request' && 'catalog-proving' || 'catalog' }}";
+  const publishes = (step: CatalogStep): boolean => (step.run ?? '').includes('scripts/catalog/publish.mjs');
+  const NO_OP = steps.find((step) => publishes(step) && (step.run ?? '').includes('catalog: nothing to publish'));
+
+  it('runs on the catalog paths for a pull request and a push to main, and on dispatch', () => {
+    const on = triggers(workflow);
+    expect(on.pull_request).toEqual({ paths: PATHS });
+    expect(on.push).toEqual({ branches: ['main'], paths: PATHS });
+    expect(Object.keys(on).sort()).toEqual(['pull_request', 'push', 'workflow_dispatch']);
+  });
+
+  it('grants contents: read and nothing more', () => {
+    expect(workflow.permissions).toEqual({ contents: 'read' });
+    for (const each of jobs) expect(each.permissions).toBeUndefined();
+  });
+
+  it('runs one job, choosing catalog-proving for a pull request and catalog otherwise', () => {
+    expect(jobs).toHaveLength(1);
+    expect(job.environment).toBe(ENVIRONMENT);
+  });
+
+  it('skips a pull request from a fork or Dependabot, and a dispatch off main', () => {
+    // Neither a fork nor Dependabot gets the environment's secrets, so its run could only fail.
+    expect(job.if).toBe(
+      "(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')"
+    );
+  });
+
+  it('queues one run per environment and never cancels one in progress', () => {
+    expect(job.concurrency?.group).toBe(`catalog-${ENVIRONMENT}`);
+    expect(job.concurrency?.['cancel-in-progress']).toBe(false);
+  });
+
+  it('resets only on a pull request, then proves the second publish a no-op', () => {
+    const resets = steps.filter((step) => (step.run ?? '').includes('--reset'));
+    expect(resets).toHaveLength(1);
+    expect(resets[0].run).toBe('node scripts/catalog/publish.mjs --reset');
+    expect(resets[0].if).toBe(ON_PULL_REQUEST);
+    expect(NO_OP?.if).toBe(ON_PULL_REQUEST);
+    expect(steps.indexOf(NO_OP!)).toBeGreaterThan(steps.indexOf(resets[0]));
+    const once = steps.filter((step) => publishes(step) && step.if !== ON_PULL_REQUEST);
+    expect(once.map((step) => [step.run, step.if])).toEqual([
+      ['node scripts/catalog/publish.mjs', "github.event_name != 'pull_request'"]
+    ]);
+  });
+
+  it('runs the reference check against the environment origin after every publish, on every event', () => {
+    const check = steps.find((step) => (step.run ?? '').includes('scripts/catalog/reference-check.mjs'));
+    expect(check?.run).toBe('node scripts/catalog/reference-check.mjs --catalog "$CATALOG_ORIGIN/index.json"');
+    expect(check?.if).toBeUndefined();
+    const lastPublish = steps.reduce((last, step, at) => (publishes(step) ? at : last), -1);
+    expect(steps.indexOf(check!)).toBeGreaterThan(lastPublish);
+    expect(job.env?.CATALOG_ORIGIN).toBe('${{ vars.CATALOG_ORIGIN }}');
+  });
+
+  it('hands the secrets only to the steps that run the publish script', () => {
+    const SECRETS = ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'CLOUDFLARE_API_TOKEN'];
+    const VARS = ['CLOUDFLARE_ACCOUNT_ID', 'CATALOG_BUCKET', 'CATALOG_ORIGIN', 'DEMO_WORKER', 'DEMO_ORIGIN', 'RELEASE_CACHE_CONTROL'];
+    expect(job.env).toEqual(Object.fromEntries(VARS.map((name) => [name, `\${{ vars.${name} }}`])));
+    for (const step of steps) {
+      const named = JSON.stringify(step).includes('secrets.');
+      expect(named, step.name ?? step.run ?? step.uses).toBe(publishes(step));
+      if (publishes(step)) {
+        expect(step.env).toEqual(Object.fromEntries(SECRETS.map((name) => [name, `\${{ secrets.${name} }}`])));
+      }
+    }
+  });
+
+  it('installs both trees, builds the package, and installs Chromium before the first publish', () => {
+    const commands = steps.map((step) => step.run ?? String(step.with?.command ?? ''));
+    const first = steps.findIndex(publishes);
+    const order = ['npm ci', 'npm ci --prefix examples/showcase', 'npm run package', 'npx playwright install --with-deps chromium'].map(
+      (command) => commands.indexOf(command)
+    );
+    expect(order.every((at) => at >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(order.at(-1)).toBeLessThan(first);
+  });
+
+  it('pins every third-party action by a 40-hex commit sha and keeps no credential in the checkout', () => {
+    const uses = steps.map((step) => step.uses ?? '').filter((u) => u !== '' && !u.startsWith('./'));
+    expect(uses.length).toBeGreaterThan(0);
+    for (const u of uses) expect(u).toMatch(/@[0-9a-f]{40}$/);
+    const checkout = steps.find((step) => (step.uses ?? '').startsWith('actions/checkout'));
+    expect(checkout?.with?.['persist-credentials']).toBe(false);
+  });
+
+  describe('the no-op proof under bash with a stub node', () => {
+    function run(out: string, code = 0): number | null {
+      const dir = mkdtempSync(resolve(tmpdir(), 'catalog-no-op-'));
+      const stub = resolve(dir, 'node');
+      writeFileSync(stub, ['#!/bin/bash', 'printf "%s\\n" "$STUB_OUT"', 'exit "$STUB_CODE"'].join('\n'));
+      chmodSync(stub, 0o755);
+      return spawnSync('bash', ['-e', '-o', 'pipefail', '-c', NO_OP?.run ?? 'exit 99'], {
+        encoding: 'utf8',
+        env: { PATH: `${dir}:${process.env.PATH}`, STUB_OUT: out, STUB_CODE: String(code) }
+      }).status;
+    }
+
+    it('passes when the second run prints exactly the no-op line', () => {
+      expect(run('catalog: nothing to publish')).toBe(0);
+    });
+
+    it('fails when the second run publishes something', () => {
+      expect(run('catalog: wrote index.json with theme waymark@1.1.0')).not.toBe(0);
+    });
+
+    it('fails when the line is only part of another line', () => {
+      expect(run('catalog: nothing to publish, but')).not.toBe(0);
+    });
+
+    it('fails when the second run exits nonzero', () => {
+      expect(run('catalog: nothing to publish', 1)).not.toBe(0);
+    });
+  });
+});
+
+describe('catalog-check.yml reads the real catalog daily with no secret', () => {
+  const name = 'catalog-check.yml';
+  const source = (): string => readFileSync(resolve(WORKFLOW_DIR, name), 'utf8');
+
+  it('runs on a schedule and on dispatch alone', () => {
+    const on = triggers(loadWorkflow(name)) as { schedule?: { cron?: string }[] };
+    expect(Object.keys(on).sort()).toEqual(['schedule', 'workflow_dispatch']);
+    expect(on.schedule?.length).toBe(1);
+  });
+
+  it('names no secret and grants contents: read', () => {
+    expect(source()).not.toContain('secrets.');
+    expect((loadWorkflow(name) as Workflow & { permissions?: unknown }).permissions).toEqual({ contents: 'read' });
+  });
+
+  it('installs Chromium, then checks the reference page against the real address', () => {
+    const steps = Object.values(loadWorkflow(name).jobs ?? {}).flatMap((job) => job.steps ?? []);
+    const commands = steps.map((step) => step.run ?? String(step.with?.command ?? ''));
+    const install = commands.indexOf('npx playwright install --with-deps chromium');
+    const check = commands.indexOf('node scripts/catalog/reference-check.mjs --catalog https://catalog.cairn.pub/index.json');
+    expect(install).toBeGreaterThanOrEqual(0);
+    expect(check).toBeGreaterThan(install);
   });
 });

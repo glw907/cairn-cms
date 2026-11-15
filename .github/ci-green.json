@@ -5,11 +5,13 @@
     ".github/workflows/test.yml"
   ],
   "judgedWhenPresent": [
+    ".github/workflows/catalog.yml",
     ".github/workflows/setup-matrix.yml",
     ".github/workflows/tool-conditions.yml",
     ".github/workflows/tool.yml"
   ],
   "neverOnPullRequest": [
+    ".github/workflows/catalog-check.yml",
     ".github/workflows/publish.yml",
     ".github/workflows/tsgo.yml"
   ],

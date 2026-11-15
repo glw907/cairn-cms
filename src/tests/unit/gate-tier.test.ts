@@ -668,6 +668,9 @@ const CI_EQUIVALENTS: Record<string, string[]> = {
   'node scripts/checks/check-admin-css-classes.mjs': ['npm run check:admin-css-classes'],
   'node scripts/checks/check-consumers.mjs': ['npm run check:consumers'],
   'node scripts/checks/check-public-skill.mjs': ['npm run check:public-skill'],
+  // CI passes the event's range; the local gate runs the no-range form, which compares the merge
+  // base with origin/main to HEAD.
+  'node scripts/catalog/version-rise.mjs --range "$BASE..HEAD"': ['node scripts/catalog/version-rise.mjs'],
 };
 
 // A CI step with no local gate command, each with the reason it stays out of the tier.
@@ -776,6 +779,14 @@ describe('the full tier against CI', () => {
 
   it('runs check:dev-package', () => {
     expect(gateCommands.has('npm run check:dev-package')).toBe(true);
+  });
+
+  it('runs the catalog tests and the version-rise check in its fast-lane form', () => {
+    const legs = (JSON.parse(readFileSync(resolve(process.cwd(), 'scripts/checks/gate-table.json'), 'utf8')) as {
+      extraCommands: Record<string, string>;
+    }).extraCommands;
+    expect(gateCommands.has(legs['test:catalog'])).toBe(true);
+    expect(gateCommands.has(legs['check:version-rise'])).toBe(true);
   });
 });
 

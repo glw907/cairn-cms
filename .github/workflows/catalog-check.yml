@@ -1,0 +1,38 @@
+name: catalog-check
+
+# Reads the real hosted catalog through the reference page every day: every row the page shows,
+# every card, screenshot, and demo address, and each demo's release marker. It holds no secret,
+# since the catalog and the demos are public; a red run means the published catalog broke, not
+# the code under review, so it never runs on a pull request.
+on:
+  schedule:
+    - cron: '0 15 * * *' # daily, 15:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reference-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci
+          clean: node_modules
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npx playwright install --with-deps chromium
+      - run: node scripts/catalog/reference-check.mjs --catalog https://catalog.cairn.pub/index.json
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics

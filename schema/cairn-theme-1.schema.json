@@ -5,7 +5,7 @@
   "description": "The manifest, cairn-theme.json, of a theme directory. An option key is a contract: once a theme ships, renaming or removing a key is a breaking change to the theme, because a later update or switch matches options by key. A default that names one of the option's values is checked by the tokens build, which a schema cannot express.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "name", "description", "version", "license", "author", "contract", "colorModes", "options"],
+  "required": ["id", "name", "description", "version", "engine", "kinds", "notes", "license", "author", "contract", "colorModes", "options"],
   "properties": {
     "$schema": {
       "description": "This schema's URL, versioned by contract.",
@@ -27,6 +27,36 @@
       "description": "Semver for the theme itself.",
       "type": "string",
       "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "engine": {
+      "description": "The engine versions the theme works with, as an npm range in one of two forms: a minimum (>=1.2.0) or a minimum with an upper bound (>=1.2.0 <2.0.0). Readers compare by SemVer precedence, so >=0.99.0-0 admits every prerelease of 0.99.0.",
+      "type": "string",
+      "pattern": "^>=(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?( <(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?)?$"
+    },
+    "kinds": {
+      "description": "One to three kinds of site the theme suits, from the closed list in sets/kinds.json. The first is the kind the theme was designed for.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "enum": ["blog", "portfolio", "docs", "landing", "organization"] }
+    },
+    "notes": {
+      "description": "One line on what this version changed.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "summary": {
+      "description": "A few sentences for the theme's catalog page.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "repository": {
+      "description": "The URL of the theme's source.",
+      "type": "string",
+      "format": "uri"
     },
     "license": { "$ref": "#/$defs/spdx" },
     "author": {

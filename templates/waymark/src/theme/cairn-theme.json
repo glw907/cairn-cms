@@ -3,7 +3,12 @@
   "id": "waymark",
   "name": "Waymark",
   "description": "An intentionally neutral look that's easy to edit.",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "notes": "Adds the fields the hosted catalog reads.",
+  "summary": "A plain, neutral look with generous reading space and a calm type scale. It stays out of the way, so your words come first, and it's easy to change when you want a look of your own.",
+  "engine": ">=0.99.0-0",
+  "kinds": ["blog"],
+  "repository": "https://github.com/glw907/cairn-cms",
   "license": "MIT",
   "author": {
     "name": "cairn",

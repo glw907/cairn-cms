@@ -4,11 +4,11 @@
 //   node scripts/theme/check.mjs <themeDir> [--json] [--rules <id,id>]
 //   node scripts/theme/check.mjs --catalog
 //
-// It runs the contract's rules over one theme directory, or over every theme in
-// `templates/catalog.json`, and prints one `check:theme: <id> pass|fail` line per theme. `--json`
+// It runs the contract's rules over one theme directory, or over every theme
+// directory under `themes/`, and prints one `check:theme: <id> pass|fail` line per theme. `--json`
 // prints the verdict as one JSON document, valid against `schema/cairn-theme-check.schema.json`.
 // `--rules` limits a run to the named rules. Only the `render` rule builds a site.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
@@ -20,6 +20,7 @@ const ROOT = repoRoot(import.meta.url);
 export const RULE_IDS = [
   'manifest-schema',
   'contract-version',
+  'engine-range',
   'tokens-schema',
   'resolver-options',
   'paths-required',
@@ -70,26 +71,24 @@ export async function checkTheme(dir, options = {}) {
 }
 
 /**
- * The directories of the catalog's themes, or the reasons the catalog cannot be checked.
- * @param {string} [file] the catalog file; the engine's `templates/catalog.json` when omitted
+ * The directories of the catalog's themes, or the reasons the catalog cannot be checked. A theme is
+ * a directory under `themes/`.
+ * @param {string} [themesDir] the directory that holds the themes; the repository's `themes/` when omitted
  * @returns {{ dirs: { id: string, dir: string }[], problems: string[] }}
  */
-export function catalogThemes(file = path.join(ROOT, 'templates/catalog.json')) {
-  const catalog = JSON.parse(readFileSync(file, 'utf8'));
+export function catalogThemes(themesDir = path.join(ROOT, 'themes')) {
   const dirs = [];
   const problems = [];
-  if (!Array.isArray(catalog.themes) || catalog.themes.length === 0) problems.push('templates/catalog.json names no theme');
-  for (const entry of catalog.themes ?? []) {
-    if (entry.source !== 'engine') {
-      problems.push(`catalog theme "${entry.id}" has source "${entry.source}", which this check cannot read from a clone`);
-      continue;
-    }
-    // The viewer reads the same directory: a catalog theme lives at themes/<id>. The entry's `path`
-    // names the theme's template, not its source.
-    const dir = path.join(ROOT, 'themes', entry.id);
-    if (existsSync(dir)) dirs.push({ id: entry.id, dir });
-    else problems.push(`catalog theme "${entry.id}": ${path.relative(ROOT, dir)} is missing`);
+  const names = readdirSync(themesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  for (const id of names) {
+    const dir = path.join(themesDir, id);
+    if (existsSync(path.join(dir, 'cairn-theme.json'))) dirs.push({ id, dir });
+    else problems.push(`themes/${id} has no cairn-theme.json`);
   }
+  if (names.length === 0) problems.push('themes/ holds no theme');
   return { dirs, problems };
 }
 

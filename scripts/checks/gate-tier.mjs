@@ -121,6 +121,9 @@ const CI_CHECKS = [
   'npm run check:tool-heuristics',
   'npm run test:theme',
   'npm run check:theme -- --catalog',
+  'npm run test:catalog',
+  // CI passes the event's range; with none, the check compares the merge base with origin/main.
+  'node scripts/catalog/version-rise.mjs',
 ].join(' && ');
 const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && ${CI_CHECKS} && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';

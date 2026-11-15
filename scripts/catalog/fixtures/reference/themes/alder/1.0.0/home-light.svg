@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960">
+<rect width="1440" height="960" fill="#f6f4ef"/>
+<path d="M0 288 C 432 211.2, 864 384, 1440 259.2" fill="none" stroke="#7a6a4a" stroke-opacity="0.35" stroke-width="4"/>
+<path d="M0 364.8 C 432 288, 864 460.8, 1440 336" fill="none" stroke="#7a6a4a" stroke-opacity="0.35" stroke-width="4"/>
+<path d="M0 441.6 C 432 364.8, 864 537.6, 1440 412.8" fill="none" stroke="#7a6a4a" stroke-opacity="0.35" stroke-width="4"/>
+<path d="M0 518.4 C 432 441.59999999999997, 864 614.4, 1440 489.59999999999997" fill="none" stroke="#7a6a4a" stroke-opacity="0.35" stroke-width="4"/>
+<path d="M0 595.2 C 432 518.4000000000001, 864 691.2, 1440 566.4000000000001" fill="none" stroke="#7a6a4a" stroke-opacity="0.35" stroke-width="4"/>
+<path d="M0 672 C 432 595.2, 864 768, 1440 643.2" fill="none" stroke="#7a6a4a" stroke-opacity="0.35" stroke-width="4"/>
+<path d="M0 748.8 C 432 672, 864 844.8, 1440 720" fill="none" stroke="#7a6a4a" stroke-opacity="0.35" stroke-width="4"/>
+<rect x="115.2" y="96" width="432" height="48" rx="9.6" fill="#2b2a26"/>
+<rect x="115.2" y="192" width="720" height="24" rx="4.8" fill="#2b2a26" fill-opacity="0.5"/>
+<text x="115.2" y="864" font-family="sans-serif" font-size="48" fill="#2b2a26">Alder 1.0.0, light</text>
+</svg>

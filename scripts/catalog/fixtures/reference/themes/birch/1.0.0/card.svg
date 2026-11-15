@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480">
+<rect width="720" height="480" fill="#eef2f5"/>
+<path d="M0 144 C 216 105.6, 432 192, 720 129.6" fill="none" stroke="#3d6e8f" stroke-opacity="0.35" stroke-width="2"/>
+<path d="M0 182.4 C 216 144, 432 230.4, 720 168" fill="none" stroke="#3d6e8f" stroke-opacity="0.35" stroke-width="2"/>
+<path d="M0 220.8 C 216 182.4, 432 268.8, 720 206.4" fill="none" stroke="#3d6e8f" stroke-opacity="0.35" stroke-width="2"/>
+<path d="M0 259.2 C 216 220.79999999999998, 432 307.2, 720 244.79999999999998" fill="none" stroke="#3d6e8f" stroke-opacity="0.35" stroke-width="2"/>
+<path d="M0 297.6 C 216 259.20000000000005, 432 345.6, 720 283.20000000000005" fill="none" stroke="#3d6e8f" stroke-opacity="0.35" stroke-width="2"/>
+<path d="M0 336 C 216 297.6, 432 384, 720 321.6" fill="none" stroke="#3d6e8f" stroke-opacity="0.35" stroke-width="2"/>
+<path d="M0 374.4 C 216 336, 432 422.4, 720 360" fill="none" stroke="#3d6e8f" stroke-opacity="0.35" stroke-width="2"/>
+<rect x="57.6" y="48" width="216" height="24" rx="4.8" fill="#1d2a33"/>
+<rect x="57.6" y="96" width="360" height="12" rx="2.4" fill="#1d2a33" fill-opacity="0.5"/>
+<text x="57.6" y="432" font-family="sans-serif" font-size="24" fill="#1d2a33">Birch 1.0.0</text>
+</svg>

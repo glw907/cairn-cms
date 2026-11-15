@@ -59,6 +59,7 @@ describe('the table', () => {
     ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
     ['showcase', 'themes/', 'themes/waymark/theme.css'],
     ['showcase', 'templates/', 'templates/waymark/package.json'],
+    ['showcase', 'sets/', 'sets/kinds.json'],
     ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
     ['engine', 'src/lib/', 'src/lib/log/index.ts'],
     ['engine', 'scripts/build/', 'scripts/build/build-admin-css.mjs'],
@@ -243,6 +244,18 @@ describe('static check selection', () => {
     expect(labelsFor('scripts/checks/normalize-signature.mjs')).toEqual(expect.arrayContaining(['check:surface']));
     expect(selectChecks(['scripts/checks/orphaned-new-script.mjs'], context).all).toBe(true);
     expect(selectChecks(['scripts/ci/retries-notice.mjs'], context).all).toBe(false);
+  });
+
+  it('selects the test:catalog leg for a catalog script, without the every-check fallback', () => {
+    const picked = selectChecks(['scripts/catalog/index.mjs'], context);
+    expect(picked.all).toBe(false);
+    expect(picked.labels).toContain('test:catalog');
+    expect(table.extraCommands['test:catalog']).toBe('npm run test:catalog');
+  });
+
+  it('selects the version-rise leg for the showcase bucket, as a fixed no-range command', () => {
+    expect(labelsFor('examples/showcase/package.json')).toContain('check:version-rise');
+    expect(table.extraCommands['check:version-rise']).toBe('node scripts/catalog/version-rise.mjs');
   });
 
   it('hands the runner labels it accepts', () => {
@@ -655,6 +668,9 @@ const CI_EQUIVALENTS: Record<string, string[]> = {
   'node scripts/checks/check-admin-css-classes.mjs': ['npm run check:admin-css-classes'],
   'node scripts/checks/check-consumers.mjs': ['npm run check:consumers'],
   'node scripts/checks/check-public-skill.mjs': ['npm run check:public-skill'],
+  // CI passes the event's range; the local gate runs the no-range form, which compares the merge
+  // base with origin/main to HEAD.
+  'node scripts/catalog/version-rise.mjs --range "$BASE..HEAD"': ['node scripts/catalog/version-rise.mjs'],
 };
 
 // A CI step with no local gate command, each with the reason it stays out of the tier.
@@ -763,6 +779,14 @@ describe('the full tier against CI', () => {
 
   it('runs check:dev-package', () => {
     expect(gateCommands.has('npm run check:dev-package')).toBe(true);
+  });
+
+  it('runs the catalog tests and the version-rise check in its fast-lane form', () => {
+    const legs = (JSON.parse(readFileSync(resolve(process.cwd(), 'scripts/checks/gate-table.json'), 'utf8')) as {
+      extraCommands: Record<string, string>;
+    }).extraCommands;
+    expect(gateCommands.has(legs['test:catalog'])).toBe(true);
+    expect(gateCommands.has(legs['check:version-rise'])).toBe(true);
   });
 });
 

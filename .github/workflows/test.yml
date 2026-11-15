@@ -15,6 +15,10 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The version-rise check below diffs the event's range, so it needs the history, not
+          # the one-commit default.
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           # Node 24 (Active LTS). The Workers Vitest plugin once carried a console bug on Node 24;
@@ -125,6 +129,17 @@ jobs:
       # packaged audit, and the Chromium the component project installed above.
       - run: npm run test:theme
       - run: npm run check:theme -- --catalog
+      # The hosted catalog's scripts. Their tests build Waymark's demo, so they also need the
+      # showcase install, the packaged engine, and Chromium.
+      - run: npm run test:catalog
+      # A theme or set that changed must raise its manifest version, or its release path, which is
+      # written once, would hold different bytes. The range is the pull request's base, or the
+      # push's previous head; a push that creates a branch has no previous head, so it skips.
+      - name: Check that every changed theme and set raised its version
+        if: github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/catalog/version-rise.mjs --range "$BASE..HEAD"
       # The cairn-styling-public-pages skill's coverage gate: every public piece has a catalogue page, every snippet
       # class compiles in the showcase's public sheet, and every named token resolves. It compiles with
       # the showcase's own Tailwind, so it runs after the showcase install.

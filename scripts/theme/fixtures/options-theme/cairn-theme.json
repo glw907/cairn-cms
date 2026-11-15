@@ -6,6 +6,9 @@
   "version": "1.0.0",
   "license": "MIT",
   "author": { "name": "cairn", "url": "https://cairn.pub" },
+  "engine": ">=0.99.0-0",
+  "kinds": ["blog"],
+  "notes": "A fixture for the theme check.",
   "contract": 1,
   "colorModes": { "light": "opts", "dark": "opts-dark" },
   "options": [

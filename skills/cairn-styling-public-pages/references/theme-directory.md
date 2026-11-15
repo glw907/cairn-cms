@@ -1,7 +1,7 @@
 # What a theme directory holds
 
-Contents: the two directories, the contract's paths, the manifest, the directive seam, the contract
-data file, the tokens build, the lay-in, see also.
+Contents: the two directories, the contract's paths, the manifest, a catalog release, the directive
+seam, the contract data file, the tokens build, the lay-in, see also.
 
 A site's files and its theme's files sit in separate directories. `src/site/` holds the site:
 `cairn.config.ts`, `site-config.ts`, `site.config.yaml`, `theme-options.css`, and `overrides.css`,
@@ -53,9 +53,14 @@ is its schema, and the tokens build validates the manifest against it.
 | `name` | Yes | The theme's display name. |
 | `description` | Yes | A summary of at most 60 characters. |
 | `version`, `license`, `author` | Yes | The theme's release and attribution. |
+| `engine` | Yes | The engine versions the theme works with, as `>=1.2.0` or `>=1.2.0 <2.0.0` and no other form. State the minimum. While the engine is a prerelease, `>=0.99.0-0` admits every prerelease of 0.99.0. |
+| `kinds` | Yes | One to three kinds of site the theme suits, from `blog`, `portfolio`, `docs`, `landing`, and `organization`. The first is the kind it was designed for. |
+| `notes` | Yes | One line, at most 200 characters, on what this version changed. |
 | `contract` | Yes | The contract version, `1`. |
 | `colorModes` | Yes | The daisyUI theme name of the `light` block and of the `dark` block. |
 | `options` | Yes | Zero to four choices an owner makes. |
+| `summary` | No | A few sentences, at most 300 characters, for the theme's catalog page. |
+| `repository` | No | The URL of the theme's source. |
 | `fonts` | No | Each face, with its license, source, and files. |
 | `screenshots` | No | Each image, with its `path` and what it `shows`. A listed image that is missing fails the theme check's `paths-required` rule. |
 | `derivedFrom` | No | The design system the theme was built from, as a `repository` and a `commit`. |
@@ -64,6 +69,29 @@ The names in `colorModes` have no other source: the build, the toggle, and the c
 them. Each option has a `key`, a `label`, two to eight `values`, and a `default`. An option key is a
 contract. The schema notes that a later update or switch matches options by key, so renaming or
 removing one breaks a theme that already uses it.
+
+`engine` is checked twice. The schema accepts only the two forms, and the theme check's
+`engine-range` rule fails when the range doesn't admit the engine version in the repository's
+`package.json`. `kinds` takes its ids from `sets/kinds.json`, which also holds each kind's label and
+description.
+
+## A catalog release
+
+The hosted catalog publishes the themes under `themes/` in the cairn-cms repository. A theme's
+release is its manifest's `version`. When `main` holds a version the catalog does not list, the
+`catalog` workflow publishes it: the archive, a card image, the screenshots, and the theme's demo
+site. The release's catalog entry takes its `notes` and its other fields from the manifest. A new
+theme's demo site needs a one-time setup by a cairn-cms maintainer.
+
+A release path is written once and never replaced. So a change to any file under `themes/<id>/`
+raises `version`, and CI's version-rise check fails a change that doesn't. A release also needs:
+
+- At least one screenshot. The first is the card's source and must be exactly 3:2, such as 1440 by
+  960. The card is a 720 by 480 WebP of at most 100 KB.
+- An archive of at most 8 MiB. Under a `theme/` root it holds the files the lay-in puts in `src/theme/`,
+  `theme-names.ts` included. It also holds `app-html-block.html`, the lines the lay-in writes between
+  the markers in `src/app.html`.
+- A passing theme check.
 
 ## The directive seam
 

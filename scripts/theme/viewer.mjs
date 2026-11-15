@@ -10,8 +10,8 @@
 //     Headless: builds once per option combination and mode, saves a PNG per page and width, and
 //       prints a JSON list of what it wrote.
 //
-// A theme is found only through templates/catalog.json and its manifest, or a directory given to
-// `--theme`.
+// A theme is found only as a directory under `themes/` with its manifest, or as a directory given
+// to `--theme`.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';

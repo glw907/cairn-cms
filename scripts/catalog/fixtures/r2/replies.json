@@ -1,0 +1,125 @@
+{
+  "source": "R2's S3 replies recorded at the theme-catalog pre-flight on 2026-11-14, each made with the token the publish run uses. The headers that vary per request (cf-ray, date, server) were cut. Bodies are as received, on one line. The probe object is probe/a.txt holding the five bytes probe; the lock probe is probe-lock/a.txt holding one, under a one-day lock rule on probe-lock/.",
+  "bucket": "cairn-catalog-proving",
+  "replies": {
+    "put-created": {
+      "request": "PUT /cairn-catalog-proving/probe/a.txt with If-None-Match: *, Cache-Control: public, max-age=60, Content-Type: text/plain; charset=utf-8",
+      "status": 200,
+      "headers": { "content-type": "text/plain;charset=UTF-8", "content-length": "0", "etag": "\"8da843ff65205a61374b09b81ed0fa35\"" },
+      "body": ""
+    },
+    "head-object": {
+      "request": "HEAD /cairn-catalog-proving/probe/a.txt",
+      "status": 200,
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "content-length": "5",
+        "cache-control": "public, max-age=60",
+        "etag": "\"8da843ff65205a61374b09b81ed0fa35\"",
+        "last-modified": "Sat, 14 Nov 2026 22:52:17 GMT"
+      },
+      "body": ""
+    },
+    "put-precondition-failed": {
+      "request": "PUT /cairn-catalog-proving/probe/a.txt with If-None-Match: *, a second time",
+      "status": 412,
+      "headers": { "content-type": "application/xml", "content-length": "165" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>PreconditionFailed</Code><Message>At least one of the pre-conditions you specified did not hold.</Message></Error>"
+    },
+    "get-object": {
+      "request": "GET /cairn-catalog-proving/probe/a.txt",
+      "status": 200,
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "content-length": "5",
+        "cache-control": "public, max-age=60",
+        "etag": "\"8da843ff65205a61374b09b81ed0fa35\"",
+        "last-modified": "Sat, 14 Nov 2026 22:52:17 GMT"
+      },
+      "body": "probe"
+    },
+    "get-missing": {
+      "request": "GET /cairn-catalog-proving/<a key that does not exist>",
+      "status": 404,
+      "headers": { "content-type": "application/xml", "content-length": "127" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>"
+    },
+    "list-one": {
+      "request": "GET /cairn-catalog-proving?list-type=2&prefix=probe/",
+      "status": 200,
+      "headers": { "content-type": "application/xml", "content-length": "461" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>cairn-catalog-proving</Name><Contents><Key>probe/a.txt</Key><Size>5</Size><LastModified>2026-11-14T22:52:17.701Z</LastModified><ETag>&quot;8da843ff65205a61374b09b81ed0fa35&quot;</ETag><StorageClass>STANDARD</StorageClass></Contents><IsTruncated>false</IsTruncated><Prefix>probe/</Prefix><MaxKeys>1000</MaxKeys><KeyCount>1</KeyCount></ListBucketResult>"
+    },
+    "delete-objects": {
+      "request": "POST /cairn-catalog-proving?delete naming probe/a.txt",
+      "status": 200,
+      "headers": { "content-type": "application/xml", "content-length": "156" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Deleted><Key>probe/a.txt</Key></Deleted></DeleteResult>"
+    },
+    "list-empty-prefix": {
+      "request": "GET /cairn-catalog-proving?list-type=2&prefix=probe/, after the delete",
+      "status": 200,
+      "headers": { "content-type": "application/xml", "content-length": "257" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>cairn-catalog-proving</Name><IsTruncated>false</IsTruncated><Prefix>probe/</Prefix><MaxKeys>1000</MaxKeys><KeyCount>0</KeyCount></ListBucketResult>"
+    },
+    "access-denied": {
+      "request": "GET /cairn-catalog?list-type=2 with the proving bucket's token",
+      "status": 403,
+      "headers": { "content-type": "application/xml", "content-length": "110" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>"
+    },
+    "put-locked-new-key": {
+      "request": "PUT /cairn-catalog-proving/probe-lock/a.txt, a key not yet written",
+      "status": 200,
+      "headers": { "content-type": "text/plain;charset=UTF-8", "content-length": "0", "etag": "\"f97c5d29941bfb1b2fdab0874906ab82\"" },
+      "body": ""
+    },
+    "put-locked-overwrite": {
+      "request": "PUT /cairn-catalog-proving/probe-lock/a.txt over the existing object, no precondition",
+      "status": 409,
+      "headers": { "content-type": "application/xml", "content-length": "153" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>ObjectLockedByBucketPolicy</Code><Message>The object is locked by the bucket policy.</Message></Error>"
+    },
+    "put-locked-if-none-match": {
+      "request": "PUT /cairn-catalog-proving/probe-lock/a.txt over the existing object, with If-None-Match: *",
+      "status": 409,
+      "headers": { "content-type": "application/xml", "content-length": "153" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>ObjectLockedByBucketPolicy</Code><Message>The object is locked by the bucket policy.</Message></Error>"
+    },
+    "delete-object-locked": {
+      "request": "DELETE /cairn-catalog-proving/probe-lock/a.txt",
+      "status": 409,
+      "headers": { "content-type": "application/xml", "content-length": "153" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>ObjectLockedByBucketPolicy</Code><Message>The object is locked by the bucket policy.</Message></Error>"
+    },
+    "delete-objects-locked": {
+      "request": "POST /cairn-catalog-proving?delete naming probe-lock/a.txt",
+      "status": 200,
+      "headers": { "content-type": "application/xml", "content-length": "257" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Error><Key>probe-lock/a.txt</Key><Code>ObjectLockedByBucketPolicy</Code><Message>The object is locked by the bucket policy.</Message></Error></DeleteResult>"
+    },
+    "get-locked-after-attempts": {
+      "request": "GET /cairn-catalog-proving/probe-lock/a.txt, after the overwrite and delete attempts",
+      "status": 200,
+      "headers": {
+        "content-type": "text/plain",
+        "content-length": "3",
+        "etag": "\"f97c5d29941bfb1b2fdab0874906ab82\"",
+        "last-modified": "Sat, 14 Nov 2026 22:52:40 GMT"
+      },
+      "body": "one"
+    },
+    "delete-object": {
+      "request": "DELETE /cairn-catalog-proving/probe-lock/a.txt, after the lock rule was removed",
+      "status": 204,
+      "headers": {},
+      "body": ""
+    },
+    "list-empty-bucket": {
+      "request": "GET /cairn-catalog-proving?list-type=2, the whole bucket, empty",
+      "status": 200,
+      "headers": { "content-type": "application/xml", "content-length": "234" },
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>cairn-catalog-proving</Name><IsTruncated>false</IsTruncated><MaxKeys>1000</MaxKeys><KeyCount>0</KeyCount></ListBucketResult>"
+    }
+  }
+}

@@ -8,6 +8,8 @@ Every top-level `.md` file here is listed below.
 - [`engine-rulings.md`](engine-rulings.md): the rulings ledger. `grep '^## '` is the index. A ruling
   stays only while a session could re-argue it and the code does not state it; everything dropped is
   at the `pre-agent-first` tag.
+- [`theme-catalog.md`](theme-catalog.md): the hosted theme catalog: its two targets, how a release
+  is published, a new theme's demo Worker, and what to do when a publish stops.
 - `consultations/`: briefs from consuming sites, each needing a verdict before a pass builds on it.
   Its [README](consultations/README.md) has the protocol.
 - `credentials.md`: machine-local credential locations. Gitignored; it exists only on the

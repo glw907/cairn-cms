@@ -614,3 +614,12 @@ spot-checks of the citations held, except those in F11.
 | F14 Low: checks that could pass without the change | Folded: item 5's grep path, SGR strip, and negative control (T4); item 6's no-colour assertion and item 1's column test (T3); `my-site-a1b2c3` (T9); `gh` and `brew` probed (M22); logs entries (Decision 12). |
 | F15 Medium: estimate near 370 | Folded: tasks re-estimated to 345, one regrade round in T9, and the budget line in the park. |
 | F16 Low: task order, base pin, standing answer 7 | Folded: T1 into T2, T5 ahead of T4, base built from `git merge-base`, standing answer 7 listed. |
+
+## Rulings
+
+Geoff answered the `decide` document `20261114-235707-dd8b14` on 2026-11-15 (approve, both recommended options). The retry ceiling stays at 400.
+
+1. Item 2 and the clock line: mask the clock spans. The harness test compares every byte except each `checked:` line's age, stamp, and elapsed, for one site and for the every-site sweep, with a `main` against `main` control run. The same ruling covers pass 3's item 4 (`CAIRN_PLAIN=1`).
+2. Item 4 under `LC_ALL=C`: amend the item for `LC_ALL=C` alone to "no byte at or above 0x80", with colour allowed. The locale decides the marks and never the colour. `TERM=dumb` keeps item 4 as written.
+
+Planner relaunch: this plan is already written and reviewed. Do not re-plan. Fold these two rulings into items 2 and 4 and the tasks that test them, update the `## Stop at planning` section to say it is answered, write the executor prompt, and launch the executor as for pass 1.

@@ -127,8 +127,10 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
   marks fall back to ASCII when the locale isn't UTF-8, and outside Windows when `LC_ALL`,
   `LC_CTYPE`, and `LANG` are all unset. When stdout and
   stderr are both terminals, `cairn health` draws a `Checking <site>` progress line on stderr while
-  it runs and erases it before the report prints. A set `CI` variable, `--quiet`, `--json`, and
-  `--verbose` each keep the line off. Output to a pipe or a file and `--json` output don't change.
+  it runs and erases it before the report prints. A set `CI` variable, `TERM=dumb`, `--quiet`,
+  `--json`, and `--verbose` each keep the line off. On a terminal, `cairn logs` and `cairn adopt
+  list` set their "not safe to paste" notice in from the margin with a blank line after it, and
+  print it unchanged to a pipe. Output to a pipe or a file and `--json` output don't change.
 
   Consumers must: nothing.
 

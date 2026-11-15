@@ -95,6 +95,29 @@ func TestSitesListExitCodes(t *testing.T) {
 	}
 }
 
+// TestSitesListPipeBytesAreStable pins the bytes a piped `cairn sites list` writes: the
+// tab-separated listing, then the credential status block. Scripts parse both, so they are
+// spelled out here rather than rendered through the code under test.
+func TestSitesListPipeBytesAreStable(t *testing.T) {
+	d, _ := testDeps(t)
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
+
+	out, errOut, err := execTree(t, d, "sites", "list")
+	if err != nil {
+		t.Fatalf("sites list: %v", err)
+	}
+	want := "my-site-a1b2c3\tmy-site.example.org\tmy-site.example.org\n" +
+		"CAIRN_CF_READ_TOKEN is not set, so delegation, https-forced, deploy, and errors\n" +
+		"cannot run\n" +
+		"CAIRN_GH_READ_TOKEN is not set, so deploy, publish-path, and engine cannot run\n"
+	if out != want {
+		t.Errorf("stdout = %q, want %q", out, want)
+	}
+	if errOut != "" {
+		t.Errorf("stderr = %q, want empty", errOut)
+	}
+}
+
 // TestSitesListVerbosePrintsTheRegistryDirectory asserts a path is treated as the identifier it
 // is: withheld by default and printed when --verbose asks for it.
 func TestSitesListVerbosePrintsTheRegistryDirectory(t *testing.T) {

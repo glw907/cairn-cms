@@ -550,7 +550,11 @@ const tmplNotACredential = "cairn: %q is not a credential cairn stores.\nThe nam
 
 // notACredentialError renders tmplNotACredential for name against the real credentialVars list.
 func notACredentialError(name string) error {
-	return translated(fmt.Errorf(tmplNotACredential, name, strings.Join(credentialNames(), ", ")))
+	names := make([]string, len(credentialVars))
+	for i, v := range credentialVars {
+		names[i] = v.name
+	}
+	return translated(fmt.Errorf(tmplNotACredential, name, strings.Join(names, ", ")))
 }
 
 // auth_check.go's Short, Long, and Example for cairn auth check (and its Hidden alias

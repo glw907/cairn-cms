@@ -152,8 +152,8 @@ func messageConstants(t *testing.T) []string {
 func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 	cairnVarPattern := regexp.MustCompile(`CAIRN_[A-Z_]+`)
 	allowed := make(map[string]bool, len(credentialVars)+1)
-	for _, v := range credentialNames() {
-		allowed[v] = true
+	for _, v := range credentialVars {
+		allowed[v.name] = true
 	}
 	// cairn new's agent guide names the setup token's variable, which env.go reads and cairn auth
 	// does not manage.
@@ -161,7 +161,7 @@ func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 	for _, s := range messageConstants(t) {
 		for _, m := range cairnVarPattern.FindAllString(s, -1) {
 			if !allowed[m] {
-				t.Errorf("messages.go entry %q names %q, not a member of credentialVars %v", s, m, credentialNames())
+				t.Errorf("messages.go entry %q names %q, not a member of credentialVars %v", s, m, credentialVars)
 			}
 		}
 	}

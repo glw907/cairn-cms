@@ -85,15 +85,6 @@ var credentialVars = []credentialVar{
 	{name: varGHReadToken, secret: true},
 }
 
-// credentialNames returns the names in credentialVars, in resolution order.
-func credentialNames() []string {
-	names := make([]string, len(credentialVars))
-	for i, v := range credentialVars {
-		names[i] = v.name
-	}
-	return names
-}
-
 // resolution holds one variable's resolved value and the line a caller
 // prints for it: the provider name on success, "<provider>: error" when
 // the provider itself failed, or empty when nothing resolved it (auth list

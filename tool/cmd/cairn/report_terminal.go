@@ -70,14 +70,7 @@ func writePasteNotice(cmd *cobra.Command, d deps, rf *rootFlags) error {
 	if stdout, stderr := styledStreams(d, rf); !style.IsTerminal(stdout) || !style.IsTerminal(stderr) {
 		return writeNotice(cmd, d, rf, pasteNotice)
 	}
-	term := reportTerminal(d, rf)
-	theme := style.NewTheme(resolveGround(d, rf).dark, term.Profile, term.ASCII)
-	for _, line := range append(style.ContinuationLine(theme, style.RoleMuted, pasteNotice, 2, style.ContentWidth(reportWidth(rf, term))), "") {
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeTerminalNotice(cmd, d, rf, pasteNotice)
 }
 
 // The progress line's timing: it first draws once a run has lasted progressDelay, so a run that

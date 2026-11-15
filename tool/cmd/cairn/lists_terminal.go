@@ -103,13 +103,45 @@ func credentialRows(d deps, e env, missing []providers.Missing) []credentialRow 
 func writeAdoptListTerminal(cmd *cobra.Command, d deps, rf *rootFlags, v view, lines []render.AdoptCandidate) error {
 	for _, c := range lines {
 		if !c.Adoptable {
-			if err := writeNotice(cmd, d, rf, tmplAdoptListRouteOnly); err != nil {
+			if err := writeListNotice(cmd, d, rf, tmplAdoptListRouteOnly); err != nil {
 				return err
 			}
 			break
 		}
 	}
 	return writeLines(cmd.OutOrStdout(), adoptLines(v, lines))
+}
+
+// writeListNotice writes a notice that sits over a drawn list. When stderr is not a terminal
+// it is writeNotice's plain lines, the bytes a script reading stderr already sees.
+func writeListNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error {
+	if _, stderr := styledStreams(d, rf); !style.IsTerminal(stderr) {
+		return writeNotice(cmd, d, rf, notice)
+	}
+	return writeTerminalNotice(cmd, d, rf, notice)
+}
+
+// writeTerminalNotice writes notice to stderr as the margin-and-muted-ink block a drawn view
+// takes: every line at cell 2, wrapped to the view's width, then one blank line.
+func writeTerminalNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error {
+	term := reportTerminal(d, rf)
+	theme := style.NewTheme(resolveGround(d, rf).dark, term.Profile, term.ASCII)
+	for _, line := range noticeLines(theme, notice, reportWidth(rf, term)) {
+		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// noticeLines lays notice out for a terminal: each of its own lines wrapped on its own, so a
+// notice carrying a line break keeps it, and a blank line closing the block.
+func noticeLines(t style.Theme, notice string, width int) []string {
+	var out []string
+	for paragraph := range strings.SplitSeq(notice, "\n") {
+		out = append(out, style.ContinuationLine(t, style.RoleMuted, paragraph, 2, width)...)
+	}
+	return append(out, "")
 }
 
 // credentialLines is auth list on a terminal: a title and one mark row per variable. A variable

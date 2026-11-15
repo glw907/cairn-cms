@@ -117,6 +117,20 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **`cairn --help`, the error printer, and the list views move onto the terminal's shared language, and
+  three variables choose the ground and the plain body.** On a terminal, help no longer paints in the
+  Accent color, and an error prints as a block that carries a fix arrow (`→`) when the error has a typed
+  fix and none when it has not. `cairn sites`, `cairn auth list`, `cairn adopt list`, `cairn auth check`,
+  and the `auth` and `adopt` receipts take the report layout. Body text is the terminal's own
+  foreground: the Text role paints no ink, so it reads on a light or a dark terminal. `--theme`,
+  `CAIRN_THEME` (`dark` or `light`), and `COLORFGBG` (its last field, `7` or `15` for light) choose the
+  palette, in that order, and `CAIRN_PLAIN=1` prints a terminal the plain output a pipe gets, with no
+  progress line. A value cairn cannot read is ignored. Output to a pipe or a file and `--json` output
+  are byte for byte what they were, except one sentence in `cairn --help` that names `CAIRN_PLAIN`.
+  The admin credentials page documents the variables.
+
+  Consumers must: nothing.
+
 - **`cairn health`, `cairn doctor`, `cairn logs`, and the `cairn sites` status block share one report
   layout in a terminal.** Their rows sit two columns in from the edge, and their blocks carry
   lowercase titles such as `failing`, `could not run`, and `what to fix`. In `cairn health` and

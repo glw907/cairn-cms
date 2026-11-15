@@ -138,6 +138,21 @@ longer tracked, so edit `themes/waymark/` and lay it in again. A site that alrea
 (`schema/cairn-theme-contract-1.json`) yet, and `theme.css` imports the built tokens sheet
 in place of the two daisyUI blocks and the `@theme` scale it held.
 
+A theme manifest must now carry `engine`, `kinds`, and `notes`, and Waymark's is `1.1.0`. A site
+needs nothing: no build or runtime reads its `src/theme/cairn-theme.json`. A theme you build or
+check from a cairn-cms clone fails the tokens build and the theme check's `manifest-schema` rule
+until you add the three fields:
+
+1. Set `engine` to the lowest engine version the theme works with, as `>=1.2.0`, or with an upper
+   bound as `>=1.2.0 <2.0.0`. While the engine is a prerelease, `>=0.99.0-0` admits every prerelease of 0.99.0.
+2. Set `kinds` to one to three ids from `sets/kinds.json`, the kind the theme was designed for
+   first.
+3. Set `notes` to one line, at most 200 characters, on what this version changed.
+4. Raise `version` with any change under `themes/<id>/`. CI fails a change that doesn't, since the
+   hosted catalog writes each release path once.
+5. Run `npm run check:theme -- themes/<id>`. Its `engine-range` rule fails when `engine` doesn't
+   admit the engine version in `package.json`.
+
 The release gate is rebuilt around three legs, and the setup docs describe a token option for
 `cairn new`: a Cloudflare API token in `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval.
 Consumers must: nothing.

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schemas/cairn-set/1.json",
+  "title": "cairn content set manifest, version 1",
+  "description": "The manifest, cairn-set.json, of a content set: the starter pages for one kind of site. A set names the engine versions it works with and what its images are and where they came from.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "version", "engine", "notes", "license", "images"],
+  "properties": {
+    "$schema": {
+      "description": "This schema's URL.",
+      "const": "https://cairn.pub/schemas/cairn-set/1.json"
+    },
+    "kind": {
+      "description": "The kind of site the set is for, from the closed list in sets/kinds.json.",
+      "enum": ["blog", "portfolio", "docs", "landing", "organization"]
+    },
+    "version": {
+      "description": "Semver for the set itself.",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "engine": {
+      "description": "The engine versions the set works with, as an npm range in one of two forms: a minimum (>=1.2.0) or a minimum with an upper bound (>=1.2.0 <2.0.0).",
+      "type": "string",
+      "pattern": "^>=(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?( <(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?)?$"
+    },
+    "notes": {
+      "description": "One line on what this version changed.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "license": {
+      "description": "The license of the set's text, as an SPDX id.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9.+() -]*$"
+    },
+    "images": {
+      "description": "Every image in the set, with where it came from and the license it carries.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "source", "license"],
+        "properties": {
+          "path": { "description": "The image's path inside the set.", "type": "string", "minLength": 1 },
+          "source": { "description": "Where the image came from.", "type": "string", "minLength": 1 },
+          "license": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9.+() -]*$"
+          }
+        }
+      }
+    }
+  }
+}

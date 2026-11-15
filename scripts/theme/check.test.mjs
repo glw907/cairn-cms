@@ -69,6 +69,9 @@ const CASES = [
   ['a required path is dropped', 'paths-required', (dir) => rmSync(path.join(dir, 'icons.ts'))],
   ['an unlisted file is added', 'paths-unlisted', (dir) => write(dir, 'notes.txt', 'stray\n')],
   ['the description runs to 61 characters', 'manifest-schema', (dir) => editJson(dir, 'cairn-theme.json', (m) => { m.description = 'x'.repeat(61); })],
+  ['the engine range is a caret range', 'manifest-schema', (dir) => editJson(dir, 'cairn-theme.json', (m) => { m.engine = '^0.99.0'; })],
+  ['the engine range excludes the engine in this repository', 'engine-range', (dir) => editJson(dir, 'cairn-theme.json', (m) => { m.engine = '>=1.0.0'; })],
+  ['the engine range stops below this engine', 'engine-range', (dir) => editJson(dir, 'cairn-theme.json', (m) => { m.engine = '>=0.1.0 <0.2.0'; })],
   ['the contract is 2', 'contract-version', (dir) => editJson(dir, 'cairn-theme.json', (m) => { m.contract = 2; })],
   ['tokens.json holds an invalid token', 'tokens-schema', (dir) => editJson(dir, 'tokens/tokens.json', (t) => { t.base.broken = { $type: 'color', $value: '#fff' }; })],
   [
@@ -195,13 +198,22 @@ test('--json output has the shape the schema names', async () => {
   assert.deepEqual(Object.keys(result).sort(), ['dir', 'failures', 'kind', 'notes', 'rules', 'schemaVersion', 'theme', 'verdict']);
 });
 
-test('--catalog fails an empty catalog and a catalog entry whose directory is missing', () => {
-  const empty = path.join(scratch, 'empty-catalog.json');
-  writeFileSync(empty, JSON.stringify({ themes: [] }));
-  assert.deepEqual(catalogThemes(empty).problems, ['templates/catalog.json names no theme']);
-  const missing = path.join(scratch, 'missing-catalog.json');
-  writeFileSync(missing, JSON.stringify({ themes: [{ id: 'ghost', name: 'Ghost', description: 'x', path: 'ghost', source: 'engine' }] }));
-  assert.match(catalogThemes(missing).problems[0], /ghost.*missing/);
+test('--catalog lists every directory under themes/, and fails a themes directory with no theme', () => {
+  const themes = path.join(scratch, 'themes');
+  mkdirSync(themes);
+  assert.deepEqual(catalogThemes(themes).problems, ['themes/ holds no theme']);
+  cpSync(FIXTURE, path.join(themes, 'one'), { recursive: true });
+  cpSync(FIXTURE, path.join(themes, 'two'), { recursive: true });
+  writeFileSync(path.join(themes, 'README.md'), 'not a theme\n');
+  const { dirs, problems } = catalogThemes(themes);
+  assert.deepEqual(problems, []);
+  assert.deepEqual(dirs.map((entry) => entry.id), ['one', 'two']);
+});
+
+test('a themes directory entry with no manifest is a problem', () => {
+  const themes = path.join(scratch, 'themes-bare');
+  mkdirSync(path.join(themes, 'ghost'), { recursive: true });
+  assert.match(catalogThemes(themes).problems[0], /ghost.*cairn-theme\.json/);
 });
 
 test('the catalog names only themes that exist', () => {

@@ -4,7 +4,7 @@
 // `vite dev` runs its platform proxy locally (the showcase config sets `remoteBindings: false`), so a
 // workstation with no account runs every step.
 import { spawn, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { stripMarkedBlocks } from '../../build/emit-template.mjs';
@@ -37,18 +37,20 @@ export function readManifest(dir) {
 }
 
 /**
- * The themes in the catalog, each read through its manifest.
+ * The themes in the catalog: every directory under `themes/` that holds a manifest, read through it.
  * @param {string} root the repository root
  * @returns {ThemeRef[]}
  */
 export function catalogThemes(root) {
-  const catalog = JSON.parse(readFileSync(path.join(root, 'templates/catalog.json'), 'utf8'));
-  // A catalog theme lives at `themes/<id>/`; the entry's `path` names its template, not the theme.
-  return catalog.themes.map((/** @type {{ id: string }} */ entry) => {
-    const dir = path.join(root, 'themes', entry.id);
-    const manifest = readManifest(dir);
-    return { id: manifest.id, name: manifest.name, dir };
-  });
+  const themes = path.join(root, 'themes');
+  return readdirSync(themes, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(path.join(themes, entry.name, 'cairn-theme.json')))
+    .map((entry) => {
+      const dir = path.join(themes, entry.name);
+      const manifest = readManifest(dir);
+      return { id: manifest.id, name: manifest.name, dir };
+    })
+    .sort((a, b) => a.id.localeCompare(b.id));
 }
 
 /**
@@ -66,7 +68,7 @@ export function resolveTheme(root, spec) {
   }
   const themes = catalogThemes(root);
   const found = spec ? themes.find((theme) => theme.id === spec) : themes[0];
-  if (!found) throw new Error(`viewer: no theme "${spec}" in templates/catalog.json and no directory by that name`);
+  if (!found) throw new Error(`viewer: no theme "${spec}" under themes/ and no directory by that name`);
   return found;
 }
 
@@ -119,15 +121,18 @@ export function writeOptions(siteDir, themeDir, options, mode) {
 }
 
 /**
- * Compose a scratch site: a showcase copy with the template's exclusions applied, the starter
- * overlay and the conformance set as its content and static files, the content manifest regenerated,
- * the admin stylesheet built, and a theme laid in.
+ * Compose a scratch site: a showcase copy with the template's exclusions applied, the content
+ * directories' content and static files copied in order, the content manifest regenerated, the
+ * admin stylesheet built, and a theme laid in.
  * @param {object} options
  * @param {string} options.root the repository root
  * @param {string} options.themeDir the theme to lay in
+ * @param {string[]} [options.contentDirs] directories each holding `src/content` and `static`, a
+ *   later one's file winning over an earlier one's at the same path; the starter overlay and the
+ *   conformance set when omitted
  * @returns {{ dir: string, remove: () => void }}
  */
-export function composeSite({ root, themeDir }) {
+export function composeSite({ root, themeDir, contentDirs = defaultContentDirs(root) }) {
   const copy = makeShowcaseCopy({ root });
   const dir = copy.dir;
   const exclusions = JSON.parse(readFileSync(path.join(root, 'examples/showcase/.cairn-template.json'), 'utf8')).exclude;
@@ -146,11 +151,9 @@ export function composeSite({ root, themeDir }) {
   if (!configText.includes(opening)) throw new Error('viewer: vite.config.ts has no defineConfig({ call to set the cache directory on');
   writeFileSync(viteConfig, configText.replace(opening, `${opening}\n  cacheDir: '.vite-cache',`));
 
-  const overlay = path.join(root, 'scripts/build/starter-overlay');
-  const conformance = path.join(root, 'scripts/theme/conformance');
   const content = path.join(dir, 'src/content');
   mkdirSync(content, { recursive: true });
-  for (const set of [overlay, conformance]) {
+  for (const set of contentDirs) {
     cpSync(path.join(set, 'src/content'), content, {
       recursive: true,
       filter: (source) => path.relative(path.join(set, 'src/content'), source).split(path.sep)[0] !== '.cairn',
@@ -166,6 +169,15 @@ export function composeSite({ root, themeDir }) {
 }
 
 /**
+ * The content the viewer composes by default: the starter overlay, then the conformance set.
+ * @param {string} root the repository root
+ * @returns {string[]}
+ */
+function defaultContentDirs(root) {
+  return [path.join(root, 'scripts/build/starter-overlay'), path.join(root, 'scripts/theme/conformance')];
+}
+
+/**
  * The environment every child process gets: the caller's, with wrangler's metrics prompt off and
  * `CI` removed. With `CI` set, `vite dev` on the scratch site prints its ready line and then never
  * answers a request (reproduced on a clean checkout and on a GitHub runner, 2026-11-09), so the
@@ -175,6 +187,8 @@ export function composeSite({ root, themeDir }) {
 function childEnv() {
   const env = { ...process.env, WRANGLER_SEND_METRICS: 'false' };
   delete env.CI;
+  // The catalog publish job holds these; a site build and its dependencies never need them.
+  for (const name of ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'CLOUDFLARE_API_TOKEN']) delete env[name];
   return env;
 }
 

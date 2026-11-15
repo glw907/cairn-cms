@@ -1,0 +1,1185 @@
+<!doctype html>
+<!--
+  The reference page for cairn's hosted theme catalog. One fetch of the catalog file gives the
+  theme grid, the kind and engine filters, and a page for each theme. It loads no library, no
+  font, and no script from anywhere else, so every request it makes is the page, the catalog, or
+  an image the catalog names. The catalog address comes from the `catalog` query parameter.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>cairn themes</title>
+    <link rel="icon" href="data:," />
+    <style>
+      :root {
+        --paper: oklch(99% 0.004 75);
+        --paper-sunk: oklch(96.5% 0.006 75);
+        --rule: oklch(89% 0.011 75);
+        --ink: oklch(26% 0.014 75);
+        --muted: oklch(48% 0.01 75);
+        --accent: oklch(52% 0.2 293);
+        --accent-ink: oklch(98% 0.012 293);
+        --accent-wash: oklch(52% 0.2 293 / 0.08);
+        --danger: oklch(48% 0.17 27);
+        --shadow: 0 1px 2px oklch(26% 0.014 75 / 0.06), 0 6px 20px oklch(26% 0.014 75 / 0.06);
+        --radius: 0.5rem;
+        --radius-small: 0.375rem;
+        --wrap: 80rem;
+        --gutter: clamp(1rem, 4vw, 2.5rem);
+        --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+        color-scheme: light dark;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: oklch(20% 0.009 75);
+          --paper-sunk: oklch(24% 0.01 75);
+          --rule: oklch(34% 0.014 75);
+          --ink: oklch(93% 0.006 75);
+          --muted: oklch(74% 0.01 75);
+          --accent: oklch(74% 0.13 293);
+          --accent-ink: oklch(20% 0.04 293);
+          --accent-wash: oklch(74% 0.13 293 / 0.12);
+          --danger: oklch(74% 0.13 27);
+          --shadow: 0 1px 2px oklch(0% 0 0 / 0.3), 0 6px 20px oklch(0% 0 0 / 0.25);
+        }
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+
+      a {
+        color: var(--accent);
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        text-decoration-thickness: 2px;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        margin: 0;
+        text-wrap: balance;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      code,
+      pre {
+        font-family: var(--font-mono);
+        font-size: 0.9375em;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .skip {
+        position: absolute;
+        left: var(--gutter);
+        top: -3rem;
+        padding: 0.5rem 0.875rem;
+        background: var(--ink);
+        color: var(--paper);
+        border-radius: var(--radius-small);
+        z-index: 10;
+      }
+
+      .skip:focus {
+        top: 0.75rem;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: var(--wrap);
+        margin-inline: auto;
+        padding-inline: var(--gutter);
+      }
+
+      .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .masthead {
+        border-bottom: 1px solid var(--rule);
+        padding-block: clamp(2rem, 6vw, 4rem) clamp(1.5rem, 4vw, 2.5rem);
+      }
+
+      .masthead h1 {
+        font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem);
+        font-weight: 700;
+        margin-block: 0.25rem 0.75rem;
+      }
+
+      .lede {
+        font-size: 1.125rem;
+        color: var(--muted);
+        max-width: 40rem;
+      }
+
+      main {
+        display: block;
+        padding-block: clamp(1.5rem, 4vw, 3rem) clamp(3rem, 8vw, 5rem);
+      }
+
+      main:focus {
+        outline: none;
+      }
+
+      .problem {
+        border: 1px solid var(--danger);
+        border-left-width: 4px;
+        border-radius: var(--radius-small);
+        padding: 0.875rem 1rem;
+        margin-bottom: 1.5rem;
+        max-width: 48rem;
+      }
+
+      .problem:empty {
+        display: none;
+      }
+
+      .problem strong {
+        color: var(--danger);
+      }
+
+      /* Filters */
+
+      .filters {
+        display: grid;
+        gap: 1.5rem;
+        margin-bottom: 1.25rem;
+      }
+
+      @media (min-width: 60rem) {
+        .filters {
+          grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
+          align-items: start;
+        }
+      }
+
+      fieldset {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        min-width: 0;
+      }
+
+      legend,
+      .field-label {
+        display: block;
+        font-weight: 600;
+        padding: 0;
+        margin-bottom: 0.5rem;
+      }
+
+      .choices {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+        gap: 0.5rem;
+      }
+
+      .choice {
+        display: flex;
+        gap: 0.625rem;
+        align-items: flex-start;
+        padding: 0.625rem 0.75rem;
+        border: 1px solid var(--rule);
+        border-radius: var(--radius-small);
+        background: var(--paper);
+        cursor: pointer;
+      }
+
+      .choice:hover {
+        border-color: var(--muted);
+      }
+
+      .choice:has(input:checked) {
+        border-color: var(--accent);
+        background: var(--accent-wash);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      @supports selector(:has(*)) {
+        .choice:has(input:focus-visible) {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+        }
+
+        .choice input:focus-visible {
+          outline: none;
+        }
+      }
+
+      .choice input {
+        margin: 0.3rem 0 0;
+        accent-color: var(--accent);
+        flex: none;
+      }
+
+      .choice-label {
+        display: block;
+        font-weight: 600;
+      }
+
+      .choice-desc {
+        display: block;
+        font-size: 0.875rem;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      .field input {
+        display: block;
+        width: 100%;
+        font: inherit;
+        font-family: var(--font-mono);
+        color: var(--ink);
+        background: var(--paper);
+        border: 1px solid var(--muted);
+        border-radius: var(--radius-small);
+        padding: 0.5rem 0.75rem;
+      }
+
+      .field input:focus-visible {
+        outline-offset: 1px;
+      }
+
+      .field input[aria-invalid='true'] {
+        border-color: var(--danger);
+        border-width: 2px;
+      }
+
+      .hint {
+        font-size: 0.875rem;
+        line-height: 1.45;
+        color: var(--muted);
+        margin-top: 0.5rem;
+      }
+
+      .field-error {
+        font-size: 0.875rem;
+        line-height: 1.45;
+        color: var(--danger);
+        font-weight: 600;
+        margin-top: 0.5rem;
+      }
+
+      .status {
+        font-size: 0.9375rem;
+        color: var(--muted);
+        padding-block: 1rem;
+        border-top: 1px solid var(--rule);
+      }
+
+      /* The grid */
+
+      .grid {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+        gap: clamp(1.25rem, 2.5vw, 2rem);
+      }
+
+      .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: box-shadow 120ms ease, border-color 120ms ease;
+      }
+
+      .card:hover,
+      .card:focus-within {
+        box-shadow: var(--shadow);
+        border-color: var(--muted);
+      }
+
+      .card img {
+        width: 100%;
+        aspect-ratio: 3 / 2;
+        object-fit: cover;
+        background: var(--paper-sunk);
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .card-body {
+        display: grid;
+        gap: 0.375rem;
+        padding: 1rem 1.125rem 1.125rem;
+      }
+
+      .card h3 {
+        font-size: 1.25rem;
+      }
+
+      .card h3 a {
+        color: var(--ink);
+        text-decoration: none;
+      }
+
+      .card h3 a::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+      }
+
+      @supports selector(:has(*)) {
+        .card h3 a:focus-visible {
+          outline: none;
+        }
+
+        .card:has(h3 a:focus-visible) {
+          outline: 2px solid var(--accent);
+          outline-offset: 3px;
+        }
+      }
+
+      .card-desc {
+        color: var(--muted);
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.375rem 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--muted);
+        margin-top: 0.375rem;
+      }
+
+      .tags {
+        display: contents;
+        list-style: none;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 0.0625rem 0.5rem;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        color: var(--ink);
+        background: var(--paper-sunk);
+      }
+
+      .empty {
+        padding: 2rem 0;
+        color: var(--muted);
+      }
+
+      /* A theme's page */
+
+      .back {
+        display: inline-block;
+        margin-bottom: 1.5rem;
+      }
+
+      .theme-head {
+        display: grid;
+        gap: 0.5rem;
+        padding-bottom: 1.75rem;
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: 2rem;
+      }
+
+      .theme-head h2 {
+        font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem);
+      }
+
+      .theme-head h2:focus {
+        outline: none;
+      }
+
+      .release-line {
+        color: var(--muted);
+        font-size: 0.9375rem;
+      }
+
+      .notice {
+        border-left: 4px solid var(--accent);
+        padding: 0.5rem 0.875rem;
+        background: var(--paper-sunk);
+        border-radius: 0 var(--radius-small) var(--radius-small) 0;
+      }
+
+      .actions {
+        margin-top: 0.75rem;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.125rem;
+        border-radius: var(--radius-small);
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .button:hover {
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+      }
+
+      .theme-layout {
+        display: grid;
+        gap: 2.5rem;
+      }
+
+      @media (min-width: 64rem) {
+        .theme-layout {
+          grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem);
+          align-items: start;
+          gap: 3rem;
+        }
+      }
+
+      .theme-main,
+      .theme-side {
+        display: grid;
+        gap: 2.5rem;
+        min-width: 0;
+      }
+
+      .section {
+        display: grid;
+        gap: 0.875rem;
+      }
+
+      .section h3 {
+        font-size: 1.125rem;
+      }
+
+      .summary {
+        font-size: 1.125rem;
+        max-width: 44rem;
+      }
+
+      .shots {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .shots img {
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        background: var(--paper-sunk);
+      }
+
+      .install {
+        margin-top: 1.25rem;
+        max-width: 32rem;
+        gap: 0.5rem;
+      }
+
+      .install h3 {
+        font-size: 1rem;
+      }
+
+      .command {
+        margin: 0;
+        padding: 0.875rem 1rem;
+        background: var(--paper-sunk);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius-small);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .facts {
+        display: grid;
+        gap: 1rem;
+        margin: 0;
+      }
+
+      .facts dt {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .facts dd {
+        margin: 0.125rem 0 0;
+      }
+
+      .plain-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.25rem;
+      }
+
+      .history {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+      }
+
+      .history li {
+        display: grid;
+        gap: 0.25rem;
+        padding-block: 0.875rem;
+        border-top: 1px solid var(--rule);
+      }
+
+      .history li:last-child {
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .history-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.25rem 0.75rem;
+      }
+
+      .history h4 {
+        font-size: 1rem;
+        font-family: var(--font-mono);
+        font-weight: 600;
+      }
+
+      .history .release-meta {
+        font-size: 0.875rem;
+        color: var(--muted);
+      }
+
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0 0.5rem;
+        border-radius: 999px;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+      }
+
+      .site-foot {
+        border-top: 1px solid var(--rule);
+        padding-block: 1.5rem 2.5rem;
+        font-size: 0.875rem;
+        color: var(--muted);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .card {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" id="skip" href="#main">Skip to main content</a>
+    <header class="masthead">
+      <div class="wrap">
+        <p class="eyebrow">cairn</p>
+        <h1>Themes</h1>
+        <p class="lede">
+          Each theme is a complete look for a cairn site. Open one to see its screenshots, try its demo, and get the
+          command that starts a site with it.
+        </p>
+      </div>
+    </header>
+
+    <main id="main" class="wrap" tabindex="-1" data-ready="false">
+      <div id="problem" class="problem" role="alert"></div>
+
+      <section id="browse" aria-labelledby="browse-title">
+        <h2 id="browse-title" class="visually-hidden">Browse themes</h2>
+        <form id="filters" class="filters" data-row="filters" hidden>
+          <fieldset id="kind-filter" data-row="kind-filter" hidden>
+            <legend>Kind of site</legend>
+            <div id="kind-choices" class="choices"></div>
+          </fieldset>
+          <div class="field" data-row="engine-filter">
+            <label class="field-label" for="engine">Engine version</label>
+            <input
+              id="engine"
+              name="engine"
+              type="text"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              aria-describedby="engine-hint"
+            />
+            <p id="engine-hint" class="hint">
+              The cairn version your site runs, such as 0.99.0. Each theme then shows its newest release that works with it. Leave it
+              empty to see every theme.
+            </p>
+            <p id="engine-error" class="field-error" hidden>Enter a version such as 1.2.0 or 0.99.0-rc.4.</p>
+          </div>
+        </form>
+        <p id="status" class="status" role="status">Loading the catalog.</p>
+        <ul id="grid" class="grid" role="list" data-row="grid"></ul>
+        <p id="empty" class="empty" hidden>No theme fits these choices. Choose another kind of site or engine version.</p>
+      </section>
+
+      <article id="theme" data-row="theme-page" aria-labelledby="theme-title" hidden></article>
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap">
+        <p id="source">Catalog: <span id="source-link"></span><span id="generated"></span></p>
+      </div>
+    </footer>
+
+    <script>
+      'use strict';
+
+      /** The catalog the page reads when the address carries no `catalog` parameter. */
+      const DEFAULT_CATALOG = 'https://catalog.cairn.pub/index.json';
+      const catalogUrl = new URLSearchParams(location.search).get('catalog') || DEFAULT_CATALOG;
+
+      const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/;
+      const RANGE = /^>=(\S+)(?: <(\S+))?$/;
+
+      /**
+       * Splits a SemVer 2.0.0 version into its numbers and prerelease identifiers, or returns null
+       * when the text is not one. Build metadata is dropped, since precedence ignores it.
+       */
+      function parseVersion(text) {
+        const m = VERSION.exec(String(text).trim());
+        if (!m) return null;
+        return { core: [m[1], m[2], m[3]].map(BigInt), pre: m[4] ? m[4].split('.') : [] };
+      }
+
+      /** Compares two prerelease identifiers by SemVer 2.0.0 rule 11. */
+      function compareIdentifier(a, b) {
+        const an = /^\d+$/.test(a);
+        const bn = /^\d+$/.test(b);
+        if (an && bn) return BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0;
+        if (an) return -1;
+        if (bn) return 1;
+        return a < b ? -1 : a > b ? 1 : 0;
+      }
+
+      /**
+       * Orders two parsed versions by SemVer precedence: the numbers first, then a prerelease
+       * below its release, then the prerelease identifiers left to right.
+       */
+      function compareVersions(a, b) {
+        for (let i = 0; i < 3; i++) {
+          if (a.core[i] !== b.core[i]) return a.core[i] < b.core[i] ? -1 : 1;
+        }
+        if (!a.pre.length && !b.pre.length) return 0;
+        if (!a.pre.length) return 1;
+        if (!b.pre.length) return -1;
+        for (let i = 0; i < Math.min(a.pre.length, b.pre.length); i++) {
+          const order = compareIdentifier(a.pre[i], b.pre[i]);
+          if (order) return order;
+        }
+        return Math.sign(a.pre.length - b.pre.length);
+      }
+
+      /**
+       * Reads an engine range in the catalog's two forms, `>=X.Y.Z[-pre]` and `>=X.Y.Z <A.B.C`.
+       * Returns null for any other text, which then admits no engine.
+       */
+      function parseRange(text) {
+        const m = RANGE.exec(String(text).trim());
+        if (!m) return null;
+        const min = parseVersion(m[1]);
+        const max = m[2] === undefined ? undefined : parseVersion(m[2]);
+        if (!min || max === null) return null;
+        return { min, max };
+      }
+
+      /** Whether a parsed engine version falls in a range, by plain precedence with prereleases included. */
+      function admits(rangeText, engine) {
+        const range = parseRange(rangeText);
+        if (!range) return false;
+        return compareVersions(engine, range.min) >= 0 && (!range.max || compareVersions(engine, range.max) < 0);
+      }
+
+      /** Says a range in words, such as "1.2.0 or later, below 2.0.0". */
+      function describeRange(text) {
+        const m = RANGE.exec(String(text).trim());
+        if (!m) return text;
+        return m[2] ? `${m[1]} or later, below ${m[2]}` : `${m[1]} or later`;
+      }
+
+      /** A theme's releases, newest first by precedence, whatever order the file gave. */
+      function releasesNewestFirst(theme) {
+        return [...theme.releases]
+          .filter((r) => parseVersion(r.version))
+          .sort((a, b) => compareVersions(parseVersion(b.version), parseVersion(a.version)));
+      }
+
+      /** The release a theme shows: its newest, or with an engine chosen, its newest that admits it. */
+      function shownRelease(theme, engine) {
+        const releases = releasesNewestFirst(theme);
+        if (!engine) return releases[0] ?? null;
+        return releases.find((r) => admits(r.engine, engine)) ?? null;
+      }
+
+      /** An address the page may load or link: an absolute http or https URL, or null. */
+      function safeUrl(text) {
+        try {
+          const url = new URL(text);
+          return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+        } catch {
+          return null;
+        }
+      }
+
+      /** Builds an element with attributes and children; strings become text, never markup. */
+      function el(tag, attrs = {}, ...children) {
+        const node = document.createElement(tag);
+        for (const [key, value] of Object.entries(attrs)) {
+          if (value === undefined || value === null || value === false) continue;
+          if (key === 'text') node.textContent = value;
+          else node.setAttribute(key, value === true ? '' : String(value));
+        }
+        for (const child of children.flat()) {
+          if (child === null || child === undefined || child === false) continue;
+          node.append(typeof child === 'string' ? document.createTextNode(child) : child);
+        }
+        return node;
+      }
+
+      const dateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' });
+
+      /** A `<time>` for a catalog date, written out in words. */
+      function timeEl(date) {
+        const parsed = new Date(`${date}T00:00:00Z`);
+        return el('time', { datetime: date, text: Number.isNaN(parsed.valueOf()) ? date : dateFormat.format(parsed) });
+      }
+
+      const state = { catalog: null, kind: '', engine: null, engineText: '', engineInvalid: false };
+      const $ = (id) => document.getElementById(id);
+      let lastThemeId = null;
+      /** The status sentence the grid last worked out, written to the live region by `announce`. */
+      let pendingStatus = '';
+      let statusTimer = 0;
+      /** How long typing in the engine field pauses before the status text is rewritten. */
+      const STATUS_DELAY_MS = 500;
+
+      /** The words for a kind id, from the catalog's kind list, or the id itself. */
+      function kindLabel(id) {
+        return state.catalog.kinds.find((k) => k.id === id)?.label ?? id;
+      }
+
+      /** The themes the filters let through, each paired with the release it shows. */
+      function visibleThemes() {
+        return state.catalog.themes
+          .filter((theme) => !state.kind || (theme.kinds ?? []).includes(state.kind))
+          .map((theme) => ({ theme, release: shownRelease(theme, state.engine) }))
+          .filter((entry) => entry.release);
+      }
+
+      function renderFilters() {
+        const kinds = state.catalog.kinds;
+        const choices = $('kind-choices');
+        choices.replaceChildren();
+        const choice = (value, label, description) => {
+          const descId = `kind-desc-${value || 'any'}`;
+          const labelId = `kind-label-${value || 'any'}`;
+          return el(
+            'label',
+            { class: 'choice' },
+            el('input', {
+              type: 'radio',
+              name: 'kind',
+              value,
+              checked: value === state.kind,
+              'aria-labelledby': labelId,
+              'aria-describedby': descId,
+            }),
+            el(
+              'span',
+              {},
+              el('span', { class: 'choice-label', id: labelId, text: label }),
+              el('span', { class: 'choice-desc', id: descId, text: description }),
+            ),
+          );
+        };
+        choices.append(choice('', 'Any kind', 'Every theme in the catalog.'));
+        for (const kind of kinds) choices.append(choice(kind.id, kind.label, kind.description));
+        $('kind-filter').hidden = kinds.length === 0;
+        $('filters').hidden = false;
+      }
+
+      function renderGrid() {
+        const entries = visibleThemes();
+        const grid = $('grid');
+        grid.replaceChildren(
+          ...entries.map(({ theme, release }) => {
+            const card = theme.card ?? {};
+            const cardSrc = safeUrl(card.url);
+            return el(
+              'li',
+              { class: 'card', 'data-theme': theme.id, 'data-version': release.version },
+              cardSrc && el('img', { src: cardSrc, width: card.width, height: card.height, alt: '', loading: 'lazy' }),
+              el(
+                'div',
+                { class: 'card-body' },
+                el('h3', {}, el('a', { href: `#theme/${encodeURIComponent(theme.id)}`, text: theme.name })),
+                el('p', { class: 'card-desc', text: theme.description }),
+                el(
+                  'div',
+                  { class: 'meta' },
+                  (theme.kinds ?? []).length > 0 && el('span', { class: 'visually-hidden', text: 'Kinds of site:' }),
+                  (theme.kinds ?? []).length > 0 &&
+                    el('ul', { class: 'tags', role: 'list' }, theme.kinds.map((k) => el('li', { class: 'tag', 'data-kind': k, text: kindLabel(k) }))),
+                  el('span', { 'data-part': 'version', text: `Version ${release.version}` }),
+                ),
+              ),
+            );
+          }),
+        );
+        $('empty').hidden = entries.length > 0;
+        const total = state.catalog.themes.length;
+        const noun = total === 1 ? 'theme' : 'themes';
+        if (state.engineInvalid) {
+          pendingStatus = `Not a version; showing ${state.kind ? `${entries.length} of ${total}` : `all ${total}`} ${noun}${forKind(' for ')}.`;
+        } else {
+          const forEngine = state.engine ? ` for engine ${state.engineText}` : '';
+          pendingStatus = `Showing ${entries.length} of ${total} ${noun}${forKind(' for ')}${forEngine}.`;
+        }
+      }
+
+      /** The kind choice in words, after a lead such as " for ", or nothing when no kind is chosen. */
+      function forKind(lead = ', ') {
+        return state.kind ? `${lead}${kindLabel(state.kind)}` : '';
+      }
+
+      /** Writes the status text now, or after typing pauses, so a screen reader hears a result and not each keystroke. */
+      function announce(delay = 0) {
+        clearTimeout(statusTimer);
+        if (delay === 0) $('status').textContent = pendingStatus;
+        else statusTimer = setTimeout(() => ($('status').textContent = pendingStatus), delay);
+      }
+
+      function renderTheme(theme) {
+        const release = shownRelease(theme, state.engine);
+        const newest = releasesNewestFirst(theme)[0];
+        const shown = release ?? newest;
+        const page = $('theme');
+        const demo = safeUrl(theme.demo);
+        const repository = safeUrl(theme.repository);
+        const author = theme.author ?? {};
+        const authorUrl = safeUrl(author.url);
+
+        let notice = null;
+        if (state.engine && !release) {
+          notice = el('p', { class: 'notice', text: `No release of ${theme.name} works with engine ${state.engineText}. The newest release is shown.` });
+        } else if (release && newest && release.version !== newest.version) {
+          notice = el('p', {
+            class: 'notice',
+            text: `Version ${release.version} is the newest that works with engine ${state.engineText}. The newest release, ${newest.version}, needs engine ${describeRange(newest.engine)}.`,
+          });
+        }
+
+        const options = shown.options ?? [];
+        const fonts = shown.fonts ?? [];
+        const modes = shown.colorModes ?? {};
+        const shotImages = (shown.screenshots ?? []).flatMap((shot) => {
+          const src = safeUrl(shot.url);
+          return src
+            ? [el('img', { src, alt: shot.shows ?? `Screenshot of ${theme.name}`, width: shot.width, height: shot.height, loading: 'lazy' })]
+            : [];
+        });
+
+        page.replaceChildren(
+          el('a', { class: 'back', href: '#' }, 'All themes'),
+          el(
+            'header',
+            { class: 'theme-head' },
+            el('p', { class: 'eyebrow', text: 'Theme' }),
+            el('h2', { id: 'theme-title', tabindex: '-1', text: theme.name }),
+            el('p', { class: 'lede', text: theme.description }),
+            el('p', { class: 'release-line', 'data-part': 'version', 'data-version': shown.version }, `Version ${shown.version}, released `, timeEl(shown.date), '.'),
+            notice,
+            demo &&
+              el(
+                'p',
+                { class: 'actions' },
+                el('a', { class: 'button', href: demo, 'data-part': 'demo' }, 'Try the demo', el('span', { class: 'visually-hidden', text: ` of ${theme.name}` })),
+              ),
+            el(
+              'section',
+              { class: 'section install', 'data-part': 'install' },
+              el('h3', { text: 'Start a site with it' }),
+              el('pre', { class: 'command' }, el('code', { text: `cairn new --theme ${theme.id}` })),
+            ),
+          ),
+          el(
+            'div',
+            { class: 'theme-layout' },
+            el(
+              'div',
+              { class: 'theme-main' },
+              theme.summary && el('p', { class: 'summary', 'data-part': 'summary', text: theme.summary }),
+              shotImages.length > 0 &&
+                el(
+                  'section',
+                  { class: 'section', 'data-part': 'screenshots' },
+                  el('h3', { text: 'Screenshots' }),
+                  el('div', { class: 'shots' }, shotImages),
+                ),
+              el(
+                'section',
+                { class: 'section' },
+                el('h3', { text: 'Version history' }),
+                el(
+                  'ol',
+                  { class: 'history', role: 'list', 'data-part': 'history' },
+                  releasesNewestFirst(theme).map((r, i) =>
+                    el(
+                      'li',
+                      { 'data-version': r.version, 'data-engine': r.engine },
+                      el(
+                        'div',
+                        { class: 'history-head' },
+                        el('h4', { text: r.version }),
+                        i === 0 && el('span', { class: 'badge', text: 'Newest' }),
+                        release && state.engine && r.version === release.version && el('span', { class: 'badge', text: 'Fits your engine' }),
+                      ),
+                      el('p', { class: 'release-meta' }, timeEl(r.date), `. Engine ${describeRange(r.engine)}.`),
+                      el('p', { 'data-part': 'notes', text: r.notes }),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            el(
+              'aside',
+              { class: 'theme-side', 'aria-label': `About ${theme.name}` },
+              el(
+                'section',
+                { class: 'section' },
+                el('h3', { text: 'Details' }),
+                el(
+                  'dl',
+                  { class: 'facts', 'data-part': 'details' },
+                  el('div', {}, el('dt', { text: 'Kinds of site' }), el('dd', { 'data-part': 'kinds', text: (theme.kinds ?? []).map(kindLabel).join(', ') })),
+                  el(
+                    'div',
+                    {},
+                    el('dt', { text: 'Color modes' }),
+                    el('dd', { 'data-part': 'color-modes' }, 'Light ', el('code', { text: modes.light ?? '' }), ', dark ', el('code', { text: modes.dark ?? '' })),
+                  ),
+                  el(
+                    'div',
+                    {},
+                    el('dt', { text: 'Options' }),
+                    el(
+                      'dd',
+                      { 'data-part': 'options' },
+                      options.length
+                        ? el(
+                            'ul',
+                            { class: 'plain-list', role: 'list' },
+                            options.map((o) =>
+                              el(
+                                'li',
+                                {},
+                                `${o.label}: `,
+                                (o.values ?? []).map((v) => (v.value === o.default ? `${v.label} (default)` : v.label)).join(', '),
+                              ),
+                            ),
+                          )
+                        : 'None',
+                    ),
+                  ),
+                  el(
+                    'div',
+                    {},
+                    el('dt', { text: 'Fonts' }),
+                    el(
+                      'dd',
+                      { 'data-part': 'fonts' },
+                      fonts.length
+                        ? el(
+                            'ul',
+                            { class: 'plain-list', role: 'list' },
+                            fonts.map((f) => {
+                              const source = safeUrl(f.source);
+                              return el('li', {}, source ? el('a', { href: source, text: f.name }) : f.name, ` (${f.license})`);
+                            }),
+                          )
+                        : 'The system fonts',
+                    ),
+                  ),
+                  el('div', {}, el('dt', { text: 'License' }), el('dd', { 'data-part': 'license', text: theme.license })),
+                  el(
+                    'div',
+                    {},
+                    el('dt', { text: 'Author' }),
+                    el('dd', { 'data-part': 'author' }, authorUrl ? el('a', { href: authorUrl, text: author.name }) : author.name ?? ''),
+                  ),
+                  repository &&
+                    el('div', {}, el('dt', { text: 'Source' }), el('dd', {}, el('a', { href: repository, 'data-part': 'repository', text: repository }))),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      /** Shows the grid or a theme's page, by the address's `#theme/<id>` fragment. */
+      function route() {
+        const hash = location.hash;
+        // Any other fragment, such as the skip link's #main, is not a route and leaves the view as it is.
+        if (hash !== '' && hash !== '#' && !hash.startsWith('#theme/')) return;
+        const match = /^#theme\/(.+)$/.exec(hash);
+        let wanted = match ? match[1] : '';
+        try {
+          wanted = decodeURIComponent(wanted);
+        } catch {
+          // A malformed escape stays as typed and matches no theme.
+        }
+        const theme = match && state.catalog.themes.find((t) => t.id === wanted);
+        if (theme) {
+          renderTheme(theme);
+          $('browse').hidden = true;
+          $('theme').hidden = false;
+          document.title = `${theme.name}: cairn themes`;
+          lastThemeId = theme.id;
+          window.scrollTo(0, 0);
+          $('theme-title').focus();
+          return;
+        }
+        $('theme').hidden = true;
+        $('theme').replaceChildren();
+        $('browse').hidden = false;
+        document.title = 'cairn themes';
+        if (match) {
+          pendingStatus = `No theme named ${wanted} is in the catalog.`;
+          announce();
+        }
+        if (lastThemeId) {
+          const link = document.querySelector(`#grid [data-theme="${CSS.escape(lastThemeId)}"] h3 a`);
+          (link ?? $('main')).focus();
+          lastThemeId = null;
+        }
+      }
+
+      function onEngineInput() {
+        const input = $('engine');
+        const text = input.value.trim();
+        const parsed = text ? parseVersion(text) : null;
+        const invalid = Boolean(text) && !parsed;
+        input.setAttribute('aria-invalid', invalid ? 'true' : 'false');
+        $('engine-error').hidden = !invalid;
+        input.setAttribute('aria-describedby', invalid ? 'engine-hint engine-error' : 'engine-hint');
+        state.engine = parsed;
+        state.engineText = parsed ? text : '';
+        state.engineInvalid = invalid;
+        renderGrid();
+        announce(STATUS_DELAY_MS);
+      }
+
+      async function start() {
+        const link = $('source-link');
+        link.textContent = catalogUrl;
+        const href = safeUrl(catalogUrl);
+        if (href) {
+          const anchor = el('a', { id: 'source-link', href, text: catalogUrl });
+          link.replaceWith(anchor);
+        }
+        try {
+          const response = await fetch(catalogUrl);
+          if (!response.ok) throw new Error(`The address answered ${response.status}.`);
+          const data = await response.json();
+          if (!data || !Array.isArray(data.themes) || !Array.isArray(data.kinds)) throw new Error('The file is not a cairn catalog.');
+          state.catalog = data;
+        } catch (error) {
+          const problem = $('problem');
+          problem.replaceChildren(el('strong', { text: 'The catalog could not be read. ' }), `${catalogUrl}: ${error.message}`);
+          problem.hidden = false;
+          $('status').textContent = 'No themes to show.';
+          $('main').dataset.ready = 'true';
+          return;
+        }
+        if (state.catalog.generated) $('generated').textContent = `, generated ${state.catalog.generated.slice(0, 10)}.`;
+        renderFilters();
+        renderGrid();
+        announce();
+        route();
+        $('kind-choices').addEventListener('change', (event) => {
+          state.kind = event.target.value;
+          renderGrid();
+          announce();
+        });
+        $('engine').addEventListener('input', onEngineInput);
+        $('filters').addEventListener('submit', (event) => event.preventDefault());
+        window.addEventListener('hashchange', route);
+        $('main').dataset.ready = 'true';
+      }
+
+      $('skip').addEventListener('click', (event) => {
+        event.preventDefault();
+        $('main').focus();
+      });
+
+      start();
+    </script>
+  </body>
+</html>

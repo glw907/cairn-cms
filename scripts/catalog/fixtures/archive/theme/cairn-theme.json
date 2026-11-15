@@ -1,0 +1,17 @@
+{
+  "$schema": "https://cairn.pub/schemas/cairn-theme/1.json",
+  "id": "pebble",
+  "name": "Pebble",
+  "description": "A fixture theme for the archive builder's committed digest.",
+  "version": "1.0.0",
+  "notes": "The first release.",
+  "engine": ">=0.99.0-0",
+  "kinds": ["blog"],
+  "license": "MIT",
+  "author": { "name": "cairn" },
+  "contract": 1,
+  "colorModes": { "light": "pebble", "dark": "pebble-dark" },
+  "options": [],
+  "fonts": [],
+  "screenshots": [{ "path": "screenshots/home-light.png", "shows": "The home page in the light color mode" }]
+}

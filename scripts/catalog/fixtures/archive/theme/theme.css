@@ -1,0 +1,4 @@
+@plugin "daisyui/theme" {
+  name: "pebble";
+  default: true;
+}

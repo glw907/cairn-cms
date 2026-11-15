@@ -9,9 +9,10 @@
 // style's Warm Stone palette and draws style's marks at one tier, the named width rungs
 // (width.go), and the sanitizer every dynamic string passes through (sanitize.go). One shared
 // layer (layout.go, rank.go) supplies the header, the section grammar, the fix format, and the
-// one severity ranking, and the four bodies compose them into the frames an operator reads: one
-// site on a terminal (body_single.go), more than one (body_many.go), a pipe or any non-terminal
-// consumer (body_plain.go), and a log excerpt (body_logs.go).
+// one severity ranking, and the bodies compose them into the frames an operator reads: one site
+// on a terminal (body_single.go), more than one (body_many.go), a pipe or any non-terminal
+// consumer (body_plain.go), a log excerpt (body_logs.go), and a doctor run on a terminal
+// (body_doctor.go).
 package render
 
 import (
@@ -82,9 +83,9 @@ type RenderInput struct {
 	Dark bool
 	// Profile is the colour profile to paint with.
 	Profile colorprofile.Profile
-	// ASCII selects the ASCII glyph tier over Unicode. style.Detect is the only function that
-	// fills it; render.Render reads the field and never re-derives it, since purity forbids a
-	// second TTY check anywhere else in this package.
+	// ASCII selects the ASCII glyph tier over Unicode. The caller fills it from style.Detect's
+	// answer, raised to ASCII on a non-UTF-8 locale; render.Render reads the field and never
+	// re-derives it, since purity forbids a TTY or environment check anywhere in this package.
 	ASCII bool
 	// Reports holds the health sweep's settled reports, in the order the sweep ran them. The
 	// render owns the ranking; nothing upstream re-orders.
@@ -121,10 +122,11 @@ func (in RenderInput) width() int {
 
 // Render composes in into a Frame. It is pure: no I/O, no clock, no environment, no terminal.
 //
-// The view decides first and the body second. ViewLogs and ViewStatus each have one form, since
-// neither carries the per-check grammar the three health bodies differ over; a caller writing to
-// a pipe prints its line-oriented form for those two rather than asking for a column layout
-// nothing will read. ViewDoctor is terminal-only and ignores Body.
+// The view decides first and the body second. ViewLogs has one form, since it carries none of
+// the per-check grammar the three health bodies differ over; a caller writing to a pipe prints
+// its line-oriented form rather than asking for a column layout nothing will read. ViewStatus
+// reads Body only to choose between its line-oriented pipe form and its terminal block.
+// ViewDoctor is terminal-only and ignores Body.
 func Render(in RenderInput) Frame {
 	t := newTheme(in.Dark, in.Profile, in.ASCII)
 	switch {

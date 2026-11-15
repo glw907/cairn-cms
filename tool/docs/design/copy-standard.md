@@ -397,6 +397,7 @@ Every user-facing string found in the sources. `delete` means the best rewrite i
 | `mockups-2` plain | `exit 2` | none | keep |
 | `mockups-2` plain | `remedy page: <url>` | nobody says "remedy page" | `docs: <url>` |
 | `mockups-2` plain | `remedy: <text>` | none; matches plugin-output idiom | keep |
+| `cairn health` | `Checking <site>` | none; the progress line on stderr while a run is under way, erased before the report prints | keep |
 
 ### 3.2 Section labels
 

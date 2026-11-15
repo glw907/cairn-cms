@@ -1,7 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
+	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/charmbracelet/colorprofile"
 
@@ -88,5 +93,79 @@ func TestWithLocale(t *testing.T) {
 				t.Errorf("withLocale changed more than ASCII: %+v", got)
 			}
 		})
+	}
+}
+
+// TestDrawProgressStoppedEarlyWritesNothing holds the delay: a run that settles before the line
+// is due leaves the stream untouched, so a fast run never flashes a line and an erase.
+func TestDrawProgressStoppedEarlyWritesNothing(t *testing.T) {
+	var out bytes.Buffer
+	stop := drawProgress(&out, time.Hour, time.Millisecond, func(int) string { return "working" })
+	stop()
+	if out.Len() != 0 {
+		t.Errorf("stream holds %q, want nothing", out.String())
+	}
+}
+
+// TestDrawProgressErasesLastAndOnce holds the join: every frame returns to the row's start and
+// erases it first, the stream ends on one erase with no frame after it, and a second stop adds
+// nothing.
+func TestDrawProgressErasesLastAndOnce(t *testing.T) {
+	const erase = "\r\x1b[2K"
+	var out bytes.Buffer
+	third := make(chan struct{})
+	stop := drawProgress(&out, time.Millisecond, time.Millisecond, func(frame int) string {
+		if frame == 2 {
+			close(third)
+		}
+		return fmt.Sprintf("frame %d", frame)
+	})
+	<-third
+	stop()
+	got := out.String()
+	stop()
+	if out.String() != got {
+		t.Errorf("a second stop wrote %q", strings.TrimPrefix(out.String(), got))
+	}
+	segments := strings.Split(strings.TrimPrefix(got, erase), erase)
+	if len(segments) < 4 {
+		t.Fatalf("stream %q holds %d segments, want at least three frames and the final erase", got, len(segments))
+	}
+	if last := segments[len(segments)-1]; last != "" {
+		t.Errorf("stream ends %q after its last erase, want nothing", last)
+	}
+	for i, s := range segments[:len(segments)-1] {
+		if want := fmt.Sprintf("frame %d", i); s != want {
+			t.Errorf("segment %d = %q, want %q", i, s, want)
+		}
+	}
+}
+
+// flushCounter stands in for the logx scrubber, which holds an unterminated line until it is
+// flushed, and counts each Flush.
+type flushCounter struct {
+	bytes.Buffer
+	flushes int
+}
+
+func (f *flushCounter) Flush() error {
+	f.flushes++
+	return nil
+}
+
+// TestDrawProgressFlushesEveryWrite holds the scrubber rule: a frame and the erase each carry no
+// newline, so each is flushed or it never reaches the terminal before the report.
+func TestDrawProgressFlushesEveryWrite(t *testing.T) {
+	var out flushCounter
+	first := make(chan struct{})
+	var once sync.Once
+	stop := drawProgress(&out, time.Millisecond, time.Hour, func(int) string {
+		once.Do(func() { close(first) })
+		return "working"
+	})
+	<-first
+	stop()
+	if out.flushes != 2 {
+		t.Errorf("flushes = %d, want 2: one frame and the erase", out.flushes)
 	}
 }

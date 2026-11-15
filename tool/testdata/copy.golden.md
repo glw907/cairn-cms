@@ -169,6 +169,7 @@ whose only non-passing results are UNCHECKED, and a directory that is not a cair
 (which still writes a payload carrying an empty checks array). Test for nonzero, not for 3.
 Run `cairn health` after deploying to reach the checks that need a live site.
 - Check a cairn-cms site's configuration, no credential or deploy needed
+- Checking %s
 - Cloudflare: skip, %s
 - Confirm the credential permissions this tool itself needs
 - Confirm the credential permissions this tool itself needs, against Cloudflare and GitHub.

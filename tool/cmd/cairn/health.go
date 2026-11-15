@@ -98,12 +98,14 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 
 	clients := buildClients(d)
 	started := d.now()
+	stop := startHealthProgress(cmd, d, rf, f, id)
 	report, err := health.Run(ctx, rec, clients, d.checks, health.Options{
 		ErrorThreshold: f.errorThreshold,
 		LogWindow:      window,
 		Now:            d.now,
 		OnCheck:        checkProgress(cmd, rf, f),
 	}, acks)
+	stop()
 	if err != nil {
 		return err
 	}
@@ -117,23 +119,6 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 
 	d.exit(int(verdict))
 	return nil
-}
-
-// checkProgress returns the callback health.Run calls as each check settles, or nil when this
-// run prints none. It writes one line per check to stderr, so a sweep that takes a while is
-// visibly progressing rather than apparently hung.
-//
-// --json suppresses it whatever --verbose says: under --json the run's progress is the
-// newline-delimited stream on stdout, and a second stream in a different shape on stderr is
-// noise an agent cannot parse.
-func checkProgress(cmd *cobra.Command, rf *rootFlags, f healthFlags) func(health.CheckResult) {
-	if !rf.verbose || f.asJSON {
-		return nil
-	}
-	errOut := cmd.ErrOrStderr()
-	return func(c health.CheckResult) {
-		_, _ = fmt.Fprint(errOut, checkProgressLine(c.ID, spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)))
-	}
 }
 
 // writeHealth writes the report, under two rules the agent contract freezes. --json wins over

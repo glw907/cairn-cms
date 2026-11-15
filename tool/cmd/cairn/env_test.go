@@ -139,7 +139,7 @@ func TestLoadEnvBlankExportedVariableIsMissing(t *testing.T) {
 		t.Error("missing does not list CAIRN_CF_READ_TOKEN, which was exported blank")
 	}
 
-	cmd := newAuthListCmd(deps{env: envFn})
+	cmd := newAuthListCmd(deps{env: envFn, keyringStatus: func(string) (bool, error) { return false, nil }})
 	var out strings.Builder
 	cmd.SetOut(&out)
 	if err := cmd.RunE(cmd, nil); err != nil {

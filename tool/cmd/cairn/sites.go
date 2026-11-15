@@ -91,10 +91,8 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	if err := writeSitesStatus(cmd, d, rf, f, verdict, len(entries) > 0 || rf.verbose); err != nil {
 		return err
 	}
-	for _, e := range listErrs {
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "cairn:", e); err != nil {
-			return err
-		}
+	if err := writeListErrors(cmd.ErrOrStderr(), listErrs); err != nil {
+		return err
 	}
 
 	d.exit(int(verdict))
@@ -110,7 +108,7 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 // the same reason the listing is. below reports whether stdout already carries a line; with
 // none, the terminal block's opening blank line has nothing to part it from and is not printed.
 func writeSitesStatus(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags, verdict spine.Verdict, below bool) error {
-	if f.asJSON || (rf.quiet && verdict == spine.VerdictOK) {
+	if f.asJSON || quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
 	in := renderInput(d, rf, nil, verdict, runStatus(buildClients(d), 0, false, nil))
@@ -119,12 +117,7 @@ func writeSitesStatus(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags, v
 	if !below && len(lines) > 0 && lines[0] == "" {
 		lines = lines[1:]
 	}
-	for _, line := range lines {
-		if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeLines(cmd.OutOrStdout(), lines)
 }
 
 // printRegistrySource writes the directory the listing read and the store.Source that chose it,
@@ -157,7 +150,7 @@ func writeSites(cmd *cobra.Command, entries []store.Entry, f sitesFlags, rf *roo
 		}
 		return writeJSONPayload(cmd.OutOrStdout(), data)
 	}
-	if rf.quiet && verdict == spine.VerdictOK {
+	if quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
 	for _, e := range entries {

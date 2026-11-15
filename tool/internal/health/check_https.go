@@ -36,7 +36,7 @@ func hstsEnabled(value any) bool {
 	return enabled
 }
 
-// httpsForcedCheck ports the zone's HTTPS posture, both halves off one settings read:
+// httpsForcedCheck checks the zone's HTTPS posture, both halves off one settings read:
 // "always_use_https", whose absence fails the admin's CSRF guard outright for an editor signing
 // in over an http origin, and the "security_header" strict_transport_security entry behind it.
 type httpsForcedCheck struct{}

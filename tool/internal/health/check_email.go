@@ -12,13 +12,11 @@ import (
 )
 
 // cloudflareSPFInclude is the SPF mechanism Cloudflare's Email Sending onboarding writes,
-// captured live on an onboarded zone (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4b-email-spike.md): a
-// sending subdomain's SPF TXT record must include it for Cloudflare's mail servers to be an
-// authorized sender. Already lowercase, since every comparison against it lowercases its side too.
+// captured live on an onboarded zone: a sending subdomain's SPF TXT record must include it for
+// Cloudflare's mail servers to be an authorized sender. Already lowercase, since every comparison against it lowercases its side too.
 const cloudflareSPFInclude = "include:_spf.mx.cloudflare.net"
 
-// dkimSelectors is the best-effort DKIM selector list this check probes for, ported from
-// create-cairn-site's DNS carry-over probe list (records.mjs's PROBE_PLAN.dkimSelectors):
+// dkimSelectors is the best-effort DKIM selector list this check probes for:
 // Google's, Fastmail's rotation, and Microsoft 365's documented default pair. DNS has no
 // enumeration primitive, so this check can only ever confirm DKIM against a selector it already
 // knows to ask for.
@@ -82,10 +80,9 @@ func dmarcPolicy(lowerTXT string) string {
 
 // checkDMARC reads domain's "_dmarc" TXT record and reports Failing when none exists, its policy
 // tag is absent, or its policy is "none": a DMARC record published at p=none asks receivers to
-// take no action on a spoofed message, which records.mjs's DMARC-is-TXT expectation treats as
-// no real policy at all. Every tag is read from a lowercased
-// copy of the record, since DNS TXT values carry no case convention and "p=None" is exactly the
-// live misconfiguration this check exists to catch.
+// take no action on a spoofed message, which is no real policy at all. Every tag is read from a lowercased copy of the
+// record, since DNS TXT values carry no case convention and "p=None" is exactly the live
+// misconfiguration this check exists to catch.
 func checkDMARC(ctx context.Context, probe *providers.Probe, domain string) (spine.Outcome, bool) {
 	records, err := probe.LookupTXT(ctx, "_dmarc."+domain)
 	if err != nil && !isDNSAbsence(err) {

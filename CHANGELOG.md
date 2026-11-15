@@ -149,6 +149,12 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **`cairn help agents` no longer lists `provider-console` as a fix actor.** No check ever named
+  that actor, so a fix's `actor` is `operator`, `developer`, or `registrar`. Apart from that one
+  line, output to a pipe or a file and `--json` output are still what they were.
+
+  Consumers must: nothing.
+
 - **A theme manifest now requires `engine`, `kinds`, and `notes`.** `schema/cairn-theme-1.schema.json`
   requires `engine` (a range of the form `>=1.2.0` or `>=1.2.0 <2.0.0`), `kinds` (one to three of
   `blog`, `portfolio`, `docs`, `landing`, and `organization`, listed with their labels in

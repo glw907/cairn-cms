@@ -49,7 +49,7 @@ func (d publishDetail) outcome(state spine.State, reason spine.ReasonCode, code 
 	return spine.Outcome{State: state, Reason: reason, Code: code, Detail: detail, Fields: d.fields()}
 }
 
-// publishPathCheck ports the engine's publish path: every open "cairn/*" edit branch a site's
+// publishPathCheck checks the engine's publish path: every open "cairn/*" edit branch a site's
 // repository carries, aged against the newest commit `cairn-cms[bot]` has made on the default
 // branch, since a bot commit newer than a branch is that branch's publish having already
 // landed.

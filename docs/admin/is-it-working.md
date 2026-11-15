@@ -18,7 +18,7 @@ The following list routes you to the right page for each situation.
    cairn doctor
    ```
 
-In a terminal, the report groups the checks under headings: failing checks first, each with its fix and link, then the checks that couldn't run, then any notes. The passing checks fold to one count line, and the skipped ones to one line that names them. When the output goes to a pipe, a file, or a CI log, the report prints one line for each check instead, in the form that follows.
+In a terminal, the report groups the checks under headings: failing checks first, each with its fix and link, then the checks that couldn't run, then any notes. The passing checks fold to one count line, such as `3 passing`, and the skipped ones to one `does not apply` line that names them. When the output goes to a pipe, a file, or a CI log, the report prints one line for each check instead, in the form that follows.
 
 The following report comes from a run against a site just after its first deploy. Every line passed except one skip, which the sections after the report explain.
 
@@ -228,7 +228,7 @@ To check, publish an edit and confirm that the newest commit on `main` names you
 
 ## Wire the admin mount
 
-**`admin.mount-incomplete`, a warning.** This is a best-effort text check that the site's `/admin` route renders cairn's admin shell. A site wired in an unusual way can trip it without being broken, so treat a result as a prompt to look, not a verdict. On a failure the report prints INFO and never FAIL.
+**`admin.mount-incomplete`, a warning.** This is a best-effort text check that the site's `/admin` route renders cairn's admin shell. A site wired in an unusual way can trip it without being broken, so treat a result as a prompt to look, not a verdict. On a failure the report lists it under notes in a terminal, and prints INFO and never FAIL in the one-line form.
 
 **Ask a developer:** compare the site's `/admin` mount with the canonical mount in the [admin mount guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-building-admin-screens/references/admin-mount.md).
 

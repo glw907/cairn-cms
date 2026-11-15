@@ -152,6 +152,11 @@ builds an `AuditReport` by hand adds `measured: []`, and a custom rule may add a
 list the files and theme blocks it read. The text report prints a `Measured:` block before its summary lines, or `measured
 nothing` when no theme sheet was read.
 
+`cairn health`, `cairn doctor`, `cairn logs`, and the `cairn sites` status block draw a new layout
+in a terminal, and `cairn health` adds a progress line on stderr there. Nothing needs to migrate:
+output to a pipe or a file and `--json` output are unchanged. A script that reads what these
+commands print should read `--json`, or their output through a pipe, never a terminal's screen.
+
 ## 0.99.0-rc.4
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,

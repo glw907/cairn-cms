@@ -117,6 +117,18 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **`cairn health`, `cairn doctor`, `cairn logs`, and the `cairn sites` status block share one report
+  layout in a terminal.** Each check takes a row that opens with its mark, and the rows sit under
+  lowercase titles such as `failing` and `could not run`, so a check's state shows in its mark and
+  its title. `cairn doctor` used to print one line per check in a terminal too; it now folds its passing checks to one count
+  line and its skipped checks to one `does not apply` line. A held check, one acknowledged with
+  `--ack`, takes the `◌` mark, and a locale that isn't UTF-8 gets ASCII marks. When stdout and
+  stderr are both terminals, `cairn health` draws a `Checking <site>` progress line on stderr while
+  it runs and erases it before the report prints. A set `CI` variable, `--quiet`, `--json`, and
+  `--verbose` each keep the line off. Output to a pipe or a file and `--json` output don't change.
+
+  Consumers must: nothing.
+
 - **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
 - **The admin docs describe `cairn new`.** `before-you-start`, `create-your-site`, `own-your-domain`, `setup-recovery`, `troubleshooting`, and `credentials` are rebuilt for the new setup, and four pages are new: `set-up-with-an-agent`, `deploys`, `suggested-plugins`, and the generated `setup-reference`. The agent page is also embedded in the `cairn` binary, and a test fails when the copy drifts.

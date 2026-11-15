@@ -122,12 +122,7 @@ func writeListNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) e
 func writeTerminalNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error {
 	term := reportTerminal(d, rf)
 	theme := style.NewTheme(resolveGround(d, rf).dark, term.Profile, term.ASCII)
-	for _, line := range noticeLines(theme, notice, reportWidth(rf, term)) {
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeLines(cmd.ErrOrStderr(), noticeLines(theme, notice, reportWidth(rf, term)))
 }
 
 // noticeLines lays notice out for a terminal: each of its own lines wrapped on its own, so a

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"os"
 	"time"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
@@ -177,7 +178,13 @@ func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.V
 // Under CAIRN_PLAIN it probes no stream, so the answer is a pipe's.
 func detectTerminal(d deps, rf *rootFlags) style.Terminal {
 	stdout, _ := styledStreams(d, rf)
-	return style.Detect(stdout, style.Env{
+	return detectOn(d, rf, stdout)
+}
+
+// detectOn measures f against the environment and the operator's --color, the one place the
+// style.Env is built. Callers choose the stream: a report reads stdout, an error reads stderr.
+func detectOn(d deps, rf *rootFlags, f *os.File) style.Terminal {
+	return style.Detect(f, style.Env{
 		NoColor: d.env(varNoColor),
 		Term:    d.env(varTerm),
 		Color:   rf.color,

@@ -191,9 +191,8 @@ func colorInvalidError(color string) error {
 	return translated(fmt.Errorf(tmplColorInvalid, color, colorAuto, colorAlways, colorNever))
 }
 
-// tmplWidthInvalid is root.go's refusal of a --width value outside widthMin to widthMax. New to
-// this table: copy-standard.md carries no row for a --width value error, so this is drafted to
-// sections 2.4 through 2.7 rather than copied.
+// tmplWidthInvalid is root.go's refusal of a --width value outside widthMin to widthMax,
+// drafted to copy-standard.md sections 2.4 through 2.7.
 const tmplWidthInvalid = "cairn: --width %d is not a width cairn can render.\nUse a whole number from %d to %d"
 
 // widthInvalidError renders tmplWidthInvalid for the value the operator gave.
@@ -551,7 +550,7 @@ const tmplNotACredential = "cairn: %q is not a credential cairn stores.\nThe nam
 
 // notACredentialError renders tmplNotACredential for name against the real credentialVars list.
 func notACredentialError(name string) error {
-	return translated(fmt.Errorf(tmplNotACredential, name, strings.Join(authVariables, ", ")))
+	return translated(fmt.Errorf(tmplNotACredential, name, strings.Join(credentialNames(), ", ")))
 }
 
 // auth_check.go's Short, Long, and Example for cairn auth check (and its Hidden alias

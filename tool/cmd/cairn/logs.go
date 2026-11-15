@@ -85,15 +85,15 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 		return unknownSiteError(site)
 	}
 
-	clients := buildClients(d)
-	if !clients.HaveCF {
-		return noCloudflareCredentialError()
+	cf, _, err := requireCF(d)
+	if err != nil {
+		return err
 	}
 
 	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
-	entries, err := logs.Fetch(ctx, clients.CF, logs.Query{
+	entries, err := logs.Fetch(ctx, cf, logs.Query{
 		Worker: rec.Cloudflare.WorkerName,
 		Since:  window,
 		Event:  f.event,

@@ -24,15 +24,8 @@ func writeError(d deps, w io.Writer, args []string, err error) {
 		_, _ = fmt.Fprintln(w, err)
 		return
 	}
-	term := withLocale(style.Detect(stderr, style.Env{
-		NoColor: d.env(varNoColor),
-		Term:    d.env(varTerm),
-		Color:   rf.color,
-	}), localeIsUTF8(d.env, runtime.GOOS))
-	width := term.Columns
-	if width == 0 {
-		width = style.DefaultWidth
-	}
+	term := withLocale(detectOn(d, rf, stderr), localeIsUTF8(d.env, runtime.GOOS))
+	width := reportWidth(rf, term) // errorFlags reads no --width, so rf.width is 0 and the terminal decides
 	message, fix := splitFix(err)
 	theme := style.NewTheme(resolveGround(d, rf).dark, term.Profile, term.ASCII)
 	_ = writeLines(w, errorBlock(theme, message, fix, width))

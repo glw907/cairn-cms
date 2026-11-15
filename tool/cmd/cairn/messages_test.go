@@ -146,13 +146,13 @@ func messageConstants(t *testing.T) []string {
 	return entries
 }
 
-// TestNoCAIRNPrefixedLiteralOutsideCredentialVars checks that every CAIRN_-prefixed literal messages.go carries is a member of authVariables (built
+// TestNoCAIRNPrefixedLiteralOutsideCredentialVars checks that every CAIRN_-prefixed literal messages.go carries is a member of credentialVars (built
 // from credentialVars, env.go) or the setup token's variable, which
 // TestCredentialVariableNamesAreSpelledOnlyInEnvGo already exempts this file to allow.
 func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 	cairnVarPattern := regexp.MustCompile(`CAIRN_[A-Z_]+`)
-	allowed := make(map[string]bool, len(authVariables)+1)
-	for _, v := range authVariables {
+	allowed := make(map[string]bool, len(credentialVars)+1)
+	for _, v := range credentialNames() {
 		allowed[v] = true
 	}
 	// cairn new's agent guide names the setup token's variable, which env.go reads and cairn auth
@@ -161,7 +161,7 @@ func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 	for _, s := range messageConstants(t) {
 		for _, m := range cairnVarPattern.FindAllString(s, -1) {
 			if !allowed[m] {
-				t.Errorf("messages.go entry %q names %q, not a member of authVariables %v", s, m, authVariables)
+				t.Errorf("messages.go entry %q names %q, not a member of credentialVars %v", s, m, credentialNames())
 			}
 		}
 	}

@@ -32,7 +32,7 @@ type credentialVar struct {
 // varCFAccountID, varCFReadToken, and varGHReadToken name, not hold, the three CAIRN_CF_/CAIRN_GH_
 // environment variables loadEnv reads; each is a bare variable name, never a credential value,
 // spelled exactly once, here. Every other file under cmd/cairn refers to one of the three through
-// these constants (or through credentialVars, authVariables, and env's accessors, which are
+// these constants (or through credentialVars and env's accessors, which are
 // all built from them) rather than spelling the name again, which is what
 // TestCredentialVariableNamesAreSpelledOnlyInEnvGo checks.
 const (
@@ -78,21 +78,26 @@ const (
 const varPublicOrigin = "PUBLIC_ORIGIN"
 
 // credentialVars lists the three variables loadEnv resolves, in resolution
-// order. A fourth variable is a one-line addition here.
+// order. It is the one list: auth's membership check and the not-a-credential refusal read it.
 var credentialVars = []credentialVar{
 	{name: varCFAccountID},
 	{name: varCFReadToken, secret: true},
 	{name: varGHReadToken, secret: true},
 }
 
-// authVariables lists the same three names, in the same order, for cairn
-// auth set's membership check.
-var authVariables = []string{varCFAccountID, varCFReadToken, varGHReadToken}
+// credentialNames returns the names in credentialVars, in resolution order.
+func credentialNames() []string {
+	names := make([]string, len(credentialVars))
+	for i, v := range credentialVars {
+		names[i] = v.name
+	}
+	return names
+}
 
 // resolution holds one variable's resolved value and the line a caller
 // prints for it: the provider name on success, "<provider>: error" when
 // the provider itself failed, or empty when nothing resolved it (auth list
-// and probe-token both turn an empty display into "not set"). value is
+// and auth check both turn an empty display into "not set"). value is
 // empty for a secret variable; credential holds that value wrapped in
 // providers.Credential instead, so a typed accessor never has to know
 // which of the three variables it is reading, and the resolved secret
@@ -143,7 +148,7 @@ func (e env) ghToken() providers.Credential {
 }
 
 // sourceLines returns e's resolutions with every empty display turned into
-// "not set", the one place cairn auth list and probe-token both get the
+// "not set", the one place cairn auth list and auth check both get the
 // text they print for an unresolved variable.
 func (e env) sourceLines() []resolution {
 	lines := make([]resolution, len(e.resolutions))

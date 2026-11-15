@@ -72,13 +72,12 @@ func newAdoptCmd(d deps, rf *rootFlags) *cobra.Command {
 // lists the account's Workers as candidates. It returns the client so a caller that goes on to
 // read a zone does not build a second one.
 func discoverWorkers(ctx context.Context, d deps) (*providers.Cloudflare, []adopt.Candidate, error) {
-	clients := buildClients(d)
-	if !clients.HaveCF {
-		return nil, nil, noCloudflareCredentialError()
+	cf, resolved, err := requireCF(d)
+	if err != nil {
+		return nil, nil, err
 	}
-	resolved, _ := loadEnv(d.env, d.secretProviders()...)
-	candidates, err := adopt.Discover(ctx, clients.CF, resolved.accountID())
-	return clients.CF, candidates, err
+	candidates, err := adopt.Discover(ctx, cf, resolved.accountID())
+	return cf, candidates, err
 }
 
 // discoverCandidates lists every Worker on the account as a candidate, marking each one the

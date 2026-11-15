@@ -103,7 +103,7 @@ func TestLoadEnvProviderAnswersWhenEnvironmentAbsent(t *testing.T) {
 func TestLoadEnvAllAbsentIsAllMissing(t *testing.T) {
 	got, missing := loadEnv(fakeEnv(nil))
 
-	for _, name := range authVariables {
+	for _, name := range credentialNames() {
 		if from := displayFor(got, name); from != "" {
 			t.Errorf("%s from = %q, want empty", name, from)
 		}
@@ -111,7 +111,7 @@ func TestLoadEnvAllAbsentIsAllMissing(t *testing.T) {
 	if len(missing) != 3 {
 		t.Fatalf("missing = %v, want all three variables", missing)
 	}
-	for i, name := range authVariables {
+	for i, name := range credentialNames() {
 		if missing[i].Var != name {
 			t.Errorf("missing[%d].Var = %q, want %q", i, missing[i].Var, name)
 		}
@@ -266,7 +266,7 @@ func TestCredentialVariableNamesAreSpelledOnlyInEnvGo(t *testing.T) {
 		}
 		for _, prefix := range []string{"CAIRN_CF_", "CAIRN_GH_"} {
 			if strings.Contains(string(data), prefix) {
-				t.Errorf("%s spells a %s variable name; read it from credentialVars, authVariables, or one of env's accessors instead", name, prefix)
+				t.Errorf("%s spells a %s variable name; read it from credentialVars or one of env's accessors instead", name, prefix)
 			}
 		}
 	}

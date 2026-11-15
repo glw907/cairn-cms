@@ -37,7 +37,7 @@ const defaultTimeout = 480 * time.Second
 // The three --color values. cairn health passes the chosen value into detectTerminal, which
 // hands it to style.Detect as Env.Color: a non-empty NO_COLOR means no colour under all
 // three, and otherwise auto defers to the terminal's colour support, always forces a coloured
-// frame regardless of the terminal, and never paints none. cairn doctor's report is plain text.
+// frame regardless of the terminal, and never paints none. cairn doctor draws a themed, width-aware frame on a terminal and plain text elsewhere.
 const (
 	colorAuto   = "auto"
 	colorAlways = "always"
@@ -139,21 +139,13 @@ func (f rootFlags) deadline(ctx context.Context) (context.Context, context.Cance
 // A notice carrying its line breaks keeps them: each line is wrapped on its own, so a
 // two-sentence notice does not reflow into one paragraph.
 func writeNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error {
-	width := rf.width
-	if width <= 0 {
-		width = detectTerminal(d, rf).Columns
-	}
-	if width <= 0 {
-		width = style.DefaultWidth
-	}
+	width := reportWidth(rf, detectTerminal(d, rf))
+	theme := style.NewTheme(rf.theme != themeLight, colorprofile.ASCII, false)
+	var lines []string
 	for paragraph := range strings.SplitSeq(notice, "\n") {
-		for _, line := range style.NewTheme(rf.theme != themeLight, colorprofile.ASCII, false).Wrap(paragraph, width) {
-			if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
-				return err
-			}
-		}
+		lines = append(lines, theme.Wrap(paragraph, width)...)
 	}
-	return nil
+	return writeLines(cmd.ErrOrStderr(), lines)
 }
 
 // versionLine renders tmplVersion for the running binary's build identity: internal/version

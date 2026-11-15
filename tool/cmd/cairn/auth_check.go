@@ -108,7 +108,7 @@ func runAuthCheck(cmd *cobra.Command, d deps, args []string, asJSON bool) error 
 		}
 	}
 
-	clients := buildClients(d)
+	clients := clientsFrom(d, resolved, missing)
 	target := probeTarget{cf: clients.CF, gh: clients.GH}
 	if site != nil {
 		target.site = *site

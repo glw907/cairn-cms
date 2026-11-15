@@ -19,7 +19,7 @@ import (
 // isAuthVariable reports whether name is one of the three variables cairn
 // auth operates on.
 func isAuthVariable(name string) bool {
-	return slices.Contains(authVariables, name)
+	return slices.ContainsFunc(credentialVars, func(v credentialVar) bool { return v.name == name })
 }
 
 // restoreOnCancel calls restore once, when ctx is done, and returns the function the caller

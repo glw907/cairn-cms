@@ -161,7 +161,7 @@ const readGrid = (/** @type {import('playwright').Page} */ page) =>
 
 /** Waits until the page has read the catalog, or has said it could not. */
 async function waitReady(page) {
-  await page.waitForSelector('main[aria-busy="false"]', { timeout: READY_TIMEOUT_MS });
+  await page.waitForSelector('main[data-ready="true"]', { timeout: READY_TIMEOUT_MS });
 }
 
 /**

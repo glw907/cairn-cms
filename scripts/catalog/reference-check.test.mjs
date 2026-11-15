@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { chromium } from 'playwright';
 import { main, PAGE_FILE, runReferenceCheck } from './reference-check.mjs';
 
 const FIXTURES = path.join(import.meta.dirname, 'fixtures/reference');
@@ -117,7 +118,55 @@ test('a catalog served with no access-control-allow-origin header exits 1', { ti
   assert.match(text, /the page could not read the catalog/);
 });
 
-test('a page that fetches a second address exits 1 naming the request', { timeout: 180_000 }, async () => {
+/**
+ * Opens the committed page against the fixture catalog in a real browser and hands the page to the body.
+ * @param {(page: import('playwright').Page) => Promise<void>} body
+ */
+async function withPage(body) {
+  const catalog = await serveFixtures();
+  const html = readFileSync(PAGE_FILE);
+  const server = createServer((_req, res) => res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(html));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(undefined)));
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('the page server has no port');
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${address.port}/?catalog=${encodeURIComponent(catalog)}`);
+    await page.waitForSelector('main[data-ready="true"]');
+    await body(page);
+  } finally {
+    await browser.close();
+    await new Promise((resolve) => server.close(() => resolve(undefined)));
+  }
+}
+
+test('the skip link on a theme page leaves the theme page open', { timeout: 60_000 }, async () => {
+  await withPage(async (page) => {
+    await page.locator('#grid [data-theme="alder"] h3 a').click();
+    await page.waitForSelector('[data-row="theme-page"]:not([hidden])');
+    await page.locator('.skip').focus();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    assert.equal(await page.locator('[data-row="theme-page"]').isVisible(), true, 'the theme page stays open');
+    assert.equal(await page.locator('#grid').isVisible(), false, 'the grid stays hidden');
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'main', 'focus moves to the main region');
+  });
+});
+
+test('the engine field names its error only while the version is not valid', { timeout: 60_000 }, async () => {
+  await withPage(async (page) => {
+    const input = page.locator('#engine');
+    const describedby = () => input.getAttribute('aria-describedby');
+    assert.equal(await describedby(), 'engine-hint', 'a valid empty field names only the hint');
+    await input.fill('nope');
+    assert.equal(await describedby(), 'engine-hint engine-error');
+    await input.fill('1.0.0');
+    assert.equal(await describedby(), 'engine-hint', 'a valid version drops the error again');
+  });
+});
+
+test('a page that fetches a second address exits 1 naming the request',{ timeout: 180_000 }, async () => {
   const catalog = await serveFixtures();
   const stray = `${new URL(catalog).origin}/demo/birch/`;
   const dir = mkdtempSync(path.join(tmpdir(), 'reference-page-'));

@@ -86,7 +86,6 @@
       :focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 3px;
-        border-radius: 2px;
       }
 
       h1,
@@ -121,6 +120,7 @@
         padding: 0;
         overflow: hidden;
         clip: rect(0 0 0 0);
+        clip-path: inset(50%);
         white-space: nowrap;
         border: 0;
       }
@@ -190,6 +190,10 @@
         max-width: 48rem;
       }
 
+      .problem:empty {
+        display: none;
+      }
+
       .problem strong {
         color: var(--danger);
       }
@@ -251,19 +255,21 @@
         box-shadow: inset 0 0 0 1px var(--accent);
       }
 
-      .choice:has(input:focus-visible) {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
+      @supports selector(:has(*)) {
+        .choice:has(input:focus-visible) {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+        }
+
+        .choice input:focus-visible {
+          outline: none;
+        }
       }
 
       .choice input {
         margin: 0.3rem 0 0;
         accent-color: var(--accent);
         flex: none;
-      }
-
-      .choice input:focus-visible {
-        outline: none;
       }
 
       .choice-label {
@@ -378,13 +384,15 @@
         inset: 0;
       }
 
-      .card h3 a:focus-visible {
-        outline: none;
-      }
+      @supports selector(:has(*)) {
+        .card h3 a:focus-visible {
+          outline: none;
+        }
 
-      .card:has(h3 a:focus-visible) {
-        outline: 2px solid var(--accent);
-        outline-offset: 3px;
+        .card:has(h3 a:focus-visible) {
+          outline: 2px solid var(--accent);
+          outline-offset: 3px;
+        }
       }
 
       .card-desc {
@@ -627,7 +635,7 @@
     </style>
   </head>
   <body>
-    <a class="skip" href="#main">Skip to the themes</a>
+    <a class="skip" id="skip" href="#main">Skip to main content</a>
     <header class="masthead">
       <div class="wrap">
         <p class="eyebrow">cairn</p>
@@ -639,8 +647,8 @@
       </div>
     </header>
 
-    <main id="main" class="wrap" tabindex="-1" aria-busy="true">
-      <div id="problem" class="problem" role="alert" hidden></div>
+    <main id="main" class="wrap" tabindex="-1" data-ready="false">
+      <div id="problem" class="problem" role="alert"></div>
 
       <section id="browse" aria-labelledby="browse-title">
         <h2 id="browse-title" class="visually-hidden">Browse themes</h2>
@@ -658,7 +666,7 @@
               autocomplete="off"
               autocapitalize="off"
               spellcheck="false"
-              aria-describedby="engine-hint engine-error"
+              aria-describedby="engine-hint"
             />
             <p id="engine-hint" class="hint">
               The cairn version your site runs, such as 0.99.0. Each theme then shows its newest release that works with it. Leave it
@@ -668,7 +676,7 @@
           </div>
         </form>
         <p id="status" class="status" role="status">Loading the catalog.</p>
-        <ul id="grid" class="grid" data-row="grid"></ul>
+        <ul id="grid" class="grid" role="list" data-row="grid"></ul>
         <p id="empty" class="empty" hidden>No theme fits these choices. Choose another kind of site or engine version.</p>
       </section>
 
@@ -677,7 +685,7 @@
 
     <footer class="site-foot">
       <div class="wrap">
-        <p id="source">Catalog: <a id="source-link" href=""></a><span id="generated"></span></p>
+        <p id="source">Catalog: <span id="source-link"></span><span id="generated"></span></p>
       </div>
     </footer>
 
@@ -803,9 +811,14 @@
         return el('time', { datetime: date, text: Number.isNaN(parsed.valueOf()) ? date : dateFormat.format(parsed) });
       }
 
-      const state = { catalog: null, kind: '', engine: null, engineText: '' };
+      const state = { catalog: null, kind: '', engine: null, engineText: '', engineInvalid: false };
       const $ = (id) => document.getElementById(id);
       let lastThemeId = null;
+      /** The status sentence the grid last worked out, written to the live region by `announce`. */
+      let pendingStatus = '';
+      let statusTimer = 0;
+      /** How long typing in the engine field pauses before the status text is rewritten. */
+      const STATUS_DELAY_MS = 500;
 
       /** The words for a kind id, from the catalog's kind list, or the id itself. */
       function kindLabel(id) {
@@ -826,14 +839,22 @@
         choices.replaceChildren();
         const choice = (value, label, description) => {
           const descId = `kind-desc-${value || 'any'}`;
+          const labelId = `kind-label-${value || 'any'}`;
           return el(
             'label',
             { class: 'choice' },
-            el('input', { type: 'radio', name: 'kind', value, checked: value === state.kind, 'aria-describedby': descId }),
+            el('input', {
+              type: 'radio',
+              name: 'kind',
+              value,
+              checked: value === state.kind,
+              'aria-labelledby': labelId,
+              'aria-describedby': descId,
+            }),
             el(
               'span',
               {},
-              el('span', { class: 'choice-label', text: label }),
+              el('span', { class: 'choice-label', id: labelId, text: label }),
               el('span', { class: 'choice-desc', id: descId, text: description }),
             ),
           );
@@ -863,8 +884,9 @@
                 el(
                   'div',
                   { class: 'meta' },
-                  el('span', { class: 'visually-hidden', text: 'Kinds of site:' }),
-                  el('ul', { class: 'tags' }, (theme.kinds ?? []).map((k) => el('li', { class: 'tag', 'data-kind': k, text: kindLabel(k) }))),
+                  (theme.kinds ?? []).length > 0 && el('span', { class: 'visually-hidden', text: 'Kinds of site:' }),
+                  (theme.kinds ?? []).length > 0 &&
+                    el('ul', { class: 'tags', role: 'list' }, theme.kinds.map((k) => el('li', { class: 'tag', 'data-kind': k, text: kindLabel(k) }))),
                   el('span', { 'data-part': 'version', text: `Version ${release.version}` }),
                 ),
               ),
@@ -873,8 +895,25 @@
         );
         $('empty').hidden = entries.length > 0;
         const total = state.catalog.themes.length;
-        const forEngine = state.engine ? ` for engine ${state.engineText}` : '';
-        $('status').textContent = `Showing ${entries.length} of ${total} ${total === 1 ? 'theme' : 'themes'}${forEngine}.`;
+        const noun = total === 1 ? 'theme' : 'themes';
+        if (state.engineInvalid) {
+          pendingStatus = `Not a version; showing ${state.kind ? `${entries.length} of ${total}` : `all ${total}`} ${noun}${forKind(' for ')}.`;
+        } else {
+          const forEngine = state.engine ? ` for engine ${state.engineText}` : '';
+          pendingStatus = `Showing ${entries.length} of ${total} ${noun}${forKind(' for ')}${forEngine}.`;
+        }
+      }
+
+      /** The kind choice in words, after a lead such as " for ", or nothing when no kind is chosen. */
+      function forKind(lead = ', ') {
+        return state.kind ? `${lead}${kindLabel(state.kind)}` : '';
+      }
+
+      /** Writes the status text now, or after typing pauses, so a screen reader hears a result and not each keystroke. */
+      function announce(delay = 0) {
+        clearTimeout(statusTimer);
+        if (delay === 0) $('status').textContent = pendingStatus;
+        else statusTimer = setTimeout(() => ($('status').textContent = pendingStatus), delay);
       }
 
       function renderTheme(theme) {
@@ -900,6 +939,12 @@
         const options = shown.options ?? [];
         const fonts = shown.fonts ?? [];
         const modes = shown.colorModes ?? {};
+        const shotImages = (shown.screenshots ?? []).flatMap((shot) => {
+          const src = safeUrl(shot.url);
+          return src
+            ? [el('img', { src, alt: shot.shows ?? `Screenshot of ${theme.name}`, width: shot.width, height: shot.height, loading: 'lazy' })]
+            : [];
+        });
 
         page.replaceChildren(
           el('a', { class: 'back', href: '#' }, 'All themes'),
@@ -919,8 +964,8 @@
               ),
             el(
               'section',
-              { class: 'section install', 'aria-labelledby': 'install-title', 'data-part': 'install' },
-              el('h3', { id: 'install-title', text: 'Start a site with it' }),
+              { class: 'section install', 'data-part': 'install' },
+              el('h3', { text: 'Start a site with it' }),
               el('pre', { class: 'command' }, el('code', { text: `cairn new --theme ${theme.id}` })),
             ),
           ),
@@ -931,26 +976,20 @@
               'div',
               { class: 'theme-main' },
               theme.summary && el('p', { class: 'summary', 'data-part': 'summary', text: theme.summary }),
-              el(
-                'section',
-                { class: 'section', 'aria-labelledby': 'shots-title', 'data-part': 'screenshots' },
-                el('h3', { id: 'shots-title', text: 'Screenshots' }),
+              shotImages.length > 0 &&
                 el(
-                  'div',
-                  { class: 'shots' },
-                  (shown.screenshots ?? []).map((shot) => {
-                    const src = safeUrl(shot.url);
-                    return src && el('img', { src, alt: shot.shows, width: shot.width, height: shot.height, loading: 'lazy' });
-                  }),
+                  'section',
+                  { class: 'section', 'data-part': 'screenshots' },
+                  el('h3', { text: 'Screenshots' }),
+                  el('div', { class: 'shots' }, shotImages),
                 ),
-              ),
               el(
                 'section',
-                { class: 'section', 'aria-labelledby': 'history-title' },
-                el('h3', { id: 'history-title', text: 'Version history' }),
+                { class: 'section' },
+                el('h3', { text: 'Version history' }),
                 el(
                   'ol',
-                  { class: 'history', 'data-part': 'history' },
+                  { class: 'history', role: 'list', 'data-part': 'history' },
                   releasesNewestFirst(theme).map((r, i) =>
                     el(
                       'li',
@@ -974,8 +1013,8 @@
               { class: 'theme-side', 'aria-label': `About ${theme.name}` },
               el(
                 'section',
-                { class: 'section', 'aria-labelledby': 'facts-title' },
-                el('h3', { id: 'facts-title', text: 'Details' }),
+                { class: 'section' },
+                el('h3', { text: 'Details' }),
                 el(
                   'dl',
                   { class: 'facts', 'data-part': 'details' },
@@ -996,7 +1035,7 @@
                       options.length
                         ? el(
                             'ul',
-                            { class: 'plain-list' },
+                            { class: 'plain-list', role: 'list' },
                             options.map((o) =>
                               el(
                                 'li',
@@ -1019,7 +1058,7 @@
                       fonts.length
                         ? el(
                             'ul',
-                            { class: 'plain-list' },
+                            { class: 'plain-list', role: 'list' },
                             fonts.map((f) => {
                               const source = safeUrl(f.source);
                               return el('li', {}, source ? el('a', { href: source, text: f.name }) : f.name, ` (${f.license})`);
@@ -1046,8 +1085,17 @@
 
       /** Shows the grid or a theme's page, by the address's `#theme/<id>` fragment. */
       function route() {
-        const match = /^#theme\/(.+)$/.exec(location.hash);
-        const theme = match && state.catalog.themes.find((t) => t.id === decodeURIComponent(match[1]));
+        const hash = location.hash;
+        // Any other fragment, such as the skip link's #main, is not a route and leaves the view as it is.
+        if (hash !== '' && hash !== '#' && !hash.startsWith('#theme/')) return;
+        const match = /^#theme\/(.+)$/.exec(hash);
+        let wanted = match ? match[1] : '';
+        try {
+          wanted = decodeURIComponent(wanted);
+        } catch {
+          // A malformed escape stays as typed and matches no theme.
+        }
+        const theme = match && state.catalog.themes.find((t) => t.id === wanted);
         if (theme) {
           renderTheme(theme);
           $('browse').hidden = true;
@@ -1062,6 +1110,10 @@
         $('theme').replaceChildren();
         $('browse').hidden = false;
         document.title = 'cairn themes';
+        if (match) {
+          pendingStatus = `No theme named ${wanted} is in the catalog.`;
+          announce();
+        }
         if (lastThemeId) {
           const link = document.querySelector(`#grid [data-theme="${CSS.escape(lastThemeId)}"] h3 a`);
           (link ?? $('main')).focus();
@@ -1076,16 +1128,22 @@
         const invalid = Boolean(text) && !parsed;
         input.setAttribute('aria-invalid', invalid ? 'true' : 'false');
         $('engine-error').hidden = !invalid;
+        input.setAttribute('aria-describedby', invalid ? 'engine-hint engine-error' : 'engine-hint');
         state.engine = parsed;
         state.engineText = parsed ? text : '';
+        state.engineInvalid = invalid;
         renderGrid();
+        announce(STATUS_DELAY_MS);
       }
 
       async function start() {
         const link = $('source-link');
         link.textContent = catalogUrl;
         const href = safeUrl(catalogUrl);
-        if (href) link.href = href;
+        if (href) {
+          const anchor = el('a', { id: 'source-link', href, text: catalogUrl });
+          link.replaceWith(anchor);
+        }
         try {
           const response = await fetch(catalogUrl);
           if (!response.ok) throw new Error(`The address answered ${response.status}.`);
@@ -1097,22 +1155,29 @@
           problem.replaceChildren(el('strong', { text: 'The catalog could not be read. ' }), `${catalogUrl}: ${error.message}`);
           problem.hidden = false;
           $('status').textContent = 'No themes to show.';
-          $('main').setAttribute('aria-busy', 'false');
+          $('main').dataset.ready = 'true';
           return;
         }
         if (state.catalog.generated) $('generated').textContent = `, generated ${state.catalog.generated.slice(0, 10)}.`;
         renderFilters();
         renderGrid();
+        announce();
         route();
         $('kind-choices').addEventListener('change', (event) => {
           state.kind = event.target.value;
           renderGrid();
+          announce();
         });
         $('engine').addEventListener('input', onEngineInput);
         $('filters').addEventListener('submit', (event) => event.preventDefault());
         window.addEventListener('hashchange', route);
-        $('main').setAttribute('aria-busy', 'false');
+        $('main').dataset.ready = 'true';
       }
+
+      $('skip').addEventListener('click', (event) => {
+        event.preventDefault();
+        $('main').focus();
+      });
 
       start();
     </script>

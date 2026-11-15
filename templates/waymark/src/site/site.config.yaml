@@ -15,6 +15,12 @@ menus:
       url: /admin
     - label: Feed
       url: /feed.xml
+  # The actions menu holds a site's call-to-action links (a Join or Donate button), for a theme
+  # that renders them. Like the footer it is developer-edited in this file. Uncomment it and point
+  # each url at a page the site has.
+  # actions:
+  #   - label: Join
+  #     url: /join
 vocabulary:
   - value: trail-reports
     label: Trail Reports

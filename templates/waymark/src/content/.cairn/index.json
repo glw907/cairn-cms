@@ -63,6 +63,18 @@
         {
           "concept": "pages",
           "id": "about"
+        },
+        {
+          "concept": "posts",
+          "id": "2026-11-03-invite-an-editor"
+        },
+        {
+          "concept": "posts",
+          "id": "2026-11-05-add-an-image"
+        },
+        {
+          "concept": "posts",
+          "id": "2026-11-06-add-a-page"
         }
       ],
       "references": [

@@ -459,18 +459,21 @@ func TestTerminalChecksAreConfinedToTheColourProfile(t *testing.T) {
 	}
 }
 
-// TestNoCommandFileExceedsItsBound holds cmd/cairn to one concern per file. probe_token.go was
-// 475 lines carrying four concerns, which is the growth this bound stops repeating.
+// TestNoCommandFileExceedsItsBound holds cmd/cairn to one concern per file: 280 lines for a
+// command file, and 300 for a new_*.go installer file, whose one command spans several files.
 //
-// messages.go is exempted by name (Task 19c-ii, ratified 2026-09-21): holding every command's
-// Short, Long, and Example plus copy-standard.md section 3.8's eight error cases is one concern
-// by construction, and splitting the table across files would defeat section 4.1's point,
-// one reviewable place a linter and a human can both read in full.
+// messages.go is exempted by name: holding every command's Short, Long, and Example plus
+// copy-standard.md section 3.8's eight error cases is one concern by construction, and
+// splitting the table across files would defeat section 4.1's point, one reviewable place a
+// linter and a human can both read in full.
 func TestNoCommandFileExceedsItsBound(t *testing.T) {
-	const bound = 300
 	for _, rel := range toolGoFiles(t) {
 		if !strings.HasPrefix(rel, "cmd/cairn/") || rel == "cmd/cairn/messages.go" {
 			continue
+		}
+		bound := 280
+		if strings.HasPrefix(filepath.Base(rel), "new_") {
+			bound = 300
 		}
 		if lines := strings.Count(readToolFile(t, rel), "\n"); lines > bound {
 			t.Errorf("%s is %d lines, over the %d-line bound; split it by concern", rel, lines, bound)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/adopt"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/spf13/cobra"
 )
@@ -67,16 +68,23 @@ func newAdoptCmd(d deps, rf *rootFlags) *cobra.Command {
 	return cmd
 }
 
-// discoverCandidates resolves the account and lists every Worker on it as a candidate, marking
-// each one the registry already holds.
-func discoverCandidates(ctx context.Context, d deps) ([]render.AdoptCandidate, error) {
+// discoverWorkers builds the Cloudflare client, refuses a run with no Cloudflare credential, and
+// lists the account's Workers as candidates. It returns the client so a caller that goes on to
+// read a zone does not build a second one.
+func discoverWorkers(ctx context.Context, d deps) (*providers.Cloudflare, []adopt.Candidate, error) {
 	clients := buildClients(d)
 	if !clients.HaveCF {
-		return nil, noCloudflareCredentialError()
+		return nil, nil, noCloudflareCredentialError()
 	}
 	resolved, _ := loadEnv(d.env, d.secretProviders()...)
-
 	candidates, err := adopt.Discover(ctx, clients.CF, resolved.accountID())
+	return clients.CF, candidates, err
+}
+
+// discoverCandidates lists every Worker on the account as a candidate, marking each one the
+// registry already holds.
+func discoverCandidates(ctx context.Context, d deps) ([]render.AdoptCandidate, error) {
+	_, candidates, err := discoverWorkers(ctx, d)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +120,7 @@ func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) 
 		}
 	}
 
-	ctx, cancel := rf.deadline(commandContext(cmd))
+	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
 	lines, err := discoverCandidates(ctx, d)
@@ -151,7 +159,7 @@ func writeAdoptListPlain(cmd *cobra.Command, d deps, rf *rootFlags, lines []rend
 	if len(routeOnly) == 0 {
 		return nil
 	}
-	if err := writeNotice(cmd, d, rf, adoptListRouteOnlyNotice()); err != nil {
+	if err := writeNotice(cmd, d, rf, tmplAdoptListRouteOnly); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {
@@ -171,16 +179,10 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 		return adoptNoWorkerError()
 	}
 
-	ctx, cancel := rf.deadline(commandContext(cmd))
+	ctx, cancel := rf.deadline(cmd.Context())
 	defer cancel()
 
-	clients := buildClients(d)
-	if !clients.HaveCF {
-		return noCloudflareCredentialError()
-	}
-	resolved, _ := loadEnv(d.env, d.secretProviders()...)
-
-	candidates, err := adopt.Discover(ctx, clients.CF, resolved.accountID())
+	cf, candidates, err := discoverWorkers(ctx, d)
 	if err != nil {
 		return err
 	}
@@ -200,7 +202,7 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 	}
 	if f.domain != "" {
 		chosen.Domain = f.domain
-		zone, err := adopt.ZoneFor(ctx, clients.CF, f.domain)
+		zone, err := adopt.ZoneFor(ctx, cf, f.domain)
 		if err != nil {
 			return err
 		}

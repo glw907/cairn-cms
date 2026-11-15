@@ -174,6 +174,7 @@ func checkDeps(envFn func(string) string, rt http.RoundTripper, registryDir func
 // callers to read.
 func runCheck(t *testing.T, cmd *cobra.Command, args ...string) int {
 	t.Helper()
+	cmd.SetContext(t.Context())
 	err := cmd.RunE(cmd, args)
 	coded, ok := errors.AsType[codedError](err)
 	if !ok {

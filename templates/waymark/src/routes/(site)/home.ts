@@ -4,6 +4,8 @@
 // blockquote, a list, or a block's markup never counts, and it reads attribute values with their
 // quotes so a `>` inside one never ends a tag early.
 
+import type { HomeData, HomePost } from '#theme/components/ArticleView.svelte';
+
 /** The rendered body either side of the split point; the rule itself is dropped. */
 export interface SplitBody {
   before: string;
@@ -103,4 +105,22 @@ export function splitAtLastRule(html: string): SplitBody {
 
   if (!rule) return { before: html, after: '' };
   return { before: html.slice(0, rule.start).trimEnd(), after: html.slice(rule.end).trimStart() };
+}
+
+// How many of the newest posts the home page lists; the archive holds the rest.
+const HOME_POST_COUNT = 3;
+
+/**
+ * Builds the theme's `home` prop from the home page's rendered body and the published posts.
+ * @remarks
+ * `posts` must be newest first, as `posts.all()` returns them, and must hold no draft. The list
+ * keeps the newest three, and an empty list makes the theme render neither its heading nor the
+ * archive link.
+ */
+export function buildHomeData(html: string, posts: HomePost[]): HomeData {
+  return {
+    posts: posts.slice(0, HOME_POST_COUNT),
+    archiveUrl: '/archive/1',
+    ...splitAtLastRule(html),
+  };
 }

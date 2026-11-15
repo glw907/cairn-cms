@@ -218,7 +218,15 @@ test.describe('home page copies', () => {
 
   test('with no home page, `/` matches the golden and no `archive/1.html` is built', async () => {
     const built = normalizeBuildNoise(await readFile(path.join(noHome!, 'index.html'), 'utf8'));
-    expect(built).toBe(await readFile(HOME_GOLDEN_FILE, 'utf8'));
+    // The one named difference: `/` now imports the theme's article view for home mode, so the
+    // page links that component's stylesheet, whose rules are scoped to classes `/` never uses.
+    const lines = built.split('\n');
+    const articleViewCss = lines.filter((line) =>
+      /<link href="[^"]*\/ArticleView\.HASH\.css" rel="stylesheet">/.test(line),
+    );
+    expect(articleViewCss).toHaveLength(1);
+    const withoutCss = lines.filter((line) => line !== articleViewCss[0]).join('\n');
+    expect(withoutCss).toBe(await readFile(HOME_GOLDEN_FILE, 'utf8'));
     expect(existsSync(path.join(noHome!, 'archive', '1.html'))).toBe(false);
   });
 });

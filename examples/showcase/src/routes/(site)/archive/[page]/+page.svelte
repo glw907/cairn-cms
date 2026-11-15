@@ -3,7 +3,7 @@
      compositions (the newest-entry spotlight, and a narrowing control scoped to the entries visible
      on the page you are viewing), not a shape a deeper page repeats. Shares its markup and token
      vocabulary with the home page's index; see #chassis/archive for the pagination shape both build
-     from. -->
+     from. Beside a home page the archive starts here at page one, with no Newer link. -->
 <script lang="ts">
   import { page } from '$app/state';
   import type { PageData } from './$types';
@@ -16,7 +16,10 @@
 
 <svelte:head>
   <title>Archive, page {data.archive.page} · {page.data.siteName}</title>
-  <meta name="robots" content="noindex" />
+  <!-- Page one exists only beside a home page, as the archive's front, so it is indexed. -->
+  {#if data.archive.page > 1}
+    <meta name="robots" content="noindex" />
+  {/if}
 </svelte:head>
 
 <section class="listing" aria-label="Writing">
@@ -40,12 +43,14 @@
   </div>
 
   <nav class="pagination" aria-label="Archive pages">
-    <a
-      href={data.archive.page - 1 === 1 ? '/' : `/archive/${data.archive.page - 1}`}
-      class="pagination__link cairn-focus-ring"
-    >
-      <span aria-hidden="true">&larr; </span>Newer
-    </a>
+    {#if data.archive.page > 1}
+      <a
+        href={data.archive.page - 1 === 1 && !data.home ? '/' : `/archive/${data.archive.page - 1}`}
+        class="pagination__link cairn-focus-ring"
+      >
+        <span aria-hidden="true">&larr; </span>Newer
+      </a>
+    {/if}
     <span class="pagination__status">Page {data.archive.page} of {data.archive.totalPages}</span>
     {#if data.archive.page < data.archive.totalPages}
       <a href={`/archive/${data.archive.page + 1}`} class="pagination__link cairn-focus-ring">

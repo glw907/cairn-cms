@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { splitAtLastRule } from './home.js';
+import { buildHomeData, splitAtLastRule } from './home.js';
+import type { HomePost } from '#theme/components/ArticleView.svelte';
 
 describe('splitAtLastRule', () => {
   it('keeps the whole body before the list when there is no rule', () => {
@@ -67,6 +68,40 @@ describe('splitAtLastRule', () => {
     expect(splitAtLastRule(html)).toEqual({
       before: '<p>A.</p><!-- <div> <hr> -->',
       after: '<p>B.</p>',
+    });
+  });
+});
+
+describe('buildHomeData', () => {
+  const post = (id: string): HomePost => ({
+    concept: 'posts',
+    id,
+    slug: id,
+    permalink: `/${id}`,
+    title: id,
+    tags: [],
+    excerpt: '',
+    wordCount: 0,
+    draft: false,
+    summaryFields: {},
+  });
+
+  it('keeps the newest three posts and splits the body around them', () => {
+    const posts = ['d', 'c', 'b', 'a'].map(post);
+    expect(buildHomeData('<p>Intro.</p>\n<hr>\n<p>Outro.</p>', posts)).toEqual({
+      posts: posts.slice(0, 3),
+      archiveUrl: '/archive/1',
+      before: '<p>Intro.</p>',
+      after: '<p>Outro.</p>',
+    });
+  });
+
+  it('hands an empty list through when there are no posts', () => {
+    expect(buildHomeData('<p>Only.</p>', [])).toEqual({
+      posts: [],
+      archiveUrl: '/archive/1',
+      before: '<p>Only.</p>',
+      after: '',
     });
   });
 });

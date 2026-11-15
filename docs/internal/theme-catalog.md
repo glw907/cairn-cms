@@ -8,7 +8,7 @@ the code is the contract: `scripts/catalog/publish.mjs`, `.github/workflows/cata
 
 The catalog is one file, `index.json`, beside each release's archive and images in an R2 bucket. A
 release is a theme's manifest `version` under `themes/<id>/`, or a content set's under
-`sets/<kind>/`. Nothing in the engine or the `cairn` tool reads the catalog yet.
+`sets/<kind>/`. Nothing in the engine or the `cairn` CLI reads the catalog yet.
 
 ## The two targets
 
@@ -146,6 +146,14 @@ resume rule applies:
 
 An archive builds to the same bytes every time from the same source, so a rerun from an unchanged
 `main` passes the comparison.
+
+A stopped run can leave a demo ahead of `index.json`. The demo deploys inside the per-theme loop and
+the index is written once at the end, so a failure after one theme's deploy leaves that demo on the
+new release while the index lists the old one. The daily check reports it as a demo whose marker is
+not the theme's newest release, and a rerun clears it.
+
+Pull requests share the one proving group. A third pull request that queues replaces the second's
+pending run, and the second's check shows as cancelled. Rerun that job from the Actions page.
 
 ## When a release path is locked with different bytes
 

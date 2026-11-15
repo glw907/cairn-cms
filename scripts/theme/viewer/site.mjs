@@ -187,6 +187,8 @@ function defaultContentDirs(root) {
 function childEnv() {
   const env = { ...process.env, WRANGLER_SEND_METRICS: 'false' };
   delete env.CI;
+  // The catalog publish job holds these; a site build and its dependencies never need them.
+  for (const name of ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'CLOUDFLARE_API_TOKEN']) delete env[name];
   return env;
 }
 

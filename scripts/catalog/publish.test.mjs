@@ -437,6 +437,20 @@ test('a theme release with no notes is refused before anything is written', asyn
   assert.deepEqual(w.bucket.writes, []);
 });
 
+test('a screenshot with no served content type is refused before anything is written', async () => {
+  const root = scratchRoot();
+  const file = path.join(root, 'themes/waymark/cairn-theme.json');
+  const manifest = JSON.parse(readFileSync(file, 'utf8'));
+  const first = manifest.screenshots[0].path;
+  cpSync(path.join(root, 'themes/waymark', first), path.join(root, 'themes/waymark', 'shot.svg'));
+  manifest.screenshots[0].path = 'shot.svg';
+  writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
+  const w = world({ root });
+  assert.equal(await w.publish(), 1);
+  assert.match(w.output(), /shot\.svg has no content type/);
+  assert.deepEqual(w.bucket.writes, []);
+});
+
 test('a set release with no notes is refused before anything is written', async () => {
   const w = world({ root: scratchRoot({ set: (m) => delete m.notes }) });
   assert.equal(await w.publish(), 1);

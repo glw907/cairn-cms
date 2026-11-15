@@ -2,8 +2,8 @@ name: catalog
 
 # Publishes the hosted theme catalog: each theme and set whose version the bucket's index.json
 # does not list gets its release objects, its demo, and a new index (scripts/catalog/publish.mjs).
-# A pull request proves the run on the `catalog-proving` environment, whose bucket and demo Worker
-# start empty every run; a push to main, or a dispatch on main, publishes to `catalog`. The script
+# A pull request proves the run on the `catalog-proving` environment, whose bucket
+# starts empty every run (the demo Worker keeps its last deploy until the new one lands); a push to main, or a dispatch on main, publishes to `catalog`. The script
 # reads its target from the environment's variables and secrets alone.
 #
 # The `catalog` environment allows the `main` branch only. `catalog-proving` has no branch rule,
@@ -94,7 +94,7 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          out=$(node scripts/catalog/publish.mjs)
+          out=$(node scripts/catalog/publish.mjs) || { printf '%s\n' "$out"; exit 1; }
           printf '%s\n' "$out"
           if ! printf '%s\n' "$out" | grep -Fxq 'catalog: nothing to publish'; then
             echo "::error::the second publish run was not a no-op"

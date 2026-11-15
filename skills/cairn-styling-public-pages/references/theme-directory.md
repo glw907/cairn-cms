@@ -79,19 +79,18 @@ description.
 
 The hosted catalog publishes the themes under `themes/` in the cairn-cms repository. A theme's
 release is its manifest's `version`. When `main` holds a version the catalog does not list, the
-`catalog` workflow publishes it: it runs the theme check, builds the theme's archive and a card image
-from the first screenshot, writes them and the screenshots under `themes/<id>/<version>`, deploys
-the theme's demo site, and then adds the release to the catalog's `index.json`, taking the release's
-`notes` and the theme's other fields from the manifest.
+`catalog` workflow publishes it: the archive, a card image, the screenshots, and the theme's demo
+site. The release's catalog entry takes its `notes` and its other fields from the manifest. A new
+theme's demo site needs a one-time setup by a maintainer, set out in `docs/internal/theme-catalog.md`.
 
 A release path is written once and never replaced. So a change to any file under `themes/<id>/`
 raises `version`, and CI's version-rise check fails a change that doesn't. A release also needs:
 
 - At least one screenshot. The first is the card's source and must be exactly 3:2, such as 1440 by
   960. The card is a 720 by 480 WebP of at most 100 KB.
-- An archive of at most 8 MiB. Under a `theme/` root it holds what the lay-in puts in `src/theme/`,
-  `theme-names.ts` included, and `app-html-block.html`, the lines the lay-in writes between the
-  markers in `src/app.html`.
+- An archive of at most 8 MiB. Under a `theme/` root it holds the files the lay-in puts in `src/theme/`,
+  `theme-names.ts` included. It also holds `app-html-block.html`, the lines the lay-in writes between
+  the markers in `src/app.html`.
 - A passing theme check.
 
 ## The directive seam

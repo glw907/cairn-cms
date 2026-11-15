@@ -273,6 +273,7 @@ export async function run({
         const bytes = readFileSync(path.join(dir, shot.path));
         const { width, height } = await sharp(bytes).metadata();
         const key = `${prefix}/${path.basename(shot.path)}`;
+        contentType(key);
         if (key === `${prefix}/card.webp` || screenshots.some((s) => s.key === key)) throw new Error(`${name} has two images published at ${key}`);
         screenshots.push({ key, bytes, shows: shot.shows, width, height });
       }
@@ -349,7 +350,10 @@ function wranglerDeploy({ dir, worker }) {
   return new Promise((resolve, reject) => {
     // The checkout's locked Wrangler, by path: `dir` is a scratch directory where npx would fetch the newest release.
     const wrangler = path.join(REPO, 'node_modules', '.bin', 'wrangler');
-    const child = spawn(wrangler, ['deploy'], { cwd: dir, stdio: 'inherit', env: process.env });
+    // Wrangler gets the deploy token and nothing else: the bucket keys are not its to hold.
+    const { PATH, HOME, CI, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID } = process.env;
+    const env = { PATH, HOME, CI, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, WRANGLER_SEND_METRICS: 'false' };
+    const child = spawn(wrangler, ['deploy'], { cwd: dir, stdio: 'inherit', env });
     child.on('error', reject);
     child.on('exit', (code, signal) => {
       if (code === 0) resolve();

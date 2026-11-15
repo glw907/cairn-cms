@@ -42,7 +42,7 @@ type v4Error struct {
 
 // resultInfo is a v4 list route's pagination metadata, present on the envelope's "result_info"
 // field whenever the route paginates. Cloudflare does not fill the same fields on every route:
-// a live capture found /zones and /zones/{id}/dns_records carrying total_pages,
+// a live capture on 2026-09-21 found /zones and /zones/{id}/dns_records carrying total_pages,
 // /accounts/{id}/workers/domains carrying per_page and total_count and no total_pages at all,
 // and /accounts/{id}/workers/scripts, /zones/{id}/settings, and the Email Sending subdomains
 // route carrying no result_info whatsoever. morePages reads whichever of them arrived; the
@@ -306,8 +306,9 @@ type BuildTrigger struct {
 }
 
 // BuildsConnections returns workerTag's Builds triggers, each carrying its repo connection.
-// Cloudflare has no dedicated connections-list route;
-// triggers embed the connection instead. A worker Cloudflare has never registered for
+// Cloudflare has no dedicated connections-list route
+// (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-13-t5-task8-live-e2e.md: "there is no connections list route at
+// all"); triggers embed the connection instead. A worker Cloudflare has never registered for
 // Builds returns a 200 with an empty slice and no error, confirmed by a live probe; treating an
 // empty list as the builds-not-connected condition is the caller's job, not this method's.
 func (cf *Cloudflare) BuildsConnections(ctx context.Context, workerTag string) ([]BuildTrigger, error) {
@@ -319,7 +320,9 @@ func (cf *Cloudflare) BuildsConnections(ctx context.Context, workerTag string) (
 	return triggers, nil
 }
 
-// Build is one Workers Builds run. The field names below match the live shape: the commit hash
+// Build is one Workers Builds run. The field names below match the live shape captured in
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-13-t5-task8-live-e2e.md and the fake server's
+// the retired Node fake that played it back: the commit hash
 // nests under "build_trigger_metadata" rather than sitting on the build itself, since that
 // object also carries the commit that triggered a push-sourced build.
 type Build struct {
@@ -377,7 +380,7 @@ type Zone struct {
 	Status string `json:"status"`
 	// NameServers is the nameserver pair Cloudflare assigned this zone, the pair the domain's
 	// registrar has to delegate to. Both the single-zone and the list route carry it, confirmed
-	// against a live GET; a zone using vanity nameservers reports those under a
+	// against a live GET on 2026-09-21; a zone using vanity nameservers reports those under a
 	// separate key this client does not read.
 	NameServers []string `json:"name_servers"`
 }
@@ -457,7 +460,7 @@ func (cf *Cloudflare) EmailSendingSubdomains(ctx context.Context, zoneID string)
 }
 
 // ObservabilityResult is a Workers Logs telemetry query's "result" object. Its "events" member
-// is an object rather than an array, which a live capture established and the
+// is an object rather than an array, which a live capture on 2026-09-21 established and the
 // synthesized fixture this package used to decode did not
 // (tool/testdata/fixtures/cloudflare/observability-telemetry-query.events.200.json).
 // "run" and "statistics" sit beside it and carry nothing a caller here reads.

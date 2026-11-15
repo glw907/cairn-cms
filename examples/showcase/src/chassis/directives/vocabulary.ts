@@ -454,9 +454,9 @@ const cards = () =>
       attributes: { columns: '4' },
       slots: {
         items: [
-          '[Junior program](/programs/junior) Ages 10 to 16, Saturdays at ten.',
-          '[Race team](/programs/race-team) Training five days a week, December to March.',
-          '[Masters](/programs/masters) Coached technique sessions for every pace.',
+          '[Junior program](https://example.com/programs/junior) Ages 10 to 16, Saturdays at ten.',
+          '[Race team](https://example.com/programs/race-team) Training five days a week, December to March.',
+          '[Masters](https://example.com/programs/masters) Coached technique sessions for every pace.',
           '**Where we meet** The Kincaid Park chalet, by the stadium lot.',
         ],
       },

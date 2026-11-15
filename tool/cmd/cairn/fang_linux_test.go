@@ -81,7 +81,7 @@ func TestHelpTakesTheGroundFromThemeAndTheVariables(t *testing.T) {
 	t.Setenv("TERM", "xterm-256color")
 	t.Setenv("COLORTERM", "")
 	_ = os.Unsetenv("NO_COLOR")
-	const mutedDark, mutedLight = "38;5;246", "38;5;243"
+	const mutedDark, mutedLight = "38;5;248", "38;5;241"
 	for _, tc := range []struct {
 		name string
 		args []string

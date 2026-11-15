@@ -35,7 +35,7 @@ var helpProfiles = []helpProfile{
 	{"truecolor", colorprofile.TrueColor, map[string]string{"COLORTERM": "truecolor", "TERM": "xterm-256color"},
 		[]string{"38;2;157;132;236", "38;2;114;70;207"}, "38;2;168;164;158", "38;2;97;93;87"},
 	{"ansi256", colorprofile.ANSI256, map[string]string{"COLORTERM": "", "TERM": "xterm-256color"},
-		[]string{"38;5;141", "38;5;97", "38;5;62"}, "38;5;246", "38;5;243"},
+		[]string{"38;5;141", "38;5;61", "38;5;62"}, "38;5;248", "38;5;241"},
 	{"ansi16", colorprofile.ANSI, map[string]string{"COLORTERM": "", "TERM": "xterm"},
 		[]string{"35", "94", "95"}, "", ""},
 }

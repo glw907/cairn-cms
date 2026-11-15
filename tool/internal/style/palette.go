@@ -50,12 +50,12 @@ type ink struct {
 
 // warmStone is the one table in this module that writes a hex value.
 var warmStone = map[Role]ink{
-	RoleMuted:   {"#615d57", "#a8a49e", "243", "246", ""},
+	RoleMuted:   {"#615d57", "#a8a49e", "241", "248", ""},
 	RoleSubtle:  {"#504c47", "#c1bdb8", "240", "250", "7"},
-	RoleOK:      {"#197037", "#7ccd8e", "28", "114", "2"},
-	RoleFailing: {"#b71824", "#ff8e86", "160", "210", "1"},
-	RoleUnknown: {"#915200", "#f7ac4d", "130", "215", "3"},
-	RoleAccent:  {"#7246cf", "#9d84ec", "97", "141", "5"},
+	RoleOK:      {"#197037", "#7ccd8e", "22", "114", "2"},
+	RoleFailing: {"#b71824", "#ff8e86", "124", "210", "1"},
+	RoleUnknown: {"#915200", "#f7ac4d", "94", "215", "3"},
+	RoleAccent:  {"#7246cf", "#9d84ec", "61", "141", "5"},
 	// The rule's risk on a Solarized Dark terminal (slot 8 is that theme's background,
 	// so a rule vanishes) is accepted here: a vanished rule costs a separator, not a state,
 	// and it is the one role the ANSI-16 slot-8 test exempts.

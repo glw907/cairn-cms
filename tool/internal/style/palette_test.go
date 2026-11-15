@@ -1,6 +1,7 @@
 package style
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 	"strconv"
@@ -15,6 +16,14 @@ import (
 // terminal owns the background, and this pair exists only so the contrast test can measure every
 // role against it.
 var groundHex = struct{ light, dark string }{"#fdfbf9", "#221f1a"}
+
+// grounds256 adds the second ground of each branch to the reference pair: a cool grey light
+// terminal and the Nord-dark ground the owner's kitty paints. The 256-colour rung is measured
+// against both of each.
+var grounds256 = struct{ light, dark []string }{
+	light: []string{groundHex.light, "#E4E7EC"},
+	dark:  []string{groundHex.dark, "#2e3440"},
+}
 
 // zeroStyleRender is lipgloss.NewStyle().Render("x"): GetForeground() on a style that never had
 // Foreground called returns lipgloss.NoColor{}, a non-nil sentinel, so the "returns the zero
@@ -89,6 +98,43 @@ func TestContrastAgainstGround(t *testing.T) {
 		}
 		if got := contrastRatio(t, v.darkHex, groundHex.dark); got < 4.5 {
 			t.Errorf("role %d dark contrast against ground = %.2f, want >= 4.5", role, got)
+		}
+	}
+}
+
+// xterm256Hex returns the "#rrggbb" of an xterm-256 colour index in the 6x6x6 cube or the grey
+// ramp. Indices 0-15 are the terminal's own palette and carry no fixed value, so they fail the
+// test.
+func xterm256Hex(t *testing.T, code string) string {
+	t.Helper()
+	n, err := strconv.Atoi(code)
+	if err != nil || n < 16 || n > 255 {
+		t.Fatalf("xterm-256 code %q is outside the fixed range 16-255", code)
+	}
+	if n >= 232 {
+		g := 8 + 10*(n-232)
+		return fmt.Sprintf("#%02x%02x%02x", g, g, g)
+	}
+	levels := [6]int{0, 95, 135, 175, 215, 255}
+	n -= 16
+	return fmt.Sprintf("#%02x%02x%02x", levels[n/36], levels[n/6%6], levels[n%6])
+}
+
+// TestContrastAgainstGround256 holds the named 256-colour rung to the same 4.5:1 as the hex rung,
+// against both grounds of each branch.
+func TestContrastAgainstGround256(t *testing.T) {
+	roles := []Role{RoleInstallerText, RoleMuted, RoleSubtle, RoleOK, RoleFailing, RoleUnknown, RoleAccent}
+	for _, role := range roles {
+		v := warmStone[role]
+		for _, g := range grounds256.light {
+			if got := contrastRatio(t, xterm256Hex(t, v.light256), g); got < 4.5 {
+				t.Errorf("role %d light256 %s against %s = %.2f, want >= 4.5", role, v.light256, g, got)
+			}
+		}
+		for _, g := range grounds256.dark {
+			if got := contrastRatio(t, xterm256Hex(t, v.dark256), g); got < 4.5 {
+				t.Errorf("role %d dark256 %s against %s = %.2f, want >= 4.5", role, v.dark256, g, got)
+			}
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -16,7 +17,16 @@ import (
 
 	"github.com/charmbracelet/x/vt"
 	"github.com/creack/pty"
+	"github.com/glw907/cairn-cms/tool/v2/internal/testharness"
 )
+
+// served reports whether the proxy served the site host at least once, which shows the run
+// reached the slow host rather than settling before the progress line was due.
+func (f *fixture) served() bool {
+	return slices.ContainsFunc(f.proxy.Requests(), func(r testharness.Request) bool {
+		return r.Host == siteDomain
+	})
+}
 
 // The pseudo-terminal's size, which its emulator matches. It is tall enough that the whole
 // report fits on one screen, so the final screen is the whole run's last state.

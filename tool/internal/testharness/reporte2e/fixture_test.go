@@ -127,11 +127,3 @@ func (f *fixture) environ(overrides map[string]string) []string {
 	slices.Sort(out)
 	return out
 }
-
-// served reports whether the proxy served the site host at least once, which shows the run
-// reached the slow host rather than settling before the progress line was due.
-func (f *fixture) served() bool {
-	return slices.ContainsFunc(f.proxy.Requests(), func(r testharness.Request) bool {
-		return r.Host == siteDomain
-	})
-}

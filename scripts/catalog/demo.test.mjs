@@ -52,10 +52,10 @@ before(() => {
 after(() => rmSync(out, { recursive: true, force: true }));
 
 test('every page carries the release marker in its head', () => {
-  const marker = '<meta name="cairn-theme-release" content="waymark@1.1.0"';
+  const marker = '<meta name="cairn-theme-release" content="waymark@1.2.0"';
   const home = readFileSync(path.join(assets, 'index.html'), 'utf8');
   const head = home.slice(0, home.indexOf('</head>'));
-  assert.ok(head.includes(marker), 'index.html has no waymark@1.1.0 marker in its head');
+  assert.ok(head.includes(marker), 'index.html has no waymark@1.2.0 marker in its head');
   for (const page of files.filter((file) => file.endsWith('.html'))) {
     assert.ok(readFileSync(path.join(assets, page), 'utf8').includes(marker), `${page} has no release marker`);
   }

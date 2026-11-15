@@ -382,6 +382,12 @@ func TestTheDocLinkSitsAtColumn20WhenItFits(t *testing.T) {
 			if !strings.Contains(frame[i], "\x1b]8;;"+fixAnchorBase) {
 				t.Errorf("width %d: the link line %q does not target the full URL", tt.width, frame[i])
 			}
+			// The doc link role's ink is what sits between the OSC 8 opener and closer.
+			probe := newTheme(true, colorprofile.TrueColor, false).DocLink("u").Render("cairn.pub/")
+			inked := strings.TrimSuffix(probe[strings.Index(probe, "\a")+1:], "\x1b]8;;\a")
+			if !strings.Contains(frame[i], inked) {
+				t.Errorf("width %d: the link line %q is not drawn in the doc link role", tt.width, frame[i])
+			}
 		}
 		if !found {
 			t.Fatalf("width %d: no line carries %q", tt.width, shown)

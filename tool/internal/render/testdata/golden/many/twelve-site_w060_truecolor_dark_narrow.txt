@@ -27,7 +27,7 @@
   [38;2;255;142;134m■[m [38;2;234;231;227mblog-site[m       [38;2;193;189;184mdeploy[m
                   [38;2;157;132;236m→[m [38;2;193;189;184mRead the build log in the Cloudflare[m
                     [38;2;193;189;184mdashboard, then push a fix.[m
-  [38;2;255;142;134m■[m [38;2;234;231;227mshop-site[m       ]8;;https://cairn.pub/docs/admin/is-it-working#onboard-the-sending-domain[38;2;193;189;184memail[m]8;;  [38;2;168;164;158memail.sender-not-onboarded[m
+  [38;2;255;142;134m■[m [38;2;234;231;227mshop-site[m       ]8;;https://cairn.pub/docs/admin/is-it-working#onboard-the-sending-domain[4;38;2;234;231;227;58;2;168;164;158;4me[m[4;38;2;234;231;227;58;2;168;164;158;4mm[m[4;38;2;234;231;227;58;2;168;164;158;4ma[m[4;38;2;234;231;227;58;2;168;164;158;4mi[m[4;38;2;234;231;227;58;2;168;164;158;4ml[m]8;;  [38;2;168;164;158memail.sender-not-onboarded[m
                   [38;2;157;132;236m→[m [38;2;193;189;184mRun `wrangler email sending enable[m
                     [38;2;193;189;184m<domain>` for the apex domain, then[m
                     [38;2;193;189;184mdeploy again.[m

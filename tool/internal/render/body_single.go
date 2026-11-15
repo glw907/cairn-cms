@@ -177,7 +177,7 @@ func (t theme) fixLines(text, url string, bare bool, col, width int) []string {
 	}
 	ink := t.Style(style.RoleMuted)
 	if linkable(url) {
-		ink = t.Link(style.RoleMuted, url)
+		ink = t.DocLink(url)
 	} else {
 		shown = sanitize(shown)
 	}

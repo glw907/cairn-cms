@@ -150,6 +150,21 @@ func (t Theme) Link(role Role, url string) lipgloss.Style {
 	return t.Style(role).Hyperlink(url)
 }
 
+// DocLink returns the style a documentation link is drawn in: Text ink, underlined, carrying url
+// as an OSC 8 hyperlink. The underline takes the Muted ink (SGR 58) where Muted has one at this
+// profile, and is a plain underline otherwise, so the line reads as a link without competing
+// with the text. At no colour it returns the zero style, underline and hyperlink included.
+func (t Theme) DocLink(url string) lipgloss.Style {
+	if NoColor(t.profile) {
+		return lipgloss.NewStyle()
+	}
+	s := t.Link(RoleText, url).Underline(true)
+	if !t.noInk(RoleMuted) {
+		s = s.UnderlineColor(t.resolve(RoleMuted))
+	}
+	return s
+}
+
 // Sized returns role's style constrained to a fixed-width cell: Width(w).MaxWidth(w), padding
 // inside the styled block and cut at the same width.
 func (t Theme) Sized(role Role, w int) lipgloss.Style {

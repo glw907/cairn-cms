@@ -110,8 +110,8 @@ func ContinuationLine(t Theme, role Role, text string, col, width int) []string 
 }
 
 // FixLine is the fix under the row it repairs: the fix mark in the accent ink two cells before
-// col, the imperative text subtle and wrapped on col, then url muted on a line of its own at col,
-// as an OSC 8 link where the profile carries colour. An empty url prints no second line, and an
+// col, the imperative text subtle and wrapped on col, then url on a line of its own at col in
+// the DocLink style, an OSC 8 link where the profile carries colour. An empty url prints no second line, and an
 // empty text prints nothing. A fix is never truncated. Pass the row's DetailColumn.
 func FixLine(t Theme, text, url string, col, width int) []string {
 	width = ContentWidth(width)
@@ -126,7 +126,7 @@ func FixLine(t Theme, text, url string, col, width int) []string {
 	if url == "" {
 		return out
 	}
-	return append(out, t.column(t.Link(RoleMuted, url), col, url, width)...)
+	return append(out, t.column(t.DocLink(url), col, url, width)...)
 }
 
 // Table lays header and rows out in columns at the margin, the header muted. The first column is

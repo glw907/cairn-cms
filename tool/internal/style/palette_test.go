@@ -162,6 +162,7 @@ func TestStyleZeroAtNoColor(t *testing.T) {
 			{"Strong", th.Strong},
 			{"SizedStrong", func(r Role) lipgloss.Style { return th.SizedStrong(r, 1) }},
 			{"Link", func(r Role) lipgloss.Style { return th.Link(r, "https://example.test") }},
+			{"DocLink", func(Role) lipgloss.Style { return th.DocLink("https://example.test") }},
 		}
 		for _, w := range ways {
 			t.Run(p.String()+"/"+w.name, func(t *testing.T) {
@@ -196,6 +197,32 @@ func TestLinkCarriesURLWithColor(t *testing.T) {
 	got := NewTheme(true, colorprofile.TrueColor, false).Link(RoleAccent, "https://example.test").Render("x")
 	if !strings.Contains(got, "https://example.test") {
 		t.Errorf("Link at TrueColor renders %q, want an OSC 8 sequence naming the URL", got)
+	}
+}
+
+// TestDocLinkIsTextInkUnderlinedInMuted: a documentation link keeps its OSC 8 target, takes the
+// Text ink with an underline, and colours the underline Muted where Muted has an ink. At ANSI-16,
+// where Muted has no slot, the underline is plain.
+func TestDocLinkIsTextInkUnderlinedInMuted(t *testing.T) {
+	const url = "https://example.test"
+	th := NewTheme(true, colorprofile.TrueColor, false)
+	got := th.DocLink(url).Render("x")
+	want := th.Link(RoleText, url).Underline(true).UnderlineColor(th.Color(RoleMuted)).Render("x")
+	if got != want {
+		t.Errorf("DocLink at TrueColor renders %q, want %q", got, want)
+	}
+	for _, sub := range []string{url, "\x1b[4;", ";58;2;"} {
+		if !strings.Contains(got, sub) {
+			t.Errorf("DocLink at TrueColor renders %q, want it to contain %q", got, sub)
+		}
+	}
+	if strings.Contains(th.Link(RoleText, url).Render("x"), "58;") {
+		t.Fatal("a plain Link carries an underline colour; the probe above proves nothing")
+	}
+
+	ansi := NewTheme(true, colorprofile.ANSI, false).DocLink(url).Render("x")
+	if strings.Contains(ansi, "58;") || !strings.Contains(ansi, "\x1b[4") {
+		t.Errorf("DocLink at ANSI renders %q, want a plain underline and no underline colour", ansi)
 	}
 }
 

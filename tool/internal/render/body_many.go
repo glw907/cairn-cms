@@ -762,7 +762,7 @@ func (t theme) fixEntry(in RenderInput, f fleetFix, width int) []string {
 	check := t.fitted(f.check, width-col)
 	checkStyle := t.Style(style.RoleSubtle)
 	if url := fixURL(f.fix); url != "" && !style.NoColor(in.Profile) && linkable(url) {
-		checkStyle = t.Link(style.RoleSubtle, url)
+		checkStyle = t.DocLink(url)
 	}
 	line := strings.Repeat(" ", col) + checkStyle.Render(check)
 	if col > t.Width(out[0]) {

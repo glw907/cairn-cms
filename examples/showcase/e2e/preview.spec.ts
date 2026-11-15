@@ -80,13 +80,13 @@ async function publish(page: Page): Promise<void> {
  * never-published entry's draft: there is nothing left to show at its edit URL). `expectEnded`
  * selects which redirect this call site expects.
  */
-async function discard(page: Page, expectEnded: boolean): Promise<void> {
+async function discard(page: Page, expectEnded: boolean, listPath = '/admin/posts'): Promise<void> {
   await page.locator('.navbar').getByRole('button', { name: 'More actions' }).click();
   await page.getByRole('button', { name: 'Discard changes' }).click();
   const dialog = page.locator('dialog[aria-labelledby="cairn-discard-dialog-title"]');
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Discard', exact: true }).click();
-  await expect(page).toHaveURL(expectEnded ? /discarded=1/ : /\/admin\/posts$/, {
+  await expect(page).toHaveURL(expectEnded ? /discarded=1/ : new RegExp(`${listPath}$`), {
     timeout: 10_000,
   });
 }
@@ -407,6 +407,56 @@ test.describe('public preview for a non-editor', () => {
     expect(await res.text()).toContain('cairn-broken-link');
 
     await deleteFromList(page, 'Broken link draft');
+  });
+
+  test('the home page previews with the news list between the parts its rule splits', async ({
+    page,
+  }) => {
+    // Idempotent: a run that stopped before its discard leaves the `home` draft behind, so reuse it.
+    const editPath = '/admin/pages/home';
+    const existing = await page.goto(editPath);
+    if (existing?.status() !== 200) {
+      await page.goto('/admin/pages');
+      const createDialog = await openCreateDialog(page, 'New page');
+      await createDialog.locator('input[name="title"]').fill('Home');
+      await createDialog.locator('input[name="slug"]').fill('home');
+      await createDialog.getByRole('button', { name: 'Create' }).click();
+      await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
+      expect(new URL(page.url()).pathname).toBe(editPath);
+      await fillTitleWhenHydrated(page, 'Home');
+    }
+    await setBody(page, 'Before the news.\n\n---\n\nAfter the news.');
+    await save(page);
+    const { url } = await mintPreview(page);
+
+    await page.goto(url);
+    const article = page.locator('article.prose');
+    const news = article.locator('section.news');
+    await expect(news.getByRole('heading', { name: 'Latest news' })).toBeVisible();
+    const rows = news.locator('[data-cairn-post]');
+    await expect(rows).toHaveCount(3);
+    for (const date of await rows.locator('.site-entry__date').all()) {
+      await expect(date).toHaveText(/\S/);
+    }
+    // The rule is the split point: the list follows the text before it and precedes the text
+    // after it, and the rule itself is not rendered.
+    const order = await article.evaluate((el) => {
+      const before = [...el.querySelectorAll('p')].find(
+        (p) => p.textContent === 'Before the news.',
+      );
+      const after = [...el.querySelectorAll('p')].find((p) => p.textContent === 'After the news.');
+      const section = el.querySelector('section.news');
+      if (!before || !after || !section) return null;
+      return {
+        beforeFirst: !!(before.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING),
+        afterLast: !!(section.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING),
+        rules: el.querySelectorAll('hr').length,
+      };
+    });
+    expect(order).toEqual({ beforeFirst: true, afterLast: true, rules: 0 });
+
+    await page.goto(editPath);
+    await discard(page, false, '/admin/pages');
   });
 
   test('mint, revoke, fetch: the revoked link 404s', async ({ page, request }) => {

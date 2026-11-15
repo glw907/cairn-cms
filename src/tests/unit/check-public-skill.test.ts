@@ -298,6 +298,6 @@ describe.skipIf(!showcaseInstalled || !existsSync(resolve(ROOT, 'dist/audit/inde
   it('passes over the shipped skill', async () => {
     const result = await runGate(ROOT);
     expect(result.problems).toEqual([]);
-    expect(result.pageCount).toBe(29);
+    expect(result.pageCount).toBe(30);
   }, 120_000);
 });

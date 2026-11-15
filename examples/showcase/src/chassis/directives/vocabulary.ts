@@ -446,7 +446,8 @@ const cards = () =>
   defineBlock({
     name: 'cards',
     label: 'Cards',
-    description: 'A grid of short cards, each with an optional picture, a title, and a line of text.',
+    description:
+      'A grid of short cards, each with an optional picture, a title, and a line of text.',
     use: 'Lay out a few parallel items, such as programs or places, side by side.',
     group: 'Structure',
     preview: {

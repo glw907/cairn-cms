@@ -23,8 +23,8 @@ const maxCommandBodyLiteral = 30
 // variable names, and provider-classified reason words for whoever is minting the three
 // credentials. auth_check.go's Long text states the design this codifies: "auth check's
 // whole output is identifiers (permission labels, credential variable names, and
-// pass/fail/skip/unknown words)", the same reason copy-standard.md section 3.9 keeps a log
-// line's field values verbatim rather than routing them through the prose table.
+// pass/fail/skip/unknown words)", the same reason a log line's field values stay verbatim
+// rather than routing through the prose table.
 // auth_check.go's genuine prose (Short, Long, Example, and its skip notices) is still moved
 // into messages.go despite this exemption; TestAuthCheckStringsLiveInMessages covers that half
 // directly.
@@ -250,7 +250,7 @@ func TestEveryCairnPrefixedMessageFollowsTheErrorGrammar(t *testing.T) {
 }
 
 // TestEveryTableConstructorBuildsATranslatedError builds one error from each remaining
-// section 3.8 constructor and asserts each carries the "cairn: " prefix and the translatedError
+// error constructor and asserts each carries the "cairn: " prefix and the translatedError
 // type that keeps translateError from wrapping it a second time.
 func TestEveryTableConstructorBuildsATranslatedError(t *testing.T) {
 	cases := map[string]error{
@@ -304,8 +304,7 @@ func TestTranslateErrorAckFileUnreadableSinglePrefix(t *testing.T) {
 }
 
 // TestTranslateErrorPrefixesARawError asserts a raw Go error that never went through this
-// table's constructors still reaches an operator with the cairn: prefix, copy-standard.md
-// section 4.2's fallback.
+// table's constructors still reaches an operator with the cairn: prefix.
 func TestTranslateErrorPrefixesARawError(t *testing.T) {
 	raw := errRaw{"open /home/geoff/.config/cairn/sites: permission denied"}
 	got := translateError(raw)

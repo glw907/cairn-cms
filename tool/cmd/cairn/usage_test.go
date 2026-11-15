@@ -566,10 +566,9 @@ func TestTheSweepCapIsThePublishedOne(t *testing.T) {
 	}
 }
 
-// TestEveryUsageErrorCarriesTwoLines covers the second half of catalogue section 3.8's usage
-// row, which the exit-code table above does not: a usage error states the refusal, then where to
-// read what the tool does accept. `cairn frobnicate` printed only the first until 2026-09-21,
-// because cobra's NoArgs message is one line.
+// TestEveryUsageErrorCarriesTwoLines covers what the exit-code table above does not: a usage
+// error states the refusal, then where to read what the tool does accept. `cairn frobnicate`
+// once printed only the first, because cobra's NoArgs message is one line.
 func TestEveryUsageErrorCarriesTwoLines(t *testing.T) {
 	for _, args := range falsificationTable {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {

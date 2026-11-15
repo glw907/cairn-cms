@@ -51,7 +51,7 @@ func independentSweepVerdict(t *testing.T, d deps) spine.Verdict {
 	return spine.ExitCode(sites, listErrs, 0)
 }
 
-// TestSweepDeadlineDefaultSizing covers the arithmetic the 2026-09-20 amendment corrected: the
+// TestSweepDeadlineDefaultSizing covers the sizing arithmetic: the
 // default whole-run budget is the single-site budget times the site count, capped at
 // maxSweepTimeout, never the single-site budget divided by the count.
 func TestSweepDeadlineDefaultSizing(t *testing.T) {

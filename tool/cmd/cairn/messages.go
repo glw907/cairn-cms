@@ -1,6 +1,5 @@
-// Package main's messages.go is the one reviewable place tool/docs/design/copy-standard.md
-// section 4.1 asks for: every string cmd/cairn prints to an operator, as a named constant or a
-// named format template plus the function that renders it. No other file under cmd/cairn holds
+// Package main's messages.go is the one reviewable place for every string cmd/cairn prints to an
+// operator, as a named constant or a named format template plus the function that renders it. No other file under cmd/cairn holds
 // operator prose at a call site or in a bare format string; TestNoLongProseLiteralOutsideMessages
 // enforces the length half of that rule and this file's doc comments carry the rest.
 //
@@ -68,11 +67,9 @@ const (
 	flagQuietHelp   = "print nothing when the run is OK"
 	flagColorHelp   = "when to colour the output: auto, always, or never"
 	flagAckFileHelp = "path to a JSON file of holds (default: acknowledgements.json in the registry directory)"
-	// flagWidthHelp is drafted to section 2.4's grammar (what the flag does, in the operator's terms)
-	// rather than copied.
+	// flagWidthHelp says what the flag does, in the operator's terms.
 	flagWidthHelp = "columns to render at, instead of the terminal's width"
-	// flagThemeHelp is drafted to section 2.4's grammar and shaped after flagColorHelp, the sibling flag an
-	// operator reads it beside.
+	// flagThemeHelp is shaped after flagColorHelp, the sibling flag an operator reads it beside.
 	flagThemeHelp = "the ground to render for: dark or light"
 )
 
@@ -97,9 +94,8 @@ const (
 )
 
 // tmplFlagError is the shape every flag parse failure reaches the operator in: cobra's
-// refusal, then the help of the command the flag was given to rather than the root's. Adapted
-// from catalogue section 3.8's usage row, whose second line is already "Run `cairn health
-// --help` for usage".
+// refusal, then the help of the command the flag was given to rather than the root's. Its second
+// line is "Run `cairn health --help` for usage".
 const (
 	tmplFlagError    = "%v."
 	tmplFlagErrorFix = "Run `%s --help` for usage"
@@ -112,8 +108,8 @@ func flagError(path string, cause error) error {
 }
 
 // tmplUnknownCommand is the root command's refusal of a word that names no command. Cobra's
-// NoArgs message is one line, and the usage-error row of catalogue section 3.8 is two: the
-// refusal, then where to read what the tool does accept.
+// NoArgs message is one line, and this one is two: the refusal, then where to read what the tool
+// does accept.
 const (
 	tmplUnknownCommand = "%q is not a cairn command."
 	fixUnknownCommand  = "Run `cairn --help` for the commands"
@@ -137,8 +133,8 @@ func authNoSubcommandError() error {
 	return fixed(whatAuthNoSubcommand, fixAuthNoSubcommand)
 }
 
-// tmplCommandCrashed is main.go's recovered-panic line, catalogue section 3.8's "a crashed
-// check" row written for a command rather than a check. The panic value's type is named and the
+// tmplCommandCrashed is main.go's recovered-panic line, written for a
+// command rather than a check. The panic value's type is named and the
 // value itself never is: a panic raised in a credential-carrying frame can carry a token.
 const tmplCommandCrashed = "cairn: %s crashed with a %s.\nThis is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues"
 
@@ -150,7 +146,7 @@ func commandCrashedMessage(path, valueType string) string {
 
 // tmplCheckProgress is the --verbose per-check line health prints to stderr as each check
 // settles, so a slow sweep is visibly progressing rather than apparently hung. Two identifiers
-// and no prose, the form section 2.3 asks for where a label would add nothing.
+// and no prose, the form where a label would add nothing.
 const tmplCheckProgress = "%s %s\n"
 
 // checkProgressLine renders tmplCheckProgress for one settled check's id and its wire word.
@@ -191,8 +187,8 @@ func colorInvalidError(color string) error {
 	return translated(fmt.Errorf(tmplColorInvalid, color, colorAuto, colorAlways, colorNever))
 }
 
-// tmplWidthInvalid is root.go's refusal of a --width value outside widthMin to widthMax,
-// drafted to copy-standard.md sections 2.4 through 2.7.
+// tmplWidthInvalid is root.go's refusal of a --width value outside widthMin to widthMax:
+// what is wrong, then the range that works.
 const tmplWidthInvalid = "cairn: --width %d is not a width cairn can render.\nUse a whole number from %d to %d"
 
 // widthInvalidError renders tmplWidthInvalid for the value the operator gave.
@@ -220,8 +216,8 @@ const (
 
 // help_agents.go's Short, Example, and the page itself. The page is verbatim in the binary
 // because `go install` reaches no tool/docs tree, so --help is the only contract surface an
-// agent can discover in band. Every line is drafted to section 2.2's person
-// and mood and section 2.9's fixed vocabulary.
+// agent can discover in band. Every line is written in the
+// imperative and the fixed vocabulary the rest of the tool uses.
 const (
 	shortAgents   = "Print the contract a program or an agent reads"
 	exampleAgents = "cairn help agents"
@@ -308,7 +304,7 @@ const (
 )
 
 // tmplUnknownSite is health.go's and logs.go's shared refusal of a site id the registry does not
-// hold, catalogue section 3.8's "unknown site" row.
+// hold.
 const (
 	tmplUnknownSite = "no site named %q."
 	fixUnknownSite  = "Run `cairn sites list` to see the sites cairn knows"
@@ -320,7 +316,7 @@ func unknownSiteError(id string) error {
 }
 
 // tmplInvalidSince is health.go's and logs.go's shared refusal of a --since value ParseSince does
-// not accept, catalogue section 3.8's "invalid --since" row.
+// not accept.
 const tmplInvalidSince = "cairn: --since %q is not a duration.\nUse a whole number of minutes, hours, or days: 90m, 24h, 7d"
 
 // invalidSinceError renders tmplInvalidSince for the value the operator gave.
@@ -328,8 +324,7 @@ func invalidSinceError(s string) error {
 	return translated(fmt.Errorf(tmplInvalidSince, s))
 }
 
-// whatHealthTooManyArgs and fixHealthTooManyArgs are cairn health's refusal of more than one positional site argument,
-// catalogue section 3.8's arity example rewritten for this command's noun.
+// whatHealthTooManyArgs and fixHealthTooManyArgs are cairn health's refusal of more than one positional site argument.
 const (
 	whatHealthTooManyArgs = "cairn health takes at most one site."
 	fixHealthTooManyArgs  = "Run `cairn health --help` for usage"
@@ -341,8 +336,7 @@ func healthTooManyArgsError() error {
 }
 
 // doctor.go's Short, Long, and Example. The Long names what cairn health does not, so an
-// operator reading either command's --help learns which one to reach for. It is drafted to section 2.4's grammar (what the command needs and what it never touches) rather
-// than copied, since the catalogue carries no row for a credential-less directory preflight.
+// operator reading either command's --help learns which one to reach for. It says what the command needs and what it never touches.
 const (
 	shortDoctor = "Check a cairn-cms site's configuration, no credential or deploy needed"
 	longDoctor  = "Check a cairn-cms site's checked-in configuration, read straight off the directory. " +
@@ -372,8 +366,8 @@ const (
 	flagDoctorJSONHelp = "print the report as JSON"
 )
 
-// whatDoctorTooManyArgs and fixDoctorTooManyArgs are cairn doctor's refusal of more than one positional directory
-// argument, catalogue section 3.8's arity example rewritten for this command's noun.
+// whatDoctorTooManyArgs and fixDoctorTooManyArgs are cairn doctor's refusal of more than one positional
+// directory argument.
 const (
 	whatDoctorTooManyArgs = "cairn doctor takes at most one directory."
 	fixDoctorTooManyArgs  = "Run `cairn doctor --help` for usage"
@@ -469,9 +463,8 @@ func adoptAddedMessage(name, domain string) string {
 }
 
 // whatNoCloudflareCredential is the error cairn adopt and cairn logs both return when
-// buildClients resolved no Cloudflare credential at all, catalogue section 3.8's "no
-// credentials" row narrowed to the one provider these two commands need. One function, so the
-// two commands cannot drift into naming a different variable from each other's copy of the same
+// buildClients resolved no Cloudflare credential at all, narrowed to the one provider these two
+// commands need. One function, so the two commands cannot drift into naming a different variable from each other's copy of the same
 // message.
 const (
 	whatNoCloudflareCredential    = "no Cloudflare credentials found."
@@ -521,13 +514,11 @@ func authNotStoredMessage(name string) string {
 // keyringUnavailableDisplay is auth list's line for a variable the keyring holds no answer for
 // because the keyring itself could not be reached, distinct from "not set": the operator's
 // credential may well be sitting in the keyring, unreadable right now rather than absent.
-// Adapted from copy-standard.md section 3.8's "keyring unavailable" row for one status-line word
-// rather than that row's three-line boundary error.
+// It is one status-line word, not a three-line boundary error.
 const keyringUnavailableDisplay = "the OS keyring did not open"
 
 // tmplKeyringUnavailable is the error auth set and auth unset return when the keyring itself
-// could not be reached, naming the environment-variable fallback the way copy-standard.md
-// section 3.8's "keyring unavailable" row does.
+// could not be reached, naming the environment-variable fallback.
 const tmplKeyringUnavailable = "cairn: the OS keyring did not open.\nSet %s in the environment instead"
 
 // keyringUnavailableError renders tmplKeyringUnavailable naming name as the fallback.
@@ -545,7 +536,7 @@ func emptyPipedValueError(name string) error {
 }
 
 // tmplNotACredential is auth set's and auth unset's shared refusal of a name outside the three
-// credential variables, catalogue section 3.8's "usage error" row.
+// credential variables.
 const tmplNotACredential = "cairn: %q is not a credential cairn stores.\nThe names are %s"
 
 // notACredentialError renders tmplNotACredential for name against the real credentialVars list.
@@ -615,8 +606,7 @@ func authCheckGHSkippedNotice(names []string) string {
 	return fmt.Sprintf(tmplAuthCheckGHSkipped, authCheckCredMissingReason(names))
 }
 
-// ack.go's seven refusals. The catalogue carries no row for an acknowledgement file or flag, since
-// acknowledgements are new to 1.0's grammar.
+// ack.go's seven refusals, one per way the --ack flag or the hold file can be malformed.
 const (
 	tmplAckFlagInvalid        = "cairn: --ack %q is not <check-id>=<YYYY-MM-DD>.\nUse the check and an expiry date, for example deploy=2026-10-01"
 	tmplAckFileNotFound       = "cairn: --ack-file %s not found.\nUse a file that exists, or drop --ack-file to use the registry's default"
@@ -668,14 +658,13 @@ func ackFileUnreadableError(path string, cause error) error {
 	return translated(fmt.Errorf(tmplAckFileUnreadable, path, cause))
 }
 
-// tmplFallback is main.go's last resort, copy-standard.md section 4.2's "falling back to
-// cairn: <err> only for an error the table does not know." fixed gives a fix error's message the
-// same prefix, so its halves are stored without it.
+// tmplFallback is main.go's last resort, for an error the table does not know. A fix error's
+// message takes the same prefix, so its halves are stored without it.
 const tmplFallback = "cairn: %v"
 
-// translateError is main.go's one call into this table, copy-standard.md section 4.2's boundary:
-// "one translation function maps a sentinel or wrapped error onto a message from the table,
-// falling back to cairn: <err> only for an error the table does not know." Every command below
+// translateError is main.go's one call into this table: it maps a sentinel or
+// wrapped error onto a message from the table, falling back to cairn: <err> only for an error
+// the table does not know. Every command below
 // main already builds its failure through one of this file's constructors, each of which
 // returns a translatedError, so this function's real job is the fallback clause: a raw Go error
 // that reached main without going through one of them (a store or filesystem failure, for

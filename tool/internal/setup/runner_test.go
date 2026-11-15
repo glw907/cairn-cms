@@ -514,7 +514,7 @@ func TestTheCloudflareApprovalOpensOnTheConsentPage(t *testing.T) {
 }
 
 // TestTheGitHubCopyNamesTheRealButtons pins that each GitHub approval sentence names the button
-// GitHub shows, as read from the pages in the 2026-11-10 rehearsal: the Create page's button begins
+// GitHub shows, as read from the live pages: the Create page's button begins
 // "Create GitHub App", and the last page's button is "Approve, Install, & Authorize", not "Approve".
 func TestTheGitHubCopyNamesTheRealButtons(t *testing.T) {
 	for _, tc := range []struct {
@@ -540,7 +540,7 @@ func TestTheInstallRecoveryNamesTheRealButton(t *testing.T) {
 }
 
 // TestTheSignInCopyNamesTheRealButton pins that the sign-in sentences name the button the site's
-// confirm page shows. The rehearsal of 2026-11-10 read it as "Confirm sign-in", not "Sign in".
+// confirm page shows. A live read of the page gave "Confirm sign-in", not "Sign in".
 func TestTheSignInCopyNamesTheRealButton(t *testing.T) {
 	for name, line := range map[string]string{"LineSignInStep": LineSignInStep, "LineDoneOpen": LineDoneOpen, "linePageFooter": linePageFooter} {
 		if !strings.Contains(line, "Confirm sign-in") {

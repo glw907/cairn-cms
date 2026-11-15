@@ -301,7 +301,7 @@ export async function run({
       const demo = new URL('/', /** @type {string} */ (env.DEMO_ORIGIN).replaceAll('{id}', manifest.id)).href;
       const out = mkdtempSync(path.join(tmpdir(), 'cairn-demo-'));
       try {
-        const { release } = buildDemo({ root: REPO, themeDir: build.dir, out, worker });
+        const { release } = buildDemo({ root: REPO, themeDir: build.dir, out, worker, origin: new URL(demo).origin });
         await deploy({ dir: out, worker });
         log(`catalog: deployed ${release} to ${worker}`);
         await waitForDemo({ fetch, now, sleep }, demo, release);

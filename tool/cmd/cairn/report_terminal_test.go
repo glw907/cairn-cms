@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -142,21 +143,23 @@ func TestDrawProgressErasesLastAndOnce(t *testing.T) {
 }
 
 // flushCounter stands in for the logx scrubber, which holds an unterminated line until it is
-// flushed, and counts each Flush.
+// flushed, and counts each Flush. Flush returns err, so a test can fail every flush.
 type flushCounter struct {
 	bytes.Buffer
 	flushes int
+	err     error
 }
 
 func (f *flushCounter) Flush() error {
 	f.flushes++
-	return nil
+	return f.err
 }
 
 // TestDrawProgressFlushesEveryWrite holds the scrubber rule: a frame and the erase each carry no
-// newline, so each is flushed or it never reaches the terminal before the report.
+// newline, so each is flushed or it never reaches the terminal before the report. A failing
+// flush stops neither, since the line is decoration and its failure is no reason to fail a run.
 func TestDrawProgressFlushesEveryWrite(t *testing.T) {
-	var out flushCounter
+	out := flushCounter{err: errors.New("flush failed")}
 	first := make(chan struct{})
 	var once sync.Once
 	stop := drawProgress(&out, time.Millisecond, time.Hour, func(int) string {

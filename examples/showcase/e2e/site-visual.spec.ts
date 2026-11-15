@@ -1,4 +1,13 @@
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
+import {
+  buildHomeCopy,
+  HOME_GOLDEN_FILE,
+  normalizeBuildNoise,
+  removeCopy,
+} from './home-fixture.js';
 
 // The reading-surface article carries several real (network-fetched) images: a hero and three figure
 // placements. toHaveScreenshot's stability poll can time out while one is still decoding, since a
@@ -189,3 +198,27 @@ for (const { label, path } of [
     expect(outlineOffset).toBe(tokenOffset);
   });
 }
+
+// A page whose id is `home` turns `/` into that page. These tests build template copies with the
+// content each one needs and read the prerendered output, so the showcase's own content and its
+// baselines never change. The golden is the base's `/` with no `home` page, captured before the
+// home routes existed, so a site without that page keeps the post list it had.
+test.describe('home page copies', () => {
+  test.describe.configure({ mode: 'serial' });
+  let noHome: string | undefined;
+
+  test.beforeAll(async () => {
+    test.setTimeout(300_000);
+    noHome = await buildHomeCopy();
+  });
+
+  test.afterAll(async () => {
+    if (noHome) await removeCopy(noHome);
+  });
+
+  test('with no home page, `/` matches the golden and no `archive/1.html` is built', async () => {
+    const built = normalizeBuildNoise(await readFile(path.join(noHome!, 'index.html'), 'utf8'));
+    expect(built).toBe(await readFile(HOME_GOLDEN_FILE, 'utf8'));
+    expect(existsSync(path.join(noHome!, 'archive', '1.html'))).toBe(false);
+  });
+});

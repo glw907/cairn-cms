@@ -8,7 +8,7 @@
 // The copy under `src/theme/` is disposable, so nothing here preserves edits to it; the refusals
 // catch swapped arguments and a theme directory that is the copy itself, which the copy's removal
 // of stale files would otherwise delete.
-import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import path from 'node:path';
 import { assertColorModes, generateThemeNames, THEME_NAMES_FILE } from './theme-names.mjs';
 
@@ -45,7 +45,8 @@ export function mirrorTheme(theme, target) {
       const child = path.join(rel, entry.name);
       if (child === 'screenshots') continue;
       kept.add(entry.name);
-      if (entry.isDirectory()) walk(child);
+      if (entry.isSymbolicLink()) copyLinkIfChanged(path.join(from, entry.name), path.join(to, entry.name));
+      else if (entry.isDirectory()) walk(child);
       else copyIfChanged(path.join(from, entry.name), path.join(to, entry.name));
     }
     for (const name of readdirSync(to)) {
@@ -57,14 +58,29 @@ export function mirrorTheme(theme, target) {
 
 /**
  * Copy a file unless the target already holds the same bytes.
- * @param {string} from
- * @param {string} to
+ * @param {string} from the theme's file
+ * @param {string} to the file's place under the site's `src/theme/`
  */
 function copyIfChanged(from, to) {
   const held = lstatSync(to, { throwIfNoEntry: false });
   if (held?.isFile() && readFileSync(to).equals(readFileSync(from))) return;
   if (held && !held.isFile()) rmSync(to, { recursive: true, force: true });
   copyFileSync(from, to);
+}
+
+/**
+ * Copy a symlink as a link with the same target unless the target already holds that link. The
+ * link is kept rather than followed, as a recursive copy keeps it, so a link to a directory does
+ * not fail and a relative link still resolves inside the copy.
+ * @param {string} from the theme's link
+ * @param {string} to the link's place under the site's `src/theme/`
+ */
+function copyLinkIfChanged(from, to) {
+  const link = readlinkSync(from);
+  const held = lstatSync(to, { throwIfNoEntry: false });
+  if (held?.isSymbolicLink() && readlinkSync(to) === link) return;
+  if (held) rmSync(to, { recursive: true, force: true });
+  symlinkSync(link, to);
 }
 
 /**

@@ -121,15 +121,18 @@ export function writeOptions(siteDir, themeDir, options, mode) {
 }
 
 /**
- * Compose a scratch site: a showcase copy with the template's exclusions applied, the starter
- * overlay and the conformance set as its content and static files, the content manifest regenerated,
- * the admin stylesheet built, and a theme laid in.
+ * Compose a scratch site: a showcase copy with the template's exclusions applied, the content
+ * directories' content and static files copied in order, the content manifest regenerated, the
+ * admin stylesheet built, and a theme laid in.
  * @param {object} options
  * @param {string} options.root the repository root
  * @param {string} options.themeDir the theme to lay in
+ * @param {string[]} [options.contentDirs] directories each holding `src/content` and `static`, a
+ *   later one's file winning over an earlier one's at the same path; the starter overlay and the
+ *   conformance set when omitted
  * @returns {{ dir: string, remove: () => void }}
  */
-export function composeSite({ root, themeDir }) {
+export function composeSite({ root, themeDir, contentDirs = defaultContentDirs(root) }) {
   const copy = makeShowcaseCopy({ root });
   const dir = copy.dir;
   const exclusions = JSON.parse(readFileSync(path.join(root, 'examples/showcase/.cairn-template.json'), 'utf8')).exclude;
@@ -148,11 +151,9 @@ export function composeSite({ root, themeDir }) {
   if (!configText.includes(opening)) throw new Error('viewer: vite.config.ts has no defineConfig({ call to set the cache directory on');
   writeFileSync(viteConfig, configText.replace(opening, `${opening}\n  cacheDir: '.vite-cache',`));
 
-  const overlay = path.join(root, 'scripts/build/starter-overlay');
-  const conformance = path.join(root, 'scripts/theme/conformance');
   const content = path.join(dir, 'src/content');
   mkdirSync(content, { recursive: true });
-  for (const set of [overlay, conformance]) {
+  for (const set of contentDirs) {
     cpSync(path.join(set, 'src/content'), content, {
       recursive: true,
       filter: (source) => path.relative(path.join(set, 'src/content'), source).split(path.sep)[0] !== '.cairn',
@@ -165,6 +166,15 @@ export function composeSite({ root, themeDir }) {
   runNode(path.join(dir, 'node_modules/@tailwindcss/cli/dist/index.mjs'), ['-i', 'src/admin.css', '-o', '.cairn/admin.css'], dir);
 
   return copy;
+}
+
+/**
+ * The content the viewer composes by default: the starter overlay, then the conformance set.
+ * @param {string} root the repository root
+ * @returns {string[]}
+ */
+function defaultContentDirs(root) {
+  return [path.join(root, 'scripts/build/starter-overlay'), path.join(root, 'scripts/theme/conformance')];
 }
 
 /**

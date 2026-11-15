@@ -288,7 +288,8 @@
           "public-preview-tokens.spec.ts",
           "starter-outline-pin.spec.ts",
           "public-theme-equivalence.spec.ts",
-          "fragments.spec.ts"
+          "fragments.spec.ts",
+          "cards.spec.ts"
         ]
       },
       {

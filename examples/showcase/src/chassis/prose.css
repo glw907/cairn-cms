@@ -504,6 +504,62 @@
     margin: 0;
   }
 
+  /* Cards: a grid of bordered cards, one column on a narrow screen and the block's `columns` count
+     from 40rem up. Each card is a flex column on the base surface: an optional 3/2 image, then a
+     body holding the title and the muted text. A card with no image opens on its title, since the
+     build renders no element for an absent part. The classes are `cards-*`, never daisyUI's live
+     `.card`, `.card-body`, or `.card-title`. */
+  .prose .cards {
+    --flow-space: var(--spacing-m);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-m);
+  }
+  @media (min-width: 40rem) {
+    .prose .cards-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .prose .cards-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .prose .cards-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  /* An empty block keeps the flow margin above it and reads as a phantom gap. */
+  .prose .cards:empty {
+    margin: 0;
+  }
+  .prose .cards-item {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: var(--border) solid var(--color-card-border);
+    border-radius: var(--radius-box);
+    background: var(--color-base-100);
+  }
+  .prose .cards-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    margin: 0;
+    border-radius: 0;
+  }
+  .prose .cards-body {
+    padding: var(--spacing-s);
+  }
+  .prose .cards-title {
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-heading);
+    font-size: var(--text-step-2);
+    line-height: var(--leading-tight);
+    margin: 0 0 var(--spacing-3xs);
+  }
+  .prose .cards-text {
+    color: var(--color-muted);
+  }
+
   /* Alert: the second directive, built from the cairn render helpers (a section
      with a cairn-alert-body, a cairn-head holding an optional icon and the
      cairn-head-title, and an alert-body). DaisyUI's .alert grid is overridden here.

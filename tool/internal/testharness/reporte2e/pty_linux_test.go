@@ -364,6 +364,147 @@ func TestReportE2EProgressLineAbsent(t *testing.T) {
 	})
 }
 
+// plainEnv is the override that turns styling off on a terminal.
+var plainEnv = map[string]string{"CAIRN_PLAIN": "1"}
+
+// offTerminal maps the pseudo-terminal's output translation, each newline written as \r\n, back
+// to the newline a pipe carries, and fails the test if a carriage return or an ESC byte remains,
+// either of which is a styled path that did not take the pipe's bytes.
+func offTerminal(t *testing.T, stream string, raw []byte) []byte {
+	t.Helper()
+	out := bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n"))
+	if i := bytes.IndexByte(out, '\r'); i >= 0 {
+		t.Fatalf("%s under CAIRN_PLAIN holds a carriage return at offset %d: %q", stream, i, raw)
+	}
+	if i := bytes.IndexByte(out, 0x1b); i >= 0 {
+		t.Fatalf("%s under CAIRN_PLAIN holds an ESC byte at offset %d: %q", stream, i, raw)
+	}
+	return out
+}
+
+// TestReportE2EPlainIsThePipe holds that CAIRN_PLAIN=1 on a terminal prints what a pipe receives.
+// cairn health, every site, runs with stdout and stderr on two terminals beside a piped run of the
+// same command: stdout's bytes, with the terminal's \r\n mapped to \n, equal the pipe's once each
+// checked line's clock text is masked, and stderr's terminal records no progress line. A control
+// run without CAIRN_PLAIN draws the line, so its absence is plain mode's doing. Help and an error
+// run the same way and equal their piped bytes, beside a control that paints them.
+func TestReportE2EPlainIsThePipe(t *testing.T) {
+	t.Parallel()
+
+	t.Run("health", func(t *testing.T) {
+		t.Parallel()
+		diff := comparePlainHealth(t)
+		if diff != "" {
+			t.Logf("first attempt differs outside the clock lines, rerunning once:\n%s", diff)
+			diff = comparePlainHealth(t)
+		}
+		if diff != "" {
+			t.Error(diff)
+		}
+	})
+
+	t.Run("health control", func(t *testing.T) {
+		t.Parallel()
+		f := newFixture(t, siteDelay)
+		out, errOut := openTerminal(t), openTerminal(t)
+		c := start(t, f, out.tty, errOut.tty, nil, "health")
+		if !c.waitWhileRunning(func() bool { return showsProgress(errOut.screen()) }) {
+			c.wait(t, out, errOut)
+			t.Fatalf("no progress line on stderr without CAIRN_PLAIN; stderr recorded %q", errOut.bytes())
+		}
+		c.wait(t, out, errOut)
+	})
+
+	for _, tt := range []struct {
+		name string
+		args []string
+		// stderr names the stream the run writes its output to.
+		stderr bool
+	}{
+		{"help", []string{"--help"}, false},
+		{"an error", []string{"healt"}, true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			f := newFixture(t, 0)
+			ctx, cancel := context.WithTimeout(t.Context(), runTimeout)
+			defer cancel()
+			want := runPipe(ctx, f, f.bin, tt.args...)
+			if want.err != nil {
+				t.Fatal(want.err)
+			}
+			wantBytes := want.stdout
+			if tt.stderr {
+				wantBytes = want.stderr
+			}
+			if len(wantBytes) == 0 {
+				t.Fatalf("cairn %s printed nothing to compare on its stream", strings.Join(tt.args, " "))
+			}
+
+			plain := ptyRun(t, f, plainEnv, tt.stderr, tt.args...)
+			got := offTerminal(t, tt.name, plain)
+			t.Logf("cairn %s under CAIRN_PLAIN: %d bytes on the terminal, %d through a pipe", strings.Join(tt.args, " "), len(got), len(wantBytes))
+			if d := firstDiff(wantBytes, got); d != "" {
+				t.Errorf("CAIRN_PLAIN on a terminal differs from the pipe at %s\npipe:\n%s\nterminal:\n%s", d, wantBytes, got)
+			}
+			if styled := ptyRun(t, f, nil, tt.stderr, tt.args...); bytes.IndexByte(styled, 0x1b) < 0 {
+				t.Errorf("the control run without CAIRN_PLAIN painted no ESC byte, so the comparison proves nothing: %q", styled)
+			}
+		})
+	}
+}
+
+// ptyRun runs cairn with args with stdout and stderr on two terminals and returns the raw bytes
+// of the one stderr names.
+func ptyRun(t *testing.T, f *fixture, overrides map[string]string, stderr bool, args ...string) []byte {
+	t.Helper()
+	out, errOut := openTerminal(t), openTerminal(t)
+	c := start(t, f, out.tty, errOut.tty, overrides, args...)
+	c.wait(t, out, errOut)
+	if stderr {
+		return errOut.bytes()
+	}
+	return out.bytes()
+}
+
+// comparePlainHealth runs cairn health under CAIRN_PLAIN on two terminals and through a pipe at
+// once, fails the test on a progress line or a styled byte, and returns a description of any
+// difference left between the two stdouts after the clock mask, or "". Each run has its own
+// fixture, so the terminal run's fixture records only that run's requests.
+func comparePlainHealth(t *testing.T) string {
+	t.Helper()
+	f, piped := newFixture(t, siteDelay), newFixture(t, siteDelay)
+	ctx, cancel := context.WithTimeout(t.Context(), runTimeout)
+	defer cancel()
+	var pipe pipeResult
+	var wg sync.WaitGroup
+	wg.Go(func() { pipe = runPipe(ctx, piped, piped.bin, "health") })
+	out, errOut := openTerminal(t), openTerminal(t)
+	c := start(t, f, out.tty, errOut.tty, plainEnv, "health")
+	c.wait(t, out, errOut)
+	wg.Wait()
+	if pipe.err != nil {
+		t.Fatal(pipe.err)
+	}
+
+	if raw := errOut.bytes(); showsProgress(string(raw)) || bytes.Contains(raw, []byte(eraseLine)) {
+		t.Fatalf("stderr's terminal recorded a progress line under CAIRN_PLAIN: %q", raw)
+	}
+	if !f.served() {
+		t.Fatal("the terminal run never reached the site host, so it settled before the line was due")
+	}
+	got, n := maskClock(offTerminal(t, "stdout", out.bytes()))
+	want, m := maskClock(pipe.stdout)
+	t.Logf("cairn health under CAIRN_PLAIN: %d bytes on the terminal, %d through a pipe, %d and %d checked lines masked", len(got), len(want), n, m)
+	if n != 1 || m != 1 || !bytes.Contains(want, []byte(siteName)) {
+		t.Fatalf("masked %d and %d checked lines, want 1 each, over a report for %s:\n%s", n, m, siteName, want)
+	}
+	if d := firstDiff(want, got); d != "" {
+		return "CAIRN_PLAIN health on a terminal differs from the pipe at " + d + "\npipe:\n" + string(want) + "\nterminal:\n" + string(got)
+	}
+	return ""
+}
+
 // TestReportE2ECLocalePaintsASCII runs under LC_ALL=C on a terminal: the report and the progress
 // line still draw, and no byte at or above 0x80 reaches the terminal. Colour is allowed, since
 // the locale decides the marks and never the colour.

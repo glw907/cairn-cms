@@ -3,11 +3,9 @@ package reporte2e
 import (
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"io"
 	"io/fs"
-	"maps"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,22 +22,6 @@ const shotsDirEnv = "CAIRN_SHOTS_DIR"
 
 // shotsDeadline bounds how long the fixture waits for the done file before it fails.
 const shotsDeadline = 20 * time.Minute
-
-// The second site's identity. Its checks pass wherever a fake can make them pass, so the
-// every-site sweep shows a healthy block beside the fixture site's failing one.
-const (
-	otherSiteDomain = "other-site.example"
-	otherSiteZone   = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
-)
-
-// fixtureAccount is the account id siteRecord carries, which the Cloudflare fake answers for.
-const fixtureAccount = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
-
-// fixtureZone is siteRecord's zone, whose settings leave HTTPS unforced.
-const fixtureZone = "9f8e7d6c5b4a39281706f5e4d3c2b1a0"
-
-// headSHA is the commit every fake branch head and build points at, so no deploy reads behind.
-const headSHA = "4f3c2b1a0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b"
 
 // TestReportE2EShotFixture holds a fixture open for screenshots taken by hand. It writes into
 // $CAIRN_SHOTS_DIR a registry of two sites, a keyring holding all three credentials, a doctor
@@ -82,7 +64,7 @@ func TestReportE2EShotFixture(t *testing.T) {
 	keyring := privateDir(t, filepath.Join(dir, "kr"))
 	for name, value := range map[string]string{
 		"CAIRN_CF_ACCOUNT_ID": fixtureAccount,
-		"CAIRN_CF_READ_TOKEN": "fixture-cloudflare-token",
+		"CAIRN_CF_READ_TOKEN": fixtureCFToken,
 		"CAIRN_GH_READ_TOKEN": "fixture-github-token",
 	} {
 		// The tagged build's file keyring names each entry by the hex of "cairn", a NUL, and the
@@ -170,99 +152,6 @@ func copyBinary(t *testing.T, from, to string) {
 	if err := dst.Close(); err != nil {
 		t.Fatal(err)
 	}
-}
-
-// writeJSON writes v as a JSON body with status.
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-// cfResult writes a successful Cloudflare v4 envelope around result.
-func cfResult(w http.ResponseWriter, result any) {
-	writeJSON(w, http.StatusOK, map[string]any{"success": true, "errors": []any{}, "messages": []any{}, "result": result})
-}
-
-// cloudflareFake answers the Cloudflare routes the health checks and logs read. The fixture
-// site's zone leaves Always Use HTTPS off, so its https-forced row fails; the other site's zone
-// forces HTTPS with HSTS. Any other route answers 404, which a check reports as could not run.
-func cloudflareFake() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := strings.TrimPrefix(r.URL.Path, "/client/v4")
-		now := time.Now().UTC()
-		switch {
-		case path == "/user/tokens/verify":
-			cfResult(w, map[string]any{"id": "fixture-token-id", "status": "active"})
-		case path == "/accounts/"+fixtureAccount+"/workers/scripts":
-			cfResult(w, []map[string]any{
-				{"id": "my-site-web", "tag": "tag-my-site"},
-				{"id": "other-site-web", "tag": "tag-other-site"},
-			})
-		case strings.HasSuffix(path, "/triggers"):
-			cfResult(w, []map[string]any{{"uuid": "trigger-1", "repo_connection": map[string]any{"repo_name": "site-web"}}})
-		case strings.HasPrefix(path, "/accounts/") && strings.HasSuffix(path, "/builds"):
-			cfResult(w, []map[string]any{{
-				"build_uuid":             "build-1",
-				"status":                 "stopped",
-				"build_outcome":          "success",
-				"created_on":             now.Add(-2 * time.Hour).Format(time.RFC3339),
-				"build_trigger_metadata": map[string]any{"commit_hash": headSHA},
-			}})
-		case path == "/zones":
-			name := r.URL.Query().Get("name")
-			zone := fixtureZone
-			if name == otherSiteDomain {
-				zone = otherSiteZone
-			}
-			cfResult(w, []map[string]any{{
-				"id": zone, "name": name, "status": "active",
-				"name_servers": []string{"ada.ns.cloudflare.com", "bob.ns.cloudflare.com"},
-			}})
-		case path == "/zones/"+fixtureZone+"/settings":
-			cfResult(w, []map[string]any{{"id": "always_use_https", "value": "off"}})
-		case path == "/zones/"+otherSiteZone+"/settings":
-			cfResult(w, []map[string]any{
-				{"id": "always_use_https", "value": "on"},
-				{"id": "security_header", "value": map[string]any{"strict_transport_security": map[string]any{"enabled": true}}},
-			})
-		case strings.HasSuffix(path, "/email/sending/subdomains"):
-			domain := siteDomain
-			if strings.Contains(path, otherSiteZone) {
-				domain = otherSiteDomain
-			}
-			cfResult(w, []map[string]any{{"name": domain, "enabled": true}})
-		case r.Method == http.MethodPost && strings.HasSuffix(path, "/workers/observability/telemetry/query"):
-			events := logEvents(now)
-			cfResult(w, map[string]any{"events": map[string]any{"events": events, "count": len(events)}})
-		default:
-			writeJSON(w, http.StatusNotFound, map[string]any{"success": false, "errors": []map[string]any{{"code": 7003, "message": "no such route in the fixture"}}})
-		}
-	})
-}
-
-// logEvents is the Workers Logs fake's window: four engine records over the last hours, one at
-// error level, which the errors check counts under its threshold.
-func logEvents(now time.Time) []map[string]any {
-	records := []struct {
-		ago    time.Duration
-		level  string
-		event  string
-		fields map[string]any
-	}{
-		{12 * time.Minute, "info", "commit.succeeded", map[string]any{"email": "editor@my-site.example", "path": "src/content/posts/spring-hours.md"}},
-		{47 * time.Minute, "error", "commit.failed", map[string]any{"email": "editor@my-site.example", "reason": "conflict"}},
-		{2 * time.Hour, "info", "auth.link.sent", map[string]any{"email": "editor@my-site.example"}},
-		{5 * time.Hour, "warn", "guard.refused", map[string]any{"reason": "no-session", "path": "/admin/content"}},
-	}
-	events := make([]map[string]any, 0, len(records))
-	for _, rec := range records {
-		at := now.Add(-rec.ago)
-		source := map[string]any{"level": rec.level, "event": rec.event, "timestamp": at.Format(time.RFC3339)}
-		maps.Copy(source, rec.fields)
-		events = append(events, map[string]any{"source": source, "timestamp": at.UnixMilli()})
-	}
-	return events
 }
 
 // githubFake answers the GitHub routes the health checks read: a token that expires in 90 days,

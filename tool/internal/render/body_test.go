@@ -308,6 +308,14 @@ func TestSectionLabels(t *testing.T) {
 	}) {
 		t.Errorf("an OK run did not fold its passing checks to one count line:\n%s", strings.Join(ok, "\n"))
 	}
+	// A folded creds check keeps its credential detail, under the count line at its column.
+	healthy := goldenCase{
+		view: "single", fixture: "healthy", reports: fixtures.Healthy(), body: BodySingle,
+		width: width100, profile: colorprofile.ASCII, dark: true,
+	}.render()
+	if !strings.Contains(healthy, "\n"+strings.Repeat(" ", 20)+"CAIRN_GH_READ_TOKEN read from the keyring") {
+		t.Errorf("a folded creds check dropped its credential detail:\n%s", healthy)
+	}
 }
 
 // TestFixIsNeverTruncated is criterion 10: every word of a fix reaches the frame at every width,

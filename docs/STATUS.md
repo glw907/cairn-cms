@@ -81,5 +81,5 @@ Open filings: #491 to #497.
 ## Pass 3 executor
 
 Pass 3 `commands` of round `tui-language` is executed by session `cairn-cms-tui-language-3` (job 9a8398b9) on branch
-`tui-language-3`, draft PR #249, which carries pass 2's commits until #247 merges. It ends at PR-ready; the conductor
+`tui-language-3`, PR #249, which carries pass 2's commits until #247 merges. It ends at PR-ready; the conductor
 lands or holds. Open filings: #498 to #509.

@@ -42,7 +42,7 @@ Rendered markup:
 
 Reads:
 
-- The column modifier `cards-cols-2`, `cards-cols-3`, or `cards-cols-4`, from `columns`. A missing value, or any other value, gives `cards-cols-3`. The grid is one column below `40rem`. From there up, two and three columns take the modifier's count, and four columns fit as many cards of at least `13rem` as the width allows, so inside the reading measure `cards-cols-4` lays out as two.
+- The column modifier `cards-cols-2`, `cards-cols-3`, or `cards-cols-4`, from `columns`. A missing value, or any other value, gives `cards-cols-3`. The grid is one column below `40rem`. From there up, two and three columns take the modifier's count, and four columns fit as many cards of at least `13rem` as the width allows, up to four across, so inside the reading measure `cards-cols-4` lays out as two.
 - No element renders for an absent part. A card with no image opens on its `cards-body`, and an image-only card holds the `cards-image` alone.
 - The title is a `p`, not a heading, so card titles stay out of the page's outline and its heading ids. The title is a `p` on purpose, so a theme should not change it to an h3. The grid and its items carry `role="list"` and `role="listitem"` because a `ul` would inherit the prose list markers.
 - The ground `--color-base-100`, the hairline `--color-card-border` at `--border`, the corner `--radius-box`, and the spacing steps `--spacing-s`, `--spacing-m`, and `--spacing-3xs`.

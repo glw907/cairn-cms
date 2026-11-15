@@ -6,6 +6,22 @@
 
 ## Medium
 
+- [ ] **#502** The header marks "Writing" active on a home page at `/` `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
+  Waymark's nav treats `/` as the writing index, which was true until `home` took the address. Found by the `pennant-2` visual grade (PR #253): the active state and `aria-current` point at the wrong page. Fix: match the writing link on `/archive` when a home page exists.
+- [ ] **#501** `setMenu` drops the commented `actions` YAML example when it rewrites a menu `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
+  The `actions` menu ships commented out in the starter's `menus.yml` (pass `pennant-2`, PR #253); a menu rewrite through `setMenu` loses that comment, so the example is gone after the first edit. Fix: keep the comment block across the rewrite, or move the example to the docs.
+- [ ] **#500** Test the page-2 "Newer" link on `/archive/2`, which points at `/archive/1` `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
+  Found reviewing `pennant-2` (PR #253): no test asserts the link, so a change to the archive's page-1 address would break it silently.
+- [ ] **#499** The home page's "All news" and "Latest news" strings are fixed English, and the link's name differs from the archive's h1 "Archive" `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
+  `themes/waymark/components/ArticleView.svelte` hard-codes both strings, and the link name (`All news`) doesn't match the page it opens. A non-English site retypes the component. Found in `pennant-2` (PR #253) review.
+- [ ] **#498** `/archive/1` renders a pagination nav with no links when the archive has one page `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
+  An empty `nav` is announced to a screen reader as a landmark with nothing in it. Found in `pennant-2` (PR #253) accessibility review.
+- [ ] **#497** The sitemap lists a `home` page marked `noindex` `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
+  The home page's entry carries the sitemap row `/` by its own rule, which does not read the page's robots setting. An owner who sets `noindex` on `home` still advertises `/`. Found in `pennant-2` (PR #253) review.
+- [ ] **#496** The `hasHomePage` check is copied into five route files, and `/home` is hard-coded in four places instead of reading `entry.permalink` `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
+  Renaming the page's permalink would need nine edits that nothing ties together. Fix: one helper in `home.ts`, read everywhere. Found in `pennant-2` (PR #253) review.
+- [ ] **#495** `EntryRow` renders its date in a `div`, not a `time` with a `datetime` attribute `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
+  A machine can't read the row's date. The change alters the no-home front page's bytes, so it moves the golden in `examples/showcase/e2e/fixtures/home-golden/`. Found in `pennant-2` (PR #253) accessibility review.
 - [ ] **#490** Stop the grammar rewriting `&`, `*`, and brackets in a repeatable item on a guided edit `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-14)*
   `readListItems` (`src/lib/render/component-grammar.ts:273`) re-reads each list item through remark-stringify, so a bare `&` in a URL comes back as `\&`, a bare `*` as `\*`, and brackets inside link text escaped. `componentRoundTripSafety` still returns `safe: true`, since the values are lossless, but the markdown is not byte-identical: an editor who opens a `cards` or callout-points item in the insert form and presses Update gets a changed line and a noisy diff in the commit. Found probing the `cards` block in pass `pennant-1`; the behavior predates it. Fix: serialize list items with the escapes those characters need only where they would change the parse, or keep the source slice of an unedited item.
   Placement: the next pass that touches `src/lib/render/component-grammar.ts`.

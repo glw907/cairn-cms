@@ -522,8 +522,10 @@
     .prose .cards-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+    /* Four columns only where each card keeps 13rem; inside the reading measure that is two, since
+       narrower cards split ordinary title words mid-word. */
     .prose .cards-cols-4 {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
     }
   }
   /* An empty block keeps the flow margin above it and reads as a phantom gap. */

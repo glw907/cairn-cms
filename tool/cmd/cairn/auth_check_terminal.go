@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
@@ -58,7 +59,8 @@ func authCheckLines(v view, rows []checkRow, verdict spine.Verdict, siteID strin
 				detail += " " + v.marks.Sep + " " + r.display
 			}
 			out = append(out, style.MarkRow(t, mark, role, r.Label, detail, v.width)...)
-			if fix {
+			// A rejected token lacks no permission, so the permission fix would misdirect it.
+			if fix && r.display != providers.ReasonUnauthorized.String() {
 				out = append(out, style.FixLine(t, fmt.Sprintf(tmplAuthCheckFix, r.Label, r.Credential), "", t.DetailColumn(r.Label, v.width), v.width)...)
 			}
 		}

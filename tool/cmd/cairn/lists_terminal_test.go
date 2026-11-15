@@ -57,13 +57,13 @@ func TestSitesBlock(t *testing.T) {
 	raw := sitesLines(trueColorView(), entries)
 	plain := plainOf(raw)
 	requireBoldTitle(t, raw[0], "sites")
-	if plain[0] != "  sites  2 in the registry" {
+	if plain[0] != "  sites  2 known" {
 		t.Errorf("title = %q, want the count beside it", plain[0])
 	}
 	if plain[1] != "" || !strings.HasPrefix(plain[2], "  site") || !strings.Contains(plain[3], "my-site") || !strings.Contains(plain[4], "docs.example.org") {
 		t.Errorf("sites block = %q, want a blank line, a header, and a row per site", plain)
 	}
-	if empty := plainOf(sitesLines(trueColorView(), nil)); len(empty) != 1 || empty[0] != "  sites  0 in the registry" {
+	if empty := plainOf(sitesLines(trueColorView(), nil)); len(empty) != 1 || empty[0] != "  sites  0 known" {
 		t.Errorf("empty registry = %q, want the title and count alone", empty)
 	}
 }
@@ -94,7 +94,7 @@ func TestAdoptBlock(t *testing.T) {
 	if !strings.HasPrefix(plain[1], "  worker") || !strings.Contains(plain[2], "trail-docs") || plain[3] != "" {
 		t.Errorf("first group = %q, want a header, its row, and a blank line", plain[:4])
 	}
-	requireBoldTitle(t, raw[4], "no custom domain")
+	requireBoldTitle(t, raw[4], "no custom domain") // Title lowercases every section title
 	if !strings.Contains(plain[6], "old-landing") {
 		t.Errorf("second group = %q, want the route-only Worker under its own title", plain[4:])
 	}
@@ -143,7 +143,7 @@ func TestAuthCheckReportBlock(t *testing.T) {
 	}
 	requireBoldTitle(t, raw[f], "failing")
 	requireMarkAt(t, raw[f+1], plain[f+1], "■", "Workers Scripts")
-	if !strings.Contains(strings.Join(plain[f+1:c], "\n"), "→ Add the Workers Scripts permission to CAIRN_CF_READ_TOKEN") {
+	if !strings.Contains(strings.Join(plain[f+1:c], "\n"), "→ Add the Workers Scripts permission to the token in") {
 		t.Errorf("failing section = %q, want the fix on the arrow", plain[f+1:c])
 	}
 	requireMarkAt(t, raw[c+1], plain[c+1], "?", "Contents")
@@ -197,5 +197,21 @@ func TestAuthCheckPrintsTodaysLinesOffATerminal(t *testing.T) {
 	}
 	if strings.ContainsAny(out, "\x1b●■") {
 		t.Errorf("stdout = %q carries styling off a terminal", out)
+	}
+}
+
+// TestAuthCheckRejectedTokenGetsNoPermissionFix pins that a Failing row whose reason is a
+// rejected token carries no permission fix, while a plain missing-permission row does.
+func TestAuthCheckRejectedTokenGetsNoPermissionFix(t *testing.T) {
+	rows := []checkRow{
+		{permission: permission{Label: "Workers Scripts", Credential: varCFReadToken}, verdict: spine.CheckVerdict{ID: "a", State: spine.Failing}, display: "unauthorized"},
+		{permission: permission{Label: "Zone", Credential: varCFReadToken}, verdict: spine.CheckVerdict{ID: "b", State: spine.Failing}, display: "forbidden"},
+	}
+	joined := strings.Join(strings.Fields(strings.Join(plainOf(authCheckLines(trueColorView(), rows, spine.VerdictCritical, "my-site")), " ")), " ")
+	if strings.Contains(joined, "Add the Workers Scripts permission") {
+		t.Errorf("a rejected token got the permission fix in %q", joined)
+	}
+	if !strings.Contains(joined, "Add the Zone permission to the token in CAIRN_CF_READ_TOKEN, then run the command again.") {
+		t.Errorf("a missing permission lost its fix in %q", joined)
 	}
 }

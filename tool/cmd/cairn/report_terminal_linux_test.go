@@ -15,7 +15,7 @@ func TestTheSitesStatusBlockOnATerminalHasABlankLineBeforeItsTitle(t *testing.T)
 		want   string
 	}{
 		{"under a listing", true, "my-site.example.org\n\n  credentials\n"},
-		{"over an empty registry", false, "registry\n\n  credentials\n"},
+		{"over an empty registry", false, "known\n\n  credentials\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			d, _ := testDeps(t)

@@ -91,7 +91,7 @@ const (
 		"To set up a new site, run `cairn new`. `cairn new --help` covers running it at a terminal and from an agent.\n" +
 		"Run `cairn help agents` for the contract a program reads.\n" +
 		"Pass --json to a reporting command for a machine-readable payload on stdout.\n" +
-		"Set CAIRN_PLAIN=1 for the plain output a pipe gets, even at a terminal.\n" +
+		"Set CAIRN_PLAIN=1 to print plain output at a terminal, the same output a pipe receives.\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN."
 	exampleRoot = "  # Check a site's health\n  $ cairn health my-site-a1b2c3\n\n  # Set up a new site\n  $ cairn new"
 )
@@ -984,12 +984,12 @@ takes --account and --zone with --resume. The exit codes follow.`
 const (
 	// labelSites titles the site listing, and tmplSitesCount is the count beside it.
 	labelSites     = "sites"
-	tmplSitesCount = "%d in the registry"
+	tmplSitesCount = "%d known"
 	// labelCredentialsList titles auth list's variables.
 	labelCredentialsList = "credentials"
 	// labelReadyToAdopt and labelNoCustomDomain title the two groups adopt list draws.
 	labelReadyToAdopt   = "ready to adopt"
-	labelNoCustomDomain = "no custom domain"
+	labelNoCustomDomain = "no Custom Domain"
 	// The column headers of the site and adopt tables.
 	colSite       = "site"
 	colName       = "name"
@@ -1002,5 +1002,5 @@ const (
 	labelCheckPassing     = "passing"
 	// tmplAuthCheckFix is the fix under a permission the token lacks, naming the permission and
 	// the variable whose token should carry it.
-	tmplAuthCheckFix = "Add the %s permission to %s, then run the command again."
+	tmplAuthCheckFix = "Add the %s permission to the token in %s, then run the command again."
 )

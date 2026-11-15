@@ -125,7 +125,7 @@ and commit the diff.
 -   GitHub App: %s
 -   keyring entries: %s
 -   repository: %s
-- %d in the registry
+- %d known
 - %q is not a cairn command.
 - %s  finished  step %s
 - %s  unfinished  step %s
@@ -148,7 +148,7 @@ and commit the diff.
 - %v.
 - --posture takes decline or invite, not %q.
 - Add a Cloudflare Worker to the registry as a site
-- Add the %s permission to %s, then run the command again.
+- Add the %s permission to the token in %s, then run the command again.
 - Check a cairn-cms site's checked-in configuration, read straight off the directory. It needs no credential and no adopted site, and makes at most one network request, a credential-free GET of the declared origin's /robots.txt. <dir> is a filesystem path, never a registered site id, and defaults to the current directory.
 
 Checks run in this order, each with the severity its failure carries:
@@ -233,7 +233,7 @@ A stream of events that does not end with a summary is unfinished.
 To set up a new site, run `cairn new`. `cairn new --help` covers running it at a terminal and from an agent.
 Run `cairn help agents` for the contract a program reads.
 Pass --json to a reporting command for a machine-readable payload on stdout.
-Set CAIRN_PLAIN=1 for the plain output a pipe gets, even at a terminal.
+Set CAIRN_PLAIN=1 to print plain output at a terminal, the same output a pipe receives.
 Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
 - Permissions:
 - Plan written to %s. Nothing was created on Cloudflare. Edit the email or the address if you need to, and then run cairn new --apply %s.
@@ -488,9 +488,9 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - name
 - narrow the query to one engine event name
 - no Cloudflare credentials found.
+- no Custom Domain
 - no Custom Domain attached to Worker %q.
 - no Worker named %q on this account.
-- no custom domain
 - no site named %q.
 - no unfinished setup is named %s.
 - passing

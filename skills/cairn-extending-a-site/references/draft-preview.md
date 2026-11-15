@@ -27,17 +27,29 @@ subsystem. They never interact.
    import { loadPreview } from '@glw907/cairn-cms/sveltekit';
    import { runtime } from '#chassis/cairn.server.js';
    import { publicRoutesConfig } from '#chassis/public-routes.js';
+   import { withReferences } from '#chassis/entry-data.js';
+   import { posts } from '#chassis/content.js';
+   import { buildHomeData } from '../../home.js';
 
    export const prerender = false;
-   export const load: PageServerLoad = (event) => loadPreview(event, { runtime, publicRoutes: publicRoutesConfig });
+   export const load: PageServerLoad = async (event) => {
+     const data = await loadPreview(event, { runtime, publicRoutes: publicRoutesConfig }).then(
+       withReferences,
+     );
+     if (data.concept !== 'pages' || data.entry.id !== 'home') return data;
+     return { ...data, home: buildHomeData(data.html, posts.all()) };
+   };
    ```
 
    `prerender = false` is required (a prerendered copy would ship a token; `loadPreview` throws at
    build). It reuses the entry pages' `PublicRoutesConfig`, so export that object from a shared
-   module if the entry route builds it inline. A scaffold chains `.then(withReferences)`.
+   module if the entry route builds it inline. The scaffold chains `.then(withReferences)`. Its
+   `home` branch runs after `loadPreview` has verified the token, and the posts come from the
+   published index, so a preview shows no other draft. A site with no home page convention
+   returns `loadPreview`'s result alone.
 4. In `+page.svelte`, render `<PreviewBanner preview={data.preview} />` from
    `@glw907/cairn-cms/public`, then the entry pages' article view with canonical, `og:url`, and the
-   twin link left out. The banner reads `--cairn-preview-bg`, `-border`, `-fg`, `-link`, `-radius`.
+   twin link left out. The scaffold passes `home={data.home}` too, so the `home` page previews with its news list. The banner reads `--cairn-preview-bg`, `-border`, `-fg`, `-link`, `-radius`.
 
 A link lives seven days, a fixed lifetime with no option.
 

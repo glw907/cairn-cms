@@ -154,9 +154,9 @@ Three environment variables change how `cairn` prints in a terminal. None holds 
 
 | Variable | Value | Effect |
 | --- | --- | --- |
-| `CAIRN_PLAIN` | `1` | Prints the plain output that a pipe receives, with no color, no progress line, and ASCII marks. Use it with a screen reader. Any other value, including `true`, does nothing. |
+| `CAIRN_PLAIN` | `1` | Prints the plain output that a pipe receives, with no progress line and ASCII marks, and no color unless you pass `--color always`. Use it with a screen reader. `cairn new` still opens its terminal view. Any other value, including `true`, does nothing. |
 | `CAIRN_THEME` | `dark` or `light` | Picks the palette for your terminal's background. |
-| `COLORFGBG` | A pair such as `0;15` | Some terminals set it. `cairn` reads the last field as the background color: `7` or `15` means a light background, and any other number means a dark one. |
+| `COLORFGBG` | A pair such as `0;15` | `cairn` reads the last field as the background color: `7` or `15` means a light background, and any other number means a dark one. |
 
 `cairn` chooses the palette from the first of these that names one:
 
@@ -165,7 +165,7 @@ Three environment variables change how `cairn` prints in a terminal. None holds 
 3. `COLORFGBG`.
 4. Dark.
 
-`cairn` ignores a `CAIRN_THEME` value other than `dark` or `light`, and a `COLORFGBG` value whose last field isn't a number, and moves to the next source. An unknown `--theme` value is an error. The three variables don't change `--json` output or output to a pipe or a file.
+`cairn` ignores a `CAIRN_THEME` value other than `dark` or `light`, and a `COLORFGBG` value whose last field isn't a number, and moves to the next source. An unknown `--theme` value is an error. The three variables don't change `--json` output. They change output to a pipe or a file only when you pass `--color always`.
 
 Body text uses your terminal's own foreground color, so it reads on any background.
 

@@ -125,8 +125,10 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
   foreground: the Text role paints no ink, so it reads on a light or a dark terminal. `--theme`,
   `CAIRN_THEME` (`dark` or `light`), and `COLORFGBG` (its last field, `7` or `15` for light) choose the
   palette, in that order, and `CAIRN_PLAIN=1` prints a terminal the plain output a pipe gets, with no
-  progress line. A value cairn cannot read is ignored. Output to a pipe or a file and `--json` output
-  are byte for byte what they were, except one sentence in `cairn --help` that names `CAIRN_PLAIN`.
+  progress line, though `cairn new` still opens its terminal view. A value cairn cannot read is
+  ignored. Output to a pipe or a file and `--json` output are unchanged, except one sentence in
+  `cairn --help` that names `CAIRN_PLAIN`, and `--color always` output, which now follows
+  `CAIRN_THEME` and `COLORFGBG`.
   The admin credentials page documents the variables.
 
   Consumers must: nothing.

@@ -166,7 +166,7 @@ still gives the ASCII marks there.
 
 ## Plain mode and the ground
 
-`CAIRN_PLAIN=1` makes every styled path treat standard output and standard error as not terminals.
+`CAIRN_PLAIN=1` makes every styled path except `cairn new`'s terminal view treat standard output and standard error as not terminals.
 A run prints the bytes a pipe receives, with the progress line off and help as plain cobra output.
 Only the exact value `1` counts. A screen reader needs this linear form, and `cairn --help` names the
 variable in one sentence.

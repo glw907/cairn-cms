@@ -430,8 +430,9 @@ compares:
 - Outside `checked: ` lines, the pipe body holds no clock text but whole-day counts: a held
   row's days left (`render/layout.go:187`) and the creds expiry days (`health/messages.go:275`).
   A pipe sweep prints one plain block per site (`health_sweep.go:76`), so the same mask covers
-  it. A control diff outside `checked: ` lines is a stop, never a wider mask. A day count that
-  changed between the two runs reruns once under Decision 14, and a second diff stops.
+  it. A control or differential diff outside `checked: ` lines reruns once: Decision 14's rerun
+  for the delegation and email rows, or a day count that turned between the two runs. A diff
+  that survives the rerun is a stop, never a wider mask.
 
 The PR shows the local `-v` run.
 
@@ -608,7 +609,7 @@ The relaunched planner folded both rulings into Decisions 1 and 3, T4, T5, T8, a
 under "Acceptance". The acceptance items keep their approved wording, and each carries its
 ruling beneath it.
 
-Geoff's note on the document asked whether the new Fable escalation was tried. The record
+Not a ruling, a record: Geoff's note on the document asked whether the new Fable escalation was tried. The record
 shows the parking planner called the advisor tool, a Fable reader, once on each question before
 it parked, as the two `[advisor]` lines under "Planning misses" say. `advisor.md` puts a change
 to an acceptance item under "What always stops", and at planning lets the advisor be asked only

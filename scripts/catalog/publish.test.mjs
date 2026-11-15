@@ -120,14 +120,15 @@ function world(options = {}) {
       },
       buildDemo: (args) => {
         const manifest = JSON.parse(readFileSync(path.join(args.themeDir, 'cairn-theme.json'), 'utf8'));
-        w.demos.push(args);
+        const release = `${manifest.id}@${manifest.version}`;
+        w.demos.push({ ...args, release });
         mkdirSync(path.join(args.out, 'assets'), { recursive: true });
-        return { release: `${manifest.id}@${manifest.version}`, assets: path.join(args.out, 'assets'), wrangler: path.join(args.out, 'wrangler.json') };
+        return { release, assets: path.join(args.out, 'assets'), wrangler: path.join(args.out, 'wrangler.json') };
       },
       deploy: async (args) => {
         w.deploys.push({ ...args, writesBefore: w.bucket.writes.length });
         if (w.deployFails) throw new Error('wrangler deploy exited 1');
-        w.live = w.demos.at(-1).release ?? w.live;
+        w.live = w.demos.at(-1).release;
         polls = 0;
       },
       fetch: async (url) => {

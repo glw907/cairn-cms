@@ -20,13 +20,13 @@ menus:
       url: /contact
 vocabulary:
   - value: map-night
-    label: Map Night
+    label: Map night
   - value: field-days
-    label: Field Days
+    label: Field days
   - value: junior-program
-    label: Junior Program
+    label: Junior program
   - value: lending-shelf
-    label: Lending Shelf
+    label: Lending shelf
 tidy:
   enabled: true
   conventions:

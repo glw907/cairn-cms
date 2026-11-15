@@ -11,7 +11,7 @@ topics:
 ---
 A member who joined in the society's first year gave the lending shelf a copy of the 1951 USGS Anchorage sheet, at 1:250,000. We spent October's map night with it spread across two tables.
 
-Anchorage sits on a peninsula, with Knik Arm to the north and Turnagain Arm to the south. The two arms are the narrow branches at the north end of Cook Inlet. On the sheet, Knik Arm is printed in large capitals across the water, and the labels around it include Anchorage, Spenard, Eagle River, Eklutna, Pioneer Peak, and Matanuska.
+Anchorage sits on a peninsula, with Knik Arm to the north and Turnagain Arm to the south. The two arms are the narrow branches at the north end of Cook Inlet. On the sheet, Knik Arm is printed in large capitals across the water.
 
 Much of the evening went to the margin, where a sheet says who made it and when. Several members brought newer maps of the same ground to set beside it.
 

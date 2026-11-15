@@ -2,7 +2,7 @@
 title: Join the society
 description: Anyone can join. Come to a map night, or write to us.
 ---
-Anyone can join the Turnagain Geographic Society. We have about 140 members, from students to retired surveyors, and you need no experience with maps.
+Anyone can join the Turnagain Geographic Society. We have about 140 members, from students to retired surveyors, and you don't need any experience with maps.
 
 ## How to join
 

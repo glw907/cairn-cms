@@ -9,10 +9,10 @@ topics:
   - junior-program
   - map-night
 ---
-At November's map night, the junior program laid the whole 1951 USGS Seward sheet on the floor of the hall, borrowed from the lending shelf.
+At November's map night, the junior program borrowed the 1951 USGS Seward sheet from the lending shelf and laid it out whole on the hall floor.
 
-The Kenai Peninsula extends about 150 miles southwest from the Chugach Mountains, south of Anchorage. The Seward sheet prints KENAI PENINSULA in capitals, and it labels Turnagain Arm, Kenai Lake, Seward, and Prince William Sound.
+South of Anchorage, the Kenai Peninsula extends about 150 miles southwest from the Chugach Mountains. The sheet prints KENAI PENINSULA in capitals, with Turnagain Arm at the top, Seward and Kenai Lake near the bottom, and Prince William Sound off to the right.
 
-Each young member picked two labels and measured the distance between them with a ruler and the sheet's scale bar. Then they swapped answers and checked each other's work. Two adults ran the session, as at every junior session.
+Each young member picked two labels and measured the distance between them with a ruler and the sheet's scale bar. Then they swapped answers and checked each other's work. Two adults ran it, as at every junior session.
 
 The junior program meets at every map night through the winter, and field days start again in June.

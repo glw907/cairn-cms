@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // kindDoctor is what this payload declares in its kind field, so a consumer reading a mixed
 // stream keys off a field rather than off the shape it happens to see.
 const kindDoctor = "doctor"
+
+// DoctorSchemaVersion versions cairn doctor's directory-preflight payload. A key is added
+// within a version and never removed or retyped within one.
+const DoctorSchemaVersion = 1
 
 // The wire state words this payload writes. They are five of the frozen vocabulary
 // the health payload writes, and the doctor adds none: its
@@ -87,7 +90,7 @@ func Marshal(in JSONInput) ([]byte, error) {
 		checks = append(checks, wireCheck(cr))
 	}
 	return json.Marshal(payload{
-		SchemaVersion: render.DoctorSchemaVersion,
+		SchemaVersion: DoctorSchemaVersion,
 		Kind:          kindDoctor,
 		Verdict:       in.Verdict.String(),
 		ExitCode:      int(in.Verdict),

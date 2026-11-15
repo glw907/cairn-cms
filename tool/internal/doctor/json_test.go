@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
@@ -180,5 +181,39 @@ func TestARunWithNoChecksWritesAnEmptyArray(t *testing.T) {
 	}
 	if decoded["exitCode"] != float64(spine.VerdictUnknown) {
 		t.Errorf("exitCode = %v, want %d", decoded["exitCode"], int(spine.VerdictUnknown))
+	}
+}
+
+// TestDoctorSchemaVersionIsOneBeforeTheTag asserts the payload constant is 1 and that the
+// published schema's schemaVersion const says the same number. No consumer read an earlier
+// form of this payload, so its first published version is 1.
+func TestDoctorSchemaVersionIsOneBeforeTheTag(t *testing.T) {
+	if DoctorSchemaVersion != 1 {
+		t.Errorf("DoctorSchemaVersion is %d, want 1 for the whole pre-tag window", DoctorSchemaVersion)
+	}
+	root, err := providers.RepoRoot()
+	if err != nil {
+		t.Fatalf("providers.RepoRoot: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(root, "schema", "cairn-doctor.schema.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var schema struct {
+		Properties struct {
+			SchemaVersion struct {
+				Const *int `json:"const"`
+			} `json:"schemaVersion"`
+		} `json:"properties"`
+	}
+	if err := json.Unmarshal(data, &schema); err != nil {
+		t.Fatal(err)
+	}
+	got := schema.Properties.SchemaVersion.Const
+	if got == nil {
+		t.Fatal("the schema declares no schemaVersion const")
+	}
+	if *got != DoctorSchemaVersion {
+		t.Errorf("the schema pins schemaVersion at %d, want the constant %d", *got, DoctorSchemaVersion)
 	}
 }

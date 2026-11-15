@@ -30,11 +30,6 @@ const (
 	adoptListSchemaVersion = 1
 	// authCheckSchemaVersion versions cairn auth check's payload.
 	authCheckSchemaVersion = 1
-	// DoctorSchemaVersion versions cairn doctor's directory-preflight payload. The
-	// marshaller itself lives in internal/doctor, whose posture check dials over HTTP; this
-	// package's contract is purity with its direct requires pinned by name, so it holds the
-	// constant and nothing else of that payload.
-	DoctorSchemaVersion = 1
 )
 
 // The kind each payload declares, so a consumer reading a mixed stream keys off a field rather

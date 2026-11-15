@@ -2,27 +2,20 @@ package health
 
 import "github.com/glw907/cairn-cms/tool/v2/internal/spine"
 
-// failSeverity names, per check id, the weight that check's Failing outcome carries. It sits
-// beside All because the two must cover the same set, which severity_test.go asserts: a tenth
-// check cannot land without an entry here.
+// failSeverity names, per check id, the weight that check's Failing outcome carries when it is
+// not spine.CriticalFailure, the zero value. It sits beside All, and severity_test.go asserts
+// every key here is a check in All, so a renamed check cannot leave a stale row.
 //
 // engine is the one WARNING. A site a release or two behind still serves every page it served
 // yesterday, so a failing engine check is work to schedule rather than a fault to be woken for,
 // and paging an operator for it nightly is what teaches them to ignore the routine.
 //
-// creds stays CRITICAL even when the only fault is a token nearing its expiry. The window to fix
-// it closes on its own, and every run after it closes observes nothing at all, so an expiring
-// token is a fault the operator can still fix before it lands rather than one to sit on.
+// creds is absent on purpose and takes the CRITICAL default, even when the only fault is a token
+// nearing its expiry. The window to fix it closes on its own, and every run after it closes
+// observes nothing at all, so an expiring token is a fault the operator can still fix before it
+// lands rather than one to sit on.
 var failSeverity = map[string]spine.FailSeverity{
-	"creds":        spine.CriticalFailure,
-	"serving":      spine.CriticalFailure,
-	"delegation":   spine.CriticalFailure,
-	"https-forced": spine.CriticalFailure,
-	"email":        spine.CriticalFailure,
-	"deploy":       spine.CriticalFailure,
-	"publish-path": spine.CriticalFailure,
-	"engine":       spine.WarningFailure,
-	"errors":       spine.CriticalFailure,
+	"engine": spine.WarningFailure,
 }
 
 // failSeverityOf returns the weight a Failing outcome from the check named id carries. An id the

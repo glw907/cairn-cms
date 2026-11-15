@@ -208,8 +208,8 @@ func runStatus(c health.Clients, elapsed time.Duration, degraded bool, reports [
 		from     string
 		needed   func(health.Tier) bool
 	}{
-		{varCFReadToken, c.HaveCF, c.CFFrom, func(t health.Tier) bool { return t == health.TierCF || t == health.TierBoth }},
-		{varGHReadToken, c.HaveGH, c.GHFrom, func(t health.Tier) bool { return t == health.TierGH || t == health.TierBoth }},
+		{varCFReadToken, c.HaveCF, c.CFFrom, health.Tier.UsesCF},
+		{varGHReadToken, c.HaveGH, c.GHFrom, health.Tier.UsesGH},
 	} {
 		entry := render.Credential{Variable: cred.variable}
 		if cred.variable == varGHReadToken {

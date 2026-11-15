@@ -89,10 +89,12 @@ The `/delivery` entry point adds `buildICalendarResponse`, with its input types 
 A new site's starter content is a standard set of pages and posts in place of the showcase's trail demo. This asks nothing of a site that already exists. A site you start after this lands replaces the sample content with its own, as [Make a scaffolded site yours](./skills/cairn-extending-a-site/references/make-it-yours.md) lists.
 
 A script that reads `cairn` output from a pipe, a file, or `--json` needs no change: those bytes are what
-they were, apart from one sentence in `cairn --help` that names `CAIRN_PLAIN` and one newline that
+they were, apart from one sentence in `cairn --help` that names `CAIRN_PLAIN`, one actor name that `cairn help agents` no longer lists, and one newline that
 `cairn auth set` writes to stderr after its `NAME: ` prompt when stdin is a pipe. At a terminal, `cairn` now reads the ground from
 `--theme`, `CAIRN_THEME`, and `COLORFGBG`, and `CAIRN_PLAIN=1` prints the plain output, except in
 `cairn new`, which still opens its terminal view.
+
+The actor name is `provider-console`. `schema/cairn-health.schema.json` no longer lists it in the `actor` enum of a fix, so a payload naming it no longer validates. No `cairn` release ever wrote it, and `schemaVersion` stays 1. If you keep a copy of that enum, or a branch that handles the value, remove it.
 
 The `cairn new` opening check counts only A, AAAA, and CNAME records on an address, so a domain whose
 bare address holds only mail records is no longer refused. A site that already deploys is unaffected.

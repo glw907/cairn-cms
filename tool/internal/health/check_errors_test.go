@@ -281,7 +281,7 @@ func TestErrorsCheckRejectedRequestIsNotObservabilityOff(t *testing.T) {
 	if outcome.Condition == spine.ConditionConfigObservabilityOff {
 		t.Error("a rejected request still reports the operator's observability as off")
 	}
-	if outcome.Detail != detailAPIRequestRejected() {
+	if outcome.Detail != detailAPIRequestRejected {
 		t.Errorf("Detail = %q, want the rejected-request detail", outcome.Detail)
 	}
 }

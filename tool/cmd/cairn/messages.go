@@ -263,7 +263,7 @@ reason, fix, hold, fields, and observed. reason is always present on a skip or a
 unknown. fields are values cairn derived; observed maps each key to a value and the
 source it was copied from. hold carries until and expired, and a check reads held only
 until its hold expires. fix carries summary, actor, outward, and url, plus command for
-an operator's fix. actor is operator, developer, provider-console, or registrar.
+an operator's fix. actor is operator, developer, or registrar.
 
 Run a fix only when its actor is operator, its outward is false, and it carries a
 command. Every other fix is for a person to read.

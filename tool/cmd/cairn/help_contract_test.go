@@ -73,7 +73,7 @@ func TestHelpAgentsListsEveryJSONField(t *testing.T) {
 		"checkId", "state", "checkedAt", "tier", "detail", "code", "condition", "reason",
 		"fix", "hold", "fields", "observed",
 		"summary", "actor", "outward", "url", "command", "until", "expired", "value", "source",
-		"operator", "developer", "provider-console", "registrar",
+		"operator", "developer", "registrar",
 		"none", "cloudflare", "github", "both",
 	}
 	for _, f := range fields {

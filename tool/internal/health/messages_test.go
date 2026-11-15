@@ -275,8 +275,9 @@ var messageExemptions = map[string]string{
 	"detailCredsGitHubExpiring":    "Catalogue lists tmplCredsGitHubExpiring, the template this function formats, rather than a fabricated date",
 }
 
-// messageDeclarations parses path and returns every top-level detailXxx function and tmplXxx
-// constant it declares: the two shapes an operator-facing message in this package takes.
+// messageDeclarations parses path and returns every top-level detailXxx function and every
+// detailXxx or tmplXxx constant it declares: the shapes an operator-facing message in this
+// package takes.
 func messageDeclarations(t *testing.T, path string) []string {
 	t.Helper()
 	fset := token.NewFileSet()
@@ -301,7 +302,7 @@ func messageDeclarations(t *testing.T, path string) []string {
 					continue
 				}
 				for _, name := range vs.Names {
-					if strings.HasPrefix(name.Name, "tmpl") {
+					if strings.HasPrefix(name.Name, "tmpl") || strings.HasPrefix(name.Name, "detail") {
 						names = append(names, name.Name)
 					}
 				}

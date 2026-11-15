@@ -9,7 +9,7 @@ import (
 // switches on it rather than parsing free text.
 type Actor string
 
-// The four Actor values a Fix declares.
+// The three Actor values a Fix declares.
 const (
 	// ActorOperator is the site's operator: the person running this tool, with access to the
 	// site's Cloudflare dashboard, GitHub organization, and keyring.
@@ -17,17 +17,13 @@ const (
 	// ActorDeveloper is whoever maintains the site's code: a config change, a dependency
 	// bump, or a build fix that only a commit can carry out.
 	ActorDeveloper Actor = "developer"
-	// ActorProviderConsole is a provider's support channel, for a fault neither the operator
-	// nor the developer can clear from outside it.
-	ActorProviderConsole Actor = "provider-console"
 	// ActorRegistrar is the domain's registrar, for a fault only a registrar-side change clears
 	// (a nameserver delegation, for instance).
 	ActorRegistrar Actor = "registrar"
 )
 
 // Fix is one fix line the fix table carries for one declared spine.Condition or spine.Code, using
-// the grammar tool/docs/design/copy-standard.md's remedy map defines, re-homed here from the
-// mockups' remedy.go sketch.
+// the grammar tool/docs/design/copy-standard.md's remedy map defines.
 type Fix struct {
 	// Text is the imperative fix line itself, catalogue grammar 2.5: one clause naming the
 	// action and where to take it, capital initial, final period.
@@ -203,27 +199,17 @@ func FixForReason(r spine.ReasonCode) (Fix, bool) {
 	return fix, ok
 }
 
-// fixForCondition returns the fix line declared Condition, when the fix table carries one.
-func fixForCondition(c spine.Condition) (Fix, bool) {
-	fix, ok := fixesByCondition[c]
-	return fix, ok
-}
-
-// fixForCode returns the fix line declared Code, when the fix table carries one.
-func fixForCode(c spine.Code) (Fix, bool) {
-	fix, ok := fixesByCode[c]
-	return fix, ok
-}
-
 // FixFor returns the fix line an Outcome's failure identity resolves to: its Condition when
 // it names one, its Code otherwise. An outcome with neither, or with an identity the table does
 // not carry a line for, returns false.
 func FixFor(o spine.Outcome) (Fix, bool) {
 	if o.Condition != spine.ConditionNone {
-		return fixForCondition(o.Condition)
+		fix, ok := fixesByCondition[o.Condition]
+		return fix, ok
 	}
 	if o.Code != spine.CodeNone {
-		return fixForCode(o.Code)
+		fix, ok := fixesByCode[o.Code]
+		return fix, ok
 	}
 	return Fix{}, false
 }

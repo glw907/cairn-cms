@@ -63,7 +63,7 @@ func TestProbeServingLiveIsOK(t *testing.T) {
 	defer srv.Close()
 
 	probe := providers.NewProbe(srv.Client().Transport, servingResolver{})
-	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
+	got := probeServing(context.Background(), probe, record.Record{Domain: srv.Listener.Addr().String()})
 
 	if got.State != spine.OK {
 		t.Errorf("State = %v, want OK (Outcome: %+v)", got.State, got)
@@ -78,13 +78,13 @@ func TestProbeServingBareAdmin200IsNotCairn(t *testing.T) {
 	defer srv.Close()
 
 	probe := providers.NewProbe(srv.Client().Transport, servingResolver{})
-	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
+	got := probeServing(context.Background(), probe, record.Record{Domain: srv.Listener.Addr().String()})
 
 	if got.State != spine.Failing || got.Code != spine.CodeServingNotCairn {
 		t.Errorf("Outcome = %+v, want Failing/%s", got, spine.CodeServingNotCairn)
 	}
-	if got.Detail != detailServingNotCairn() {
-		t.Errorf("Detail = %q, want %q", got.Detail, detailServingNotCairn())
+	if got.Detail != detailServingNotCairn {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailServingNotCairn)
 	}
 }
 
@@ -97,13 +97,13 @@ func TestProbeServingHomePageNot200IsHostnameMismatch(t *testing.T) {
 	defer srv.Close()
 
 	probe := providers.NewProbe(srv.Client().Transport, servingResolver{})
-	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
+	got := probeServing(context.Background(), probe, record.Record{Domain: srv.Listener.Addr().String()})
 
 	if got.State != spine.Failing || got.Code != spine.CodeServingMismatch {
 		t.Errorf("Outcome = %+v, want Failing/%s", got, spine.CodeServingMismatch)
 	}
-	if got.Detail != detailServingHostnameMismatch() {
-		t.Errorf("Detail = %q, want %q", got.Detail, detailServingHostnameMismatch())
+	if got.Detail != detailServingHostnameMismatch {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailServingHostnameMismatch)
 	}
 }
 
@@ -115,7 +115,7 @@ func TestProbeServingCertificatePendingFallsBackToHTTP(t *testing.T) {
 	defer srv.Close()
 
 	probe := providers.NewProbe(http.DefaultTransport, servingResolver{})
-	got := probeServing(context.Background(), probe, record.Record{}, srv.Listener.Addr().String())
+	got := probeServing(context.Background(), probe, record.Record{Domain: srv.Listener.Addr().String()})
 
 	want := spine.ParkReason(spine.ParkCertificatePending)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -126,7 +126,7 @@ func TestProbeServingCertificatePendingFallsBackToHTTP(t *testing.T) {
 func TestProbeServingHostnameRecordsAbsent(t *testing.T) {
 	probe := providers.NewProbe(http.DefaultTransport, servingResolver{ns: nil})
 	// 127.0.0.1:1 has no listener: both schemes fail to connect at all.
-	got := probeServing(context.Background(), probe, record.Record{}, "127.0.0.1:1")
+	got := probeServing(context.Background(), probe, record.Record{Domain: "127.0.0.1:1"})
 
 	want := spine.ParkReason(spine.ParkHostnameRecordsAbsent)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -140,7 +140,7 @@ func TestProbeServingHostnameResolverLagging(t *testing.T) {
 		servingResolver{ns: []*net.NS{{Host: "ada.ns.cloudflare.com."}}},
 		fakeAuthority([]net.IP{net.ParseIP("2001:db8::1")}, nil),
 	)
-	got := probeServing(context.Background(), probe, record.Record{}, "127.0.0.1:1")
+	got := probeServing(context.Background(), probe, record.Record{Domain: "127.0.0.1:1"})
 
 	want := spine.ParkReason(spine.ParkHostnameResolverLagging)
 	if got.State != spine.Unknown || got.Reason != want {
@@ -280,7 +280,7 @@ func TestDiagnoseUnreachablePropagationSplit(t *testing.T) {
 			}
 			probe := providers.NewProbeWithAuthority(http.DefaultTransport, servingResolver{ns: tt.ns, nsErr: tt.nsErr}, authority)
 			r := delegationRecord(t, tt.assignedNS)
-			got := diagnoseUnreachable(context.Background(), probe, r, "example.test", providers.RequestTimeout)
+			got := diagnoseUnreachable(context.Background(), probe, r, providers.RequestTimeout)
 			if got.State != spine.Unknown || got.Reason != tt.want {
 				t.Errorf("Outcome = %+v, want Unknown %s", got, tt.want)
 			}
@@ -308,7 +308,7 @@ func TestDiagnoseUnreachableSweepSharesOneDeadline(t *testing.T) {
 
 	budget := 100 * time.Millisecond
 	start := time.Now()
-	got := diagnoseUnreachable(context.Background(), probe, record.Record{}, "example.test", budget)
+	got := diagnoseUnreachable(context.Background(), probe, record.Record{Domain: "example.test"}, budget)
 	elapsed := time.Since(start)
 
 	if elapsed >= 2*budget {

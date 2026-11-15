@@ -91,7 +91,7 @@ func checkGitHubCredential(ctx context.Context, c Clients, now time.Time) creden
 		return credentialSide{outcome: credentialErrorOutcome(err), from: c.GHFrom}
 	}
 	if expiry.IsZero() {
-		return credentialSide{outcome: spine.Outcome{State: spine.OK, Detail: detailCredsGitHubNoExpiry()}, from: c.GHFrom}
+		return credentialSide{outcome: spine.Outcome{State: spine.OK, Detail: detailCredsGitHubNoExpiry}, from: c.GHFrom}
 	}
 	if expiry.Sub(now) < credExpiryWindow {
 		outcome := spine.Outcome{State: spine.Failing, Code: spine.CodeCredsExpiringSoon, Detail: detailCredsGitHubExpiring(expiry, now)}
@@ -153,8 +153,8 @@ func credentialLine(name string, side credentialSide) string {
 func detailForCredCode(code spine.Code) string {
 	switch code {
 	case spine.CodeCredsForbidden:
-		return detailCredsForbidden()
+		return detailCredsForbidden
 	default:
-		return detailCredsUnauthorized()
+		return detailCredsUnauthorized
 	}
 }

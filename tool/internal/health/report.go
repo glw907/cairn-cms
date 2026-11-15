@@ -52,8 +52,8 @@ type CheckResult struct {
 // indistinguishable from a fields-fully-redacted one. A dropped field is dropped entirely, key
 // and value.
 //
-// Visibility is the producing check's decision, carried on the field itself (see field and
-// verboseField), not a judgment made here: a shape-based filter over the value (a regex for
+// Visibility is the producing check's decision, carried on the field itself (see field and the
+// Verbose flag), not a judgment made here: a shape-based filter over the value (a regex for
 // "looks like a UUID" or "looks like owner/repo") both over- and under-matches, and a key
 // allowlist held in this file diverges from the checks that produce the keys.
 func nonVerboseFields(fields []spine.OutcomeField) []spine.OutcomeField {

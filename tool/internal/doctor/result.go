@@ -38,24 +38,15 @@ func (s Status) String() string {
 	}
 }
 
-// Result is one check's settled outcome against a Snapshot.
+// Result is one check's settled outcome against a Snapshot. Its identity and severity are its
+// Check's, which a CheckedResult carries alongside.
 type Result struct {
-	// ID is the check's stable identifier, stamped by Run from the Check that produced this
-	// Result. A Result taken straight from Check.Run carries none.
-	ID string
 	// Status is the check's settled verdict.
 	Status Status
-	// Severity is read only when Status is StatusFail: the severity the producing Check's
-	// condition declares in the registry, stamped by Run. A Result taken straight from Check.Run
-	// carries none.
-	Severity spine.FailSeverity
 	// Detail is the check's note: a why/fix line for a fail, or the note an info status
 	// prints. Empty for pass, skip, and unchecked.
 	Detail string
 }
-
-// The five Result constructors below leave ID and Severity unset: Run stamps both from the
-// Result's Check, so a check body never restates what its Check already declares.
 
 // passResult builds a StatusPass Result, the common case every check's pass path shares.
 func passResult(detail string) Result {
@@ -109,13 +100,15 @@ var statusTable = [...]statusFacts{
 	StatusUnchecked: {state: spine.Unknown, wire: stateWordUnknown, reason: spine.ReasonNotObservable},
 }
 
-// checkVerdict converts r to the spine.CheckVerdict its exit code arithmetic reads.
-func (r Result) checkVerdict() spine.CheckVerdict {
-	facts := statusTable[r.Status]
-	v := spine.CheckVerdict{ID: r.ID, State: facts.state}
+// checkVerdict converts cr to the spine.CheckVerdict its exit code arithmetic reads. A fail
+// carries the severity its check's condition declares in the registry, so a check can never
+// disagree with its condition.
+func (cr CheckedResult) checkVerdict() spine.CheckVerdict {
+	facts := statusTable[cr.Result.Status]
+	v := spine.CheckVerdict{ID: cr.Check.ID, State: facts.state}
 	switch facts.state {
 	case spine.Failing:
-		v.Severity = r.Severity
+		v.Severity = conditionText(cr.Check.Condition).Severity
 	case spine.Unknown:
 		v.Reason = facts.reason
 	}
@@ -128,7 +121,7 @@ func (r Result) checkVerdict() spine.CheckVerdict {
 func Verdicts(checked []CheckedResult) spine.SiteVerdicts {
 	out := make(spine.SiteVerdicts, len(checked))
 	for i, c := range checked {
-		out[i] = c.Result.checkVerdict()
+		out[i] = c.checkVerdict()
 	}
 	return out
 }

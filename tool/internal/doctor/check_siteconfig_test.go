@@ -52,14 +52,15 @@ func TestConfigSiteConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := runCheck(configSiteConfig, s).Result
+			cr := runCheck(configSiteConfig, s)
+			result := cr.Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			switch tt.wantStatus {
 			case StatusFail:
-				if result.Severity != spine.CriticalFailure {
-					t.Errorf("Severity = %v, want spine.CriticalFailure", result.Severity)
+				if cr.checkVerdict().Severity != spine.CriticalFailure {
+					t.Errorf("Severity = %v, want spine.CriticalFailure", cr.checkVerdict().Severity)
 				}
 				if result.Detail == "" {
 					t.Error("Detail is empty for a fail, want the parse or shape error")

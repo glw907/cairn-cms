@@ -170,15 +170,16 @@ func TestConfigDependencyFloors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := runCheck(configDependencyFloors, s).Result
+			cr := runCheck(configDependencyFloors, s)
+			result := cr.Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			if !strings.Contains(result.Detail, tt.wantDetailHas) {
 				t.Errorf("Detail = %q, want it to contain %q", result.Detail, tt.wantDetailHas)
 			}
-			if tt.wantStatus == StatusFail && result.Severity != spine.CriticalFailure {
-				t.Errorf("Severity = %v, want spine.CriticalFailure", result.Severity)
+			if tt.wantStatus == StatusFail && cr.checkVerdict().Severity != spine.CriticalFailure {
+				t.Errorf("Severity = %v, want spine.CriticalFailure", cr.checkVerdict().Severity)
 			}
 		})
 	}

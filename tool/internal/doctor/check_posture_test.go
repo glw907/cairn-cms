@@ -49,12 +49,13 @@ func TestAIPostureEffectiveDeclaredDoesNotMatchServed(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1, "aiPosture": "invite"}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := runCheck(aiPostureEffective, s).Result
+	cr := runCheck(aiPostureEffective, s)
+	result := cr.Result
 	if result.Status != StatusFail {
 		t.Fatalf("Status = %v, want StatusFail (detail %q)", result.Status, result.Detail)
 	}
-	if result.Severity != spine.WarningFailure {
-		t.Errorf("Severity = %v, want spine.WarningFailure", result.Severity)
+	if cr.checkVerdict().Severity != spine.WarningFailure {
+		t.Errorf("Severity = %v, want spine.WarningFailure", cr.checkVerdict().Severity)
 	}
 }
 

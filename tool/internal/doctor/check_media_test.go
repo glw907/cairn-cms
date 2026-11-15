@@ -84,8 +84,8 @@ func TestConfigMediaBucketOwnRemediation(t *testing.T) {
 	if cr.Check.Condition != spine.ConditionConfigMediaBucketMissing {
 		t.Fatalf("Condition = %q, want %q", cr.Check.Condition, spine.ConditionConfigMediaBucketMissing)
 	}
-	if cr.Result.Severity != spine.WarningFailure {
-		t.Errorf("Severity = %v, want spine.WarningFailure", cr.Result.Severity)
+	if cr.checkVerdict().Severity != spine.WarningFailure {
+		t.Errorf("Severity = %v, want spine.WarningFailure", cr.checkVerdict().Severity)
 	}
 
 	mediaText, ok := spine.TextFor(spine.ConditionConfigMediaBucketMissing)

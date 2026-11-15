@@ -124,7 +124,7 @@ func TestGoldenPayloadCarriesEveryWireState(t *testing.T) {
 func TestAnInfoIsWrittenAsAPassCarryingANote(t *testing.T) {
 	got := wireCheck(CheckedResult{
 		Check:  Check{ID: "admin.mount-shape", Condition: spine.ConditionAdminMountIncomplete},
-		Result: Result{ID: "admin.mount-shape", Status: StatusInfo, Detail: "no wired /admin mount detected"},
+		Result: Result{Status: StatusInfo, Detail: "no wired /admin mount detected"},
 	})
 	if got.State != stateWordPass {
 		t.Errorf("state = %q, want %q", got.State, stateWordPass)
@@ -142,7 +142,7 @@ func TestAnInfoIsWrittenAsAPassCarryingANote(t *testing.T) {
 func TestAFailureCarriesItsConditionsFix(t *testing.T) {
 	got := wireCheck(CheckedResult{
 		Check:  Check{ID: "config.observability", Condition: spine.ConditionConfigObservabilityOff},
-		Result: Result{ID: "config.observability", Status: StatusFail, Detail: "observability.enabled is not true"},
+		Result: Result{Status: StatusFail, Detail: "observability.enabled is not true"},
 	})
 	want := conditionText(spine.ConditionConfigObservabilityOff)
 	if got.Fix == nil {

@@ -167,7 +167,7 @@ type CheckedResult struct {
 	Result Result
 }
 
-// Run executes every check in checks against s, in report order, and pairs each with its stamped
+// Run executes every check in checks against s, in report order, and pairs each with its
 // Result.
 func Run(s Snapshot) []CheckedResult {
 	out := make([]CheckedResult, len(checks))
@@ -177,13 +177,7 @@ func Run(s Snapshot) []CheckedResult {
 	return out
 }
 
-// runCheck runs c against s and stamps the Result with c's ID and, on a fail, the severity c's
-// condition declares in the registry, so a check can never disagree with its condition.
+// runCheck runs c against s and pairs c with the Result it produced.
 func runCheck(c Check, s Snapshot) CheckedResult {
-	result := c.Run(s)
-	result.ID = c.ID
-	if result.Status == StatusFail {
-		result.Severity = conditionText(c.Condition).Severity
-	}
-	return CheckedResult{Check: c, Result: result}
+	return CheckedResult{Check: c, Result: c.Run(s)}
 }

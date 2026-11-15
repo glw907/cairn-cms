@@ -106,7 +106,7 @@ export function GET(): Response {
     name: 'Site events',
     productId: '-//Example//Events//EN',
     events: [
-      { uid: 'field-day-2027-06-05@example.com', summary: 'Field day', start: '2027-06-05', end: '2027-06-06' },
+      { uid: 'field-day-2027-06-05@example.com', summary: 'Field day', start: '2027-06-05' },
       { uid: 'meeting-2027-06-09@example.com', summary: 'Meeting', start: new Date('2027-06-09T01:00:00Z'), status: 'cancelled' },
     ],
   });

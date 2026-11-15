@@ -223,6 +223,10 @@ list). Everywhere else, delete it. The single-site fix line under its own failin
 heading. A nine-row table of `pass` needs no heading but keeps `passing` because the header's tally
 names the same word.
 
+This rule governs the piped form, the output a command prints when standard output is not a
+terminal. On a terminal, the report titles every block it draws, as the Blocks section of
+`terminal-standard.md` describes.
+
 ### 2.4 The grammar of a detail line
 
 **What was measured, in the operator's terms, with the number.**
@@ -324,7 +328,7 @@ One word per concept. The banned column is exhaustive for these sources.
 | concept | the word | never |
 |---|---|---|
 | run verdict | `OK` `WARNING` `CRITICAL` `UNKNOWN` (capitals) | healthy, degraded, critical (lowercase), all clear, no issues, fine |
-| check result | `pass` `fail` `skip` `held` | ok, failing, unknown, ack, acknowledged, passed, error, warn |
+| check result | `pass` `fail` `skip` `held` (in the piped form; a terminal shows the marks and block titles of `terminal-standard.md` instead) | ok, failing, unknown, ack, acknowledged, passed, error, warn |
 | section for skipped checks | `could not run` | unknown, degraded, unavailable, not observable, indeterminate |
 | why a check skipped | the missing input, named | `cred-missing`, `reason.*`, park codes, enums |
 | a failure the operator has accepted for now | `held`, a `hold` | ack, acknowledged, snoozed, muted, suppressed, waived |
@@ -527,7 +531,7 @@ Detail lines for the realistic cases. `creds`, `serving`, `delegation`, `https`,
 | `brief-4` | `no issues` | claim in place of a count | `9 passing` |
 | `brief-3` | `all clear  ecxc.ski · cairn.pub` | a whole-run claim describing two of six sites | `2 passing  ecxc.ski · cairn.pub` |
 | `brief-2` | `● 4 healthy  creds · serving · ...` | fifth state word | `● 4 passing  creds · serving · ...` |
-| `board-3` | legend `● ok  ▲ failing  ? could not run  ◌ acknowledged` | three of four words are outside the vocabulary; a legend is a confession that the rows are unreadable | delete; every row carries its state word or its verdict word |
+| `board-3` | legend `● ok  ▲ failing  ? could not run  ◌ acknowledged` | three of four words are outside the vocabulary; a legend is a confession that the rows are unreadable | delete; every row carries its state word or its verdict word (in the piped form; the terminal table has no legend either, since each row carries its mark and its verdict word) |
 | `board-3` | legend `cr creds · sv serving · dl delegation · ...` | the cipher the charter rules out (`family.md:79`) | delete with the cipher |
 | `board-3` | `6 sites   4▲ critical   2● ok` | glyph-in-count; lowercase verdict words | `6 sites  4 CRITICAL · 2 OK` |
 | `brief-3` | `907.LIFE`, `AKSAILINGCLUB.ORG` | a domain is an identifier and is never case-folded | lowercase as given |

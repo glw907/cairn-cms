@@ -56,6 +56,9 @@ What a session needs to know:
   `catalog` run published Waymark 1.1.0: index https://catalog.cairn.pub/index.json, demo
   https://demo-waymark.cairn.pub/. Nothing reads the catalog yet, and BACKLOG #486 comes before a second theme joins
   `themes/`.
+- Round `events` (`conductor-events`): pass 1 `feed` is merged (#250, `buildICalendarResponse` in `/delivery`; no
+  engine release). Passes 2 and 3 wait on Pennant pass 4's accepted review. Resume from
+  `initiatives/theme-garden/plans/2026-11-14-events-conductor-prompt.txt`.
 
 ## Open decisions and watches
 

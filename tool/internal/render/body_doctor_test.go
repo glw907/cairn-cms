@@ -248,6 +248,31 @@ func TestDoctorTerminalGoldensPrintNoPipeStatusWord(t *testing.T) {
 	}
 }
 
+// TestDoctorFailureLinksTheAddressThePipePrints: each failure's terminal link targets the docs
+// address doctor.Format prints on a pipe, so the two forms cannot drift apart.
+func TestDoctorFailureLinksTheAddressThePipePrints(t *testing.T) {
+	checked := doctorEveryState()
+	f := Render(RenderInput{
+		View: ViewDoctor, Width: 120, Dark: true, Profile: colorprofile.TrueColor,
+		Site: "my-site", Checked: checked, Verdict: doctorVerdict(checked), Now: fixtures.Now(),
+	})
+	frame := strings.Join(f.Lines(), "\n")
+	pipe := doctor.Format(checked)
+	for _, cr := range checked {
+		if cr.Result.Status != doctor.StatusFail {
+			continue
+		}
+		text, _ := spine.TextFor(cr.Check.Condition)
+		url := doctor.DocsURL(text.DocsAnchor)
+		if !strings.Contains(pipe, "Docs: "+url) {
+			t.Fatalf("the pipe report does not print %q", url)
+		}
+		if !strings.Contains(frame, "\x1b]8;;"+url+"\a") {
+			t.Errorf("the terminal body does not link %q", url)
+		}
+	}
+}
+
 // TestDoctorFailureMarkFollowsItsConditionSeverity holds a failing doctor row to the filled mark
 // when its condition is critical and the outlined mark when it is a warning.
 func TestDoctorFailureMarkFollowsItsConditionSeverity(t *testing.T) {

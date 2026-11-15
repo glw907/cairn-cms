@@ -149,17 +149,7 @@ func (t theme) doctorFailRows(cr doctor.CheckedResult, glyph string, role style.
 		return out
 	}
 	out = append(out, style.ContinuationLine(t.Theme, style.RoleMuted, sanitize(text.Why), col, width)...)
-	return append(out, t.fixLines(text.Remediation, doctorDocsURL(text.DocsAnchor), false, col, width)...)
-}
-
-// doctorDocsURL resolves a doctor condition's docs anchor, shaped "<page>.md#<fragment>", to its
-// published address on the admin arm, the address doctor.Format prints on a pipe. An empty
-// anchor has no address.
-func doctorDocsURL(anchor string) string {
-	if anchor == "" {
-		return ""
-	}
-	return docsBase + "admin/" + strings.Replace(anchor, ".md", "", 1)
+	return append(out, t.fixLines(text.Remediation, doctor.DocsURL(text.DocsAnchor), false, col, width)...)
 }
 
 // skipLine folds every skipped check into one muted line: the count at the margin and the

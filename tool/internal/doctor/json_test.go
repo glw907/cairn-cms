@@ -151,8 +151,8 @@ func TestAFailureCarriesItsConditionsFix(t *testing.T) {
 	if got.Fix.Summary != want.Remediation {
 		t.Errorf("fix.summary = %q, want the condition's remediation %q", got.Fix.Summary, want.Remediation)
 	}
-	if got.Fix.URL != docsURL(want.DocsAnchor) {
-		t.Errorf("fix.url = %q, want %q", got.Fix.URL, docsURL(want.DocsAnchor))
+	if got.Fix.URL != DocsURL(want.DocsAnchor) {
+		t.Errorf("fix.url = %q, want %q", got.Fix.URL, DocsURL(want.DocsAnchor))
 	}
 }
 

@@ -139,5 +139,5 @@ func wireFix(id spine.Condition) *fixPayload {
 		return nil
 	}
 	text := conditionText(id)
-	return &fixPayload{Summary: text.Remediation, URL: docsURL(text.DocsAnchor)}
+	return &fixPayload{Summary: text.Remediation, URL: DocsURL(text.DocsAnchor)}
 }

@@ -229,10 +229,10 @@ func TestGoldenFailureBlockCarriesDocsURL(t *testing.T) {
 // TestDocsURLDropsTheMdExtension pins the published docs URL's exact shape: the mirror's
 // basename without .md, joined to its fragment.
 func TestDocsURLDropsTheMdExtension(t *testing.T) {
-	got := docsURL("is-it-working.md#deploy-the-worker-with-its-bindings")
+	got := DocsURL("is-it-working.md#deploy-the-worker-with-its-bindings")
 	want := "https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings"
 	if got != want {
-		t.Errorf("docsURL = %q, want %q", got, want)
+		t.Errorf("DocsURL = %q, want %q", got, want)
 	}
 }
 
@@ -240,8 +240,8 @@ func TestDocsURLDropsTheMdExtension(t *testing.T) {
 // registry entry this pass raises happens not to hit today but the function must still handle:
 // a report must print no broken URL line for it.
 func TestDocsURLIsEmptyForNoAnchor(t *testing.T) {
-	if got := docsURL(""); got != "" {
-		t.Errorf("docsURL(\"\") = %q, want empty", got)
+	if got := DocsURL(""); got != "" {
+		t.Errorf("DocsURL(\"\") = %q, want empty", got)
 	}
 }
 

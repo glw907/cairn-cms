@@ -8,11 +8,12 @@ import (
 // docsBaseAdmin is the admin docs directory a failure's docs URL resolves against.
 const docsBaseAdmin = "https://cairn.pub/docs/admin/"
 
-// docsURL builds a failure's docs URL from anchor, a condition's docsAnchor field shaped
+// DocsURL builds a failure's docs URL from anchor, a condition's docsAnchor field shaped
 // "<basename>.md#<fragment>": the published address drops the ".md" the mirror carries. Empty
 // when anchor itself is empty, so a condition carrying no docsAnchor prints no URL line rather
-// than a broken one.
-func docsURL(anchor string) string {
+// than a broken one. The plain report, the JSON payload, and the terminal body all print this
+// one address.
+func DocsURL(anchor string) string {
 	if anchor == "" {
 		return ""
 	}
@@ -35,7 +36,7 @@ func Format(checked []CheckedResult) string {
 		text := conditionText(cr.Check.Condition)
 		lines = append(lines, "", fmt.Sprintf("%s failed.", cr.Check.label()),
 			"  Why: "+text.Why, "  Fix: "+text.Remediation)
-		if url := docsURL(text.DocsAnchor); url != "" {
+		if url := DocsURL(text.DocsAnchor); url != "" {
 			lines = append(lines, "  Docs: "+url)
 		}
 	}

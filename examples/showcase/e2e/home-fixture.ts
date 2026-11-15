@@ -188,7 +188,10 @@ export async function removeCopy(output: string): Promise<void> {
  * (`ArticleView.HASH.css`) and every tag that names a file stay in place. The
  * `rel="modulepreload"` link lines are dropped whole: they are hints for the bundler's chunk
  * graph, which moves whenever any module the build reaches changes (a theme component, say),
- * while the page itself does not.
+ * while the page itself does not. The plain block markers `<!--[-->`, `<!--[-1-->`, `<!--]-->`,
+ * and `<!---->` are dropped too: they are invisible hydration anchors, and wrapping markup in a
+ * new `{#if}` branch adds or moves a pair without changing what renders. The numbered branch
+ * markers `<!--[0-->` and `<!--[1-->` stay, since they record which branch rendered.
  */
 export function normalizeBuildNoise(html: string): string {
   return html
@@ -200,5 +203,6 @@ export function normalizeBuildNoise(html: string): string {
     )
     .replace(/version: "\d+"/g, 'version: "VERSION"')
     .replace(/__sveltekit_[a-z0-9]+/g, '__sveltekit_ID')
-    .replace(/<!--[a-z0-9]{5,}-->/g, '<!--HASH-->');
+    .replace(/<!--[a-z0-9]{5,}-->/g, '<!--HASH-->')
+    .replace(/<!--(?:\[|\[-1|\]|)-->/g, '');
 }

@@ -285,20 +285,15 @@ var aiPostureEffective = Check{
 	SkipTitle: "Stated AI posture",
 	Condition: spine.ConditionAIPostureNotEffective,
 	Run: func(s Snapshot) Result {
-		facts, found, err := readSiteFacts(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !found {
-			return uncheckedResult(factsAbsentDetail)
-		}
-		if !s.Robots.Present {
-			return uncheckedResult(postureRobotsAbsentDetail(s.Robots.Reason))
-		}
-		target, ok := robotsURL(s.PublicOrigin.Value)
-		if !ok {
-			return uncheckedResult(detailPostureBadOrigin)
-		}
-		return evaluatePosture(facts.HasAIPosture, facts.AIPosture, s.Robots.Body, target)
+		return withSiteFacts(s, func(facts siteFacts) Result {
+			if !s.Robots.Present {
+				return uncheckedResult(postureRobotsAbsentDetail(s.Robots.Reason))
+			}
+			target, ok := robotsURL(s.PublicOrigin.Value)
+			if !ok {
+				return uncheckedResult(detailPostureBadOrigin)
+			}
+			return evaluatePosture(facts.HasAIPosture, facts.AIPosture, s.Robots.Body, target)
+		})
 	},
 }

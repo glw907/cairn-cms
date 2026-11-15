@@ -106,33 +106,28 @@ var authRoleWiring = Check{
 	SkipTitle: "Guard role vocabulary",
 	Condition: spine.ConditionAuthRoleWiringMissing,
 	Run: func(s Snapshot) Result {
-		facts, found, err := readSiteFacts(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !found {
-			return uncheckedResult(factsAbsentDetail)
-		}
-		custom := customRoleNames(facts.Roles)
-		if len(custom) == 0 {
-			return skipResult(skipNoCustomRoles)
-		}
-		hooks, hooksPath, hooksFound, err := readHooksSource(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !hooksFound {
-			return infoResult(fmt.Sprintf(tmplRoleWiringNoHooksFile, hooksCandidatePaths[0], hooksCandidatePaths[1]))
-		}
-		switch guardRoleWiring(hooks) {
-		case guardWiringAbsent:
-			return infoResult(fmt.Sprintf(tmplRoleWiringAbsent, hooksPath))
-		case guardWiringIndirect:
-			return infoResult(infoRoleWiringIndirect)
-		case guardWiringUnwired:
-			return failResult(fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", "), hooksPath))
-		default:
-			return passResult(passRoleWiringWired)
-		}
+		return withSiteFacts(s, func(facts siteFacts) Result {
+			custom := customRoleNames(facts.Roles)
+			if len(custom) == 0 {
+				return skipResult(skipNoCustomRoles)
+			}
+			hooks, hooksPath, hooksFound, err := readHooksSource(s)
+			if err != nil {
+				return uncheckedResult(err.Error())
+			}
+			if !hooksFound {
+				return infoResult(fmt.Sprintf(tmplRoleWiringNoHooksFile, hooksCandidatePaths[0], hooksCandidatePaths[1]))
+			}
+			switch guardRoleWiring(hooks) {
+			case guardWiringAbsent:
+				return infoResult(fmt.Sprintf(tmplRoleWiringAbsent, hooksPath))
+			case guardWiringIndirect:
+				return infoResult(infoRoleWiringIndirect)
+			case guardWiringUnwired:
+				return failResult(fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", "), hooksPath))
+			default:
+				return passResult(passRoleWiringWired)
+			}
+		})
 	},
 }

@@ -17,16 +17,11 @@ var configObservability = Check{
 	SkipTitle: "Workers Logs sink",
 	Condition: spine.ConditionConfigObservabilityOff,
 	Run: func(s Snapshot) Result {
-		facts, found, err := ReadWranglerConfig(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !found {
-			return skipResult(noWranglerFoundDetail)
-		}
-		if !facts.ObservabilityEnabled {
-			return failResult(detailObservabilityOff)
-		}
-		return passResult(detailObservabilityOn)
+		return withWrangler(s, func(facts WranglerFacts) Result {
+			if !facts.ObservabilityEnabled {
+				return failResult(detailObservabilityOff)
+			}
+			return passResult(detailObservabilityOn)
+		})
 	},
 }

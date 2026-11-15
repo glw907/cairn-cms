@@ -29,6 +29,19 @@ type WranglerFacts struct {
 	R2Buckets []string
 }
 
+// withWrangler runs body against the site's wrangler facts, and settles the result itself when
+// they cannot be read: unchecked on a parse error, skip when no wrangler config exists.
+func withWrangler(s Snapshot, body func(WranglerFacts) Result) Result {
+	facts, found, err := ReadWranglerConfig(s)
+	if err != nil {
+		return uncheckedResult(err.Error())
+	}
+	if !found {
+		return skipResult(noWranglerFoundDetail)
+	}
+	return body(facts)
+}
+
 // ReadWranglerConfig reads the doctor's wrangler-config facts from wrangler.jsonc (preferred when
 // both exist) or wrangler.toml under s.Dir. found is false when neither file exists, which the
 // checks report as a skip rather than a failure. err is non-nil only when a present wrangler.jsonc

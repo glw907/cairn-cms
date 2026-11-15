@@ -30,26 +30,16 @@ var configMediaBucket = Check{
 	SkipTitle: "Media bucket binding",
 	Condition: spine.ConditionConfigMediaBucketMissing,
 	Run: func(s Snapshot) Result {
-		facts, found, err := readSiteFacts(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !found {
-			return uncheckedResult(factsAbsentDetail)
-		}
-		if !facts.HasMediaBucketBinding {
-			return skipResult(skipConfigMediaBucketNone)
-		}
-		wrangler, wranglerFound, err := ReadWranglerConfig(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !wranglerFound {
-			return skipResult(noWranglerFoundDetail)
-		}
-		if !slices.Contains(wrangler.R2Buckets, facts.MediaBucketBinding) {
-			return failResult(fmt.Sprintf(tmplConfigMediaBucketFail, facts.MediaBucketBinding))
-		}
-		return passResult(fmt.Sprintf(tmplConfigMediaBucketPass, facts.MediaBucketBinding))
+		return withSiteFacts(s, func(facts siteFacts) Result {
+			if !facts.HasMediaBucketBinding {
+				return skipResult(skipConfigMediaBucketNone)
+			}
+			return withWrangler(s, func(wrangler WranglerFacts) Result {
+				if !slices.Contains(wrangler.R2Buckets, facts.MediaBucketBinding) {
+					return failResult(fmt.Sprintf(tmplConfigMediaBucketFail, facts.MediaBucketBinding))
+				}
+				return passResult(fmt.Sprintf(tmplConfigMediaBucketPass, facts.MediaBucketBinding))
+			})
+		})
 	},
 }

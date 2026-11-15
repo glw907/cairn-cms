@@ -11,8 +11,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
-// adminLoginPath is the path the site-specific marker's /admin redirect must land on, ported
-// from the retired Node wizard's admin login path.
+// adminLoginPath is the path the site-specific marker's /admin redirect must land on.
 const adminLoginPath = "/admin/login"
 
 // servingCheck confirms the hostname serves the site:
@@ -30,14 +29,15 @@ func (servingCheck) Needs() Tier { return TierNone }
 
 // Run implements Check.
 func (servingCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
-	return probeServing(ctx, c.Probe, r, r.Domain)
+	return probeServing(ctx, c.Probe, r)
 }
 
-// probeServing is confirmHostname's logic: HTTPS is tried first, falling back to HTTP only
-// when HTTPS never reaches an HTTP response at all (a missing certificate, DNS not yet
-// resolving, or a refused connection). Reaching HTTP with the marker pair intact means only the
-// certificate is still issuing; reaching neither at all defers to the DNS diagnosis.
-func probeServing(ctx context.Context, probe *providers.Probe, r record.Record, domain string) spine.Outcome {
+// probeServing tries HTTPS first, falling back to HTTP only when HTTPS never reaches an HTTP
+// response at all (a missing certificate, DNS not yet resolving, or a refused connection).
+// Reaching HTTP with the marker pair intact means only the certificate is still issuing;
+// reaching neither at all defers to the DNS diagnosis of r.Domain.
+func probeServing(ctx context.Context, probe *providers.Probe, r record.Record) spine.Outcome {
+	domain := r.Domain
 	if primary := probeOrigin(ctx, probe, "https://"+domain); primary.reachable {
 		if primary.matches {
 			return spine.Outcome{State: spine.OK}
@@ -52,11 +52,11 @@ func probeServing(ctx context.Context, probe *providers.Probe, r record.Record, 
 		return servingMismatch(fallback)
 	}
 
-	return diagnoseUnreachable(ctx, probe, r, domain, providers.RequestTimeout)
+	return diagnoseUnreachable(ctx, probe, r, providers.RequestTimeout)
 }
 
-// originProbe is one origin's reachability and marker match, mirroring hostname.mjs's
-// probeOrigin return shape: matches and serves are only meaningful when reachable is true.
+// originProbe is one origin's reachability and marker match: matches and serves are only
+// meaningful when reachable is true.
 type originProbe struct {
 	reachable bool
 	matches   bool
@@ -78,9 +78,8 @@ func servingMismatch(p originProbe) spine.Outcome {
 	return spine.Outcome{State: spine.Failing, Code: spine.CodeServingMismatch, Detail: detailServingHostnameMismatch}
 }
 
-// probeOrigin fetches origin's "/" and "/admin" (unfollowed), the way hostname.mjs's
-// matchesMarker does, treating a transport failure on either fetch as unreachable rather than a
-// mismatch.
+// probeOrigin fetches origin's "/" and "/admin" (unfollowed), treating a transport failure on
+// either fetch as unreachable rather than a mismatch.
 func probeOrigin(ctx context.Context, probe *providers.Probe, origin string) originProbe {
 	root, err := probe.Get(ctx, origin+"/")
 	if err != nil {
@@ -127,8 +126,8 @@ func matchesMarker(origin string, root, admin *http.Response) bool {
 	return base.ResolveReference(target).Path == adminLoginPath
 }
 
-// diagnoseUnreachable is confirmHostname's propagation split (hostname.mjs's diagnoseUnreachable)
-// for the case where neither scheme connects at all: it reads the apex AAAA record, the same
+// diagnoseUnreachable splits propagation states for the case where neither scheme connects at
+// all: it reads the apex AAAA record, the same
 // record a Custom Domain attach itself writes, against the zone's authoritative
 // nameservers, which no recursive resolver's negative cache sits in front of. Present there
 // means only the caller's resolver has not caught up; absent, or no authoritative read
@@ -139,17 +138,18 @@ func matchesMarker(origin string, root, admin *http.Response) bool {
 // not a pair a domain may have since moved away from, so an ordinary LookupNS is tried first and
 // wins outright whenever it answers with at least one nameserver. Only when that lookup answers
 // with none, or errors outright, does the sweep fall back to r's saved assigned pair
-// (assignedNameServers): minutes after a registrar delegation, the operator's resolver can
+// (Cloudflare.NameServers): minutes after a registrar delegation, the operator's resolver can
 // still hold a negative answer for NS while Cloudflare's nameservers already serve the apex
 // record, and only the saved pair can catch that case as resolver-lagging rather than
 // records-absent. When neither source yields a nameserver, or every authoritative query in the
 // sweep fails outright, the outcome is records-absent, the conservative default. budget is the
 // wall-clock ceiling for the whole sweep below, not a per-nameserver allowance, so a domain whose
 // nameservers are all unreachable cannot hold the check for budget times the nameserver count.
-func diagnoseUnreachable(ctx context.Context, probe *providers.Probe, r record.Record, domain string, budget time.Duration) spine.Outcome {
+func diagnoseUnreachable(ctx context.Context, probe *providers.Probe, r record.Record, budget time.Duration) spine.Outcome {
+	domain := r.Domain
 	hosts := discoveredNameServerHosts(ctx, probe, domain)
 	if len(hosts) == 0 {
-		hosts = assignedNameServers(r)
+		hosts = r.Cloudflare.NameServers()
 	}
 	if len(hosts) == 0 {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkHostnameRecordsAbsent)}

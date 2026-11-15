@@ -171,6 +171,48 @@ func TestDelegationCheckUnrecordedAndZoneSilentIsUnknown(t *testing.T) {
 	}
 }
 
+// countingRoundTripper counts the requests that reach the wrapped transport.
+type countingRoundTripper struct {
+	next  http.RoundTripper
+	calls int
+}
+
+func (rt *countingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	rt.calls++
+	return rt.next.RoundTrip(req)
+}
+
+// TestDelegationCheckReadsTheZoneAtMostOnce asserts the zone is read once when the pair
+// matches or the record carries none, and not at all when a recorded pair does not match the
+// live nameservers.
+func TestDelegationCheckReadsTheZoneAtMostOnce(t *testing.T) {
+	tests := []struct {
+		name      string
+		r         record.Record
+		live      []string
+		wantCalls int
+	}{
+		{"recorded pair mismatches live", delegationRecord(t, assignedPair), []string{"ns1.old-registrar.test"}, 0},
+		{"recorded pair matches live", delegationRecord(t, assignedPair), assignedPair, 1},
+		{"no recorded pair", record.Record{Domain: "example.test"}, assignedPair, 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := &countingRoundTripper{next: zoneRoundTripper{status: http.StatusOK, body: zoneEnvelope("active")}}
+			c := Clients{
+				Probe:  providers.NewProbe(http.DefaultTransport, delegationResolver(tt.live)),
+				CF:     cfClient(rt),
+				HaveCF: true,
+			}
+
+			(delegationCheck{}).Run(context.Background(), tt.r, c, Options{})
+			if rt.calls != tt.wantCalls {
+				t.Errorf("zone requests = %d, want %d", rt.calls, tt.wantCalls)
+			}
+		})
+	}
+}
+
 func TestDelegationCheckAPIErrorIsUnknownNotFailing(t *testing.T) {
 	r := delegationRecord(t, assignedPair)
 	c := Clients{

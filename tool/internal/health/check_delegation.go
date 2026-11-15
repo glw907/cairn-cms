@@ -2,7 +2,6 @@ package health
 
 import (
 	"context"
-	"encoding/json"
 	"net"
 	"strings"
 
@@ -23,14 +22,12 @@ func (delegationCheck) ID() string { return "delegation" }
 // state through the Cloudflare API.
 func (delegationCheck) Needs() Tier { return TierCF }
 
-// Run implements Check. Unlike checkDelegation's alreadyActive short circuit, which exists only
-// to skip a needless lookup during interactive provisioning, Run always measures the live
-// nameservers and, once they match, the live zone state: a recurring health check has no
-// provisioning-time flag to trust, and the zone the account was assigned can only be confirmed
-// by asking it. The pair to compare against comes from the record when it carries one and from
+// Run implements Check. It always measures the live nameservers and, once they match, the live
+// zone state: a recurring health check has no provisioning-time flag to trust, and the zone the
+// account was assigned can only be confirmed by asking it. The pair to compare against comes from the record when it carries one and from
 // the zone otherwise, so an adopted record missing the key still settles a verdict.
 func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
-	assigned := assignedNameServers(r)
+	assigned := r.Cloudflare.NameServers()
 
 	// A record adopted before the registry carried the pair, or written by a tool that never
 	// recorded it, is not unobservable: the zone itself reports the nameservers Cloudflare
@@ -38,12 +35,9 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 	// read once and reused below, so the fallback costs no extra call on the path that needs it.
 	var zone *providers.Zone
 	if len(assigned) == 0 {
-		z, err := c.CF.ZoneByName(ctx, r.Domain)
-		if err != nil {
-			return apiErrorOutcome(err)
-		}
-		if z == nil {
-			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone}
+		z, settled := readZone(ctx, c, r.Domain)
+		if settled != nil {
+			return *settled
 		}
 		if len(z.NameServers) == 0 {
 			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoAssignedNS}
@@ -60,12 +54,9 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 	}
 
 	if zone == nil {
-		z, err := c.CF.ZoneByName(ctx, r.Domain)
-		if err != nil {
-			return apiErrorOutcome(err)
-		}
-		if z == nil {
-			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone}
+		z, settled := readZone(ctx, c, r.Domain)
+		if settled != nil {
+			return *settled
 		}
 		zone = z
 	}
@@ -75,27 +66,23 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 	return spine.Outcome{State: spine.OK}
 }
 
-// assignedNameServers reads the "nameServers" key the Node CLI persists under a record's
-// "cloudflare" object (chapter2.mjs: cloudflare: { domain, zoneId, nameServers, alreadyActive }).
-// record.Cloudflare does not type that key, so it round-trips through Extra; a record with no
-// such key, or one this package cannot decode as a string slice, reports nil.
-func assignedNameServers(r record.Record) []string {
-	for _, extra := range r.Cloudflare.Extra {
-		if extra.Key != "nameServers" {
-			continue
-		}
-		var nameServers []string
-		if err := json.Unmarshal(extra.Value, &nameServers); err != nil {
-			return nil
-		}
-		return nameServers
+// readZone reads the account's zone for domain. A non-nil outcome settles the check: the read
+// failed, or the account has no such zone.
+func readZone(ctx context.Context, c Clients, domain string) (*providers.Zone, *spine.Outcome) {
+	z, err := c.CF.ZoneByName(ctx, domain)
+	if err != nil {
+		out := apiErrorOutcome(err)
+		return nil, &out
 	}
-	return nil
+	if z == nil {
+		out := spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone}
+		return nil, &out
+	}
+	return z, nil
 }
 
 // nameServersMatch reports whether every assigned nameserver appears in actual, comparing
-// case-insensitively and ignoring a trailing root dot, the way zone.mjs's
-// actualLower.has(ns.toLowerCase()) comparison does.
+// case-insensitively and ignoring a trailing root dot.
 func nameServersMatch(assigned []string, actual []*net.NS) bool {
 	actualLower := make(map[string]bool, len(actual))
 	for _, ns := range actual {
@@ -109,13 +96,12 @@ func nameServersMatch(assigned []string, actual []*net.NS) bool {
 	return true
 }
 
-// cloudflareNSSuffix is the suffix every Cloudflare-assigned nameserver hostname carries, ported
-// from zone.mjs's CLOUDFLARE_NS_PATTERN (/\.ns\.cloudflare\.com$/i).
+// cloudflareNSSuffix is the suffix every Cloudflare-assigned nameserver hostname carries.
 const cloudflareNSSuffix = ".ns.cloudflare.com"
 
 // looksLikeCloudflareNS reports whether actual carries at least one Cloudflare-shaped
-// nameserver, which zone.mjs reads as "delegated to Cloudflare, but not to this account" rather
-// than "not delegated at all".
+// nameserver, which reads as "delegated to Cloudflare, but not to this account" rather than "not
+// delegated at all".
 func looksLikeCloudflareNS(actual []*net.NS) bool {
 	for _, ns := range actual {
 		if strings.HasSuffix(normalizeNS(ns.Host), cloudflareNSSuffix) {

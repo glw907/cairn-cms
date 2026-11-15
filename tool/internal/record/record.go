@@ -92,6 +92,39 @@ type Cloudflare struct {
 	order []string
 }
 
+// nameServersKey is the "cloudflare" key that holds the zone's assigned nameserver pair.
+const nameServersKey = "nameServers"
+
+// NameServers returns the nameserver pair Cloudflare assigned the zone, or nil when the record
+// carries no such key or its value is not a string array. The key travels in Extra, untyped.
+func (c *Cloudflare) NameServers() []string {
+	for _, e := range c.Extra {
+		if e.Key != nameServersKey {
+			continue
+		}
+		var ns []string
+		if err := json.Unmarshal(e.Value, &ns); err != nil {
+			return nil
+		}
+		return ns
+	}
+	return nil
+}
+
+// SetNameServers records the assigned nameserver pair, replacing an existing entry in place so
+// a parsed record keeps the key's observed position and appending one otherwise.
+func (c *Cloudflare) SetNameServers(ns []string) {
+	// json.Marshal of a []string cannot fail.
+	raw, _ := json.Marshal(ns)
+	for i := range c.Extra {
+		if c.Extra[i].Key == nameServersKey {
+			c.Extra[i].Value = raw
+			return
+		}
+	}
+	c.Extra = append(c.Extra, ExtraField{Key: nameServersKey, Value: raw})
+}
+
 func (c *Cloudflare) setOrder(order []string) { c.order = order }
 func (c *Cloudflare) addExtra(e ExtraField)   { c.Extra = append(c.Extra, e) }
 func (c *Cloudflare) keyOrder() []string      { return c.order }

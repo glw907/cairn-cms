@@ -10,8 +10,8 @@ import (
 
 // field wraps value as a spine.OutcomeField named key that every render carries. Non-verbose is
 // the default, so a value only a verbose render may carry (an account id, a zone id, a worker
-// name, a repository slug, a full commit SHA, a build id) must go through verboseField instead;
-// a check cannot leave that decision to a rendering-time filter.
+// name, a repository slug, a full commit SHA, a build id) must set the field's Verbose flag, as
+// verboseObservedField does; a check cannot leave that decision to a rendering-time filter.
 //
 // Every key names what it measures, never its category: "errorCount", not "count". A generic
 // name collides the moment one check reports two of the same category, and it leaves a reader of
@@ -23,14 +23,6 @@ import (
 func field(key string, value any) spine.OutcomeField {
 	data, _ := json.Marshal(value)
 	return spine.OutcomeField{Key: key, Value: data}
-}
-
-// verboseField wraps value as a spine.OutcomeField named key that only a verbose render carries.
-// A non-verbose render drops the field entirely, key and value.
-func verboseField(key string, value any) spine.OutcomeField {
-	f := field(key, value)
-	f.Verbose = true
-	return f
 }
 
 // observedField wraps value as a spine.OutcomeField named key whose value was copied out of a
@@ -49,7 +41,7 @@ func observedField(key string, value any, source spine.FieldSource) spine.Outcom
 }
 
 // verboseObservedField wraps value as a copied field only a verbose render carries, the
-// intersection of verboseField and observedField.
+// intersection of the Verbose flag and observedField.
 func verboseObservedField(key string, value any, source spine.FieldSource) spine.OutcomeField {
 	f := observedField(key, value, source)
 	f.Verbose = true

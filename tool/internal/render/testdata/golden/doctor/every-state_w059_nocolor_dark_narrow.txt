@@ -11,8 +11,8 @@
   → Declare the send_email binding as EMAIL and the
     d1_databases binding as AUTH_DB in wrangler.jsonc (or
     wrangler.toml), then re-deploy.
-    https://cairn.pub/docs/admin/is-it-working#deploy-the-w
-    orker-with-its-bindings
+    cairn.pub/docs/admin/is-it-working#deploy-the-worker-wi
+    th-its-bindings
   □ Workers Logs has no sink
     observability.enabled is not true
     observability.enabled is not true in the wrangler
@@ -20,8 +20,8 @@
     runtime failure leaves nothing to read.
   → Set observability.enabled to true in wrangler.jsonc,
     then re-deploy.
-    https://cairn.pub/docs/admin/is-it-working#turn-on-obse
-    rvability
+    cairn.pub/docs/admin/is-it-working#turn-on-observabilit
+    y
 
   could not run
   ? The stated AI posture is not the served one

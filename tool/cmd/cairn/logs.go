@@ -116,7 +116,7 @@ func writeLogs(cmd *cobra.Command, d deps, rf *rootFlags, entries []logs.Entry, 
 		}
 		return writeJSONPayload(cmd.OutOrStdout(), data)
 	}
-	// A terminal gets the log body, which states the day once on a separate rule and wraps a field
+	// A terminal gets the log body, which states the day once on its title and wraps a field
 	// into a separate column. A pipe keeps the tab-separated line, which is what a grep, an awk,
 	// and an agent read.
 	if in, ok := logsRenderInput(d, rf, entries, site); ok {

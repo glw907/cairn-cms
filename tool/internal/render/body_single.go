@@ -157,13 +157,13 @@ func (t theme) fixBlock(fix health.Fix, hasFix bool, col, width int) []string {
 	if !hasFix {
 		return nil
 	}
-	return t.fixLines(fix.Text, fixURL(fix), true, col, width)
+	return t.fixLines(fix.Text, fixURL(fix), col, width)
 }
 
 // fixLines is fixBlock's layout for a fix sentence and its resolved address, the form a doctor
 // failure's fix shares. An empty text draws nothing and an empty url draws the sentence alone.
-// bare prints the address without its scheme, measured as printed, while the link keeps it.
-func (t theme) fixLines(text, url string, bare bool, col, width int) []string {
+// The address prints without its scheme and is measured as printed, while the link keeps it.
+func (t theme) fixLines(text, url string, col, width int) []string {
 	if text == "" {
 		return nil
 	}
@@ -171,10 +171,7 @@ func (t theme) fixLines(text, url string, bare bool, col, width int) []string {
 	if url == "" {
 		return out
 	}
-	shown := url
-	if bare {
-		shown = strings.TrimPrefix(strings.TrimPrefix(url, "https://"), "http://")
-	}
+	shown := strings.TrimPrefix(strings.TrimPrefix(url, "https://"), "http://")
 	ink := t.Style(style.RoleMuted)
 	if linkable(url) {
 		ink = t.DocLink(url)

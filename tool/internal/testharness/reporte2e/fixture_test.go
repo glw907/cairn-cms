@@ -87,6 +87,8 @@ type fixture struct {
 // newFixture builds a fixture whose site host answers each request after siteDelay, which is
 // what keeps a run going long enough to watch. It skips the test on any system but Linux, for
 // the reason testharness.NewCase gives.
+//
+//nolint:unparam // the Linux-only pty tests pass a delay; other systems compile only the zero callers
 func newFixture(t *testing.T, siteDelay time.Duration) *fixture {
 	t.Helper()
 	if runtime.GOOS != "linux" {

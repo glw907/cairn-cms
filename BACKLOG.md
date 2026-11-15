@@ -6,6 +6,8 @@
 
 ## Medium
 
+- [ ] **#525** Waymark's header brand link overflows a 320 px viewport when the site name is long `#bug` `#cairn-cms` *(2026-11-15)*
+  `themes/waymark` sets `whitespace-nowrap` on the brand link's name span, so "The Turnagain Geographic Society" (32 characters) runs 13 px past the viewport at 320 on every page of the organization demo (`scrollWidth` 333, found in pennant pass 3's render read). The footer wordmark wraps at the same width. A theme must hold the 320 bar for any site name a developer sets. Placement: the next catalog pass, in `themes/waymark` and the chassis header it copies.
 - [ ] **#524** Test comments in `tool/cmd/cairn` still cite plan criteria and rounds, and `-update-help` fails one test `#improvement` `#cairn-cms` *(2026-11-15)*
   The pass-3 close round removed drafting citations from non-test comments and left the tests. About 22 comments name "criterion N" (`ack_test.go:222`, `:256`, `:296`; `auth_test.go:148`, `:351`, `:379`; `auth_check_test.go:408`; `doctor_test.go:208`; `health_sweep_test.go:187`, `:245`, `:258`, `:294`, `:338`; `messages_test.go:16`, `:217`, `:322`, `:334`, `:337`, `:351`, `:360`, `:385`) or a round (`new_sandbox_test.go:114`, `health_quiet_test.go:47` and `:118`, `adopt_groups_test.go:106`, `auth_check_test.go:320`, `health_test.go:226`, `messages_test.go:403-405`). Five non-test comments still carry provenance: `root.go:32-34`, `health_sweep.go:212-213`, `messages.go:672`, `adopt.go:13-14`, and `messages.go:542`. `auth_test.go:378` asserts a struct field equals `os.Stdin`, which tests wiring, not behaviour. Separately, `go test ./cmd/cairn -run Help -update-help` rewrites the goldens and then fails `TestBareCairnPrintsHelpOnAPipe`, so a regeneration needs a second plain run. Placement: the refactor pass named in #508, since it edits the same files.
 - [ ] **#523** The light `cairn health` shots show four layout and copy findings `#improvement` `#cairn-cms` *(2026-11-15)*
@@ -358,6 +360,14 @@
 
 ## Low
 
+- [ ] **#526** The home page `<title>` repeats the site name when the home title equals `siteName` `#improvement` `#cairn-cms` *(2026-11-15)*
+  `examples/showcase/src/routes/(site)/+page.svelte:55` builds `${title} · ${siteName}`, so the organization demo reads "The Turnagain Geographic Society · The Turnagain Geographic Society" once pass 3 sets `siteName` from the home title. Drop the suffix on the home route, or when the two are equal. Found in pennant pass 3 (plan M18). Placement: the next catalog pass.
+- [ ] **#527** remark-gfm autolinks every email address in set content, and no escape stops it `#improvement` `#cairn-cms` *(2026-11-15)*
+  `\@` and `&#64;` still render a `mailto:` link; only a code span shows an address as text. A set page that wants a plain address, or a card that must carry no link (the home "Questions" card), cannot get one. Found in pennant pass 3. Placement: the pass that keys the facts-row style on a card title with no link.
+- [ ] **#528** The catalog index schema admits only `https://` URLs, so a publish test cannot serve its fake bucket from `127.0.0.1` `#improvement` `#cairn-cms` *(2026-11-15)*
+  `scripts/catalog/publish.test.mjs` keeps `CATALOG_ORIGIN` at `https://catalog-proving.example` and swaps the origin while serving `index.json`, because a loopback address fails the index validation. The swap is test-only code that a looser test origin would remove. Found in pennant pass 3 (T3). Placement: the next catalog pass.
+- [ ] **#529** Pass branches and `main` reused backlog ids `#494` to `#502` for different items `#improvement` `#cairn-cms` *(2026-11-15)*
+  Merging `origin/main` into `pennant-3` kept both sides' entries, so two items share each of those ids. A cross-reference such as "see #497" is ambiguous until one set is renumbered. Number from the highest id on `origin/main` when filing in a pass branch, or renumber at the merge. Found in pennant pass 3. Placement: the next backlog sweep.
 - [ ] **#522** Pass 2's changelog entry says pipe output is unchanged "apart from one sentence in `cairn --help`" `#improvement` `#cairn-cms` *(2026-11-15)*
   Pass 4 (PR #252) drops `provider-console` from the actor sentence in `cairn help agents` too (`tool/cmd/cairn/messages.go` and `tool/testdata/copy.golden.md`; no help golden changes), so the changelog sentence undercounts by one. Geoff's schema ruling put `MIGRATION-NOTES.md` in scope and its sentence now names the help line; pass 2's changelog entry still needs the one-line edit. Found by pass 4. Placement: the round's close packet.
 - [ ] **#521** Comments still cite retired Node names, and one cites a method that no longer exists `#improvement` `#cairn-cms` *(2026-11-15)*

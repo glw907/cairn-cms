@@ -100,7 +100,7 @@ func main() {
 func runTree(parent context.Context, d deps, out, errOut io.Writer, args []string) (code int) {
 	defer func() {
 		if p := recover(); p != nil {
-			_, _ = fmt.Fprintln(errOut, commandCrashedMessage(commandPath(args), fmt.Sprintf("%T", p)))
+			writeError(d, errOut, args, errors.New(commandCrashedMessage(commandPath(args), fmt.Sprintf("%T", p))))
 			code = int(spine.VerdictUnknown)
 		}
 	}()
@@ -120,7 +120,7 @@ func runTree(parent context.Context, d deps, out, errOut io.Writer, args []strin
 	// A coded error carries a verdict and no message: the command that returned one has already
 	// printed everything the operator needs, so printing again would double it.
 	if _, coded := errors.AsType[codedError](err); !coded {
-		_, _ = fmt.Fprintln(errOut, translateError(err))
+		writeError(d, errOut, args, translateError(err))
 	}
 	return int(exitVerdict(err))
 }

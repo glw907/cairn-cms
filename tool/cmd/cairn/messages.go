@@ -7,6 +7,9 @@
 // A template constant is named `tmplXxx`; the function beside it renders the template and, for
 // an error, wraps the result in translatedError so main's boundary (translateError, in
 // main.go) knows the message already carries this table's shape and does not wrap it twice.
+// An error whose last line is a Run line is split in two beside its constructor: the message
+// (`whatXxx`, or a template) and the fix (`fixXxx`, or `tmplXxxFix` when it is a template), both
+// stored without the cairn: prefix, which fixed adds.
 // `make copy-list` (cmd/copylist) reads every string-valued const this file declares at the
 // package level, by parsing the source rather than importing it: cmd/cairn is package main, and
 // Go forbids importing a main package, so the golden generator statically extracts the same
@@ -36,6 +39,25 @@ type translatedError struct{ error }
 // translated wraps err as a translatedError.
 func translated(err error) error {
 	return translatedError{err}
+}
+
+// fixError is a table error whose last line is the command that repairs it, held apart from the
+// message so a terminal can draw it on the fix mark. Error joins the two with a newline: the bytes
+// a pipe, a log file, and a script reading stderr have always received.
+type fixError struct {
+	message string
+	fix     string
+}
+
+// Error returns the message, then the fix on its own line.
+func (e fixError) Error() string {
+	return e.message + "\n" + e.fix
+}
+
+// fixed builds a fixError from what, given the cairn: prefix every table error carries, and the
+// fix that repairs it, wrapped as a translatedError like every other constructor's result.
+func fixed(what, fix string) error {
+	return translated(fixError{message: fmt.Sprintf(tmplFallback, what), fix: fix})
 }
 
 // The persistent flags' help text, root.go's PersistentFlags declarations.
@@ -77,32 +99,41 @@ const (
 // refusal, then the help of the command the flag was given to rather than the root's. Adapted
 // from catalogue section 3.8's usage row, whose second line is already "Run `cairn health
 // --help` for usage".
-const tmplFlagError = "cairn: %v.\nRun `%s --help` for usage"
+const (
+	tmplFlagError    = "%v."
+	tmplFlagErrorFix = "Run `%s --help` for usage"
+)
 
 // flagError renders tmplFlagError for cobra's message and the full command path the flag
 // was given to, which cobra reports already carrying the binary name.
 func flagError(path string, cause error) error {
-	return translated(fmt.Errorf(tmplFlagError, cause, path))
+	return fixed(fmt.Sprintf(tmplFlagError, cause), fmt.Sprintf(tmplFlagErrorFix, path))
 }
 
 // tmplUnknownCommand is the root command's refusal of a word that names no command. Cobra's
 // NoArgs message is one line, and the usage-error row of catalogue section 3.8 is two: the
 // refusal, then where to read what the tool does accept.
-const tmplUnknownCommand = "cairn: %q is not a cairn command.\nRun `cairn --help` for the commands"
+const (
+	tmplUnknownCommand = "%q is not a cairn command."
+	fixUnknownCommand  = "Run `cairn --help` for the commands"
+)
 
 // unknownCommandError renders tmplUnknownCommand for the word the operator gave.
 func unknownCommandError(word string) error {
-	return translated(fmt.Errorf(tmplUnknownCommand, word))
+	return fixed(fmt.Sprintf(tmplUnknownCommand, word), fixUnknownCommand)
 }
 
-// tmplAuthNoSubcommand is cairn auth's refusal of a run naming no subcommand. A command group
+// whatAuthNoSubcommand and fixAuthNoSubcommand are cairn auth's refusal of a run naming no subcommand. A command group
 // with nothing to run is a usage error rather than a help request, so it exits 3 and writes its
 // help to stderr.
-const tmplAuthNoSubcommand = "cairn: cairn auth names a subcommand.\nRun `cairn auth --help` for the subcommands"
+const (
+	whatAuthNoSubcommand = "cairn auth names a subcommand."
+	fixAuthNoSubcommand  = "Run `cairn auth --help` for the subcommands"
+)
 
-// authNoSubcommandError renders tmplAuthNoSubcommand.
+// authNoSubcommandError renders whatAuthNoSubcommand and its fix.
 func authNoSubcommandError() error {
-	return translated(errors.New(tmplAuthNoSubcommand))
+	return fixed(whatAuthNoSubcommand, fixAuthNoSubcommand)
 }
 
 // tmplCommandCrashed is main.go's recovered-panic line, catalogue section 3.8's "a crashed
@@ -278,11 +309,14 @@ const (
 
 // tmplUnknownSite is health.go's and logs.go's shared refusal of a site id the registry does not
 // hold, catalogue section 3.8's "unknown site" row.
-const tmplUnknownSite = "cairn: no site named %q.\nRun `cairn sites list` to see the sites cairn knows"
+const (
+	tmplUnknownSite = "no site named %q."
+	fixUnknownSite  = "Run `cairn sites list` to see the sites cairn knows"
+)
 
 // unknownSiteError renders tmplUnknownSite for id.
 func unknownSiteError(id string) error {
-	return translated(fmt.Errorf(tmplUnknownSite, id))
+	return fixed(fmt.Sprintf(tmplUnknownSite, id), fixUnknownSite)
 }
 
 // tmplInvalidSince is health.go's and logs.go's shared refusal of a --since value ParseSince does
@@ -294,13 +328,16 @@ func invalidSinceError(s string) error {
 	return translated(fmt.Errorf(tmplInvalidSince, s))
 }
 
-// tmplHealthTooManyArgs is cairn health's refusal of more than one positional site argument,
+// whatHealthTooManyArgs and fixHealthTooManyArgs are cairn health's refusal of more than one positional site argument,
 // catalogue section 3.8's arity example rewritten for this command's noun.
-const tmplHealthTooManyArgs = "cairn: cairn health takes at most one site.\nRun `cairn health --help` for usage"
+const (
+	whatHealthTooManyArgs = "cairn health takes at most one site."
+	fixHealthTooManyArgs  = "Run `cairn health --help` for usage"
+)
 
-// healthTooManyArgsError renders tmplHealthTooManyArgs.
+// healthTooManyArgsError renders whatHealthTooManyArgs and its fix.
 func healthTooManyArgsError() error {
-	return translated(errors.New(tmplHealthTooManyArgs))
+	return fixed(whatHealthTooManyArgs, fixHealthTooManyArgs)
 }
 
 // doctor.go's Short, Long, and Example. The Long names what cairn health does not, so an
@@ -335,13 +372,16 @@ const (
 	flagDoctorJSONHelp = "print the report as JSON"
 )
 
-// tmplDoctorTooManyArgs is cairn doctor's refusal of more than one positional directory
+// whatDoctorTooManyArgs and fixDoctorTooManyArgs are cairn doctor's refusal of more than one positional directory
 // argument, catalogue section 3.8's arity example rewritten for this command's noun.
-const tmplDoctorTooManyArgs = "cairn: cairn doctor takes at most one directory.\nRun `cairn doctor --help` for usage"
+const (
+	whatDoctorTooManyArgs = "cairn doctor takes at most one directory."
+	fixDoctorTooManyArgs  = "Run `cairn doctor --help` for usage"
+)
 
-// doctorTooManyArgsError renders tmplDoctorTooManyArgs.
+// doctorTooManyArgsError renders whatDoctorTooManyArgs and its fix.
 func doctorTooManyArgsError() error {
-	return translated(errors.New(tmplDoctorTooManyArgs))
+	return fixed(whatDoctorTooManyArgs, fixDoctorTooManyArgs)
 }
 
 // tmplNotACairnSite is cairn doctor's one-line report when dir carries neither a wrangler
@@ -389,28 +429,35 @@ const tmplAdoptListRouteOnly = "cairn: the Workers after the blank line serve no
 // tmplAdoptNoDomain is cairn adopt's refusal of a Worker discovery found no Custom Domain for,
 // with no --domain given. It replaces a raw "record: domain is empty" from the validator, which
 // named neither the Worker nor the flag that resolves it.
-const tmplAdoptNoDomain = "cairn: no Custom Domain attached to Worker %q.\nRun `cairn adopt --worker %s --domain <domain>` naming the domain it serves"
+const (
+	tmplAdoptNoDomain    = "no Custom Domain attached to Worker %q."
+	tmplAdoptNoDomainFix = "Run `cairn adopt --worker %s --domain <domain>` naming the domain it serves"
+)
 
 // adoptNoDomainError renders tmplAdoptNoDomain for the Worker the operator named.
 func adoptNoDomainError(worker string) error {
-	return translated(fmt.Errorf(tmplAdoptNoDomain, worker, worker))
+	return fixed(fmt.Sprintf(tmplAdoptNoDomain, worker), fmt.Sprintf(tmplAdoptNoDomainFix, worker))
 }
 
-// tmplAdoptNoWorker is cairn adopt's refusal of a run with no --worker named.
-const tmplAdoptNoWorker = "cairn: cairn adopt names one Worker.\nRun `cairn adopt list` to see the Workers on the account"
+// whatAdoptNoWorker is cairn adopt's refusal of a run with no --worker named. fixAdoptNoWorker is
+// its fix, which tmplAdoptUnknownWorker shares.
+const (
+	whatAdoptNoWorker = "cairn adopt names one Worker."
+	fixAdoptNoWorker  = "Run `cairn adopt list` to see the Workers on the account"
+)
 
-// adoptNoWorkerError renders tmplAdoptNoWorker.
+// adoptNoWorkerError renders whatAdoptNoWorker and its fix.
 func adoptNoWorkerError() error {
-	return translated(errors.New(tmplAdoptNoWorker))
+	return fixed(whatAdoptNoWorker, fixAdoptNoWorker)
 }
 
 // tmplAdoptUnknownWorker is cairn adopt's refusal of a --worker name absent from the account's
 // Workers.
-const tmplAdoptUnknownWorker = "cairn: no Worker named %q on this account.\nRun `cairn adopt list` to see the Workers on the account"
+const tmplAdoptUnknownWorker = "no Worker named %q on this account."
 
 // adoptUnknownWorkerError renders tmplAdoptUnknownWorker for the name the operator gave.
 func adoptUnknownWorkerError(worker string) error {
-	return translated(fmt.Errorf(tmplAdoptUnknownWorker, worker))
+	return fixed(fmt.Sprintf(tmplAdoptUnknownWorker, worker), fixAdoptNoWorker)
 }
 
 // tmplAdoptAdded is cairn adopt's success line.
@@ -421,16 +468,19 @@ func adoptAddedMessage(name, domain string) string {
 	return fmt.Sprintf(tmplAdoptAdded, name, domain)
 }
 
-// tmplNoCloudflareCredential is the error cairn adopt and cairn logs both return when
+// whatNoCloudflareCredential is the error cairn adopt and cairn logs both return when
 // buildClients resolved no Cloudflare credential at all, catalogue section 3.8's "no
 // credentials" row narrowed to the one provider these two commands need. One function, so the
 // two commands cannot drift into naming a different variable from each other's copy of the same
 // message.
-const tmplNoCloudflareCredential = "cairn: no Cloudflare credentials found.\nRun `cairn auth set %s` to store one"
+const (
+	whatNoCloudflareCredential    = "no Cloudflare credentials found."
+	tmplNoCloudflareCredentialFix = "Run `cairn auth set %s` to store one"
+)
 
-// noCloudflareCredentialError renders tmplNoCloudflareCredential naming varCFReadToken.
+// noCloudflareCredentialError renders whatNoCloudflareCredential, its fix naming varCFReadToken.
 func noCloudflareCredentialError() error {
-	return translated(fmt.Errorf(tmplNoCloudflareCredential, varCFReadToken))
+	return fixed(whatNoCloudflareCredential, fmt.Sprintf(tmplNoCloudflareCredentialFix, varCFReadToken))
 }
 
 // auth.go's Short and Example, for auth and its four subcommands.
@@ -615,7 +665,8 @@ func ackFileUnreadableError(path string, cause error) error {
 }
 
 // tmplFallback is main.go's last resort, copy-standard.md section 4.2's "falling back to
-// cairn: <err> only for an error the table does not know."
+// cairn: <err> only for an error the table does not know." fixed gives a fix error's message the
+// same prefix, so its halves are stored without it.
 const tmplFallback = "cairn: %v"
 
 // translateError is main.go's one call into this table, copy-standard.md section 4.2's boundary:
@@ -684,19 +735,23 @@ resolver remember the name as missing, for up to 30 minutes.`
 
 // tmplNewRequires is the refusal of a run that leaves out a flag its mode needs, or that gives
 // a flag only another flag allows. It names the missing flag and the one that needs it.
-const tmplNewRequires = "cairn: %s is required with %s.\nRun `cairn new --help` for the flags"
+const (
+	tmplNewRequires = "%s is required with %s."
+	// fixNewFlags is the fix line every cairn new flag refusal shares.
+	fixNewFlags = "Run `cairn new --help` for the flags"
+)
 
 // newRequiresError renders tmplNewRequires.
 func newRequiresError(missing, with string) error {
-	return translated(fmt.Errorf(tmplNewRequires, missing, with))
+	return fixed(fmt.Sprintf(tmplNewRequires, missing, with), fixNewFlags)
 }
 
 // tmplNewConflict is the refusal of two flags that cannot be given together. It names both.
-const tmplNewConflict = "cairn: %s and %s cannot be used together.\nRun `cairn new --help` for the flags"
+const tmplNewConflict = "%s and %s cannot be used together."
 
 // newConflictError renders tmplNewConflict.
 func newConflictError(first, second string) error {
-	return translated(fmt.Errorf(tmplNewConflict, first, second))
+	return fixed(fmt.Sprintf(tmplNewConflict, first, second), fixNewFlags)
 }
 
 // tmplNewSandboxed is the refusal of a setup that runs inside a sandbox. Setup serves its approval
@@ -721,11 +776,11 @@ func newSandboxedError() error {
 }
 
 // tmplNewBadPosture is the refusal of a --posture outside the two values setup writes.
-const tmplNewBadPosture = "cairn: --posture takes decline or invite, not %q.\nRun `cairn new --help` for the flags"
+const tmplNewBadPosture = "--posture takes decline or invite, not %q."
 
 // newBadPostureError renders tmplNewBadPosture.
 func newBadPostureError(value string) error {
-	return translated(fmt.Errorf(tmplNewBadPosture, value))
+	return fixed(fmt.Sprintf(tmplNewBadPosture, value), fixNewFlags)
 }
 
 // newExitCodes is cairn new's exit code table, which the agent guide prints and a golden holds.
@@ -761,9 +816,6 @@ func newSetupTokenSpaceError() error {
 	return translated(fmt.Errorf(tmplSetupTokenSpace, varCFSetupToken))
 }
 
-// tmplNewUsage renders a refusal the agent view found in the flags or the plan file.
-const tmplNewUsage = "%s\nRun `cairn new --help` for the flags"
-
 // tmplNewHostOutsideZone is the refusal of a --host that is not the --zone or a subdomain of it.
 const tmplNewHostOutsideZone = "cairn: --host %s must be the zone %s or a subdomain of it"
 
@@ -772,49 +824,56 @@ func newHostOutsideZoneError(host, zone string) error {
 	return newUsageError(fmt.Sprintf(tmplNewHostOutsideZone, host, zone))
 }
 
-// newUsageError renders tmplNewUsage.
+// newUsageError renders a refusal the agent view found in the flags or the plan file, which
+// problem states whole, cairn: prefix included, with fixNewFlags under it.
 func newUsageError(problem string) error {
-	return translated(fmt.Errorf(tmplNewUsage, problem))
+	return translated(fixError{message: problem, fix: fixNewFlags})
 }
 
 // tmplNewUnfinished is the refusal of --plan while one unfinished setup exists.
-const tmplNewUnfinished = "cairn: an unfinished setup exists: %s.\nContinue it with --resume %s, or start a new site with --new.\nRun `cairn new --help` for the flags"
+const tmplNewUnfinished = "an unfinished setup exists: %s.\nContinue it with --resume %s, or start a new site with --new."
 
 // newUnfinishedError renders tmplNewUnfinished.
 func newUnfinishedError(id string) error {
-	return translated(fmt.Errorf(tmplNewUnfinished, id, id))
+	return fixed(fmt.Sprintf(tmplNewUnfinished, id, id), fixNewFlags)
 }
 
 // tmplNewSeveralUnfinished is the refusal of --plan while several unfinished setups exist.
-const tmplNewSeveralUnfinished = "cairn: several unfinished setups exist: %s.\nContinue one with --resume <id>, or start a new site with --new.\nRun `cairn new --help` for the flags"
+const tmplNewSeveralUnfinished = "several unfinished setups exist: %s.\nContinue one with --resume <id>, or start a new site with --new."
 
 // newSeveralUnfinishedError renders tmplNewSeveralUnfinished.
 func newSeveralUnfinishedError(ids []string) error {
-	return translated(fmt.Errorf(tmplNewSeveralUnfinished, strings.Join(ids, ", ")))
+	return fixed(fmt.Sprintf(tmplNewSeveralUnfinished, strings.Join(ids, ", ")), fixNewFlags)
 }
 
 // tmplNewNoSetup is the refusal of --resume with an id that names no unfinished setup.
-const tmplNewNoSetup = "cairn: no unfinished setup is named %s.\nRun `cairn new status` to list them"
+const (
+	tmplNewNoSetup = "no unfinished setup is named %s."
+	fixNewNoSetup  = "Run `cairn new status` to list them"
+)
 
 // newNoSetupError renders tmplNewNoSetup.
 func newNoSetupError(id string) error {
-	return translated(fmt.Errorf(tmplNewNoSetup, id))
+	return fixed(fmt.Sprintf(tmplNewNoSetup, id), fixNewNoSetup)
 }
 
 // tmplNewNoRunForPlan is the refusal of --apply with a plan whose run has no unfinished setup.
-const tmplNewNoRunForPlan = "cairn: the plan's runId is %s, and no unfinished setup has that run.\nRun `cairn new status` to list them, or run --plan again"
+const (
+	tmplNewNoRunForPlan = "the plan's runId is %s, and no unfinished setup has that run."
+	fixNewNoRunForPlan  = "Run `cairn new status` to list them, or run --plan again"
+)
 
 // newNoRunForPlanError renders tmplNewNoRunForPlan.
 func newNoRunForPlanError(runID string) error {
-	return translated(fmt.Errorf(tmplNewNoRunForPlan, runID))
+	return fixed(fmt.Sprintf(tmplNewNoRunForPlan, runID), fixNewNoRunForPlan)
 }
 
 // tmplNewPlanUnreadable is the refusal of a plan file that cannot be read.
-const tmplNewPlanUnreadable = "cairn: %v.\nRun `cairn new --help` for the flags"
+const tmplNewPlanUnreadable = "%v."
 
 // newPlanUnreadableError renders tmplNewPlanUnreadable.
 func newPlanUnreadableError(err error) error {
-	return translated(fmt.Errorf(tmplNewPlanUnreadable, err))
+	return fixed(fmt.Sprintf(tmplNewPlanUnreadable, err), fixNewFlags)
 }
 
 // tmplNewTemplateFetch is the stop of a terminal run whose template fetch failed before the

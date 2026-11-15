@@ -47,10 +47,8 @@ type Fix struct {
 
 // fixesByCondition is the fix table's engine-Condition half: the three condition ids this tool
 // can ever print (spine.Conditions() carries the engine's whole registry, but this tool's checks
-// declare only these three; see health's TestFixTableCoversDeclaredConditions). Two of the three
-// entries' Text and Command are copied from tool/docs/design/copy-standard.md section 3.5;
-// ConditionConfigObservabilityOff's is not in the catalogue, so its line is written directly here
-// to the same section 2.5 grammar, the same as fixesByCode's uncatalogued rows below.
+// declare only these three; see health's TestFixTableCoversDeclaredConditions). ConditionConfigObservabilityOff's
+// line is written for this tool alone, in the same plain form as fixesByCode's rows below.
 var fixesByCondition = map[spine.Condition]Fix{
 	spine.ConditionEdgeHTTPSNotForced: {
 		Text:    "Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates.",

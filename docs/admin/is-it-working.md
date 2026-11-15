@@ -18,7 +18,7 @@ The following list routes you to the right page for each situation.
    cairn doctor
    ```
 
-In a terminal, the report groups the checks under headings: failing checks first, each with its fix and link, then the checks that couldn't run, then any notes. The passing checks fold to one count line, such as `3 passing`, and the skipped ones to one `does not apply` line that names them. When the output goes to a pipe, a file, or a CI log, the report prints one line for each check instead, in the form that follows.
+In a terminal, the report groups the checks under headings: failing checks first, each with its fix and link, then the checks that couldn't run, then any notes. The passing checks fold to one count line, such as `3 passing`, and the skipped ones to one line, such as `2 do not apply`, that names them. When the output goes to a pipe, a file, or a CI log, the report prints one line for each check instead, in the form that follows.
 
 The following report comes from a run against a site just after its first deploy. Every line passed except one skip, which the sections after the report explain.
 
@@ -43,7 +43,7 @@ In this form, each line starts with one of five words:
 - `UNCHECKED`: the check applied but couldn't read the input it needed.
 - `INFO`: the check couldn't see enough to answer, or it carries an advisory.
 
-A terminal shows the same five results without the words. A `FAIL` check sits under `failing`, an `UNCHECKED` one under `could not run`, and an `INFO` one under `notes`. A `PASS` counts toward the `passing` line, and the `does not apply` line names each `SKIP`. The rest of this page uses the five words for both forms.
+A terminal shows the same five results without the words. A `FAIL` check sits under `failing`, an `UNCHECKED` one under `could not run`, and an `INFO` one under `notes`. A `PASS` counts toward the `passing` line, and the skip line, which reads `1 does not apply` or `<n> do not apply`, names each `SKIP`. The rest of this page uses the five words for both forms.
 
 A skip is neither a pass nor a failure. The one in the preceding report belongs to a check that applies only to a site that declares custom roles. This site declares none, so the check had nothing to examine. The title reads like a problem even though the line reports that the check wasn't needed.
 

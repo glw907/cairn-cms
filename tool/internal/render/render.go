@@ -144,12 +144,17 @@ func Render(in RenderInput) Frame {
 }
 
 // renderStatus draws the run's state and nothing else. A pipe keeps the line-oriented form, one
-// fact per line at the left edge; a terminal gets the titled block of mark rows.
+// fact per line at the left edge; a terminal gets the titled block of mark rows, opened by one
+// blank line that parts its title from the listing above it.
 func renderStatus(t theme, in RenderInput) Frame {
 	if in.Body == BodyPlain {
 		return t.clampFrame(Frame{body: t.statusLines(in, 0, in.width())}, in.width())
 	}
-	return t.clampFrame(Frame{body: t.listingLines(in, in.width())}, in.width())
+	lines := t.listingLines(in, in.width())
+	if len(lines) > 0 {
+		lines = append([]string{""}, lines...)
+	}
+	return t.clampFrame(Frame{body: lines}, in.width())
 }
 
 // Frame is render.Render's result, held as a header, a body, and a footer that carries the

@@ -5,41 +5,38 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/colorprofile"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
-// TestRuleHonoursRequestedWidthExactly holds the width contract: the requested width is honoured
+// TestFrameHonoursRequestedWidthExactly holds the width contract: the requested width is honoured
 // exactly, and the rungs are behavioural thresholds only, never a snap. A render at width 90 is
-// not byte-identical to one at width 80.
-func TestRuleHonoursRequestedWidthExactly(t *testing.T) {
+// not byte-identical to one at width 80, and neither prints a line past its width.
+func TestFrameHonoursRequestedWidthExactly(t *testing.T) {
+	render := func(w int) []string {
+		return Render(input(fixtures.OneSick(), BodySingle, w, colorprofile.ASCII, false, spine.VerdictCritical)).Lines()
+	}
+	r80, r90 := render(80), render(90)
+	if strings.Join(r80, "\n") == strings.Join(r90, "\n") {
+		t.Fatal("the frames at 80 and 90 are byte-identical; width must be honoured exactly, not snapped to a rung")
+	}
 	th := newTheme(true, colorprofile.ASCII, false)
-	r80 := th.rule(80)
-	r90 := th.rule(90)
-	if r80 == r90 {
-		t.Fatal("rule(80) and rule(90) are byte-identical; width must be honoured exactly, not snapped to a rung")
-	}
-	if got := th.Width(r80); got != 80 {
-		t.Errorf("width(rule(80)) = %d, want 80", got)
-	}
-	if got := th.Width(r90); got != 90 {
-		t.Errorf("width(rule(90)) = %d, want 90", got)
+	for w, lines := range map[int][]string{80: r80, 90: r90} {
+		for _, l := range lines {
+			if got := th.Width(l); got > w {
+				t.Errorf("a line at width %d is %d cells: %q", w, got, l)
+			}
+		}
 	}
 }
 
 // TestDegenerateWidthsNeverPanic is criterion 20: 0, 1, 2, 5, 19, and a negative value each render
-// without panicking, on both rule and clamp.
+// without panicking on clamp.
 func TestDegenerateWidthsNeverPanic(t *testing.T) {
 	widths := []int{0, 1, 2, 5, 19, -1, -400}
 	for _, w := range widths {
 		for _, ascii := range []bool{false, true} {
 			th := newTheme(true, colorprofile.TrueColor, ascii)
-			func() {
-				defer func() {
-					if r := recover(); r != nil {
-						t.Errorf("rule(%v, %d) panicked: %v", ascii, w, r)
-					}
-				}()
-				_ = th.rule(w)
-			}()
 			func() {
 				defer func() {
 					if r := recover(); r != nil {

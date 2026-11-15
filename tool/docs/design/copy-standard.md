@@ -416,6 +416,7 @@ Every user-facing string found in the sources. `delete` means the best rewrite i
 | `board-3` | `do these, worst first` | the origin of the defect | `what to fix` |
 | `ledger-2` | `── do this next ──` | invented imperative; duplicates the fix line above it | delete |
 | `ledger-2` | `── checks ──` | labels the only thing on screen | delete |
+| `cairn sites` | `credentials` | none; the title over the credential rows under a listing on a terminal, a bare lowercase noun naming what the rows are | keep |
 
 ### 3.3 The degraded notice and the skip group
 

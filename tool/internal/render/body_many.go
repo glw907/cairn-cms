@@ -23,6 +23,9 @@ import (
 
 // The strip's column budget.
 const (
+	// siteLead is the cells before the site column: the margin, the site's verdict mark, and the
+	// space after it, so the site name starts on the grid's name column.
+	siteLead = 4
 	// stripSep is the gutter between two heading columns, and the gutter before the verdict.
 	stripSep = 1
 	// siteColCap bounds the site column, so one 57-character domain cannot push the strip into
@@ -70,12 +73,12 @@ func stripHeadingsFor(ids []string) []string {
 	return out
 }
 
-// stripWidth returns the width the labelled strip needs: the site column, a gutter, every
-// heading with a gutter between each pair, a gutter, and the verdict column. It is the whole of
-// the fallback rule, computed rather than guessed, so a heading change moves the threshold
-// visibly rather than silently.
+// stripWidth returns the width the labelled strip needs: the lead, the site column, a gutter,
+// every heading with a gutter between each pair, a gutter, and the verdict column. It is the
+// whole of the fallback rule, computed rather than guessed, so a heading change moves the
+// threshold visibly rather than silently.
 func (t theme) stripWidth(headings []string, siteCol, verdictCol int) int {
-	total := siteCol + stripSep + stripSep + verdictCol
+	total := siteLead + siteCol + stripSep + stripSep + verdictCol
 	for i, h := range headings {
 		if i > 0 {
 			total += stripSep
@@ -132,8 +135,8 @@ func renderMany(t theme, in RenderInput) Frame {
 
 	f := Frame{header: t.verdictLines(in.Verdict, subject, tally, width)}
 	if len(ranked) > 0 {
-		f.header = append(f.header, t.indented(t.Style(style.RoleMuted), 0,
-			checkedPhrase(freshest(ranked, in.Now), in.Now, in.Status.Elapsed), width)...)
+		f.header = append(f.header, style.ContinuationLine(t.Theme, style.RoleMuted,
+			checkedPhrase(freshest(ranked, in.Now), in.Now, in.Status.Elapsed), colIndent, width)...)
 	}
 
 	var body []string
@@ -141,12 +144,13 @@ func renderMany(t theme, in RenderInput) Frame {
 		body = append(body, "")
 		body = append(body, t.siteBlock(in, ranked, width)...)
 	}
-	if lines := t.statusLines(in, 0, width); len(lines) > 0 {
+	if lines := t.statusLines(in, colIndent, width); len(lines) > 0 {
 		body = append(body, "")
 		body = append(body, lines...)
 	}
 	if fixes := t.fleetFixes(in, ranked, width); len(fixes) > 0 {
-		body = append(body, "", t.insetRule(labelWhatToFix, width))
+		body = append(body, "")
+		body = append(body, style.Title(t.Theme, labelWhatToFix, width)...)
 		body = append(body, fixes...)
 	}
 	f.body = body
@@ -186,14 +190,45 @@ func freshest(rs []health.Report, fallback time.Time) time.Time {
 }
 
 // siteBlock draws the fleet's rows: the labelled strip where the headings fit the requested
-// width, and the plain table where they do not.
+// width, and the plain table where they do not. Either sits on the grid: each site's verdict
+// mark at the margin and the block itself from the name column, so the headings line up over
+// the site names.
 func (t theme) siteBlock(in RenderInput, rs []health.Report, width int) []string {
 	ids := stripColumns()
 	siteCol := t.siteColWidth(rs)
+	var block []string
 	if t.stripWidth(stripHeadingsFor(ids), siteCol, verdictColWidth) <= width {
-		return t.stripBlock(in, rs, ids, siteCol)
+		block = t.stripBlock(in, rs, ids, siteCol)
+	} else {
+		block = t.tableBlock(in, rs, siteCol, width)
 	}
-	return t.tableBlock(in, rs, siteCol, width)
+	// Both blocks draw their heading line first and then one line per site, in rs's order.
+	out := make([]string, 0, len(block))
+	for i, l := range block {
+		if i == 0 || i > len(rs) {
+			out = append(out, strings.Repeat(" ", siteLead)+l)
+			continue
+		}
+		mark, role := t.siteMark(siteVerdict(rs[i-1]), in.Verdict)
+		out = append(out, strings.Repeat(" ", colIndent)+t.Style(role).Render(mark)+
+			strings.Repeat(" ", max(siteLead-colIndent-t.Width(mark), 1))+l)
+	}
+	return out
+}
+
+// siteMark returns the mark and ink one site's row takes from the verdict it reports, inside a
+// frame whose verdict is frame: the same mark a check reaching that verdict would take.
+func (t theme) siteMark(v, frame spine.Verdict) (mark string, role style.Role) {
+	switch v {
+	case spine.VerdictCritical:
+		return t.marks.Failing, style.RoleFailing
+	case spine.VerdictWarning:
+		return t.marks.FailingWarn, style.RoleUnknown
+	case spine.VerdictUnknown:
+		return t.marks.CouldNotRun, style.RoleUnknown
+	default:
+		return t.marks.Pass, passRole(frame)
+	}
 }
 
 // stripBlock draws the labelled status strip: one row per site, one real heading per check, the
@@ -296,10 +331,12 @@ var tableColumns = []struct {
 // and its verdict, the two a row means nothing without.
 const tableMandatoryColumns = 2
 
-// tableFit returns the column widths the table draws at width, and how many columns that is.
-// The site column takes siteCol, shrunk toward siteColFloor only when the two mandatory columns
-// alone do not fit, since a site column narrow enough to ellipsize every name buys nothing.
+// tableFit returns the column widths the table draws at width, after the lead, and how many
+// columns that is. The site column takes siteCol, shrunk toward siteColFloor only when the two
+// mandatory columns alone do not fit, since a site column narrow enough to ellipsize every name
+// buys nothing.
 func tableFit(siteCol, width int) (widths []int, columns int) {
+	width -= siteLead
 	widths = make([]int, len(tableColumns))
 	for i, c := range tableColumns {
 		widths[i] = c.width
@@ -386,7 +423,7 @@ func (t theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int
 		Rows(rows...).
 		BorderTop(false).BorderBottom(false).BorderLeft(false).BorderRight(false).
 		BorderRow(false).BorderColumn(false).BorderHeader(false).
-		Width(min(total, width)).
+		Width(min(total, width-siteLead)).
 		Wrap(false).
 		StyleFunc(func(r, c int) lipgloss.Style {
 			role, strong := tableRole(r, c, rows, verdicts, in.Verdict)
@@ -435,22 +472,6 @@ func blankZero(n int) string {
 	return strconv.Itoa(n)
 }
 
-// The fleet fix list's column budget. The sentence gets its width: the site and the
-// check name the fix on one line, and the sentence sits beneath them with a hanging indent, so
-// it never has to share a line with two columns and leave a stray verb behind.
-const (
-	fixIndent   = 2
-	fixArrowCol = 2
-	fixCheckCol = 14
-	fixSentence = 6
-	// fixGutter is the space kept between the site and the check, which a long name may not eat.
-	fixGutter = 2
-	// fixCheckFloor is the narrowest the check cell ever draws. The site column gives way to it
-	// rather than the other way round: a head line that cannot hold both names ellipsizes the
-	// site, which the row beneath it repeats, and keeps the check the fix is named by.
-	fixCheckFloor = 4
-)
-
 // fleetFix is one repair the fleet screen prints, with the facts it is ranked and drawn by.
 type fleetFix struct {
 	// site is the sanitized name of the worst-ranked site the fix belongs to, the one the entry's
@@ -486,14 +507,9 @@ type fleetFix struct {
 // cannot act on, and the list is already ranked; if a fleet ever outgrows the screen the honest
 // form is a named cap with a sentence, never a cipher.
 func (t theme) fleetFixes(in RenderInput, rs []health.Report, width int) []string {
-	// The site column is the longest name it holds, held to what the head line can pay for: at a
-	// narrow width the two names and the indent together outrun the line, and a column budgeted
-	// past the width is what a final clamp then cuts a name inside.
-	siteCol := min(t.siteColWidth(rs)+2,
-		max(width-fixIndent-fixArrowCol-fixCheckFloor, siteColFloor+fixGutter))
 	var out []string
 	for _, f := range rankFleetFixes(collectFleetFixes(in, rs)) {
-		out = append(out, t.fixEntry(in, f, siteCol, width)...)
+		out = append(out, t.fixEntry(in, f, width)...)
 	}
 	return out
 }
@@ -679,64 +695,70 @@ func compareBool(a, b bool) int {
 	}
 }
 
-// fixEntry draws one repair: the site and the check on one line with the greppable handle after
-// them, the sentence beneath with a hanging indent, and, for a fix covering more than one check,
-// the checks it covers.
+// fixEntry draws one repair as a mark row: the failure's mark, the site as the row's name, and
+// the check the fix is named by as its detail, with the greppable handle after it. The fix line
+// sits beneath at the row's detail column and, for a fix covering more than one check or site,
+// the checks and sites it covers follow there.
 //
 // The check name carries the documentation link here rather than a printed URL: a fleet list is
 // an index, and `cairn health <site>` is where the full fix with its URL lives.
-func (t theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string {
-	// What the head line has left for the check name and the handle after it.
-	room := max(width-fixIndent-fixArrowCol-siteCol, 1)
-
-	// The handle keeps the head line only where it fits whole. Below that it wraps to the
-	// sentence column beneath, the way a fix's URL wraps rather than being cut: half a condition
-	// id is a greppable handle for nothing, and the id is the whole reason it is printed.
-	tail := f.tail
-	var tailLines []string
-	if tail != "" && min(fixCheckCol, room)+t.Width(tail) > room {
-		// Below a width that holds the id whole on a line by itself it is not printed at all. A
-		// broken id is worse than an absent one, and --json carries it at every width.
-		if t.Width(tail) <= width-fixSentence {
-			tailLines = atColumn(t.Style(style.RoleMuted), fixSentence, []string{tail})
-		}
-		tail = ""
+func (t theme) fixEntry(in RenderInput, f fleetFix, width int) []string {
+	site := t.fitted(f.site, width-colIndent-2)
+	col := t.DetailColumn(site, width)
+	mark, role := t.marks.CouldNotRun, style.RoleUnknown
+	switch {
+	case f.blocked:
+	case criticalFailure(f.check):
+		mark, role = t.marks.Failing, style.RoleFailing
+	default:
+		mark = t.marks.FailingWarn
 	}
+	out := style.MarkRow(t.Theme, mark, role, site, "", width)
 
-	// The check cell takes a fixed width only where something follows it. A padded cell at the
-	// end of a line is trailing whitespace inside a styled block, which no trim can reach and
-	// every golden would carry.
-	checkCol := fixCheckCol
-	if tail == "" {
-		checkCol = t.Width(f.check)
-	}
-	checkCol = min(checkCol, room)
-	nameCell := t.Sized(style.RoleMuted, checkCol)
+	check := t.fitted(f.check, width-col)
+	checkStyle := t.Style(style.RoleSubtle)
 	if url := fixURL(f.fix); url != "" && !style.NoColor(in.Profile) && linkable(url) {
-		nameCell = t.SizedLink(style.RoleMuted, url, checkCol)
+		checkStyle = t.Link(style.RoleSubtle, url)
 	}
-	head := row(
-		strings.Repeat(" ", fixIndent),
-		t.cell(style.RoleAccent, t.marks.Fix, fixArrowCol),
-		t.SizedStrong(style.RoleText, siteCol).Render(t.fitted(f.site, siteCol-fixGutter)),
-		nameCell.Render(t.fitted(f.check, checkCol)),
-		t.Style(style.RoleMuted).Render(tail),
-	)
-	out := append([]string{strings.TrimRight(head, " ")}, tailLines...)
-	out = append(out, atColumn(t.Style(style.RoleSubtle), fixSentence,
-		t.Wrap(sanitize(f.fix.Text), width-fixSentence))...)
+	line := strings.Repeat(" ", col) + checkStyle.Render(check)
+	if col > t.Width(out[0]) {
+		line = out[0] + strings.Repeat(" ", col-t.Width(out[0])) + checkStyle.Render(check)
+		out = out[:0]
+	}
+	// The handle keeps the check's line only where it fits whole, and otherwise takes a line of
+	// its own at the detail column. Half a condition id is a greppable handle for nothing, so
+	// below a width that holds it whole it is not printed at all, and --json carries it at every
+	// width.
+	var tailLines []string
+	if f.tail != "" {
+		tail := t.Style(style.RoleMuted).Render(f.tail)
+		switch {
+		case t.Width(line)+2+t.Width(f.tail) <= width:
+			line += "  " + tail
+		case t.Width(f.tail) <= width-col:
+			tailLines = []string{strings.Repeat(" ", col) + tail}
+		}
+	}
+	out = append(out, line)
+	out = append(out, tailLines...)
+	// The sentence wraps through Wrap, which keeps a lone word from dangling on its last line, so
+	// FixLine is handed the first line alone and the rest follow at its column.
+	sentence := t.Wrap(sanitize(f.fix.Text), width-col)
+	if len(sentence) > 0 {
+		out = append(out, style.FixLine(t.Theme, sentence[0], "", col, width)...)
+		out = append(out, atColumn(t.Style(style.RoleSubtle), col, sentence[1:])...)
+	}
 	// A merged entry can cover, or list "also on:", as many sites as the fleet holds: one shared
-	// token disables the same checks fleet-wide, so both lists below wrap through Wrap rather
-	// than WrapGreedy, the same guard the sentence above already takes.
+	// token disables the same checks fleet-wide, so both lists below wrap through Wrap too.
 	if len(f.ids) > 1 {
-		out = append(out, atColumn(t.Style(style.RoleMuted), fixSentence,
-			t.Wrap(keyFixFor+strings.Join(f.ids, ", "), width-fixSentence))...)
+		out = append(out, atColumn(t.Style(style.RoleMuted), col,
+			t.Wrap(keyFixFor+strings.Join(f.ids, ", "), width-col))...)
 	}
 	if len(f.alsoOn) > 0 {
-		lead := strings.Repeat(" ", fixSentence) + t.Style(style.RoleMuted).Render(labelAlsoOn)
-		col := fixSentence + t.Width(labelAlsoOn)
-		out = append(out, t.hangingAt(t.Style(style.RoleMuted), lead, col,
-			strings.Join(t.fittedEach(f.alsoOn, width-col), ", "), width, true)...)
+		lead := strings.Repeat(" ", col) + t.Style(style.RoleMuted).Render(labelAlsoOn)
+		listCol := col + t.Width(labelAlsoOn)
+		out = append(out, t.hangingAt(t.Style(style.RoleMuted), lead, listCol,
+			strings.Join(t.fittedEach(f.alsoOn, width-listCol), ", "), width, true)...)
 	}
 	return out
 }

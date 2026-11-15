@@ -2,26 +2,19 @@ package render
 
 import (
 	"cmp"
-	"strings"
+	"slices"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
-// The single-site column budget. A glyph never sets a column: it sits in a measured field, so a
-// terminal that renders an East Asian Ambiguous glyph two cells wide shifts nothing after it.
-const (
-	colIndent = 2
-	colGlyph  = 2
-	// colWord fits the longest state word, "unknown", and one space. A cell is Width(n).MaxWidth(n),
-	// so a budget under the word's width would cut the word rather than overflow the column.
-	colWord = 8
-	colName = 14
-)
+// colIndent is the margin every terminal body's lines start at, the column style's blocks put a
+// mark and a title in.
+const colIndent = 2
 
 // renderSingle draws one site's health: the rows grouped by what the operator must do, in the
-// order they must do it, under lowercase inset rules, with each fix under the row it repairs.
+// order they must do it, under lowercase titles, with each fix under the row it repairs.
 func renderSingle(t theme, in RenderInput) Frame {
 	width := in.width()
 	report := firstReport(in)
@@ -30,15 +23,16 @@ func renderSingle(t theme, in RenderInput) Frame {
 	tally := s.tally(" " + t.marks.Sep + " ")
 
 	f := Frame{header: t.verdictLines(in.Verdict, subject, tally, width)}
-	f.header = append(f.header, t.indented(t.Style(style.RoleMuted), 0,
-		checkedPhrase(checkedAt(report, in.Now), in.Now, in.Status.Elapsed), width)...)
+	f.header = append(f.header, style.ContinuationLine(t.Theme, style.RoleMuted,
+		checkedPhrase(checkedAt(report, in.Now), in.Now, in.Status.Elapsed), colIndent, width)...)
 
 	var body []string
 	section := func(label string, cs []health.CheckResult) {
 		if len(cs) == 0 {
 			return
 		}
-		body = append(body, "", t.insetRule(label, width))
+		body = append(body, "")
+		body = append(body, style.Title(t.Theme, label, width)...)
 		for _, c := range cs {
 			body = append(body, t.checkRows(in, c, width)...)
 		}
@@ -47,16 +41,17 @@ func renderSingle(t theme, in RenderInput) Frame {
 	section(labelCouldNotRun, s.CouldNotRun)
 	section(labelHeld, s.Held)
 
-	// A run with nothing to do is the one frame that can afford to show its work, so every
-	// check is listed in the order the sweep ran them. Anywhere a failure is on screen the same
-	// checks fold into one muted line instead: nothing green belongs below a failure.
-	switch {
-	case len(s.Passing) == 0:
-	case in.Verdict == spine.VerdictOK:
-		section(labelPassing, s.Passing)
-	default:
+	// Passing checks fold into one count line in every run. Its mark takes the frame's pass ink,
+	// so nothing green sits below a failure.
+	if len(s.Passing) > 0 {
 		body = append(body, "")
 		body = append(body, t.foldLine(in, s.Passing, width)...)
+	}
+	// A passing creds check folds with the rest, and its credential detail follows the count line
+	// at its detail column, so a token's expiry still shows in a run where nothing failed.
+	if slices.ContainsFunc(s.Passing, func(c health.CheckResult) bool { return c.ID == credsRowID }) {
+		col := t.DetailColumn(count(len(s.Passing), labelPassing), width)
+		body = append(body, t.statusLines(in, col, width)...)
 	}
 	f.body = body
 
@@ -84,8 +79,7 @@ func (t theme) mark(in RenderInput, c health.CheckResult) (glyph string, role st
 	g := t.marks
 	switch {
 	case c.Outcome.State == spine.Failing && c.Acknowledged:
-		// WATCH: the held mark switches to Held here; every golden with a held row changes then.
-		return g.NotStarted, style.RoleUnknown
+		return g.Held, style.RoleUnknown
 	case c.Outcome.State == spine.Failing && criticalFailure(c.ID):
 		return g.Failing, style.RoleFailing
 	case c.Outcome.State == spine.Failing:
@@ -97,118 +91,47 @@ func (t theme) mark(in RenderInput, c health.CheckResult) (glyph string, role st
 	}
 }
 
-// keepsWord reports whether a row prints its state word beside the glyph. The word is dropped
-// only where hue carries the state: at the Unicode tier in colour, where the check id is the
-// row's subject and belongs as close to the margin as the glyph allows. The ASCII tier and any
-// no-colour terminal keep it unconditionally, since with no hue and no filled glyph the
-// word is the state's last carrier. It is decided here rather than by a flag: there is nothing
-// an operator can pass to remove the word from a frame that needs it.
-func keepsWord(in RenderInput) bool {
-	return in.ASCII || style.NoColor(in.Profile)
-}
-
-// wordRole returns the ink a state word takes. A held row keeps full-strength ink on its word
-// while spending no hue at all, and joins the attention ink once its hold is close to expiry.
-func (t theme) wordRole(c health.CheckResult, escalating bool) style.Role {
-	switch {
-	case c.Outcome.State == spine.Failing && c.Acknowledged && escalating:
-		return style.RoleUnknown
-	case c.Outcome.State == spine.Failing && c.Acknowledged:
-		return style.RoleText
-	case c.Outcome.State == spine.Failing && criticalFailure(c.ID):
-		return style.RoleFailing
-	case c.Outcome.State == spine.Failing, c.Outcome.State == spine.Unknown:
-		return style.RoleUnknown
-	default:
-		return style.RoleMuted
-	}
-}
-
-// detailCol is the column a row's detail starts at, which the state word moves six cells right
-// when the tier keeps one.
-func detailCol(in RenderInput) int {
-	if keepsWord(in) {
-		return colIndent + colGlyph + colWord + colName
-	}
-	return colIndent + colGlyph + colName
-}
-
-// checkRows draws one check: the glyph, the state word where the tier keeps it, the check id,
-// the detail in a separate column, the hold field where the row carries one, and the fix beneath.
+// checkRows draws one check as a mark row: the mark, the check id, and the detail on the grid,
+// then the hold field, the credential detail on the creds row, and the fix, each at the row's
+// detail column.
 func (t theme) checkRows(in RenderInput, c health.CheckResult, width int) []string {
 	hold, escalating := holdField(c, in.Now)
-	glyph, glyphRole := t.mark(in, c)
+	glyph, role := t.mark(in, c)
+	name := sanitize(c.ID)
+	col := t.DetailColumn(name, width)
+	detail := sanitize(checkDetail(c))
+	head := style.MarkRow(t.Theme, glyph, role, name, detail, width)
 
-	cells := []string{strings.Repeat(" ", colIndent), t.cell(glyphRole, glyph, colGlyph)}
-	if keepsWord(in) {
-		word := spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)
-		cells = append(cells, t.cell(t.wordRole(c, escalating), word, colWord))
+	fix, hasFix := health.FixFor(c.Outcome)
+	block := t.fixBlock(fix, hasFix, col, width)
+	if cond := conditionID(c.Outcome); cond != "" {
+		tail := t.Style(style.RoleMuted).Render("  " + cond)
+		// Below 100 columns the fix block's URL has already taken the width, so the detail
+		// re-flows to make room for the id rather than leaving it to no line at all.
+		lines, ok := t.wrapLeavingTail(detail, width-col, t.Width(tail))
+		switch {
+		case width < width100 && ok:
+			head = style.MarkRow(t.Theme, glyph, role, name, lines[0], width)
+			for _, l := range lines[1:] {
+				head = append(head, style.ContinuationLine(t.Theme, style.RoleSubtle, l, col, width)...)
+			}
+			head[len(head)-1] += tail
+		default:
+			t.placeCondition(head, block, tail, width)
+		}
 	}
-	cells = append(cells, t.SizedStrong(style.RoleText, colName).Render(sanitize(c.ID)))
 
 	holdRole := style.RoleMuted
 	if escalating {
 		holdRole = style.RoleUnknown
 	}
-	detail := sanitize(checkDetail(c))
-
-	// Below the narrow rung the body drops to one column: the row names the check and every
-	// field beneath it sits at one shallow indent rather than in a column budget the width
-	// cannot pay for.
-	narrow := width < widthNarrow
-	col := detailCol(in)
-	if narrow {
-		col = colIndent + colGlyph
-	}
-
-	cond := conditionID(c.Outcome)
-	tail := ""
-	if cond != "" {
-		tail = "  " + cond
-	}
-	lines, placed := t.detailLines(detail, tail, col, width)
-
-	var head []string
-	switch {
-	case narrow || len(lines) == 0:
-		head = append(head, row(cells...))
-		head = append(head, lines...)
-	default:
-		head = append(head, row(cells...)+strings.TrimLeft(lines[0], " "))
-		head = append(head, lines[1:]...)
-	}
-
-	fix, hasFix := health.FixFor(c.Outcome)
-	block := t.fixBlock(in, fix, hasFix, width)
-	if !placed {
-		t.placeCondition(head, block, t.Style(style.RoleMuted).Render(tail), width)
-	}
-
-	out := append(head, t.indented(t.Style(holdRole), col, hold, width)...)
-	// The credential and keyring detail sit on the creds row, in a separate detail column, rather
-	// than in the header block: it is detail about the check the operator is already reading.
+	out := append(head, style.ContinuationLine(t.Theme, holdRole, hold, col, width)...)
+	// The credential and keyring detail sit on the creds row rather than in the header block: it
+	// is detail about the check the operator is already reading.
 	if c.ID == credsRowID {
 		out = append(out, t.statusLines(in, col, width)...)
 	}
 	return append(out, block...)
-}
-
-// detailLines renders one check's detail into a separate column, and reports whether the condition
-// id's tail was placed on the last of them. Below 100 columns the fix block's URL has already
-// taken the width, so the detail re-flows to make room for the id rather than leaving it to a
-// line by itself.
-func (t theme) detailLines(detail, tail string, col, width int) (lines []string, placed bool) {
-	avail := width - col
-	if tail == "" || width >= width100 {
-		return atColumn(t.Style(style.RoleSubtle), col, t.WrapGreedy(detail, avail)), false
-	}
-	wrapped, ok := t.wrapLeavingTail(detail, avail, t.Width(tail))
-	lines = atColumn(t.Style(style.RoleSubtle), col, wrapped)
-	if !ok || len(lines) == 0 {
-		return lines, false
-	}
-	lines[len(lines)-1] += t.Style(style.RoleMuted).Render(tail)
-	return lines, true
 }
 
 // checkDetail returns the line a check contributes: the detail it measured, or, where it
@@ -220,45 +143,43 @@ func checkDetail(c health.CheckResult) string {
 	return cmp.Or(c.Outcome.Detail, health.ReasonPhrase(c.Outcome.Reason))
 }
 
-// fixBlock renders one fix under the row it repairs: the imperative sentence wrapped with a
-// hanging indent, then the full documentation URL on a line by itself, clickable where the terminal
-// supports OSC 8 and whole everywhere else. A fix is never truncated.
-func (t theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) []string {
+// fixBlock renders one fix under the row it repairs, at the row's detail column: the imperative
+// sentence on the fix mark, then the full documentation URL on a line by itself, clickable where
+// the terminal supports OSC 8 and the address passes linkable. A fix is never truncated.
+//
+// A URL too long for the detail column moves left to the name column rather than breaking, since
+// an address split across two lines cannot be copied whole. Only one too long for that column
+// as well breaks.
+func (t theme) fixBlock(fix health.Fix, hasFix bool, col, width int) []string {
 	if !hasFix || fix.Text == "" {
 		return nil
 	}
-	g := t.marks
-	indent := colIndent + colGlyph
-	col := indent + t.Width(g.Fix) + 1
-	lead := strings.Repeat(" ", indent) + t.Style(style.RoleAccent).Render(g.Fix) + " "
-	out := t.hangingAt(t.Style(style.RoleSubtle), lead, col, sanitize(fix.Text), width, false)
-
+	out := style.FixLine(t.Theme, sanitize(fix.Text), "", col, width)
 	url := fixURL(fix)
 	if url == "" {
 		return out
 	}
-	// The link's text is the URL itself, so a terminal that renders the hyperlink and one that
-	// prints the text show the same destination.
-	st := t.Style(style.RoleMuted)
-	if !style.NoColor(in.Profile) && linkable(url) {
-		st = t.Link(style.RoleMuted, url)
+	ink := t.Style(style.RoleMuted)
+	if linkable(url) {
+		ink = t.Link(style.RoleMuted, url)
+	} else {
+		url = sanitize(url)
 	}
-	return append(out, t.indented(st, col, url, width)...)
+	if col+t.Width(url) > width {
+		col = min(col, colIndent+2)
+	}
+	return append(out, t.indented(ink, col, url, width)...)
 }
 
 // placeCondition writes the condition id onto the tail of a line it shares, in place. The id
 // never occupies a line by itself: on a line by itself under a detail it reads as debris rather
 // than as the greppable handle for the failure beside it.
 //
-// At 100 columns and above it trails the fix block's last line, so the handle and the page that
-// documents it share a line. Below that the URL has already taken the width, so the id trails
-// the check's detail and wraps with it. Where no line has room for it at all, which happens
-// only at the narrowest widths, it is not printed, and
+// At 100 columns and above it trails the fix block's last line where that line has room, so the
+// handle and the page that documents it share a line, and the check's detail otherwise. Below
+// that the detail comes first. Where no line has room for it at all it is not printed, and
 // --json carries the id at every width.
 func (t theme) placeCondition(detail, block []string, tail string, width int) {
-	if tail == "" {
-		return
-	}
 	order := [][]string{detail, block}
 	if width >= width100 {
 		order = [][]string{block, detail}
@@ -282,19 +203,37 @@ func attachTail(t theme, lines []string, tail string, width int) bool {
 	return false
 }
 
-// foldLine folds every passing check into one line. Its dot takes the frame's pass ink,
-// which is the same rule every other passing mark follows: green only in a run whose verdict
-// is OK.
+// foldLine folds every passing check into one mark row: the count as the row's name and the
+// check ids as its detail. Its mark takes the frame's pass ink, the rule every passing mark
+// follows: green only in a run whose verdict is OK.
 func (t theme) foldLine(in RenderInput, passing []health.CheckResult, width int) []string {
 	names := make([]string, 0, len(passing))
 	for _, c := range passing {
 		names = append(names, sanitize(c.ID))
 	}
 	g := t.marks
-	label := count(len(passing), labelPassing)
-	lead := t.Style(passRole(in.Verdict)).Render(g.Pass) + " " + t.Style(style.RoleMuted).Render(label) + "  "
-	col := t.Width(g.Pass) + 1 + t.Width(label) + 2
-	return t.hangingAt(t.Style(style.RoleMuted), lead, col, strings.Join(names, " "+g.Sep+" "), width, false)
+	name := count(len(passing), labelPassing)
+	col := t.DetailColumn(name, width)
+	// The ids are packed whole, so a line breaks between two ids, and a broken line keeps its
+	// separator at its end, leaving room for it, rather than opening the next line on one.
+	sep := " " + g.Sep + " "
+	room := width - col - t.Width(" "+g.Sep)
+	var lines []string
+	for _, id := range names {
+		if n := len(lines); n > 0 && t.Width(lines[n-1]+sep+id) <= room {
+			lines[n-1] += sep + id
+			continue
+		}
+		if n := len(lines); n > 0 {
+			lines[n-1] += " " + g.Sep
+		}
+		lines = append(lines, id)
+	}
+	out := style.MarkRow(t.Theme, g.Pass, passRole(in.Verdict), name, lines[0], width)
+	for _, l := range lines[1:] {
+		out = append(out, style.ContinuationLine(t.Theme, style.RoleSubtle, l, col, width)...)
+	}
+	return out
 }
 
 // clampFrame cuts every emitted line to the requested width, the last thing a terminal body

@@ -10,11 +10,83 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
-// statusInput builds the input a status line is read from, with one token found and one missing.
+// statusInput builds the input a status line is read from, with one token found and one missing,
+// as a pipe receives it.
 func statusInput() RenderInput {
 	return RenderInput{
-		View: ViewStatus, Width: width100, Dark: true, Profile: colorprofile.ASCII,
+		View: ViewStatus, Body: BodyPlain, Width: width100, Dark: true, Profile: colorprofile.ASCII,
 		Status: sampleStatus(), Now: fixtures.Now(),
+	}
+}
+
+// TestPipedListingKeepsItsBytes pins the site listing's piped status lines byte for byte: a
+// script reading `cairn sites` through a pipe parses these lines, so the terminal's grid never
+// reaches them.
+func TestPipedListingKeepsItsBytes(t *testing.T) {
+	const amber, muted = "\x1b[38;2;247;172;77m", "\x1b[38;2;168;164;158m"
+	degraded := StatusState{Degraded: true, Credentials: []Credential{{Variable: "CAIRN_CF_READ_TOKEN", Provider: providerEnvironment}}}
+	for _, c := range []struct {
+		name    string
+		profile colorprofile.Profile
+		width   int
+		status  StatusState
+		want    []string
+	}{
+		{"truecolor-100", colorprofile.TrueColor, 100, sampleStatus(), []string{
+			amber + "CAIRN_CF_READ_TOKEN is not set, so email and errors cannot run\x1b[m",
+			muted + "CAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days\x1b[m",
+		}},
+		{"truecolor-40", colorprofile.TrueColor, 40, sampleStatus(), []string{
+			amber + "CAIRN_CF_READ_TOKEN is not set, so email\x1b[m",
+			amber + "and errors cannot run\x1b[m",
+			muted + "CAIRN_GH_READ_TOKEN read from the\x1b[m",
+			muted + "keyring, expires 2026-09-26, in 6 days\x1b[m",
+		}},
+		{"ascii-100", colorprofile.ASCII, 100, sampleStatus(), []string{
+			"CAIRN_CF_READ_TOKEN is not set, so email and errors cannot run",
+			"CAIRN_GH_READ_TOKEN read from the keyring, expires 2026-09-26, in 6 days",
+		}},
+		{"ascii-40", colorprofile.ASCII, 40, sampleStatus(), []string{
+			"CAIRN_CF_READ_TOKEN is not set, so email",
+			"and errors cannot run",
+			"CAIRN_GH_READ_TOKEN read from the",
+			"keyring, expires 2026-09-26, in 6 days",
+		}},
+		{"degraded", colorprofile.TrueColor, 100, degraded, []string{
+			muted + "CAIRN_CF_READ_TOKEN read from the environment\x1b[m",
+			amber + "some checks could not run for want of a token\x1b[m",
+		}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			in := RenderInput{View: ViewStatus, Body: BodyPlain, Width: c.width, Dark: true,
+				Profile: c.profile, Status: c.status, Now: fixtures.Now()}
+			got := Render(in).Lines()
+			if strings.Join(got, "\n") != strings.Join(c.want, "\n") {
+				t.Errorf("piped listing =\n%q\nwant\n%q", got, c.want)
+			}
+		})
+	}
+}
+
+// TestTerminalListingIsATitledBlockOfMarkRows: on a terminal the listing's credentials sit under
+// a title, one mark row each, the variable at the name column and its fact under or beside it.
+func TestTerminalListingIsATitledBlockOfMarkRows(t *testing.T) {
+	in := statusInput()
+	in.Body = BodySingle
+	lines := plainLines(in)
+	want := []string{
+		"  credentials",
+		"  ? CAIRN_CF_READ_TOKEN",
+		"    is not set, so email and errors cannot run",
+		"  ● CAIRN_GH_READ_TOKEN",
+		"    read from the keyring, expires 2026-09-26, in 6 days",
+	}
+	if strings.Join(lines, "\n") != strings.Join(want, "\n") {
+		t.Errorf("terminal listing =\n%s\nwant\n%s", strings.Join(lines, "\n"), strings.Join(want, "\n"))
+	}
+	in.Status = StatusState{Credentials: []Credential{{Variable: "CAIRN_CF\u001b[2J_READ_TOKEN", Disables: []string{"dep\nloy"}}}}
+	if text := strings.Join(Render(in).Lines(), "\n"); strings.Contains(text, "\u001b[2J") || strings.Contains(text, "\n\n") {
+		t.Errorf("an escape or an injected line reached the terminal listing: %q", text)
 	}
 }
 

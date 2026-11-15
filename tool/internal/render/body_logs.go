@@ -9,16 +9,17 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
-// The log body's column budget. The date and the zone are stated once, on the section rule,
-// so a record line spends its width on the record rather than repeating the day on every row.
+// The log body's column budget. The date and the zone are stated once, on the title, so a record
+// line spends its width on the record rather than repeating the day on every row. The time and
+// the level together carry the event to the grid's detail column, 20.
 const (
-	logIndent = 2
+	logIndent = colIndent
 	logTime   = 10
-	logLevel  = 7
+	logLevel  = 8
 	logEvent  = 23
 )
 
-// logLabel heads the section rule a log excerpt opens with.
+// logLabel opens the title a log excerpt starts with.
 const logLabel = "logs"
 
 // logEmpty is what a query that matched nothing says.
@@ -40,17 +41,23 @@ func renderLogs(t theme, in RenderInput) Frame {
 	width := in.width()
 	site := sanitize(in.Site)
 	if len(in.Entries) == 0 {
-		return Frame{header: []string{t.Style(style.RoleMuted).Render(logEmpty)}}
+		return Frame{header: []string{strings.Repeat(" ", logIndent) + t.Style(style.RoleMuted).Render(logEmpty)}}
 	}
 
+	// The title is the one label lowercased; the site and the zone keep the case they carry.
 	earliest, latest := logSpan(in.Entries)
-	label := strings.TrimSpace(logLabel + "  " + site + "  " + earliest.Format("2006-01-02 MST"))
-	f := Frame{header: []string{t.insetRule(label, width)}}
+	title := style.Title(t.Theme, logLabel, width)[0]
+	if subject := strings.TrimSpace(site + "  " + earliest.Format("2006-01-02 MST")); subject != "" {
+		title += "  " + t.Strong(style.RoleText).Render(subject)
+	}
+	f := Frame{header: []string{title, ""}}
 
 	// The field column only pays for itself where it leaves the fields a readable share of the
-	// line. Below that the record names itself on one line and its fields follow at the time
-	// column, which is a wrap the reader can follow rather than a token cut down the middle.
+	// line. Below that the record names itself on one line and its fields follow at the grid's
+	// detail column, or at the name column under the one-column threshold, which is a wrap the
+	// reader can follow rather than a token cut down the middle.
 	wide := width >= width100
+	underCol := t.DetailColumn("", width)
 	var body []string
 	for _, e := range in.Entries {
 		cells := []string{
@@ -69,13 +76,13 @@ func renderLogs(t theme, in RenderInput) Frame {
 			continue
 		}
 		body = append(body, strings.TrimRight(lead, " "))
-		body = append(body, t.indented(t.Style(style.RoleSubtle), logIndent+logTime, logFieldText(e), width)...)
+		body = append(body, t.indented(t.Style(style.RoleSubtle), underCol, logFieldText(e), width)...)
 	}
 	f.body = body
 
-	f.footer = []string{"", t.Style(style.RoleMuted).Render(count(len(in.Entries), "records") +
-		" " + t.marks.Sep + " " +
-		earliest.Format("15:04") + " to " + latest.Format("15:04 MST"))}
+	span := count(len(in.Entries), "records") + " " + t.marks.Sep + " " +
+		earliest.Format("15:04") + " to " + latest.Format("15:04 MST")
+	f.footer = []string{"", strings.Repeat(" ", logIndent) + t.Style(style.RoleMuted).Render(span)}
 	return t.clampFrame(f, width)
 }
 

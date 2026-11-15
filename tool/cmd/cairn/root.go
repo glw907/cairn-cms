@@ -152,13 +152,10 @@ func writeNotice(cmd *cobra.Command, d deps, rf *rootFlags, notice string) error
 	return nil
 }
 
-// commandContext returns cmd's context, or a background context when the command was run
-// without one. Only a test builds a command that way; main always executes with a context.
+// commandContext returns cmd's context. Execute always sets one, and a test that calls RunE
+// directly passes a command built with a real context.
 func commandContext(cmd *cobra.Command) context.Context {
-	if ctx := cmd.Context(); ctx != nil {
-		return ctx
-	}
-	return context.Background()
+	return cmd.Context()
 }
 
 // versionLine renders tmplVersion for the running binary's build identity: internal/version
@@ -271,28 +268,4 @@ func newRootCmd(d deps) *cobra.Command {
 	})
 
 	return cmd
-}
-
-// completeSiteIDs is the ValidArgsFunction cairn health and cairn logs share for their
-// positional site argument. It reads the registry only, never the network: an error opening or
-// listing it answers no candidates rather than a printed error, since a completion script has
-// nowhere useful to show one.
-func completeSiteIDs(d deps) func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return func(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if len(args) > 0 {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-		st, err := openRegistry(d)
-		if err != nil {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-		entries, _ := st.List()
-		var ids []string
-		for _, e := range entries {
-			if strings.HasPrefix(e.ID, toComplete) {
-				ids = append(ids, e.ID)
-			}
-		}
-		return ids, cobra.ShellCompDirectiveNoFileComp
-	}
 }

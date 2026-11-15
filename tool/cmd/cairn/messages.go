@@ -400,11 +400,6 @@ const (
 // verification.
 const tmplAdoptListRouteOnly = "cairn: the Workers after the blank line serve no Custom Domain, so cairn cannot adopt them from what it discovered.\nRun `cairn adopt --worker <name> --domain <domain>` to adopt one, naming the domain it serves"
 
-// adoptListRouteOnlyNotice renders tmplAdoptListRouteOnly.
-func adoptListRouteOnlyNotice() string {
-	return tmplAdoptListRouteOnly
-}
-
 // tmplAdoptNoDomain is cairn adopt's refusal of a Worker discovery found no Custom Domain for,
 // with no --domain given. It replaces a raw "record: domain is empty" from the validator, which
 // named neither the Worker nor the flag that resolves it. New to this table, owed to the
@@ -523,7 +518,7 @@ func notACredentialError(name string) error {
 	return translated(fmt.Errorf(tmplNotACredential, name, strings.Join(authVariables, ", ")))
 }
 
-// probe_token.go's Short, Long, and Example for cairn auth check (and its Hidden alias
+// auth_check.go's Short, Long, and Example for cairn auth check (and its Hidden alias
 // cairn auth probe), plus its skip wording: "Cloudflare: skip, CAIRN_CF_READ_TOKEN is not
 // set" and its GitHub sibling name the word and the missing variable, the same shape every
 // site-scoped row's skip reason follows below. Cloudflare reads two variables, so its

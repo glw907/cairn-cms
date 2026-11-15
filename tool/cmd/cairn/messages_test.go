@@ -21,17 +21,15 @@ const maxCommandBodyLiteral = 30
 
 // probeDumpFiles hold cairn auth check's raw diagnostic dump: permission labels, credential
 // variable names, and provider-classified reason words for whoever is minting the three
-// credentials. probe_token.go's Long text states the design this codifies: "auth check's
+// credentials. auth_check.go's Long text states the design this codifies: "auth check's
 // whole output is identifiers (permission labels, credential variable names, and
 // pass/fail/skip/unknown words)", the same reason copy-standard.md section 3.9 keeps a log
 // line's field values verbatim rather than routing them through the prose table.
-// probe_token.go's genuine prose (Short, Long, Example, and its skip notices) is still moved
+// auth_check.go's genuine prose (Short, Long, Example, and its skip notices) is still moved
 // into messages.go despite this exemption; TestAuthCheckStringsLiveInMessages covers that half
 // directly.
 var probeDumpFiles = map[string]bool{
-	"probe_cloudflare.go": true,
-	"probe_github.go":     true,
-	"probe_token.go":      true,
+	"auth_check.go": true,
 }
 
 // excludedCommandLiterals returns every *ast.BasicLit a cmd/cairn file exempts from
@@ -91,7 +89,7 @@ func TestNoLongProseLiteralOutsideMessages(t *testing.T) {
 	}
 }
 
-// TestAuthCheckStringsLiveInMessages pins the half of probe_token.go's prose the
+// TestAuthCheckStringsLiveInMessages pins the half of auth_check.go's prose the
 // probeDumpFiles exemption above does not cover: its Short, Long, and Example, on both cairn
 // auth check and its Hidden alias cairn auth probe, are still messages.go constants, not
 // literals reintroduced at the call site.

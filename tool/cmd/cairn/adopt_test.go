@@ -108,7 +108,7 @@ func TestAdoptListWrapsItsNoticesToTheWidth(t *testing.T) {
 			}
 		}
 		flat := strings.Join(strings.Fields(stderr), " ")
-		for _, notice := range []string{pasteNotice, adoptListRouteOnlyNotice()} {
+		for _, notice := range []string{pasteNotice, tmplAdoptListRouteOnly} {
 			if want := strings.Join(strings.Fields(notice), " "); !strings.Contains(flat, want) {
 				t.Errorf("width %d: stderr %q does not carry %q whole", width, stderr, want)
 			}

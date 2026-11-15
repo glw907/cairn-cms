@@ -6,6 +6,10 @@
 
 ## Medium
 
+- [ ] **#507** `sites` lists two credentials where `auth list` lists three, and no capture shows the `auth check` fix arrow `#improvement` `#cairn-cms` *(2026-11-14)*
+  The pass-3 grade found `sites` omits `CAIRN_CF_ACCOUNT_ID`, which the mockup's frame shows and `auth list` prints. Whether that predates pass 3 is unchecked. The fixture's not-found reason draws no arrow, and no fixture row reaches the failing section, so only unit tests cover those two paths. A fixture variant with a missing credential and a forbidden permission would give a screenshot. Placement: the next pass on `tool/cmd/cairn` lists or `internal/testharness/reporte2e`.
+- [ ] **#506** The terminal colour rung ignores `COLORTERM`, so kitty paints 256-colour greys, and light Muted measures 3.66:1 `#improvement` `#cairn-cms` *(2026-11-14)*
+  `tool/internal/style/detect.go:105` passes only `TERM` to `colorprofile.Env`, so `COLORTERM=truecolor` is ignored and the Warm Stone hexes never reach kitty. On the light ground, Muted at the 256-colour grey measures 3.66:1, below the 4.5:1 body level, and it paints the whole help description column. The spec hexes would measure 5.27:1. Whether the `TERM`-only read predates pass 2 is unchecked. Placement: the next pass on `internal/style`.
 - [ ] **#505** Pass 3 left gotchas in the gate and the harness `#improvement` `#cairn-cms` *(2026-11-14)*
   `lane:fast` is not serialized against a sibling worktree's `TestNewE2E*` on port 49152. `cairn-run-gate` reprints a cached red unless given `--fresh`. `cairn health`'s email check does real DNS lookups, so a differential row that needs exit 1 must use `doctor`. A `reporte2e` helper used by an untagged test file must live in an untagged file. Found by pass 3 (PR #249). Placement: the next pass on `scripts/gate` or `internal/testharness`.
 - [ ] **#504** Some errors still lack a typed fix, so a terminal draws no arrow for their imperative line `#improvement` `#cairn-cms` *(2026-11-14)*

@@ -6,6 +6,8 @@
 
 ## Medium
 
+- [ ] **#523** The light `cairn health` shots show four layout and copy findings `#improvement` `#cairn-cms` *(2026-11-15)*
+  A fresh grader read `light-health-cairn-theme` and `light-health-colorfgbg` (identical bytes, so both ground paths resolve to one palette; lowest ink 4.53:1) and found no structural defect. It did find four items. The https-forced reason reads `off for the zone  edge.https-not-forced`, with a double space and an inline token in a near-identical grey. The held `serving` description runs to column 80, so it touches the right edge. The held mark `◌` renders as a faint ring (2.93:1 as drawn, though its ink is 4.62:1). The two credential lines sit under `5 passing`, so it is unclear which check each belongs to, and the expiry wraps mid-fact. The reason text and the description column are strings a pipe also receives, so a fix changes pipe bytes and needs the byte-identity ruling. The fix arrow's 4.53:1 clears the floor by 0.03. Placement: the next pass that may change health's strings, and `internal/render`.
 - [ ] **#511** Pass 3 left four formatting and coverage nits `#improvement` `#cairn-cms` *(2026-11-14)*
   `ground_test.go` has no row for `doctor`'s call to `stdoutGround` (`doctor.go:97`), and the differential's forced-colour pipe row covers `health` only. Three lines run past their file's wrap width: `terminal-standard.md:169`, `MIGRATION-NOTES.md:90`, and `report_terminal.go:84`. Found by pass 3's task-scope review (PR #249). Placement: the next pass on `tool/cmd/cairn`.
 - [ ] **#510** `adopt.go` joins a repository's owner and name without checking for an empty owner `#bug` `#cairn-cms` *(2026-11-14)*

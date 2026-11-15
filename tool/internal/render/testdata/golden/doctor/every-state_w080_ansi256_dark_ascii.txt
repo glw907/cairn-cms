@@ -1,0 +1,31 @@
+  [1;38;5;210mCRITICAL[m  [1;38;5;255mmy-site[m  [38;5;246m2 failing - 1 could not run - 3 passing[m
+
+  [1;38;5;255mfailing[m
+  [38;5;210m![m [38;5;255mWrangler bindings are missing[m
+    [38;5;250mmissing AUTH_DB (d1_databases)[m
+    [38;5;246mThe wrangler config declares no send_email binding named EMAIL or no D1[m
+    [38;5;246mbinding named AUTH_DB, so the magic-link send or the session store has[m
+    [38;5;246mnothing to call and no editor can sign in.[m
+  [38;5;141m>[m [38;5;250mDeclare the send_email binding as EMAIL and the d1_databases binding as[m
+    [38;5;250mAUTH_DB in wrangler.jsonc (or wrangler.toml), then re-deploy.[m
+    ]8;;https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings[4;38;5;255;4mc[m[4;38;5;255;4ma[m[4;38;5;255;4mi[m[4;38;5;255;4mr[m[4;38;5;255;4mn[m[4;38;5;255;4m.[m[4;38;5;255;4mp[m[4;38;5;255;4mu[m[4;38;5;255;4mb[m[4;38;5;255;4m/[m[4;38;5;255;4md[m[4;38;5;255;4mo[m[4;38;5;255;4mc[m[4;38;5;255;4ms[m[4;38;5;255;4m/[m[4;38;5;255;4ma[m[4;38;5;255;4md[m[4;38;5;255;4mm[m[4;38;5;255;4mi[m[4;38;5;255;4mn[m[4;38;5;255;4m/[m[4;38;5;255;4mi[m[4;38;5;255;4ms[m[4;38;5;255;4m-[m[4;38;5;255;4mi[m[4;38;5;255;4mt[m[4;38;5;255;4m-[m[4;38;5;255;4mw[m[4;38;5;255;4mo[m[4;38;5;255;4mr[m[4;38;5;255;4mk[m[4;38;5;255;4mi[m[4;38;5;255;4mn[m[4;38;5;255;4mg[m[4;38;5;255;4m#[m[4;38;5;255;4md[m[4;38;5;255;4me[m[4;38;5;255;4mp[m[4;38;5;255;4ml[m[4;38;5;255;4mo[m[4;38;5;255;4my[m[4;38;5;255;4m-[m[4;38;5;255;4mt[m[4;38;5;255;4mh[m[4;38;5;255;4me[m[4;38;5;255;4m-[m[4;38;5;255;4mw[m[4;38;5;255;4mo[m[4;38;5;255;4mr[m[4;38;5;255;4mk[m[4;38;5;255;4me[m[4;38;5;255;4mr[m[4;38;5;255;4m-[m[4;38;5;255;4mw[m[4;38;5;255;4mi[m[4;38;5;255;4mt[m[4;38;5;255;4mh[m[4;38;5;255;4m-[m[4;38;5;255;4mi[m[4;38;5;255;4mt[m[4;38;5;255;4ms[m[4;38;5;255;4m-[m[4;38;5;255;4mb[m[4;38;5;255;4mi[m[4;38;5;255;4mn[m[4;38;5;255;4md[m[4;38;5;255;4mi[m[4;38;5;255;4mn[m[4;38;5;255;4mg[m[4;38;5;255;4ms[m]8;;
+  [38;5;215m*[m [38;5;255mWorkers Logs has no sink[m
+    [38;5;250mobservability.enabled is not true[m
+    [38;5;246mobservability.enabled is not true in the wrangler config, so the structured[m
+    [38;5;246mlog records go nowhere and a runtime failure leaves nothing to read.[m
+  [38;5;141m>[m [38;5;250mSet observability.enabled to true in wrangler.jsonc, then re-deploy.[m
+    ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[4;38;5;255;4mc[m[4;38;5;255;4ma[m[4;38;5;255;4mi[m[4;38;5;255;4mr[m[4;38;5;255;4mn[m[4;38;5;255;4m.[m[4;38;5;255;4mp[m[4;38;5;255;4mu[m[4;38;5;255;4mb[m[4;38;5;255;4m/[m[4;38;5;255;4md[m[4;38;5;255;4mo[m[4;38;5;255;4mc[m[4;38;5;255;4ms[m[4;38;5;255;4m/[m[4;38;5;255;4ma[m[4;38;5;255;4md[m[4;38;5;255;4mm[m[4;38;5;255;4mi[m[4;38;5;255;4mn[m[4;38;5;255;4m/[m[4;38;5;255;4mi[m[4;38;5;255;4ms[m[4;38;5;255;4m-[m[4;38;5;255;4mi[m[4;38;5;255;4mt[m[4;38;5;255;4m-[m[4;38;5;255;4mw[m[4;38;5;255;4mo[m[4;38;5;255;4mr[m[4;38;5;255;4mk[m[4;38;5;255;4mi[m[4;38;5;255;4mn[m[4;38;5;255;4mg[m[4;38;5;255;4m#[m[4;38;5;255;4mt[m[4;38;5;255;4mu[m[4;38;5;255;4mr[m[4;38;5;255;4mn[m[4;38;5;255;4m-[m[4;38;5;255;4mo[m[4;38;5;255;4mn[m[4;38;5;255;4m-[m[4;38;5;255;4mo[m[4;38;5;255;4mb[m[4;38;5;255;4ms[m[4;38;5;255;4me[m[4;38;5;255;4mr[m[4;38;5;255;4mv[m[4;38;5;255;4ma[m[4;38;5;255;4mb[m[4;38;5;255;4mi[m[4;38;5;255;4ml[m[4;38;5;255;4mi[m[4;38;5;255;4mt[m[4;38;5;255;4my[m]8;;
+
+  [1;38;5;255mcould not run[m
+  [38;5;215m?[m [38;5;255mThe stated AI posture is not the served one[m
+    [38;5;250mcould not reach the resolved origin's /robots.txt[m
+
+  [1;38;5;255mnotes[m
+    [38;5;246mCustom /admin mount looks incomplete[m
+    [38;5;246mno wired /admin mount detected; mount the shared /admin/+layout that renders[m
+    [38;5;246mCairnAdminShell[m
+
+  [38;5;246m+[m [38;5;255m3 passing[m
+  [38;5;246m2 do not apply[m    [38;5;246mMedia bucket binding - Guard role vocabulary[m
+
+  [1;38;5;210mCRITICAL[m  [1;38;5;255mmy-site[m  [38;5;246m2 failing - 1 could not run - 3 passing[m

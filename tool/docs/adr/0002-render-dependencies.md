@@ -33,6 +33,18 @@ tree's own flag sets to build the committed flag list, and those sets are
 belongs to the module rather than to `internal/render`, since `render` never imports it; this is
 why `internal/render/purity_test.go`'s `otherDirectRequires` carries it, now 6.
 
+## Addendum: a pseudo-terminal and a terminal emulator for the report tests
+
+The health progress line draws only when stdout and stderr are both terminals. To see it,
+`internal/testharness/reporte2e` runs the built binary on a pseudo-terminal and reads the final
+screen the run leaves. It takes `github.com/creack/pty` at `v1.1.24` to open the pseudo-terminal
+and `github.com/charmbracelet/x/vt` at `v0.1.0` to replay the recorded bytes into a screen. `x/vt`
+comes from the same Charm stack as `x/ansi`, which this ADR already pins. Every module `x/vt`
+requires was already in the build graph. Only `_test.go` files in that one package import either module, so
+neither reaches the binary: `go list -deps ./cmd/cairn` names neither. They belong to the module
+rather than to `internal/render`, which is why `internal/render/purity_test.go`'s
+`otherDirectRequires` carries them, now 14.
+
 ## Addendum: the man generator's indirect requires (Task 22a)
 
 `tool/cmd/mangen` imports `github.com/spf13/cobra/doc`, a subpackage of the

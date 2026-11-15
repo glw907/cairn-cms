@@ -77,6 +77,7 @@ func scrubTargets(d deps) []providers.Credential {
 func main() {
 	d := newDeps()
 	d.stdout = processStdout()
+	d.stderr = os.Stderr
 	d.interactive = stdioTerminal
 
 	out, errOut, skipped, flush := scrubbedWriters(d)

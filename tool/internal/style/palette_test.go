@@ -162,6 +162,7 @@ func TestStyleZeroAtNoColor(t *testing.T) {
 			{"Strong", th.Strong},
 			{"SizedStrong", func(r Role) lipgloss.Style { return th.SizedStrong(r, 1) }},
 			{"Link", func(r Role) lipgloss.Style { return th.Link(r, "https://example.test") }},
+			{"DocLink", func(Role) lipgloss.Style { return th.DocLink("https://example.test") }},
 		}
 		for _, w := range ways {
 			t.Run(p.String()+"/"+w.name, func(t *testing.T) {
@@ -196,6 +197,23 @@ func TestLinkCarriesURLWithColor(t *testing.T) {
 	got := NewTheme(true, colorprofile.TrueColor, false).Link(RoleAccent, "https://example.test").Render("x")
 	if !strings.Contains(got, "https://example.test") {
 		t.Errorf("Link at TrueColor renders %q, want an OSC 8 sequence naming the URL", got)
+	}
+}
+
+// TestDocLinkIsTextInkWithPlainUnderline: a documentation link keeps its OSC 8 target and takes
+// the Text ink with a plain underline at every colour tier, and sets no underline colour.
+func TestDocLinkIsTextInkWithPlainUnderline(t *testing.T) {
+	const url = "https://example.test"
+	for _, p := range []colorprofile.Profile{colorprofile.TrueColor, colorprofile.ANSI256, colorprofile.ANSI} {
+		th := NewTheme(true, p, false)
+		got := th.DocLink(url).Render("x")
+		want := th.Link(RoleText, url).Underline(true).Render("x")
+		if got != want {
+			t.Errorf("DocLink at %v renders %q, want %q", p, got, want)
+		}
+		if !strings.Contains(got, url) || !strings.Contains(got, "\x1b[4") || strings.Contains(got, "58;") {
+			t.Errorf("DocLink at %v renders %q, want the URL and a plain underline and no SGR 58", p, got)
+		}
 	}
 }
 

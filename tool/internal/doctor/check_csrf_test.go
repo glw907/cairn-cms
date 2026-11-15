@@ -320,7 +320,8 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := runCheck(configCsrfTrustedOrigins, s).Result
+			cr := runCheck(configCsrfTrustedOrigins, s)
+			result := cr.Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -334,8 +335,8 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 					t.Errorf("Detail = %q, want it not to contain %q", result.Detail, unwanted)
 				}
 			}
-			if tt.wantStatus == StatusFail && result.Severity != spine.WarningFailure {
-				t.Errorf("Severity = %v, want spine.WarningFailure", result.Severity)
+			if tt.wantStatus == StatusFail && cr.checkVerdict().Severity != spine.WarningFailure {
+				t.Errorf("Severity = %v, want spine.WarningFailure", cr.checkVerdict().Severity)
 			}
 		})
 	}
@@ -350,5 +351,26 @@ func TestConfigCsrfTrustedOriginsIdentity(t *testing.T) {
 	}
 	if got := conditionText(configCsrfTrustedOrigins.Condition).Severity; got != spine.WarningFailure {
 		t.Errorf("registry severity = %v, want spine.WarningFailure", got)
+	}
+}
+
+// TestJoinOrRendersASerialOrList covers the one-, two-, and three-item shapes a detail's file
+// list takes: a lone name, "a or b", and "a, b, or c" with the serial comma.
+func TestJoinOrRendersASerialOrList(t *testing.T) {
+	tests := []struct {
+		name  string
+		items []string
+		want  string
+	}{
+		{name: "one item", items: []string{"package-lock.json"}, want: "package-lock.json"},
+		{name: "two items", items: []string{"vite.config.js", "vite.config.ts"}, want: "vite.config.js or vite.config.ts"},
+		{name: "three items", items: []string{"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}, want: "package-lock.json, pnpm-lock.yaml, or yarn.lock"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := joinOr(tt.items); got != tt.want {
+				t.Errorf("joinOr(%q) = %q, want %q", tt.items, got, tt.want)
+			}
+		})
 	}
 }

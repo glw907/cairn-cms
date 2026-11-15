@@ -126,10 +126,12 @@ var renderDirectRequires = []string{
 // pflag values cobra hands back), and x/crypto, whose nacl/box seals the deploy secret for
 // GitHub's Actions secrets API, plus Bubble Tea v2, teatest v2, Huh v2 and Bubbles v2 for the
 // terminal view, its frame harness, its forms and its key-hint footers (ADR-0004), plus Fang
-// v2, which themes Cobra help for a terminal reader. They are counted rather than named, because
-// internal/secrets confines one of those import paths to its file and that check reads every .go
-// file in the module as text, this one included.
-const otherDirectRequires = 12
+// v2, which themes Cobra help for a terminal reader, plus creack/pty and charmbracelet/x/vt, the
+// test-only pseudo-terminal and terminal emulator the report end-to-end tests drive the binary
+// through. They are counted rather than named, because internal/secrets confines one of those
+// import paths to its file and that check reads every .go file in the module as text, this one
+// included.
+const otherDirectRequires = 14
 
 // TestRenderDirectRequiresArePinned holds ADR-0002's pin policy to its list, and the module
 // to its total. A fifth library taken for this package, or one of the four dropped, fails here

@@ -88,7 +88,7 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	if err := writeSites(cmd, entries, f, rf, verdict, listErrs); err != nil {
 		return err
 	}
-	if err := writeSitesStatus(cmd, d, rf, f, verdict); err != nil {
+	if err := writeSitesStatus(cmd, d, rf, f, verdict, len(entries) > 0 || rf.verbose); err != nil {
 		return err
 	}
 	for _, e := range listErrs {
@@ -107,14 +107,19 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 // from the first health run that skips half its checks.
 //
 // It is silent under --json, where the payload is the output, and silent on a quiet OK run for
-// the same reason the listing is.
-func writeSitesStatus(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags, verdict spine.Verdict) error {
+// the same reason the listing is. below reports whether stdout already carries a line; with
+// none, the terminal block's opening blank line has nothing to part it from and is not printed.
+func writeSitesStatus(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags, verdict spine.Verdict, below bool) error {
 	if f.asJSON || (rf.quiet && verdict == spine.VerdictOK) {
 		return nil
 	}
 	in := renderInput(d, rf, nil, verdict, runStatus(buildClients(d), 0, false, nil))
 	in.View = render.ViewStatus
-	for _, line := range render.Render(in).Lines() {
+	lines := render.Render(in).Lines()
+	if !below && len(lines) > 0 && lines[0] == "" {
+		lines = lines[1:]
+	}
+	for _, line := range lines {
 		if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
 			return err
 		}

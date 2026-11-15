@@ -80,3 +80,8 @@ What a session needs to know:
   (`trig_0193pPNoyxsTGeUhF1xx7woa`).
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries).
+
+## Pass 2 executor
+
+Pass 2 `reports` of round `tui-language` sits in PR #247 (review accept), waiting on the conductor; pass 3 follows its merge.
+Open filings: #491 to #497.

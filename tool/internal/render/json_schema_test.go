@@ -433,8 +433,7 @@ func TestAuthCheckPayloadValidatesAgainstSchema(t *testing.T) {
 // before tool/v1.0.0 is pushed, so the whole pre-tag window is one schema and the first
 // published version of each payload is 1: an increment inside the window would publish a
 // revision nobody could have read the previous form of. The same reasoning covers a payload
-// published after the tag, cairn doctor's: no consumer read an earlier form of that payload
-// either, so its first published version is 1 too.
+// published after the tag, cairn doctor's, which internal/doctor's own test holds to the same rule.
 func TestEverySchemaVersionIsOneBeforeTheTag(t *testing.T) {
 	for _, tt := range []struct {
 		schema   string
@@ -446,7 +445,6 @@ func TestEverySchemaVersionIsOneBeforeTheTag(t *testing.T) {
 		{"cairn-logs.schema.json", logsSchemaVersion},
 		{"cairn-adopt-list.schema.json", adoptListSchemaVersion},
 		{"cairn-auth-check.schema.json", authCheckSchemaVersion},
-		{"cairn-doctor.schema.json", DoctorSchemaVersion},
 	} {
 		t.Run(tt.schema, func(t *testing.T) {
 			if tt.constant != 1 {

@@ -62,6 +62,11 @@ type deps struct {
 	// cmd.OutOrStdout, and the detection needs a file descriptor that an io.Writer cannot
 	// carry. main.go fills it; a test leaves it nil, which Detect reads as a pipe.
 	stdout *os.File
+	// stderr is the process's error stream, carried for the same reason as stdout: the health
+	// progress line draws only when both streams are terminals, and the check needs the file
+	// descriptor. A command still writes through cmd.ErrOrStderr, so the scrubber sees every
+	// byte. main.go fills it; a test leaves it nil, which reads as not a terminal.
+	stderr *os.File
 	// interactive reports whether stdin and stdout are both a terminal, which sends a mode-less
 	// cairn new to the terminal view. main fills it; a test leaves it nil, which reads as a pipe.
 	interactive func() bool

@@ -29,24 +29,19 @@ var configBindings = Check{
 	PassTitle: "Wrangler bindings are declared",
 	SkipTitle: "Wrangler bindings",
 	Condition: spine.ConditionConfigBindingsMissing,
-	Run: func(s Snapshot) Result {
-		facts, found, err := ReadWranglerConfig(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !found {
-			return skipResult(noWranglerFoundDetail)
-		}
-		var missing []string
-		if !facts.HasEmailBinding {
-			missing = append(missing, bindingEmailMissing)
-		}
-		if !facts.HasAuthDB {
-			missing = append(missing, bindingAuthDBMissing)
-		}
-		if len(missing) > 0 {
-			return failResult(fmt.Sprintf(tmplBindingsMissing, strings.Join(missing, " and ")))
-		}
-		return passResult(detailBindingsPresent)
+	run: func(s Snapshot) Result {
+		return withWrangler(s, func(facts WranglerFacts) Result {
+			var missing []string
+			if !facts.HasEmailBinding {
+				missing = append(missing, bindingEmailMissing)
+			}
+			if !facts.HasAuthDB {
+				missing = append(missing, bindingAuthDBMissing)
+			}
+			if len(missing) > 0 {
+				return failResult(fmt.Sprintf(tmplBindingsMissing, strings.Join(missing, " and ")))
+			}
+			return passResult(detailBindingsPresent)
+		})
 	},
 }

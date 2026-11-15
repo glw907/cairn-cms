@@ -214,7 +214,7 @@ var configCsrfTrustedOrigins = Check{
 	PassTitle: "Trusted origins keep SvelteKit's origin check",
 	SkipTitle: "Trusted origins setting",
 	Condition: spine.ConditionConfigCSRFTrustedOriginsWildcard,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		_, svelteConfigFound, err := s.readFile("svelte.config.js")
 		if err != nil {
 			return uncheckedResult(err.Error())
@@ -236,4 +236,20 @@ var configCsrfTrustedOrigins = Check{
 		}
 		return csrfVerdict(path, entries, svelteConfigFound)
 	},
+}
+
+// joinOr joins a list of names the way a sentence offers alternatives, matching the copy
+// standard's serial "or": "a or b" for two, and commas with a serial comma before the trailing
+// "or" for three or more.
+func joinOr(items []string) string {
+	switch len(items) {
+	case 0:
+		return ""
+	case 1:
+		return items[0]
+	case 2:
+		return items[0] + " or " + items[1]
+	default:
+		return strings.Join(items[:len(items)-1], ", ") + ", or " + items[len(items)-1]
+	}
 }

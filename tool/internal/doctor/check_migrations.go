@@ -43,51 +43,46 @@ var configMigrations = Check{
 	PassTitle: "Auth store migrations are copied",
 	SkipTitle: "Auth store migrations",
 	Condition: spine.ConditionConfigMigrationsMissing,
-	Run: func(s Snapshot) Result {
-		wrangler, found, err := ReadWranglerConfig(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !found {
-			return skipResult(noWranglerFoundDetail)
-		}
-		if !wrangler.HasAuthDB {
-			return skipResult(skipConfigMigrationsNoAuthDB)
-		}
-
-		siteDir := wrangler.AuthDBMigrationsDir
-		if siteDir == "" {
-			siteDir = "migrations" // wrangler's default when migrations_dir is absent
-		}
-		if filepath.IsAbs(siteDir) {
-			return uncheckedResult(uncheckedConfigMigrationsUnreadable)
-		}
-		siteDir = path.Clean(filepath.ToSlash(siteDir))
-
-		packaged, ok, err := listUnder(s.Dir, "node_modules/"+cairnModule+"/migrations")
-		if err != nil || !ok {
-			return uncheckedResult(uncheckedConfigMigrationsPackage)
-		}
-		var required []string
-		for _, name := range packaged {
-			if strings.HasSuffix(name, ".sql") && !slices.Contains(optInMigrations, name) {
-				required = append(required, name)
+	run: func(s Snapshot) Result {
+		return withWrangler(s, func(wrangler WranglerFacts) Result {
+			if !wrangler.HasAuthDB {
+				return skipResult(skipConfigMigrationsNoAuthDB)
 			}
-		}
 
-		have, _, err := listUnder(s.Dir, siteDir)
-		if err != nil {
-			return uncheckedResult(uncheckedConfigMigrationsUnreadable)
-		}
-		var missing []string
-		for _, name := range required {
-			if !slices.Contains(have, name) {
-				missing = append(missing, name)
+			siteDir := wrangler.AuthDBMigrationsDir
+			if siteDir == "" {
+				siteDir = "migrations" // wrangler's default when migrations_dir is absent
 			}
-		}
-		if len(missing) > 0 {
-			return failResult(fmt.Sprintf(tmplConfigMigrationsMissing, siteDir, strings.Join(missing, ", ")))
-		}
-		return passResult(fmt.Sprintf(tmplConfigMigrationsPass, siteDir))
+			if filepath.IsAbs(siteDir) {
+				return uncheckedResult(uncheckedConfigMigrationsUnreadable)
+			}
+			siteDir = path.Clean(filepath.ToSlash(siteDir))
+
+			packaged, ok, err := listUnder(s.Dir, "node_modules/"+cairnModule+"/migrations")
+			if err != nil || !ok {
+				return uncheckedResult(uncheckedConfigMigrationsPackage)
+			}
+			var required []string
+			for _, name := range packaged {
+				if strings.HasSuffix(name, ".sql") && !slices.Contains(optInMigrations, name) {
+					required = append(required, name)
+				}
+			}
+
+			have, _, err := listUnder(s.Dir, siteDir)
+			if err != nil {
+				return uncheckedResult(uncheckedConfigMigrationsUnreadable)
+			}
+			var missing []string
+			for _, name := range required {
+				if !slices.Contains(have, name) {
+					missing = append(missing, name)
+				}
+			}
+			if len(missing) > 0 {
+				return failResult(fmt.Sprintf(tmplConfigMigrationsMissing, siteDir, strings.Join(missing, ", ")))
+			}
+			return passResult(fmt.Sprintf(tmplConfigMigrationsPass, siteDir))
+		})
 	},
 }

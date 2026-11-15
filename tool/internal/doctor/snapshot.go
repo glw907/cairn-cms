@@ -12,8 +12,8 @@ type OriginSource int
 // The origin sources config.public-origin and ai.posture-effective both consult, in precedence
 // order, plus the absent case.
 const (
-	// OriginAbsent means neither vars.PUBLIC_ORIGIN nor the environment named an origin.
-	OriginAbsent OriginSource = iota
+	// originAbsent means neither vars.PUBLIC_ORIGIN nor the environment named an origin.
+	originAbsent OriginSource = iota
 	// OriginFromVars means the resolved origin came from vars.PUBLIC_ORIGIN, the
 	// higher-precedence source.
 	OriginFromVars
@@ -23,7 +23,7 @@ const (
 
 // PublicOrigin is the site's resolved public origin, or its typed absence.
 type PublicOrigin struct {
-	// Value is the resolved origin. Empty when Source is OriginAbsent.
+	// Value is the resolved origin. Empty when neither source named an origin.
 	Value string
 	// Source names which precedence rule produced Value.
 	Source OriginSource

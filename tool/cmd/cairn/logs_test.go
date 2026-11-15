@@ -46,6 +46,22 @@ func TestImplicitlyVerboseCommandsWarnBeforeTheyPrint(t *testing.T) {
 	}
 }
 
+// TestAPipedNoticeIsByteIdentical pins the paste notice a pipe receives: one plain line at the
+// left edge, with no margin and no blank line after it, whatever width is asked for.
+func TestAPipedNoticeIsByteIdentical(t *testing.T) {
+	for _, args := range [][]string{
+		{"logs", "my-site-a1b2c3"},
+		{"adopt", "list", "--json=false"},
+	} {
+		d, _ := testDeps(t)
+		writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
+		_, stderr, _ := execTree(t, d, append(args, "--width", "100")...)
+		if want := "cairn: this output carries identifiers and is not safe to paste in public.\n"; stderr != want {
+			t.Errorf("%s: stderr = %q, want %q", args[0], stderr, want)
+		}
+	}
+}
+
 // TestLogsTakesExactlyOneSite asserts the site is required rather than defaulted: a log query
 // with no site named would have to guess which one, and a registry holds many.
 func TestLogsTakesExactlyOneSite(t *testing.T) {

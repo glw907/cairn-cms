@@ -124,6 +124,23 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **`cairn health`, `cairn doctor`, `cairn logs`, and the `cairn sites` status block share one report
+  layout in a terminal.** Their rows sit two columns in from the edge, and their blocks carry
+  lowercase titles such as `failing`, `could not run`, and `what to fix`. In `cairn health` and
+  `cairn doctor`, a check's state shows in the mark that opens its row and in its block's title,
+  and a note carries no mark. `cairn doctor` used to print one line per check in a terminal too;
+  it now folds its passing checks to one count line and its skipped checks to one
+  `does not apply` line. A held check, one acknowledged with `--ack`, takes the `◌` mark. The
+  marks fall back to ASCII when the locale isn't UTF-8, and outside Windows when `LC_ALL`,
+  `LC_CTYPE`, and `LANG` are all unset. When stdout and
+  stderr are both terminals, `cairn health` draws a `Checking <site>` progress line on stderr while
+  it runs and erases it before the report prints. A set `CI` variable, `TERM=dumb`, `--quiet`,
+  `--json`, and `--verbose` each keep the line off. On a terminal, `cairn logs` and `cairn adopt
+  list` set their "not safe to paste" notice in from the margin with a blank line after it, and
+  print it unchanged to a pipe. Output to a pipe or a file and `--json` output don't change.
+
+  Consumers must: nothing.
+
 - **A theme manifest now requires `engine`, `kinds`, and `notes`.** `schema/cairn-theme-1.schema.json`
   requires `engine` (a range of the form `>=1.2.0` or `>=1.2.0 <2.0.0`), `kinds` (one to three of
   `blog`, `portfolio`, `docs`, `landing`, and `organization`, listed with their labels in

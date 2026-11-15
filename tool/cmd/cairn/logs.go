@@ -71,7 +71,7 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 	// Under --json stderr carries nothing but an error, so the notice travels as the payload's
 	// containsPersonalData field instead of a line no agent reading stdout would see.
 	if !f.asJSON {
-		if err := writeNotice(cmd, d, rf, pasteNotice); err != nil {
+		if err := writePasteNotice(cmd, d, rf); err != nil {
 			return err
 		}
 	}
@@ -116,7 +116,7 @@ func writeLogs(cmd *cobra.Command, d deps, rf *rootFlags, entries []logs.Entry, 
 		}
 		return writeJSONPayload(cmd.OutOrStdout(), data)
 	}
-	// A terminal gets the log body, which states the day once on a separate rule and wraps a field
+	// A terminal gets the log body, which states the day once on its title and wraps a field
 	// into a separate column. A pipe keeps the tab-separated line, which is what a grep, an awk,
 	// and an agent read.
 	if in, ok := logsRenderInput(d, rf, entries, site); ok {

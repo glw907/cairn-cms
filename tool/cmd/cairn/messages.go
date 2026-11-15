@@ -134,6 +134,15 @@ func checkProgressLine(id, word string) string {
 	return fmt.Sprintf(tmplCheckProgress, id, word)
 }
 
+// tmplHealthProgress is the progress line's text while cairn health checks one site, filled
+// with the site's id. New to this table.
+const tmplHealthProgress = "Checking %s"
+
+// healthProgressText renders tmplHealthProgress for one site's id.
+func healthProgressText(id string) string {
+	return fmt.Sprintf(tmplHealthProgress, id)
+}
+
 // tmplScrubSkipped is the --verbose notice naming credentials too short for the output scrubber
 // to match. Redacting a very short value would replace ordinary words throughout the report, so
 // the scrubber leaves it and says so rather than silently dropping the protection. New to this

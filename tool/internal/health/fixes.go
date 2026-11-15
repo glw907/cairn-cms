@@ -65,7 +65,7 @@ var fixesByCondition = map[spine.Condition]Fix{
 		Outward: true,
 		Command: "wrangler email sending enable <domain>",
 	},
-	// Not in the catalogue; the plainest fragment satisfying section 2.5.
+	// The plainest fragment that names the action.
 	spine.ConditionConfigObservabilityOff: {
 		Text:    "Turn on observability for the Worker in wrangler.jsonc, then deploy again.",
 		Anchor:  "turn-on-observability",
@@ -75,9 +75,7 @@ var fixesByCondition = map[spine.Condition]Fix{
 }
 
 // fixesByCode is the fix table's tool-owned half, one line per spine.Code health's checks can
-// declare. None of these carries an Anchor yet. A line marked "not in the catalogue" is written
-// directly under tool/docs/design/copy-standard.md section 4.6 rather than copied from an existing
-// row.
+// declare. None of these carries an Anchor yet.
 var fixesByCode = map[spine.Code]Fix{
 	// Copied from the catalogue.
 	spine.CodeServingMismatch: {
@@ -96,7 +94,7 @@ var fixesByCode = map[spine.Code]Fix{
 		Outward: true,
 	},
 
-	// Not in the catalogue; the plainest fragment satisfying section 2.5.
+	// The plainest fragment that names the action.
 	spine.CodeServingNotCairn: {
 		Text:    "Confirm this hostname serves the cairn site, not another Worker or origin.",
 		Actor:   ActorOperator,

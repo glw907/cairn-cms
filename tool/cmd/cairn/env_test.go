@@ -103,17 +103,17 @@ func TestLoadEnvProviderAnswersWhenEnvironmentAbsent(t *testing.T) {
 func TestLoadEnvAllAbsentIsAllMissing(t *testing.T) {
 	got, missing := loadEnv(fakeEnv(nil))
 
-	for _, name := range credentialNames() {
-		if from := displayFor(got, name); from != "" {
-			t.Errorf("%s from = %q, want empty", name, from)
+	for _, v := range credentialVars {
+		if from := displayFor(got, v.name); from != "" {
+			t.Errorf("%s from = %q, want empty", v.name, from)
 		}
 	}
 	if len(missing) != 3 {
 		t.Fatalf("missing = %v, want all three variables", missing)
 	}
-	for i, name := range credentialNames() {
-		if missing[i].Var != name {
-			t.Errorf("missing[%d].Var = %q, want %q", i, missing[i].Var, name)
+	for i, v := range credentialVars {
+		if missing[i].Var != v.name {
+			t.Errorf("missing[%d].Var = %q, want %q", i, missing[i].Var, v.name)
 		}
 	}
 }

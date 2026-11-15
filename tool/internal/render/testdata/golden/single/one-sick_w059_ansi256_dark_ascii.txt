@@ -1,6 +1,6 @@
   [1;38;5;210mCRITICAL[m  [1mblog-site[m
-  [38;5;246m3 failing - 2 could not run - 1 held - 3 passing[m
-  [38;5;246mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
+  [38;5;248m3 failing - 2 could not run - 1 held - 3 passing[m
+  [38;5;248mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
 
   [1mfailing[m
   [38;5;210m![m deploy
@@ -12,8 +12,8 @@
     [38;5;250mkeyring[m
     [38;5;215mCAIRN_CF_READ_TOKEN is not set, so email and errors[m
     [38;5;215mcould not run[m
-    [38;5;246mCAIRN_GH_READ_TOKEN read from the keyring, expires[m
-    [38;5;246m2026-09-26, in 6 days[m
+    [38;5;248mCAIRN_GH_READ_TOKEN read from the keyring, expires[m
+    [38;5;248m2026-09-26, in 6 days[m
   [38;5;141m>[m [38;5;250mCreate a new token, then run `cairn auth set` naming[m
     [38;5;250mthe credential.[m
   [38;5;215m*[m engine
@@ -30,15 +30,15 @@
   [1mheld[m
   [38;5;215mo[m https-forced
     [38;5;250mAlways Use HTTPS is off for the[m
-    [38;5;250mzone[m[38;5;246m  edge.https-not-forced[m
-    [38;5;246mheld until 2026-09-25, 5 days left[m
+    [38;5;250mzone[m[38;5;248m  edge.https-not-forced[m
+    [38;5;248mheld until 2026-09-25, 5 days left[m
   [38;5;141m>[m [38;5;250mTurn on Always Use HTTPS for the zone under SSL/TLS,[m
     [38;5;250mEdge Certificates.[m
     ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[4;4mc[m[4;4ma[m[4;4mi[m[4;4mr[m[4;4mn[m[4;4m.[m[4;4mp[m[4;4mu[m[4;4mb[m[4;4m/[m[4;4md[m[4;4mo[m[4;4mc[m[4;4ms[m[4;4m/[m[4;4ma[m[4;4md[m[4;4mm[m[4;4mi[m[4;4mn[m[4;4m/[m[4;4mi[m[4;4ms[m[4;4m-[m[4;4mi[m[4;4mt[m[4;4m-[m[4;4mw[m[4;4mo[m[4;4mr[m[4;4mk[m[4;4mi[m[4;4mn[m[4;4mg[m[4;4m#[m[4;4mf[m[4;4mo[m[4;4mr[m[4;4mc[m[4;4me[m[4;4m-[m[4;4mh[m[4;4mt[m[4;4mt[m[4;4mp[m[4;4ms[m[4;4m-[m[4;4ma[m[4;4mt[m[4;4m-[m[4;4mt[m[4;4mh[m[4;4me[m[4;4m-[m[4;4me[m]8;;
     ]8;;https://cairn.pub/docs/admin/is-it-working#force-https-at-the-edge[4;4md[m[4;4mg[m[4;4me[m]8;;
 
-  [38;5;246m+[m 3 passing
+  [38;5;248m+[m 3 passing
     [38;5;250mserving - delegation - publish-path[m
 
   [1;38;5;210mCRITICAL[m  [1mblog-site[m
-  [38;5;246m3 failing - 2 could not run - 1 held - 3 passing[m
+  [38;5;248m3 failing - 2 could not run - 1 held - 3 passing[m

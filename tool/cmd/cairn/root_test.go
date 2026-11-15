@@ -189,7 +189,7 @@ func readFileAt(t *testing.T, path, rel string) string {
 	return string(data)
 }
 
-// TestGrammarResolvesEveryCommandAndAlias covers the 2026-09-20 grammar: sites list with bare
+// TestGrammarResolvesEveryCommandAndAlias covers the command grammar: sites list with bare
 // sites as its alias, adopt list as its subcommand, and auth probe in place of the old
 // top-level probe-token.
 func TestGrammarResolvesEveryCommandAndAlias(t *testing.T) {
@@ -463,9 +463,8 @@ func TestTerminalChecksAreConfinedToTheColourProfile(t *testing.T) {
 // command file, and 300 for a new_*.go installer file, whose one command spans several files.
 //
 // messages.go is exempted by name: holding every command's Short, Long, and Example plus
-// copy-standard.md section 3.8's eight error cases is one concern by construction, and
-// splitting the table across files would defeat section 4.1's point, one reviewable place a
-// linter and a human can both read in full.
+// the error cases is one concern by construction, and splitting the table across files would
+// defeat its point, one reviewable place a linter and a human can both read in full.
 func TestNoCommandFileExceedsItsBound(t *testing.T) {
 	for _, rel := range toolGoFiles(t) {
 		if !strings.HasPrefix(rel, "cmd/cairn/") || rel == "cmd/cairn/messages.go" {

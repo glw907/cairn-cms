@@ -203,9 +203,8 @@ func sentFilters(t *testing.T, sent map[string]any) []any {
 
 // wantLeafFilter asserts filter is an equality leaf carrying key and value, and the "string" type
 // every leaf filter in the Workers Observability query contract must declare (the endpoint
-// answers HTTP 400 with a ZodError for a leaf missing "type", which is what cairn sent for a week
-// until 2026-09-21). The expected type is the literal "string", never logs.go's filterType
-// constant, so a wrong constant in logs.go cannot pass by agreeing with itself.
+// answers HTTP 400 with a ZodError for a leaf missing "type", which is what cairn once sent). The expected type is the literal "string", never logs.go's
+// filterType constant, so a wrong constant in logs.go cannot pass by agreeing with itself.
 func wantLeafFilter(t *testing.T, filter any, key, value string) {
 	t.Helper()
 	f, ok := filter.(map[string]any)
@@ -382,8 +381,8 @@ func TestFetchRecordsCountsEngineRecordsAndIgnoresConsoleLines(t *testing.T) {
 }
 
 // TestFetchRecordsReportsATruncatedPage asserts a page that fills the fetch limit reports itself
-// truncated, so a caller says "at least" rather than passing a floor off as a total. This is the
-// 2026-09-21 live finding: a 24 hour query returned 1000 entries against a 1000 limit, and the
+// truncated, so a caller says "at least" rather than passing a floor off as a total. This is a
+// live finding: a 24 hour query returned 1000 entries against a 1000 limit, and the
 // endpoint's result.events.count read 1000 too, so nothing in the response says how many more
 // there were.
 func TestFetchRecordsReportsATruncatedPage(t *testing.T) {
@@ -423,7 +422,7 @@ func TestFetchMapsANotFoundToErrObservabilityOff(t *testing.T) {
 	}
 }
 
-// TestFetchDoesNotReadARejectedRequestAsObservabilityOff pins the misreport the 2026-09-21 live
+// TestFetchDoesNotReadARejectedRequestAsObservabilityOff pins the misreport a live
 // run found. cairn sent a filter carrying no "type", the endpoint answered HTTP 400 with a
 // ZodError and no v4 errors array at all, and the old mapping folded that into the sentinel, so
 // four production sites read as having observability turned off.
@@ -448,7 +447,7 @@ func TestFetchDoesNotReadARejectedRequestAsObservabilityOff(t *testing.T) {
 }
 
 // TestFetchDecodesTheRecordedLiveResponse decodes the response a live telemetry query returned
-// on 2026-09-21, the fixture that is live all the way down. It is the test the old synthesized
+// the fixture that is live all the way down. It is the test the old synthesized
 // fixture could not be: result.events is an object rather than an array, each event carries the
 // Worker's record under "source", and the decode read neither until this round.
 func TestFetchDecodesTheRecordedLiveResponse(t *testing.T) {

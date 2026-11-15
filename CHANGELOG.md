@@ -134,7 +134,10 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
   palette, in that order, and `CAIRN_PLAIN=1` prints a terminal the plain output a pipe gets, with no
   progress line, though `cairn new` still opens its terminal view. A value cairn cannot read is
   ignored. Output to a pipe or a file and `--json` output are byte for byte what they were, except one
-  sentence in `cairn --help` that names `CAIRN_PLAIN`.
+  sentence in `cairn --help` that names `CAIRN_PLAIN`, and one newline: `cairn auth set` now ends its
+  `NAME: ` prompt line on stderr when stdin is a pipe, so the receipt starts at the margin. The
+  256-colour palette is darker on a light ground and lighter on a dark one, so every ink measures at
+  least 4.5:1 against the ground.
   The admin credentials page documents the variables.
 
   Consumers must: nothing.

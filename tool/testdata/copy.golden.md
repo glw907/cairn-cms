@@ -147,6 +147,7 @@ and commit the diff.
 
 - %v.
 - --posture takes decline or invite, not %q.
+- --since %q is not a duration.
 - Add a Cloudflare Worker to the registry as a site
 - Add the %s permission to the token in %s, then run the command again.
 - Check a cairn-cms site's checked-in configuration, read straight off the directory. It needs no credential and no adopted site, and makes at most one network request, a credential-free GET of the declared origin's /robots.txt. <dir> is a filesystem path, never a registered site id, and defaults to the current directory.
@@ -270,6 +271,7 @@ Folder: %s
 Owner email: %s
 AI crawlers: %s
 Nothing was created.
+- Use a whole number of minutes, hours, or days: 90m, 24h, 7d
 - an unfinished setup exists: %s.
 Continue it with --resume %s, or start a new site with --new.
 - cairn adopt --worker my-site
@@ -439,8 +441,6 @@ Use a file that exists, or drop --ack-file to use the registry's default
 - cairn: --email must be one email address, such as owner@example.com.
 Run `cairn new --help` for the flags
 - cairn: --host %s must be the zone %s or a subdomain of it
-- cairn: --since %q is not a duration.
-Use a whole number of minutes, hours, or days: 90m, 24h, 7d
 - cairn: --theme %q is not a theme cairn renders.
 Use %s or %s
 - cairn: --width %d is not a width cairn can render.

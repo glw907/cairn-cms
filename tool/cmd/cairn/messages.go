@@ -320,13 +320,16 @@ func unknownSiteError(id string) error {
 	return fixed(fmt.Sprintf(tmplUnknownSite, id), fixUnknownSite)
 }
 
-// tmplInvalidSince is health.go's and logs.go's shared refusal of a --since value ParseSince does
-// not accept, catalogue section 3.8's "invalid --since" row.
-const tmplInvalidSince = "cairn: --since %q is not a duration.\nUse a whole number of minutes, hours, or days: 90m, 24h, 7d"
+// whatInvalidSince and fixInvalidSince are health.go's and logs.go's shared refusal of a --since
+// value ParseSince does not accept, catalogue section 3.8's "invalid --since" row.
+const (
+	whatInvalidSince = "--since %q is not a duration."
+	fixInvalidSince  = "Use a whole number of minutes, hours, or days: 90m, 24h, 7d"
+)
 
-// invalidSinceError renders tmplInvalidSince for the value the operator gave.
+// invalidSinceError renders whatInvalidSince for the value the operator gave.
 func invalidSinceError(s string) error {
-	return translated(fmt.Errorf(tmplInvalidSince, s))
+	return fixed(fmt.Sprintf(whatInvalidSince, s), fixInvalidSince)
 }
 
 // whatHealthTooManyArgs and fixHealthTooManyArgs are cairn health's refusal of more than one positional site argument,

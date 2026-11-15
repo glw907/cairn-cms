@@ -12,8 +12,8 @@ import (
 )
 
 // TestErrorBlockDrawsAnArrowOnlyForAFix renders three errors at TrueColor on both glyph tiers:
-// --since's refusal, whose second line opens Use and so carries no fix, an untyped error, and a
-// Run-line error. Only the last draws a fix line, so the test fails both when an arrow leaks onto
+// --since's refusal, an untyped error, and a Run-line error. --since and the Run line draw a fix
+// line and the untyped error does not, so the test fails both when an arrow leaks onto
 // an error with no fix and when the block never draws one.
 func TestErrorBlockDrawsAnArrowOnlyForAFix(t *testing.T) {
 	cases := []struct {
@@ -22,7 +22,7 @@ func TestErrorBlockDrawsAnArrowOnlyForAFix(t *testing.T) {
 		head    string
 		wantFix bool
 	}{
-		{"invalid since", invalidSinceError("tuesday"), `--since "tuesday" is not a duration.`, false},
+		{"invalid since", invalidSinceError("tuesday"), `--since "tuesday" is not a duration.`, true},
 		{"untyped", translateError(errRaw{"open sites: permission denied"}), "open sites: permission denied", false},
 		{"typed fix", unknownCommandError("healt"), `"healt" is not a cairn command.`, true},
 	}
@@ -120,5 +120,19 @@ func TestErrorFlagsReadsColorAndTheme(t *testing.T) {
 		if got := *errorFlags(c.args); got != c.want {
 			t.Errorf("errorFlags(%q) = %+v, want %+v", c.args, got, c.want)
 		}
+	}
+}
+
+// TestInvalidSinceFixSitsOnTheArrow holds that --since's instruction draws on the fix mark, not as
+// a muted why-line, and that the message and fix rejoin to the one line a pipe prints.
+func TestInvalidSinceFixSitsOnTheArrow(t *testing.T) {
+	message, fix := splitFix(invalidSinceError("tuesday"))
+	if fix != fixInvalidSince || strings.Contains(message, "\n") {
+		t.Fatalf("split = %q, %q, want the refusal alone and the Use line as the fix", message, fix)
+	}
+	theme := style.NewTheme(true, colorprofile.TrueColor, false)
+	joined := ansi.Strip(strings.Join(errorBlock(theme, message, fix, 80), "\n"))
+	if !strings.Contains(joined, "→ Use a whole number of minutes, hours, or days: 90m, 24h, 7d") {
+		t.Errorf("block = %q, want the Use line on the arrow", joined)
 	}
 }

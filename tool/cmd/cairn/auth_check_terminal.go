@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
@@ -47,6 +49,15 @@ func authCheckLines(v view, rows []checkRow, verdict spine.Verdict, siteID strin
 	if verdict == spine.VerdictOK {
 		passRole = style.RoleOK
 	}
+	// One table sizes every row's label and credential columns, so the three groups line up. Its
+	// header is blank and dropped, and the rows sit two cells in to leave the mark its margin.
+	cells := make([][]string, 0, len(rows))
+	for _, g := range [][]checkRow{failing, unknown, passing} {
+		for _, r := range g {
+			cells = append(cells, []string{r.Label, r.Credential})
+		}
+	}
+	table := style.Table(t, []string{"", ""}, cells, v.width-2)[1:]
 	out := head
 	section := func(title, mark string, role style.Role, group []checkRow, fix bool) {
 		if len(group) == 0 {
@@ -54,21 +65,48 @@ func authCheckLines(v view, rows []checkRow, verdict spine.Verdict, siteID strin
 		}
 		out = append(append(out, ""), style.Title(t, title, v.width)...)
 		for _, r := range group {
-			detail := r.Credential
+			out = append(out, "  "+t.Style(role).Render(mark)+" "+table[0][2:])
+			table = table[1:]
 			if r.display != "" {
-				detail += " " + v.marks.Sep + " " + r.display
+				out = append(out, style.ContinuationLine(t, style.RoleSubtle, authCheckDetail(r.display), authCheckTextCol, v.width)...)
 			}
-			out = append(out, style.MarkRow(t, mark, role, r.Label, detail, v.width)...)
 			// A rejected token lacks no permission, so the permission fix would misdirect it.
 			if fix && r.display != providers.ReasonUnauthorized.String() {
-				out = append(out, style.FixLine(t, fmt.Sprintf(tmplAuthCheckFix, r.Label, r.Credential), "", t.DetailColumn(r.Label, v.width), v.width)...)
+				out = append(out, style.FixLine(t, fmt.Sprintf(tmplAuthCheckFix, r.Label, r.Credential), "", authCheckTextCol, v.width)...)
 			}
 		}
 	}
 	section(labelCheckFailing, failMark, failRole, failing, true)
 	section(labelCheckCouldNotRun, v.marks.CouldNotRun, style.RoleUnknown, unknown, false)
+	// One missing credential can block several rows, so the group carries its fix once.
+	if slices.ContainsFunc(unknown, func(r checkRow) bool {
+		return r.verdict.Reason == spine.ReasonCredMissing && r.display != authCheckSiteRequiredReason
+	}) {
+		if fix, ok := health.FixForReason(spine.ReasonCredMissing); ok {
+			out = append(out, style.FixLine(t, fix.Text, "", authCheckTextCol, v.width)...)
+		}
+	}
 	section(labelCheckPassing, v.marks.Pass, passRole, passing, false)
 	return append(append(out, ""), head...)
+}
+
+// authCheckTextCol is where a permission's label, its detail, and its fix sit: the column
+// style.MarkRow puts a name at, after the mark and one space.
+const authCheckTextCol = 4
+
+// authCheckDetail turns a row's display into the words a terminal shows. A reason that reached the
+// row as its stable machine token reads as the prose the health checks print for the same reason,
+// and every other display already is prose.
+func authCheckDetail(display string) string {
+	if display == "unreachable" {
+		return health.ReasonPhrase(spine.ReasonOffline)
+	}
+	for _, r := range providers.Reasons() {
+		if r.String() == display {
+			return health.ReasonPhrase(spine.APIReason(r))
+		}
+	}
+	return display
 }
 
 // checkVerdictRole is the ink a verdict word takes: full saturation for CRITICAL alone, and green

@@ -148,8 +148,8 @@ func TestAuthCheckReportBlock(t *testing.T) {
 	}
 	requireMarkAt(t, raw[c+1], plain[c+1], "?", "Contents")
 	requireMarkAt(t, raw[p+1], plain[p+1], "●", "Zone")
-	if strings.Contains(strings.Join(plain[c:], "\n"), "→") {
-		t.Errorf("a row that did not fail drew an arrow: %q", plain[c:])
+	if strings.Contains(strings.Join(plain[p:], "\n"), "→") {
+		t.Errorf("a row that passed drew an arrow: %q", plain[p:])
 	}
 }
 

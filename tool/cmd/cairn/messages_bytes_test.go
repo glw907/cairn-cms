@@ -59,6 +59,8 @@ func TestErrorBytesHold(t *testing.T) {
 		// new_dryrun.go builds this one at its call site from the bare template.
 		{"new bad email", translated(errors.New(tmplNewBadEmail)),
 			"cairn: --email must be one email address, such as owner@example.com.\nRun `cairn new --help` for the flags"},
+		{"invalid since", invalidSinceError("tuesday"),
+			"cairn: --since \"tuesday\" is not a duration.\nUse a whole number of minutes, hours, or days: 90m, 24h, 7d"},
 		{"keyring unavailable", keyringUnavailableError("CAIRN_CF_READ_TOKEN"),
 			"cairn: the OS keyring did not open.\nSet CAIRN_CF_READ_TOKEN in the environment instead"},
 	}

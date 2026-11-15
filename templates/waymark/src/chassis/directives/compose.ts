@@ -14,7 +14,7 @@ export type DirectiveRenderer = (ctx: BlockContext) => Element;
 export type DirectiveRenderers = Partial<Record<DirectiveName, DirectiveRenderer>>;
 
 /**
- * The nine registered blocks, in registration order, over a theme's icon set. Each renderer in
+ * The vocabulary's blocks, in registration order, over a theme's icon set. Each renderer in
  * `renderers` replaces the `build` of the block it is keyed by and nothing else. A key outside the
  * vocabulary throws, naming it, so a misspelled or removed directive fails the build instead of
  * silently rendering the default.

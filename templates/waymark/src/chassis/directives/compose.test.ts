@@ -37,7 +37,7 @@ function outcome(build: (ctx: BlockContext) => unknown): unknown {
 }
 
 describe('composeBlocks', () => {
-  it('registers the nine blocks in the documented order', () => {
+  it('registers the vocabulary blocks in the documented order', () => {
     expect(composeBlocks(icons, {}).map((b) => b.name)).toEqual([
       'callout',
       'alert',
@@ -48,6 +48,7 @@ describe('composeBlocks', () => {
       'micro-cta',
       'faq',
       'banner',
+      'cards',
     ]);
   });
 
@@ -85,7 +86,7 @@ describe('composeBlocks', () => {
 });
 
 describe('classes.json', () => {
-  it('names exactly the nine vocabulary blocks', () => {
+  it('names exactly the vocabulary blocks', () => {
     const names = composeBlocks(icons, {}).map((b) => b.name);
     expect(Object.keys(classes).sort()).toEqual([...names].sort());
   });

@@ -30,7 +30,7 @@ var robotsClient = &http.Client{
 // field the command layer stamps before any check runs. ctx carries the run's deadline, the
 // root command's --timeout, and nothing else bounds the request.
 func FetchRobots(ctx context.Context, origin PublicOrigin) Robots {
-	if origin.Source == OriginAbsent {
+	if origin.Source == originAbsent {
 		return Robots{Present: false, Reason: robotsAbsentNoOrigin}
 	}
 	target, ok := robotsURL(origin.Value)

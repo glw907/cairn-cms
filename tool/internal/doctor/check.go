@@ -21,8 +21,8 @@ type Check struct {
 	// Condition is the cairn-doctor condition id this check's failure raises. A check whose
 	// failure raises no catalogued condition leaves this spine.ConditionNone.
 	Condition spine.Condition
-	// Run measures s and returns the check's settled Result.
-	Run func(s Snapshot) Result
+	// run measures s and returns the check's settled Result.
+	run func(s Snapshot) Result
 }
 
 // Catalogue returns every operator-facing string this package's checks contribute.
@@ -157,13 +157,13 @@ var checks = []Check{
 	aiPostureEffective,
 }
 
-// CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and its
+// CheckedResult pairs one Check with the Result its run produced. A report's per-check line and its
 // failure block both need the check's label, which lives on Check (its Condition) and not on
 // every Result, so the pair travels together.
 type CheckedResult struct {
 	// Check is the check that ran.
 	Check Check
-	// Result is the settled outcome Check.Run produced against the run's Snapshot.
+	// Result is the settled outcome Check.run produced against the run's Snapshot.
 	Result Result
 }
 
@@ -179,5 +179,5 @@ func Run(s Snapshot) []CheckedResult {
 
 // runCheck runs c against s and pairs c with the Result it produced.
 func runCheck(c Check, s Snapshot) CheckedResult {
-	return CheckedResult{Check: c, Result: c.Run(s)}
+	return CheckedResult{Check: c, Result: c.run(s)}
 }

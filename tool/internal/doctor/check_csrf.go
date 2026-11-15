@@ -214,7 +214,7 @@ var configCsrfTrustedOrigins = Check{
 	PassTitle: "Trusted origins keep SvelteKit's origin check",
 	SkipTitle: "Trusted origins setting",
 	Condition: spine.ConditionConfigCSRFTrustedOriginsWildcard,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		_, svelteConfigFound, err := s.readFile("svelte.config.js")
 		if err != nil {
 			return uncheckedResult(err.Error())

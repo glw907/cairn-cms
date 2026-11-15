@@ -239,7 +239,7 @@ func TestConfigDependencyFloorsSymlinkedNodeModulesIsUnchecked(t *testing.T) {
 		t.Fatalf("write package.json: %v", err)
 	}
 
-	result := configDependencyFloors.Run(Snapshot{Dir: site})
+	result := configDependencyFloors.run(Snapshot{Dir: site})
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}
@@ -273,7 +273,7 @@ func TestReadEnginePeersFiltersOptionalPeer(t *testing.T) {
 
 	// A lockfile carrying no entry for the optional peer must not turn the run into a skip:
 	// the two real peers alone must still pass.
-	result := configDependencyFloors.Run(snapshotWithFiles(t, map[string]string{
+	result := configDependencyFloors.run(snapshotWithFiles(t, map[string]string{
 		enginePackageJSONPath: enginePackageJSONFixture,
 		"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.56.10", "@sveltejs/kit": "3.0.0"}),
 	}))

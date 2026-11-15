@@ -177,7 +177,7 @@ var configNoReferrerBlanket = Check{
 	PassTitle: "No site-wide Referrer-Policy: no-referrer",
 	SkipTitle: "Site-wide Referrer-Policy",
 	Condition: spine.ConditionConfigNoReferrerBlanket,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		hooksText, hooksPath, hooksFound, err := readHooksSource(s)
 		if err != nil {
 			return uncheckedResult(err.Error())

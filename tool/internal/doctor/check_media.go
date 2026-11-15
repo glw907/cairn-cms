@@ -29,7 +29,7 @@ var configMediaBucket = Check{
 	PassTitle: "Media bucket binding is declared",
 	SkipTitle: "Media bucket binding",
 	Condition: spine.ConditionConfigMediaBucketMissing,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		return withSiteFacts(s, func(facts siteFacts) Result {
 			if !facts.HasMediaBucketBinding {
 				return skipResult(skipConfigMediaBucketNone)

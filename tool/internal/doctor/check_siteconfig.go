@@ -25,7 +25,7 @@ var configSiteConfig = Check{
 	PassTitle: "Site config validates",
 	SkipTitle: "Site config",
 	Condition: spine.ConditionConfigSiteConfigInvalid,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		outcome, err := s.siteConfig()
 		if err != nil {
 			return uncheckedResult(err.Error())

@@ -284,7 +284,7 @@ var aiPostureEffective = Check{
 	PassTitle: "The stated AI posture is the served one",
 	SkipTitle: "Stated AI posture",
 	Condition: spine.ConditionAIPostureNotEffective,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		return withSiteFacts(s, func(facts siteFacts) Result {
 			if !s.Robots.Present {
 				return uncheckedResult(postureRobotsAbsentDetail(s.Robots.Reason))

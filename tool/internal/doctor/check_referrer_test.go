@@ -198,7 +198,7 @@ func TestConfigNoReferrerBlanket(t *testing.T) {
 // sources it actually read.
 func TestConfigNoReferrerBlanketNamesSourcesOnPass(t *testing.T) {
 	s := snapshotWithFiles(t, map[string]string{"static/_headers": headersScoped})
-	result := configNoReferrerBlanket.Run(s)
+	result := configNoReferrerBlanket.run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass", result.Status)
 	}

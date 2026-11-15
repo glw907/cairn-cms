@@ -43,7 +43,7 @@ var configMigrations = Check{
 	PassTitle: "Auth store migrations are copied",
 	SkipTitle: "Auth store migrations",
 	Condition: spine.ConditionConfigMigrationsMissing,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		return withWrangler(s, func(wrangler WranglerFacts) Result {
 			if !wrangler.HasAuthDB {
 				return skipResult(skipConfigMigrationsNoAuthDB)

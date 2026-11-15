@@ -16,7 +16,7 @@ var configObservability = Check{
 	PassTitle: "Workers Logs has a sink",
 	SkipTitle: "Workers Logs sink",
 	Condition: spine.ConditionConfigObservabilityOff,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		return withWrangler(s, func(facts WranglerFacts) Result {
 			if !facts.ObservabilityEnabled {
 				return failResult(detailObservabilityOff)

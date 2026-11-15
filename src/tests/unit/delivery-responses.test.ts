@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildRssResponse, buildJsonFeedResponse, buildSitemapResponse, buildRobotsResponse, buildMarkdownResponse } from '../../lib/delivery/responses.js';
+import { buildRssResponse, buildJsonFeedResponse, buildSitemapResponse, buildRobotsResponse, buildMarkdownResponse, buildICalendarResponse } from '../../lib/delivery/responses.js';
 
 const channel = { title: 'T', description: 'D', siteUrl: 'https://x.test', feedUrl: 'https://x.test/feed.xml' };
 const items = [{ title: 'Post', url: 'https://x.test/p', date: '2026-05-14', summary: 'S' }];
@@ -44,5 +44,11 @@ describe('delivery response helpers', () => {
     expect(res.headers.get('Content-Type')).toBe('text/markdown; charset=utf-8');
     const body = await res.text();
     expect(body).toBe('# Heading\n\nSome **bold** text.');
+  });
+
+  it('buildICalendarResponse is a calendar with the text/calendar content type', async () => {
+    const res = buildICalendarResponse({ name: 'N', productId: '-//X//Y//EN', events: [] });
+    expect(res.headers.get('Content-Type')).toBe('text/calendar; charset=utf-8');
+    expect((await res.text()).startsWith('BEGIN:VCALENDAR\r\n')).toBe(true);
   });
 });

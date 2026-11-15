@@ -158,6 +158,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/delivery`
 
 - `buildExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
+- `buildICalendarResponse`: (calendar: ICalendar) => Response
 - `buildJsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `buildMarkdownResponse`: (opts: { body: string }) => Response
 - `buildRobotsResponse`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => Response
@@ -179,6 +180,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EntryRef`: { concept: string; id: string; title: string; permalink: string; excerpt?: string }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
+- `ICalendar`: { name: string; productId: string; stamp?: Date; events: ICalendarEvent[] }
+- `ICalendarEvent`: { uid: string; summary: string; location?: string; description?: string; url?: string; status?: "cancelled" } & ({ start: `${number}-${number}-${number}`; end?: `${number}-${number}-${number}` } | { start: Date; end?: Date })
 - `ManifestProblem`: { concept: string; id: string; path: string; draft: boolean; errors: { [x: string]: string } }
 - `PublicRoutes`: { entryLoad: (event: { url: URL }) => Promise<EntryData<S>>; entries: () => { path: string }[]; markdownEntries: () => { path: string }[]; markdownLoad: (event: { url: URL }) => Promise<{ body: string }> }
 - `PublicRoutesConfig`: { site: S; render: (input: RenderInput) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia: MediaResolve | null }

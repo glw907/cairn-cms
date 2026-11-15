@@ -170,7 +170,7 @@ If your site has a block named `cards`, you can use it to lay out a few similar 
 
 1. In the toolbar, select **Insert block**.
 2. Choose **Cards**.
-3. In **Columns**, choose 2, 3, or 4. The form starts at 4. If you clear it, the block uses 3.
+3. In **Columns**, choose 2, 3, or 4. The form starts at 4. If you clear it, the block uses 3. Cards never shrink below a readable width, so 4 shows two across in a normal text column and one across on a phone.
 4. Under **Cards**, the form lists four sample cards. Replace their text with your own, remove any you don't need, and add one line for each card you want.
 5. Select **Insert**.
 

@@ -36,6 +36,10 @@ for (const colorScheme of SCHEMES) {
         block
           .locator('.cards-item')
           .evaluateAll((items) => new Set(items.map((el) => (el as HTMLElement).offsetLeft)).size);
+      if (width === 768 || width === 2560) {
+        expect(await columns(three)).toBe(3);
+        expect(await columns(four)).toBe(2);
+      }
       if (width === 1440) {
         expect(await columns(three)).toBe(3);
         // The reading measure fits two 13rem cards across, so the four-column block lays out as two.

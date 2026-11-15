@@ -69,12 +69,14 @@ func TestPipedListingKeepsItsBytes(t *testing.T) {
 }
 
 // TestTerminalListingIsATitledBlockOfMarkRows: on a terminal the listing's credentials sit under
-// a title, one mark row each, the variable at the name column and its fact under or beside it.
+// a title after one blank line, one mark row each, the variable at the name column and its fact
+// under or beside it. The piped form opens with no blank line (TestPipedListingKeepsItsBytes).
 func TestTerminalListingIsATitledBlockOfMarkRows(t *testing.T) {
 	in := statusInput()
 	in.Body = BodySingle
 	lines := plainLines(in)
 	want := []string{
+		"",
 		"  credentials",
 		"  ? CAIRN_CF_READ_TOKEN",
 		"    is not set, so email and errors cannot run",
@@ -87,6 +89,20 @@ func TestTerminalListingIsATitledBlockOfMarkRows(t *testing.T) {
 	in.Status = StatusState{Credentials: []Credential{{Variable: "CAIRN_CF\u001b[2J_READ_TOKEN", Disables: []string{"dep\nloy"}}}}
 	if text := strings.Join(Render(in).Lines(), "\n"); strings.Contains(text, "\u001b[2J") || strings.Contains(text, "\n\n") {
 		t.Errorf("an escape or an injected line reached the terminal listing: %q", text)
+	}
+}
+
+// TestTheStatusBlockHasABlankLineBeforeItsTitleAndThePipedListingDoesNot is the layout grid's
+// vertical rule for the terminal block, one blank line and then the title, beside the piped
+// lines a script parses from the first line on.
+func TestTheStatusBlockHasABlankLineBeforeItsTitleAndThePipedListingDoesNot(t *testing.T) {
+	in := statusInput()
+	in.Body = BodySingle
+	if lines := plainLines(in); len(lines) < 2 || lines[0] != "" || lines[1] != "  "+labelCredentials {
+		t.Errorf("terminal status block opens %q, want a blank line and then the title", lines[:min(2, len(lines))])
+	}
+	if lines := Render(statusInput()).Lines(); len(lines) == 0 || strings.TrimSpace(lines[0]) == "" {
+		t.Errorf("piped status lines open %q, want a fact on the first line", lines)
 	}
 }
 

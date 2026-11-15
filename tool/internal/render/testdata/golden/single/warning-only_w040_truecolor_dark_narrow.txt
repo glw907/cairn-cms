@@ -18,8 +18,8 @@
   [38;2;157;132;236m→[m [38;2;193;189;184mTurn on observability for the Worker[m
     [38;2;193;189;184min wrangler.jsonc, then deploy[m
     [38;2;193;189;184magain.[m
-    ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158mhttps://cairn.pub/docs/admin/is-it-w[m]8;;
-    ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158morking#turn-on-observability[m]8;;
+    ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158mcairn.pub/docs/admin/is-it-working#t[m]8;;
+    ]8;;https://cairn.pub/docs/admin/is-it-working#turn-on-observability[38;2;168;164;158murn-on-observability[m]8;;
 
   [38;2;168;164;158m●[m [38;2;234;231;227m7 passing[m
     [38;2;193;189;184mcreds · serving · delegation ·[m

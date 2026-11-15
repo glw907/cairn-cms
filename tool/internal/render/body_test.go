@@ -357,6 +357,38 @@ func TestHyperlinkOnlyForConstrainedTargets(t *testing.T) {
 	}
 }
 
+// TestTheDocLinkSitsAtColumn20WhenItFits draws the one-site report at 80 columns, where the
+// address without its scheme fits on the fix's column 20 hang, and at 59, where the frame is one
+// column and the address sits at the name column. The OSC 8 target keeps the scheme either way.
+func TestTheDocLinkSitsAtColumn20WhenItFits(t *testing.T) {
+	shown := strings.TrimPrefix(fixAnchorBase, "https://")
+	for _, tt := range []struct {
+		width, col int
+	}{{80, 20}, {59, 4}} {
+		frame := Render(input(fixtures.OneSick(), BodySingle, tt.width, colorprofile.TrueColor, false, spine.VerdictCritical)).Lines()
+		found := false
+		for i, l := range plainLines(input(fixtures.OneSick(), BodySingle, tt.width, colorprofile.TrueColor, false, spine.VerdictCritical)) {
+			at := strings.Index(l, shown)
+			if at < 0 {
+				continue
+			}
+			found = true
+			if at != tt.col || strings.TrimSpace(l[:at]) != "" {
+				t.Errorf("width %d: the link starts at cell %d in %q, want cell %d", tt.width, at, l, tt.col)
+			}
+			if strings.Contains(l, "https://") {
+				t.Errorf("width %d: the printed link %q carries its scheme", tt.width, l)
+			}
+			if !strings.Contains(frame[i], "\x1b]8;;"+fixAnchorBase) {
+				t.Errorf("width %d: the link line %q does not target the full URL", tt.width, frame[i])
+			}
+		}
+		if !found {
+			t.Fatalf("width %d: no line carries %q", tt.width, shown)
+		}
+	}
+}
+
 // TestConditionIDNeverAloneOnALine is criterion 11: across the whole 40-to-400 sweep, no line
 // consists of nothing but a condition id.
 func TestConditionIDNeverAloneOnALine(t *testing.T) {
@@ -375,18 +407,20 @@ func TestConditionIDNeverAloneOnALine(t *testing.T) {
 // trails the fix block's URL line, and below that it trails the check's detail instead.
 func TestConditionIDPlacementByBand(t *testing.T) {
 	cond := string(spine.ConditionEdgeHTTPSNotForced)
+	// The terminal prints the address without its scheme.
+	shown := strings.TrimPrefix(fixAnchorBase, "https://")
 	// At 100 the URL line, at the detail column, has no room left for the id, so it falls back
 	// to the detail.
 	for _, width := range []int{120, 200} {
 		line := lineCarrying(t, width, cond)
-		if !strings.Contains(line, fixAnchorBase) {
+		if !strings.Contains(line, shown) {
 			t.Errorf("width %d: the id sits on %q, want the fix block's URL line", width, line)
 		}
 	}
 	const detail = "Always Use HTTPS is off for the zone"
 	for _, width := range []int{60, 80, 100} {
 		line := lineCarrying(t, width, cond)
-		if strings.Contains(line, fixAnchorBase) {
+		if strings.Contains(line, shown) {
 			t.Errorf("width %d: the id sits on the URL line %q, want the detail line", width, line)
 		}
 		carrier := strings.TrimSpace(strings.TrimSuffix(line, "  "+cond))
@@ -1404,6 +1438,10 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 		}
 		tables++
 
+		if strings.Contains(head, labelChecks) {
+			assertFoldedTable(t, w, head)
+			continue
+		}
 		_, columns := tableFit(theme.siteColWidth(reports), style.ContentWidth(w))
 		for i := range columns {
 			if !strings.Contains(head, tableColumns[i].heading) {
@@ -1431,6 +1469,95 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 
 	if tables == 0 {
 		t.Fatal("no width in the supported range drew the plain table, so nothing was asserted")
+	}
+}
+
+// assertFoldedTable checks a folded table's heading row: site, verdict, and the one checks
+// column, with no count, engine, or checked heading of its own.
+func assertFoldedTable(t *testing.T, w int, head string) {
+	t.Helper()
+	got := strings.Join(strings.Fields(head), " ")
+	if got != "site verdict checks" {
+		t.Fatalf("width %d: narrow heading row %q, want site, verdict, and checks", w, head)
+	}
+}
+
+// TestATableNarrowerThan60FoldsItsCounts draws one site below and at the one-column threshold.
+// Below it the counts share one checks cell joined by the separator, each count whole, and the
+// count columns are gone; at 60 the count columns draw as before.
+func TestATableNarrowerThan60FoldsItsCounts(t *testing.T) {
+	reports := fixtures.Degraded()
+	for _, w := range []int{59, 50} {
+		lines := plainLines(input(reports, BodyMany, w, colorprofile.ASCII, false, verdictFor(reports)))
+		head := tableHeadingLine(lines)
+		if got := strings.Join(strings.Fields(head), " "); got != "site verdict checks" {
+			t.Fatalf("width %d: heading %q, want site verdict checks", w, head)
+		}
+		// Every heading cell is ASCII, so its byte index is its cell; the row carries a Unicode
+		// mark and is measured in runes.
+		col := strings.Index(head, labelChecks)
+		row := []rune(lines[slices.Index(lines, head)+1])
+		if len(row) <= col {
+			t.Fatalf("width %d: site row %q has no checks cell", w, string(row))
+		}
+		cell := string(row[col:])
+		if cell != "1 failing · 3 could not run" {
+			t.Errorf("width %d: checks cell %q, want %q", w, cell, "1 failing · 3 could not run")
+		}
+		if len(row) > w {
+			t.Errorf("width %d: site row %q is %d cells", w, string(row), len(row))
+		}
+	}
+
+	head := tableHeadingLine(plainLines(input(reports, BodyMany, 60, colorprofile.ASCII, false, verdictFor(reports))))
+	if strings.Contains(head, labelChecks) || !strings.Contains(head, labelCouldNotRun) {
+		t.Errorf("width 60: heading %q, want the count columns unfolded", head)
+	}
+}
+
+// TestATableFoldsOnlyWhenEverySitesCountsFitWhole draws twelve long site names at 59, where the
+// widest row's counts overrun the checks cell. A cell that dropped a count would read as a site
+// without it, so the table keeps its headed count columns and every count in them.
+func TestATableFoldsOnlyWhenEverySitesCountsFitWhole(t *testing.T) {
+	twelve := fixtures.TwelveSites()
+	lines := plainLines(input(twelve, BodyMany, 59, colorprofile.ASCII, false, verdictFor(twelve)))
+	head := tableHeadingLine(lines)
+	if got := strings.Join(strings.Fields(head), " "); got != "site verdict failing could not run" {
+		t.Fatalf("heading %q, want the headed failing and could not run columns", head)
+	}
+	row := strings.Fields(lines[slices.Index(lines, head)+1])
+	if len(row) < 2 || row[len(row)-2] != "1" || row[len(row)-1] != "4" {
+		t.Errorf("first row %q, want its failing and could-not-run counts", row)
+	}
+
+	head = tableHeadingLine(plainLines(input(twelve, BodyMany, 40, colorprofile.ASCII, false, verdictFor(twelve))))
+	if strings.Contains(head, labelChecks) {
+		t.Errorf("width 40: heading %q draws a checks column the counts do not fit", head)
+	}
+}
+
+// TestFoldedCountsJoinTheNonZeroCountsInOrder asserts the checks cell names failing, then could
+// not run, then held, and leaves out a state with nothing in it.
+func TestFoldedCountsJoinTheNonZeroCountsInOrder(t *testing.T) {
+	theme := newTheme(true, colorprofile.ASCII, false)
+	sep := " " + theme.marks.Sep + " "
+	all := sections{
+		Failing:     make([]health.CheckResult, 1),
+		CouldNotRun: make([]health.CheckResult, 2),
+		Held:        make([]health.CheckResult, 1),
+	}
+	tests := []struct {
+		s    sections
+		want string
+	}{
+		{all, "1 failing" + sep + "2 could not run" + sep + "1 held"},
+		{sections{Held: make([]health.CheckResult, 3)}, "3 held"},
+		{sections{}, ""},
+	}
+	for _, tt := range tests {
+		if got := theme.foldedCounts(tt.s); got != tt.want {
+			t.Errorf("foldedCounts = %q, want %q", got, tt.want)
+		}
 	}
 }
 

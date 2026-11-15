@@ -21,7 +21,8 @@ import (
 type Query struct {
 	// Worker names the Workers script the query reads.
 	Worker string
-	// Since bounds the query to the trailing window ending now, clamped to the seven-day retention window.
+	// Since bounds the query to the trailing window ending now, clamped to the seven-day retention
+	// window.
 	Since time.Duration
 	// Event narrows the query to one event name, matched against the JSON "event" key every
 	// engine log record carries. Empty means every event.

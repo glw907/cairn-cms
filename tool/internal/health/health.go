@@ -98,16 +98,15 @@ func needsClient(tier Tier, c Clients) bool {
 // Run sweeps every check in checks against r, in order, and returns the settled Report. Run is
 // pure over its inputs: the same checks, record, clients, options, and acks, replayed through the
 // same Options.Now, produce a byte-identical Report every time, which is what lets a caller
-// golden-test a run. Options.Now is the
-// sweep's only clock, handed to every check through Options so a check has no reason to read the
-// system clock itself.
+// golden-test a run. Options.Now is the sweep's only clock, handed to every check through Options so
+// a check has no reason to read the system clock itself.
 //
 // Run rejects a zero Options outright, since a threshold, window, or clock left at its zero value
-// would otherwise run silently rather than loudly. A check whose Needs tier's client is absent is never called:
-// Run records it Unknown with reason.cred-missing and sets Degraded, the one report-level signal
-// that distinguishes a missing credential from every other Unknown. A cancelled or expired ctx
-// stops the sweep after the check already in flight settles; every remaining check is recorded
-// Unknown with reason.not-run rather than dropped from the report. A panicking check is
+// would otherwise run silently rather than loudly. A check whose Needs tier's client is absent is
+// never called: Run records it Unknown with reason.cred-missing and sets Degraded, the one
+// report-level signal that distinguishes a missing credential from every other Unknown. A cancelled
+// or expired ctx stops the sweep after the check already in flight settles; every remaining check
+// is recorded Unknown with reason.not-run rather than dropped from the report. A panicking check is
 // recovered the same way, so one broken check never loses the rest of the sweep.
 func Run(ctx context.Context, r record.Record, c Clients, checks []Check, o Options, acks Acks) (Report, error) {
 	if err := o.validate(); err != nil {

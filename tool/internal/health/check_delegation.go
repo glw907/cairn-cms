@@ -10,9 +10,8 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
-// delegationCheck checks delegation:
-// it compares the domain's actual nameservers against the pair Cloudflare assigned this account
-// at provisioning, then, once they match, reads the zone's activation state.
+// delegationCheck compares the domain's actual nameservers against the pair Cloudflare assigned this
+// account at provisioning, then, once they match, reads the zone's activation state.
 type delegationCheck struct{}
 
 // ID implements Check.
@@ -24,8 +23,9 @@ func (delegationCheck) Needs() Tier { return TierCF }
 
 // Run implements Check. It always measures the live nameservers and, once they match, the live
 // zone state: a recurring health check has no provisioning-time flag to trust, and the zone the
-// account was assigned can only be confirmed by asking it. The pair to compare against comes from the record when it carries one and from
-// the zone otherwise, so an adopted record missing the key still settles a verdict.
+// account was assigned can only be confirmed by asking it. The pair to compare against comes from
+// the record when it carries one and from the zone otherwise, so an adopted record missing the key
+// still settles a verdict.
 func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	assigned := r.Cloudflare.NameServers()
 

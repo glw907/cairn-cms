@@ -12,8 +12,8 @@ import (
 )
 
 // publishStaleWindow is how long a "cairn/*" edit branch may sit unpublished before the check
-// reports it stale: the publish-path window, chosen because an editor's saved draft
-// that has not reached Publish in two weeks is either abandoned or stuck, not merely slow.
+// reports it stale. Two weeks is chosen because an editor's saved draft that has not reached Publish
+// in that time is either abandoned or stuck, not merely slow.
 const publishStaleWindow = 14 * 24 * time.Hour
 
 // cairnBranchPrefix is the per-entry edit branch prefix the engine creates on save
@@ -91,10 +91,10 @@ func staleBranchCount(branches []providers.Branch, botCommitAt, now time.Time) i
 // absence of any bot commit does not change that: a site whose editors have not published yet is
 // quiet, not unobservable, and Unknown here is reserved for the repository the run could not
 // read at all. Every branch age is measured against o.Now, the sweep's clock, so the same branch
-// list replays to the same ages. A stale branch declares spine.ConditionNone rather than an App-unreachable
-// remedy: a stale edit branch most often means an editor simply never opened Publish, and the
-// same verdict also fires when the repository already carries a bot commit, which proves the App
-// did reach and write it, so blaming the App would mislead.
+// list replays to the same ages. A stale branch declares spine.ConditionNone rather than an
+// App-unreachable remedy: a stale edit branch most often means an editor simply never opened
+// Publish, and the same verdict also fires when the repository already carries a bot commit, which
+// proves the App did reach and write it, so blaming the App would mislead.
 func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
 	if !hasRepo(r) {
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonRepoNotRecorded, Detail: detailNoRepoRecorded}

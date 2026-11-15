@@ -2,15 +2,22 @@
 // watcher that copies edits from the theme directory across. An edit to a token source reruns the
 // tokens build first, so the generated sheets follow.
 import { execFile, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, rmSync, watch } from 'node:fs';
+import { watch } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { layIn } from '../lay-in.mjs';
+import { layIn, mirrorTheme } from '../lay-in.mjs';
 import { renderControl } from './control.mjs';
-import { answers, catalogThemes, chooseOptions, composeSite, freePort, listRoutes, readManifest, resolveTheme, startSite, writeOptions } from './site.mjs';
+import { catalogThemes, chooseOptions, composeSite, freePort, listRoutes, readManifest, resolveTheme, settles, startSite, writeOptions } from './site.mjs';
 
 /** The quiet time after a theme edit before it is copied across. */
 const DEBOUNCE_MS = 150;
+
+/**
+ * How long a pick waits for the site to settle. A pick reloads every theme module that differs,
+ * and with the whole theme rewritten that took over 100 seconds on one loaded core, so the wait
+ * matches the dev server's start limit rather than a fast machine's reload.
+ */
+const PICK_SETTLE_MS = 180_000;
 
 /**
  * The JSON endpoints the control server answers, keyed `"<METHOD> <path>"`. Another module adds a
@@ -85,11 +92,7 @@ export async function startInteractive({ root, theme, endpoints = {} }) {
         return;
       }
     }
-    const target = path.join(site.dir, 'src/theme');
-    for (const name of changed) {
-      if (!existsSync(path.join(themeDir, name))) rmSync(path.join(target, name), { recursive: true, force: true });
-    }
-    cpSync(themeDir, target, { recursive: true, force: true, filter: (source) => path.relative(themeDir, source) !== 'screenshots' });
+    mirrorTheme(themeDir, path.join(site.dir, 'src/theme'));
     try {
       writeSheet();
     } catch (error) {
@@ -148,12 +151,15 @@ export async function startInteractive({ root, theme, endpoints = {} }) {
       const found = themes.find((t) => t.id === body.theme);
       if (!found) throw new Error(`no theme "${body.theme}"`);
       load(found);
-      // The wholesale lay-in answers 500 for a moment while Vite re-reads the files, so the page
-      // reloads only once the site is back.
-      const deadline = Date.now() + 60_000;
-      while (!(await answers(dev.url))) {
-        if (Date.now() > deadline) throw new Error('the site did not recover after the theme was laid in');
-        await new Promise((done) => setTimeout(done, 300));
+      // The site answers 500 or stalls while Vite reloads the laid-in modules, so the page reloads
+      // only once the site has settled. A failure carries the dev server's output, which names the
+      // error the site's own 500 page hides.
+      const result = await settles(dev.url, PICK_SETTLE_MS);
+      if (!result.settled) {
+        throw new Error(
+          `the site did not settle within ${PICK_SETTLE_MS / 1000}s after the theme was laid in; its last answer was ` +
+            `${result.last.status}: ${result.last.body.slice(0, 2000)}\nThe dev server's last output:\n${dev.output().slice(-4000)}`,
+        );
       }
     },
     '/api/option': (/** @type {Record<string, string>} */ body) => {

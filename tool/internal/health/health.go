@@ -28,6 +28,12 @@ const (
 	TierBoth
 )
 
+// UsesCF reports whether the tier needs a Cloudflare credential.
+func (t Tier) UsesCF() bool { return t == TierCF || t == TierBoth }
+
+// UsesGH reports whether the tier needs a GitHub credential.
+func (t Tier) UsesGH() bool { return t == TierGH || t == TierBoth }
+
 // String names the tier in the wire vocabulary: "none", "cloudflare", "github", or "both". A
 // Tier this package does not know names itself "none": a credential requirement nothing can
 // satisfy is not a requirement a reader can act on.
@@ -87,16 +93,7 @@ const reportSchemaVersion = 1
 
 // needsClient reports whether tier's required credential is present in c.
 func needsClient(tier Tier, c Clients) bool {
-	switch tier {
-	case TierCF:
-		return c.HaveCF
-	case TierGH:
-		return c.HaveGH
-	case TierBoth:
-		return c.HaveCF && c.HaveGH
-	default:
-		return true
-	}
+	return (!tier.UsesCF() || c.HaveCF) && (!tier.UsesGH() || c.HaveGH)
 }
 
 // Run sweeps every check in checks against r, in order, and returns the settled Report. Run is
@@ -114,7 +111,7 @@ func needsClient(tier Tier, c Clients) bool {
 // Unknown with reason.not-run rather than dropped from the report. A panicking check is
 // recovered the same way, so one broken check never loses the rest of the sweep.
 func Run(ctx context.Context, r record.Record, c Clients, checks []Check, o Options, acks Acks) (Report, error) {
-	if err := o.Validate(); err != nil {
+	if err := o.validate(); err != nil {
 		return Report{}, err
 	}
 

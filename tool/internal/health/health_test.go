@@ -13,7 +13,7 @@ import (
 )
 
 // validOptions is the minimal Options every test in this package that does not itself exercise
-// Options.Validate needs to pass Run's zero-value rejection.
+// Options.validate needs to pass Run's zero-value rejection.
 var validOptions = Options{ErrorThreshold: 1, LogWindow: time.Minute, Now: fixedNow}
 
 // fixedNow is the clock every test in this package sweeps against so a settled CheckResult's

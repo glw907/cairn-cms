@@ -548,11 +548,11 @@ func TestParseSinceGrammar(t *testing.T) {
 	}
 }
 
-// TestClampSinceNarrowsToRetentionClamp asserts a window wider than RetentionClamp is narrowed
+// TestClampSinceNarrowsToRetentionClamp asserts a window wider than retentionClamp is narrowed
 // to it, and a narrower window passes through unchanged.
 func TestClampSinceNarrowsToRetentionClamp(t *testing.T) {
-	if got := clampSince(30 * 24 * time.Hour); got != RetentionClamp {
-		t.Errorf("clampSince(30d) = %v, want %v", got, RetentionClamp)
+	if got := clampSince(30 * 24 * time.Hour); got != retentionClamp {
+		t.Errorf("clampSince(30d) = %v, want %v", got, retentionClamp)
 	}
 	if got := clampSince(time.Hour); got != time.Hour {
 		t.Errorf("clampSince(1h) = %v, want 1h unchanged", got)

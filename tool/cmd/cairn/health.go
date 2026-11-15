@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"time"
 
@@ -99,12 +98,7 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 	clients := buildClients(d)
 	started := d.now()
 	stop := startHealthProgress(cmd, d, rf, f, id)
-	report, err := health.Run(ctx, rec, clients, d.checks, health.Options{
-		ErrorThreshold: f.errorThreshold,
-		LogWindow:      window,
-		Now:            d.now,
-		OnCheck:        checkProgress(cmd, rf, f),
-	}, acks)
+	report, err := health.Run(ctx, rec, clients, d.checks, healthOptions(cmd, d, rf, f, window), acks)
 	stop()
 	if err != nil {
 		return err
@@ -149,13 +143,7 @@ func quietSuppressesFrame(quiet bool, verdict spine.Verdict) bool {
 // writeHealthBody writes one report through the render seam, which owns every layout decision:
 // the body for the scope and the stream, the ranking, the section grammar, and the fix format.
 func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, verdict spine.Verdict, status render.StatusState) error {
-	frame := render.Render(renderInput(d, rf, rs, verdict, status))
-	for _, line := range frame.Lines() {
-		if _, err := fmt.Fprintln(w, line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeLines(w, render.Render(renderInput(d, rf, rs, verdict, status)).Lines())
 }
 
 // renderInput builds the one input the render seam reads. This function and the detector it
@@ -187,10 +175,9 @@ func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.V
 
 // detectTerminal reads the one TTY-and-colour answer every command's render input is built from.
 func detectTerminal(d deps, rf *rootFlags) style.Terminal {
-	resolved, _ := loadEnv(d.env)
 	return style.Detect(d.stdout, style.Env{
-		NoColor: resolved.noColorValue(),
-		Term:    resolved.termValue(),
+		NoColor: d.env(varNoColor),
+		Term:    d.env(varTerm),
 		Color:   rf.color,
 	})
 }

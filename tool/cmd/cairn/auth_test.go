@@ -116,8 +116,9 @@ func TestAuthSetPropagatesPromptError(t *testing.T) {
 
 func TestAuthListPrintsProviderAndNoValue(t *testing.T) {
 	d := deps{
-		env:     fakeEnv(map[string]string{"CAIRN_CF_ACCOUNT_ID": "acct-123"}),
-		keyring: fakeProvider{name: "keyring", values: map[string]string{"CAIRN_GH_READ_TOKEN": "ghp_secret"}},
+		env:           fakeEnv(map[string]string{"CAIRN_CF_ACCOUNT_ID": "acct-123"}),
+		keyring:       fakeProvider{name: "keyring", values: map[string]string{"CAIRN_GH_READ_TOKEN": "ghp_secret"}},
+		keyringStatus: func(string) (bool, error) { return false, nil },
 	}
 	cmd := newAuthListCmd(d)
 	var out bytes.Buffer

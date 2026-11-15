@@ -178,3 +178,23 @@ func checkProgress(cmd *cobra.Command, rf *rootFlags, f healthFlags) func(health
 		_, _ = fmt.Fprint(errOut, checkProgressLine(c.ID, spine.StateWord(c.Outcome.State, c.Outcome.Reason, c.Acknowledged)))
 	}
 }
+
+// writeLines writes each line of a rendered frame to w on its own line.
+func writeLines(w io.Writer, lines []string) error {
+	for _, line := range lines {
+		if _, err := fmt.Fprintln(w, line); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// writeListErrors writes each registry listing error to w, prefixed as the one-line stderr form.
+func writeListErrors(w io.Writer, errs []error) error {
+	for _, e := range errs {
+		if _, err := fmt.Fprintln(w, "cairn:", e); err != nil {
+			return err
+		}
+	}
+	return nil
+}

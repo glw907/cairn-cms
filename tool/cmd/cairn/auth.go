@@ -221,7 +221,7 @@ func newAuthListCmd(d deps) *cobra.Command {
 // nothing did. loadEnv's resolution, and so credential-resolution behavior, is untouched:
 // this only refines what auth list prints for a variable Resolve already reported as a miss.
 func keyringAwareDisplay(d deps, r resolution) string {
-	if r.display != "not set" || d.keyringStatus == nil {
+	if r.display != "not set" {
 		return r.display
 	}
 	if _, err := d.keyringStatus(r.name); errors.Is(err, secrets.ErrKeyringUnavailable) {

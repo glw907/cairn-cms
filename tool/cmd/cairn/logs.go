@@ -120,12 +120,7 @@ func writeLogs(cmd *cobra.Command, d deps, rf *rootFlags, entries []logs.Entry, 
 	// into a separate column. A pipe keeps the tab-separated line, which is what a grep, an awk,
 	// and an agent read.
 	if in, ok := logsRenderInput(d, rf, entries, site); ok {
-		for _, line := range render.Render(in).Lines() {
-			if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeLines(cmd.OutOrStdout(), render.Render(in).Lines())
 	}
 	for _, e := range entries {
 		line := fmt.Sprintf("%s\t%s\t%s", e.At.UTC().Format(time.RFC3339), e.Level, e.Event)

@@ -10,6 +10,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+/** The file under a site's `src/theme/` that the names are written to; a theme directory never ships it. */
+export const THEME_NAMES_FILE = 'theme-names.ts';
+
 /** The cookie the toggle persists a visitor's choice to; the chassis toggle and `app.html` agree on it. */
 export const COOKIE_NAME = 'cairn-site-theme';
 
@@ -83,7 +86,7 @@ export function generateThemeNames(siteDir, colorModes) {
   assertColorModes(colorModes);
   const htmlPath = path.join(siteDir, 'src/app.html');
   const rewritten = rewriteAppHtml(readFileSync(htmlPath, 'utf8'), colorModes);
-  writeFileSync(path.join(siteDir, 'src/theme/theme-names.ts'), renderThemeNames(colorModes));
+  writeFileSync(path.join(siteDir, 'src/theme', THEME_NAMES_FILE), renderThemeNames(colorModes));
   writeFileSync(htmlPath, rewritten);
 }
 

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -49,6 +49,23 @@ test('a lay-in replaces the target wholesale, so a stale file is gone afterward'
   assert.equal(run.status, 0, run.stderr);
   assert.ok(!existsSync(path.join(site, 'src/theme/stale.css')));
   assert.ok(existsSync(path.join(site, 'src/theme/theme.css')));
+});
+
+test('a lay-in over a laid-in theme rewrites only the files that changed', async (t) => {
+  const site = await scratchSite(t);
+  const theme = await mkdtemp(path.join(tmpdir(), 'cairn-lay-in-edit-'));
+  t.after(() => rm(theme, { recursive: true, force: true }));
+  await cp(WAYMARK, theme, { recursive: true });
+  assert.equal(layIn(theme, site).status, 0);
+  const stamp = (/** @type {string} */ rel) => statSync(path.join(site, 'src/theme', rel), { bigint: true }).mtimeNs;
+  const before = { theme: stamp('theme.css'), header: stamp('components/SiteHeader.svelte') };
+  await writeFile(path.join(theme, 'site.css'), '/* edited */\n');
+  const run = layIn(theme, site);
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(await readFile(path.join(site, 'src/theme/site.css'), 'utf8'), '/* edited */\n');
+  assert.equal(stamp('theme.css'), before.theme, 'an unchanged stylesheet is not rewritten');
+  assert.equal(stamp('components/SiteHeader.svelte'), before.header, 'an unchanged component is not rewritten');
+  assert.ok(existsSync(path.join(site, 'src/theme/theme-names.ts')));
 });
 
 test('a manifest with a bad color-mode name is refused before the site copy is touched', async (t) => {

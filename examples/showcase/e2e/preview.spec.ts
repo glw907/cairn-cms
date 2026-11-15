@@ -435,6 +435,7 @@ test.describe('public preview for a non-editor', () => {
     await expect(news.getByRole('heading', { name: 'Latest news' })).toBeVisible();
     const rows = news.locator('[data-cairn-post]');
     await expect(rows).toHaveCount(3);
+    await expect(rows.locator('.site-entry__date')).toHaveCount(3);
     for (const date of await rows.locator('.site-entry__date').all()) {
       await expect(date).toHaveText(/\S/);
     }

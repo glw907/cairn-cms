@@ -74,6 +74,7 @@ test('the page shows the fixture catalog, holds every width, and filters by kind
   const catalog = await serveFixtures();
   const result = await runReferenceCheck({ catalog });
   assert.deepEqual(result.failures, []);
+  assert.deepEqual(result.notes, [], 'every theme has its own demo address, so none is skipped');
 
   assert.deepEqual([...new Set(result.viewports.map((v) => v.width))], [320, 390, 768, 1440, 2560]);
   for (const v of result.viewports) {
@@ -98,6 +99,28 @@ test('a demo serving an older release than the catalog names exits 1 naming the 
   const { code, text } = await command(catalog);
   assert.equal(code, 1, text);
   assert.match(text, /alder: the demo .* serves alder@1\.0\.0, not alder@2\.0\.0/);
+});
+
+/** Points every theme's demo at one fixture demo directory, as the proving target does. */
+const shareDemo = (dir) => (data) => {
+  for (const theme of data.themes) theme.demo = theme.demo.replace(/\/demo\/[^/]+\//, `/demo/${dir}/`);
+};
+
+test('a shared demo address serving the last theme passes and notes the earlier theme', { timeout: 180_000 }, async () => {
+  const catalog = await serveFixtures({ edit: shareDemo('birch') });
+  const result = await runReferenceCheck({ catalog });
+  assert.deepEqual(result.failures, []);
+  assert.equal(result.notes.length, 1, result.notes.join('\n'));
+  assert.match(result.notes[0], /^alder: .*\/demo\/birch\/.* birch /);
+});
+
+test('a shared demo address serving an earlier theme exits 1 naming the last theme', { timeout: 180_000 }, async () => {
+  const catalog = await serveFixtures({ edit: shareDemo('alder') });
+  const { code, text } = await command(catalog);
+  assert.equal(code, 1, text);
+  assert.match(text, /birch: the demo .* serves alder@2\.0\.0, not birch@1\.0\.0/);
+  assert.match(text, /reference-check: note alder: .*\/demo\/alder\//);
+  assert.doesNotMatch(text, /FAIL alder: the demo/, 'the earlier theme is not held to the shared marker');
 });
 
 test('a card that does not answer 200 exits 1 naming the card', { timeout: 180_000 }, async () => {

@@ -5,7 +5,9 @@
 // page, the catalog, nor an image; on a row of the theme section the page cannot show; on a kind
 // or engine choice whose shown themes differ from what the data says; on a card, screenshot, or
 // demo address that does not answer 200; and on a demo whose release marker is not its theme's
-// newest release.
+// newest release. Where several themes share one demo address, only the last of them in catalog
+// order is held to the marker, since the publish run deploys in that order and the last deploy is
+// the one the address serves; each theme skipped that way is reported as a note.
 //
 // Usage: node scripts/catalog/reference-check.mjs [--catalog <url>]
 // With no --catalog it reads https://catalog.cairn.pub/index.json.
@@ -34,6 +36,8 @@ const READY_TIMEOUT_MS = 30_000;
 /**
  * @typedef {object} CheckResult
  * @property {string[]} failures one line per failure, each naming what failed
+ * @property {string[]} notes one line per theme whose demo marker was not compared, naming the
+ *  theme and the address it shares with a later theme
  * @property {Array<{ width: number, view: string, scrollWidth: number, innerWidth: number }>} viewports
  *  the page's width at each viewport, on the grid and on each theme's page
  * @property {{ all: string[], kinds: Record<string, string[]>, engines: Record<string, string[]> }} observed
@@ -98,12 +102,15 @@ function releaseMarkers(html) {
 }
 
 /**
- * Checks every card, screenshot, and demo address from node, and each demo's release marker.
+ * Checks every card, screenshot, and demo address from node, and each demo's release marker. A
+ * demo address several themes share is held to the marker of the last of them in catalog order
+ * alone, and each earlier one is noted as skipped.
  * @param {any} catalog
  * @param {typeof fetch} fetchImpl
  * @param {string[]} failures
+ * @param {string[]} notes
  */
-async function checkAddresses(catalog, fetchImpl, failures) {
+async function checkAddresses(catalog, fetchImpl, failures, notes) {
   const jobs = [];
   for (const theme of catalog.themes) {
     jobs.push(['card', theme, theme.card?.url]);
@@ -118,12 +125,19 @@ async function checkAddresses(catalog, fetchImpl, failures) {
       if (status !== 200) failures.push(`${theme.id}: the ${what} at ${url} answered ${status || error}`);
     }),
   );
+  /** The theme each demo address is held to: the last in catalog order that names it. */
+  const holder = new Map(catalog.themes.map((theme) => [theme.demo, theme]));
+  for (const theme of catalog.themes) {
+    const last = holder.get(theme.demo);
+    if (last !== theme) notes.push(`${theme.id}: the demo marker at ${theme.demo} is not compared, since ${last.id} is later in the catalog at the same address`);
+  }
   await Promise.all(
     catalog.themes.map(async (theme) => {
       const newest = expectedRelease(theme, null);
       const want = `${theme.id}@${newest.version}`;
       const { status, body, error } = await read(fetchImpl, theme.demo);
       if (status !== 200) return failures.push(`${theme.id}: the demo at ${theme.demo} answered ${status || error}`);
+      if (holder.get(theme.demo) !== theme) return;
       const markers = releaseMarkers(body);
       if (markers.length === 0) return failures.push(`${theme.id}: the demo at ${theme.demo} carries no cairn-theme-release marker`);
       if (!markers.every((m) => m === want)) failures.push(`${theme.id}: the demo at ${theme.demo} serves ${markers.join(', ')}, not ${want}`);
@@ -331,6 +345,7 @@ export async function runReferenceCheck({ catalog: catalogUrl, page: pageFile = 
   /** @type {CheckResult} */
   const result = {
     failures: [],
+    notes: [],
     viewports: [],
     observed: { all: [], kinds: {}, engines: {} },
     requests: [],
@@ -354,7 +369,7 @@ export async function runReferenceCheck({ catalog: catalogUrl, page: pageFile = 
   result.themes = catalog.themes?.length ?? 0;
   result.kinds = catalog.kinds?.length ?? 0;
 
-  await checkAddresses(catalog, fetchImpl, failures);
+  await checkAddresses(catalog, fetchImpl, failures, result.notes);
 
   const server = await servePage(pageFile);
   const pageUrl = `${server.origin}/?catalog=${encodeURIComponent(catalogUrl)}`;
@@ -449,7 +464,7 @@ export async function runReferenceCheck({ catalog: catalogUrl, page: pageFile = 
 }
 
 /**
- * The command: runs the check and prints each failure, or a one-line summary.
+ * The command: runs the check and prints each note, then each failure or a one-line summary.
  * @param {string[]} argv the arguments after the script name
  * @param {{ page?: string, print?: (line: string) => void }} [options] a page file to serve in
  *  place of the committed one, and where to print
@@ -463,6 +478,7 @@ export async function main(argv, { page, print = (line) => console.log(line) } =
   }
   const catalog = at === -1 ? DEFAULT_CATALOG : argv[at + 1];
   const result = await runReferenceCheck({ catalog, page });
+  for (const note of result.notes) print(`reference-check: note ${note}`);
   if (result.failures.length > 0) {
     for (const failure of result.failures) print(`reference-check: FAIL ${failure}`);
     print(`reference-check: ${result.failures.length} failure${result.failures.length === 1 ? '' : 's'} against ${catalog}`);

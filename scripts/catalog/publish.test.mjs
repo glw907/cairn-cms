@@ -5,6 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { createServer } from 'node:http';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -16,6 +17,7 @@ import { buildThemeArchive } from './archive.mjs';
 import { REPLIES, fakeBucket } from './fixtures/r2/fake-bucket.mjs';
 import { run } from './publish.mjs';
 import { createR2 } from './r2.mjs';
+import { runReferenceCheck } from './reference-check.mjs';
 
 const REPO = repoRoot(import.meta.url);
 const validateIndex = new Ajv2020({ allErrors: true }).compile(JSON.parse(readFileSync(path.join(REPO, 'schema/cairn-catalog-1.schema.json'), 'utf8')));
@@ -44,8 +46,9 @@ const sha512 = (bytes) => `sha512-${createHash('sha512').update(bytes).digest('b
 
 /**
  * A scratch repository root holding a copy of Waymark, the kinds data, and optionally the fixture
- * blog set, with an edit applied to each manifest.
- * @param {{ theme?: (m: any) => void, set?: boolean | ((m: any) => void) }} [edits]
+ * blog set, with an edit applied to each manifest. `second` adds another copy of Waymark under
+ * `themes/<id>/`, with that `id` and `name`.
+ * @param {{ theme?: (m: any) => void, set?: boolean | ((m: any) => void), second?: { id: string, name: string } }} [edits]
  */
 function scratchRoot(edits = {}) {
   const root = mkdtempSync(path.join(tmpdir(), 'cairn-publish-'));
@@ -59,6 +62,12 @@ function scratchRoot(edits = {}) {
     writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
   };
   if (edits.theme) editJson(path.join(theme, 'cairn-theme.json'), edits.theme);
+  if (edits.second) {
+    const { id, name } = edits.second;
+    const copy = path.join(root, 'themes', id);
+    cpSync(path.join(REPO, 'themes/waymark'), copy, { recursive: true });
+    editJson(path.join(copy, 'cairn-theme.json'), (m) => Object.assign(m, { id, name }));
+  }
   if (edits.set) {
     const set = path.join(root, 'sets/blog');
     cpSync(path.join(REPO, 'scripts/catalog/fixtures/archive/set-blog'), set, { recursive: true });
@@ -67,9 +76,16 @@ function scratchRoot(edits = {}) {
   return root;
 }
 
+/** A demo page whose head names one release, as a built demo's does. */
+const demoPage = (release) =>
+  new Response(`<!doctype html><html><head><meta name="cairn-theme-release" content="${release}" /></head><body></body></html>`, {
+    headers: { 'content-type': 'text/html' },
+  });
+
 /**
  * A publish run's world: the fake bucket, the R2 client over it, and fakes for the theme check,
- * the demo build, the deploy, the demo address, and the clock.
+ * the demo build, the deploy, the demo address, and the clock. `events` holds, in order, each
+ * `build <release>`, `deploy <release>`, and `poll <release served>` the fakes saw.
  * @param {object} [options]
  * @param {string} [options.root]
  * @param {string} [options.bucket] the fake bucket's name
@@ -95,6 +111,7 @@ function world(options = {}) {
     demos: [],
     deploys: [],
     fetched: [],
+    events: [],
     lines: [],
     live: 'waymark@1.0.0',
     t: Date.parse('2026-11-20T18:04:00Z'),
@@ -123,6 +140,7 @@ function world(options = {}) {
         const manifest = JSON.parse(readFileSync(path.join(args.themeDir, 'cairn-theme.json'), 'utf8'));
         const release = `${manifest.id}@${manifest.version}`;
         w.demos.push({ ...args, release });
+        w.events.push(`build ${release}`);
         mkdirSync(path.join(args.out, 'assets'), { recursive: true });
         return { release, assets: path.join(args.out, 'assets'), wrangler: path.join(args.out, 'wrangler.json') };
       },
@@ -130,15 +148,15 @@ function world(options = {}) {
         w.deploys.push({ ...args, writesBefore: w.bucket.writes.length });
         if (w.deployFails) throw new Error('wrangler deploy exited 1');
         w.live = w.demos.at(-1).release;
+        w.events.push(`deploy ${w.live}`);
         polls = 0;
       },
       fetch: async (url) => {
         w.fetched.push(String(url));
         polls++;
         const release = options.served !== undefined ? options.served : polls > (options.markerAfter ?? 0) ? w.live : 'waymark@1.0.0';
-        return new Response(`<!doctype html><html><head><meta name="cairn-theme-release" content="${release}" /></head><body></body></html>`, {
-          headers: { 'content-type': 'text/html' },
-        });
+        w.events.push(`poll ${release}`);
+        return demoPage(release);
       },
     });
   w.index = () => {
@@ -317,6 +335,52 @@ test('the run checks the theme, builds its demo for the worker, and polls the de
   assert.equal(w.deploys[0].worker, 'cairn-demo-proving');
   assert.ok(w.fetched.length >= 3, 'the poll waits for the marker past two stale pages');
   assert.ok(w.fetched.every((url) => url === 'https://demo-waymark.example/'), w.fetched.join(' '));
+});
+
+test('two themes sharing one demo address each deploy and are waited on in turn, and the reference check passes', { timeout: 180_000 }, async () => {
+  /** @type {ReturnType<typeof world> | undefined} */
+  let w;
+  let catalogOrigin = '';
+  // The bucket's objects over HTTP with CORS, standing in for the catalog origin. The schema admits
+  // only https addresses in the index, so the run writes the proving origin and the index is served
+  // with that origin swapped for this server's.
+  const server = createServer((req, res) => {
+    const key = decodeURIComponent(new URL(req.url ?? '/', 'http://127.0.0.1').pathname.slice(1));
+    const object = w?.bucket.store.get(key);
+    const headers = { 'access-control-allow-origin': '*' };
+    if (!object) return res.writeHead(404, headers).end('not found');
+    const body = key === 'index.json' ? object.bytes.toString('utf8').replaceAll(ENV.CATALOG_ORIGIN, catalogOrigin) : object.bytes;
+    res.writeHead(200, { ...headers, 'content-type': object.contentType ?? 'application/octet-stream' }).end(body);
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(undefined)));
+  try {
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('the bucket server has no port');
+    catalogOrigin = `http://127.0.0.1:${address.port}`;
+    const demo = 'https://demo-proving.example/';
+    w = world({ root: scratchRoot({ second: { id: 'waymark-two', name: 'Waymark Two' } }), env: { DEMO_ORIGIN: 'https://demo-proving.example' } });
+    assert.equal(await w.publish(), 0, w.output());
+
+    const order = w.index().themes.map((t) => `${t.id}@${t.releases[0].version}`);
+    assert.deepEqual(order, ['waymark@1.2.0', 'waymark-two@1.2.0']);
+    assert.ok(w.index().themes.every((t) => t.demo === demo), 'both themes share the demo address');
+    assert.deepEqual(
+      w.events,
+      order.flatMap((release) => [`build ${release}`, `deploy ${release}`, `poll ${release}`]),
+      'each theme is built, deployed, and seen at the address before the next, in catalog order',
+    );
+
+    const { live } = w;
+    const result = await runReferenceCheck({
+      catalog: `${catalogOrigin}/index.json`,
+      fetch: async (url, init) => (String(url) === demo ? demoPage(live) : globalThis.fetch(url, init)),
+    });
+    assert.deepEqual(result.failures, []);
+    assert.equal(result.notes.length, 1, result.notes.join('\n'));
+    assert.match(result.notes[0], /^waymark: /);
+  } finally {
+    await new Promise((resolve) => server.close(() => resolve(undefined)));
+  }
 });
 
 test('a theme whose first kind is organization gets the checkout\'s organization set for its demo', async () => {

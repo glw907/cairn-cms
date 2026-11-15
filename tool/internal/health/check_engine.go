@@ -153,7 +153,7 @@ func skippedVersions(versions []string, siteIndex, latestIndex int) []string {
 // Run implements Check.
 func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	if !hasRepo(r) {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonRepoNotRecorded, Detail: detailNoRepoRecorded()}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonRepoNotRecorded, Detail: detailNoRepoRecorded}
 	}
 	manifest, err := c.GH.FileAtRef(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, "package.json", DefaultBranch(r))
 	if err != nil {
@@ -161,7 +161,7 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	}
 	rng, ok := manifestDependencyRange(manifest)
 	if !ok {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailEngineNoCairnDependency()}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailEngineNoCairnDependency}
 	}
 	siteVersion := baseVersion(rng)
 
@@ -177,7 +177,7 @@ func (engineCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	siteIndex := slices.Index(versions, siteVersion)
 	latestIndex := slices.Index(versions, latest)
 	if siteIndex < 0 || latestIndex < 0 {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailEngineVersionNotFound()}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailEngineVersionNotFound}
 	}
 
 	skipped := skippedVersions(versions, siteIndex, latestIndex)

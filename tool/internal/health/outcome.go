@@ -88,7 +88,7 @@ func apiErrorOutcome(err error) spine.Outcome {
 	reason := pe.ClassifiedReason()
 	outcome := spine.Outcome{State: spine.Unknown, Reason: spine.APIReason(reason)}
 	if reason == providers.ReasonRequestRejected {
-		outcome.Detail = detailAPIRequestRejected()
+		outcome.Detail = detailAPIRequestRejected
 	}
 	return outcome
 }

@@ -73,9 +73,9 @@ type originProbe struct {
 // hostname not serving the site at all, which is the older line's case.
 func servingMismatch(p originProbe) spine.Outcome {
 	if p.serves {
-		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingNotCairn, Detail: detailServingNotCairn()}
+		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingNotCairn, Detail: detailServingNotCairn}
 	}
-	return spine.Outcome{State: spine.Failing, Code: spine.CodeServingMismatch, Detail: detailServingHostnameMismatch()}
+	return spine.Outcome{State: spine.Failing, Code: spine.CodeServingMismatch, Detail: detailServingHostnameMismatch}
 }
 
 // probeOrigin fetches origin's "/" and "/admin" (unfollowed), the way hostname.mjs's

@@ -99,14 +99,14 @@ func checkDMARC(ctx context.Context, probe *providers.Probe, domain string) (spi
 		policy := dmarcPolicy(lower)
 		switch policy {
 		case "none":
-			return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCPolicyNone, Detail: detailEmailDMARCPolicyNone()}, false
+			return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCPolicyNone, Detail: detailEmailDMARCPolicyNone}, false
 		case "":
-			return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCNoPolicy, Detail: detailEmailDMARCNoPolicy()}, false
+			return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCNoPolicy, Detail: detailEmailDMARCNoPolicy}, false
 		default:
 			return spine.Outcome{}, true
 		}
 	}
-	return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCMissing, Detail: detailEmailDMARCMissing()}, false
+	return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCMissing, Detail: detailEmailDMARCMissing}, false
 }
 
 // checkSPF reads domain's TXT records, the sending subdomain Cloudflare's Email Sending
@@ -141,7 +141,7 @@ func checkDKIM(ctx context.Context, probe *providers.Probe, domain string) (spin
 			return spine.Outcome{}, true
 		}
 	}
-	return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDKIMMissing, Detail: detailEmailDKIMMissing()}, false
+	return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDKIMMissing, Detail: detailEmailDKIMMissing}, false
 }
 
 // checkSendingSubdomain reads the zone's Cloudflare Email Sending subdomains and reports on the
@@ -163,5 +163,5 @@ func checkSendingSubdomain(ctx context.Context, r record.Record, c Clients) spin
 		}
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkEmailNotReady)}
 	}
-	return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEmailSenderNotOnboarded, Detail: detailEmailSenderNotOnboarded()}
+	return spine.Outcome{State: spine.Failing, Condition: spine.ConditionEmailSenderNotOnboarded, Detail: detailEmailSenderNotOnboarded}
 }

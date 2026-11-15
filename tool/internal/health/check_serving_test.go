@@ -83,8 +83,8 @@ func TestProbeServingBareAdmin200IsNotCairn(t *testing.T) {
 	if got.State != spine.Failing || got.Code != spine.CodeServingNotCairn {
 		t.Errorf("Outcome = %+v, want Failing/%s", got, spine.CodeServingNotCairn)
 	}
-	if got.Detail != detailServingNotCairn() {
-		t.Errorf("Detail = %q, want %q", got.Detail, detailServingNotCairn())
+	if got.Detail != detailServingNotCairn {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailServingNotCairn)
 	}
 }
 
@@ -102,8 +102,8 @@ func TestProbeServingHomePageNot200IsHostnameMismatch(t *testing.T) {
 	if got.State != spine.Failing || got.Code != spine.CodeServingMismatch {
 		t.Errorf("Outcome = %+v, want Failing/%s", got, spine.CodeServingMismatch)
 	}
-	if got.Detail != detailServingHostnameMismatch() {
-		t.Errorf("Detail = %q, want %q", got.Detail, detailServingHostnameMismatch())
+	if got.Detail != detailServingHostnameMismatch {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailServingHostnameMismatch)
 	}
 }
 

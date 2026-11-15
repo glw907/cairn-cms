@@ -97,7 +97,7 @@ func staleBranchCount(branches []providers.Branch, botCommitAt, now time.Time) i
 // did reach and write it, so blaming the App would mislead.
 func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome {
 	if !hasRepo(r) {
-		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonRepoNotRecorded, Detail: detailNoRepoRecorded()}
+		return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonRepoNotRecorded, Detail: detailNoRepoRecorded}
 	}
 	owner, repo := r.GitHub.Repo.Owner, r.GitHub.Repo.Repo
 
@@ -125,7 +125,7 @@ func (publishPathCheck) Run(ctx context.Context, r record.Record, c Clients, o O
 		return detail.outcome(spine.Failing, "", spine.CodePublishStaleBranch, detailPublishStaleBranches(stale))
 	}
 	if len(open) == 0 {
-		return detail.outcome(spine.OK, "", "", detailPublishNothingWaiting())
+		return detail.outcome(spine.OK, "", "", detailPublishNothingWaiting)
 	}
 	return detail.outcome(spine.OK, "", "", "")
 }

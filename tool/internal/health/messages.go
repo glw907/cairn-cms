@@ -19,72 +19,48 @@ import (
 
 // detailHTTPSAlwaysUseHTTPSOff renders the https-forced check's Always Use HTTPS half, catalogue
 // section 3.4.
-func detailHTTPSAlwaysUseHTTPSOff() string {
-	return "Always Use HTTPS is off for the zone"
-}
+const detailHTTPSAlwaysUseHTTPSOff = "Always Use HTTPS is off for the zone"
 
 // detailHTTPSHSTSOff renders the https-forced check's HSTS half alone, catalogue section 3.4.
-func detailHTTPSHSTSOff() string {
-	return "HSTS is off for the zone"
-}
+const detailHTTPSHSTSOff = "HSTS is off for the zone"
 
 // detailHTTPSBothOff renders both halves off at once, catalogue section 3.4.
-func detailHTTPSBothOff() string {
-	return "Always Use HTTPS and HSTS are both off for the zone"
-}
+const detailHTTPSBothOff = "Always Use HTTPS and HSTS are both off for the zone"
 
 // detailHTTPSNoAlwaysUseHTTPSSetting renders the https-forced check's unobservable-zone verdict,
 // catalogue section 3.4.
-func detailHTTPSNoAlwaysUseHTTPSSetting() string {
-	return "Cloudflare returned no Always Use HTTPS setting for the zone"
-}
+const detailHTTPSNoAlwaysUseHTTPSSetting = "Cloudflare returned no Always Use HTTPS setting for the zone"
 
 // detailDelegationWrongNameservers renders the delegation check's Failing verdict, catalogue
 // section 3.4.
-func detailDelegationWrongNameservers() string {
-	return "the domain points at nameservers outside this Cloudflare zone"
-}
+const detailDelegationWrongNameservers = "the domain points at nameservers outside this Cloudflare zone"
 
 // detailDelegationNoAssignedNS renders the delegation check's unobservable verdict,
 // catalogue section 3.4.
-func detailDelegationNoAssignedNS() string {
-	return "no assigned nameservers recorded for this site"
-}
+const detailDelegationNoAssignedNS = "no assigned nameservers recorded for this site"
 
 // detailDelegationNoZone renders the delegation check's unobservable verdict, catalogue
 // section 3.4.
-func detailDelegationNoZone() string {
-	return "Cloudflare reports no zone for this domain"
-}
+const detailDelegationNoZone = "Cloudflare reports no zone for this domain"
 
 // detailServingHostnameMismatch renders the serving check's Failing verdict for a hostname that
 // answers something other than a home page, catalogue section 3.4.
-func detailServingHostnameMismatch() string {
-	return "the hostname does not answer"
-}
+const detailServingHostnameMismatch = "the hostname does not answer"
 
 // detailServingNotCairn renders the serving check's Failing verdict for a hostname whose home
 // page answers but whose /admin is not cairn's. The catalogue folds this case into the line
 // above, which tells an operator the opposite of what the probe found; this is the plainest
 // fragment satisfying section 2.4.
-func detailServingNotCairn() string {
-	return "the hostname answers, but /admin is not cairn's sign-in page"
-}
+const detailServingNotCairn = "the hostname answers, but /admin is not cairn's sign-in page"
 
 // detailEmailDMARCMissing renders the email check's no-record verdict, catalogue section 3.4.
-func detailEmailDMARCMissing() string {
-	return "no DMARC record published for the domain"
-}
+const detailEmailDMARCMissing = "no DMARC record published for the domain"
 
 // detailEmailDMARCPolicyNone renders the email check's p=none verdict, catalogue section 3.4.
-func detailEmailDMARCPolicyNone() string {
-	return "the DMARC record allows every sender (p=none)"
-}
+const detailEmailDMARCPolicyNone = "the DMARC record allows every sender (p=none)"
 
 // detailEmailDMARCNoPolicy renders the email check's missing-tag verdict, catalogue section 3.4.
-func detailEmailDMARCNoPolicy() string {
-	return "the DMARC record carries no p= policy"
-}
+const detailEmailDMARCNoPolicy = "the DMARC record carries no p= policy"
 
 // tmplEmailSPFMissing is detailEmailSPFMissing's format template, named so `make copy-list`
 // can print the template rather than inventing an example include mechanism.
@@ -97,59 +73,43 @@ func detailEmailSPFMissing(include string) string {
 }
 
 // detailEmailDKIMMissing renders the email check's DKIM verdict, catalogue section 3.4.
-func detailEmailDKIMMissing() string {
-	return "no DKIM record found for the sending subdomain"
-}
+const detailEmailDKIMMissing = "no DKIM record found for the sending subdomain"
 
 // detailEmailSenderNotOnboarded renders the email check's onboarding verdict, catalogue section
 // 3.4.
-func detailEmailSenderNotOnboarded() string {
-	return "the sending subdomain is not onboarded"
-}
+const detailEmailSenderNotOnboarded = "the sending subdomain is not onboarded"
 
 // detailDeployWorkerNotFound renders the deploy check's absent-Worker verdict. The catalogue
 // carries no row for this case; this is the plainest fragment satisfying section 2.4.
-func detailDeployWorkerNotFound() string {
-	return "the Worker does not exist in this account"
-}
+const detailDeployWorkerNotFound = "the Worker does not exist in this account"
 
 // detailDeployBuildsNotConnected renders the deploy check's disconnected-Builds verdict,
 // catalogue section 3.4, with an added clause: the bare catalogue line reads as a fault, and the
 // state it names is a site deployed some other way.
-func detailDeployBuildsNotConnected() string {
-	return "Workers Builds is not connected to this Worker, so there is no deployment to read"
-}
+const detailDeployBuildsNotConnected = "Workers Builds is not connected to this Worker, so there is no deployment to read"
 
 // detailNoRepoRecorded renders the skipped verdict every repository-reading check returns
 // against a record that names none. One fragment serves all three: the fact is the record's, not
 // the check's, and three wordings for one fact would read as three different problems. The
 // catalogue carries no row; this is the plainest fragment satisfying section 2.6.
-func detailNoRepoRecorded() string {
-	return "no GitHub repository recorded for this site"
-}
+const detailNoRepoRecorded = "no GitHub repository recorded for this site"
 
 // detailDeployBuildFailed renders the deploy check's failed-build verdict. The catalogue's
 // build-failed row composes the commit and branch position (3.4's "build failed 26m ago
 // (3f0ba18), main is 2 commits ahead"), which belongs to the render layer reading Fields, not to
 // this bare Detail fallback; this is the plainest fragment satisfying section 2.4.
-func detailDeployBuildFailed() string {
-	return "the last build did not succeed"
-}
+const detailDeployBuildFailed = "the last build did not succeed"
 
 // detailDeployNoDeployment renders the deploy check's verdict for a GitHub Actions site whose
 // Worker has no deployment.
-func detailDeployNoDeployment() string {
-	return "the Worker has no deployment"
-}
+const detailDeployNoDeployment = "the Worker has no deployment"
 
 // detailPublishNothingWaiting renders the publish-path check's quiet-state verdict: no open
 // edit branch, so nothing is waiting on an editor. The catalogue's row for this state words
 // it as an absence of observations ("no cairn branches or publish commits observed"), which
 // reads as a failure to measure rather than the ordinary state it names; this is the plainest
 // fragment satisfying section 2.4.
-func detailPublishNothingWaiting() string {
-	return "no edits are waiting to publish"
-}
+const detailPublishNothingWaiting = "no edits are waiting to publish"
 
 // detailPublishStaleBranches renders the publish-path check's stale-branch verdict. The
 // catalogue's publish-path rows assume an App-installation check this package does not run; this
@@ -169,15 +129,11 @@ func detailPublishStaleBranches(count int) string {
 
 // detailEngineNoCairnDependency renders the engine check's unobservable verdict, catalogue
 // section 3.4.
-func detailEngineNoCairnDependency() string {
-	return "the site's package.json carries no " + cairnPackageName + " dependency"
-}
+const detailEngineNoCairnDependency = "the site's package.json carries no " + cairnPackageName + " dependency"
 
 // detailEngineVersionNotFound renders the engine check's unobservable verdict, catalogue
 // section 3.4.
-func detailEngineVersionNotFound() string {
-	return "the installed or latest version is not in the published version list"
-}
+const detailEngineVersionNotFound = "the installed or latest version is not in the published version list"
 
 // detailEngineCurrent renders the engine check's up-to-date verdict, catalogue section 3.4.
 func detailEngineCurrent(installed string) string {
@@ -216,9 +172,7 @@ func errorsWindow(d time.Duration) string {
 
 // detailErrorsObservabilityOff renders the errors check's missing-dataset verdict, catalogue
 // section 3.4.
-func detailErrorsObservabilityOff() string {
-	return "the Worker has no observability dataset"
-}
+const detailErrorsObservabilityOff = "the Worker has no observability dataset"
 
 // detailAPIRequestRejected renders the Detail every check carries when a provider answered a
 // request with HTTP 400. The catalogue carries no row for it: the condition did not exist before
@@ -226,9 +180,7 @@ func detailErrorsObservabilityOff() string {
 // the operator as a site setting they had never turned off. It names cairn as the faulty party
 // and points at the one place a report belongs, the shape tmplCommandCrashed already uses for the
 // other fault that is never the operator's.
-func detailAPIRequestRejected() string {
-	return "the provider refused the request cairn sent; this is a bug in cairn, reportable at https://github.com/glw907/cairn-cms/issues"
-}
+const detailAPIRequestRejected = "the provider refused the request cairn sent; this is a bug in cairn, reportable at https://github.com/glw907/cairn-cms/issues"
 
 // The format templates detailErrorsCount and detailErrorsAboveThreshold render from. The two
 // "at least" forms carry a count the fetch truncated at its limit: the window holds that many
@@ -261,9 +213,7 @@ func detailErrorsAboveThreshold(count int, truncated bool, window time.Duration,
 
 // detailCredsGitHubNoExpiry renders the creds check's non-expiring-token verdict, catalogue
 // section 3.4.
-func detailCredsGitHubNoExpiry() string {
-	return "GitHub reports no expiry for this token"
-}
+const detailCredsGitHubNoExpiry = "GitHub reports no expiry for this token"
 
 // tmplCredsGitHubExpiring is detailCredsGitHubExpiring's format template.
 const tmplCredsGitHubExpiring = "the GitHub token expires %s, in %d days"
@@ -279,16 +229,12 @@ func detailCredsGitHubExpiring(expiry, now time.Time) string {
 // detailCredsUnauthorized renders a credential the provider rejected outright, catalogue section
 // 3.4's "Cloudflare rejected the token" generalized across providers: ReasonToOutcome carries no
 // provider name, so credentialLine supplies it as this line's leading word.
-func detailCredsUnauthorized() string {
-	return "the token was rejected"
-}
+const detailCredsUnauthorized = "the token was rejected"
 
 // detailCredsForbidden renders a credential the provider accepted but refused to act on,
 // catalogue section 3.4's "the token lacks the Zone:Read permission" generalized across
 // providers, for the same reason detailCredsUnauthorized is generalized.
-func detailCredsForbidden() string {
-	return "the token lacks a required permission"
-}
+const detailCredsForbidden = "the token lacks a required permission"
 
 // reasonPhrases is the prose every reason code prints as. A reason code is cairn's
 // vocabulary, greppable and stable, and it belongs in --json and in a log line; a body printing
@@ -308,7 +254,7 @@ var reasonPhrases = map[spine.ReasonCode]string{
 	spine.ReasonOffline:         "the provider could not be reached",
 	spine.ReasonNotRun:          "the check did not run",
 	spine.ReasonNotObservable:   "this site exposes nothing for the check to read",
-	spine.ReasonRepoNotRecorded: detailNoRepoRecorded(),
+	spine.ReasonRepoNotRecorded: detailNoRepoRecorded,
 
 	spine.ParkReason(spine.ParkDelegationPropagating):   "the domain's delegation is still propagating",
 	spine.ParkReason(spine.ParkDelegationPending):       "the zone is waiting for the domain to be delegated to it",
@@ -324,15 +270,15 @@ var reasonPhrases = map[spine.ReasonCode]string{
 	spine.ParkReason(spine.ParkBuildRunning):            "the build is still running",
 	spine.ParkReason(spine.ParkBuildsReconcileParked):   "the Workers Builds connection is waiting to settle",
 
-	spine.APIReason(providers.ReasonUnauthorized):           detailCredsUnauthorized(),
-	spine.APIReason(providers.ReasonForbidden):              detailCredsForbidden(),
+	spine.APIReason(providers.ReasonUnauthorized):           detailCredsUnauthorized,
+	spine.APIReason(providers.ReasonForbidden):              detailCredsForbidden,
 	spine.APIReason(providers.ReasonNotFound):               "the provider has no record of what the check asked for",
-	spine.APIReason(providers.ReasonBuildsNotConnected):     detailDeployBuildsNotConnected(),
+	spine.APIReason(providers.ReasonBuildsNotConnected):     detailDeployBuildsNotConnected,
 	spine.APIReason(providers.ReasonBuildsRepoNotSelected):  "Workers Builds names no repository for this Worker",
 	spine.APIReason(providers.ReasonBuildsAppNotAuthorized): "Workers Builds is not authorized on the GitHub account",
-	spine.APIReason(providers.ReasonSenderNotConfigured):    detailEmailSenderNotOnboarded(),
+	spine.APIReason(providers.ReasonSenderNotConfigured):    detailEmailSenderNotOnboarded,
 	spine.APIReason(providers.ReasonRateLimited):            "the provider is rate-limiting cairn's requests",
-	spine.APIReason(providers.ReasonRequestRejected):        detailAPIRequestRejected(),
+	spine.APIReason(providers.ReasonRequestRejected):        detailAPIRequestRejected,
 	spine.APIReason(providers.ReasonUnknown):                "the provider failed for a reason cairn cannot classify",
 }
 
@@ -356,44 +302,44 @@ func ReasonPhrase(r spine.ReasonCode) string {
 // package's detailXxx function instead.
 func Catalogue() []string {
 	out := []string{
-		detailHTTPSAlwaysUseHTTPSOff(),
-		detailHTTPSHSTSOff(),
-		detailHTTPSBothOff(),
-		detailHTTPSNoAlwaysUseHTTPSSetting(),
-		detailDelegationWrongNameservers(),
-		detailDelegationNoAssignedNS(),
-		detailDelegationNoZone(),
-		detailServingHostnameMismatch(),
-		detailServingNotCairn(),
-		detailEmailDMARCMissing(),
-		detailEmailDMARCPolicyNone(),
-		detailEmailDMARCNoPolicy(),
+		detailHTTPSAlwaysUseHTTPSOff,
+		detailHTTPSHSTSOff,
+		detailHTTPSBothOff,
+		detailHTTPSNoAlwaysUseHTTPSSetting,
+		detailDelegationWrongNameservers,
+		detailDelegationNoAssignedNS,
+		detailDelegationNoZone,
+		detailServingHostnameMismatch,
+		detailServingNotCairn,
+		detailEmailDMARCMissing,
+		detailEmailDMARCPolicyNone,
+		detailEmailDMARCNoPolicy,
 		tmplEmailSPFMissing,
-		detailEmailDKIMMissing(),
-		detailEmailSenderNotOnboarded(),
-		detailDeployWorkerNotFound(),
-		detailDeployBuildsNotConnected(),
-		detailNoRepoRecorded(),
-		detailDeployBuildFailed(),
-		detailDeployNoDeployment(),
-		detailPublishNothingWaiting(),
+		detailEmailDKIMMissing,
+		detailEmailSenderNotOnboarded,
+		detailDeployWorkerNotFound,
+		detailDeployBuildsNotConnected,
+		detailNoRepoRecorded,
+		detailDeployBuildFailed,
+		detailDeployNoDeployment,
+		detailPublishNothingWaiting,
 		tmplPublishStaleBranchSingular,
 		tmplPublishStaleBranchesPlural,
-		detailEngineNoCairnDependency(),
-		detailEngineVersionNotFound(),
+		detailEngineNoCairnDependency,
+		detailEngineVersionNotFound,
 		detailEngineCurrent("<version>"),
 		tmplEngineBehind,
 		tmplEngineBehind + tmplEngineBehindActionableSuffix,
-		detailErrorsObservabilityOff(),
-		detailAPIRequestRejected(),
+		detailErrorsObservabilityOff,
+		detailAPIRequestRejected,
 		tmplErrorsCount,
 		tmplErrorsCountAtLeast,
 		tmplErrorsAboveThreshold,
 		tmplErrorsAtLeastAboveThreshold,
-		detailCredsGitHubNoExpiry(),
+		detailCredsGitHubNoExpiry,
 		tmplCredsGitHubExpiring,
-		detailCredsUnauthorized(),
-		detailCredsForbidden(),
+		detailCredsUnauthorized,
+		detailCredsForbidden,
 		ReasonPhrase("reason.unrecognized"),
 	}
 	// Every reason phrase is an operator-facing line like any other detail, so the whole table

@@ -89,7 +89,7 @@ func (errorsCheck) Run(ctx context.Context, r record.Record, c Clients, o Option
 				State:     spine.Unknown,
 				Reason:    spine.ReasonNotObservable,
 				Condition: spine.ConditionConfigObservabilityOff,
-				Detail:    detailErrorsObservabilityOff(),
+				Detail:    detailErrorsObservabilityOff,
 			}
 		}
 		return apiErrorOutcome(err)

@@ -128,7 +128,7 @@ func TestDelegationCheckWrongNameserversIsFailing(t *testing.T) {
 	}
 
 	got := (delegationCheck{}).Run(context.Background(), r, c, Options{})
-	if got.State != spine.Failing || got.Detail != detailDelegationWrongNameservers() {
+	if got.State != spine.Failing || got.Detail != detailDelegationWrongNameservers {
 		t.Errorf("Outcome = %+v, want Failing wrong-nameservers", got)
 	}
 }
@@ -166,8 +166,8 @@ func TestDelegationCheckUnrecordedAndZoneSilentIsUnknown(t *testing.T) {
 	if got.State != spine.Unknown || got.Reason != spine.ReasonNotObservable {
 		t.Errorf("Outcome = %+v, want Unknown reason.not-observable", got)
 	}
-	if got.Detail != detailDelegationNoAssignedNS() {
-		t.Errorf("Detail = %q, want %q", got.Detail, detailDelegationNoAssignedNS())
+	if got.Detail != detailDelegationNoAssignedNS {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailDelegationNoAssignedNS)
 	}
 }
 

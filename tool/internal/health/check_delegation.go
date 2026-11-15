@@ -43,10 +43,10 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 			return apiErrorOutcome(err)
 		}
 		if z == nil {
-			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone()}
+			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone}
 		}
 		if len(z.NameServers) == 0 {
-			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoAssignedNS()}
+			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoAssignedNS}
 		}
 		zone, assigned = z, z.NameServers
 	}
@@ -54,7 +54,7 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 	actual, _ := c.Probe.LookupNS(ctx, r.Domain)
 	if !nameServersMatch(assigned, actual) {
 		if looksLikeCloudflareNS(actual) {
-			return spine.Outcome{State: spine.Failing, Code: spine.CodeDelegationWrongNS, Detail: detailDelegationWrongNameservers()}
+			return spine.Outcome{State: spine.Failing, Code: spine.CodeDelegationWrongNS, Detail: detailDelegationWrongNameservers}
 		}
 		return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkDelegationPending)}
 	}
@@ -65,7 +65,7 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 			return apiErrorOutcome(err)
 		}
 		if z == nil {
-			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone()}
+			return spine.Outcome{State: spine.Unknown, Reason: spine.ReasonNotObservable, Detail: detailDelegationNoZone}
 		}
 		zone = z
 	}

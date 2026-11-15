@@ -182,7 +182,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 	if worker == nil {
-		return deployDetail{}.outcome(spine.Failing, "", spine.CodeDeployWorkerNotFound, detailDeployWorkerNotFound())
+		return deployDetail{}.outcome(spine.Failing, "", spine.CodeDeployWorkerNotFound, detailDeployWorkerNotFound)
 	}
 	detail := deployDetail{WorkerExists: true}
 
@@ -195,7 +195,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 	if len(triggers) == 0 {
-		return detail.outcome(spine.Unknown, spine.APIReason(providers.ReasonBuildsNotConnected), "", detailDeployBuildsNotConnected())
+		return detail.outcome(spine.Unknown, spine.APIReason(providers.ReasonBuildsNotConnected), "", detailDeployBuildsNotConnected)
 	}
 	detail.BuildsConnected = true
 	detail.PushToDeploy = true
@@ -221,11 +221,11 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	// against a build that succeeded, so a failed build never measures MainSHA or Behind.
 	if build.Outcome != buildOutcomeSuccess {
 		detail.LastBuild = buildFailed
-		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployBuildFailed())
+		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployBuildFailed)
 	}
 
 	if !hasRepo(r) {
-		return detail.outcome(spine.Unknown, spine.ReasonRepoNotRecorded, "", detailNoRepoRecorded())
+		return detail.outcome(spine.Unknown, spine.ReasonRepoNotRecorded, "", detailNoRepoRecorded)
 	}
 	mainSHA, err := c.GH.HeadSHA(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, DefaultBranch(r))
 	if err != nil {
@@ -248,7 +248,7 @@ func actionsDeploy(ctx context.Context, name string, detail deployDetail, c Clie
 		return apiErrorOutcome(err)
 	}
 	if len(deployments) == 0 {
-		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployNoDeployment())
+		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployNoDeployment)
 	}
 	detail.LastBuild = buildOK
 	detail.LastBuildAt = deployments[0].CreatedOn

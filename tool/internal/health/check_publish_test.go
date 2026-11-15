@@ -122,8 +122,8 @@ func TestPublishPathCheckNothingWaitingIsOK(t *testing.T) {
 	if got.State != spine.OK {
 		t.Errorf("Outcome = %+v, want OK", got)
 	}
-	if got.Detail != detailPublishNothingWaiting() {
-		t.Errorf("Detail = %q, want %q", got.Detail, detailPublishNothingWaiting())
+	if got.Detail != detailPublishNothingWaiting {
+		t.Errorf("Detail = %q, want %q", got.Detail, detailPublishNothingWaiting)
 	}
 }
 

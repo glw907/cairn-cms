@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"testing"
+
+	"github.com/spf13/cobra"
 
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render"
@@ -44,6 +47,66 @@ func TestResolveGroundPrecedence(t *testing.T) {
 				t.Errorf("dark = %v, want %v", got, tt.wantDark)
 			}
 		})
+	}
+}
+
+// TestFlagBeforeParseCarriesWasGiven holds that --theme dark, which equals the default, still
+// beats CAIRN_THEME=light, on both paths a ground is read from: cobra's parse before a command
+// runs, and the pre-parse help takes because cobra answers --help before any flag reaches the
+// root's flags.
+func TestFlagBeforeParseCarriesWasGiven(t *testing.T) {
+	d, _ := testDeps(t)
+	d.env = fakeEnv(map[string]string{varTheme: themeLight})
+
+	for _, tt := range []struct {
+		args     []string
+		wantDark bool
+	}{
+		{[]string{"--theme", "dark"}, true},
+		{[]string{"--theme=light"}, false},
+		{nil, false},
+	} {
+		if got := resolveGround(d, preParseFlags(append([]string{"--help"}, tt.args...))).dark; got != tt.wantDark {
+			t.Errorf("preparse %v: dark = %v, want %v", tt.args, got, tt.wantDark)
+		}
+
+		f := &rootFlags{}
+		var ran bool
+		cmd := &cobra.Command{
+			Use: "probe",
+			PersistentPreRunE: func(c *cobra.Command, _ []string) error {
+				f.notePassed(c)
+				return nil
+			},
+			RunE: func(*cobra.Command, []string) error { ran = true; return nil },
+		}
+		cmd.PersistentFlags().StringVar(&f.theme, "theme", themeDark, "")
+		cmd.SetArgs(tt.args)
+		if err := cmd.Execute(); err != nil || !ran {
+			t.Fatalf("command over %v: ran=%v err=%v", tt.args, ran, err)
+		}
+		if got := resolveGround(d, f).dark; got != tt.wantDark {
+			t.Errorf("command %v: dark = %v, want %v", tt.args, got, tt.wantDark)
+		}
+	}
+}
+
+// TestHelpIsAnsweredBeforeThemeIsParsed pins why help needs its own pre-parse: cobra returns on
+// --help before PersistentPreRunE, so the root's themeSet is still false.
+func TestHelpIsAnsweredBeforeThemeIsParsed(t *testing.T) {
+	d, _ := testDeps(t)
+	var out bytes.Buffer
+	cmd := newRootCmd(d)
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{"--theme", "dark", "--help"})
+	ran := false
+	cmd.PersistentPreRunE = func(*cobra.Command, []string) error { ran = true; return nil }
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if ran {
+		t.Error("PersistentPreRunE ran before help, so the pre-parse is not needed")
 	}
 }
 

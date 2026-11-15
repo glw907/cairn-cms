@@ -1,0 +1,52 @@
+
+  Operate a cairn-cms production site.                                                                                  
+                                                                                                                        
+  To set up a new site, run `cairn new`. `cairn new --help` covers running it at a terminal and from an agent.          
+  Run `cairn help agents` for the contract a program reads.                                                             
+  Pass --json to a reporting command for a machine-readable payload on stdout.                                          
+  Set CAIRN_PLAIN=1 for the plain output a pipe gets, even at a terminal.                                               
+  Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.                                                                   
+         
+  [1mUSAGE[m  
+         
+    cairn[38;5;243m [command][m[38;5;243m [--flags][m      
+            
+  [1mEXAMPLES[m  
+            
+    [38;5;243m# Check a site's health[m        
+    $[38;5;243m [mcairn[38;5;243m [mhealth[38;5;243m [mmy-site-a1b2c3  
+                                   
+    [38;5;243m# Set up a new site[m            
+    $[38;5;243m [mcairn[38;5;243m [mnew                    
+                  
+  [1mSITE COMMANDS:[m  
+                  
+    adopt[38;5;243m [command][m[38;5;243m [--flags][m  [38;5;243mAdd a Cloudflare Worker to the registry as a site[m
+    doctor[38;5;243m [<dir>][m[38;5;243m [--flags][m   [38;5;243mCheck a cairn-cms site's configuration, no credential or deploy needed[m
+    health[38;5;243m [<site>][m[38;5;243m [--flags][m  [38;5;243mRun the read-only health checks against one site, or every site when none is named[m
+    logs <site>[38;5;243m [--flags][m      [38;5;243mRead one site's engine log records[m
+    new[38;5;243m [command][m[38;5;243m [--flags][m    [38;5;243mSet up a new cairn site[m
+    sites[38;5;243m [command][m[38;5;243m [--flags][m  [38;5;243mList the sites cairn knows[m
+                        
+  [1mCREDENTIAL COMMANDS:[m  
+                        
+    auth[38;5;243m [command][m             [38;5;243mManage credentials in the OS keyring[m
+                   
+  [1mOTHER COMMANDS:[m  
+                   
+    agents                     [38;5;243mPrint the contract a program or an agent reads[m
+    completion[38;5;243m [command][m       [38;5;243mGenerate the autocompletion script for the specified shell[m
+    help[38;5;243m [command][m             [38;5;243mHelp about any command[m
+         
+  [1mFLAGS[m  
+         
+    --ack-file                 [38;5;243mPath to a JSON file of holds (default: acknowledgements.json in the registry directory)[m
+    --color                    [38;5;243mWhen to colour the output: auto, always, or never[m[38;5;243m (auto)[m
+    -h --help                  [38;5;243mHelp for cairn[m
+    -q --quiet                 [38;5;243mPrint nothing when the run is OK[m
+    --theme                    [38;5;243mThe ground to render for: dark or light[m[38;5;243m (dark)[m
+    -t --timeout               [38;5;243mWall-Clock budget for the whole run[m[38;5;243m (8m0s)[m
+    -v --verbose               [38;5;243mPrint the identifiers a run otherwise withholds[m
+    -V --version               [38;5;243mPrint the version and exit[m
+    --width                    [38;5;243mColumns to render at, instead of the terminal's width[m
+

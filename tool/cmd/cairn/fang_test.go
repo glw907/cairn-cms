@@ -7,6 +7,10 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/colorprofile"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // TestThemedHelpCarriesNoEscapeUnderNoColor runs the root's help through fang, which paints a
@@ -21,7 +25,7 @@ func TestThemedHelpCarriesNoEscapeUnderNoColor(t *testing.T) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&out)
 	cmd.SetArgs([]string{"--help"})
-	if err := fangExecute(context.Background(), cmd); err != nil {
+	if err := fangExecute(context.Background(), cmd, style.NewTheme(true, colorprofile.TrueColor, false)); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(out.String(), "USAGE") {

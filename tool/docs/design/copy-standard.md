@@ -661,6 +661,7 @@ from the code comments marking them instead, not from this section alone.
 | status line under a site listing, a token the run could not find | `CAIRN_CF_READ_TOKEN is not set, so creds, email and errors cannot run` | a listing attempts no check, so the past tense above would report a failure that did not happen; this says what the absence will cost |
 | fleet fix list, one remedy covering several sites | `also on: xcathletes.org, cairn.pub` | one remedy is printed once per frame, and the sites it applies to are named in that one entry, ranked, never truncated |
 | `cairn doctor` terminal body, the info results' title | `notes` | an info result is a passing check carrying a note, which no health section word names (3.2) |
+| `cairn --help`, the root's long text (one sentence added) | `Set CAIRN_PLAIN=1 for the plain output a pipe gets, even at a terminal.` | the plain-mode ruling asks for `CAIRN_PLAIN` to be documented in `cairn --help`; the sentence names it alone, since no ruling puts `CAIRN_THEME` or `COLORFGBG` in help |
 | `cairn doctor` terminal body, the skipped checks folded to one line | `1 does not apply`, `<n> do not apply` (the verb agrees with the count) | a doctor skip is a precondition that did not hold, not a check that could not run, so 2.9's `could not run` would misreport it (3.2) |
 
 ---

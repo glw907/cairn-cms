@@ -1,8 +1,12 @@
 package main
 
 import (
+	"io"
 	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // The variables that choose the ground and the plain body. Neither is ever an error: a value
@@ -32,15 +36,15 @@ type ground struct {
 // resolveGround reads the ground and the plain flag from the root flags and the environment.
 // The ground is the first of --theme, CAIRN_THEME, and COLORFGBG to name one, and dark when none
 // does. An explicit --theme counts even when it repeats the default, so --theme dark beats
-// CAIRN_THEME=light. A light --theme also counts when rf was built by hand rather than parsed,
-// since only a parsed flag carries its Changed bit.
+// CAIRN_THEME=light. themeSet is the flag's Changed bit,
+// so a rootFlags built by hand names a ground only with it set.
 //
 // cairn never queries the terminal for its background: a terminal that does not answer the query
 // would leave the run waiting.
 func resolveGround(d deps, rf *rootFlags) ground {
 	g := ground{dark: true, plain: d.env(varPlain) == "1"}
 	switch {
-	case rf.themeSet || rf.theme == themeLight:
+	case rf.themeSet:
 		g.dark = rf.theme != themeLight
 	case d.env(varTheme) == themeDark || d.env(varTheme) == themeLight:
 		g.dark = d.env(varTheme) == themeDark
@@ -61,6 +65,40 @@ func colorFGBGLight(v string) (light, ok bool) {
 		return false, false
 	}
 	return field == "7" || field == "15", true
+}
+
+// notePassed records which flags with a default the operator passed, from c's parsed flags. A
+// value equal to its default still counts, which is how an explicit --theme dark outranks
+// CAIRN_THEME.
+func (f *rootFlags) notePassed(c *cobra.Command) {
+	if flag := c.Flags().Lookup("timeout"); flag != nil {
+		f.timeoutSet = flag.Changed
+	}
+	if flag := c.Flags().Lookup("width"); flag != nil {
+		f.widthSet = flag.Changed
+	}
+	if flag := c.Flags().Lookup("theme"); flag != nil {
+		f.themeSet = flag.Changed
+	}
+}
+
+// preParseFlags reads --color and --theme from args before cobra parses them, because help is
+// chosen and painted before PersistentPreRunE runs. Every other flag is skipped, help included
+// so a flag after it is still read. Args with neither flag, or ones cobra will reject, read as
+// the defaults with theme unset.
+func preParseFlags(args []string) *rootFlags {
+	fs := pflag.NewFlagSet("preparse", pflag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	fs.ParseErrorsAllowlist.UnknownFlags = true
+	fs.BoolP("help", "h", false, "")
+	rf := &rootFlags{}
+	fs.StringVar(&rf.color, "color", colorAuto, "")
+	fs.StringVar(&rf.theme, "theme", themeDark, "")
+	if err := fs.Parse(args); err != nil {
+		return &rootFlags{color: colorAuto, theme: themeDark}
+	}
+	rf.themeSet = fs.Changed("theme")
+	return rf
 }
 
 // styledStreams returns the streams a styled path probes for a terminal: the process streams,

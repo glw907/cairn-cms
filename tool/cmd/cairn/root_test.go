@@ -544,7 +544,7 @@ func TestThemeSelectsThePaletteGround(t *testing.T) {
 	reports := []health.Report{failingReport()}
 
 	frameFor := func(theme string) (render.RenderInput, string) {
-		in := renderInput(d, &rootFlags{theme: theme, color: colorAlways, width: 80}, reports,
+		in := renderInput(d, &rootFlags{theme: theme, themeSet: true, color: colorAlways, width: 80}, reports,
 			spine.VerdictCritical, render.StatusState{})
 		return in, strings.Join(render.Render(in).Lines(), "\n")
 	}

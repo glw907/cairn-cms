@@ -18,13 +18,6 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
-// processStdout returns the stdout handle render's terminal detection probes. It is the
-// *os.File rather than the io.Writer below because a colour profile, a column count, and a TTY
-// check each need the file descriptor. Nothing writes through it.
-func processStdout() *os.File {
-	return os.Stdout
-}
-
 // stdioTerminal reports whether stdin and stdout are both a terminal, deps.interactive in
 // production.
 func stdioTerminal() bool {
@@ -76,7 +69,7 @@ func scrubTargets(d deps) []providers.Credential {
 
 func main() {
 	d := newDeps()
-	d.stdout = processStdout()
+	d.stdout = os.Stdout
 	d.stderr = os.Stderr
 	d.interactive = stdioTerminal
 

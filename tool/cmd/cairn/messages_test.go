@@ -253,23 +253,16 @@ func TestEveryCairnPrefixedMessageFollowsTheErrorGrammar(t *testing.T) {
 	}
 }
 
-// The eight rows copy-standard.md section 3.8 names, one constructor each, plus the fallback.
-// TestEveryEightSection38CaseHasATableEntry exercises each directly so criterion 2's count
-// is proven rather than merely asserted in a comment, and so `unused` never flags the four
-// (noCredentialsError, networkDownError, rateLimitedError, crashedCheckError) that carry no
-// production call site today (see messages.go's comment on why).
-func TestEveryEightSection38CaseHasATableEntry(t *testing.T) {
+// TestEveryTableConstructorBuildsATranslatedError builds one error from each remaining
+// section 3.8 constructor and asserts each carries the "cairn: " prefix and the translatedError
+// type that keeps translateError from wrapping it a second time.
+func TestEveryTableConstructorBuildsATranslatedError(t *testing.T) {
 	cases := map[string]error{
-		"no credentials":                 noCredentialsError(),
-		"keyring unavailable":            keyringUnavailableError("CAIRN_CF_READ_TOKEN"),
-		"unknown site":                   unknownSiteError("example-a1b2c3"),
-		"network down":                   networkDownError(),
-		"rate limited, no Retry-After":   rateLimitedError(""),
-		"rate limited, with Retry-After": rateLimitedError("5m"),
-		"invalid --since":                invalidSinceError("7"),
-		"usage error, not a credential":  notACredentialError("NOT_A_REAL_VARIABLE"),
-		"usage error, arity":             healthTooManyArgsError(),
-		"a crashed check":                crashedCheckError("deploy"),
+		"keyring unavailable":           keyringUnavailableError("CAIRN_CF_READ_TOKEN"),
+		"unknown site":                  unknownSiteError("example-a1b2c3"),
+		"invalid --since":               invalidSinceError("7"),
+		"usage error, not a credential": notACredentialError("NOT_A_REAL_VARIABLE"),
+		"usage error, arity":            healthTooManyArgsError(),
 	}
 	for label, err := range cases {
 		if err == nil {

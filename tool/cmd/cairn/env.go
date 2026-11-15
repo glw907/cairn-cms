@@ -73,8 +73,8 @@ const (
 )
 
 // varPublicOrigin names the site's public origin variable, cairn doctor's fallback once the
-// wrangler config carries none. It is not a cairn credential, so it carries no Missing entry and
-// is read directly from envFn, the same as the two above.
+// wrangler config carries none. It is not a cairn credential, so doctor reads it straight from
+// deps.env.
 const varPublicOrigin = "PUBLIC_ORIGIN"
 
 // credentialVars lists the three variables loadEnv resolves, in resolution
@@ -87,16 +87,7 @@ var credentialVars = []credentialVar{
 
 // authVariables lists the same three names, in the same order, for cairn
 // auth set's membership check.
-var authVariables = credentialNames(credentialVars)
-
-// credentialNames extracts each credentialVar's name, in order.
-func credentialNames(cs []credentialVar) []string {
-	names := make([]string, len(cs))
-	for i, c := range cs {
-		names[i] = c.name
-	}
-	return names
-}
+var authVariables = []string{varCFAccountID, varCFReadToken, varGHReadToken}
 
 // resolution holds one variable's resolved value and the line a caller
 // prints for it: the provider name on success, "<provider>: error" when
@@ -113,16 +104,13 @@ type resolution struct {
 	display    string
 }
 
-// env holds every variable loadEnv resolved, keyed by name, plus three plain environment reads
-// no secrets.Provider ever sees: noColor and term, the pair style.Detect takes to pick a
-// color profile, and publicOrigin, which the doctor's config.public-origin check reads straight
-// instead of through a Provider since it names no credential. All three come straight from
-// envFn.
+// env holds every variable loadEnv resolved, keyed by name, plus the two plain environment reads
+// no secrets.Provider ever sees: noColor and term, the pair style.Detect takes to pick a color
+// profile. Both come straight from envFn.
 type env struct {
-	resolutions  []resolution
-	noColor      string
-	term         string
-	publicOrigin string
+	resolutions []resolution
+	noColor     string
+	term        string
 }
 
 // noColorValue returns the resolved NO_COLOR value, empty when unset.
@@ -135,44 +123,14 @@ func (e env) termValue() string {
 	return e.term
 }
 
-// publicOriginValue returns the resolved PUBLIC_ORIGIN value, empty when unset.
-func (e env) publicOriginValue() string {
-	return e.publicOrigin
-}
-
-// nonSecretVar enumerates loadEnv's variables whose resolved value is a plain string, never
-// wrapped in providers.Credential. Its underlying type is int, not string, so no string literal
-// or variable converts into it implicitly; only a value of this type reaches (env).value, which
-// makes reading a secret variable (CAIRN_CF_READ_TOKEN, CAIRN_GH_READ_TOKEN) through it a compile
-// error rather than a silent empty string, however the caller obtained the name.
-type nonSecretVar int
-
-// accountIDVar is the one non-secret variable loadEnv resolves today.
-const accountIDVar nonSecretVar = iota
-
-// name returns v's resolved variable name.
-func (v nonSecretVar) name() string {
-	switch v {
-	case accountIDVar:
-		return varCFAccountID
-	default:
-		return ""
-	}
-}
-
-// value returns v's resolved value, or empty when v was not resolved.
-func (e env) value(v nonSecretVar) string {
+// accountID returns the resolved CAIRN_CF_ACCOUNT_ID value.
+func (e env) accountID() string {
 	for _, r := range e.resolutions {
-		if r.name == v.name() {
+		if r.name == varCFAccountID {
 			return r.value
 		}
 	}
 	return ""
-}
-
-// accountID returns the resolved CAIRN_CF_ACCOUNT_ID value.
-func (e env) accountID() string {
-	return e.value(accountIDVar)
 }
 
 // credential returns name's resolved value already wrapped in
@@ -212,9 +170,6 @@ func (e env) sourceLines() []resolution {
 	return lines
 }
 
-// noCloudflareCredentialError (cmd/cairn/messages.go) is the error logs and adopt both return
-// when buildClients resolved no Cloudflare credential at all.
-
 // loadEnv resolves every variable in credentialVars by trying envFn first
 // and then each provider in p in order, and reports which ones it could
 // not resolve from any of them. It never returns a resolved value's source
@@ -231,7 +186,6 @@ func loadEnv(envFn func(string) string, p ...secrets.Provider) (env, []providers
 
 	out.noColor = envFn(varNoColor)
 	out.term = envFn(varTerm)
-	out.publicOrigin = envFn(varPublicOrigin)
 
 	for _, cv := range credentialVars {
 		v, from, err := secrets.Resolve(cv.name, chain...)

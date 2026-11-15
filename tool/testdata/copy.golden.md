@@ -108,8 +108,6 @@ and commit the diff.
 
 ## cmd/cairn
 
-- 
-Run the command again in %s
 -   # Answer the questions in the terminal
   $ cairn new
 
@@ -435,8 +433,6 @@ Use a whole number of minutes, hours, or days: 90m, 24h, 7d
 Use %s or %s
 - cairn: --width %d is not a width cairn can render.
 Use a whole number from %d to %d
-- cairn: Cloudflare rate-limited this run.
-The checks that need Cloudflare could not run; the others are reported above
 - cairn: an unfinished setup exists: %s.
 Continue it with --resume %s, or start a new site with --new.
 Run `cairn new --help` for the flags
@@ -448,9 +444,6 @@ Run `cairn auth --help` for the subcommands
 Run `cairn doctor --help` for usage
 - cairn: cairn health takes at most one site.
 Run `cairn health --help` for usage
-- cairn: could not reach the network.
-No check ran, so this run says nothing about the site.
-Check your connection, then run the command again
 - cairn: could not read %s.
 %v
 Give the file read permission, or drop --ack-file to use the registry's default
@@ -460,9 +453,6 @@ Run `cairn auth set %s` to store one
 Run `cairn adopt --worker %s --domain <domain>` naming the domain it serves
 - cairn: no Worker named %q on this account.
 Run `cairn adopt list` to see the Workers on the account
-- cairn: no credentials found.
-The health checks read your Cloudflare and GitHub tokens from the OS keyring or the environment.
-Run `cairn auth set %s` to store one
 - cairn: no site named %q.
 Run `cairn sites list` to see the sites cairn knows
 - cairn: no unfinished setup is named %s.
@@ -476,8 +466,6 @@ Run `cairn new --help` for the flags
 Use YYYY-MM-DD, for example 2026-10-01
 - cairn: the %q entry in %s has no expires date.
 Add an expires date to the entry
-- cairn: the %s check crashed.
-This is a bug in cairn. Report it at https://github.com/glw907/cairn-cms/issues
 - cairn: the OS keyring did not open.
 Set %s in the environment instead
 - cairn: the Workers after the blank line serve no Custom Domain, so cairn cannot adopt them from what it discovered.

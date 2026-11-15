@@ -170,8 +170,3 @@ func excludeAckFile(entries []store.Entry, errs []error, dir string, rf *rootFla
 	}
 	return outEntries, outErrs
 }
-
-// The six errors above (ackFlagError, ackFileNotFoundError, ackFileMalformedError,
-// ackFileMissingCheckIDError, ackFileMissingExpiryError, ackFileMalformedDateError) are defined
-// in cmd/cairn/messages.go: the catalogue carries no row for a malformed or missing
-// acknowledgement entry, so each is drafted to copy-standard.md's grammar rather than copied.

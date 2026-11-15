@@ -168,8 +168,7 @@ func resolvePublicOrigin(d deps, s doctor.Snapshot) doctor.PublicOrigin {
 	if facts, found, err := doctor.ReadWranglerConfig(s); err == nil && found && facts.HasPublicOrigin {
 		return doctor.PublicOrigin{Value: facts.PublicOrigin, Source: doctor.OriginFromVars}
 	}
-	resolved, _ := loadEnv(d.env)
-	if origin := resolved.publicOriginValue(); origin != "" {
+	if origin := d.env(varPublicOrigin); origin != "" {
 		return doctor.PublicOrigin{Value: origin, Source: doctor.OriginFromEnv}
 	}
 	return doctor.PublicOrigin{}

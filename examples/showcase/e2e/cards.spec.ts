@@ -26,9 +26,9 @@ for (const colorScheme of SCHEMES) {
       );
       expect(noOverflow).toBe(true);
 
-      const srcs = await page.locator('.cards img').evaluateAll((imgs) =>
-        imgs.map((img) => img.getAttribute('src') ?? ''),
-      );
+      const srcs = await page
+        .locator('.cards img')
+        .evaluateAll((imgs) => imgs.map((img) => img.getAttribute('src') ?? ''));
       expect(srcs.length).toBeGreaterThan(0);
       for (const src of srcs) expect(src).not.toBe('');
 

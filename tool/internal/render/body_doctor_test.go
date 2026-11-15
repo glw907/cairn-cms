@@ -142,12 +142,21 @@ func terminalCases(t *testing.T, keep func(goldenCase) bool) []goldenCase {
 	return out
 }
 
+func TestDoesNotApplyAgreesWithCount(t *testing.T) {
+	for n, want := range map[int]string{1: "1 does not apply", 2: "2 do not apply", 5: "5 do not apply"} {
+		if got := doesNotApply(n); got != want {
+			t.Errorf("doesNotApply(%d) = %q, want %q", n, got, want)
+		}
+	}
+}
+
 // wantWords returns the verdict word, the section names, and the marks c's frame must carry.
 func wantWords(c goldenCase) []string {
 	g := style.MarksFor(c.ascii)
 	if c.view == "doctor" {
 		return []string{doctorVerdict(c.checked).String(), labelFailing, labelCouldNotRun, labelNotes,
-			labelDoesNotApply, labelPassing, g.Failing, g.FailingWarn, g.CouldNotRun, g.Pass, g.Fix}
+			doesNotApply(len(splitDoctor(c.checked).skipped)), labelPassing, g.Failing, g.FailingWarn,
+			g.CouldNotRun, g.Pass, g.Fix}
 	}
 	words := []string{verdictFor(c.reports).String(), labelPassing, g.Pass}
 	s := split(c.reports[0])

@@ -33,7 +33,7 @@
     /admin/+layout that renders CairnAdminShell
 
   ● 3 passing
-  2 does not apply
+  2 do not apply
     Media bucket binding · Guard role vocabulary
 
   CRITICAL  my-site

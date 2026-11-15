@@ -12,9 +12,16 @@ import (
 // precondition did not hold for this site, so it is neither a failure nor a check that could not
 // run, and an info result is a passing check that carries a note worth reading.
 const (
-	labelDoesNotApply = "does not apply"
-	labelNotes        = "notes"
+	labelNotes = "notes"
 )
+
+// doesNotApply returns the fold line's count and verb, the verb agreeing with the count.
+func doesNotApply(n int) string {
+	if n == 1 {
+		return count(n, "does not apply")
+	}
+	return count(n, "do not apply")
+}
 
 // doctorSections is one doctor run split the way its terminal body groups it.
 type doctorSections struct {
@@ -157,7 +164,7 @@ func (t theme) skipLine(skipped []doctor.CheckedResult, width int) []string {
 	for _, cr := range skipped {
 		names = append(names, sanitize(cr.Check.Title(cr.Result.Status)))
 	}
-	label := count(len(skipped), labelDoesNotApply)
+	label := doesNotApply(len(skipped))
 	text := strings.Join(names, " "+t.marks.Sep+" ")
 	head := style.ContinuationLine(t.Theme, style.RoleMuted, label, colIndent, width)
 	// An empty name gives the grid's value column at this width, which is the name column

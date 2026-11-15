@@ -26,6 +26,6 @@
     [38;5;246mCairnAdminShell[m
 
   [38;5;246m+[m [38;5;255m3 passing[m
-  [38;5;246m2 does not apply[m  [38;5;246mMedia bucket binding - Guard role vocabulary[m
+  [38;5;246m2 do not apply[m    [38;5;246mMedia bucket binding - Guard role vocabulary[m
 
   [1;38;5;210mCRITICAL[m  [1;38;5;255mmy-site[m  [38;5;246m2 failing - 1 could not run - 3 passing[m

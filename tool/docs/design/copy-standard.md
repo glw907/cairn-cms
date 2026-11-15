@@ -423,7 +423,7 @@ Every user-facing string found in the sources. `delete` means the best rewrite i
 | `ledger-2` | `── checks ──` | labels the only thing on screen | delete |
 | `cairn sites` | `credentials` | none; the title over the credential rows under a listing on a terminal, a bare lowercase noun naming what the rows are | keep |
 | `cairn doctor` | `notes` | none; the title over the info results on a terminal, a bare lowercase noun naming what the rows are | keep |
-| `cairn doctor` | `2 does not apply  Media bucket binding · Guard role vocabulary` | none; the muted line the skipped checks fold to on a terminal. A doctor skip means the check's precondition did not hold for this site, so it is not `could not run` | keep |
+| `cairn doctor` | `2 do not apply    Media bucket binding · Guard role vocabulary` | none; the muted line the skipped checks fold to on a terminal. A doctor skip means the check's precondition did not hold for this site, so it is not `could not run` | keep |
 
 ### 3.3 The degraded notice and the skip group
 
@@ -661,7 +661,7 @@ from the code comments marking them instead, not from this section alone.
 | status line under a site listing, a token the run could not find | `CAIRN_CF_READ_TOKEN is not set, so creds, email and errors cannot run` | a listing attempts no check, so the past tense above would report a failure that did not happen; this says what the absence will cost |
 | fleet fix list, one remedy covering several sites | `also on: xcathletes.org, cairn.pub` | one remedy is printed once per frame, and the sites it applies to are named in that one entry, ranked, never truncated |
 | `cairn doctor` terminal body, the info results' title | `notes` | an info result is a passing check carrying a note, which no health section word names (3.2) |
-| `cairn doctor` terminal body, the skipped checks folded to one line | `<n> does not apply` | a doctor skip is a precondition that did not hold, not a check that could not run, so 2.9's `could not run` would misreport it (3.2) |
+| `cairn doctor` terminal body, the skipped checks folded to one line | `1 does not apply`, `<n> do not apply` (the verb agrees with the count) | a doctor skip is a precondition that did not hold, not a check that could not run, so 2.9's `could not run` would misreport it (3.2) |
 
 ---
 

@@ -26,6 +26,6 @@
     CairnAdminShell
 
   + 3 passing
-  2 does not apply  Media bucket binding - Guard role vocabulary
+  2 do not apply    Media bucket binding - Guard role vocabulary
 
   CRITICAL  my-site  2 failing - 1 could not run - 3 passing

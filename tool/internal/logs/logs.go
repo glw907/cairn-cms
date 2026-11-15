@@ -61,10 +61,8 @@ type Entry struct {
 // whose settings carry no observability object at all answered the same query 200 with zero
 // events, as did a Worker name that does not exist, so a Worker with observability off is not
 // distinguishable from one that simply logged nothing over the window, and this sentinel does not
-// reach a caller for that case. It used to cover an unclassified reason too, which is how a 400
-// (cairn's query body being malformed) reported for a week as a site whose observability was
-// never turned on. The 404 arm is kept for a route that does not exist at all; nothing on the
-// verification account produced one.
+// reach a caller for that case. The 404 arm is kept for a route that does not exist at all;
+// nothing on the verification account produced one.
 var ErrObservabilityOff = errors.New("logs: worker has no observability dataset")
 
 // retentionClamp is the Workers Logs retention window observed on the verification account: every
@@ -125,8 +123,8 @@ func clampSince(since time.Duration) time.Duration {
 // filterType is the "type" every leaf filter in a telemetry query must declare, one of the
 // API's "string", "number", or "boolean". Every key cairn filters on ($metadata.service, event,
 // level) holds a string. A filter without it is refused: the endpoint answers HTTP 400 with a
-// ZodError naming the missing key, which is exactly what cairn once sent
-// (tool/testdata/fixtures/cloudflare/observability-telemetry-query.filter-rejected.400.json).
+// ZodError naming the missing key; see
+// tool/testdata/fixtures/cloudflare/observability-telemetry-query.filter-rejected.400.json.
 const filterType = "string"
 
 // filter is one leaf filter a caller adds to a telemetry query beyond the worker-name filter
@@ -286,12 +284,13 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 }
 
 // Fetch returns worker's log entries over the q.Since window ending at now (clamped to
-// retentionClamp), newest first, narrowed to q.Event when set. It drops any entry the endpoint
-// returned whose "event" does not equal q.Event, the same posture FetchRecords takes on the
-// level: the endpoint's filter is applied to a record cairn does not control the shape of, so a
-// caller trusts what each entry actually carries rather than the filter alone. now is a parameter, not a
-// system-clock read, so a caller replaying a query gets the same window every time. Every field
-// stays json.RawMessage with no rendering choice baked in.
+// the seven-day retention window), newest first, narrowed to q.Event when set. It drops any
+// entry the endpoint returned whose "event" does not equal q.Event, the same posture
+// FetchRecords takes on the level: the endpoint's filter is applied to a record cairn does not
+// control the shape of, so a caller trusts what each entry actually carries rather than the
+// filter alone. now is a parameter, not a system-clock read, so a caller replaying a query gets
+// the same window every time. Every field stays json.RawMessage with no rendering choice baked
+// in.
 func Fetch(ctx context.Context, cf *providers.Cloudflare, q Query, now time.Time) ([]Entry, error) {
 	var extra []filter
 	if q.Event != "" {
@@ -319,8 +318,8 @@ type Records struct {
 }
 
 // FetchRecords returns the engine's log records at level, over the since window ending at now
-// (clamped to retentionClamp), newest first, and reports whether the page was truncated at the
-// fetch limit.
+// (clamped to the seven-day retention window), newest first, and reports whether the page was
+// truncated at the fetch limit.
 //
 // An engine record is one a site's cairn engine wrote through src/lib/log, recognized by the
 // "event" key of its level/event/timestamp envelope; every other line a Worker logs, a bare

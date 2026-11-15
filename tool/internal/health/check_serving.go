@@ -70,7 +70,7 @@ type originProbe struct {
 // pair. A home page that answers 200 is a live site; whatever is at that hostname, it is not
 // cairn's admin, and saying the hostname does not answer would send an operator to DNS over a
 // route or a build that points somewhere else. A home page that answers anything else is a
-// hostname not serving the site at all, which is the older line's case.
+// hostname not serving the site at all.
 func servingMismatch(p originProbe) spine.Outcome {
 	if p.serves {
 		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingNotCairn, Detail: detailServingNotCairn}

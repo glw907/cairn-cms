@@ -12,7 +12,7 @@ import (
 )
 
 // publishStaleWindow is how long a "cairn/*" edit branch may sit unpublished before the check
-// reports it stale: the spec's publish-path window, chosen because an editor's saved draft
+// reports it stale: the publish-path window, chosen because an editor's saved draft
 // that has not reached Publish in two weeks is either abandoned or stuck, not merely slow.
 const publishStaleWindow = 14 * 24 * time.Hour
 

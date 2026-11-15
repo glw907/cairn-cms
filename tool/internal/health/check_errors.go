@@ -17,9 +17,8 @@ import (
 //
 // It counts engine records alone, never every error-level line the Worker logged. On a public site
 // the Worker's 404 logging runs to thousands a day, which is what a count of every error-level
-// line reported: a live run against a healthy site returned 1000 errors in 24 hours, the query's
-// limit, made up of crawler 404s and holding no cairn record at all. logs.FetchRecords carries the
-// distinction.
+// line reported: crawler 404s alone fill the query's 1000-record limit, leaving no room for a
+// cairn record. logs.FetchRecords carries the distinction.
 type errorsCheck struct{}
 
 // ID implements Check.

@@ -175,9 +175,9 @@ func errorsWindow(d time.Duration) string {
 const detailErrorsObservabilityOff = "the Worker has no observability dataset"
 
 // detailAPIRequestRejected renders the Detail every check carries when a provider answered a
-// request with HTTP 400. The catalogue carries no row for it: the condition did not exist until
-// a live run found cairn's Workers Logs query body rejected and reported to the operator as a
-// site setting they had never turned off. It names cairn as the faulty party and points at the one place a report belongs, the shape tmplCommandCrashed already uses for the
+// request with HTTP 400. The catalogue carries no row for it. A 400 means cairn sent a malformed
+// request, so the line names cairn as the faulty party rather than blaming an operator setting,
+// and points at the one place a report belongs, the shape tmplCommandCrashed already uses for the
 // other fault that is never the operator's.
 const detailAPIRequestRejected = "the provider refused the request cairn sent; this is a bug in cairn, reportable at https://github.com/glw907/cairn-cms/issues"
 

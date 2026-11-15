@@ -1,6 +1,6 @@
-// Package health holds the tool's 1.0 health sweep: the Check contract every provisioning
-// signal implements, the Report a sweep produces, and Run, the pure function that drives one set
-// of checks to a settled Report. 2.0's HUD polls the same Check functions with no wrapper.
+// Package health holds the health sweep: the Check contract every provisioning signal
+// implements, the Report a sweep produces, and Run, the pure function that drives one set of
+// checks to a settled Report.
 package health
 
 import (
@@ -59,8 +59,7 @@ func (t Tier) MarshalJSON() ([]byte, error) {
 
 // Check is one health measurement: a pure function over a site record, the run's injected
 // provider clients, and its options, with no store access, no globals, and no I/O beyond the
-// clients it is handed. That purity is the 2.0 seam: the HUD polls the same functions per site
-// with no wrapper.
+// clients it is handed.
 type Check interface {
 	// ID names the check, stable across releases: it is the key an acknowledgement targets and
 	// the id a rendered report lists a check by.
@@ -74,7 +73,7 @@ type Check interface {
 	Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome
 }
 
-// All is the complete 1.0 health check set, in report order. It is a literal slice, never
+// All is the complete health check set, in report order. It is a literal slice, never
 // populated by init(), so adding a check always means modifying this file directly.
 var All = []Check{
 	credsCheck{},
@@ -99,7 +98,7 @@ func needsClient(tier Tier, c Clients) bool {
 // Run sweeps every check in checks against r, in order, and returns the settled Report. Run is
 // pure over its inputs: the same checks, record, clients, options, and acks, replayed through the
 // same Options.Now, produce a byte-identical Report every time, which is what lets a caller
-// golden-test a run or, in 2.0, a HUD poll loop call it with no wrapper. Options.Now is the
+// golden-test a run. Options.Now is the
 // sweep's only clock, handed to every check through Options so a check has no reason to read the
 // system clock itself.
 //

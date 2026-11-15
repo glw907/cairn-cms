@@ -49,8 +49,7 @@ type Fix struct {
 // can ever print (spine.Conditions() carries the engine's whole registry, but this tool's checks
 // declare only these three; see health's TestFixTableCoversDeclaredConditions). Two of the three
 // entries' Text and Command are copied from tool/docs/design/copy-standard.md section 3.5;
-// ConditionConfigObservabilityOff's is not in the catalogue (grep for "observability" and
-// "wrangler.jsonc" in section 3.5 finds no fix row for it), so its line is written directly here
+// ConditionConfigObservabilityOff's is not in the catalogue, so its line is written directly here
 // to the same section 2.5 grammar, the same as fixesByCode's uncatalogued rows below.
 var fixesByCondition = map[spine.Condition]Fix{
 	spine.ConditionEdgeHTTPSNotForced: {

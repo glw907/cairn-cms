@@ -444,34 +444,55 @@ func TestSetNameServersOnABuiltRecord(t *testing.T) {
 }
 
 // TestSetNameServersReplacesInPlaceOnAParsedRecord asserts a parsed record that already carries
-// the key keeps one entry, at its observed position, when the same pair is set again.
+// the key keeps one entry, at its observed position, when a different pair is set.
 func TestSetNameServersReplacesInPlaceOnAParsedRecord(t *testing.T) {
 	doc := "{\n  \"name\": \"s\",\n  \"step\": \"live\",\n  \"domain\": \"example.com\",\n" +
-		"  \"cloudflare\": {\n    \"nameServers\": [\n      \"ada.ns.cloudflare.com\",\n" +
-		"      \"bob.ns.cloudflare.com\"\n    ],\n    \"accountId\": \"a\"\n  }\n}\n"
+		"  \"cloudflare\": {\n    \"zoneId\": \"z\",\n    \"nameServers\": [\n" +
+		"      \"ada.ns.cloudflare.com\",\n      \"bob.ns.cloudflare.com\"\n    ],\n" +
+		"    \"accountId\": \"a\"\n  }\n}\n"
+	want := "{\n  \"name\": \"s\",\n  \"step\": \"live\",\n  \"domain\": \"example.com\",\n" +
+		"  \"cloudflare\": {\n    \"zoneId\": \"z\",\n    \"nameServers\": [\n" +
+		"      \"cora.ns.cloudflare.com\",\n      \"dan.ns.cloudflare.com\"\n    ],\n" +
+		"    \"accountId\": \"a\"\n  }\n}\n"
 	r, err := Parse([]byte(doc))
 	if err != nil {
 		t.Fatalf("Parse: %v", err)
 	}
-	want, err := r.Marshal()
-	if err != nil {
-		t.Fatalf("Marshal: %v", err)
+	at := -1
+	for i, e := range r.Cloudflare.Extra {
+		if e.Key == "nameServers" {
+			at = i
+		}
 	}
-	pair := []string{"ada.ns.cloudflare.com", "bob.ns.cloudflare.com"}
-	if ns := r.Cloudflare.NameServers(); !reflect.DeepEqual(ns, pair) {
-		t.Fatalf("NameServers = %v, want %v", ns, pair)
+	if at < 0 {
+		t.Fatal("parsed record has no nameServers entry in Cloudflare.Extra")
 	}
 
+	pair := []string{"cora.ns.cloudflare.com", "dan.ns.cloudflare.com"}
 	r.Cloudflare.SetNameServers(pair)
+
+	count, now := 0, -1
+	for i, e := range r.Cloudflare.Extra {
+		if e.Key == "nameServers" {
+			count++
+			now = i
+		}
+	}
+	if count != 1 {
+		t.Errorf("nameServers entries = %d, want 1", count)
+	}
+	if now != at {
+		t.Errorf("nameServers index = %d, want its original %d", now, at)
+	}
+	if ns := r.Cloudflare.NameServers(); !reflect.DeepEqual(ns, pair) {
+		t.Errorf("NameServers = %v, want %v", ns, pair)
+	}
 	got, err := r.Marshal()
 	if err != nil {
 		t.Fatalf("Marshal after set: %v", err)
 	}
-	if string(got) != string(want) {
-		t.Errorf("Marshal after set =\n%s\nwant the unchanged re-marshal:\n%s", got, want)
-	}
-	if n := strings.Count(string(got), `"nameServers"`); n != 1 {
-		t.Errorf("nameServers key appears %d times, want 1", n)
+	if string(got) != want {
+		t.Errorf("Marshal after set =\n%s\nwant:\n%s", got, want)
 	}
 }
 

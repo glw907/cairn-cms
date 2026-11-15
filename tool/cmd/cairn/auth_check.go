@@ -90,13 +90,16 @@ func runAuthCheck(cmd *cobra.Command, d deps, args []string, asJSON bool) error 
 	}
 
 	resolved, missing := loadEnv(d.env, d.secretProviders()...)
-	if !asJSON {
+	// A terminal gets the report written below; a pipe keeps the lines printed as each row settles.
+	v, onTerminal := listView(d, rootFlagsOf(cmd))
+	text := !asJSON && !onTerminal
+	if text {
 		printCredentialSources(out, resolved)
 	}
 
 	cfUnset := unsetAmong(missing, varCFAccountID, varCFReadToken)
 	ghUnset := unsetAmong(missing, varGHReadToken)
-	if !asJSON {
+	if text {
 		if len(cfUnset) > 0 {
 			_, _ = fmt.Fprintln(out, authCheckCFSkippedNotice(cfUnset))
 		}
@@ -111,22 +114,33 @@ func runAuthCheck(cmd *cobra.Command, d deps, args []string, asJSON bool) error 
 		target.site = *site
 	}
 
-	if !asJSON {
+	if text {
 		_, _ = fmt.Fprintln(out, authCheckPermissionsHeading)
 	}
 	verdicts := make(spine.SiteVerdicts, 0, len(permissionTable))
 	rows := make([]render.AuthCheckPermission, 0, len(permissionTable))
+	settled := make([]checkRow, 0, len(permissionTable))
 	for _, p := range permissionTable {
 		row := checkPermission(ctx, p, target, cfUnset, ghUnset, site != nil)
 		if asJSON {
 			rows = append(rows, render.AuthCheckPermission{Label: row.Label, Credential: row.Credential, State: checkRowWord(row), Reason: row.display})
-		} else {
+		} else if text {
 			printCheckRow(out, row)
 		}
+		settled = append(settled, row)
 		verdicts = append(verdicts, row.verdict)
 	}
 
 	verdict := spine.ExitCode([]spine.SiteVerdicts{verdicts}, nil, 0)
+	if !asJSON && onTerminal {
+		siteID := ""
+		if site != nil {
+			siteID = site.id
+		}
+		if err := writeLines(out, authCheckLines(v, settled, verdict, siteID)); err != nil {
+			return err
+		}
+	}
 	if asJSON {
 		siteID := ""
 		if site != nil {

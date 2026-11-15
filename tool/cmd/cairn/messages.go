@@ -918,3 +918,29 @@ Other flags:
 
 A usage error exits 3, before anything ran, and writes nothing to stdout. An unfinished run
 takes --account and --zone with --resume. The exit codes follow.`
+
+// The titles, count, and column headers a terminal draws for the list commands and for auth
+// check's report. Off a terminal none of them prints, so the piped bytes stay what they were.
+const (
+	// labelSites titles the site listing, and tmplSitesCount is the count beside it.
+	labelSites     = "sites"
+	tmplSitesCount = "%d in the registry"
+	// labelCredentialsList titles auth list's variables.
+	labelCredentialsList = "credentials"
+	// labelReadyToAdopt and labelNoCustomDomain title the two groups adopt list draws.
+	labelReadyToAdopt   = "ready to adopt"
+	labelNoCustomDomain = "no custom domain"
+	// The column headers of the site and adopt tables.
+	colSite       = "site"
+	colName       = "name"
+	colDomain     = "domain"
+	colWorker     = "worker"
+	colRepository = "repository"
+	// The three section words auth check's report groups its permissions under.
+	labelCheckFailing     = "failing"
+	labelCheckCouldNotRun = "could not run"
+	labelCheckPassing     = "passing"
+	// tmplAuthCheckFix is the fix under a permission the token lacks, naming the permission and
+	// the variable whose token should carry it.
+	tmplAuthCheckFix = "Add the %s permission to %s, then run the command again."
+)

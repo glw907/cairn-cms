@@ -6,8 +6,8 @@ import (
 )
 
 // TestTheSitesStatusBlockOnATerminalHasABlankLineBeforeItsTitle runs cairn sites with a
-// pseudo-terminal behind stdout. Under a listing the credentials title follows one blank line;
-// over an empty registry nothing precedes the block, so it opens on its title.
+// pseudo-terminal behind stdout. The credentials title follows one blank line, whether the
+// sites table or the bare sites title is what comes before it.
 func TestTheSitesStatusBlockOnATerminalHasABlankLineBeforeItsTitle(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
@@ -15,7 +15,7 @@ func TestTheSitesStatusBlockOnATerminalHasABlankLineBeforeItsTitle(t *testing.T)
 		want   string
 	}{
 		{"under a listing", true, "my-site.example.org\n\n  credentials\n"},
-		{"over an empty registry", false, "  credentials\n"},
+		{"over an empty registry", false, "registry\n\n  credentials\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			d, _ := testDeps(t)
@@ -30,8 +30,8 @@ func TestTheSitesStatusBlockOnATerminalHasABlankLineBeforeItsTitle(t *testing.T)
 			if tc.listed && !strings.Contains(out, tc.want) {
 				t.Errorf("stdout = %q, want the listing, a blank line, and the title", out)
 			}
-			if !tc.listed && !strings.HasPrefix(out, tc.want) {
-				t.Errorf("stdout = %q, want it to open on the title", out)
+			if !tc.listed && !strings.Contains(out, tc.want) {
+				t.Errorf("stdout = %q, want the sites title, a blank line, and the credentials title", out)
 			}
 		})
 	}

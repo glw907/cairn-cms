@@ -125,6 +125,7 @@ and commit the diff.
 -   GitHub App: %s
 -   keyring entries: %s
 -   repository: %s
+- %d in the registry
 - %s
 Run `cairn new --help` for the flags
 - %s  finished  step %s
@@ -144,6 +145,7 @@ Run `cairn new --help` for the flags
 - %s was not stored in the keyring
 
 - Add a Cloudflare Worker to the registry as a site
+- Add the %s permission to %s, then run the command again.
 - Check a cairn-cms site's checked-in configuration, read straight off the directory. It needs no credential and no adopted site, and makes at most one network request, a credential-free GET of the declared origin's /robots.txt. <dir> is a filesystem path, never a registered site id, and defaults to the current directory.
 
 Checks run in this order, each with the severity its failure carries:
@@ -489,13 +491,20 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - cairn: this output carries identifiers and is not safe to paste in public.
 - columns to render at, instead of the terminal's width
 - continue the unfinished setup with this site id
+- could not run
 - create the site from a plan file
+- credentials
 - decline or invite: what the site does about AI crawlers; required with --plan and --dry-run
+- domain
 - error records in the window that still report OK
+- failing
 - hold one check until an expiry date: <check-id>=<YYYY-MM-DD>. Repeatable, and applies to that check on every site in a sweep.
 - lookback window for the error count: a whole number of m, h, or d
 - lookback window: a whole number of m, h, or d
+- name
 - narrow the query to one engine event name
+- no custom domain
+- passing
 - path to a JSON file of holds (default: acknowledgements.json in the registry directory)
 - print nothing when the run is OK
 - print the candidates as JSON
@@ -506,8 +515,12 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - print the permission report as JSON
 - print the report as JSON
 - print the version and exit
+- ready to adopt
+- repository
 - run `cairn auth check <site>` to confirm this permission
 - run the questions and approvals, write the plan to this file, and create nothing
+- site
+- sites
 - start a new site instead of continuing an unfinished one
 - the Cloudflare account id, not its name, when setup finds several accounts
 - the Cloudflare domain to serve the site from, when the account has several and --host doesn't name one
@@ -524,6 +537,7 @@ If you piped or shortened this output, step 1 is the fix: run the call again bar
 - the theme id, when the template offers several
 - wall-clock budget for the whole run
 - when to colour the output: auto, always, or never
+- worker
 - write the dry run as a JSON payload on stdout
 
 ## doctor

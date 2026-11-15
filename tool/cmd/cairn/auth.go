@@ -161,8 +161,7 @@ func newAuthSetCmd(d deps) *cobra.Command {
 				}
 				return err
 			}
-			_, err = fmt.Fprint(cmd.OutOrStdout(), authStoredMessage(name))
-			return err
+			return writeReceipt(cmd, d, authStoredMessage(name))
 		},
 	}
 }
@@ -183,11 +182,9 @@ func newAuthUnsetCmd(d deps) *cobra.Command {
 			}
 			switch err := d.keyringDeleter.Delete(name); {
 			case err == nil:
-				_, ferr := fmt.Fprint(cmd.OutOrStdout(), authDeletedMessage(name))
-				return ferr
+				return writeReceipt(cmd, d, authDeletedMessage(name))
 			case errors.Is(err, secrets.ErrNotFound):
-				_, ferr := fmt.Fprint(cmd.OutOrStdout(), authNotStoredMessage(name))
-				return ferr
+				return writeReceipt(cmd, d, authNotStoredMessage(name))
 			case errors.Is(err, secrets.ErrKeyringUnavailable):
 				return keyringUnavailableError(name)
 			default:
@@ -205,7 +202,10 @@ func newAuthListCmd(d deps) *cobra.Command {
 		Example: exampleAuthList,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			resolved, _ := loadEnv(d.env, d.secretProviders()...)
+			resolved, missing := loadEnv(d.env, d.secretProviders()...)
+			if v, ok := listView(d, rootFlagsOf(cmd)); ok {
+				return writeLines(cmd.OutOrStdout(), credentialLines(v, credentialRows(d, resolved, missing)))
+			}
 			for _, r := range resolved.sourceLines() {
 				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", r.name, keyringAwareDisplay(d, r)); err != nil {
 					return err

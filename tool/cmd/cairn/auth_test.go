@@ -56,7 +56,7 @@ func (f *fakeDeleter) Delete(name string) error {
 // authSetDeps builds the dependency set auth set runs over, from a fake prompt and a fake
 // keyring writer.
 func authSetDeps(read func(*cobra.Command, string) (string, error), w *fakeWriter) deps {
-	return deps{readPassword: read, keyringWriter: w}
+	return deps{env: envOf(nil), readPassword: read, keyringWriter: w}
 }
 
 func TestAuthSetDeclaresNoValueFlagOrPositionalValueArg(t *testing.T) {
@@ -208,7 +208,7 @@ func TestAuthSetNamesTheEnvironmentFallbackWhenTheKeyringIsUnavailable(t *testin
 
 // unsetDeps builds the dependency set auth unset runs over.
 func unsetDeps(del *fakeDeleter) deps {
-	return deps{keyringDeleter: del}
+	return deps{env: envOf(nil), keyringDeleter: del}
 }
 
 // TestAuthUnsetTable covers four rows: a present entry,

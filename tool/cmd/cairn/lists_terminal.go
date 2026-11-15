@@ -38,12 +38,8 @@ type view struct {
 }
 
 // listView returns the view a list or receipt draws with, and whether it draws at all: only a
-// terminal does, and CAIRN_PLAIN makes that answer a pipe's. A deps with no environment reader
-// is a command built alone, which has no terminal to detect.
+// terminal does, and CAIRN_PLAIN makes that answer a pipe's.
 func listView(d deps, rf *rootFlags) (view, bool) {
-	if d.env == nil {
-		return view{}, false
-	}
 	term := reportTerminal(d, rf)
 	t := style.NewTheme(resolveGround(d, rf).dark, term.Profile, term.ASCII)
 	return view{t, style.MarksFor(term.ASCII), reportWidth(rf, term)}, term.TTY

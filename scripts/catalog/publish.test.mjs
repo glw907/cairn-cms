@@ -32,11 +32,11 @@ const ENV = {
 };
 
 const WAYMARK_KEYS = [
-  'themes/waymark/1.1.0.tgz',
-  'themes/waymark/1.1.0/home-light.png',
-  'themes/waymark/1.1.0/home-dark.png',
-  'themes/waymark/1.1.0/home-mobile.png',
-  'themes/waymark/1.1.0/card.webp',
+  'themes/waymark/1.2.0.tgz',
+  'themes/waymark/1.2.0/home-light.png',
+  'themes/waymark/1.2.0/home-dark.png',
+  'themes/waymark/1.2.0/home-mobile.png',
+  'themes/waymark/1.2.0/card.webp',
 ];
 
 const sha512 = (bytes) => `sha512-${createHash('sha512').update(bytes).digest('base64')}`;
@@ -277,21 +277,21 @@ test('a first publish writes the archive, the screenshots, the card, then the in
   const [theme] = index.themes;
   assert.equal(theme.id, 'waymark');
   assert.equal(theme.demo, 'https://demo-waymark.example/');
-  assert.deepEqual(theme.card, { url: 'https://catalog-proving.example/themes/waymark/1.1.0/card.webp', width: 720, height: 480 });
+  assert.deepEqual(theme.card, { url: 'https://catalog-proving.example/themes/waymark/1.2.0/card.webp', width: 720, height: 480 });
   const [release] = theme.releases;
-  assert.equal(release.version, '1.1.0');
+  assert.equal(release.version, '1.2.0');
   assert.equal(release.date, '2026-11-20');
-  assert.equal(release.url, 'https://catalog-proving.example/themes/waymark/1.1.0.tgz');
-  const archive = w.bucket.store.get('themes/waymark/1.1.0.tgz').bytes;
+  assert.equal(release.url, 'https://catalog-proving.example/themes/waymark/1.2.0.tgz');
+  const archive = w.bucket.store.get('themes/waymark/1.2.0.tgz').bytes;
   assert.equal(release.integrity, sha512(archive));
   assert.equal(release.integrity, buildThemeArchive(path.join(w.root, 'themes/waymark')).integrity);
   assert.equal(release.size, archive.length);
   assert.deepEqual(
     release.screenshots.map((s) => [s.url, s.width, s.height]),
     [
-      ['https://catalog-proving.example/themes/waymark/1.1.0/home-light.png', 1440, 960],
-      ['https://catalog-proving.example/themes/waymark/1.1.0/home-dark.png', 1440, 960],
-      ['https://catalog-proving.example/themes/waymark/1.1.0/home-mobile.png', 390, 960],
+      ['https://catalog-proving.example/themes/waymark/1.2.0/home-light.png', 1440, 960],
+      ['https://catalog-proving.example/themes/waymark/1.2.0/home-dark.png', 1440, 960],
+      ['https://catalog-proving.example/themes/waymark/1.2.0/home-mobile.png', 390, 960],
     ],
   );
   assert.equal(release.screenshots[0].shows, 'The home page in the light color mode at 1440 pixels wide');
@@ -373,7 +373,7 @@ test('a demo marker that never appears fails the run after two minutes, with the
   assert.equal(w.t - start, 120_000);
   assert.ok(w.fetched.length > 1);
   assert.ok(w.fetched.every((url) => url === 'https://demo-waymark.example/'));
-  assert.match(w.output(), /waymark@1\.1\.0/);
+  assert.match(w.output(), /waymark@1\.2\.0/);
   assert.match(w.output(), /two minutes/);
 });
 
@@ -399,32 +399,32 @@ for (const [name, locked, status] of [
   test(`a run after a stop between the archive and the index finishes without rewriting the archive (${name})`, async () => {
     const w = world({ deployFails: true, locked });
     assert.equal(await w.publish(), 1);
-    const archive = w.bucket.store.get('themes/waymark/1.1.0.tgz').bytes;
+    const archive = w.bucket.store.get('themes/waymark/1.2.0.tgz').bytes;
     const before = w.bucket.requests.length;
     w.deployFails = false;
     assert.equal(await w.publish(), 0, w.output());
     const second = w.bucket.requests.slice(before);
-    const archivePuts = second.filter((r) => r.method === 'PUT' && r.key === 'themes/waymark/1.1.0.tgz');
+    const archivePuts = second.filter((r) => r.method === 'PUT' && r.key === 'themes/waymark/1.2.0.tgz');
     assert.deepEqual(archivePuts.map((r) => r.status), [status], 'the archive put is refused and the resume rule reads it');
-    assert.equal(w.bucket.store.get('themes/waymark/1.1.0.tgz').bytes, archive);
-    assert.deepEqual(w.bucket.writes.filter((x) => x.key === 'themes/waymark/1.1.0.tgz').length, 1);
+    assert.equal(w.bucket.store.get('themes/waymark/1.2.0.tgz').bytes, archive);
+    assert.deepEqual(w.bucket.writes.filter((x) => x.key === 'themes/waymark/1.2.0.tgz').length, 1);
     assert.ok(validateIndex(w.index()));
     assert.equal(w.index().themes[0].releases[0].integrity, sha512(archive));
   });
 }
 
 test('an existing archive with a different digest fails the run naming its path', async () => {
-  const w = world({ objects: { 'themes/waymark/1.1.0.tgz': 'bytes from another build' } });
+  const w = world({ objects: { 'themes/waymark/1.2.0.tgz': 'bytes from another build' } });
   assert.equal(await w.publish(), 1);
-  assert.match(w.output(), /themes\/waymark\/1\.1\.0\.tgz/);
+  assert.match(w.output(), /themes\/waymark\/1\.2\.0\.tgz/);
   assert.equal(w.bucket.store.has('index.json'), false);
-  assert.equal(w.bucket.store.get('themes/waymark/1.1.0.tgz').bytes.toString(), 'bytes from another build');
+  assert.equal(w.bucket.store.get('themes/waymark/1.2.0.tgz').bytes.toString(), 'bytes from another build');
 });
 
 test('a card already at its path is kept', async () => {
-  const w = world({ objects: { 'themes/waymark/1.1.0/card.webp': 'an earlier card' } });
+  const w = world({ objects: { 'themes/waymark/1.2.0/card.webp': 'an earlier card' } });
   assert.equal(await w.publish(), 0, w.output());
-  assert.equal(w.bucket.store.get('themes/waymark/1.1.0/card.webp').bytes.toString(), 'an earlier card');
+  assert.equal(w.bucket.store.get('themes/waymark/1.2.0/card.webp').bytes.toString(), 'an earlier card');
   assert.ok(w.bucket.store.has('index.json'));
 });
 

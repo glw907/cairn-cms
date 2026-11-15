@@ -87,7 +87,8 @@ there is no `src/params/` directory), a `[...path=md]/+server.ts` with
   Pass one event per occurrence. A date is a `YYYY-MM-DD` string, and an all-day `end` is the last
   day, inclusive. A timed event takes a UTC `Date`, so turn a wall time and its zone into that
   instant yourself, and write each repeat as its own event. Keep a cancelled occurrence in the feed
-  with `status: 'cancelled'` so subscribers' copies update. The charset note below applies.
+  with `status: 'cancelled'` so subscribers' copies update, and open its summary with "Cancelled:",
+  since some apps ignore the status. The charset note below applies.
 - Sitemap: `buildSitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn), origin, extraRoutes)`
   takes `lastmod` from `updated` then `date`, skips `noindex` entries, and adds non-entry pages.
 - Robots: `buildRobotsResponse({ sitemapUrl, disallow: ['/admin'], posture })`. Pass the adapter's
@@ -98,6 +99,8 @@ there is no `src/params/` directory), a `[...path=md]/+server.ts` with
   `Content-Type` comes from Cloudflare's asset layer, which derives it from the file extension and
   documents no charset ([static asset headers](https://developers.cloudflare.com/workers/static-assets/headers/)).
 
+A calendar feed route:
+
 ```ts
 import { buildICalendarResponse } from '@glw907/cairn-cms/delivery';
 
@@ -107,7 +110,7 @@ export function GET(): Response {
     productId: '-//Example//Events//EN',
     events: [
       { uid: 'field-day-2027-06-05@example.com', summary: 'Field day', start: '2027-06-05' },
-      { uid: 'meeting-2027-06-09@example.com', summary: 'Meeting', start: new Date('2027-06-09T01:00:00Z'), status: 'cancelled' },
+      { uid: 'meeting-2027-06-09@example.com', summary: 'Cancelled: Meeting', start: new Date('2027-06-09T01:00:00Z'), status: 'cancelled' },
     ],
   });
 }

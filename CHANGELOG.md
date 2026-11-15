@@ -8,9 +8,9 @@ short how-to posts, and one post that shows every markdown element and each bloc
 ships with the site, so no page loads a picture from another host. The showcase keeps its own fixtures.
 The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/`.
 
-- **`/delivery` adds `buildICalendarResponse`, a calendar feed members can subscribe to.** It takes
-  plain events, each starting on a date or at a UTC instant, and returns a `text/calendar;
-  charset=utf-8` response. An all-day event's end date is inclusive. The helper does no time zone
+- **`/delivery` adds `buildICalendarResponse`, a calendar feed visitors can subscribe to.** It takes
+  plain events, each starting on a date or at a UTC instant, and returns a
+  `text/calendar; charset=utf-8` response. An all-day event's end date is inclusive. The helper does no time zone
   math and writes no repeat rules, so a site that needs either keeps that in its own code.
 
   Consumers must: nothing.

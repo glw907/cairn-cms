@@ -543,15 +543,15 @@ when the remediation pass lands.
 - **Shape:** the leanest form is one environment variable, with no flag, file, stored copy, or mint. Setup uses the supplied token for every Cloudflare call and stores it as the site's deploy key. That keeps the option free of token management: a token that could mint tokens could mint any token on the account, so setup asks for none.
 - **Reopens on:** a request for a second way to supply the token, or for setup to mint a narrower one.
 
-## scope-verdict-cards: the chassis vocabulary carries a `cards` block  (kept, 2026-11-15, packet 20261115-041501-ead5c5)
+## scope-verdict-cards: the chassis vocabulary carries a `cards` block  (keep, 2026-11-15, packet 20261115-041501-ead5c5)
 
-- **Verdict:** kept by Geoff over the triage's decline, which rested on `scope-verdict-361`. The block list gains a `cards` block.
+- **Verdict:** keep. Geoff kept it over the triage's decline, which rested on `scope-verdict-361`. The block list gains a `cards` block.
 - **Shape:** one `cards` block with a repeatable list of one-line items and `columns`, laid out and styled by the chassis so no theme owes a rule.
 - **Reopens on:** a theme round asking for another block.
 
-## scope-verdict-page-home: the page with id `home` serves `/`  (accepted, reshaped, 2026-11-14 triage, approved 2026-11-15)
+## scope-verdict-page-home: the page with id `home` serves `/`  (accept, 2026-11-15, 2026-11-14 triage, reshaped and approved)
 
-- **Verdict:** accepted, reshaped, in the 2026-11-14 triage and approved 2026-11-15.
+- **Verdict:** accept, reshaped. The 2026-11-14 triage accepted it in a reshaped form, and Geoff approved it 2026-11-15.
 - **Shape:** the page with id `home` serves `/`, and the route is site-owned, so `src/lib/` does not change. The archive serves page one, the newest three posts join the home, and `home` is not served again at `/home`.
 - **Reopens on:** a need the template route can't meet without engine code.
 

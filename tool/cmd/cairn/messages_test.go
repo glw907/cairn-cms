@@ -146,8 +146,8 @@ func messageConstants(t *testing.T) []string {
 	return entries
 }
 
-// TestNoCAIRNPrefixedLiteralOutsideCredentialVars checks that every CAIRN_-prefixed literal messages.go carries is a member of credentialVars (built
-// from credentialVars, env.go) or the setup token's variable, which
+// TestNoCAIRNPrefixedLiteralOutsideCredentialVars checks that every CAIRN_-prefixed literal
+// messages.go carries is a member of credentialVars or the setup token's variable, which
 // TestCredentialVariableNamesAreSpelledOnlyInEnvGo already exempts this file to allow.
 func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 	cairnVarPattern := regexp.MustCompile(`CAIRN_[A-Z_]+`)

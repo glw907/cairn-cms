@@ -37,7 +37,8 @@ const defaultTimeout = 480 * time.Second
 // The three --color values. cairn health passes the chosen value into detectTerminal, which
 // hands it to style.Detect as Env.Color: a non-empty NO_COLOR means no colour under all
 // three, and otherwise auto defers to the terminal's colour support, always forces a coloured
-// frame regardless of the terminal, and never paints none. cairn doctor draws a themed, width-aware frame on a terminal and plain text elsewhere.
+// frame regardless of the terminal, and never paints none. cairn doctor draws a themed,
+// width-aware frame on a terminal and plain text elsewhere.
 const (
 	colorAuto   = "auto"
 	colorAlways = "always"

@@ -48,6 +48,19 @@ func withLocale(t style.Terminal, utf8 bool) style.Terminal {
 	return t
 }
 
+// reportWidth returns the width a terminal report composes into: the operator's --width, then
+// the terminal's measured columns, then style.DefaultWidth when neither names one.
+func reportWidth(rf *rootFlags, term style.Terminal) int {
+	switch {
+	case rf.width > 0:
+		return rf.width
+	case term.Columns > 0:
+		return term.Columns
+	default:
+		return style.DefaultWidth
+	}
+}
+
 // writePasteNotice writes pasteNotice to stderr ahead of the report it warns about. Where both
 // streams are terminals the notice sits over a drawn frame, so it takes the frame's margin and
 // muted ink, wraps with every line at cell 2, and is parted from the frame by one blank line.
@@ -57,15 +70,8 @@ func writePasteNotice(cmd *cobra.Command, d deps, rf *rootFlags) error {
 		return writeNotice(cmd, d, rf, pasteNotice)
 	}
 	term := reportTerminal(d, rf)
-	width := rf.width
-	if width <= 0 {
-		width = term.Columns
-	}
-	if width <= 0 {
-		width = style.DefaultWidth
-	}
 	theme := style.NewTheme(rf.theme != themeLight, term.Profile, term.ASCII)
-	for _, line := range append(style.ContinuationLine(theme, style.RoleMuted, pasteNotice, 2, style.ContentWidth(width)), "") {
+	for _, line := range append(style.ContinuationLine(theme, style.RoleMuted, pasteNotice, 2, style.ContentWidth(reportWidth(rf, term))), "") {
 		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), line); err != nil {
 			return err
 		}
@@ -103,10 +109,7 @@ func startHealthProgress(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlag
 		return func() {}
 	}
 	term := reportTerminal(d, rf)
-	width := rf.width
-	if width <= 0 {
-		width = term.Columns
-	}
+	width := reportWidth(rf, term)
 	theme := style.NewTheme(rf.theme != themeLight, term.Profile, term.ASCII)
 	text := healthProgressText(id)
 	return drawProgress(cmd.ErrOrStderr(), progressDelay, progressFrame, func(frame int) string {

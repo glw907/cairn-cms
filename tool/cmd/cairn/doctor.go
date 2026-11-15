@@ -108,13 +108,9 @@ func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dir stri
 	if abs, err := filepath.Abs(dir); err == nil {
 		dir = abs
 	}
-	width := rf.width
-	if width <= 0 {
-		width = term.Columns
-	}
 	frame := render.Render(render.RenderInput{
 		View:    render.ViewDoctor,
-		Width:   width,
+		Width:   reportWidth(rf, term),
 		Dark:    rf.theme != themeLight,
 		Profile: term.Profile,
 		ASCII:   term.ASCII,

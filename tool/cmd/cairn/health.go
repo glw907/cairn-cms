@@ -171,14 +171,10 @@ func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, ver
 // paint, and --theme chooses which palette to paint from.
 func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict, status render.StatusState) render.RenderInput {
 	term := reportTerminal(d, rf)
-	width := rf.width
-	if width <= 0 {
-		width = term.Columns
-	}
 	return render.RenderInput{
 		View:    render.ViewHealth,
 		Body:    render.SelectBody(len(reports), term.TTY),
-		Width:   width,
+		Width:   reportWidth(rf, term),
 		Dark:    rf.theme != themeLight,
 		Profile: term.Profile,
 		ASCII:   term.ASCII,

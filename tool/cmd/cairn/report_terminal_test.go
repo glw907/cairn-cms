@@ -97,6 +97,26 @@ func TestWithLocale(t *testing.T) {
 	}
 }
 
+func TestReportWidth(t *testing.T) {
+	tests := []struct {
+		name    string
+		flag    int
+		columns int
+		want    int
+	}{
+		{"--width wins", 70, 100, 70},
+		{"measured columns", 0, 100, 100},
+		{"neither falls back to the default", 0, 0, style.DefaultWidth},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := reportWidth(&rootFlags{width: tt.flag}, style.Terminal{Columns: tt.columns}); got != tt.want {
+				t.Errorf("reportWidth(width %d, columns %d) = %d, want %d", tt.flag, tt.columns, got, tt.want)
+			}
+		})
+	}
+}
+
 // TestDrawProgressStoppedEarlyWritesNothing holds the delay: a run that settles before the line
 // is due leaves the stream untouched, so a fast run never flashes a line and an erase.
 func TestDrawProgressStoppedEarlyWritesNothing(t *testing.T) {

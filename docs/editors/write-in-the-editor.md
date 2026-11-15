@@ -164,6 +164,30 @@ A fragment is a reusable piece of content that you write once on the **Fragments
 
 The editor adds a line that it displays as a chip reading **Include:** followed by the fragment's title. When no fragment is published, the picker says **No fragments published yet.** and there is nothing to include. To change the shared text, edit the fragment itself.
 
+### Add cards
+
+If your site has a block named `cards`, you can use it to lay out a few similar items side by side, such as programs or places. To add one, follow these steps:
+
+1. In the toolbar, select **Insert block**.
+2. Choose **Cards**.
+3. In **Columns**, choose 2, 3, or 4. If you leave it empty, the block uses 3.
+4. Under **Cards**, add one line for each card.
+5. Select **Insert**.
+
+Each card is one line. The line can hold three parts, in this order:
+
+- A picture, which is optional. Start the line with an image.
+- A title. Write it as a link and the link becomes the card's title. Text in bold also works as a title, and it doesn't link anywhere.
+- Text. Write the rest of the line after the title.
+
+For example, this line makes a card with a linked title and one sentence of text:
+
+```markdown
+[Junior program](/programs/junior) Ages 10 to 16, Saturdays at ten.
+```
+
+A line with only text is a card with no title.
+
 ## Collapse blocks
 
 Edit the text inside a block, and leave the `:::` lines alone. A figure is a block too.

@@ -146,7 +146,7 @@ func (t theme) doctorFailRows(cr doctor.CheckedResult, glyph string, role style.
 	// condition has no registry entry.
 	text, _ := spine.TextFor(cr.Check.Condition)
 	out = append(out, style.ContinuationLine(t.Theme, style.RoleMuted, sanitize(text.Why), col, width)...)
-	return append(out, t.fixLines(text.Remediation, doctor.DocsURL(text.DocsAnchor), false, col, width)...)
+	return append(out, t.fixLines(text.Remediation, doctor.DocsURL(text.DocsAnchor), col, width)...)
 }
 
 // skipLine folds every skipped check into one muted line: the count at the margin and the

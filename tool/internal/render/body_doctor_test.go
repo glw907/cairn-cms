@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/colorprofile"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
@@ -249,7 +250,8 @@ func TestDoctorTerminalGoldensPrintNoPipeStatusWord(t *testing.T) {
 }
 
 // TestDoctorFailureLinksTheAddressThePipePrints: each failure's terminal link targets the docs
-// address doctor.Format prints on a pipe, so the two forms cannot drift apart.
+// address doctor.Format prints on a pipe, so the two forms cannot drift apart, and the visible
+// text prints that address without its scheme, as the health body does.
 func TestDoctorFailureLinksTheAddressThePipePrints(t *testing.T) {
 	checked := doctorEveryState()
 	f := Render(RenderInput{
@@ -257,6 +259,7 @@ func TestDoctorFailureLinksTheAddressThePipePrints(t *testing.T) {
 		Site: "my-site", Checked: checked, Verdict: doctorVerdict(checked), Now: fixtures.Now(),
 	})
 	frame := strings.Join(f.Lines(), "\n")
+	visible := ansi.Strip(frame)
 	pipe := doctor.Format(checked)
 	for _, cr := range checked {
 		if cr.Result.Status != doctor.StatusFail {
@@ -269,6 +272,9 @@ func TestDoctorFailureLinksTheAddressThePipePrints(t *testing.T) {
 		}
 		if !strings.Contains(frame, "\x1b]8;;"+url+"\a") {
 			t.Errorf("the terminal body does not link %q", url)
+		}
+		if bare := strings.TrimPrefix(url, "https://"); !strings.Contains(visible, bare) || strings.Contains(visible, url) {
+			t.Errorf("the terminal body should show %q without its scheme:\n%s", bare, visible)
 		}
 	}
 }

@@ -8,14 +8,13 @@
     nothing to call and no editor can sign in.
   → Declare the send_email binding as EMAIL and the d1_databases binding as
     AUTH_DB in wrangler.jsonc (or wrangler.toml), then re-deploy.
-    https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindin
-    gs
+    cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings
   □ Workers Logs has no sink
     observability.enabled is not true
     observability.enabled is not true in the wrangler config, so the structured
     log records go nowhere and a runtime failure leaves nothing to read.
   → Set observability.enabled to true in wrangler.jsonc, then re-deploy.
-    https://cairn.pub/docs/admin/is-it-working#turn-on-observability
+    cairn.pub/docs/admin/is-it-working#turn-on-observability
 
   could not run
   ? The stated AI posture is not the served one

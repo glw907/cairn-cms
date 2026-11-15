@@ -81,7 +81,7 @@ The hosted catalog publishes the themes under `themes/` in the cairn-cms reposit
 release is its manifest's `version`. When `main` holds a version the catalog does not list, the
 `catalog` workflow publishes it: the archive, a card image, the screenshots, and the theme's demo
 site. The release's catalog entry takes its `notes` and its other fields from the manifest. A new
-theme's demo site needs a one-time setup by a maintainer, set out in `docs/internal/theme-catalog.md`.
+theme's demo site needs a one-time setup by a cairn-cms maintainer.
 
 A release path is written once and never replaced. So a change to any file under `themes/<id>/`
 raises `version`, and CI's version-rise check fails a change that doesn't. A release also needs:

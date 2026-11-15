@@ -155,15 +155,15 @@ func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, ver
 // run's scope and whether stdout is a terminal, never the colour choice: an operator who forces
 // colour into a pipe still gets the plain body, in colour.
 //
-// The ground is --theme alone, which nothing detects: --color and NO_COLOR choose whether to
-// paint, and --theme chooses which palette to paint from.
+// The ground is resolveGround's: --color and NO_COLOR choose whether to paint, and --theme,
+// CAIRN_THEME, or COLORFGBG chooses which palette to paint from.
 func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.Verdict, status render.StatusState) render.RenderInput {
 	term := reportTerminal(d, rf)
 	return render.RenderInput{
 		View:    render.ViewHealth,
 		Body:    render.SelectBody(len(reports), term.TTY),
 		Width:   reportWidth(rf, term),
-		Dark:    rf.theme != themeLight,
+		Dark:    resolveGround(d, rf).dark,
 		Profile: term.Profile,
 		ASCII:   term.ASCII,
 		Reports: reports,
@@ -174,8 +174,10 @@ func renderInput(d deps, rf *rootFlags, reports []health.Report, verdict spine.V
 }
 
 // detectTerminal reads the one TTY-and-colour answer every command's render input is built from.
+// Under CAIRN_PLAIN it probes no stream, so the answer is a pipe's.
 func detectTerminal(d deps, rf *rootFlags) style.Terminal {
-	return style.Detect(d.stdout, style.Env{
+	stdout, _ := styledStreams(d, rf)
+	return style.Detect(stdout, style.Env{
 		NoColor: d.env(varNoColor),
 		Term:    d.env(varTerm),
 		Color:   rf.color,

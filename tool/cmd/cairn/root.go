@@ -48,7 +48,8 @@ const (
 //
 // There is no auto: querying a terminal for its background (OSC 11) is a write-then-read against
 // the operator's terminal, and a terminal that does not answer leaves the run waiting on one.
-// 1.0 takes the value the operator states, and dark when they state none.
+// resolveGround takes the value the operator states, then CAIRN_THEME and COLORFGBG, and dark
+// when none names one.
 const (
 	themeDark  = "dark"
 	themeLight = "light"
@@ -75,6 +76,9 @@ type rootFlags struct {
 	// is independent of color: NO_COLOR and --color decide whether a frame is painted at all, and
 	// this decides which palette it is painted from.
 	theme string
+	// themeSet reports whether the operator passed --theme, the Changed-bit pattern timeoutSet
+	// uses, so an explicit --theme dark outranks CAIRN_THEME.
+	themeSet bool
 	// width overrides the terminal column count style.Detect would otherwise read. Zero means
 	// unset: the operator's terminal width applies. cairn health reads the value in renderInput,
 	// falling back to the detected terminal's column count when the operator set none, and
@@ -189,6 +193,9 @@ func newRootCmd(d deps) *cobra.Command {
 			}
 			if flag := c.Flags().Lookup("width"); flag != nil {
 				f.widthSet = flag.Changed
+			}
+			if flag := c.Flags().Lookup("theme"); flag != nil {
+				f.themeSet = flag.Changed
 			}
 			if err := f.validate(); err != nil {
 				return err

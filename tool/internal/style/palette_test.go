@@ -78,9 +78,10 @@ func contrastRatio(t *testing.T, hexA, hexB string) float64 {
 }
 
 // TestContrastAgainstGround: every text-bearing role clears 4.5:1 against its branch's reference
-// ground. RoleRule is a decorative separator, not text, and is exempt.
+// ground. RoleRule is a decorative separator, not text, and is exempt. RoleText carries no ink of
+// its own, so the terminal's foreground is the only ink it has and there is nothing to measure.
 func TestContrastAgainstGround(t *testing.T) {
-	roles := []Role{RoleText, RoleMuted, RoleSubtle, RoleOK, RoleFailing, RoleUnknown, RoleAccent}
+	roles := []Role{RoleInstallerText, RoleMuted, RoleSubtle, RoleOK, RoleFailing, RoleUnknown, RoleAccent}
 	for _, role := range roles {
 		v := warmStone[role]
 		if got := contrastRatio(t, v.lightHex, groundHex.light); got < 4.5 {
@@ -234,8 +235,8 @@ func TestColorResolvesWarmStoneForBothBackgrounds(t *testing.T) {
 		role Role
 		want string
 	}{
-		{"light text", false, RoleText, "#28231d"},
-		{"dark text", true, RoleText, "#eae7e3"},
+		{"light installer text", false, RoleInstallerText, "#28231d"},
+		{"dark installer text", true, RoleInstallerText, "#eae7e3"},
 		{"light muted", false, RoleMuted, "#615d57"},
 		{"dark muted", true, RoleMuted, "#a8a49e"},
 		{"light ok", false, RoleOK, "#197037"},
@@ -263,6 +264,26 @@ func TestColorResolvesWarmStoneForBothBackgrounds(t *testing.T) {
 				t.Errorf("Pair = %v, want %s", pick, tt.want)
 			}
 		})
+	}
+}
+
+// TestTextCarriesNoInk: RoleText paints in the terminal's own foreground at every colour rung and
+// on both grounds, so Style emits no foreground code and Strong emits bold alone.
+func TestTextCarriesNoInk(t *testing.T) {
+	for _, p := range []colorprofile.Profile{colorprofile.TrueColor, colorprofile.ANSI256, colorprofile.ANSI} {
+		for _, dark := range []bool{true, false} {
+			th := NewTheme(dark, p, false)
+			if got := th.Style(RoleText).Render("x"); strings.Contains(got, "38;") || got != zeroStyleRender {
+				t.Errorf("%v dark=%v: Style(RoleText) renders %q, want no foreground code", p, dark, got)
+			}
+			strong := th.Strong(RoleText)
+			if got := strong.Render("x"); strings.Contains(got, "38;") || !strong.GetBold() {
+				t.Errorf("%v dark=%v: Strong(RoleText) renders %q, want bold with no foreground code", p, dark, got)
+			}
+			if _, ok := th.Color(RoleText).(lipgloss.NoColor); !ok {
+				t.Errorf("%v dark=%v: Color(RoleText) = %v, want NoColor", p, dark, th.Color(RoleText))
+			}
+		}
 	}
 }
 

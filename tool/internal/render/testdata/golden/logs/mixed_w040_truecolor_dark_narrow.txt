@@ -1,4 +1,4 @@
-  [1;38;2;234;231;227mlogs[m  [38;2;234;231;227mmy-site[m  [38;2;168;164;158m2026-09-20 AKDT[m
+  [1mlogs[m  my-site  [38;2;168;164;158m2026-09-20 AKDT[m
 
   [38;2;168;164;158m14:28:42[m  [38;2;255;142;134merror[m
     [38;2;193;189;184mmessage=[404] GET /wordpress/[m
@@ -6,7 +6,7 @@
     [38;2;193;189;184mmessage=GET[m
     [38;2;193;189;184mhttps://blog.example.org/wordpress/?[m
     [38;2;193;189;184mrest_route=%2Fwp%2Fv2%2Fusers[m
-  [38;2;168;164;158m14:28:20[m  [38;2;247;172;77mwarn[m    [38;2;234;231;227mguard.rejected[m
+  [38;2;168;164;158m14:28:20[m  [38;2;247;172;77mwarn[m    guard.rejected
     [38;2;193;189;184mreason=origin  path=/about[m
   [38;2;168;164;158m14:28:06[m  [38;2;255;142;134merror[m
     [38;2;193;189;184mmessage=[404] POST /blog/[m

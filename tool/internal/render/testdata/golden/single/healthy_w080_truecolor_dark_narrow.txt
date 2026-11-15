@@ -1,9 +1,9 @@
-  [1;38;2;124;205;142mOK[m  [1;38;2;234;231;227mmy-site[m  [38;2;168;164;158m9 passing[m
+  [1;38;2;124;205;142mOK[m  [1mmy-site[m  [38;2;168;164;158m9 passing[m
   [38;2;168;164;158mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
 
-  [38;2;124;205;142m●[m [38;2;234;231;227m9 passing[m       [38;2;193;189;184mcreds · serving · delegation · https-forced · email ·[m
+  [38;2;124;205;142m●[m 9 passing       [38;2;193;189;184mcreds · serving · delegation · https-forced · email ·[m
                     [38;2;193;189;184mdeploy · publish-path · engine · errors[m
                     [38;2;168;164;158mCAIRN_CF_READ_TOKEN read from the keyring[m
                     [38;2;168;164;158mCAIRN_GH_READ_TOKEN read from the keyring[m
 
-  [1;38;2;124;205;142mOK[m  [1;38;2;234;231;227mmy-site[m  [38;2;168;164;158m9 passing[m
+  [1;38;2;124;205;142mOK[m  [1mmy-site[m  [38;2;168;164;158m9 passing[m

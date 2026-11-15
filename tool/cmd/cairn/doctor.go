@@ -94,13 +94,14 @@ func writeDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap 
 	if quietSuppressesFrame(rf.quiet, verdict) {
 		return nil
 	}
-	return writeDoctorReport(cmd.OutOrStdout(), reportTerminal(d, rf), rf, snap.Dir, checked, verdict)
+	return writeDoctorReport(cmd.OutOrStdout(), reportTerminal(d, rf), rf, resolveGround(d, rf).dark, snap.Dir, checked, verdict)
 }
 
 // writeDoctorReport writes the run as text: the terminal body when stdout is a terminal, and
 // doctor.Format's lines, unchanged, on a pipe. The terminal body names the run by the checked
-// directory's base name, made absolute first so a run on "." still names its directory.
-func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dir string, checked []doctor.CheckedResult, verdict spine.Verdict) error {
+// directory's base name, made absolute first so a run on "." still names its directory, and is
+// painted on the dark ground or the light one.
+func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dark bool, dir string, checked []doctor.CheckedResult, verdict spine.Verdict) error {
 	if !term.TTY {
 		_, err := fmt.Fprintln(w, doctor.Format(checked))
 		return err
@@ -111,7 +112,7 @@ func writeDoctorReport(w io.Writer, term style.Terminal, rf *rootFlags, dir stri
 	frame := render.Render(render.RenderInput{
 		View:    render.ViewDoctor,
 		Width:   reportWidth(rf, term),
-		Dark:    rf.theme != themeLight,
+		Dark:    dark,
 		Profile: term.Profile,
 		ASCII:   term.ASCII,
 		Checked: checked,

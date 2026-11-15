@@ -66,17 +66,27 @@ func (s Styles) NoColor() bool { return style.NoColor(s.profile) }
 
 // Fg returns the role's colour, or lipgloss.NoColor where the role falls back to the terminal's
 // own foreground: no colour at all, or an ANSI-16 terminal and a role with no slot.
-func (s Styles) Fg(r Role) color.Color { return s.theme.Color(r) }
+func (s Styles) Fg(r Role) color.Color { return s.theme.Color(installerInk(r)) }
 
 // Style returns the role at regular weight.
-func (s Styles) Style(r Role) lipgloss.Style { return s.theme.Style(r) }
+func (s Styles) Style(r Role) lipgloss.Style { return s.theme.Style(installerInk(r)) }
 
 // Strong returns the role at bold weight, plain at no colour.
-func (s Styles) Strong(r Role) lipgloss.Style { return s.theme.Strong(r) }
+func (s Styles) Strong(r Role) lipgloss.Style { return s.theme.Strong(installerInk(r)) }
 
 // Link returns the role carrying url as an OSC 8 hyperlink, plain at no colour. Callers pass
 // the URL itself as the text where it fits, so a terminal without OSC 8 still shows it.
-func (s Styles) Link(r Role, url string) lipgloss.Style { return s.theme.Link(r, url) }
+func (s Styles) Link(r Role, url string) lipgloss.Style { return s.theme.Link(installerInk(r), url) }
+
+// installerInk keeps the installer's body text in its own warm ink: the CLI's RoleText takes the
+// terminal's foreground, and every view paint resolves a role here, so mapping it at this one
+// point leaves each call site's RoleText as it is.
+func installerInk(r Role) Role {
+	if r == RoleText {
+		return style.RoleInstallerText
+	}
+	return r
+}
 
 // Glyphs is one tier of marks. Every mark is one cell wide, followed by exactly one space.
 type Glyphs struct {

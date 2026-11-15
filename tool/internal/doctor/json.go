@@ -100,32 +100,23 @@ func Marshal(in JSONInput) ([]byte, error) {
 	})
 }
 
-// wireCheck converts one settled result to its wire form.
-//
-// Two mappings are worth stating, since neither is visible in the status names. A skip takes
-// reason.not-run, the closest fit in the frozen vocabulary: the code says the check did not run,
-// which for a directory preflight means its precondition did not apply. An unchecked result
-// takes reason.not-observable, which names a check that tried and saw nothing.
+// wireCheck converts one settled result to its wire form. The state word and reason come from
+// statusTable; an info check's sentence travels as a note and a failure carries its fix.
 func wireCheck(cr CheckedResult) checkPayload {
-	out := checkPayload{CheckID: cr.Check.ID, Condition: conditionID(cr.Check.Condition)}
+	facts := statusTable[cr.Result.Status]
+	out := checkPayload{
+		CheckID:   cr.Check.ID,
+		State:     facts.wire,
+		Reason:    string(facts.reason),
+		Condition: conditionID(cr.Check.Condition),
+	}
 	switch cr.Result.Status {
+	case StatusInfo:
+		out.Note = cr.Result.Detail
 	case StatusFail:
-		out.State = stateWordFail
 		out.Detail = cr.Result.Detail
 		out.Fix = wireFix(cr.Check.Condition)
-	case StatusSkip:
-		out.State = stateWordSkip
-		out.Reason = string(spine.ReasonNotRun)
-		out.Detail = cr.Result.Detail
-	case StatusInfo:
-		out.State = stateWordPass
-		out.Note = cr.Result.Detail
-	case StatusUnchecked:
-		out.State = stateWordUnknown
-		out.Reason = string(spine.ReasonNotObservable)
-		out.Detail = cr.Result.Detail
 	default:
-		out.State = stateWordPass
 		out.Detail = cr.Result.Detail
 	}
 	return out

@@ -23,17 +23,9 @@ const cairnModule = "@glw907/cairn-cms"
 // The containment form is the stronger one in packages/cairn-cms-dev/src/media-seed/bin.ts (isWithin,
 // realpathNearestAncestor, and the two checks their caller makes), not a textual prefix test.
 func readUnder(dir, relPath string) (body []byte, ok bool, err error) {
-	candidate := filepath.Join(dir, relPath)
-	if !contains(dir, candidate) {
-		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
-	}
-
-	resolved, err := realpathNearestAncestor(candidate)
+	candidate, err := containedPath(dir, relPath)
 	if err != nil {
 		return nil, false, err
-	}
-	if !contains(dir, resolved) {
-		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
 	}
 
 	b, err := os.ReadFile(candidate)
@@ -50,17 +42,9 @@ func readUnder(dir, relPath string) (body []byte, ok bool, err error) {
 // readUnder applies. ok is false when the directory does not exist; err is non-nil for a
 // containment refusal or any other read failure.
 func listUnder(dir, relPath string) (names []string, ok bool, err error) {
-	candidate := filepath.Join(dir, relPath)
-	if !contains(dir, candidate) {
-		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
-	}
-
-	resolved, err := realpathNearestAncestor(candidate)
+	candidate, err := containedPath(dir, relPath)
 	if err != nil {
 		return nil, false, err
-	}
-	if !contains(dir, resolved) {
-		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
 	}
 
 	entries, err := os.ReadDir(candidate)
@@ -74,6 +58,23 @@ func listUnder(dir, relPath string) (names []string, ok bool, err error) {
 		names = append(names, e.Name())
 	}
 	return names, true, nil
+}
+
+// containedPath returns the absolute path of relPath inside dir, or an error when it, or the
+// real location a symlink gives it, falls outside dir. The path need not exist.
+func containedPath(dir, relPath string) (string, error) {
+	candidate := filepath.Join(dir, relPath)
+	if !contains(dir, candidate) {
+		return "", fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
+	}
+	resolved, err := realpathNearestAncestor(candidate)
+	if err != nil {
+		return "", err
+	}
+	if !contains(dir, resolved) {
+		return "", fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
+	}
+	return candidate, nil
 }
 
 // contains reports whether candidate is boundary itself or lives under it. It uses filepath.Rel

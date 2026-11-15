@@ -140,8 +140,9 @@ func (c Check) lineTitle(status Status) string {
 	return c.label()
 }
 
-// checks is the complete doctor check set cairn doctor runs, in report order: the nine
-// file-only checks followed by the three facts-dependent checks.
+// checks is the complete doctor check set cairn doctor runs, in report order. Three read
+// site-facts.json (config.media-bucket, auth.role-wiring, ai.posture-effective); the other nine
+// read the site's files directly.
 var checks = []Check{
 	configBindings,
 	configMediaBucket,

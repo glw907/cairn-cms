@@ -5,10 +5,7 @@ import (
 	"strings"
 )
 
-// docsBaseAdmin is the admin docs directory a failure's docs URL resolves against, the same
-// shape internal/render/layout.go's fixAnchorBase carries for the health report. It is not
-// shared with render: a doctor-to-render import would invert render's dependency direction
-// for one string, so the constant is duplicated here instead.
+// docsBaseAdmin is the admin docs directory a failure's docs URL resolves against.
 const docsBaseAdmin = "https://cairn.pub/docs/admin/"
 
 // docsURL builds a failure's docs URL from anchor, a condition's docsAnchor field shaped

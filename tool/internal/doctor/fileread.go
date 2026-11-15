@@ -20,8 +20,7 @@ const cairnModule = "@glw907/cairn-cms"
 // exist or is a dangling symlink; err is non-nil for a containment refusal or any other read
 // failure, a permission-denied file included.
 //
-// The containment form is the stronger one in packages/cairn-cms-dev/src/media-seed/bin.ts (isWithin,
-// realpathNearestAncestor, and the two checks their caller makes), not a textual prefix test.
+// Containment is judged on the resolved real path, not on a textual prefix test.
 func readUnder(dir, relPath string) (body []byte, ok bool, err error) {
 	candidate, err := containedPath(dir, relPath)
 	if err != nil {
@@ -92,8 +91,7 @@ func contains(boundary, candidate string) bool {
 // the nearest existing ancestor is resolved, and any not-yet-existing trailing segments are
 // rejoined unresolved, since nothing can symlink from a path that does not exist. This lets a
 // containment check see through a symlink planted anywhere between the nominal path and its real
-// location, not only through a literal ".." segment. Mirrors
-// packages/cairn-cms-dev/src/media-seed/bin.ts's realpathNearestAncestor.
+// location, not only through a literal ".." segment.
 func realpathNearestAncestor(path string) (string, error) {
 	resolved, err := filepath.EvalSymlinks(path)
 	if err == nil {

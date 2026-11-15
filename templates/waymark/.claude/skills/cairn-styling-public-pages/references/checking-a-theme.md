@@ -25,7 +25,11 @@ and message. `--json` prints the verdict as one document that validates against
 `notes` list of what a passing rule measured. `--rules` runs only the named rules. `--catalog` checks
 every directory under `themes/` and fails when `themes/` holds no theme or a directory has no
 `cairn-theme.json`. In CI, the `test` job runs `--catalog` on every pull request and on each push to `main`. A release
-waits on that job, and a failing catalog theme blocks it.
+waits on that job, and a failing catalog theme blocks it. The same job runs
+`node scripts/catalog/version-rise.mjs`, which fails when a file under `themes/<id>/` changed and the
+manifest's `version` did not rise, since the hosted catalog writes each release once. The `catalog`
+workflow runs the theme check again on each release before it publishes it, as
+[What a theme directory holds](theme-directory.md#a-catalog-release) describes.
 
 Each rule covers one kind of defect, and the rules don't overlap. A file under `fonts/`, for example,
 answers to `fonts`, not to `paths-unlisted`.

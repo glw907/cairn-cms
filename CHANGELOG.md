@@ -117,6 +117,22 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **A theme manifest names its engine range, its kinds, and its release notes, and the house themes
+  publish to a hosted catalog.** `schema/cairn-theme-1.schema.json` now requires `engine` (a range
+  of the form `>=1.2.0` or `>=1.2.0 <2.0.0`), `kinds` (one to three of `blog`, `portfolio`, `docs`,
+  `landing`, and `organization`, listed with their labels in `sets/kinds.json`), and `notes` (at
+  most 200 characters), and allows `summary` (at most 300) and `repository`. Waymark is `1.1.0` and
+  declares `>=0.99.0-0`. The theme check gains the `engine-range` rule, which fails when the range
+  doesn't admit the engine version in `package.json`, and `--catalog` and the theme viewer now list
+  every directory under `themes/` in place of `templates/catalog.json`, which still feeds the pack
+  script and the Go tool. `schema/cairn-catalog-1.schema.json` describes the catalog's `index.json`,
+  and `schema/cairn-set-1.schema.json` a content set's manifest. A `catalog` workflow publishes each
+  new theme release, with its archive, images, and demo, and CI fails a change under `themes/<id>/`
+  or `sets/<kind>/` that doesn't raise the manifest's version. A site's laid-in `src/theme/` is not
+  read by anything that checks these fields.
+
+  Consumers must: add `engine`, `kinds`, and `notes` to a theme manifest you build or check from a cairn-cms clone; a site's own `src/theme/cairn-theme.json` needs nothing.
+
 - **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
 - **The admin docs describe `cairn new`.** `before-you-start`, `create-your-site`, `own-your-domain`, `setup-recovery`, `troubleshooting`, and `credentials` are rebuilt for the new setup, and four pages are new: `set-up-with-an-agent`, `deploys`, `suggested-plugins`, and the generated `setup-reference`. The agent page is also embedded in the `cairn` binary, and a test fails when the copy drifts.

@@ -1,7 +1,7 @@
 # What a theme directory holds
 
-Contents: the two directories, the contract's paths, the manifest, the directive seam, the contract
-data file, the tokens build, the lay-in, see also.
+Contents: the two directories, the contract's paths, the manifest, a catalog release, the directive
+seam, the contract data file, the tokens build, the lay-in, see also.
 
 A site's files and its theme's files sit in separate directories. `src/site/` holds the site:
 `cairn.config.ts`, `site-config.ts`, `site.config.yaml`, `theme-options.css`, and `overrides.css`,
@@ -69,6 +69,30 @@ The names in `colorModes` have no other source: the build, the toggle, and the c
 them. Each option has a `key`, a `label`, two to eight `values`, and a `default`. An option key is a
 contract. The schema notes that a later update or switch matches options by key, so renaming or
 removing one breaks a theme that already uses it.
+
+`engine` is checked twice. The schema accepts only the two forms, and the theme check's
+`engine-range` rule fails when the range doesn't admit the engine version in the repository's
+`package.json`. `kinds` takes its ids from `sets/kinds.json`, which also holds each kind's label and
+description.
+
+## A catalog release
+
+The hosted catalog publishes the themes under `themes/` in the cairn-cms repository. A theme's
+release is its manifest's `version`. When `main` holds a version the catalog does not list, the
+`catalog` workflow publishes it: it runs the theme check, builds the theme's archive and a card image
+from the first screenshot, writes them and the screenshots under `themes/<id>/<version>`, deploys
+the theme's demo site, and then adds the release to the catalog's `index.json`, taking the release's
+`notes` and the theme's other fields from the manifest.
+
+A release path is written once and never replaced. So a change to any file under `themes/<id>/`
+raises `version`, and CI's version-rise check fails a change that doesn't. A release also needs:
+
+- At least one screenshot. The first is the card's source and must be exactly 3:2, such as 1440 by
+  960. The card is a 720 by 480 WebP of at most 100 KB.
+- An archive of at most 8 MiB. Under a `theme/` root it holds what the lay-in puts in `src/theme/`,
+  `theme-names.ts` included, and `app-html-block.html`, the lines the lay-in writes between the
+  markers in `src/app.html`.
+- A passing theme check.
 
 ## The directive seam
 

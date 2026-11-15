@@ -1,0 +1,34 @@
+siteName: Waymark
+description: A map club in Anchorage, Alaska, with a monthly map night, summer field days, and a junior program.
+menus:
+  primary:
+    - label: Programs
+      url: /programs
+    - label: News
+      url: /archive/1
+    - label: Contact
+      url: /contact
+  footer:
+    - label: Safeguarding and privacy
+      url: /safeguarding
+    - label: Contact
+      url: /contact
+  actions:
+    - label: Join the society
+      url: /join
+    - label: Contact us
+      url: /contact
+vocabulary:
+  - value: map-night
+    label: Map Night
+  - value: field-days
+    label: Field Days
+  - value: junior-program
+    label: Junior Program
+  - value: lending-shelf
+    label: Lending Shelf
+tidy:
+  enabled: true
+  conventions:
+    oxfordComma: always
+    smartQuotes: true

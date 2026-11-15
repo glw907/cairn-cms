@@ -11,7 +11,7 @@ export const prerender = true;
 // A sample that exercises every element the reading surface styles: the lead, headings, emphasis and
 // a link, an unordered list, an ordered list, a task list, a blockquote, inline code, two fenced
 // blocks in different languages (to show the highlighter across token kinds), a table, a horizontal
-// rule, and a figure. The directive components are not written here: the load below renders one
+// rule, a figure, and a three-item cards block. The directive components are not written here: the load below renders one
 // sample per registry entry, so a new component appears on the page without an edit to this route.
 const SAMPLE = `<p class="lead">This is the reading surface. Every element below is rendered by the same theme a reader sees, so the styleguide shows the real prose output rather than an imitation of it.</p>
 
@@ -76,6 +76,16 @@ A figure holds a picture and its caption together, placed in the text column:
 
 A centered figure holds the measure of the text.
 :::
+
+Cards lay out a few parallel items side by side, each with an optional picture, a title, and a line of text:
+
+::::cards{columns="3"}
+:::items
+- ![A still mountain lake](https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=720) [Junior program](https://example.com/programs/junior) Ages 10 to 16, Saturdays at ten.
+- [Race team](https://example.com/programs/race-team) Training five days a week, December to March.
+- Masters sessions run all winter, with coached technique for every pace.
+:::
+::::
 
 ---
 

@@ -470,3 +470,7 @@ all folded.
   `fixes_test.go:410,416`, the `slices` import, "method expression", the out-of-row
   `fixtures_test.go:14` mention (filed), a dropped vacuous testdata path, working directories,
   CI verdicts in task reports, and the close order with its delta-review floor.
+
+## Rulings
+
+Geoff answered the close packet `20261115-180213-6f0b69` on 2026-11-15. One ruling changes this PR: **Call, `provider-console` in the schema: remove it now.** Remove `provider-console` from the actor enum in `tool/schema/cairn-health.schema.json` and write the disclosure the version policy asks for into `CHANGELOG.md` under `## Unreleased` (a `Consumers must:` line, naming the schema change) and `MIGRATION-NOTES.md`. Close #514 and cite it. Everything else in the PR stands, including the filed H2 items (#515). Pass 3 is being changed first (palette, the `auth set` newline, two light shots, C7 and C11); conductor-cairn-cms tells you when `origin/tui-language-3` has its fix commits, and you then merge it in before you start.

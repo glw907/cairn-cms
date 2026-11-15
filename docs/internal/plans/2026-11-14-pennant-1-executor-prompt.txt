@@ -7,7 +7,7 @@ npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svel
 
 Risk class: `ordinary`. The pass touches nothing under `src/lib/`, `themes/`, or `tool/`; a task that needs one parks the pass.
 
-Base: `4ebfb0e9e`. Fast lane after each task: `npm run lane:fast -- --range 4ebfb0e9e..HEAD`. Gate at close: `cairn-run-gate "$(node scripts/checks/gate-tier.mjs --range 4ebfb0e9e..HEAD --class ordinary)"`. A task's local e2e runs only its own spec: `npm --prefix examples/showcase run test:e2e -- e2e/<spec>.ts`. The site-visual styleguide baselines fail locally from T2 until CI regenerates them; that failure is expected.
+Base: `5ace145a3`. Fast lane after each task: `npm run lane:fast -- --range 5ace145a3..HEAD`. Gate at close: `cairn-run-gate "$(node scripts/checks/gate-tier.mjs --range 5ace145a3..HEAD --class ordinary)"`. A task's local e2e runs only its own spec: `npm --prefix examples/showcase run test:e2e -- e2e/<spec>.ts`. The site-visual styleguide baselines fail locally from T2 until CI regenerates them; that failure is expected.
 
 Push target: `glw907/cairn-cms`. The first push opens a draft PR against `main` whose body carries a `Round: pennant` line. CI watch: `ci-green <sha> --pr <n> --wait` as a background task from the worktree.
 
@@ -30,7 +30,7 @@ Rules that hold throughout:
 - Each accepted task's report names the CI verdict on that head, or says CI has not run on it.
 - After the whole-branch review, a Low finding from a delta read is folded once (checked by your own diff read and CI) or filed through `standards:log-issue`; it never starts another review round.
 - If an acceptance item becomes unreachable mid-run, every other item still runs; close the pass, report that item unmet with its cause in the PR, and say so first in the packet.
-- Retries go on while each fixes a traced cause, up to 220 minutes on the path (twice the design's approved 110). Stop only on that ceiling, an untraced cause, or what `pass-core` `references/advisor.md` "What always stops" lists. A stop writes its reason for the conductor, as `round-run.md` "Stops" says, and ends. Never ask Geoff in chat and never queue an approval-queue item yourself outside the hand-over below.
+- Retries go on while each fixes a traced cause, up to 220 minutes on the path (twice the design's approved 110). Stop only on that ceiling, an untraced cause, or what `pass-core` `references/advisor.md` "What always stops" lists. A stop writes its reason for the conductor, as `round-run.md` "Stops" says. Never ask Geoff in chat and never queue an approval-queue item yourself outside the hand-over below.
 - Call the advisor before you declare the pass done.
 
 Hand-over: when the plan's Close steps are done, CI is green, and the whole-branch review is accepted with no open finding, land the PR with `approval-queue land glw907/cairn-cms#<n> "<claim>"` if it meets the land test in `round-run.md`; otherwise send the PR's packet through the `approval-packet` skill and merge on Geoff's approval through the queue. Commits end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; the PR body ends with `🤖 Generated with [Claude Code](https://claude.com/claude-code)`. Commit specific files.

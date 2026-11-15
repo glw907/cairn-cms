@@ -7,7 +7,7 @@ Pass: 1 cards
 Design: `~/Projects/initiatives/theme-garden/specs/2026-11-14-pennant-design.md`, approved by
 Geoff through design packet `20261115-041501-ead5c5` on 2026-11-15 with the ruling "Keep it, as
 one `cards` block". Worktree `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/pennant-1`,
-branch `pennant-1`, base `4ebfb0e9e`. PR base `main`. Class `ordinary`. Conductor
+branch `pennant-1`, base `5ace145a3`. PR base `main`. Class `ordinary`. Conductor
 `conductor-pennant`. The design's path is 110 minutes; this plan's path is 120 with pairs (sum of
 task minutes 160). The park line at planning is 220, and the retry ceiling is 220, twice the
 approved 110.
@@ -30,8 +30,10 @@ rule. Its merge publishes nothing (design "What each merge publishes").
 - Reviewed: one `standards:plan-reviewer` read (Opus, `medium`), with pass-core `planner.md`
   "Stops" and "Pre-flight" added to its prompt. Findings folded under "Plan review fold".
 - Evidence: the mechanism table and the recorded searches below. Every row is a probe run at
-  `9525823a1` (code identical to `4ebfb0e9e` outside `BACKLOG.md`) on 2026-11-14, or a quoted
-  source line.
+  `9525823a1` on 2026-11-14, or a quoted source line. The base then moved to `5ace145a3`, which
+  adds PR #248 (`scripts/theme/lay-in.mjs`, `theme-names.mjs`, and the viewer, none a change site
+  here). On that base `node --test scripts/theme/check.test.mjs` passes and the acceptance 4 grep
+  returns the same seven hits.
 
 ### Auto-mode routes
 
@@ -189,7 +191,7 @@ TSDoc; the em dash is banned in them.
 After each task commits, from the pass worktree:
 
 ```sh
-npm run lane:fast -- --range 4ebfb0e9e..HEAD
+npm run lane:fast -- --range 5ace145a3..HEAD
 ```
 
 A task's local e2e runs only its own spec, from the pass worktree:
@@ -199,10 +201,19 @@ baselines (durable gotchas, "CI-canonical baselines"). That failure is expected 
 worktree the showcase's `@glw907/cairn-cms` resolves to the worktree root, and the pass changes
 no engine code anyway.
 
-Path: T1 → T2 → (T3 beside T4) → (T5 beside T6) → T7. 25 + 20 + 25 + 25 + 25 = 120 minutes on the
+Path: T1 → T2 → (T3 beside T4) → (T5 beside T6) → T7. 30 + 15 + 25 + 25 + 25 = 120 minutes on the
 path; the sum of all tasks is 160.
 
-### T1. The block, probed first (25 min, Opus)
+Registry-coupled checks go red when T1 adds `cards` to `classes.json`, until the content for it
+lands. The fast lane runs `check:public-skill` on every task, and `check:template` whenever a
+showcase path changes (`scripts/checks/gate-table.json:105`), so T1 carries the skill page and
+the emit and stays green. Two checks outside the fast lane stay red from T1 until T5 and are
+expected to: `scripts/theme/conformance.test.mjs` (`:167-178`) and
+`scripts/build/starter-overlay.test.mjs` (`:127-136`). CI first runs after T5, at Close step 4.
+Every task that changes the showcase chassis or `skills/` runs `npm run emit:template` and
+commits the generated tree before its lane.
+
+### T1. The block, probed first (30 min, Opus)
 
 1. Probe, in a test that stays: in `examples/showcase/src/chassis/directives/` add the `cards` def
    (Decisions 1 to 7) and a unit test beside `compose.test.ts` that, for the preview block and for
@@ -220,27 +231,27 @@ path; the sum of all tasks is 160.
    `:88` (names and order, ten entries). Reword `compose.ts:17` and
    `vocabulary.ts:393` to say "the vocabulary's blocks" without a count, and the two rows of
    `examples/showcase/src/chassis/README.md:37-38` the same way.
-4. File one `standards:log-issue` item for M3 (the `&`, `*`, and bracket normalization in
+4. Update `scripts/theme/check.test.mjs:64` from 9 to 10 notes.
+5. `skills/cairn-styling-public-pages/references/directive-cards.md`, on the model of
+   `directive-micro-cta.md`: the markup of Decision 2, the classes, and a snippet whose classes
+   exist. Add its row to that folder's `README.md`. Then `npm run emit:template`, commit the
+   generated tree, and run `npm run check:public-skill`.
+6. File one `standards:log-issue` item for M3 (the `&`, `*`, and bracket normalization in
    `readListItems`), tagged `#initiative:theme-garden`.
 
 Done when the new tests pass and `npm run lane:fast` is green. Acceptance: 2 (grammar side), 4
 (chassis hits).
 
-### T2. The grid and its default look (20 min)
+### T2. The grid and its default look (15 min)
 
 1. Load `cairn-following-public-design` and `standards:daisyui`. Write the `cards` rules in
    `examples/showcase/src/chassis/prose.css` (Decision 8). The selector list includes a bare
    `.prose .cards` rule (M6).
-2. Update `scripts/theme/check.test.mjs:64` from 9 to 10 notes.
-3. Acceptance 3's failing half, in the implementer's worktree after its task commit:
-   `git switch --detach`, delete the `cards` rules, commit, run `npm run test:theme` bare (about
-   six minutes on pavilion), and save the output lines that name `directive-styled` and Waymark.
-   Then `git switch -` to return to the task branch. Never `git reset --hard`. The implementer's
-   report gives the executor the throwaway commit id and the saved lines, and the executor puts
-   both in the PR. The passing half is CI's test job on the pass head, which runs
-   `npm run test:theme` (`test.yml:130`).
+2. `npm run emit:template` and commit the generated chassis copy.
+3. Run `node --test --test-force-exit scripts/theme/check.test.mjs` and confirm it passes.
 
-Acceptance: 3.
+Acceptance: 3 (the rules). Its failing half runs at T7, once T5 has turned the conformance and
+starter checks green, so `directive-styled` is the only failure it shows.
 
 ### T3. The styleguide and its e2e (25 min, beside T4)
 
@@ -251,9 +262,11 @@ Acceptance: 3.
    each color scheme (`page.emulateMedia({ colorScheme })`, as `styleguide.spec.ts` does), load
    `/styleguide` and assert: `document.documentElement.scrollWidth <= window.innerWidth`; every
    `img` in a `.cards` block has a non-empty `src`; the page has two `.cards` blocks, one with
-   three items and one with four. Count columns as the number of distinct `offsetLeft` values of a
-   block's `.cards-item`s, so the count does not depend on how the grid is written: at 1440 the
-   first block has 3 and the second 4; at 320 both have 1.
+   three items and one with four. Select each block by its modifier (`.cards.cards-cols-3`,
+   `.cards.cards-cols-4`), never by page order. Count columns as the number of distinct
+   `offsetLeft` values of a block's `.cards-item`s, so the count does not depend on how the grid
+   is written: at 1440 the three-column block has 3 and the four-column block 4; at 320 both
+   have 1.
 3. Run `npm --prefix examples/showcase run test:e2e -- e2e/cards.spec.ts e2e/styleguide.spec.ts`
    and confirm the two styleguide axe tests still pass in both schemes.
 
@@ -270,7 +283,7 @@ Add `examples/showcase/e2e/cards-admin.spec.ts` on the model at `golden-path.spe
    (`src/lib/admin/ComponentForm.svelte:55`), so it opens with the preview's four items and
    `columns` 4. Press `Remove item` until two remain, fill `Cards 1` and `Cards 2` with the T1
    fixture strings (find the aria-label and button names in `ComponentForm.svelte` before
-   writing the locators), set the `Columns` select, and Insert.
+   writing the locators), set the `Columns` select to `2`, and Insert.
 3. Read `input[name="body"]`. Click the opener line, Edit block, Update with no change, and
    assert the hidden body is byte-identical to the first read.
 4. Save, reload the post, and assert the saved body is byte-identical too.
@@ -280,7 +293,7 @@ The fixture holds no `&`, no bare `*`, and no brackets inside link text (M3). Ru
 
 Acceptance: 2.
 
-### T5. Content, the packaged skills, and the emit (25 min, beside T6)
+### T5. Content, the count wording, and the emit (20 min, beside T6)
 
 1. `scripts/theme/conformance/src/content/pages/directives.md`: a `## Cards` section before
    `## Fragments`, in the page's form, with an empty block, a long block (inner plus head of 400
@@ -292,13 +305,12 @@ Acceptance: 2.
    has. After the edit, check that `.cairn/index.json`'s `links` for that entry still match
    (`node --test scripts/build/starter-overlay.test.mjs`); regenerate it the way the test's
    failure names if it does not.
-3. `skills/cairn-styling-public-pages/references/directive-cards.md`, on the model of
-   `directive-micro-cta.md`: the markup of Decision 2, the classes, and a snippet whose classes
-   exist. Add its row to that folder's `README.md`.
-4. Reword `skills/cairn-extending-a-site/references/components-and-islands.md:19` and
+3. Reword `skills/cairn-extending-a-site/references/components-and-islands.md:19` and
    `skills/cairn-styling-public-pages/references/theme-directory.md:98` to drop the count.
-5. `npm run emit:template`, commit the generated tree, then `npm run check:template` and
-   `npm run check:public-skill`.
+4. `npm run emit:template`, commit the generated tree, then run `npm run check:template`,
+   `npm run check:public-skill`, and
+   `node --test --test-force-exit scripts/theme/conformance.test.mjs scripts/build/starter-overlay.test.mjs`.
+   All three go green here.
 
 Acceptance: 4 (skills and template hits).
 
@@ -330,17 +342,24 @@ Acceptance: 4 (skills and template hits).
 
 Acceptance: 5, every pass item 2.
 
-### T7. Baselines, then close (20 min)
+### T7. Acceptance 3, baselines, then close (25 min)
 
-1. After the last commit that changes a rendered page, dispatch once:
+1. Acceptance 3's failing half, run by the executor in the pass worktree, since it changes no
+   branch: `git switch --detach`, delete the `cards` rules from
+   `examples/showcase/src/chassis/prose.css`, commit, run `npm run test:theme` bare (about six
+   minutes on pavilion), and save the output lines that name `directive-styled` and Waymark.
+   Then `git switch pennant-1`. Never `git reset --hard`. The throwaway commit id and the saved
+   lines go in the PR. The passing half is CI's test job on the final head, which runs
+   `npm run test:theme` (`test.yml:130`).
+2. After the last commit that changes a rendered page, dispatch once:
    `gh workflow run e2e.yml --repo glw907/cairn-cms --ref pennant-1 -f update_snapshots=true`. Wait
    for the bot's "chore(e2e): regenerate..." commit, then `git pull --ff-only` before any further
    push. Read every changed baseline. Only the ten site-visual
    `styleguide-{light,dark}-{320,390,768,1440,2560}-linux.png` files may change; any other changed
    baseline is a finding. A refusal takes the "Auto-mode routes" alternative.
-2. The bot's commit gets no CI, because a push made with `GITHUB_TOKEN` starts no workflow run.
+3. The bot's commit gets no CI, because a push made with `GITHUB_TOKEN` starts no workflow run.
    The Close steps end with a human commit on top of it, and that head is the one CI must pass.
-3. The steps under "Close".
+4. The steps under "Close".
 
 ## Acceptance
 
@@ -351,7 +370,7 @@ Copied verbatim from the design, each mapped to its task and its evidence.
 2. In the admin, the insert form adds a `cards` block with two items, one holding an image and a link. Editing that block and saving leaves the markdown byte-identical. A test asserts it.
    - T1 (grammar test), T4. Evidence: the e2e test's name and pass line in CI.
 3. With the `cards` rules removed from the chassis `prose.css`, `npm run test:theme` fails on `directive-styled` for Waymark. With them present it passes, and `git diff --stat` shows no file under `themes/`.
-   - T2. Evidence: the detached commit id and its failing `npm run test:theme` lines, CI's test job (which runs `npm run test:theme`) passing on the final head, and `git diff --stat main...HEAD -- themes/` printing nothing.
+   - T2, T7 step 1. Evidence: the detached commit id and its failing `npm run test:theme` lines, CI's test job (which runs `npm run test:theme`) passing on the final head, and `git diff --stat main...HEAD -- themes/` printing nothing.
 4. `git grep -n -i -E "nine (blocks|directives)|9 (blocks|directives)"` over `templates/`, `examples/showcase/`, `skills/`, `scripts/`, `docs/`, `src/lib/`, and `MIGRATION-NOTES.md` returns nothing.
    - T1, T5. Amended check (advisor.md "Acceptance items", Decision 10): the same command with the pathspec `':!docs/internal/plans/2026-11-14-tui-language-1-style-plan.md'` added returns nothing. The excluded file is round `tui-language`'s pass 1 plan; its line 376 counts the Go tool's terminal blocks, not the directive vocabulary, and this pass may not edit it. The outcome (no stale count of the block list) holds. Evidence: the amended command and its empty output, and the unamended output showing only that line.
 5. `docs/editors/` gains a section on adding a card that names the `cards` block and its `columns` values, the fact-checker returns no finding on it, and `npm run check:docs-gate` passes.
@@ -375,11 +394,13 @@ Added checks:
 
 1. Whole-branch `standards:diff-reviewer` against this plan and the design, and in the same round
    `standards:daisyui-a11y-reviewer` on the `prose.css` rules and the styleguide sample
-   (`cairn-running-passes` "Review checklists by path"). Fold their findings first.
+   (`cairn-running-passes` "Review checklists by path"). Fold their findings first. A fold that
+   touches the showcase chassis or `skills/` reruns `npm run emit:template` and commits the
+   generated tree.
 2. Fresh `standards:visual-verifier` on the styleguide screenshots (Added checks). The grader
    never built the work.
 3. The targeted gate, run bare from the pass worktree:
-   `cairn-run-gate "$(node scripts/checks/gate-tier.mjs --range 4ebfb0e9e..HEAD --class ordinary)"`.
+   `cairn-run-gate "$(node scripts/checks/gate-tier.mjs --range 5ace145a3..HEAD --class ordinary)"`.
 4. Push; the first push opens the draft PR against `main`, with a `Round: pennant` line.
 5. T7's regeneration, then `git pull --ff-only`.
 6. One commit deleting this plan and its executor prompt (`git rm` of the two files), pushed on
@@ -431,3 +452,15 @@ and 7 minors. All are folded:
 11. T1 step 3 no longer asks for a registration line in `compose.ts`.
 12. The engine-resolution line now says the worktree install resolves to the worktree.
 13. The preview no longer hot-links an image; Decision 7 swaps the two blocks.
+
+The advisor's read after that fold added four changes:
+
+1. The base moved from `4ebfb0e9e` to `5ace145a3`, current `main`, because PR #248 changed
+   `scripts/theme/`, which `npm run test:theme` covers. The two plan commits were unpushed, so
+   the rebase rewrote nothing shared.
+2. The fast lane runs `check:public-skill` on every task, so the skill page, the note count, and
+   the emit moved into T1, and the checks that stay red until T5 are named.
+3. Acceptance 3's failing run moved to T7 step 1, after the content lands, so it shows only
+   `directive-styled`.
+4. T3 selects blocks by modifier class, T4 names the `Columns` value, and a Close fold that
+   touches the chassis or `skills/` reruns the emit.

@@ -118,11 +118,14 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
   Consumers must: nothing.
 
 - **`cairn health`, `cairn doctor`, `cairn logs`, and the `cairn sites` status block share one report
-  layout in a terminal.** Each check takes a row that opens with its mark, and the rows sit under
-  lowercase titles such as `failing` and `could not run`, so a check's state shows in its mark and
-  its title. `cairn doctor` used to print one line per check in a terminal too; it now folds its passing checks to one count
-  line and its skipped checks to one `does not apply` line. A held check, one acknowledged with
-  `--ack`, takes the `◌` mark, and a locale that isn't UTF-8 gets ASCII marks. When stdout and
+  layout in a terminal.** Their rows sit two columns in from the edge, and their blocks carry
+  lowercase titles such as `failing`, `could not run`, and `what to fix`. In `cairn health` and
+  `cairn doctor`, a check's state shows in the mark that opens its row and in its block's title,
+  and a note carries no mark. `cairn doctor` used to print one line per check in a terminal too;
+  it now folds its passing checks to one count line and its skipped checks to one
+  `does not apply` line. A held check, one acknowledged with `--ack`, takes the `◌` mark. The
+  marks fall back to ASCII when the locale isn't UTF-8, and outside Windows when `LC_ALL`,
+  `LC_CTYPE`, and `LANG` are all unset. When stdout and
   stderr are both terminals, `cairn health` draws a `Checking <site>` progress line on stderr while
   it runs and erases it before the report prints. A set `CI` variable, `--quiet`, `--json`, and
   `--verbose` each keep the line off. Output to a pipe or a file and `--json` output don't change.

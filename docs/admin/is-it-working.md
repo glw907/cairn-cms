@@ -43,6 +43,8 @@ In this form, each line starts with one of five words:
 - `UNCHECKED`: the check applied but couldn't read the input it needed.
 - `INFO`: the check couldn't see enough to answer, or it carries an advisory.
 
+A terminal shows the same five results without the words. A `FAIL` check sits under `failing`, an `UNCHECKED` one under `could not run`, and an `INFO` one under `notes`. A `PASS` counts toward the `passing` line, and the `does not apply` line names each `SKIP`. The rest of this page uses the five words for both forms.
+
 A skip is neither a pass nor a failure. The one in the preceding report belongs to a check that applies only to a site that declares custom roles. This site declares none, so the check had nothing to examine. The title reads like a problem even though the line reports that the check wasn't needed.
 
 When a check fails, the report adds a block that names the problem and gives the link:
@@ -59,7 +61,7 @@ Workers Logs has no sink failed.
 9 passed, 1 failed, 1 skipped, 0 info, 0 unchecked
 ```
 
-The report prints a title for each check and never a condition id. This page files each check under its condition id, a name such as `config.bindings-missing`, because the id is how the rest of cairn's diagnostics refer to the same problem. A check's title changes with its result, so a passing line and a failing line word the same check differently. Each section heading names the remedy. The following table maps each title to its section.
+The report names a check by its title and never by its condition id. This page files each check under its condition id, a name such as `config.bindings-missing`, because the id is how the rest of cairn's diagnostics refer to the same problem. A check's title changes with its result, so a passing line and a failing line word the same check differently. Each section heading names the remedy. The following table maps each title to its section.
 
 A site that `cairn new` built starts with Workers Logs switched on and the `EMAIL`, `AUTH_DB`, and `MEDIA_BUCKET` bindings declared in its template, so the logging and bindings checks fail only after someone changes the site's configuration. The dependency check can still fail later as packages drift, with nothing customized.
 
@@ -228,7 +230,7 @@ To check, publish an edit and confirm that the newest commit on `main` names you
 
 ## Wire the admin mount
 
-**`admin.mount-incomplete`, a warning.** This is a best-effort text check that the site's `/admin` route renders cairn's admin shell. A site wired in an unusual way can trip it without being broken, so treat a result as a prompt to look, not a verdict. On a failure the report lists it under notes in a terminal, and prints INFO and never FAIL in the one-line form.
+**`admin.mount-incomplete`, a warning.** This is a best-effort text check that the site's `/admin` route renders cairn's admin shell. A site wired in an unusual way can trip it without being broken, so treat a result as a prompt to look, not a verdict. On a failure the report lists it under `notes` in a terminal, and prints INFO and never FAIL in the one-line form.
 
 **Ask a developer:** compare the site's `/admin` mount with the canonical mount in the [admin mount guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-building-admin-screens/references/admin-mount.md).
 

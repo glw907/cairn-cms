@@ -360,3 +360,12 @@ One `standards:plan-reviewer` read (Opus, `medium`), 2026-11-14. Every finding i
 - S7, the crash test's setup: Decision 12 names the token, account id, registry, and the `adopt list` crash line.
 - S8, the help sentence changes pipe output: the reviewer recommended docs only. The design rules "documented in the standard and in `cairn --help`" (line 63), so Decision 7a keeps one sentence naming `CAIRN_PLAIN` alone, as a `Call:`.
 - N1 to N4: the base SHA is named, the cites are corrected, the Close reruns `check:docs-gate`, and T4 calls the 22 a floor. The executor prompt already carries the CI-verdict and delta-review lines.
+
+## Rulings
+
+Geoff answered the close packet `20261115-180213-6f0b69` on 2026-11-15. Calls 1 to 5, 7 to 10 and the Calls 8 to 9 words stand as built. These change the PR:
+
+1. **Call 6, the 256-colour contrast: fix it in this pass.** Change the palette so every ink at the 256-colour rung meets the 4.5:1 body floor against kitty's ground and the reference ground, light and dark (light Muted to xterm 241 is the proposal, #506; check each of Muted, OK, Unknown, Failing and Accent). Add a test over the 256-colour values beside `TestContrastAgainstGround`. The palette and colour detection are in pass 1's package `tool/internal/style`, and this ruling puts them in this pass's row. Regenerate the goldens the change moves and say which.
+2. **Call 11, the `auth set` receipt: add the newline now.** `readPipedValue` (`auth.go:108`) writes a newline after the `NAME: ` prompt on a piped stdin. This is the one stderr byte on a pipe Geoff has approved to differ from `main`; update the differential row and note the difference in `CHANGELOG.md` and `MIGRATION-NOTES.md` next to the `cairn --help` sentence. Close #512 and cite it.
+3. **Call 14 and Call 15: take the two light `cairn health` shots and one more fix round for C7 and C11.** Shoot `CAIRN_THEME=light cairn health` and `COLORFGBG=0;15 cairn health` in kitty and grade them with a fresh context. Fix C7 and C11 (filed in #508), then run a fresh `standards:go-architecture-reader` at the closing head and report the verdict. Update the PR's `## Acceptance` and `## Calls for Geoff` to match.
+4. The relaunched executor merges `origin/main` and `origin/tui-language-2` first (backlog ids, highest is #522 on tui-language-4; number from the highest at filing time). Pass 4 is cut from this branch, so conductor-cairn-cms relaunches it after this fix lands.

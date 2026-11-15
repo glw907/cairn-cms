@@ -1,0 +1,35 @@
+{
+  "$schema": "https://cairn.pub/schemas/cairn-set/1.json",
+  "kind": "organization",
+  "version": "1.0.0",
+  "engine": ">=0.99.0-rc.5",
+  "notes": "First release.",
+  "license": "CC0-1.0",
+  "images": [
+    {
+      "path": "static/images/turnagain-arm.webp",
+      "source": "USGS Historical Topographic Map Collection, Seward 1:250,000 (1951), https://prd-tnm.s3.amazonaws.com/StagedProducts/Maps/HistoricalTopo/GeoTIFF/AK/AK_Seward_361825_1951_250000_geo.tif",
+      "license": "Public Domain"
+    },
+    {
+      "path": "static/images/portage-valley.webp",
+      "source": "USGS Historical Topographic Map Collection, Seward 1:250,000 (1951), https://prd-tnm.s3.amazonaws.com/StagedProducts/Maps/HistoricalTopo/GeoTIFF/AK/AK_Seward_361825_1951_250000_geo.tif",
+      "license": "Public Domain"
+    },
+    {
+      "path": "static/images/knik-arm.webp",
+      "source": "USGS Historical Topographic Map Collection, Anchorage 1:250,000 (1951), https://prd-tnm.s3.amazonaws.com/StagedProducts/Maps/HistoricalTopo/GeoTIFF/AK/AK_Anchorage_361712_1951_250000_geo.tif",
+      "license": "Public Domain"
+    },
+    {
+      "path": "static/images/chugach-front.webp",
+      "source": "USGS Historical Topographic Map Collection, Anchorage 1:250,000 (1951), https://prd-tnm.s3.amazonaws.com/StagedProducts/Maps/HistoricalTopo/GeoTIFF/AK/AK_Anchorage_361712_1951_250000_geo.tif",
+      "license": "Public Domain"
+    },
+    {
+      "path": "static/images/kenai-peninsula.webp",
+      "source": "USGS Historical Topographic Map Collection, Seward 1:250,000 (1951), https://prd-tnm.s3.amazonaws.com/StagedProducts/Maps/HistoricalTopo/GeoTIFF/AK/AK_Seward_361825_1951_250000_geo.tif",
+      "license": "Public Domain"
+    }
+  ]
+}

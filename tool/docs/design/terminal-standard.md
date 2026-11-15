@@ -115,7 +115,7 @@ Section titles follow section 2.3 of `copy-standard.md`, which also says when a 
 title at all.
 
 The progress line is drawn on standard error, and only when standard output and standard error are
-both terminals, `CI` is unset, and neither `--json` nor `--quiet` is set. It appears after about
+both terminals, `CI` is unset, and none of `--json`, `--quiet`, and `--verbose` is set. It appears after about
 200 ms and is erased when the report prints or the run is interrupted. Pass 1 builds the block as
 one static line, and pass 2 animates it. Each frame sends the line erase `ESC[2K` even under
 `NO_COLOR`, because the erase is cursor control and not styling, and the line is off under

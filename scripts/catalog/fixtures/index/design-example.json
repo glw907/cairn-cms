@@ -1,0 +1,47 @@
+{
+  "$schema": "https://cairn.pub/schemas/cairn-catalog/1.json",
+  "format": 1,
+  "generated": "2026-11-20T18:04:00Z",
+  "kinds": [
+    { "id": "blog", "label": "Blog", "description": "Dated posts, newest first. For a journal, a newsletter, or news." }
+  ],
+  "themes": [
+    {
+      "id": "survey",
+      "name": "Survey",
+      "description": "One line an owner sees at setup.",
+      "summary": "A few sentences for a catalog page.",
+      "author": { "name": "glw907", "url": "https://github.com/glw907" },
+      "license": "MIT",
+      "repository": "https://github.com/glw907/cairn-cms",
+      "kinds": ["blog", "organization"],
+      "demo": "https://demo-survey.cairn.pub/",
+      "card": { "url": "https://catalog.cairn.pub/themes/survey/1.0.0/card.webp", "width": 720, "height": 480 },
+      "releases": [
+        {
+          "version": "1.0.0",
+          "date": "2026-11-20",
+          "notes": "First release.",
+          "engine": ">=0.99.0-0",
+          "contract": 1,
+          "url": "https://catalog.cairn.pub/themes/survey/1.0.0.tgz",
+          "integrity": "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+          "size": 412000,
+          "colorModes": { "light": "survey-light", "dark": "survey-dark" },
+          "options": [],
+          "screenshots": [
+            { "url": "https://catalog.cairn.pub/themes/survey/1.0.0/light.png", "shows": "Home page, light", "width": 1440, "height": 960 }
+          ]
+        }
+      ]
+    }
+  ],
+  "sets": [
+    {
+      "kind": "blog",
+      "releases": [
+        { "version": "1.0.0", "date": "2026-11-20", "notes": "First release.", "engine": ">=0.99.0-0", "url": "https://catalog.cairn.pub/sets/blog/1.0.0.tgz", "integrity": "sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB==", "size": 900000 }
+      ]
+    }
+  ]
+}

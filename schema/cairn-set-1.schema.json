@@ -5,7 +5,14 @@
   "description": "The manifest, cairn-set.json, of a content set: the starter pages for one kind of site. A set names the engine versions it works with and what its images are and where they came from.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["kind", "version", "engine", "notes", "license", "images"],
+  "required": [
+    "kind",
+    "version",
+    "engine",
+    "notes",
+    "license",
+    "images"
+  ],
   "properties": {
     "$schema": {
       "description": "This schema's URL.",
@@ -13,7 +20,13 @@
     },
     "kind": {
       "description": "The kind of site the set is for, from the closed list in sets/kinds.json.",
-      "enum": ["blog", "portfolio", "docs", "landing", "organization"]
+      "enum": [
+        "blog",
+        "portfolio",
+        "docs",
+        "landing",
+        "organization"
+      ]
     },
     "version": {
       "description": "Semver for the set itself.",
@@ -42,10 +55,22 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["path", "source", "license"],
+        "required": [
+          "path",
+          "source",
+          "license"
+        ],
         "properties": {
-          "path": { "description": "The image's path inside the set.", "type": "string", "minLength": 1 },
-          "source": { "description": "Where the image came from.", "type": "string", "minLength": 1 },
+          "path": {
+            "description": "The image's path inside the set.",
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "description": "Where the image came from.",
+            "type": "string",
+            "minLength": 1
+          },
           "license": {
             "type": "string",
             "pattern": "^[A-Za-z0-9][A-Za-z0-9.+() -]*$"

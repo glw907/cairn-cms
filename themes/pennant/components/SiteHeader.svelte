@@ -79,6 +79,21 @@ on a narrow desktop, and a sticky bar that tall would cover a jumped-to heading.
   function toggleTheme() {
     theme = toggleThemeWithTransition(themeConfig, theme);
   }
+
+  /** Escape closes the open menu and returns focus to its summary. */
+  function closeOnEscape(event: KeyboardEvent) {
+    const menu = event.currentTarget as HTMLDetailsElement;
+    if (event.key !== 'Escape' || !menu.open) return;
+    menu.open = false;
+    menu.querySelector('summary')?.focus();
+  }
+
+  /** Focus moving out of the menu closes it; a null target (a click on the page) closes it too. */
+  function closeOnLeave(event: FocusEvent) {
+    const menu = event.currentTarget as HTMLDetailsElement;
+    const next = event.relatedTarget as Node | null;
+    if (!next || !menu.contains(next)) menu.open = false;
+  }
 </script>
 
 {#snippet links(list: NavLink[])}
@@ -105,7 +120,7 @@ on a narrow desktop, and a sticky bar that tall would cover a jumped-to heading.
         </nav>
 
         {#key page.url.pathname}
-          <details class="menu">
+          <details class="menu" onkeydown={closeOnEscape} onfocusout={closeOnLeave}>
             <summary>Menu</summary>
             <nav class="menu-panel" aria-label="Primary">
               {@render links(nav)}

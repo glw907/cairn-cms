@@ -170,7 +170,7 @@ bare title. Everything else renders identically on both. -->
           {/if}
           {#if actions.length}
             <div class="pennant-hero__actions">
-              {#each actions as action, i (action.url)}
+              {#each actions as action, i}
                 <a
                   href={action.url}
                   rel={isAdminHref(action.url) ? 'external' : undefined}

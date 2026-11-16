@@ -389,9 +389,106 @@ const banner = () =>
     },
   });
 
+// The column counts a cards grid lays out; any other `columns` value, or none, falls back to three.
+// The render does not validate a select value, so a hand-typed `columns="7"` reaches build as is.
+const CARD_COLUMNS = ['2', '3', '4'];
+
+/** True for a text node holding only whitespace, the separator markdown leaves between parts. */
+function isBlank(node: ElementContent | undefined): boolean {
+  return node?.type === 'text' && node.value.trim() === '';
+}
+
+/** The element at the head of `nodes` when it has the tag `tagName`, else undefined. */
+function leading(nodes: ElementContent[], tagName: string): Element | undefined {
+  const first = nodes[0];
+  return first?.type === 'element' && first.tagName === tagName ? first : undefined;
+}
+
+// One card from one item's rendered line. The line reads as an optional leading image, then an
+// optional title, then text. A leading link is a linked title; failing that, a leading strong run
+// is a plain title, its children set without the bold. A link later in the line stays in the text.
+// The title is a paragraph, never a heading, so a card title joins neither the page outline nor its
+// heading slugs. No element renders for an absent part, so an imageless card opens on its title.
+function card(line: ElementContent[]): Element {
+  const rest = [...line];
+  const skipBlank = () => {
+    while (isBlank(rest[0])) rest.shift();
+  };
+  skipBlank();
+  const image = leading(rest, 'img');
+  if (image) {
+    rest.shift();
+    skipBlank();
+  }
+  let title: ElementContent[] | undefined;
+  const link = leading(rest, 'a');
+  const strong = link ? undefined : leading(rest, 'strong');
+  if (link) title = [link];
+  else if (strong) title = strong.children;
+  if (title) rest.shift();
+  skipBlank();
+  const first = rest[0];
+  if (first?.type === 'text') rest[0] = { ...first, value: first.value.trimStart() };
+
+  const body: ElementContent[] = [];
+  if (title) body.push(h('p', { className: ['cards-title'] }, title));
+  if (rest.length > 0) body.push(h('p', { className: ['cards-text'] }, rest));
+  const children: ElementContent[] = [];
+  if (image) children.push(h('img', { ...image.properties, className: ['cards-image'] }));
+  if (body.length > 0) children.push(h('div', { className: ['cards-body'] }, body));
+  return h('div', { className: ['cards-item'], role: 'listitem' }, children);
+}
+
+// A grid of cards, one per list item, laid out and given its default look by the chassis sheet, so
+// a theme owes no rule for it. Each item is one line of markdown, which keeps the insert form a
+// plain list of text fields. The grid is div-based, since a ul would inherit the prose list
+// markers, so the `list` and `listitem` roles give assistive technology the list semantics a ul
+// would carry.
+const cards = () =>
+  defineBlock({
+    name: 'cards',
+    label: 'Cards',
+    description:
+      'A grid of short cards, each with an optional picture, a title, and a line of text.',
+    use: 'Lay out a few parallel items, such as programs or places, side by side.',
+    group: 'Structure',
+    preview: {
+      attributes: { columns: '4' },
+      slots: {
+        items: [
+          '[Junior program](https://example.com/programs/junior) Ages 10 to 16, Saturdays at ten.',
+          '[Race team](https://example.com/programs/race-team) Training five days a week, December to March.',
+          '[Masters](https://example.com/programs/masters) Coached technique sessions for every pace.',
+          '**Where we meet** The Kincaid Park chalet, by the stadium lot.',
+        ],
+      },
+    },
+    attributes: {
+      columns: fields.select({ label: 'Columns', options: CARD_COLUMNS }),
+    },
+    slots: [
+      {
+        name: 'items',
+        label: 'Cards',
+        kind: 'repeatable',
+        help: 'One card per line: an optional image, then a link or bold text as the title, then the text.',
+        itemFields: { text: fields.text({ label: 'Card' }) },
+      },
+    ],
+    build: (ctx) => {
+      const requested = ctx.attr('columns') ?? '';
+      const columns = CARD_COLUMNS.includes(requested) ? requested : '3';
+      return h(
+        'div',
+        { className: ['cards', `cards-cols-${columns}`], role: 'list' },
+        ctx.items('items').map(card),
+      );
+    },
+  });
+
 /**
- * The nine directive blocks as factories over the theme's icon kit, keyed by directive name. The
- * key order is the registration order.
+ * The vocabulary's directive blocks as factories over the theme's icon kit, keyed by directive
+ * name. The key order is the registration order.
  */
 export const vocabulary = {
   callout,
@@ -403,6 +500,7 @@ export const vocabulary = {
   'micro-cta': microCta,
   faq,
   banner,
+  cards,
 };
 
 /** A directive name the chassis vocabulary defines. */

@@ -84,6 +84,8 @@ Only the release in this file has notes here. The notes of earlier releases live
 
 ## Unreleased
 
+The chassis vocabulary's block list grows by one, a `cards` block, and a site that re-emits its chassis gets it. Contract 1 keeps its number, and a theme can style `.cards` further, though the chassis already lays it out and gives it a default look.
+
 The `/delivery` entry point adds `buildICalendarResponse`, with its input types `ICalendar` and `ICalendarEvent`. A site opts in by adding a route that returns the response, and nothing that exists changes.
 
 A new site's starter content is a standard set of pages and posts in place of the showcase's trail demo. This asks nothing of a site that already exists. A site you start after this lands replaces the sample content with its own, as [Make a scaffolded site yours](./skills/cairn-extending-a-site/references/make-it-yours.md) lists.

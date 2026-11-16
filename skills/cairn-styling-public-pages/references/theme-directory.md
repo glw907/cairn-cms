@@ -95,7 +95,7 @@ raises `version`, and CI's version-rise check fails a change that doesn't. A rel
 
 ## The directive seam
 
-The chassis owns the directive vocabulary: the nine standard directives in
+The chassis owns the directive vocabulary: the standard directives in
 `src/chassis/directives/` and their class names in `classes.json`. It also owns `composeBlocks`, a
 function the adapter calls as `composeBlocks(icons, renderers)`. A theme's `directives/renderers.ts` exports a
 `renderers` map from a directive name to a `build` function, and each entry replaces how that

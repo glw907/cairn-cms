@@ -61,7 +61,7 @@ test('the directive-styled rule names the sheet that styled each class', async (
   const result = await checkTheme(copy(), { rules: ['directive-styled'] });
   const banner = result.notes.find((note) => note.message.startsWith('.banner '));
   assert.match(banner.message, /site\.css$/);
-  assert.equal(result.notes.length, 9);
+  assert.equal(result.notes.length, 10);
 });
 
 /** [label, rule, edit]: one defect and the one rule that must report it. */

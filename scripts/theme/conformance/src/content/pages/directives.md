@@ -204,6 +204,36 @@ A banner nested inside a callout:
 :::
 ::::
 
+## Cards
+
+An empty cards block holds no cards:
+
+::::cards{columns="3"}
+:::items
+:::
+::::
+
+A long cards block holds three cards, one with an image and a linked title, one with a linked title, and one with a strong title and plain text:
+
+::::cards{columns="3"}
+:::items
+- ![A wide view across the valley](/images/conformance-wide.svg) [A route over the ridge](https://example.com/ridge) A card with a lot to say tests the space inside its box, so this text runs long enough that it wraps onto several lines at a narrow width and the gap between the title and the text shows.
+- [A second card with a linked title](https://example.com/second) The second card has no image, so the grid shows how a card without one sits beside a card with one, in the same row and at the same height.
+- **A third card with a strong title** The third card has plain text under a strong title and no link, which is the last shape a card takes, and it closes the row.
+:::
+::::
+
+A cards block nested inside a callout:
+
+:::::callout[Cards inside a callout]{tone="note"}
+::::cards{columns="2"}
+:::items
+- [A nested card](https://example.com/nested) The first card inside the callout.
+- **A second nested card** The second card inside the callout.
+:::
+::::
+:::::
+
 ## Fragments
 
 An include places a fragment inside the page:

@@ -8,6 +8,7 @@ The `cairn-styling-public-pages` gate holds the list complete: a directive, an i
 - [The alert directive](directive-alert.md)
 - [The banner directive](directive-banner.md)
 - [The callout directive](directive-callout.md)
+- [The cards directive](directive-cards.md)
 - [The cta directive](directive-cta.md)
 - [The faq directive](directive-faq.md)
 - [The figure directive](directive-figure.md)

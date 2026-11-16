@@ -34,8 +34,8 @@ the mechanism.
 | `archive.ts` | The archive shape: year-grouped, paginated segments over the posts index, shared by the home page (page one) and the `/archive/[page]` route so the slicing rule never drifts between them. |
 | `date.ts` | The site's one date vocabulary: every date-bearing surface formats through the single `formatDate` helper. |
 | `theme-toggle.ts` | The light/dark toggle mechanism: resolve the active theme (from `data-theme`, else the root's computed `color-scheme`, else the system scheme), apply a choice, persist it to a cookie. |
-| `directives/vocabulary.ts` | The directive vocabulary: the nine blocks' names, fields, slots, previews, and field meaning, each with a default `build` that emits the chassis markup. |
-| `directives/compose.ts` | `composeBlocks`: registers the nine blocks over a theme's icon set and its partial renderer map (a replacement `build` per directive); a key outside the vocabulary throws, naming it. |
+| `directives/vocabulary.ts` | The directive vocabulary: the blocks' names, fields, slots, previews, and field meaning, each with a default `build` that emits the chassis markup. |
+| `directives/compose.ts` | `composeBlocks`: registers the vocabulary's blocks over a theme's icon set and its partial renderer map (a replacement `build` per directive); a key outside the vocabulary throws, naming it. |
 | `directives/banner-expiry.ts` | The banner's expiry rule, shared by the banner's default `build` and the theme's live island. |
 | `directives/classes.json` | The documented class list: each block's root class, one entry per directive. |
 | `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the engine's `cairn-public.css` import (the roles, the code-highlight binding, and the focus-ring class), the design-scale keys with generic defaults, and the two heading levers (`--font-weight-heading`, `--cairn-heading-case`) with the `heading-case` utility. |

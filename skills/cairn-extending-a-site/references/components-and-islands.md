@@ -16,7 +16,7 @@ Contents:
 
 ## Declare and register
 
-On a scaffold, the nine standard directives (the callout, the banner, and the rest) belong to the
+On a scaffold, the standard directives (the callout, the banner, and the rest) belong to the
 chassis, in `src/chassis/directives/`, and the adapter builds its `blocks` array in
 `src/site/cairn.config.ts` as `composeBlocks(icons, renderers)`. A theme may replace how a standard
 directive renders through `src/theme/directives/renderers.ts`, which swaps a `build` and nothing else:

@@ -66,7 +66,7 @@ order:
    and `themes/<id>/<version>/`, or `sets/<kind>/<version>.tgz` for a set.
 4. For a theme, builds the demo, deploys it with the checkout's own `wrangler deploy`, and polls the
    demo address for up to two minutes until its `cairn-theme-release` marker names the new release.
-   The job picks the demo's content set by the first entry of the theme's manifest `kinds`: it
+   The job picks the demo's content set by the first entry of the theme's manifest `kinds`, whose ids `definitions/kinds.json` lists and `npm run check:definitions` keeps in step with the schemas: it
    builds over `sets/<kind>/` when that directory holds a `cairn-set.json`, and over
    `scripts/build/starter-overlay/` otherwise. It builds each demo with its own origin, the origin
    of `DEMO_ORIGIN` with `{id}` replaced (`new URL(...).origin`), so the canonical links, feeds,

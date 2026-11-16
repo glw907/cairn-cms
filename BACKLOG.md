@@ -432,6 +432,8 @@
 - [ ] **#383** Show an admin a failed deploy, with what to do next `#feature` `#cairn-cms` `#initiative:cairn-setup` *(2026-11-08)* *(swept 2026-11-13)*
   The admin shows no deploy status, and the GitHub App asks for no Actions permission. GitHub's failed-run email is the only signal (`docs/admin/deploys.md:31-45`). The `cairn new` design deferred an admin view to the backlog (`~/Projects/initiatives/cairn-setup/specs/2026-11-08-cairn-new-design.md:211-212,427-428`). A view would need an Actions read on the App and a `cairn-judging-scope` check before a pass builds it.
   Placement: revisit when an owner reports a deploy failure the email did not surface.
+- [ ] **#540** Tighten the definitions generator's check and its tests `#improvement` `#cairn-cms` *(2026-11-16)*
+  The whole-branch review of the definitions pass found five small, non-blocking gaps. (a) `scripts/checks/check-definitions.mjs` returns early when the definitions have problems, so it does not report drift in the same run; the plan said problems plus per-file drift. (b) `scripts/build/emit-definitions.mjs` exports `readDefinitions` and `writeSchemas`, which the plan did not name. (c) `kind.defaultFeatures ?? []` and `feature.kinds ?? []` let a kind with no `defaultFeatures` pass `check:definitions`. (d) The empty-feature-list test in `scripts/build/emit-definitions.test.mjs` asserts only pass or fail, not the `not` keyword, and the catalog's "a theme with one kind twice" case in `scripts/catalog/index.test.mjs` is also pass or fail only. (e) The clause added to `docs/internal/theme-catalog.md` runs past the file's line width and sits mid-sentence before a colon. Placement: the next pass that touches the definitions generator.
 
 ## Won't do
 

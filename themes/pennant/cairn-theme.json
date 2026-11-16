@@ -1,0 +1,80 @@
+{
+  "$schema": "https://cairn.pub/schemas/cairn-theme/1.json",
+  "id": "pennant",
+  "name": "Pennant",
+  "description": "A two-color club and team look that's easy to recolor.",
+  "version": "1.0.0",
+  "notes": "First release.",
+  "summary": "A bold look for a club, a team, or a school group, built on two colors. Pick one of five color pairs, or set your own two colors, and the header, the buttons, the links, and the crest all follow. Bold condensed headings and a news section put your next event up front.",
+  "engine": ">=0.99.0-rc.5",
+  "kinds": ["organization"],
+  "repository": "https://github.com/glw907/cairn-cms",
+  "license": "MIT",
+  "author": {
+    "name": "cairn",
+    "url": "https://cairn.pub"
+  },
+  "contract": 1,
+  "colorModes": {
+    "light": "pennant",
+    "dark": "pennant-dark"
+  },
+  "options": [
+    {
+      "key": "colors",
+      "label": "Colors",
+      "values": [
+        { "value": "fireweed", "label": "Fireweed and spruce" },
+        { "value": "navy", "label": "Navy and gold" },
+        { "value": "scarlet", "label": "Scarlet and charcoal" },
+        { "value": "purple", "label": "Purple and silver" },
+        { "value": "orange", "label": "Orange and blue" }
+      ],
+      "default": "fireweed"
+    }
+  ],
+  "fonts": [
+    {
+      "name": "Big Shoulders Display",
+      "license": "OFL-1.1",
+      "source": "https://fontsource.org/fonts/big-shoulders-display",
+      "files": [
+        "fonts/big-shoulders-display-latin-700-normal.woff2",
+        "fonts/big-shoulders-display-latin-800-normal.woff2",
+        "fonts/big-shoulders-display-latin-ext-700-normal.woff2",
+        "fonts/big-shoulders-display-latin-ext-800-normal.woff2"
+      ]
+    },
+    {
+      "name": "Barlow Semi Condensed",
+      "license": "OFL-1.1",
+      "source": "https://fontsource.org/fonts/barlow-semi-condensed",
+      "files": [
+        "fonts/barlow-semi-condensed-latin-600-normal.woff2",
+        "fonts/barlow-semi-condensed-latin-700-normal.woff2",
+        "fonts/barlow-semi-condensed-latin-ext-600-normal.woff2",
+        "fonts/barlow-semi-condensed-latin-ext-700-normal.woff2"
+      ]
+    },
+    {
+      "name": "Barlow",
+      "license": "OFL-1.1",
+      "source": "https://fontsource.org/fonts/barlow",
+      "files": [
+        "fonts/barlow-latin-400-italic.woff2",
+        "fonts/barlow-latin-400-normal.woff2",
+        "fonts/barlow-latin-500-normal.woff2",
+        "fonts/barlow-latin-600-normal.woff2",
+        "fonts/barlow-latin-ext-400-italic.woff2",
+        "fonts/barlow-latin-ext-400-normal.woff2",
+        "fonts/barlow-latin-ext-500-normal.woff2",
+        "fonts/barlow-latin-ext-600-normal.woff2"
+      ]
+    }
+  ],
+  "screenshots": [
+    { "path": "screenshots/home-light.png", "shows": "The home page in the light color mode at 1440 pixels wide" },
+    { "path": "screenshots/home-dark.png", "shows": "The home page in the dark color mode at 1440 pixels wide" },
+    { "path": "screenshots/home-mobile.png", "shows": "The home page in the light color mode at 390 pixels wide" }
+  ]
+}

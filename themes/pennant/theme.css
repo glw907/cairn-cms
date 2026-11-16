@@ -1,0 +1,94 @@
+/* ============================================================================
+   Pennant, cairn's club and team theme. A club's look is two colors and the text that sits on
+   each, held in four tokens: color 1 is `--color-neutral` with `--color-neutral-content`, and
+   color 2 is `--color-secondary` with `--color-secondary-content`. Every other color, the
+   tinted grounds, the ink, the muted text, the links, and the card hairline, is a `color-mix()`
+   over those four in `tokens/tokens.json`, so a value of the `colors` option or a site's own
+   override of the four recolors the whole theme in both color modes.
+
+   This file is the theme half of the chassis boundary (src/chassis/README.md): it imports the
+   chassis token system, then the faces, then the built `tokens/tokens.css`, which redeclares
+   every design-scale key with Pennant's values plus the two daisyUI theme blocks, `pennant` and
+   `pennant-dark`. A value declared later in the build wins, so this file restates no chassis
+   machinery. Edit `tokens/tokens.json` and run `node scripts/theme/build-tokens.mjs
+   themes/pennant` to change a value; never edit a built file.
+
+   The faces: Barlow Semi Condensed (`--font-display`) sets the headings at
+   `--font-weight-heading`, Big Shoulders Display (`--font-brand`, the `font-brand` utility) the
+   site name and the crest, and Barlow (`--font-body`) the text.
+   ============================================================================ */
+@import "../chassis/tokens.css";
+
+/* The faces, self-hosted from the woff2 files in `fonts/` so the real faces are the first paint
+   with no third-party font origin. This `@import` must precede every other rule. Loading them
+   here, not in the layout, gives the editor preview frame, which links this same sheet, the same
+   faces. */
+@import "./fonts/fonts.css";
+
+/* The token values, imported after the chassis and the faces so each lands later in the build
+   than the chassis default it overrides. */
+@import "./tokens/tokens.css";
+
+/* Hairline outlines: an uncolored outline button or badge gets a faint edge instead of full ink.
+   This compiles into a sublayer declared after daisyUI's, so it outranks every state daisyUI's
+   button and badge rules restate. The button half overrides only `--btn-border`, so a colored
+   variant, which sets `--btn-color` itself, keeps its colored edge. The badge half sets
+   `border-color` directly, since daisyUI's `.badge-outline` reads `currentColor` rather than a
+   variable; the `:not()` list keeps every colored outline badge on `currentColor`. */
+@layer utilities {
+  @layer site-theme {
+    .btn-outline {
+      --btn-border: var(
+        --btn-color,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent)
+      );
+    }
+
+    .badge-outline:not(
+      .badge-primary,
+      .badge-secondary,
+      .badge-accent,
+      .badge-neutral,
+      .badge-info,
+      .badge-success,
+      .badge-warning,
+      .badge-error
+    ) {
+      border-color: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    }
+  }
+}
+
+/* Motion: a cross-fade on an explicit color-mode change, and a plain root cross-fade on internal
+   navigation. `.theme-flip-transition` lands on `<html>` for one flip only (theme-toggle.ts), so a
+   change from the OS or a first paint never animates. */
+:root.theme-flip-transition .site-shell,
+:root.theme-flip-transition .site-header,
+:root.theme-flip-transition .site-main,
+:root.theme-flip-transition .site-footer {
+  transition:
+    background-color 0.2s ease-out,
+    color 0.2s ease-out,
+    border-color 0.2s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root.theme-flip-transition .site-shell,
+  :root.theme-flip-transition .site-header,
+  :root.theme-flip-transition .site-main,
+  :root.theme-flip-transition .site-footer {
+    transition: none;
+  }
+}
+
+/* Internal navigation: `startViewTransition` runs only from the (site) group's `onNavigate`
+   hook, so this never fires for the admin, which loads no theme.css. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.18s;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

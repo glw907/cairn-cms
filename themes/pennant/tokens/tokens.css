@@ -1,0 +1,156 @@
+/* The daisyUI theme blocks, the `@theme` scale, and the unlayered root and dark rules. Built from the theme's tokens by scripts/theme/build-tokens.mjs. Do not edit. */
+
+@plugin "daisyui/theme" {
+  name: "pennant";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-neutral: oklch(52% 0.21 357);
+  --color-neutral-content: oklch(99% 0.003 357);
+  --color-secondary: oklch(25% 0.035 175);
+  --color-secondary-content: oklch(96% 0.008 175);
+  --color-primary-content: var(--color-base-100);
+  --color-accent: var(--color-secondary);
+  --color-accent-content: var(--color-secondary-content);
+  --color-info: oklch(55% 0.1 235);
+  --color-info-content: oklch(99% 0.01 235);
+  --color-success: oklch(54% 0.12 150);
+  --color-success-content: oklch(99% 0.01 150);
+  --color-warning: oklch(80% 0.13 78);
+  --color-warning-content: oklch(28% 0.05 78);
+  --color-error: oklch(58% 0.19 27);
+  --color-error-content: oklch(99% 0.01 27);
+  --cairn-success-ink: oklch(45% 0.1 150);
+  --cairn-warning-ink: oklch(52% 0.11 76);
+  --cairn-error-ink: oklch(50% 0.17 27);
+  --cairn-info-ink: oklch(48% 0.1 235);
+  --radius-selector: 4px;
+  --radius-field: 7px;
+  --radius-box: 10px;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "pennant-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-neutral: oklch(52% 0.21 357);
+  --color-neutral-content: oklch(99% 0.003 357);
+  --color-secondary: oklch(25% 0.035 175);
+  --color-secondary-content: oklch(96% 0.008 175);
+  --color-primary-content: var(--color-base-100);
+  --color-accent: var(--color-secondary);
+  --color-accent-content: var(--color-secondary-content);
+  --color-info: oklch(70% 0.1 235);
+  --color-info-content: oklch(24% 0.04 235);
+  --color-success: oklch(66% 0.12 150);
+  --color-success-content: oklch(24% 0.04 150);
+  --color-warning: oklch(82% 0.13 78);
+  --color-warning-content: oklch(25% 0.05 78);
+  --color-error: oklch(66% 0.17 27);
+  --color-error-content: oklch(24% 0.05 27);
+  --cairn-success-ink: oklch(78% 0.11 150);
+  --cairn-warning-ink: oklch(82% 0.12 76);
+  --cairn-error-ink: oklch(76% 0.14 27);
+  --cairn-info-ink: oklch(80% 0.1 235);
+  --radius-selector: 4px;
+  --radius-field: 7px;
+  --radius-box: 10px;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@theme {
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-brand: "Big Shoulders Display", Impact, "Arial Narrow", sans-serif;
+  --font-body: Barlow, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-weight-heading: 700;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-step--2: 0.84rem;
+  --text-step--1: 0.95rem;
+  --text-step-0: 1.0625rem;
+  --text-step-1: 1.15rem;
+  --text-step-2: 1.4rem;
+  --text-step-3: clamp(1.45rem, 1.3rem + 0.6vw, 1.7rem);
+  --text-step-4: clamp(1.9rem, 1.35rem + 1.7vw, 2.65rem);
+  --text-step-5: clamp(2.2rem, 1.5rem + 2.2vw, 3.1rem);
+  --spacing-3xs: clamp(0.31rem, 0.3rem + 0.05vw, 0.34rem);
+  --spacing-2xs: clamp(0.5rem, 0.48rem + 0.11vw, 0.56rem);
+  --spacing-xs: clamp(0.75rem, 0.72rem + 0.16vw, 0.84rem);
+  --spacing-s: clamp(1rem, 0.96rem + 0.22vw, 1.13rem);
+  --spacing-m: clamp(1.375rem, 1.3rem + 0.33vw, 1.56rem);
+  --spacing-l: clamp(1.75rem, 1.6rem + 0.6vw, 2.25rem);
+  --spacing-xl: clamp(2.6rem, 2.3rem + 1.2vw, 3.5rem);
+  --spacing-2xl: clamp(3.5rem, 3.1rem + 1.6vw, 4.75rem);
+  --leading-body: 1.55;
+  --leading-snug: 1.2;
+  --leading-tight: 1.05;
+  --tracking-tight: 0em;
+  --tracking-display: 0.02em;
+  --tracking-eyebrow: 0.08em;
+  --container-measure: 44rem;
+  --container-measure-wide: 70rem;
+}
+
+:root {
+  --cairn-caption-tracking: 0.06em;
+  --cairn-eyebrow-case: uppercase;
+  --cairn-scroll-cue: linear-gradient(to right, transparent, var(--cairn-code-bg) 85%), radial-gradient(farthest-side at 100% 50%, color-mix(in oklab, var(--color-base-content) 22%, transparent), transparent);
+  --color-base-100: color-mix(in oklab, var(--color-neutral) 2%, oklch(99.4% 0 0));
+  --color-base-200: color-mix(in oklab, var(--color-neutral) 5%, oklch(97.2% 0 0));
+  --color-base-300: color-mix(in oklab, var(--color-neutral) 9%, oklch(91% 0 0));
+  --color-base-content: color-mix(in oklab, var(--color-neutral) 14%, oklch(18% 0 0));
+  --color-muted: color-mix(in oklab, var(--color-neutral) 12%, oklch(45% 0 0));
+  --color-primary: color-mix(in oklab, var(--color-neutral) 62%, var(--color-base-content));
+  --color-card-border: color-mix(in oklab, var(--color-base-content) 13%, transparent);
+  --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 7%, transparent), 0 8px 22px -10px color-mix(in oklab, var(--color-base-content) 16%, transparent);
+  --cairn-cta-bg: var(--color-neutral);
+  --cairn-cta-content: var(--color-neutral-content);
+  --cairn-cta-border: transparent;
+  --cairn-cta-btn-bg: var(--color-secondary);
+  --cairn-cta-btn-content: var(--color-secondary-content);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-base-100: color-mix(in oklab, var(--color-neutral) 6%, oklch(16% 0 0));
+    --color-base-200: color-mix(in oklab, var(--color-neutral) 7%, oklch(20% 0 0));
+    --color-base-300: color-mix(in oklab, var(--color-neutral) 10%, oklch(29% 0 0));
+    --color-base-content: color-mix(in oklab, var(--color-neutral) 5%, oklch(94% 0 0));
+    --color-muted: color-mix(in oklab, var(--color-neutral) 8%, oklch(73% 0 0));
+    --color-primary: color-mix(in oklab, var(--color-neutral) 45%, var(--color-base-content));
+    --color-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+    --cairn-shadow: 0 1px 2px color-mix(in oklab, black 40%, transparent), 0 8px 24px -10px color-mix(in oklab, black 55%, transparent);
+    --cairn-cta-bg: var(--color-neutral);
+    --cairn-cta-content: var(--color-neutral-content);
+    --cairn-cta-border: transparent;
+    --cairn-cta-btn-bg: var(--color-secondary);
+    --cairn-cta-btn-content: var(--color-secondary-content);
+  }
+}
+
+:root[data-theme="pennant-dark"] {
+  --color-base-100: color-mix(in oklab, var(--color-neutral) 6%, oklch(16% 0 0));
+  --color-base-200: color-mix(in oklab, var(--color-neutral) 7%, oklch(20% 0 0));
+  --color-base-300: color-mix(in oklab, var(--color-neutral) 10%, oklch(29% 0 0));
+  --color-base-content: color-mix(in oklab, var(--color-neutral) 5%, oklch(94% 0 0));
+  --color-muted: color-mix(in oklab, var(--color-neutral) 8%, oklch(73% 0 0));
+  --color-primary: color-mix(in oklab, var(--color-neutral) 45%, var(--color-base-content));
+  --color-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+  --cairn-shadow: 0 1px 2px color-mix(in oklab, black 40%, transparent), 0 8px 24px -10px color-mix(in oklab, black 55%, transparent);
+  --cairn-cta-bg: var(--color-neutral);
+  --cairn-cta-content: var(--color-neutral-content);
+  --cairn-cta-border: transparent;
+  --cairn-cta-btn-bg: var(--color-secondary);
+  --cairn-cta-btn-content: var(--color-secondary-content);
+}

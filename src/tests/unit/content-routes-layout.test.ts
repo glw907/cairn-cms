@@ -442,7 +442,7 @@ function expectedNav(capability: 'owner' | 'editor' | 'none') {
   return resolveNavLayout({
     layout: NAV_LAYOUT_WITH_SECTION,
     concepts: NAV_WITH_SECTION_CONCEPTS,
-    navMenuLabel: null,
+    navMenus: [],
     editor: { email: 'inst@test', displayName: 'Inst', role: capability, capability } as Editor,
   });
 }

@@ -200,7 +200,7 @@ export function createShellActions(ctx: ContentRoutesContext) {
     const resolved = resolveNavLayout({
       layout: runtime.navLayout,
       concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label, routing: c.routing })),
-      navMenuLabel: runtime.navMenus[0]?.label ?? null,
+      navMenus: runtime.navMenus.map(({ menuName, label }) => ({ name: menuName, label })),
       access: runtime.access,
       editor,
     });

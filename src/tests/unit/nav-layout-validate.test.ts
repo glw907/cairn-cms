@@ -7,7 +7,7 @@ import { runtime } from './_content-harness.js';
 function ctx(overrides: Partial<Parameters<typeof validateNavLayout>[1]> = {}) {
   return {
     conceptIds: ['posts', 'pages'],
-    navMenuConfigured: false,
+    navMenuCount: 0,
     roleNames: ['owner', 'editor'],
     ...overrides,
   };
@@ -25,14 +25,37 @@ describe('validateNavLayout: construction throws', () => {
     expect(() => validateNavLayout(layout, ctx())).toThrow(/screen "settings" is referenced more than once/);
   });
 
-  it('rejects "nav" referenced with no navMenu configured', () => {
+  it('rejects "nav" referenced when editor.nav declares no menu', () => {
     const layout: NavLayout = [{ screen: 'nav' }];
-    expect(() => validateNavLayout(layout, ctx({ navMenuConfigured: false }))).toThrow(/navMenu.*editor\.nav.*NavMenuConfig/);
+    expect(() => validateNavLayout(layout, ctx({ navMenuCount: 0 }))).toThrow(
+      'navLayout: screen "nav" is referenced but editor.nav declares no menu; add a menu to editor.nav, or drop the "nav" screen from navLayout',
+    );
   });
 
-  it('accepts "nav" once a navMenu is configured', () => {
+  it('accepts "nav" once a menu is declared', () => {
     const layout: NavLayout = [{ screen: 'nav' }];
-    expect(() => validateNavLayout(layout, ctx({ navMenuConfigured: true }))).not.toThrow();
+    expect(() => validateNavLayout(layout, ctx({ navMenuCount: 1 }))).not.toThrow();
+  });
+
+  it('rejects a label on "nav" when two or more menus are declared', () => {
+    const layout: NavLayout = [{ screen: 'nav', label: 'Menus' }];
+    expect(() => validateNavLayout(layout, ctx({ navMenuCount: 2 }))).toThrow(
+      'navLayout: screen "nav" places 2 or more menus, so it takes no label; set each menu\'s label in editor.nav',
+    );
+  });
+
+  it('still accepts a relabel of "nav" with one menu', () => {
+    const layout: NavLayout = [{ screen: 'nav', label: 'Menus' }];
+    expect(() => validateNavLayout(layout, ctx({ navMenuCount: 1 }))).not.toThrow();
+  });
+
+  it('rejects a site entry under /admin/nav/<name> as a collision, and lets bare /admin/nav through', () => {
+    expect(() =>
+      validateNavLayout([{ label: 'Menu', icon: 'inbox', href: '/admin/nav/main' }], ctx()),
+    ).toThrow(/collides/);
+    expect(() =>
+      validateNavLayout([{ label: 'Menu', icon: 'inbox', href: '/admin/nav' }], ctx()),
+    ).not.toThrow();
   });
 
   it('rejects a nested section', () => {

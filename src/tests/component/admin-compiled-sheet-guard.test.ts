@@ -23,7 +23,7 @@ function data() {
     siteName: 'Test Site',
     user: editor,
     concepts,
-    nav: resolveNavLayout({ layout: undefined, concepts, navMenuLabel: null, editor }),
+    nav: resolveNavLayout({ layout: undefined, concepts, navMenus: [], editor }),
     pathname: '/admin/posts',
     theme: 'cairn-admin' as const,
     collapsedNav: null as string[] | null,

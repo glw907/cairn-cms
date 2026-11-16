@@ -126,7 +126,7 @@ describe('one map, four readers', () => {
           { label: 'Y', icon: 'inbox', href: '/admin/y' },
         ],
         concepts: [{ id: 'pages', label: 'Pages' }],
-        navMenuLabel: null,
+        navMenus: [],
         access: ev.locals.cairnAccess,
         editor: ev.locals.cairnEditor!,
       });

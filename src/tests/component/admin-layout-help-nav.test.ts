@@ -16,7 +16,7 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
     siteName: 'Test Site',
     user: editor,
     concepts,
-    nav: resolveNavLayout({ layout: undefined, concepts, navMenuLabel: navLabel, editor }),
+    nav: resolveNavLayout({ layout: undefined, concepts, navMenus: navLabel === null ? [] : [{ name: 'primary', label: navLabel }], editor }),
     pathname,
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],

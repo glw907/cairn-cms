@@ -226,7 +226,7 @@ function isNavLayoutEngineRef(node: NavLayoutEntry | NavLayoutEngineRef): node i
  *  at server start rather than rendering a broken or silently-wrong sidebar. Checks, in order: every
  *  engine reference names a real screen (a declared concept id or one of the fixed utility screens)
  *  and is referenced at most once, a hidden reference included; `'nav'` is referenced only when the
- *  site configures a navMenu; a relabel is never blank; a section's label is never blank and
+ *  site declares at least one menu in `editor.nav`; a relabel is never blank; a section's label is never blank and
  *  never repeats another section's label; a section carries no nested section and at least one
  *  child; two site entries, top-level or inside a section, never share an href anywhere in the tree
  *  (a duplicate would resolve to two links pointing at the same route, and the shell's key-safety
@@ -239,13 +239,13 @@ function isNavLayoutEngineRef(node: NavLayoutEntry | NavLayoutEngineRef): node i
  *
  * The second parameter carries context this validation needs but does not itself derive: the
  *  site's concept ids (for the engine screen-id set and the embedded-entry href collision check),
- *  whether a navMenu is configured, and the declared role vocabulary's names.
+ *  how many menus `editor.nav` declares, and the declared role vocabulary's names.
  */
 export function validateNavLayout(
   layout: NavLayout,
   ctx: {
     conceptIds: string[];
-    navMenuConfigured: boolean;
+    navMenuCount: number;
     roleNames: string[];
   },
 ): void {
@@ -280,8 +280,11 @@ export function validateNavLayout(
     if (!knownScreens.has(ref.screen)) {
       throw new Error(`navLayout: unknown screen "${ref.screen}"; use one of ${[...knownScreens].join(", ")}`);
     }
-    if (ref.screen === 'nav' && !ctx.navMenuConfigured) {
-      throw new Error('navLayout: screen "nav" is referenced but no navMenu is configured; set editor.nav (a NavMenuConfig) on the adapter, or drop the "nav" screen from navLayout');
+    if (ref.screen === 'nav' && ctx.navMenuCount === 0) {
+      throw new Error('navLayout: screen "nav" is referenced but editor.nav declares no menu; add a menu to editor.nav, or drop the "nav" screen from navLayout');
+    }
+    if (ref.screen === 'nav' && ref.label !== undefined && ctx.navMenuCount > 1) {
+      throw new Error('navLayout: screen "nav" places 2 or more menus, so it takes no label; set each menu\'s label in editor.nav');
     }
     if (seenScreens.has(ref.screen)) {
       throw new Error(`navLayout: screen "${ref.screen}" is referenced more than once`);
@@ -399,7 +402,7 @@ export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: 
 }
 
 // The resolver: turns a validated (or absent) navLayout, plus the per-request capability/role and
-// the site's concepts/navMenu, into one arranged, filtered, serializable tree the shell renders
+// the site's concepts/menus, into one arranged, filtered, serializable tree the shell renders
 // directly. Runs fresh per request (the capability/role gates are per-editor), but the arrangement
 // itself is pure data shuffling, no I/O.
 
@@ -473,8 +476,8 @@ interface ResolveNavLayoutOptions {
    *  carries it.
    */
   concepts: { id: string; label: string; routing?: { dated: boolean } }[];
-  /** The nav-menu editor's label, or null when the site configures none (gates the `nav` screen). */
-  navMenuLabel: string | null;
+  /** The site's declared menus in config order; an empty list hides the `nav` screen. */
+  navMenus: { name: string; label: string }[];
   /**
    * The site's declared access map, or undefined for zero-config. Every engine door is gated
    *  through {@link canReach} against this map (folding in row 4's capability floor); a site entry
@@ -492,10 +495,9 @@ interface ResolveNavLayoutOptions {
 }
 
 /** The engine's screen defaults (label, href) not already covered by a site's concepts. */
-const ENGINE_SCREEN_DEFAULTS: Record<(typeof ENGINE_SCREEN_IDS)[number], { label: string; href: string }> = {
+const ENGINE_SCREEN_DEFAULTS: Record<Exclude<(typeof ENGINE_SCREEN_IDS)[number], 'nav'>, { label: string; href: string }> = {
   media: { label: 'Library', href: '/admin/media' },
   vocabulary: { label: 'Tags', href: '/admin/vocabulary' },
-  nav: { label: '', href: '/admin/nav' }, // label substituted from navMenuLabel at resolve time
   settings: { label: 'Settings', href: '/admin/settings' },
   editors: { label: 'Editors', href: '/admin/editors' },
   help: { label: 'Help', href: '/admin/help' },
@@ -504,27 +506,44 @@ const ENGINE_SCREEN_DEFAULTS: Record<(typeof ENGINE_SCREEN_IDS)[number], { label
 /** The default label/href for one engine screen id: a concept's label, or the fixed table above. */
 function engineDefault(screen: string, opts: ResolveNavLayoutOptions): { label: string; href: string } {
   const fixed = (ENGINE_SCREEN_DEFAULTS as Record<string, { label: string; href: string } | undefined>)[screen];
-  if (fixed) {
-    return screen === 'nav' ? { label: opts.navMenuLabel ?? '', href: fixed.href } : fixed;
-  }
+  if (fixed) return fixed;
   const concept = opts.concepts.find((c) => c.id === screen);
   return { label: concept?.label ?? screen, href: `/admin/${screen}` };
 }
 
 /**
- * Whether one engine screen is visible for the current request: `nav` additionally requires a
- *  configured navMenu (an orthogonal gate the access map cannot express, since an unconfigured
+ * Whether one engine screen is visible for the current request: `nav` additionally requires at
+ *  least one declared menu (an orthogonal gate the access map cannot express, since a menuless
  *  `nav` is never a valid reference at all); every other screen defers entirely to
  *  {@link canReach}, which folds in the capability floor (the 0.85.0 rule), the `editors` owner
  *  floor, and the site's map narrowing, so this generalizes the pre-map gate rather than
  *  adding a second one beside it.
  */
 function engineVisible(screen: string, opts: ResolveNavLayoutOptions): boolean {
-  if (screen === 'nav' && opts.navMenuLabel === null) return false;
+  if (screen === 'nav' && opts.navMenus.length === 0) return false;
   return canReach(opts.access, opts.editor, screen);
 }
 
-/** Resolve one engine screen into its door, applying a declared relabel and icon override when given. */
+/**
+ * Resolve one engine screen into its doors: one per declared menu for `nav` (each labeled by its
+ *  menu, the declared icon applying to all), exactly one for every other screen.
+ */
+function engineEntries(
+  screen: string,
+  opts: ResolveNavLayoutOptions,
+  labelOverride?: string,
+  iconOverride?: NavIcon,
+): ResolvedEngineNavEntry[] {
+  if (screen !== 'nav') return [engineEntry(screen, opts, labelOverride, iconOverride)];
+  return opts.navMenus.map((menu) => ({
+    screen,
+    label: labelOverride ?? menu.label,
+    href: `/admin/nav/${encodeURIComponent(menu.name)}`,
+    ...(iconOverride ? { iconName: iconOverride } : {}),
+  }));
+}
+
+/** Resolve one non-`nav` engine screen into its door, applying a declared relabel and icon override when given. */
 function engineEntry(
   screen: string,
   opts: ResolveNavLayoutOptions,
@@ -562,13 +581,13 @@ function hrefReachable(href: string, opts: ResolveNavLayoutOptions): boolean {
 }
 
 /**
- * The engine's fixed utility screens in canonical sidebar order, `nav` included only when a navMenu
- *  is configured (an unconfigured `nav` is never a valid reference at all, so it never appears here
+ * The engine's fixed utility screens in canonical sidebar order, `nav` included only when a menu
+ *  is declared (a menuless `nav` is never a valid reference at all, so it never appears here
  *  or in `fallback`). `help` is not one of them: it trails the whole order, and the default
  *  synthesis deliberately leaves it out of `items` entirely.
  */
 function utilityScreenOrder(opts: ResolveNavLayoutOptions): string[] {
-  return ['media', 'vocabulary', ...(opts.navMenuLabel !== null ? ['nav'] : []), 'settings', 'editors'];
+  return ['media', 'vocabulary', ...(opts.navMenus.length > 0 ? ['nav'] : []), 'settings', 'editors'];
 }
 
 /**
@@ -606,16 +625,16 @@ function roleMatches(roles: string[] | undefined, role: string): boolean {
 function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions): ResolvedNavLayout {
   const referenced = new Set<string>();
 
-  function resolveChild(node: NavLayoutEntry | NavLayoutEngineRef): ResolvedLayoutChild | null {
+  function resolveChild(node: NavLayoutEntry | NavLayoutEngineRef): ResolvedLayoutChild[] {
     if (isNavLayoutEngineRef(node)) {
       referenced.add(node.screen);
-      if (node.hidden || !engineVisible(node.screen, opts)) return null;
-      return engineEntry(node.screen, opts, node.label, node.icon);
+      if (node.hidden || !engineVisible(node.screen, opts)) return [];
+      return engineEntries(node.screen, opts, node.label, node.icon);
     }
-    if (!ownerOnlyVisible(node, opts)) return null;
-    if (!roleMatches(node.roles, opts.editor.role)) return null;
-    if (!hrefReachable(node.href, opts)) return null;
-    return resolvedLayoutEntry(node);
+    if (!ownerOnlyVisible(node, opts)) return [];
+    if (!roleMatches(node.roles, opts.editor.role)) return [];
+    if (!hrefReachable(node.href, opts)) return [];
+    return [resolvedLayoutEntry(node)];
   }
 
   const items: ResolvedLayoutNode[] = [];
@@ -632,20 +651,18 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
       }
       const children: ResolvedLayoutChild[] = [];
       for (const child of node.children) {
-        const resolved = resolveChild(child);
-        if (resolved) children.push(resolved);
+        children.push(...resolveChild(child));
       }
       if (children.length > 0) items.push({ label: node.label, children, collapsed: node.collapsed });
     } else {
-      const resolved = resolveChild(node);
-      if (resolved) items.push(resolved);
+      items.push(...resolveChild(node));
     }
   }
 
   const fallback: ResolvedLayoutChild[] = [];
   for (const screen of engineScreenOrder(opts)) {
     if (!referenced.has(screen) && engineVisible(screen, opts)) {
-      fallback.push(engineEntry(screen, opts));
+      fallback.push(...engineEntries(screen, opts));
     }
   }
 
@@ -655,7 +672,7 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
 /**
  * Synthesize the flat zero-config default arrangement for a site that declares no navLayout: the
  *  concepts, then the fixed engine screens in their existing order (media, vocabulary, nav when
- *  configured, settings, editors) as loose top-level nodes; `help` is deliberately left
+ *  a menu is declared, settings, editors) as loose top-level nodes; `help` is deliberately left
  *  unreferenced, so it resolves into `fallback`. No section wraps these nodes: at the sizes a
  *  zero-config site actually reaches, a section header pays a category-decision cost the flat list
  *  never earns back.
@@ -665,12 +682,12 @@ function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout 
   for (const concept of opts.concepts) {
     if (engineVisible(concept.id, opts)) items.push(engineEntry(concept.id, opts));
   }
-  // engineVisible is the single visibility authority (nav needs a configured navMenu, editors needs
+  // engineVisible is the single visibility authority (nav needs a declared menu, editors needs
   // owner, all need capability !== 'none'), the same gate the concept loop above and the help
   // fallback below rely on. utilityScreenOrder is the single order authority, shared with the
   // omission-fallback walk, so a screen never sits in one arrangement's order and not the other's.
   for (const screen of utilityScreenOrder(opts)) {
-    if (engineVisible(screen, opts)) items.push(engineEntry(screen, opts));
+    if (engineVisible(screen, opts)) items.push(...engineEntries(screen, opts));
   }
 
   const fallback: ResolvedLayoutChild[] = engineVisible('help', opts) ? [engineEntry('help', opts)] : [];

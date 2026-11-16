@@ -23,7 +23,7 @@ function opts(
       { id: 'posts', label: 'Posts' },
       { id: 'pages', label: 'Pages' },
     ],
-    navMenuLabel: 'Navigation',
+    navMenus: [{ name: 'primary', label: 'Navigation' }],
     editor: { email: `${role}@test`, displayName: role, role, capability } as Editor,
     ...rest,
   };
@@ -76,7 +76,7 @@ describe('resolveNavLayout: icon override', () => {
 describe('resolveNavLayout: omission fallback', () => {
   it('sends engine screens the tree never references to fallback, in engine order', () => {
     const layout: NavLayout = [{ screen: 'posts' }];
-    const resolved = resolveNavLayout(opts({ layout, navMenuLabel: null }));
+    const resolved = resolveNavLayout(opts({ layout, navMenus: [] }));
     expect(resolved.fallback).toEqual([
       { screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false },
       { screen: 'media', label: 'Library', href: '/admin/media' },
@@ -129,7 +129,7 @@ describe('resolveNavLayout: default synthesis', () => {
       { screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false },
       { screen: 'media', label: 'Library', href: '/admin/media' },
       { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
-      { screen: 'nav', label: 'Navigation', href: '/admin/nav' },
+      { screen: 'nav', label: 'Navigation', href: '/admin/nav/primary' },
       { screen: 'settings', label: 'Settings', href: '/admin/settings' },
       { screen: 'editors', label: 'Editors', href: '/admin/editors' },
     ]);
@@ -155,7 +155,7 @@ describe('resolveNavLayout: capability gates', () => {
   });
 
   it('omits the nav screen from the default arrangement when no navMenu is configured', () => {
-    const resolved = resolveNavLayout(opts({ navMenuLabel: null }));
+    const resolved = resolveNavLayout(opts({ navMenus: [] }));
     expect(resolved.items).not.toContainEqual(expect.objectContaining({ screen: 'nav' }));
     expect(resolved.fallback).not.toContainEqual(expect.objectContaining({ screen: 'nav' }));
   });
@@ -297,12 +297,12 @@ describe('resolveNavLayout: fallback screens obey the map', () => {
   it('omits a mapped-away screen from fallback for the excluded role, keeps it for the included role', () => {
     const layout: NavLayout = [{ screen: 'posts' }];
     const excluded = resolveNavLayout(
-      opts({ layout, access: PAGES_RESTRICTED, capability: 'editor', role: 'publisher', navMenuLabel: null }),
+      opts({ layout, access: PAGES_RESTRICTED, capability: 'editor', role: 'publisher', navMenus: [] }),
     );
     expect(excluded.fallback).not.toContainEqual(expect.objectContaining({ screen: 'pages' }));
 
     const included = resolveNavLayout(
-      opts({ layout, access: PAGES_RESTRICTED, capability: 'editor', role: 'webmaster', navMenuLabel: null }),
+      opts({ layout, access: PAGES_RESTRICTED, capability: 'editor', role: 'webmaster', navMenus: [] }),
     );
     expect(included.fallback).toContainEqual(expect.objectContaining({ screen: 'pages' }));
   });
@@ -365,5 +365,64 @@ describe('resolveNavLayout: default-layout parity with declared-layout on the sa
     expect(declared.items).not.toContainEqual(expect.objectContaining({ screen: 'pages' }));
     expect(defaulted.items).toContainEqual(expect.objectContaining({ screen: 'posts' }));
     expect(defaulted.items).not.toContainEqual(expect.objectContaining({ screen: 'pages' }));
+  });
+});
+
+describe('resolveNavLayout: several menus', () => {
+  const menus = [
+    { name: 'primary', label: 'Navigation' },
+    { name: 'actions', label: 'Action links' },
+  ];
+  const primary = { screen: 'nav', label: 'Navigation', href: '/admin/nav/primary' };
+  const actions = { screen: 'nav', label: 'Action links', href: '/admin/nav/actions' };
+
+  it('expands a nav ref in a declared section into one entry per menu, in config order', () => {
+    const layout: NavLayout = [{ label: 'Site', children: [{ screen: 'nav' }, { screen: 'settings' }] }];
+    const resolved = resolveNavLayout(opts({ layout, navMenus: menus }));
+    expect(resolved.items).toEqual([
+      { label: 'Site', children: [primary, actions, { screen: 'settings', label: 'Settings', href: '/admin/settings' }] },
+    ]);
+  });
+
+  it('expands a top-level nav ref, applying a declared icon to each entry', () => {
+    const layout: NavLayout = [{ screen: 'nav', icon: 'wrench' }];
+    const resolved = resolveNavLayout(opts({ layout, navMenus: menus }));
+    expect(resolved.items).toEqual([
+      { ...primary, iconName: 'wrench' },
+      { ...actions, iconName: 'wrench' },
+    ]);
+  });
+
+  it('keeps one nav slot in the default arrangement, between vocabulary and settings', () => {
+    const resolved = resolveNavLayout(opts({ navMenus: menus }));
+    const screens = resolved.items.map((n) => ('screen' in n ? `${n.screen}:${n.href}` : n.label));
+    expect(screens).toEqual([
+      'posts:/admin/posts',
+      'pages:/admin/pages',
+      'media:/admin/media',
+      'vocabulary:/admin/vocabulary',
+      'nav:/admin/nav/primary',
+      'nav:/admin/nav/actions',
+      'settings:/admin/settings',
+      'editors:/admin/editors',
+    ]);
+  });
+
+  it('sends every menu to fallback when the tree never references nav', () => {
+    const layout: NavLayout = [{ screen: 'posts' }];
+    const resolved = resolveNavLayout(opts({ layout, navMenus: menus }));
+    expect(resolved.fallback.filter((e) => 'screen' in e && e.screen === 'nav')).toEqual([primary, actions]);
+  });
+
+  it('percent-encodes a menu name in the href', () => {
+    const resolved = resolveNavLayout(opts({ navMenus: [{ name: 'a b', label: 'AB' }] }));
+    expect(resolved.items).toContainEqual({ screen: 'nav', label: 'AB', href: '/admin/nav/a%20b' });
+  });
+
+  it('drops every menu entry for a none-capability session', () => {
+    const layout: NavLayout = [{ screen: 'nav' }];
+    const resolved = resolveNavLayout(opts({ layout, navMenus: menus, capability: 'none' }));
+    expect(resolved.items).toEqual([]);
+    expect(resolved.fallback).toEqual([]);
   });
 });

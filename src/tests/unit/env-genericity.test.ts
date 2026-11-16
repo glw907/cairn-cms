@@ -105,7 +105,8 @@ function typeOnlyContentRoutesAssignability(): void {
 }
 void typeOnlyContentRoutesAssignability;
 
-// createNavRoutes: navLoad/navSaveAction both read the same CairnEvent slot as content-routes.
+// createNavRoutes: navLoad/navSaveAction both read the same CairnEvent slot as content-routes,
+// then the declared menu's name.
 // Checked per member, not as a whole against Record<string, X>, since NavRoutes is now a
 // hand-declared interface (the conventions pass, contract-first returns) rather than a `Pick`-
 // derived mapped type; a plain interface carries no index signature, so the same
@@ -113,8 +114,8 @@ void typeOnlyContentRoutesAssignability;
 // mirroring AuthRoutes' and EditorRoutes' own per-member checks below.
 function typeOnlyNavRoutesAssignability(): void {
   const nav = createNavRoutes({ runtime: {} as CairnRuntime });
-  nav.navLoad satisfies (event: SiteRequestEvent) => unknown;
-  nav.navSaveAction satisfies (event: SiteRequestEvent) => unknown;
+  nav.navLoad satisfies (event: SiteRequestEvent, menuName: string) => unknown;
+  nav.navSaveAction satisfies (event: SiteRequestEvent, menuName: string) => unknown;
 }
 void typeOnlyNavRoutesAssignability;
 

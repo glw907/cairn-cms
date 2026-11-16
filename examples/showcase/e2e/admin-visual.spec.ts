@@ -714,7 +714,7 @@ test.describe('empty first-run server', () => {
   const ZERO_SCREENS = [
     { screen: 'posts', path: '/admin/posts', text: 'No posts yet' },
     { screen: 'tags', path: '/admin/vocabulary', text: 'No tags yet' },
-    { screen: 'nav', path: '/admin/nav', text: 'No menu items yet' },
+    { screen: 'nav', path: '/admin/nav/primary', text: 'No menu items yet' },
     { screen: 'media', path: '/admin/media', text: 'No media yet' },
     { screen: 'help', path: '/admin/help', text: 'Your first steps' },
   ];

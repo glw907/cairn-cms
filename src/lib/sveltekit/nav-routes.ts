@@ -1,4 +1,5 @@
-// The admin nav-editing routes: the load and save a site's /admin/nav shim calls. A factory closes
+// The admin nav-editing routes: the load and save for each declared menu, one route per menu at
+// /admin/nav/<name>, which a site's /admin/nav shim calls. A factory closes
 // over the composed runtime, mirroring createContentRoutesInternal (the factory that actually does
 // that closing-over; the public createContentRoutes is a thin wrapper around it), so the read and
 // commit paths are unit-testable against a fetch double riding the event's locals.cairnBackend seam.
@@ -40,7 +41,7 @@ export interface NavData {
  * @beta
  */
 export interface NavRoutesConfig {
-  /** The composed runtime the nav routes close over: the site's menu, roles, and backend. */
+  /** The composed runtime the nav routes close over: the site's menus, roles, and backend. */
   runtime: CairnRuntime;
 }
 
@@ -75,12 +76,21 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
     return lists.flat();
   }
 
-  /** Load the nav editor. A missing or unparsable config degrades to an empty tree so it still opens. */
-  async function navLoad(event: CairnEvent): Promise<NavData> {
+  /**
+   * Resolve the declared menu a request names. The caller runs this after the access check, so a
+   *  role without `nav` gets 403 for every address, declared or not.
+   */
+  function findMenu(menuName: string) {
+    const found = runtime.navMenus.find((m) => m.menuName === menuName);
+    if (!found) throw error(404, 'Not found');
+    return found;
+  }
+
+  /** Load one menu's editor. A missing or unparsable config degrades to an empty tree so it still opens. */
+  async function navLoad(event: CairnEvent, menuName: string): Promise<NavData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
-    const navMenu = runtime.navMenus[0];
-    if (!navMenu) throw error(404, 'No navigation menu configured');
+    const navMenu = findMenu(menuName);
     const maxDepth = navMenu.maxDepth ?? 2;
     const menu = { name: navMenu.menuName, label: navMenu.label, maxDepth };
 
@@ -121,16 +131,15 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
   }
 
   /**
-   * Save the nav tree: validate, then read-modify-commit the one menu with the session editor as
+   * Save one menu's tree: validate, then read-modify-commit that menu with the session editor as
    *  author. Refuses `fail(400)` on an invalid posted tree and `fail(409)` when the config's head
    *  moved since the editor opened the page. The nav view shares the edit view's `save` action, so
    *  a refusal is a {@link ContentFormFailure}.
    */
-  async function navSaveAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
+  async function navSaveAction(event: CairnEvent, menuName: string): Promise<ActionFailure<ContentFormFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
-    const navMenu = runtime.navMenus[0];
-    if (!navMenu) throw error(404, 'No navigation menu configured');
+    const navMenu = findMenu(menuName);
     const maxDepth = navMenu.maxDepth ?? 2;
 
     const form = await event.request.formData();
@@ -165,7 +174,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
         backend.defaultBranch,
         [{ path: runtime.siteConfigPath, content: setMenu(raw, navMenu.menuName, tree) }],
         { name: editor.displayName, email: editor.email },
-        `Update ${navMenu.label.toLowerCase()}`,
+        `Update the ${navMenu.menuName} menu`,
         head ?? undefined,
       );
       log.info('commit.succeeded', commitFields);
@@ -175,17 +184,17 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
       } satisfies ContentFormFailure);
     }
 
-    throw redirect(303, '/admin/nav?saved=1');
+    throw redirect(303, `/admin/nav/${encodeURIComponent(navMenu.menuName)}?saved=1`);
   }
 
   return { navLoad, navSaveAction };
 }
 
 /**
- * What `createNavRoutes` returns: the nav editor's load and save functions.
+ * What `createNavRoutes` returns: the nav editor's load and save functions, each taking the declared menu's name.
  * @beta
  */
 export interface NavRoutes {
-  navLoad: (event: CairnEvent) => Promise<NavData>;
-  navSaveAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>>;
+  navLoad: (event: CairnEvent, menuName: string) => Promise<NavData>;
+  navSaveAction: (event: CairnEvent, menuName: string) => Promise<ActionFailure<ContentFormFailure>>;
 }

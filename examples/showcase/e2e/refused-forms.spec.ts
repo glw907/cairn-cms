@@ -58,7 +58,7 @@ async function navLabels(page: Page): Promise<string[]> {
 test('Nav: a refused save keeps the rows and their order, and focuses the alert each time', async ({
   page,
 }) => {
-  await open(page, '/admin/nav');
+  await open(page, '/admin/nav/primary');
   const expected = await addBlankNavRow(page);
 
   await page.getByRole('button', { name: 'Save navigation' }).click();
@@ -164,7 +164,7 @@ test('Editors: a refused add keeps Name and Email through the refresh and focuse
 test('Nav refused from ?saved=1 shows no saved banner, keeps its rows, and focuses the alert', async ({
   page,
 }) => {
-  await open(page, '/admin/nav?saved=1');
+  await open(page, '/admin/nav/primary?saved=1');
   await expect(page.getByText('Navigation saved.').first()).toBeVisible();
   const expected = await addBlankNavRow(page);
 
@@ -192,7 +192,7 @@ test('Create dialog refused from ?publishedAll=1 stays open with its values', as
 
 test('Nav: an error result keeps the rows and shows the notice', async ({ page }) => {
   await page.route(
-    (url) => isAction(url, '/admin/nav', 'save'),
+    (url) => isAction(url, '/admin/nav/primary', 'save'),
     (route) =>
       route.fulfill({
         status: 403,
@@ -200,7 +200,7 @@ test('Nav: an error result keeps the rows and shows the notice', async ({ page }
         body: '<!doctype html><title>Forbidden</title><p>Forbidden</p>',
       }),
   );
-  await open(page, '/admin/nav');
+  await open(page, '/admin/nav/primary');
   const expected = await addBlankNavRow(page);
 
   await page.getByRole('button', { name: 'Save navigation' }).click();
@@ -211,11 +211,11 @@ test('Nav: an error result keeps the rows and shows the notice', async ({ page }
 });
 
 test('Nav: a double click on Save sends one POST', async ({ page }) => {
-  await open(page, '/admin/nav');
+  await open(page, '/admin/nav/primary');
   await page.getByRole('button', { name: 'Add item' }).first().click();
   // Hold the response so the second click lands while the first request is in flight.
   await page.route(
-    (url) => isAction(url, '/admin/nav', 'save'),
+    (url) => isAction(url, '/admin/nav/primary', 'save'),
     async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 400));
       await route.continue();
@@ -223,7 +223,10 @@ test('Nav: a double click on Save sends one POST', async ({ page }) => {
   );
   let posts = 0;
   page.on('request', (request) => {
-    if (request.method() === 'POST' && isAction(new URL(request.url()), '/admin/nav', 'save'))
+    if (
+      request.method() === 'POST' &&
+      isAction(new URL(request.url()), '/admin/nav/primary', 'save')
+    )
       posts++;
   });
 
@@ -262,7 +265,7 @@ test('Editors: add, role change, and remove update the table with no document lo
 test('Nav: a save redirects through a document load and the status region reads', async ({
   page,
 }) => {
-  await open(page, '/admin/nav');
+  await open(page, '/admin/nav/primary');
   await page.getByRole('button', { name: 'Add item' }).first().click();
   await page.getByRole('button', { name: 'Save navigation' }).click();
   await expect(page).toHaveURL(/saved=1/);

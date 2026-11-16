@@ -162,7 +162,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
       }
       case 'nav': {
         if (!nav) throw error(404, 'Not found');
-        return { view: 'nav', page: await nav.navLoad(contentEvent(event, {})) };
+        return { view: 'nav', page: await nav.navLoad(contentEvent(event, {}), view.menu) };
       }
       case 'media': {
         return { view: 'media', page: await content.mediaLibraryLoad(contentEvent(event, {})) };
@@ -273,7 +273,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     save: viewAction('save', ['edit', 'nav'], (event, view) => {
       if (view.view === 'edit') return content.saveAction(contentEvent(event, { concept: view.concept.id, id: view.id }));
       if (!nav) throw error(404, 'Not found');
-      return nav.navSaveAction(contentEvent(event, {}));
+      return nav.navSaveAction(contentEvent(event, {}), view.menu);
     }),
     // The tidy settings save: the editor commits the per-convention block to the
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
@@ -383,7 +383,8 @@ export interface CairnAdminRoutes {
    *  data for `/admin/login` and `/admin/auth/confirm`, and the view's `page` data otherwise. The
    *  `/admin` landing redirects a role with a declared `home` there, sends an owner or editor to
    *  the first concept list it can reach, and gives a `none` role the `welcome` view. The nav view
-   *  404s unless the runtime has a `navMenu`.
+   *  404s unless the runtime declares the menu named in
+   *  the path (`/admin/nav/<name>`).
    */
   load: InternalCairnAdminRoutes['load'];
   // WATCH: check:tool-heuristics greps this exact member for the Go tool's admin.mount-shape
@@ -392,7 +393,7 @@ export interface CairnAdminRoutes {
   /**
    * Every named admin action. Each parses the pathname as `load` does and throws a 404 when the
    *  parsed view does not accept it: `request` on login; `confirm` on confirm; `logout` on any
-   *  view; `create` on a list; `save` on edit or nav (404 without a `navMenu`); `settingsSave` on
+   *  view; `create` on a list; `save` on edit or nav (404 for an undeclared menu); `settingsSave` on
    *  settings; `vocabularySave` on vocabulary; `upload`, `publish`, `discard`, `rename`,
    *  `previewMint`, `previewRevoke`, `dictionaryAdd`, and `tidy` on edit; `delete` on edit or a
    *  list (the id from the path, or from the form body on a list); `revert` on history;

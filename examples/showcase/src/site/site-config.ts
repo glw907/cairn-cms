@@ -18,13 +18,13 @@ export const siteName = siteConfig.siteName;
 
 /**
  * The public header's primary menu, resolved from `menus.primary` at the same depth the admin
- * nav editor declares (`cairn.config.ts`'s `editor.nav.maxDepth`).
+ * nav editor declares for it (the `primary` entry in `cairn.config.ts`'s `editor.nav` list).
  */
 export const primaryNav = readMenu(siteConfig, 'primary', 2);
 
 /**
- * The public footer's menu, resolved from `menus.footer`, a flat (depth 1) list. `/admin/nav`
- * edits only `menus.primary` (the one menu `createNavRoutes` is bound to), so this block is
+ * The public footer's menu, resolved from `menus.footer`, a flat (depth 1) list. Each menu
+ * in `editor.nav` is edited at `/admin/nav/<name>`; `footer` is not on that list, so this block is
  * developer-edited directly in `site.config.yaml`.
  */
 export const footerNav = readMenu(siteConfig, 'footer', 1);

@@ -233,20 +233,47 @@ describe('authed views', () => {
 
   it('404s the nav view when the runtime configures no navMenu', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
-    await expect(admin.load(adminEvent('/admin/nav'))).rejects.toMatchObject({ status: 404 });
+    await expect(admin.load(adminEvent('/admin/nav/primary'))).rejects.toMatchObject({ status: 404 });
   });
 
-  it('serves the nav view when a navMenu is configured', async () => {
-    const gh = new GithubDouble({ main: {} });
-    gh.install();
-    const rt = runtime();
-    rt.navMenus = [{ menuName: 'primary', label: 'Primary nav', maxDepth: 2 }];
-    const admin = createCairnAdmin({ runtime: rt, ...deps });
-    const data = await admin.load(adminEvent('/admin/nav'));
-    expect(data.view).toBe('nav');
-    if (data.view !== 'nav') throw new Error('narrowing');
-    expect('layout' in data).toBe(false);
-    expect(data.page.menu).toEqual({ name: 'primary', label: 'Primary nav', maxDepth: 2 });
-    expect(data.page.tree).toEqual([]);
+  describe('nav view with two menus', () => {
+    function twoMenus() {
+      const rt = runtime();
+      rt.navMenus = [
+        { menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
+        { menuName: 'actions', label: 'Action links', maxDepth: 1 },
+      ];
+      return rt;
+    }
+
+    it('serves each declared menu at its own address', async () => {
+      new GithubDouble({ main: {} }).install();
+      const admin = createCairnAdmin({ runtime: twoMenus(), ...deps });
+      for (const [name, label, maxDepth] of [['primary', 'Primary nav', 2], ['actions', 'Action links', 1]] as const) {
+        const data = await admin.load(adminEvent(`/admin/nav/${name}`));
+        expect(data.view).toBe('nav');
+        if (data.view !== 'nav') throw new Error('narrowing');
+        expect('layout' in data).toBe(false);
+        expect(data.page.menu).toEqual({ name, label, maxDepth });
+        expect(data.page.tree).toEqual([]);
+      }
+    });
+
+    it('404s an undeclared name, an encoded percent, and the bare /admin/nav', async () => {
+      new GithubDouble({ main: {} }).install();
+      const admin = createCairnAdmin({ runtime: twoMenus(), ...deps });
+      for (const path of ['/admin/nav/nope', '/admin/nav/%25', '/admin/nav']) {
+        await expect(admin.load(adminEvent(path))).rejects.toMatchObject({ status: 404 });
+      }
+    });
+
+    it('403s an editor on every address when the access map names nav for owners only', async () => {
+      new GithubDouble({ main: {} }).install();
+      const rt = { ...twoMenus(), access: { nav: ['owner' as const] } };
+      const admin = createCairnAdmin({ runtime: rt, ...deps });
+      for (const path of ['/admin/nav/primary', '/admin/nav/actions', '/admin/nav/nope']) {
+        await expect(admin.load(adminEvent(path))).rejects.toMatchObject({ status: 403 });
+      }
+    });
   });
 });

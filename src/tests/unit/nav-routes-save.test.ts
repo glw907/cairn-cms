@@ -7,12 +7,15 @@ import type { CairnRuntime } from '../../lib/content/types.js';
 function runtime(): CairnRuntime {
   return baseRuntime({
     concepts: [],
-    navMenus: [{ menuName: 'primary', label: 'Primary nav', maxDepth: 2 }],
+    navMenus: [
+      { menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
+      { menuName: 'actions', label: 'Action links', maxDepth: 1 },
+    ],
   });
 }
 
 function saveEvent(treeJson: string) {
-  return contentEvent({ url: 'https://t.example/admin/nav', form: { tree: treeJson } });
+  return contentEvent({ url: 'https://t.example/admin/nav/primary', form: { tree: treeJson } });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -24,8 +27,8 @@ describe('navSaveAction', () => {
     const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary:\n    - label: Old\n' } });
     gh.install();
     const routes = createNavRoutes({ runtime: runtime() });
-    const { location } = await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }]))));
-    expect(location).toBe('/admin/nav?saved=1');
+    const { location } = await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])), 'primary'));
+    expect(location).toBe('/admin/nav/primary?saved=1');
     // The new YAML landed on main, carrying the new menu.
     expect(gh.read('main', 'src/lib/site.config.yaml')).toContain('label: Home');
     // The commit names the session editor as author, never a committer.
@@ -35,7 +38,7 @@ describe('navSaveAction', () => {
   });
 
   it('preserves a sibling menus.footer block when saving menus.primary', async () => {
-    // /admin/nav is bound to one menu (primary); a save must round-trip the rest of the
+    // Each menu saves on its own (primary here); a save must round-trip the rest of the
     // document untouched, including a developer-edited footer block.
     const gh = new GithubDouble({
       main: {
@@ -46,7 +49,7 @@ describe('navSaveAction', () => {
     gh.install();
     const routes = createNavRoutes({ runtime: runtime() });
     await expectRedirect(() =>
-      routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }]))),
+      routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])), 'primary'),
     );
     const saved = gh.read('main', 'src/lib/site.config.yaml');
     expect(saved).toContain('label: Home');
@@ -60,7 +63,7 @@ describe('navSaveAction', () => {
     gh.install();
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createNavRoutes({ runtime: runtime() });
-    await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }]))));
+    await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])), 'primary'));
     const committed = infoSpy.mock.calls
       .map((c) => c[0] as Record<string, unknown>)
       .filter((r) => r.event === 'commit.succeeded');
@@ -75,6 +78,7 @@ describe('navSaveAction', () => {
     const routes = createNavRoutes({ runtime: runtime() });
     const result = (await routes.navSaveAction(
       saveEvent(JSON.stringify([{ url: '/no-label' }])),
+      'primary',
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/label/i);
@@ -88,7 +92,7 @@ describe('navSaveAction', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createNavRoutes({ runtime: runtime() });
     const result = (await routes.navSaveAction(
-      saveEvent('<script>not json</script>'),
+      saveEvent('<script>not json</script>'), 'primary',
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).not.toContain('<script>');
@@ -99,7 +103,7 @@ describe('navSaveAction', () => {
   it('404s when the config file is gone at save time', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createNavRoutes({ runtime: runtime() });
-    await expect(routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home' }])))).rejects.toMatchObject({ status: 404 });
+    await expect(routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home' }])), 'primary')).rejects.toMatchObject({ status: 404 });
   });
 
   it('reports a head-moved conflict as a reload prompt without overwriting', async () => {
@@ -121,9 +125,34 @@ describe('navSaveAction', () => {
     }));
     const routes = createNavRoutes({ runtime: runtime() });
     const result = (await routes.navSaveAction(
-      saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])),
+      saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])), 'primary',
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/someone else changed/i);
+  });
+
+  it('saves actions under menus.actions only, naming the menu in the commit message', async () => {
+    const before = 'siteName: S\nmenus:\n  primary:\n    - label: Old\n  actions:\n    - label: Join\n';
+    const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': before } });
+    gh.install();
+    const routes = createNavRoutes({ runtime: runtime() });
+    const { location } = await expectRedirect(() =>
+      routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Contact', url: '/contact' }])), 'actions'),
+    );
+    expect(location).toBe('/admin/nav/actions?saved=1');
+    const saved = gh.read('main', 'src/lib/site.config.yaml');
+    expect(saved).toContain('label: Contact');
+    expect(saved).not.toContain('label: Join');
+    expect(saved).toContain('primary:\n    - label: Old\n');
+    const commitPost = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
+    expect((commitPost.body as { message: string }).message).toBe('Update the actions menu');
+  });
+
+  it('404s an undeclared menu name without committing', async () => {
+    const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const routes = createNavRoutes({ runtime: runtime() });
+    await expect(routes.navSaveAction(saveEvent('[]'), 'nope')).rejects.toMatchObject({ status: 404 });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

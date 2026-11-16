@@ -182,16 +182,17 @@ export async function buildFeedItems(): Promise<FeedItem[]> {
 
 ## Editable menu
 
-Declare `editor.nav: { menuName, label, maxDepth }` on the adapter (without it `/admin/nav` 404s),
-add the menu under `menus.<menuName>` in the site config, and read it in a server load with
+Declare `editor.nav` on the adapter as a list, `[{ menuName, label, maxDepth }]`. Each menu is edited
+at `/admin/nav/<menuName>`, and without the list every `/admin/nav` address 404s. Add each menu
+under `menus.<menuName>` in the site config, and read it in a server load with
 `readMenu(siteConfig, name, maxDepth)`. Nodes are `{ label, url?, children? }`; a URL starts with
 `/`, `#`, `http://`, `https://`, `mailto:`, or `tel:`. A broken node throws `NavValidationError`.
 
 The scaffold's root `+layout.server.ts` also reads `readMenu(siteConfig, 'actions', 1)`, the menu for
 call-to-action links such as a Join button. It returns `actions` in the layout data only when the menu
 holds a link, and a theme reads `page.data.actions`. The template ships the menu commented out in
-`site.config.yaml`, and like the footer it is edited in that file, since `/admin/nav` edits only the
-menu `editor.nav` names.
+`site.config.yaml`, and like the footer it is edited in that file until you add it to `editor.nav`.
+A menu becomes admin-editable once it joins the list.
 
 ## Build failures
 

@@ -122,7 +122,9 @@ export const cairn = defineAdapter({
   To take one out, reference it with `hidden: true`. `navFilter` never sees that group.
 - `icon` is a `NavIcon` name; the type lists the allowed names.
 - `editors` stays out of a non-owner's sidebar wherever it is placed, and `nav` needs the
-  adapter's `editor.nav`.
+  adapter's `editor.nav`, a list of menus. `screen: 'nav'` places every declared menu in list
+  order, one entry each, and takes no `label` when the list holds two or more (each menu's label
+  lives in `editor.nav`).
 - `collapsed: true` applies only until a visitor's first toggle; from then on the
   `cairn-admin-nav-collapsed` cookie wins in both directions, so a section added later renders
   open for that visitor. The shell writes that cookie and `cairn-admin-theme` from the browser,
@@ -175,7 +177,9 @@ publishActions: [{ label: 'Announce', href: '/admin/announce?post={id}', concept
 A server start that throws `navLayout:` names the value at fault (except a blank section
 label). The triggers: an icon outside `NavIcon`; a site `href` that collides with a built-in
 view, or two entries sharing an `href`; an unknown screen id, or a screen referenced twice
-(a `hidden` reference counts); `nav` without `editor.nav`; a blank relabel; a blank or duplicate
+(a `hidden` reference counts); `nav` while `editor.nav` declares no menu; a `nav` entry with a
+`label` while `editor.nav` declares two or more menus (`screen "nav" places 2 or more menus, so it
+takes no label`); a site `href` of `/admin/nav` or under `/admin/nav/`; a blank relabel; a blank or duplicate
 section label; empty `children` or a nested section; an undeclared role name. A `defineAccess:`
 or `access:` error names the bad key or role.
 

@@ -344,6 +344,12 @@
 
 ## Low
 
+- [ ] **#542** Build `NavTree.svelte`'s copy from the menu's label, so the Action links screen stops saying "Save navigation" `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-16)*
+  `src/lib/admin/NavTree.svelte` keeps "Navigation saved.", the `Navigation items` list label, and "Save navigation" for every menu, so the `actions` screen reads as if it edited the main navigation. Menu-neutral copy changes the `refused-forms.spec.ts` selectors and the admin baselines, so the menus pass (foundation-2) left it. Fix: derive the strings from `data.menu.label`, update the selectors, regenerate the baselines.
+
+- [ ] **#541** Update the `/admin/nav` comments in the Waymark and Pennant theme components and the `options-theme` fixture `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-16)*
+  `themes/waymark/components/SiteHeader.svelte:14` and `SiteFooter.svelte:16`, `themes/pennant/components/SiteFooter.svelte:15`, and `scripts/theme/fixtures/options-theme/components/SiteHeader.svelte:14` and `SiteFooter.svelte:16` say `/admin/nav` edits only `menus.primary`. Each menu in `editor.nav` is now edited at `/admin/nav/<menuName>`. A theme edit raises its version and publishes, which the menus pass (foundation-2) rules out. Placement: the next theme release.
+
 - [ ] **#522** Pass 2's changelog entry says pipe output is unchanged "apart from one sentence in `cairn --help`" `#improvement` `#cairn-cms` *(2026-11-15)*
   Pass 4 (PR #252) drops `provider-console` from the actor sentence in `cairn help agents` too (`tool/cmd/cairn/messages.go` and `tool/testdata/copy.golden.md`; no help golden changes), so the changelog sentence undercounts by one. Geoff's schema ruling put `MIGRATION-NOTES.md` in scope and its sentence now names the help line; pass 2's changelog entry still needs the one-line edit. Found by pass 4. Placement: the round's close packet.
 - [ ] **#521** Comments still cite retired Node names, and one cites a method that no longer exists `#improvement` `#cairn-cms` *(2026-11-15)*

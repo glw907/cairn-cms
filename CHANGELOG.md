@@ -2,6 +2,10 @@
 
 <!-- release-size: minor -->
 
+- **`editor.nav` takes a list of menus, and the admin edits each one at `/admin/nav/<menuName>`.** Each listed menu gets its own sidebar entry, in list order, and saves under its own key in `site.config.yaml`, so saving one menu leaves the others alone. The save's commit message names the menu, and the tab title reads its label. Bare `/admin/nav` now answers 404, and so does a menu name the list doesn't declare. A `navLayout` entry `{ screen: 'nav' }` places every declared menu, and takes no `label` when the list holds two or more. `CairnRuntime.navMenu` becomes `navMenus`, a list that is empty when no menu is declared. `defineAdapter` throws at build for the old single-object form, for a repeated `menuName`, and for more than 8 menus. The showcase, and so the template, lists `primary` and the Pennant `actions` menu.
+
+  Consumers must: change `editor.nav` in `cairn.config.ts` from one menu object to a list, `nav: [{ menuName: 'primary', label: 'Navigation' }]`, move any link to `/admin/nav` to `/admin/nav/<menuName>`, and read `CairnRuntime.navMenus` where code read `navMenu`.
+
 - **A page with the id `home` becomes the site's home page, and Waymark 1.2.0 sets the newest posts into it.** The template's routes serve a published `home` page at `/`, redirect `/home` to `/` with a 308, and leave it out of the markdown twins and the sitemap. The archive then starts at page one, `/archive/1`, with the newest post, and the sitemap lists it. The editor places the news list with a rule line (`---`) in the page body: the list takes the place of the body's last top-level rule, or follows the body when there is none. Waymark renders a "Latest news" list of the newest three posts with dates and a link to the archive, and renders neither when there are no posts. The preview of the `home` page shows the list too. A site with no `home` page serves `/` and the archive as before. This is template and theme code, so the engine's exports don't change.
 
   Consumers must: nothing.

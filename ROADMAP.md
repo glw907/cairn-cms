@@ -1804,11 +1804,6 @@ The original decision framing, for the record:
   `unlayeredAllowlist` entry to suppress the drawer's transition at the breakpoint flip, or a
   `componentsLayerCap` increase that gives the layered form room.
 
-- **The second-menu editing question (chassis-B2 harvest, engine consultation candidate).**
-  `/admin/nav`'s `createNavRoutes` binds to one menu (`menus.primary`); chassis-B2 moved the
-  showcase's footer nav to `site.config.yaml`'s `menus.footer` as a developer-edited yaml block
-  rather than a second admin-editable menu, since no site has asked to edit a second menu from
-  `/admin` yet. **Trigger:** a consuming site asking to edit a second menu in the admin UI.
 - **An engine-shipped Cloudflare Access verifier**, replacing the recipe the extend track carries in `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/replace-magic-links-with-cloudflare-access.md`
   (`docs/internal/engine-rulings.md`'s `identity-seam-access-verifier` row, declined for now).
   **Trigger:** a second consumer hand-rolling this verifier, an engine-internal consumer of it,

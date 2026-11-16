@@ -39,7 +39,7 @@ test('each declared menu opens by name, saves under its own key, and an unknown 
 
   await page.goto('/admin/nav/actions');
   await expect(page.getByRole('heading', { name: 'Action links', level: 1 })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Save navigation' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add item' }).first()).toBeVisible();
   const actionsBefore = await rowsOnScreen(page);
   await addItemAndSave(page, 'Visit us', '/about');
   await expect(page).toHaveURL(/\/admin\/nav\/actions\?saved=1$/);

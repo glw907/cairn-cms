@@ -1,16 +1,16 @@
 <!-- @component
 One news row, shared by the home page's news list and the archive routes so the row's markup and
-styles live in one place. The date sits in the left column in the link ink, day and month above the
-year; the title links to the post, with the description under it; a thumbnail closes the row when
-the post's summary fields carry an `image` whose `src` is a root-relative path or an `https://` URL.
-A row with no image has two columns, and an undated row drops the date column. Below 47.5rem the
-date runs across the top with the year inline, and the thumbnail shrinks beside the title.
+styles live in one place: a page that copies the row instead drifts from it at the next redesign.
+A row shows the date, the linked title with the description under it, and a thumbnail when the
+post has a usable image. A row with no image has two columns, and an undated row drops the date
+column.
 
 The thumbnail reads `post.summaryFields.image`, which reaches a row only when the site's
-`cairn.config.ts` names `image` among its summary fields; with `description` alone, every row
-renders without one. The thumbnail is decorative beside the linked title, so it carries empty alt
-text, and no row prints a caption or a name with its photo. `data-cairn-post` is the stable hook
-other tests key off.
+`cairn.config.ts` names `image` among its summary fields. With `description` alone, or with an
+`image.src` that is a `media:` token or anything but a root-relative path or an `https://` URL,
+the row silently renders without one. The thumbnail is decorative beside the linked title, so it
+carries empty alt text, and no row prints a caption or a name with its photo. `data-cairn-post` is
+the stable hook other tests key off.
 -->
 <script lang="ts">
   import type { ContentSummary } from '@glw907/cairn-cms/delivery';

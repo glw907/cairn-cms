@@ -22,9 +22,9 @@
        news head), the `cards` block in Pennant's three forms, and the `.banner*` block. Every color
        is a theme token, so a club's color override re-skins all of it.
 
-   Every painted pair here is one the theme-contrast audit measures: base-content and muted text on
+   Text here sits only in pairs the theme-contrast audit lists: base-content and muted text on
    base-100 and base-200, the primary ink on both, secondary-content on secondary, and
-   neutral-content on neutral. A `:has()` selector below sets layout only (a size, a width, a grid),
+   neutral-content on neutral. The crest's stripes are decoration, not text. A `:has()` selector below sets layout only (a size, a width, a grid),
    never a color, so a ground switched on by `:has()` is drawn by its base rule and only sized there. */
 
 /* The size literals this sheet's rules use that the chassis design scale doesn't name. Named here

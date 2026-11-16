@@ -59,6 +59,9 @@ export function themeContext(dir) {
 /** The manifest's own file name, for failures about it. */
 const MANIFEST = 'cairn-theme.json';
 
+/** The one path `paths-unlisted` admits beyond contract 1's list: a README at the theme root. */
+const THEME_README = 'README.md';
+
 /**
  * What a rule returns: its failures, or its failures with notes the report prints beside them.
  * @typedef {Failure[] | { failures: Failure[], notes: string[] }} RuleResult
@@ -151,9 +154,12 @@ export const STATIC_RULES = {
 
   'paths-unlisted'({ dir }) {
     const allowed = CONTRACT.paths.allowed.map(globRegExp);
-    // fonts/ belongs to the `fonts` rule, which says why a file there is refused.
+    // fonts/ belongs to the `fonts` rule, which says why a file there is refused. A README.md at the
+    // theme root is admitted beside contract 1's paths, which do not list it: it is where a theme
+    // tells a developer how to set it up, and lay-in copies it into the site's src/theme/, where
+    // nothing imports it.
     return filesUnder(dir)
-      .filter((file) => !file.startsWith('fonts/') && !allowed.some((re) => re.test(file)))
+      .filter((file) => !file.startsWith('fonts/') && file !== THEME_README && !allowed.some((re) => re.test(file)))
       .map((file) => ({ file, message: 'the file is not a path contract 1 lists' }));
   },
 

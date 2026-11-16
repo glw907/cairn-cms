@@ -7,7 +7,10 @@ import assert from 'node:assert/strict';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import postcss from 'postcss';
 import semver from 'semver';
+import { crestInitials } from '../../themes/pennant/components/crest.ts';
+import { splitHomeBanner } from '../../themes/pennant/components/home-split.ts';
 import { repoRoot } from '../repo-root.mjs';
 import { buildTheme } from './build-tokens.mjs';
 import { RULE_IDS, catalogThemes, checkTheme } from './check.mjs';
@@ -15,6 +18,7 @@ import { renderBuilds } from './check-render.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 const FIXTURE = path.join(ROOT, 'scripts/theme/fixtures/options-theme');
+const PENNANT = path.join(ROOT, 'themes/pennant');
 const NO_RENDER = RULE_IDS.filter((id) => id !== 'render');
 const scratch = mkdtempSync(path.join(tmpdir(), 'cairn-theme-check-'));
 let count = 0;
@@ -58,6 +62,86 @@ test('the unbroken options fixture passes every rule but render', async () => {
 test('waymark passes every rule but render', async () => {
   const result = await checkTheme(path.join(ROOT, 'themes/waymark'), { rules: NO_RENDER });
   assert.deepEqual(result.failures, []);
+});
+
+test('pennant passes every rule but render', async () => {
+  const result = await checkTheme(PENNANT, { rules: NO_RENDER });
+  assert.deepEqual(result.failures, []);
+});
+
+test("pennant's manifest names three OFL-1.1 fonts, the organization kind, and its exact description", () => {
+  const manifest = JSON.parse(read(PENNANT, 'cairn-theme.json'));
+  assert.deepEqual(manifest.fonts.map((font) => font.license), ['OFL-1.1', 'OFL-1.1', 'OFL-1.1']);
+  assert.deepEqual(manifest.kinds, ['organization']);
+  assert.equal(manifest.description, "A two-color club and team look that's easy to recolor.");
+  assert.ok(manifest.description.length <= 60);
+});
+
+// A colors value sets these four on `:where(:root)`, which an unlayered `:root` rule naming them
+// would outrank with no cookie, so the value would never show (#412).
+test("pennant's unlayered rules in tokens.css declare none of the four option tokens", () => {
+  const OPTION_TOKENS = ['--color-neutral', '--color-neutral-content', '--color-secondary', '--color-secondary-content'];
+  const rules = [];
+  postcss.parse(read(PENNANT, 'tokens/tokens.css')).walkRules((rule) => rules.push(rule));
+  assert.ok(rules.some((rule) => rule.selector === ':root'), 'tokens.css has an unlayered :root rule');
+  for (const rule of rules) {
+    const declared = rule.nodes.filter((node) => node.type === 'decl').map((decl) => decl.prop);
+    assert.deepEqual(declared.filter((prop) => OPTION_TOKENS.includes(prop)), [], rule.selector);
+  }
+});
+
+test('a README.md at the theme root passes paths-unlisted, and one elsewhere still fails', async () => {
+  const dir = copy();
+  write(dir, 'README.md', '# A theme\n');
+  assert.deepEqual((await checkTheme(dir, { rules: ['paths-unlisted'] })).failures, []);
+  write(dir, 'tokens/README.md', '# Tokens\n');
+  write(dir, 'NOTES.md', 'stray\n');
+  const files = (await checkTheme(dir, { rules: ['paths-unlisted'] })).failures.map((failure) => failure.file);
+  assert.deepEqual(files.sort(), ['NOTES.md', 'tokens/README.md']);
+});
+
+for (const [name, initials] of [
+  ['The Turnagain Geographic Society', 'TGS'],
+  ['Anchorage FC', 'AF'],
+  ['4321', ''],
+]) {
+  test(`the crest of "${name}" reads "${initials}"`, () => {
+    assert.equal(crestInitials(name), initials);
+  });
+}
+
+/** The organization home body ahead of its last rule, as the viewer build renders it. */
+const HOME_BEFORE = JSON.parse(read(ROOT, 'scripts/theme/fixtures/pennant-home-before.json'));
+const BANNER_WRAPPER = /^<div data-cairn-island="banner"[^>]*>[\s\S]*<\/div><\/div>$/;
+
+test('the home split lifts a live banner off the start of the body', () => {
+  const html = `\n  <div data-cairn-island="banner" data-cairn-props="{}"><div class="banner" role="status"><p class="banner-message">Open</p></div></div>\n<h2>Next</h2>`;
+  assert.deepEqual(splitHomeBanner(html), {
+    banner: '<div data-cairn-island="banner" data-cairn-props="{}"><div class="banner" role="status"><p class="banner-message">Open</p></div></div>',
+    rest: '<h2>Next</h2>',
+  });
+});
+
+test('the home split lifts an expired banner, which renders its hidden fallback', () => {
+  const banner = '<div data-cairn-island="banner" data-cairn-props="{}"><div hidden class="banner-expired"></div></div>';
+  assert.deepEqual(splitHomeBanner(`${banner}<p>Body</p>`), { banner, rest: '<p>Body</p>' });
+});
+
+test('the home split leaves a body that opens with no banner whole', () => {
+  const html = '<h2>What we do</h2><div data-cairn-island="banner" data-cairn-props="{}"><div class="banner"></div></div>';
+  assert.deepEqual(splitHomeBanner(html), { banner: '', rest: html });
+});
+
+test("the home split lifts the organization set's rendered banner, live and expired", () => {
+  const message = /:::banner\{message="([^"]+)"/.exec(read(ROOT, 'sets/organization/src/content/pages/home.md'))[1];
+  const live = splitHomeBanner(HOME_BEFORE.live);
+  assert.match(live.banner, BANNER_WRAPPER);
+  assert.ok(live.banner.includes(`<p class="banner-message">${message}</p>`), 'the fixture carries the set home page banner');
+  assert.ok(live.rest.startsWith('<h2 id="what-we-do">'));
+  const expired = splitHomeBanner(HOME_BEFORE.expired);
+  assert.match(expired.banner, BANNER_WRAPPER);
+  assert.ok(expired.banner.includes('class="banner-expired"'));
+  assert.equal(expired.rest, live.rest);
 });
 
 test('the directive-styled rule names the sheet that styled each class', async () => {

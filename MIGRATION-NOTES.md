@@ -165,7 +165,7 @@ until you add the three fields:
 
 1. Set `engine` to the lowest engine version the theme works with, as `>=1.2.0`, or with an upper
    bound as `>=1.2.0 <2.0.0`. While the engine is a prerelease, `>=0.99.0-0` admits every prerelease of 0.99.0.
-2. Set `kinds` to one to three ids from `sets/kinds.json`, the kind the theme was designed for
+2. Set `kinds` to one to three ids from `definitions/kinds.json`, the kind the theme was designed for
    first.
 3. Set `notes` to one line, at most 200 characters, on what this version changed.
 4. Raise `version` with any change under `themes/<id>/`. CI fails a change that doesn't, since the

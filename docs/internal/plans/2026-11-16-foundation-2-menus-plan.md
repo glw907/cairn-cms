@@ -16,7 +16,7 @@ editing screen for each declared menu at `/admin/nav/<name>`, and saves each men
 `actions` menu on the list, so it is edited through the admin. No theme or set file changes, so
 the merge publishes nothing.
 
-Planned path: 180 minutes against the design's 120 (parking ceiling 240, standing answer 20). See
+Planned path: 185 minutes against the design's 120 (parking ceiling 240, standing answer 20). See
 "Path".
 
 Scope premise (`cairn-judging-scope`): the menu editor is the admin frame's own job, and the engine
@@ -127,7 +127,7 @@ pass can meet:
 - 19: a needed change under `.github/**`, `scripts/release/**`, or `.claude/settings*` is left
   alone and recorded for the round's `merge` document. None is foreseen. The regen dispatch
   uses `e2e.yml` as it stands.
-- 20: over 240 path minutes at planning parks (twice the design's 120). 180 planned.
+- 20: over 240 path minutes at planning parks (twice the design's 120). 185 planned.
 
 The run's ceilings are the ones the design names: the round stops new launches past 1,380 path
 minutes, and the usage ceiling is 85 percent of the weekly allowance. Retries go on while each
@@ -188,7 +188,8 @@ Pass 2:
     `cairn.config.ts` list `primary` then `actions`. Three hits are expected to remain and are not
     the single form: `src/lib/sveltekit/admin-nav.ts:498` (the engine screen defaults),
     `src/tests/component/CairnAdmin.test.ts:24`, and `src/tests/unit/site-config-path.test.ts:44`
-    (an `@ts-expect-error` case that still errors). Leave them.
+    (an `@ts-expect-error` case that still errors), plus the "before" sample in the new
+    `MIGRATION-NOTES.md` entry. Leave them.
 - A user whose role lacks the `nav` rule gets 403 on every menu's address, and a commit from the second menu's screen carries that menu's name in its message.
   - Task 2: `cairn-admin-load.test.ts` and `cairn-admin-actions.test.ts` with a role lacking
     `nav`, for the load and the save at `/admin/nav/primary` and `/admin/nav/actions`;
@@ -214,6 +215,12 @@ The worktree is `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/foundatio
 task, run the fast lane: the legs `node scripts/checks/gate-tier.mjs --fast --range f2c95910e..HEAD`
 prints, each through `cairn-run-gate`. Tasks 1, 2, and 3 run in order (each builds on the last's
 types). Task 4 and Task 5 run as a pair once Task 3 lands. Task 7 (the review) runs before Task 8 (the regen), so the regen follows the last admin change.
+
+Push once Task 1 lands, which opens the draft PR, and push after each task after it. In the PR's
+e2e job, the `admin-visual.spec.ts` snapshot comparisons are red by design from Task 2 (the
+zero-nav screen's crumb and path change) until the Task 8 regen, and Task 4 adds the sidebar's
+second entry to every desktop shot. Read a red e2e run's failed tests: a failure in any other
+spec, or in any other job, is real and stops the line.
 
 The admin menu labels used throughout: `primary` is `Navigation` (unchanged), and `actions` is
 `Action links` with `maxDepth: 1` (Decisions 4).
@@ -269,7 +276,7 @@ for Task 6's admin read. With `--with-link`, before shooting a nav screen it cli
 `Add item` button and fills the new row's `input[aria-label="Label"]` with `Visit us` and its URL
 field with `/about`, without saving (the selectors `refused-forms.spec.ts:42-54` uses).
 
-### Task 1: the type, the runtime, and the adapter's throws (20 min)
+### Task 1: the type, the runtime, the adapter's throws, and the readers (25 min)
 
 1. `src/lib/content/types.ts`: `nav?: NavMenuConfig[]`, its doc comment saying it lists the menus
    the admin edits, each at `/admin/nav/<menuName>`, in sidebar order, at most 8. `CairnRuntime`'s
@@ -287,7 +294,16 @@ field with `/about`, without saving (the selectors `refused-forms.spec.ts:42-54`
    `defineAdapter`'s `@throws` doc comment (`adapter.ts:30-33`) adds the three cases.
 4. `src/tests/unit/define-adapter-nav.test.ts` (new): asserts each exact message with
    `toThrow(<string>)`, plus that a list of 8 distinct menus passes.
-5. Move every unit and component test that builds `navMenu` to `navMenus`, so the fast lane is
+5. Move the four readers of `runtime.navMenu` to the list in the same commit, reading
+   `runtime.navMenus[0]` so behavior holds until Tasks 2 and 3 replace them: `nav-routes.ts`,
+   `cairn-admin.ts:110` (`runtime.navMenus.length > 0`), `content-routes-context.ts:365`, and
+   `content-routes-shell.ts:203`. The fast lane runs `npm run check` over the engine, so a rename
+   that leaves a reader behind fails this commit.
+6. Wrap the showcase's `editor.nav` in brackets (`examples/showcase/src/site/cairn.config.ts:219-224`,
+   `nav: [{ menuName: 'primary', label: 'Navigation', maxDepth: 2 }]`), then run
+   `npm run emit:template` and `npm run check:template`. Without it, the new throw stops every
+   showcase build and e2e run until Task 4.
+7. Move every unit and component test that builds `navMenu` to `navMenus`, so the fast lane is
    green on this commit. Where a test covers a subject Task 2 or 3 changes, change only the field
    it sets; the new cases come with that task.
 
@@ -325,7 +341,11 @@ field with `/about`, without saving (the selectors `refused-forms.spec.ts:42-54`
      since it 403s earlier, in `requireEditor`.
    - `cairn-admin-actions.test.ts:556`: the save at `/admin/nav/actions` with the same fixture
      answers 403, and with an owner redirects to `/admin/nav/actions?saved=1`.
-5. `src/lib/nav/site-config.ts:2`: the comment says each menu is edited from `/admin/nav/<name>`.
+5. Move the two e2e specs that name the old address with the route, so the e2e job stays
+   runnable: in `refused-forms.spec.ts`, every `/admin/nav` becomes `/admin/nav/primary`, and
+   `isAction(url, '/admin/nav/primary', 'save')`; in `admin-visual.spec.ts:717`, the zero-state
+   path becomes `/admin/nav/primary`, and the baseline file name stays `admin-zero-nav-*`.
+6. `src/lib/nav/site-config.ts:2`: the comment says each menu is edited from `/admin/nav/<name>`.
    `examples/showcase/src/site/site-config.ts:18-27`'s comments (`editor.nav.maxDepth`, and
    "`/admin/nav` edits only `menus.primary`") say the same of the list; the template copy follows
    through `npm run emit:template` in Task 4.
@@ -369,7 +389,8 @@ field with `/about`, without saving (the selectors `refused-forms.spec.ts:42-54`
 
 ### Task 4: the showcase, the template, and the e2e (pair, 25 min)
 
-1. `examples/showcase/src/site/cairn.config.ts`, outside any exclude block:
+1. `examples/showcase/src/site/cairn.config.ts`, outside any exclude block, adds `actions` to the
+   list Task 1 bracketed:
    `nav: [{ menuName: 'primary', label: 'Navigation', maxDepth: 2 }, { menuName: 'actions', label: 'Action links', maxDepth: 1 }]`,
    with a comment saying the theme reads `actions` when it renders call-to-action links, and
    Waymark doesn't.
@@ -379,10 +400,6 @@ field with `/about`, without saving (the selectors `refused-forms.spec.ts:42-54`
 3. `npm run emit:template`, then `npm run check:template`. The template's `cairn.config.ts`,
    `site.config.yaml`, and `.claude/skills` copies come only from the generator.
 4. E2E:
-   - `refused-forms.spec.ts`: every `/admin/nav` becomes `/admin/nav/primary`, and
-     `isAction(url, '/admin/nav/primary', 'save')`.
-   - `admin-visual.spec.ts:717`: the zero-state path becomes `/admin/nav/primary`; the baseline
-     file name stays `admin-zero-nav-*`.
    - `admin-nav-layout.spec.ts:28-34`: `['Tags', 'Navigation', 'Action links', 'Signups', 'Site settings', 'Editors']`.
    - `nav-menus.spec.ts` (new): opens `/admin/nav/primary` and `/admin/nav/actions` by name and
      checks each page's heading (`Navigation`, `Action links`). On `/admin/nav/actions` it adds one
@@ -479,7 +496,7 @@ the one dispatch.
    `standards:svelte-reviewer` on the `.svelte`, load, and action changes. Fold every finding,
    then run the fast lane again.
 
-### Task 8: regenerate the admin baselines, delete, hand over (15 min, path 10)
+### Task 8: regenerate the admin baselines, delete, hand over (15 min)
 
 1. Push `foundation-2`. Run `gh workflow run e2e.yml --repo glw907/cairn-cms --ref foundation-2 -f update_snapshots=true`,
    bare and alone. Watch the run with `gh run watch <id> --repo glw907/cairn-cms`, bare, as a
@@ -581,14 +598,14 @@ under `.github/**`.
 | Task | Minutes |
 | --- | --- |
 | 0 base builds, scripts, screenshots, hash, admin base shots | 25 |
-| 1 type, runtime, throws, test moves | 20 |
+| 1 type, runtime, throws, readers, showcase brackets, test moves | 25 |
 | 2 route, load, save, tests | 25 |
 | 3 sidebar, layout check, crumb, tests | 25 |
 | 4 and 5, as a pair | 25 |
 | 6 head build, parity, four verifiers and the a11y read | 35 |
 | 7 whole-branch review and its folds | 10 |
 | 8 the regen dispatch and its read, delete, hand over (the run and CI off the path) | 15 |
-| Path (4 and 5 overlap) | 180 |
+| Path (4 and 5 overlap) | 185 |
 
 Each `cairn-implementer` worktree pays its own setup (two `npm ci` runs and a package), which the
 task minutes carry.
@@ -600,7 +617,7 @@ task minutes carry.
 - `[design-gap]` The runtime field's rename (Decisions 3), the `actions` label (Decisions 4), and the nav screen's copy (Decisions 15).
 - `[mechanism]` The recorder has no message and the dev session is owner-only (Decisions 8).
 - `[mechanism]` The admin baselines need a CI regen dispatch the design doesn't mention (Decisions 12).
-- `[estimate]` 180 against 120: the parity builds and 60 pairs every pass owes, plus the admin shots and the regen.
+- `[estimate]` 185 against 120: the parity builds and 60 pairs every pass owes, plus the admin shots and the regen.
 
 ## Review folded
 
@@ -619,4 +636,9 @@ four high, eight medium, and seven low. All were checked against the code and fo
   (Tasks 7 and 8); the draft PR is updated, not opened again; `Pass: menus` joins the PR lines.
 - Low: the NavTree copy (Decisions 15); the expected remaining grep hits are listed under the
   acceptance; the showcase `site-config.ts` comments join Task 2; the e2e import is cited; the
-  integration test's folder is corrected; Task 6 takes 35 minutes, and the path is 180.
+  integration test's folder is corrected; Task 6 takes 35 minutes.
+
+The advisor's read before launch found two sequencing gaps, also folded. Task 1 now moves the
+four readers and brackets the showcase's `nav`, so each task's commit is green. The expected red
+in the e2e job's `admin-visual` comparisons, from Task 2 until the regen, is named above the
+tasks. The path is 185.

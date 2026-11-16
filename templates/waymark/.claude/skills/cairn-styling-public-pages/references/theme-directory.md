@@ -30,6 +30,15 @@ Paths are relative to the theme directory. The contract requires these:
 | `icons.ts` | The icon set the adapter and the directives use. |
 | `fonts/fonts.css` | The `@font-face` rules for the theme's faces. |
 
+`ArticleView` takes one optional prop, `home`, that marks the page as the site's home page. Its type,
+`HomeData`, is exported from `ArticleView.svelte`'s module script and holds `posts` (the entries
+`EntryRow` renders, newest first), `archiveUrl`, and `before` and `after`, the two halves of the
+rendered body. With `home`, the component renders `before`, a "Latest news" list of `posts` through
+`EntryRow` with a link to `archiveUrl`, then `after`, and it advertises no markdown-twin link. An empty
+`posts` renders neither the heading nor the link. Without `home` it renders the body whole. The prop is
+optional, so a theme that doesn't declare it renders a home page as an ordinary page with no list, and
+the contract data file lists paths and tokens only, so the prop changes nothing in it.
+
 The contract also allows these, and a theme needs one only when its files use it:
 
 - `options/*/*.css`, the built sheets for each option value.

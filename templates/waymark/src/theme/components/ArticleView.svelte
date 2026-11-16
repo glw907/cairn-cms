@@ -16,11 +16,37 @@ rather than reading as a published page. `loadPreview` (`/sveltekit`) already st
 `og:url`, and `jsonLd.url` from `data.seo` for exactly this reason, so the strip below is redundant
 for that field, though not for the `.md` twin link, which this component derives itself. It changes
 no other rendering: the fidelity claim (a minted preview and its eventual public page render
-identically) depends on everything else staying byte-for-byte the same. -->
+identically) depends on everything else staying byte-for-byte the same.
+
+The optional `home` prop marks the page as the site's home page. With it, the body renders as the
+`before` HTML, then a "Latest news" list of `posts` with a link to `archiveUrl`, then the `after`
+HTML, and no markdown-twin link is advertised, since the home page has no `.md` twin. An empty
+`posts` renders neither the heading nor the link. Without `home`, the body renders whole, exactly
+as it did before the prop existed. -->
+<script lang="ts" module>
+  import type { ContentSummary } from '@glw907/cairn-cms/delivery';
+
+  /** One entry in the home page's news list: the shape `EntryRow` renders. */
+  export type HomePost = ContentSummary;
+
+  /** The home page's parts: the body split around the news list, and the list itself. */
+  export interface HomeData {
+    /** The newest posts, newest first. Empty renders neither the heading nor the archive link. */
+    posts: HomePost[];
+    /** Where the "All news" link points. */
+    archiveUrl: string;
+    /** Trusted rendered HTML shown above the news list. */
+    before: string;
+    /** Trusted rendered HTML shown below the news list. */
+    after: string;
+  }
+</script>
+
 <script lang="ts">
   import type { EntryData, EntryRef } from '@glw907/cairn-cms/delivery';
   import { CairnHead } from '@glw907/cairn-cms/public';
   import { formatDate } from '#chassis/date.js';
+  import EntryRow from './EntryRow.svelte';
   import type { site } from '#chassis/content.js';
 
   interface Props {
@@ -39,9 +65,14 @@ identically) depends on everything else staying byte-for-byte the same. -->
      * title rather than reading as a published page.
      */
     titleTemplate?: (title: string) => string;
+    /** Present on the home page: renders the news list inside the body and drops the `.md` twin link. */
+    home?: HomeData;
   }
 
-  let { data, preview = false, titleTemplate }: Props = $props();
+  let { data, preview = false, titleTemplate, home }: Props = $props();
+
+  // A per-instance id, so the news heading never collides with a rehype-slug id from an editor heading.
+  const newsId = $props.id();
 
   // Belt and suspenders: loadPreview already strips canonical/og:url/jsonLd.url from data.seo, so
   // this filter is a no-op against that caller. It stays so this component's contract does not
@@ -102,7 +133,9 @@ identically) depends on everything else staying byte-for-byte the same. -->
    * rather than re-reading frontmatter, so this agrees with whatever the head itself already decided.
    */
   const markdownUrl = $derived(
-    preview || data.seo.meta.some((m) => m.name === 'robots' && m.content.includes('noindex'))
+    preview ||
+      home ||
+      data.seo.meta.some((m) => m.name === 'robots' && m.content.includes('noindex'))
       ? undefined
       : data.canonicalUrl + '.md',
   );
@@ -142,7 +175,23 @@ identically) depends on everything else staying byte-for-byte the same. -->
       {/if}
     </p>
   {/if}
-  {@html data.html}
+  {#if home}
+    {@html home.before}
+    {#if home.posts.length}
+      <section class="news" aria-labelledby={newsId}>
+        <h2 id={newsId}>Latest news</h2>
+        <ul class="news__list" role="list">
+          {#each home.posts as post (post.id)}
+            <li><EntryRow {post} /></li>
+          {/each}
+        </ul>
+        <p><a href={home.archiveUrl}>All news</a></p>
+      </section>
+    {/if}
+    {@html home.after}
+  {:else}
+    {@html data.html}
+  {/if}
   {#if related.length}
     <!-- The resolved related-post edges, each a link to its target permalink. -->
     <nav class="related" aria-label="Related posts" data-testid="post-related">
@@ -157,6 +206,24 @@ identically) depends on everything else staying byte-for-byte the same. -->
 </article>
 
 <style>
+  /* The news section is a peer of the body's h2 sections, so it takes the h2's space above it
+     (prose.css sets `--flow-space` on an h2 itself, which a wrapping section does not inherit). */
+  .news {
+    --flow-space: var(--spacing-xl);
+  }
+  .news > p {
+    margin-top: var(--spacing-s);
+  }
+  /* The news rows are a list for assistive tech only: no bullets, indent, or prose list spacing. */
+  .news__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .news__list > li {
+    margin: 0;
+    padding: 0;
+  }
   /* The article's one meta line: the archive index's date/muted register (step--1, tabular
      figures) so the two surfaces read as one shared vocabulary rather than two independent
      treatments. `.prose > h1 + *`'s spacing rule (prose.css) already gives this its air below the

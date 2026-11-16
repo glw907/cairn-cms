@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // The no-flash theme read. Runs synchronously before the first paint, so a returning
+      // visitor's explicit choice (SiteHeader.svelte's toggle) never flashes the system default
+      // first. No cookie leaves `data-theme` unset, and theme.css's prefers-color-scheme
+      // block picks the system scheme with no JS involved at all. The regex line between the two
+      // markers is generated from the theme manifest's colorModes by scripts/theme/theme-names.mjs,
+      // the same source as src/theme/theme-names.ts, which this inline script cannot import; it
+      // names both themes on purpose, so a stale cookie left by a rename fails it and the page
+      // falls back to the system scheme.
+      (function () {
+        // cairn-theme-names:start
+        var match = document.cookie.match(/(?:^|; )cairn-site-theme=(cairn-dark|cairn)(?:;|$)/);
+        // cairn-theme-names:end
+        if (match) document.documentElement.setAttribute('data-theme', match[1]);
+      })();
+    </script>
+		<!--HASH--><link rel="stylesheet" href="/_app/immutable/assets/theme.HASH.css"/> <link rel="stylesheet" href="/_app/immutable/assets/site.HASH.css"/> <link rel="stylesheet" href="/_app/immutable/assets/theme-options.HASH.css"/> <link rel="stylesheet" href="/_app/immutable/assets/theme-options.HASH.css"/><!--HASH--><!--[0--> <!--[0--><meta name="description" content="Trail reports and gear notes from the field."/><!--[1--><meta property="og:title" content="Waymark"/><!--[1--><meta property="og:description" content="Trail reports and gear notes from the field."/><!--[1--><meta property="og:type" content="website"/><!--[1--><meta property="og:url" content="https://showcase.test/"/><!--[1--><meta property="og:site_name" content="Waymark"/><!--[0--><meta name="twitter:card" content="summary"/> <link rel="canonical" href="https://showcase.test/"/><link rel="alternate" type="application/rss+xml" href="https://showcase.test/feed.xml" title="Waymark"/><link rel="alternate" type="application/feed+json" href="https://showcase.test/feed.json" title="Waymark"/>  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Waymark","description":"Trail reports and gear notes from the field.","url":"https://showcase.test/"}</script><title>Waymark</title>
+		<link href="./_app/immutable/assets/SiteFooter.HASH.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/2.HASH.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/EntryRow.HASH.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/5.HASH.css" rel="stylesheet">
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div><!--[0--><!--[0--><div class="cairn-site-shell site-shell bg-base-100 font-body text-base-content"><a href="#main" class="skip-link sr-only z-50 rounded-field bg-primary font-semibold text-primary-content no-underline focus:not-sr-only focus:absolute focus:top-s focus:left-s focus:px-xs focus:py-2xs">Skip to content</a> <header class="site-header sticky top-0 z-20 border-b border-card-border svelte-1d2pryo"><div class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-x-m gap-y-2xs px-m py-xs"><a href="/" class="brand-link inline-flex min-h-11 items-center text-base-content no-underline svelte-1d2pryo" aria-label="Waymark"><span class="whitespace-nowrap font-display font-heading heading-case text-step-1 tracking-tight">Waymark</span></a> <div class="contents md:flex md:flex-wrap md:items-center md:gap-s"><nav class="site-nav order-2 flex w-full flex-wrap items-center gap-s uppercase text-step--2 md:order-none md:w-auto svelte-1d2pryo" aria-label="Primary"><a href="/" aria-current="page" class="inline-flex min-h-11 items-center px-xs no-underline font-semibold text-primary svelte-1d2pryo">Writing</a><a href="/admin" rel="external" class="inline-flex min-h-11 items-center px-xs no-underline font-medium text-muted hover:text-base-content svelte-1d2pryo">Admin</a></nav> <button type="button" aria-label="Switch to dark mode" class="theme-toggle cairn-focus-ring order-1 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-field text-muted hover:text-base-content md:order-none svelte-1d2pryo"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.4 14.9A8.5 8.5 0 1 1 9.6 4.1a7 7 0 0 0 10.8 10.8z"></path></svg></button></div></div></header> <main id="main" tabindex="-1" class="cairn-site-main site-main svelte-1br2sqw"> <section class="mx-auto max-w-measure pb-xl pt-l"><h1 class="m-0 mb-s font-display font-heading heading-case text-step-5 leading-tight tracking-tight">Notes, stacked one stone at a time.</h1> <p class="m-0 max-w-[38rem] text-step-1 leading-snug text-muted">Trail reports and gear notes from the field.</p></section> <section class="listing svelte-1ewzqr7" aria-label="Writing"><!--[0--><article class="lead svelte-1ewzqr7" data-cairn-post=""><p class="m-0 mb-2xs text-step--1 font-semibold eyebrow-case tracking-eyebrow text-muted">Latest</p> <!--[0--><div class="lead__date svelte-1ewzqr7">4 Oct 2026</div> <h2 class="lead__title svelte-1ewzqr7"><a href="/posts/the-fourth-report" class="svelte-1ewzqr7">The fourth report</a></h2>  <a href="/posts/the-fourth-report" class="lead__link svelte-1ewzqr7">Read the post<span aria-hidden="true">→</span></a></article> <div class="cairn-section index"><div class="index__head svelte-1ewzqr7"><p class="m-0 text-step--1 font-semibold eyebrow-case tracking-eyebrow text-muted">Archive</p> <span class="index__count svelte-1ewzqr7">3
+        entries</span></div>  <h2 class="index__year svelte-1ewzqr7 index__year--first">2026</h2> <article class="site-entry svelte-t3qxoe" data-cairn-post=""><!--[0--><div class="site-entry__date svelte-t3qxoe">3 Oct 2026</div> <div><h3 class="site-entry__title svelte-t3qxoe"><a href="/posts/the-third-report" class="cairn-focus-ring svelte-t3qxoe">The third report</a></h3> </div></article><article class="site-entry svelte-t3qxoe" data-cairn-post=""><!--[0--><div class="site-entry__date svelte-t3qxoe">2 Oct 2026</div> <div><h3 class="site-entry__title svelte-t3qxoe"><a href="/posts/the-second-report" class="cairn-focus-ring svelte-t3qxoe">The second report</a></h3> </div></article><article class="site-entry svelte-t3qxoe" data-cairn-post=""><!--[0--><div class="site-entry__date svelte-t3qxoe">1 Oct 2026</div> <div><h3 class="site-entry__title svelte-t3qxoe"><a href="/posts/the-first-report" class="cairn-focus-ring svelte-t3qxoe">The first report</a></h3> </div></article></div> </section></main> <footer class="site-footer border-t border-base-300 bg-base-200"><div class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xl"><a href="/" class="brand-link inline-flex min-h-11 items-center text-muted no-underline svelte-1dtlgba" aria-label="Waymark"><span class="font-display font-heading heading-case text-step-1 tracking-tight">Waymark</span></a> <nav class="site-nav flex flex-wrap items-center gap-s text-step--1 svelte-1dtlgba" aria-label="Footer"><a href="/" class="inline-flex min-h-11 items-center px-xs text-muted no-underline hover:text-base-content svelte-1dtlgba">Writing</a><a href="/admin" rel="external" class="inline-flex min-h-11 items-center px-xs text-muted no-underline hover:text-base-content svelte-1dtlgba">Admin</a><a href="/feed.xml" class="inline-flex min-h-11 items-center px-xs text-muted no-underline hover:text-base-content svelte-1dtlgba">Feed</a></nav> <p class="w-full border-t border-card-border pt-s text-step--1 text-muted">Built with cairn. A self-contained SvelteKit site that consumes the package and proves it.</p></div></footer></div> 
+			
+			<script>
+				{
+					__sveltekit_ID = {
+						base: new URL(".", location).pathname.slice(0, -1),
+						version: "VERSION"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					import("./_app/immutable/entry/start.HASH.js").then(async (kit) => {
+						kit.init(__sveltekit_ID);
+						const app = await import("./_app/immutable/entry/app.HASH.js");
+						kit.start(app, element, {
+							node_ids: [0, 2, 5],
+							data: [{type:"data",data:{hasIslands:true,nav:[{label:"Writing",url:"/"},{label:"Admin",url:"/admin"}],footerNav:[{label:"Writing",url:"/"},{label:"Admin",url:"/admin"},{label:"Feed",url:"/feed.xml"}],siteName:"Waymark"},uses:{}},null,{type:"data",data:{featured:{concept:"posts",id:"2026-10-04-the-fourth-report",slug:"the-fourth-report",permalink:"/posts/the-fourth-report",title:"The fourth report",date:"2026-10-04",updated:void 0,tags:[],excerpt:"This is the fourth report, written for the home page fixture.",wordCount:11,draft:false,summaryFields:{}},archive:{page:1,totalPages:1,years:[{year:"2026",entries:[{concept:"posts",id:"2026-10-03-the-third-report",slug:"the-third-report",permalink:"/posts/the-third-report",title:"The third report",date:"2026-10-03",updated:void 0,tags:[],excerpt:"This is the third report, written for the home page fixture.",wordCount:11,draft:false,summaryFields:{}},{concept:"posts",id:"2026-10-02-the-second-report",slug:"the-second-report",permalink:"/posts/the-second-report",title:"The second report",date:"2026-10-02",updated:void 0,tags:[],excerpt:"This is the second report, written for the home page fixture.",wordCount:11,draft:false,summaryFields:{}},{concept:"posts",id:"2026-10-01-the-first-report",slug:"the-first-report",permalink:"/posts/the-first-report",title:"The first report",date:"2026-10-01",updated:void 0,tags:[],excerpt:"This is the first report, written for the home page fixture.",wordCount:11,draft:false,summaryFields:{}}]}]},vocabulary:[{value:"trail-reports",label:"Trail Reports"},{value:"gear",label:"Gear"},{value:"weather",label:"Weather"},{value:"routes",label:"Routes"},{value:"season-notes",label:"Season Notes"}],seo:{title:"Waymark",meta:[{name:"description",content:"Trail reports and gear notes from the field."},{property:"og:title",content:"Waymark"},{property:"og:description",content:"Trail reports and gear notes from the field."},{property:"og:type",content:"website"},{property:"og:url",content:"https://showcase.test/"},{property:"og:site_name",content:"Waymark"},{name:"twitter:card",content:"summary"}],links:[{rel:"canonical",href:"https://showcase.test/"},{rel:"alternate",type:"application/rss+xml",href:"https://showcase.test/feed.xml",title:"Waymark"},{rel:"alternate",type:"application/feed+json",href:"https://showcase.test/feed.json",title:"Waymark"}],jsonLd:{"@context":"https://schema.org","@type":"WebSite",name:"Waymark",description:"Trail reports and gear notes from the field.",url:"https://showcase.test/"}},description:"Trail reports and gear notes from the field."},uses:{}}],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+  </body>
+</html>

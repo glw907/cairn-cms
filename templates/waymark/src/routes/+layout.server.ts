@@ -16,7 +16,12 @@
 // still has exactly one source no matter which module reads it.
 import type { LayoutServerLoad } from './$types';
 import { siteIslands } from '#theme/directives/islands/registry.js';
-import { primaryNav, footerNav, siteName } from '#site/site-config.js';
+import { readMenu } from '@glw907/cairn-cms';
+import { primaryNav, footerNav, siteName, siteConfig } from '#site/site-config.js';
+
+// The site's call-to-action links, from `menus.actions`, for a theme that renders them. Returned
+// only when the menu holds a link, so a site without one serializes the same layout data as before.
+const actions = readMenu(siteConfig, 'actions', 1);
 
 export const load: LayoutServerLoad = () => {
   return {
@@ -24,5 +29,6 @@ export const load: LayoutServerLoad = () => {
     nav: primaryNav,
     footerNav,
     siteName,
+    ...(actions.length > 0 ? { actions } : {}),
   };
 };

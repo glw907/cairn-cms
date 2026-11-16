@@ -1,0 +1,19 @@
+import type { RequestHandler, EntryGenerator } from './$types';
+import { createPublicRoutes, buildMarkdownResponse } from '@glw907/cairn-cms/delivery';
+import { publicRoutesConfig } from '#chassis/public-routes.js';
+
+// Prerendered, same as every other public route (robots.txt, sitemap.xml, feed.xml). This is not
+// incidental: the build runs against committed `main` content, so there is no request path by
+// which a `cairn/*` pending-edit branch can reach this route. Switching this to runtime SSR would
+// reopen the disclosure hazard `markdownLoad`'s noindex guard and the enumerator's static import
+// walk both close by construction today.
+export const prerender = true;
+
+const routes = createPublicRoutes(publicRoutesConfig);
+
+export const entries: EntryGenerator = () => routes.markdownEntries();
+
+export const GET: RequestHandler = async ({ url }) => {
+  const { body } = await routes.markdownLoad({ url });
+  return buildMarkdownResponse({ body });
+};

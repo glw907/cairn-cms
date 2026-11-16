@@ -9,6 +9,7 @@ Contents:
 
 - [Shared inputs](#shared-inputs)
 - [Entry pages and the head](#entry-pages-and-the-head)
+- [The home page route](#the-home-page-route)
 - [Feeds, sitemap, robots](#feeds-sitemap-robots)
 - [Archive, tag pages, other heads](#archive-tag-pages-other-heads)
 - [Editable menu](#editable-menu)
@@ -77,6 +78,25 @@ Markdown twin: an `md` matcher in `src/params.ts` (`export const params = define
 there is no `src/params/` directory), a `[...path=md]/+server.ts` with
 `routes.markdownEntries()` and `buildMarkdownResponse({ body })` from `routes.markdownLoad({ url })`, and
 `markdownUrl` on `CairnHead`. `noindex` entries get no twin.
+
+## The home page route
+
+The scaffold's `(site)/+page.server.ts` serves `/`. When a published `pages` entry has the id `home`,
+it returns that page's data with a `home` member and no archive lead; with no such page it returns
+the post list as before. The routes treat the `home` page as one convention, each in its own file:
+
+- `/home` answers a 308 to `/` from the `[...path]` load, so the page has one address. The entries
+  generator keeps `/home`, which makes the build write the redirect into `_redirects`.
+- `[...path=md]/+server.ts` drops the `home` page from its entries, so no `/home.md` is built.
+- The archive starts at page one: `archive/[page]` lists every post, its entries start at `1`, and
+  page one drops `noindex`. With no posts it builds no archive page.
+- `sitemap.xml/+server.ts` filters `/home` and lists `/archive/1` when posts exist.
+- `home.ts` holds `splitAtLastRule`, which splits the rendered body at its last top-level `<hr>`,
+  and `buildHomeData`, which returns the `home` prop with the newest three posts, `archiveUrl`
+  `/archive/1`, and the `before` and `after` halves. The preview mount builds the same prop for the
+  `home` page.
+
+The home page's canonical and `og:url` are `origin + '/'`.
 
 ## Feeds, sitemap, robots
 
@@ -166,6 +186,12 @@ Declare `editor.nav: { menuName, label, maxDepth }` on the adapter (without it `
 add the menu under `menus.<menuName>` in the site config, and read it in a server load with
 `readMenu(siteConfig, name, maxDepth)`. Nodes are `{ label, url?, children? }`; a URL starts with
 `/`, `#`, `http://`, `https://`, `mailto:`, or `tel:`. A broken node throws `NavValidationError`.
+
+The scaffold's root `+layout.server.ts` also reads `readMenu(siteConfig, 'actions', 1)`, the menu for
+call-to-action links such as a Join button. It returns `actions` in the layout data only when the menu
+holds a link, and a theme reads `page.data.actions`. The template ships the menu commented out in
+`site.config.yaml`, and like the footer it is edited in that file, since `/admin/nav` edits only the
+menu `editor.nav` names.
 
 ## Build failures
 

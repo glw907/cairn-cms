@@ -1,6 +1,6 @@
 # Write in the editor
 
-This page shows you how to write a page or post in the editor. It covers starting an entry, formatting text, adding links, images, and blocks, checking your spelling, previewing the result, and changing an entry's settings. An entry is one item of content, such as a page or a post.
+This page shows you how to write a page or post in the editor. It covers starting an entry, formatting text, adding links, images, and blocks, checking your spelling, previewing the result, changing an entry's settings, and making a home page. An entry is one item of content, such as a page or a post.
 
 You need access to the editor, which [Welcome to the editor](welcome.md) describes. This page stops when your writing is ready. The page [Publish an entry and review its history](publish-and-history.md) covers saving, publishing, and getting an old version back. The page [Add an image](add-an-image.md) covers uploading pictures.
 
@@ -274,6 +274,39 @@ The following table describes the panel's groups, from the settings you change m
 | **Share preview** | **Share preview link** creates a private link that lets someone who isn't an editor read your saved draft before it's published. The link shows the entry's latest saved draft, later drafts included, until it expires, you revoke it, or the draft is published or discarded. **Revoke all links** turns off every link for the entry. |
 
 **Change address** needs an entry with no unpublished edits. If the entry has some, the editor tells you to publish or discard them, and then rename. **Share preview link** needs a saved draft.
+
+## Make a home page
+
+A page with the address `home` becomes your site's front page. Visitors see it at your site's main address, and the address `/home` sends them there. The front page can also show your newest posts. Your site's design decides how the list looks. This section describes the Waymark design.
+
+To make the page, follow these steps:
+
+1. In the sidebar, select **Pages**, and then select **New page**.
+2. In the **Title** box, type the title of your front page.
+3. In the **Address** box, type `home`, and then select **Create**.
+4. Write the page, and then publish it. The page replaces your site's front page only after you publish it.
+
+The **Details** panel has a **Description** box and a **Hero image** box for the page. The description is the summary that search engines and social sites show for your site.
+
+### Place the news list
+
+The page shows a **Latest news** list with your three newest published posts, each with its date, and an **All news** link to the full list of posts. A draft never appears in the list.
+
+You choose where the list goes with a rule, which is a horizontal line:
+
+1. Write the part of the page that should come before the list.
+2. Put the cursor on a new line, leave an empty line above it, and then type `---`. You can also select **Horizontal rule** in the **More formatting** menu.
+3. Write the part of the page that should come after the list.
+
+The list takes the place of the rule, so the rule itself doesn't show. Keep these points in mind:
+
+- If the page has more than one rule, the list goes at the last one. The earlier rules stay as lines.
+- A rule inside a quote, a list, or a block doesn't count.
+- A `---` on the line directly under some text makes that text a heading, so leave an empty line above it.
+- If the page has no rule, the list goes after your text.
+- If your site has no published posts, the page shows no **Latest news** heading and no **All news** link.
+
+A preview link made with **Share preview link** shows the list too. The list in a preview holds published posts only, so it never shows another draft.
 
 ## Use the writing controls
 

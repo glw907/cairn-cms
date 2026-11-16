@@ -129,6 +129,10 @@ export const cairn = defineAdapter({
       routing: 'page',
       fields: {
         title: fields.text({ label: 'Title', required: true }),
+        // The same SEO pair the posts declare, so a page (the home page among them) carries its
+        // own meta description and hero image.
+        description: fields.textarea({ label: 'Description' }),
+        image: fields.image({ label: 'Hero image', seo: true }),
         robots: fields.text({ label: 'Robots' }),
       },
     }),

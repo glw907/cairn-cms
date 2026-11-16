@@ -2,6 +2,14 @@
 
 <!-- release-size: minor -->
 
+- **A page with the id `home` becomes the site's home page, and Waymark 1.2.0 sets the newest posts into it.** The template's routes serve a published `home` page at `/`, redirect `/home` to `/` with a 308, and leave it out of the markdown twins and the sitemap. The archive then starts at page one, `/archive/1`, with the newest post, and the sitemap lists it. The editor places the news list with a rule line (`---`) in the page body: the list takes the place of the body's last top-level rule, or follows the body when there is none. Waymark renders a "Latest news" list of the newest three posts with dates and a link to the archive, and renders neither when there are no posts. The preview of the `home` page shows the list too. A site with no `home` page serves `/` and the archive as before. This is template and theme code, so the engine's exports don't change.
+
+  Consumers must: nothing.
+
+- **The template's pages gain `description` and `image` fields, and `site.config.yaml` shows an `actions` menu.** A page takes a description for its head summary and a hero image, as a post does. The root layout reads `menus.actions` and returns it as `actions` only when it holds a link, for a theme that renders call-to-action links such as a Join button. The template ships the menu commented out, so a new site shows no button until its developer writes one.
+
+  Consumers must: nothing.
+
 - **The chassis vocabulary gains a `cards` block.** A `cards` block lays out a few parallel items, such as programs or places, in a grid of two, three, or four columns. Four columns show two across where the page is too narrow to keep each card readable. Each item is one line of markdown: an optional leading image, a link or bold run that becomes the title, and text. The chassis lays out and styles the grid, so a theme owes no rule for it, and the editor's insert form takes one text field per card. A site that re-emits its chassis gets the block.
 
   Consumers must: nothing.

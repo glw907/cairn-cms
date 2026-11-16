@@ -559,3 +559,9 @@ when the remediation pass lands.
 - **Shape:** the page with id `home` serves `/`, and the route is site-owned, so `src/lib/` does not change. The archive serves page one, the newest three posts join the home, and `home` is not served again at `/home`.
 - **Reopens on:** a need the template route can't meet without engine code.
 
+
+## scope-verdict-home-site-convention: the home page is a site convention in the template's routes, with no engine surface  (accept, 2026-11-15, pennant pass 2 plan)
+
+- **Verdict:** accept. A page with id `home` serving `/`, with the newest posts set into its body, ships as template route code and Waymark's `home` prop. It adds nothing to `src/lib/`, so a later pass doesn't move it there.
+- **Shape:** the marker is one optional `ArticleView` prop, `home`, and the lists are named members of it (`posts` today), so a later round adds `events` beside `posts`. The editor places the list with an ordinary markdown rule and no block is added. `/home` redirects to `/` and has no markdown twin. The archive starts at page one only when the page exists.
+- **Reopens on:** a second site that needs the split or the redirect to behave the same without copying template routes.

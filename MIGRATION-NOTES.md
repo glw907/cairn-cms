@@ -84,6 +84,14 @@ Only the release in this file has notes here. The notes of earlier releases live
 
 ## Unreleased
 
+A page whose id is `home` can serve `/` on a site that takes the new template routes and Waymark 1.2.0. The engine's exports and the theme contract schema don't change, and a site that already exists is unaffected until it copies the routes. A site that wants the behavior copies `(site)/home.ts` and the changes to `(site)/+page.server.ts`, `(site)/+page.svelte`, `(site)/[...path]/+page.server.ts`, `(site)/[...path=md]/+server.ts`, `(site)/archive/[page]/`, `(site)/preview/[token]/`, and `sitemap.xml/+server.ts` from the template.
+
+A theme author gets one new optional prop on `ArticleView`, `home`, typed `HomeData` and exported from the component's module script. It holds `posts`, `archiveUrl`, `before`, and `after`. A theme that doesn't declare it renders a home page as an ordinary page with no news list. Waymark renders the list from 1.2.0, and the contract file lists paths and tokens only, so it didn't change.
+
+The template's `pages` concept gains a `description` and an `image` field, the same as a post's. A site that wants them on its pages adds both to its `pages` fieldset, and existing pages stay valid without them.
+
+The template's root layout reads a `menus.actions` menu from `site.config.yaml` and returns it as `actions` when it holds a link. A site that wants a call-to-action menu uncomments the example and points each `url` at one of its pages. A nav edit saved in the admin rewrites `site.config.yaml` without its comments, so an uncommented menu is safer than the commented example.
+
 The chassis vocabulary's block list grows by one, a `cards` block, and a site that re-emits its chassis gets it. Contract 1 keeps its number, and a theme can style `.cards` further, though the chassis already lays it out and gives it a default look.
 
 The `/delivery` entry point adds `buildICalendarResponse`, with its input types `ICalendar` and `ICalendarEvent`. A site opts in by adding a route that returns the response, and nothing that exists changes.

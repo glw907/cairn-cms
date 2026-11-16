@@ -3,11 +3,15 @@
      /archive/[page], sharing this page's markup shape and the #chassis/archive pagination helper. It
      is token-backed throughout: DaisyUI role utilities and cairn-token arbitrary-value utilities for
      the markup, a scoped `<style>` only for the lead card, the index grid, and the hairlines a utility
-     cannot express. No hard-coded color or px font-size. -->
+     cannot express. No hard-coded color or px font-size. When the site has a page whose id is `home`,
+     the load hands that page instead, and the theme's article view renders it with the newest posts;
+     none of the markup below renders then. -->
 <script lang="ts">
   import type { PageData } from './$types';
   import { CairnHead } from '@glw907/cairn-cms/public';
   import { formatDate } from '#chassis/date.js';
+  import { page } from '$app/state';
+  import ArticleView from '#theme/components/ArticleView.svelte';
   import EntryRow from '#theme/components/EntryRow.svelte';
 
   let { data }: { data: PageData } = $props();
@@ -24,12 +28,12 @@
   // This page's entries, flattened out of their year groups. Pagination bounds the payload to one
   // page's worth of posts, so the tag filter narrows within the visible page rather than the whole
   // corpus; a tag with no match on this page simply shows nothing, the same as a real narrowing.
-  const pageEntries = $derived(data.archive.years.flatMap((group) => group.entries));
+  const pageEntries = $derived(data.archive?.years.flatMap((group) => group.entries) ?? []);
 
   // The filter options: the committed vocabulary entries whose value is actually in use on this
   // page, so the control never offers a tag nothing here carries.
   const inUse = $derived(new Set(pageEntries.flatMap((p) => p.tags ?? [])));
-  const tagOptions = $derived(data.vocabulary.filter((entry) => inUse.has(entry.value)));
+  const tagOptions = $derived((data.vocabulary ?? []).filter((entry) => inUse.has(entry.value)));
 
   // A tag search is a narrowing operation over the flat page, not a composition: it drops the
   // year headings and the featured lead, showing exactly what matched. `filtered` is undefined
@@ -41,6 +45,16 @@
   const showFeatured = $derived(selected === '' && Boolean(data.featured));
 </script>
 
+<!-- The branch is not reindented: the front page's text nodes carry their indentation into the
+     served HTML, so reindenting them would change the no-home page's bytes. -->
+<!-- prettier-ignore -->
+{#if data.home}
+  <ArticleView
+    {data}
+    home={data.home}
+    titleTemplate={(title) => `${title} · ${page.data.siteName}`}
+  />
+{:else}
 <CairnHead seo={data.seo} />
 
 <section class="mx-auto max-w-measure pb-xl pt-l">
@@ -155,6 +169,7 @@
     </nav>
   {/if}
 </section>
+{/if}
 
 <style>
   /* The listing: a top hairline opens the whole section (the previous single-list treatment), with

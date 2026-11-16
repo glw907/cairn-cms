@@ -35,7 +35,7 @@ by the root layout server load; only top-level links with a url render. `/admin/
 
   const siteName = $derived(page.data.siteName ?? '');
 
-  // A prerendered page carries the year it was built in; the next build moves it.
+  // The server renders the build's year and the browser recomputes it on hydration.
   const year = new Date().getFullYear();
 </script>
 

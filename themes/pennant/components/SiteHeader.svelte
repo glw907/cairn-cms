@@ -27,9 +27,13 @@ keyed on the path.
 The color-mode toggle sets `data-theme` on `<html>` between `pennant` and `pennant-dark` and
 persists the choice to a `cairn-site-theme` cookie (path `/`, a year); the inline script in
 `app.html` reads that cookie before first paint so a returning visitor's choice never flashes the
-system default. With no stored choice, the mode sheet's `prefers-color-scheme` block follows the OS
-setting live, with no JS: the toggle is a standing override from the first explicit choice on,
-never a tri-state control.
+system default. With no stored choice, the page renders in the site's default mode, or, where the
+site sets none, follows the OS setting live through the `prefers-color-scheme` block in
+`tokens/tokens.css`, with no JS: the toggle is a standing override from the first explicit choice
+on, never a tri-state control.
+
+The bar scrolls with the page rather than sticking: a long name or five links fold it to two rows
+on a narrow desktop, and a sticky bar that tall would cover a jumped-to heading.
 -->
 <script lang="ts">
   import { page } from '$app/state';
@@ -292,13 +296,6 @@ never a tri-state control.
   .site-header :is(a, summary, button):focus-visible {
     outline: 2px solid var(--color-neutral-content);
     outline-offset: 2px;
-  }
-
-  @media (min-width: 760px) {
-    .site-header {
-      position: sticky;
-      top: 0;
-    }
   }
 
   @media (max-width: 759.98px) {

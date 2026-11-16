@@ -6,6 +6,10 @@
 
 ## Medium
 
+- [ ] **#539** Harden Pennant's `home-split.ts` banner scanner against markup the engine's sanitizer does not produce today `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-16)*
+  `themes/pennant/components/home-split.ts` reads `<script>`, `<style>`, and `<textarea>` bodies as markup, ends a comment only at `-->` and not `--!>`, and keeps scanning after a tag it cannot parse or a negative depth instead of returning the whole body. `home-split.test.ts` lacks those cases, plus an unquoted attribute, uppercase `</DIV>`, a void tag, `<!-- </div> -->`, and single quotes. `splitAtLastRule` in `examples/showcase/src/routes/(site)/home.ts` has the same `--!>` gap. Nothing is reachable today, because the input is sanitized serializer output with double-quoted attributes and no scripts, styles, or comments. Pennant 1.0.0 merged with these open on Geoff's say, to land in the next Pennant release.
+  Placement: next Pennant release (1.0.1), with #532.
+
 - [ ] **#502** The header marks "Writing" active on a home page at `/` `#bug` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*
   Waymark's nav treats `/` as the writing index, which was true until `home` took the address. Found by the `pennant-2` visual grade (PR #253): the active state and `aria-current` point at the wrong page. Fix: match the writing link on `/archive` when a home page exists.
 - [ ] **#501** `setMenu` drops the commented `actions` YAML example when it rewrites a menu `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-15)*

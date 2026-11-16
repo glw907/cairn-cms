@@ -79,7 +79,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
   async function navLoad(event: CairnEvent): Promise<NavData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
-    const navMenu = runtime.navMenu;
+    const navMenu = runtime.navMenus[0];
     if (!navMenu) throw error(404, 'No navigation menu configured');
     const maxDepth = navMenu.maxDepth ?? 2;
     const menu = { name: navMenu.menuName, label: navMenu.label, maxDepth };
@@ -129,7 +129,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
   async function navSaveAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
-    const navMenu = runtime.navMenu;
+    const navMenu = runtime.navMenus[0];
     if (!navMenu) throw error(404, 'No navigation menu configured');
     const maxDepth = navMenu.maxDepth ?? 2;
 

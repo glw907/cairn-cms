@@ -107,7 +107,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
   });
   const editors = createEditorRoutes({ runtime });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
-  const nav = runtime.navMenu ? createNavRoutes({ runtime }) : null;
+  const nav = runtime.navMenus.length > 0 ? createNavRoutes({ runtime }) : null;
 
   /**
    * Build the event a wrapped content load reads. The catch-all route carries only a rest

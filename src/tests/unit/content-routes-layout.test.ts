@@ -255,7 +255,7 @@ describe('shellLoad', () => {
 
   it('exposes the nav label when a navMenu is configured', async () => {
     const rt = runtime();
-    rt.navMenu = { menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+    rt.navMenus = [{ menuName: 'primary', label: 'Primary nav', maxDepth: 2 }];
     const { shell } = await createContentRoutes({ runtime: rt }).shellLoad(event('/admin/nav', 'editor', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     expect(findScreen(shell.nav.items, 'nav')?.label).toBe('Primary nav');

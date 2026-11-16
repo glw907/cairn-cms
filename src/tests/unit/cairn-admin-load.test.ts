@@ -239,7 +239,7 @@ describe('authed views', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const rt = runtime();
-    rt.navMenu = { menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+    rt.navMenus = [{ menuName: 'primary', label: 'Primary nav', maxDepth: 2 }];
     const admin = createCairnAdmin({ runtime: rt, ...deps });
     const data = await admin.load(adminEvent('/admin/nav'));
     expect(data.view).toBe('nav');

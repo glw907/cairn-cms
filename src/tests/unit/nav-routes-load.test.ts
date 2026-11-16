@@ -5,7 +5,7 @@ import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-h
 import { testEvent } from '../helpers/test-event.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
-function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
+function runtime(navMenus: CairnRuntime['navMenus']): CairnRuntime {
   return baseRuntime({
     concepts: [
       postsConcept(),
@@ -16,7 +16,7 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],
-    navMenu,
+    navMenus,
   });
 }
 
@@ -24,7 +24,7 @@ function loadEvent(search = '') {
   return contentEvent({ url: `https://t.example/admin/nav${search}`, editor: { email: 'e@t', displayName: 'E', role: 'editor', capability: 'editor' } });
 }
 
-const NAV = { menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+const NAV = [{ menuName: 'primary', label: 'Primary nav', maxDepth: 2 }];
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -138,7 +138,7 @@ describe('navLoad', () => {
   });
 
   it('404s when no navMenu is configured', async () => {
-    const routes = createNavRoutes({ runtime: runtime(undefined) });
+    const routes = createNavRoutes({ runtime: runtime([]) });
     await expect(routes.navLoad(loadEvent())).rejects.toMatchObject({ status: 404 });
   });
 

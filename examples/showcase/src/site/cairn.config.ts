@@ -217,11 +217,7 @@ export const cairn = defineAdapter({
     islands: siteIslands,
   },
   editor: {
-    nav: {
-      menuName: 'primary',
-      label: 'Navigation',
-      maxDepth: 2,
-    },
+    nav: [{ menuName: 'primary', label: 'Navigation', maxDepth: 2 }],
     // The site's whole declared sidebar, the organize-your-admin-nav guide's worked shape: a
     // Content group for what an editor authors and owns, then a trailing Site group for site
     // management, inbound data, configuration, and roster. The custom and engine doors both place

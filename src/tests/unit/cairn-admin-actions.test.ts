@@ -553,7 +553,7 @@ describe('save on the nav view', () => {
     const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary: []\n' } });
     gh.install();
     const rt = runtime();
-    rt.navMenu = { menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+    rt.navMenus = [{ menuName: 'primary', label: 'Primary nav', maxDepth: 2 }];
     const admin = createCairnAdmin({ runtime: rt, ...deps });
     const event = actionEvent('/admin/nav', { form: { tree: JSON.stringify([{ label: 'Home', url: '/' }]) } });
     await expectRedirect(admin.actions.save(event), '/admin/nav?saved=1');
@@ -632,7 +632,7 @@ describe('settings view', () => {
   function tidyRuntime(): CairnRuntime {
     return {
       ...runtime(),
-      navMenu: { menuName: 'primary', label: 'Nav', maxDepth: 2 },
+      navMenus: [{ menuName: 'primary', label: 'Nav', maxDepth: 2 }],
       tidy: { enabled: true, model: 'claude-sonnet-5' },
     };
   }

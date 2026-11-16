@@ -24,6 +24,27 @@ function assertIslandsConsistent(rendering: CairnAdapter['rendering']): void {
   }
 }
 
+const MAX_NAV_MENUS = 8;
+
+// Fail closed on a malformed `editor.nav`: the old single-object form, a repeated menuName (two
+// screens for one YAML key), or more menus than the sidebar is built for.
+function assertNavMenus(nav: unknown): void {
+  if (nav === undefined) return;
+  if (!Array.isArray(nav)) {
+    throw new Error("cairn: `editor.nav` is now a list of menus. Wrap the object in brackets: `nav: [{ menuName: 'primary', label: 'Navigation' }]`.");
+  }
+  const seen = new Set<string>();
+  for (const menu of nav as { menuName: string }[]) {
+    if (seen.has(menu.menuName)) {
+      throw new Error(`cairn: \`editor.nav\` declares the menu "${menu.menuName}" twice. Give each menu its own \`menuName\`.`);
+    }
+    seen.add(menu.menuName);
+  }
+  if (nav.length > MAX_NAV_MENUS) {
+    throw new Error(`cairn: \`editor.nav\` declares ${nav.length} menus, and the limit is ${MAX_NAV_MENUS}. Remove a menu or edit it in \`site.config.yaml\`.`);
+  }
+}
+
 /**
  * Declare a site's adapter while preserving each concept's concrete schema type for typed reads. The
  * returned type also keeps every optional `CairnAdapter` key the site left unset, so `cairn.aiPosture`
@@ -32,7 +53,8 @@ function assertIslandsConsistent(rendering: CairnAdapter['rendering']): void {
  * @throws When a block declares `hydrate` with no `rendering.islands` entry, when `rendering.islands`
  * holds a name no block hydrates, when `defineRegistry` refuses `rendering.blocks`, or when
  * `rendering` holds a `components` key. A site's build is `vite build`, which does not type-check,
- * so that key would otherwise publish a site with no blocks.
+ * so that key would otherwise publish a site with no blocks. Also throws when `editor.nav` is not
+ * an array, when two of its entries share a `menuName`, or when it holds more than 8 entries.
  * @public
  */
 export function defineAdapter<const A extends CairnAdapter>(
@@ -47,6 +69,7 @@ export function defineAdapter<const A extends CairnAdapter>(
   if ('components' in adapter.rendering) {
     throw new Error('cairn: the `components` key under `rendering` is gone. Pass your block definitions as `blocks`, an array.');
   }
+  assertNavMenus(adapter.editor?.nav);
   assertIslandsConsistent(adapter.rendering);
   // A reserved block name fails here, at boot, not on the first edit-screen render, which is where
   // the admin builds its registry for a site that hand-writes `render`.

@@ -7,7 +7,7 @@ import type { CairnRuntime } from '../../lib/content/types.js';
 function runtime(): CairnRuntime {
   return baseRuntime({
     concepts: [],
-    navMenu: { menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
+    navMenus: [{ menuName: 'primary', label: 'Primary nav', maxDepth: 2 }],
   });
 }
 

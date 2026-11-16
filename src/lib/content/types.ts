@@ -324,8 +324,11 @@ export interface CairnAdapter {
      *  the site's CSS out of the admin document, so the preview frame links these instead.
      */
     preview?: PreviewConfig;
-    /** Which menu in the site-config YAML the nav editor manages. */
-    nav?: NavMenuConfig;
+    /**
+     * The menus in the site-config YAML the admin edits, each at `/admin/nav/<menuName>`, in
+     *  sidebar order. At most 8, each with its own `menuName`.
+     */
+    nav?: NavMenuConfig[];
     /**
      * Optional contact a stuck editor is pointed to from the in-admin help (an email address, a URL,
      *  or a name and instruction). Unset, `composeRuntime` defaults it to cairn's hosted help
@@ -450,7 +453,8 @@ export interface CairnRuntime {
    *  otherwise `{ enabled: true, bucketBinding }` for the upload, storage, delivery, and resolver paths.
    */
   media: import('../media/config.js').ResolvedMediaConfig;
-  navMenu?: NavMenuConfig;
+  /** The adapter's `editor.nav` menus in declared order, empty when it declares none. */
+  navMenus: NavMenuConfig[];
   /**
    * The repo-relative path of the site-config YAML the nav editor, Settings, and Tags read and
    *  write, fixed at compose to the scaffold's `src/site/site.config.yaml`.

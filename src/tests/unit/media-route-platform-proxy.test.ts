@@ -34,6 +34,7 @@ function runtime(media: ResolvedMediaConfig): CairnRuntime {
   return {
     siteName: 'T',
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     email: { from: 'cms@test' },

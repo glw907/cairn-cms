@@ -9,6 +9,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'T',
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '123', installationId: '2' }),
     email: { from: 'cms@test' },

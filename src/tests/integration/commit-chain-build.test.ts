@@ -83,6 +83,7 @@ function runtime(): CairnRuntime {
     media: MEDIA_ON,
     vocabulary: [],
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
   };
 }
 

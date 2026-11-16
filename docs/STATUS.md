@@ -13,6 +13,14 @@ from it: the setup rebuild (`cairn new`) forms the next release, and nothing shi
 Dev snapshots (engine 0.99.0-dev.2, `create-cairn-site` 2.0.0-dev.9) stay on `gate`. The scripted and naive legs passed;
 only `owner` is missing from `~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`.
 
+<!-- round-report foundation -->
+Round foundation is running: pass 1 has landed and pass 2 is next
+Pass 1 of six is merged (#256): the page-kind list now lives in `definitions/kinds.json` and the schemas are generated from it. Nothing a visitor sees changed. Pass 2 is launching. Nothing waits for Geoff yet.
+
+Open documents: none.
+Resume from: /var/home/glw907/Projects/initiatives/theme-garden/plans/2026-11-15-foundation-conductor-prompt.txt
+<!-- /round-report -->
+
 <!-- round-report pennant -->
 Pennant 1.0.0 and Waymark 1.2.0 are published, and the Pennant demo is live
 All four passes are merged: #251, #253, #254 and #255. The catalog lists Pennant 1.0.0 and Waymark 1.2.0, and https://demo-pennant.cairn.pub/ serves the Turnagain Geographic Society with the Pennant theme. Nothing waits for Geoff.

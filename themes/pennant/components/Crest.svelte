@@ -33,7 +33,6 @@ decorative beside the site name, so the shield is hidden from assistive technolo
     color: var(--color-secondary-content);
     font-family: var(--font-brand);
     font-weight: 800;
-    font-size: 1em;
     line-height: 1;
     letter-spacing: var(--tracking-display);
   }

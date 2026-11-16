@@ -17,6 +17,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'Test Site',
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
     concepts: [
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },

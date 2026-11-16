@@ -51,13 +51,29 @@
       "pattern": "^>=(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?( <(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?)?$"
     },
     "kinds": {
-      "description": "One to three kinds of site the theme suits, from the closed list in definitions/kinds.json. The first is the kind the theme was designed for.",
+      "description": "One to five kinds of site the theme suits, from the closed list in definitions/kinds.json. The first is the kind the theme was designed for.",
       "type": "array",
       "minItems": 1,
-      "maxItems": 3,
+      "maxItems": 5,
       "uniqueItems": true,
       "items": {
         "$ref": "#/$defs/kindId"
+      }
+    },
+    "menus": {
+      "description": "The names of the menus the theme shows, as site.config.yaml keys them under menus.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/name"
+      }
+    },
+    "features": {
+      "description": "The features whose views the theme styles, from the closed list in definitions/features.json.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/featureId"
       }
     },
     "notes": {

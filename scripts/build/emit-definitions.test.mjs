@@ -70,3 +70,34 @@ test('an empty feature list is accepted as the empty set by the theme schema', a
   assert.equal(validate([]), true);
   assert.equal(validate(['x']), false);
 });
+
+/** The Ajv keywords a manifest breaks against the theme schema in a scratch root. */
+async function keywordsIn(root, edit) {
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js');
+  const schema = readJson(path.join(root, 'schema/cairn-theme-1.schema.json'));
+  const validate = new Ajv2020({ validateFormats: false, allErrors: true }).compile(schema);
+  const manifest = readJson(path.join(REPO, 'scripts/theme/fixtures/options-theme/cairn-theme.json'));
+  edit(manifest);
+  validate(manifest);
+  return (validate.errors ?? []).map((error) => error.keyword);
+}
+
+test('six distinct kinds are refused with maxItems once a sixth kind exists', async () => {
+  const root = scratchRoot();
+  editJson(path.join(root, 'definitions/kinds.json'), (data) => {
+    data.kinds.push({ id: 'gallery', label: 'Gallery', description: 'Pictures.', defaultFeatures: [] });
+  });
+  writeSchemas(root);
+  const six = ['blog', 'portfolio', 'docs', 'landing', 'organization', 'gallery'];
+  assert.deepEqual(await keywordsIn(root, (m) => (m.kinds = six)), ['maxItems']);
+});
+
+test('a feature listed in features.json is accepted by the theme schema and another is refused with enum', async () => {
+  const root = scratchRoot();
+  editJson(path.join(root, 'definitions/features.json'), (data) => {
+    data.features.push({ id: 'test-feature', label: 'Test', kinds: ['blog'], layer: 'features/test-feature' });
+  });
+  writeSchemas(root);
+  assert.deepEqual(await keywordsIn(root, (m) => (m.features = ['test-feature'])), []);
+  assert.deepEqual(await keywordsIn(root, (m) => (m.features = ['other'])), ['enum']);
+});

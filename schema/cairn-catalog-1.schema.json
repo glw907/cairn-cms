@@ -290,7 +290,7 @@
         "kinds": {
           "type": "array",
           "minItems": 1,
-          "maxItems": 3,
+          "maxItems": 5,
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/kindId"

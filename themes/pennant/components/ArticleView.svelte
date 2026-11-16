@@ -1,28 +1,27 @@
 <!-- @component
-The Waymark article template: the hero figure, the title and meta line, the rendered body, and the
-related-posts nav. `(site)/[...path]/+page.svelte` (the prerendered public entry route) and
-`(site)/preview/[token]/+page.svelte` (the preview pass's runtime route) both render this one
-component, so the two surfaces cannot structurally drift: the same markup, the same styling, the
-same data shape.
+Pennant's article template. `(site)/[...path]/+page.svelte` (the prerendered public entry route),
+`(site)/preview/[token]/+page.svelte` (the preview pass's runtime route), and the home route all
+render this one component, so the surfaces cannot structurally drift: the same markup, the same
+styling, the same data shape.
 
-The `preview` flag is the ONE behavior difference the two callers need: on preview, this component
-emits no `<link rel="canonical">`, no `og:url`, and no raw-markdown `.md` twin link, since the
-entry's eventual public permalink is not yet live (or, on the ended page, already superseded) and
-a preview must not self-canonicalize onto it or let a crawler or unfurler consolidate there. The
-token, not the URL, is the credential; it lives only in the route path and never appears on the
-page. The public route also passes `titleTemplate` (the site's `<page> · <siteName>` convention);
-the preview route leaves it unset, so a minted preview's `<title>` stays the entry's bare title
-rather than reading as a published page. `loadPreview` (`/sveltekit`) already strips `canonical`,
-`og:url`, and `jsonLd.url` from `data.seo` for exactly this reason, so the strip below is redundant
-for that field, though not for the `.md` twin link, which this component derives itself. It changes
-no other rendering: the fidelity claim (a minted preview and its eventual public page render
-identically) depends on everything else staying byte-for-byte the same.
+Without `home`, a page or post reads at the measure: the hero image, the title and meta line, the
+rendered body, and the related-posts nav. With `home`, the page is the club's front page in the wide
+container: a banner lifted off the start of `home.before` (by `splitHomeBanner`), the hero (the
+title, the frontmatter description, up to two buttons from `page.data.actions`, and the image, or
+the crest on a color-1 ground when the page sets none), the rest of `home.before`, the news list of
+`posts` with a link to `archiveUrl`, then `home.after`. An empty `posts` renders no news section.
+The home page advertises no markdown twin, since it has none.
 
-The optional `home` prop marks the page as the site's home page. With it, the body renders as the
-`before` HTML, then a "Latest news" list of `posts` with a link to `archiveUrl`, then the `after`
-HTML, and no markdown-twin link is advertised, since the home page has no `.md` twin. An empty
-`posts` renders neither the heading nor the link. Without `home`, the body renders whole, exactly
-as it did before the prop existed. -->
+No photo carries a caption or a name: the hero renders the image and its alt text only, whatever
+caption the frontmatter holds. Club pages show members, often children, and a printed name beside a
+photo is the pairing safeguarding practice asks a club to avoid.
+
+The `preview` flag is the one behavior difference the public and preview callers need: on preview,
+this component emits no `<link rel="canonical">`, no `og:url`, and no raw-markdown `.md` twin link,
+since the entry's eventual public permalink is not yet live (or, on the ended page, already
+superseded). The public route also passes `titleTemplate` (the site's `<page> · <siteName>`
+convention); the preview route leaves it unset, so a minted preview's `<title>` stays the entry's
+bare title. Everything else renders identically on both. -->
 <script lang="ts" module>
   import type { ContentSummary } from '@glw907/cairn-cms/delivery';
 
@@ -31,11 +30,11 @@ as it did before the prop existed. -->
 
   /** The home page's parts: the body split around the news list, and the list itself. */
   export interface HomeData {
-    /** The newest posts, newest first. Empty renders neither the heading nor the archive link. */
+    /** The newest posts, newest first. Empty renders no news section. */
     posts: HomePost[];
     /** Where the "All news" link points. */
     archiveUrl: string;
-    /** Trusted rendered HTML shown above the news list. */
+    /** Trusted rendered HTML shown above the news list. A leading banner island is lifted above the hero. */
     before: string;
     /** Trusted rendered HTML shown below the news list. */
     after: string;
@@ -43,18 +42,21 @@ as it did before the prop existed. -->
 </script>
 
 <script lang="ts">
+  import type { NavNode } from '@glw907/cairn-cms';
   import type { EntryData, EntryRef } from '@glw907/cairn-cms/delivery';
   import { CairnHead } from '@glw907/cairn-cms/public';
+  import { page } from '$app/state';
   import { formatDate } from '#chassis/date.js';
-  import EntryRow from './EntryRow.svelte';
   import type { site } from '#chassis/content.js';
+  import Crest from './Crest.svelte';
+  import EntryRow from './EntryRow.svelte';
+  import { splitHomeBanner } from './home-split.js';
 
   interface Props {
     /**
      * The composed entry data, plus the reference-edge resolution `#chassis/entry-data.js` layers on.
-     * Typed by the site's concepts: both routes assign the same shape, since `loadPreview` and
-     * `createPublicRoutes` infer it from the one `publicRoutesConfig`. The raw `image` value is still
-     * checked at runtime below.
+     * Typed by the site's concepts: every route assigns the same shape. The raw `image` and
+     * `description` values are still checked at runtime below.
      */
     data: EntryData<typeof site> & { references: Record<string, EntryRef | EntryRef[]> };
     /** True on the preview route: suppresses canonical, og:url, and the `.md` twin link. Defaults to false (the public route). */
@@ -65,19 +67,20 @@ as it did before the prop existed. -->
      * title rather than reading as a published page.
      */
     titleTemplate?: (title: string) => string;
-    /** Present on the home page: renders the news list inside the body and drops the `.md` twin link. */
+    /** Present on the home page: renders the front-page layout and drops the `.md` twin link. */
     home?: HomeData;
   }
 
   let { data, preview = false, titleTemplate, home }: Props = $props();
 
-  // A per-instance id, so the news heading never collides with a rehype-slug id from an editor heading.
-  const newsId = $props.id();
+  // Per-instance ids, so the hero and news headings never collide with a rehype-slug id from an
+  // editor heading.
+  const uid = $props.id();
+  const heroId = `${uid}-hero`;
+  const newsId = `${uid}-news`;
 
-  // Belt and suspenders: loadPreview already strips canonical/og:url/jsonLd.url from data.seo, so
-  // this filter is a no-op against that caller. It stays so this component's contract does not
-  // depend on the specific caller's behavior, and so a site rendering preview data from any other
-  // source still gets the strip.
+  // loadPreview already strips canonical/og:url/jsonLd.url from data.seo, so this filter is a no-op
+  // against that caller. It stays so this component's contract does not depend on the caller.
   const seo = $derived(
     preview
       ? {
@@ -88,24 +91,22 @@ as it did before the prop existed. -->
       : data.seo,
   );
 
-  // The resolved author edge: a single reference projects to one EntryRef, so the template
-  // reads its title and permalink. Undefined when the entry sets no author.
+  // The resolved author edge: a single reference projects to one EntryRef. Undefined when unset.
   const author = $derived(data.references.author as EntryRef | undefined);
   // The resolved related edges: an array(reference) projects to a list, rendered as links.
   const related = $derived((data.references.related as EntryRef[] | undefined) ?? []);
 
-  /** The raw frontmatter `image` object, loosely typed: only the two fields the fallback below reads. */
+  /** The raw frontmatter `image` object, loosely typed: only the fields the fallback below reads. */
   interface RawImageField {
     src?: unknown;
     alt?: unknown;
-    caption?: unknown;
   }
 
   /**
-   * A raw external `image.src` URL (a plain `https://...` link, not a `media:` token), rendered
-   * directly since the engine's heroImage projection only resolves a `media:` token (raw-URL
-   * hero images bypass the R2 delivery pipeline by design). Undefined once `data.heroImage` is set,
-   * so this never overrides the resolved projection.
+   * A raw `image.src` the engine's heroImage projection leaves unresolved, since it resolves only a
+   * `media:` token: an external `https://` URL or a root-relative path to a static file. A
+   * protocol-relative `//` path is refused. Undefined once `data.heroImage` is set, so this never
+   * overrides the resolved projection.
    */
   const rawHeroFallback = $derived.by(() => {
     if (data.heroImage) return undefined;
@@ -114,23 +115,34 @@ as it did before the prop existed. -->
       'image' in data.entry.frontmatter ? data.entry.frontmatter.image : undefined;
     if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
     const field = value as RawImageField;
-    if (typeof field.src !== 'string' || !/^https?:\/\//.test(field.src)) return undefined;
-    return {
-      url: field.src,
-      alt: typeof field.alt === 'string' ? field.alt : '',
-      caption:
-        typeof field.caption === 'string' && field.caption !== '' ? field.caption : undefined,
-    };
+    if (typeof field.src !== 'string' || !/^(https?:\/\/|\/(?!\/))/.test(field.src)) {
+      return undefined;
+    }
+    return { url: field.src, alt: typeof field.alt === 'string' ? field.alt : '' };
   });
 
   const hero = $derived(data.heroImage ?? rawHeroFallback);
 
+  // The hero's lede: the page's own description, the same text its meta description carries.
+  const description = $derived.by(() => {
+    const value: unknown =
+      'description' in data.entry.frontmatter ? data.entry.frontmatter.description : undefined;
+    return typeof value === 'string' && value.trim() !== '' ? value : undefined;
+  });
+
+  // The root layout returns `actions` (the site's `menus.actions`) beside the members app.d.ts
+  // declares; the cast reads that one extra member. The hero shows the first two linked ones.
+  const actions = $derived(
+    ((page.data as { actions?: NavNode[] }).actions ?? [])
+      .filter((node): node is NavNode & { url: string } => typeof node.url === 'string')
+      .slice(0, 2),
+  );
+
+  const split = $derived(home ? splitHomeBanner(home.before) : undefined);
+
   /**
-   * The entry's raw-markdown twin, `undefined` for a `noindex` entry (so the head never advertises a
-   * twin `markdownEntries` excluded from the build) and always `undefined` on preview (the twin route
-   * is a build-time prerender enumeration a token-bearing draft never joins, and advertising one would
-   * leak the draft's existence at a guessable neighboring URL). Read off the rendered robots meta tag
-   * rather than re-reading frontmatter, so this agrees with whatever the head itself already decided.
+   * The entry's raw-markdown twin, `undefined` for a `noindex` entry, on preview, and on the home
+   * page. Read off the rendered robots meta tag so this agrees with whatever the head decided.
    */
   const markdownUrl = $derived(
     preview ||
@@ -143,96 +155,104 @@ as it did before the prop existed. -->
 
 <CairnHead {seo} {markdownUrl} {titleTemplate} />
 
-<!-- The bespoke reading surface. The `.prose` container caps the column at the measure and binds every
-     element to the theme tokens (prose.css, @import-ed into theme.css). The hero figure leads the
-     article on the same surface; the engine's rendered markdown follows the title. -->
-<article class="prose">
-  {#if hero}
-    <!-- The site template owns the hero layout: the engine ships the resolved data (or, for a raw
-         external URL the engine's projection does not resolve, the fallback above), this renders
-         it. The root-relative url feeds the img; the absolute form is the og:image (in the head above). -->
-    <figure class="hero">
-      <img src={hero.url} alt={hero.alt} />
-      {#if hero.caption}
-        <figcaption>{hero.caption}</figcaption>
-      {/if}
-    </figure>
-  {/if}
-  <h1>{data.entry.title}</h1>
-  {#if data.entry.date || author}
-    <!-- The one meta line every article carries: the date in the site's shared vocabulary, and the
-         resolved author edge when the entry sets one. The author link's text is the target page's
-         title, read from the resolved reference, so it matches that page's heading. -->
-    <p class="meta">
-      {#if data.entry.date}
-        <time datetime={data.entry.date}>{formatDate(data.entry.date)}</time>
-      {/if}
-      {#if data.entry.date && author}
-        <span aria-hidden="true"> &middot; </span>
-      {/if}
-      {#if author}
-        <span data-testid="post-author">By <a href={author.permalink}>{author.title}</a></span>
-      {/if}
-    </p>
-  {/if}
-  {#if home}
-    {@html home.before}
-    {#if home.posts.length}
-      <section class="news" aria-labelledby={newsId}>
-        <h2 id={newsId}>Latest news</h2>
-        <ul class="news__list" role="list">
-          {#each home.posts as post (post.id)}
-            <li><EntryRow {post} /></li>
+{#if home && split}
+  <div class="pennant-home">
+    {#if split.banner}
+      <div class="pennant-home__banner">{@html split.banner}</div>
+    {/if}
+    <div class="pennant-home__wrap">
+      <section class="pennant-hero" aria-labelledby={heroId}>
+        <div class="pennant-hero__text">
+          <h1 id={heroId} class="pennant-hero__title">{data.entry.title}</h1>
+          {#if description}
+            <p class="pennant-hero__lede">{description}</p>
+          {/if}
+          {#if actions.length}
+            <div class="pennant-hero__actions">
+              {#each actions as action, i (action.url)}
+                <a
+                  href={action.url}
+                  class="pennant-button"
+                  class:pennant-button--filled={i === 0}
+                  class:pennant-button--quiet={i > 0}>{action.label}</a
+                >
+              {/each}
+            </div>
+          {/if}
+        </div>
+        {#if hero}
+          <div class="pennant-hero__media">
+            <img src={hero.url} alt={hero.alt} />
+          </div>
+        {:else}
+          <div class="pennant-hero__media pennant-hero__media--crest">
+            <Crest siteName={page.data.siteName ?? data.entry.title} />
+          </div>
+        {/if}
+      </section>
+      <div class="prose pennant-home__body">
+        {@html split.rest}
+        {#if home.posts.length}
+          <section class="news" aria-labelledby={newsId}>
+            <div class="news__head">
+              <h2 id={newsId}>Latest news</h2>
+              <a href={home.archiveUrl}>All news</a>
+            </div>
+            <ul class="news__list" role="list">
+              {#each home.posts as post (post.id)}
+                <li><EntryRow {post} /></li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
+        {@html home.after}
+      </div>
+    </div>
+  </div>
+{:else}
+  <!-- The reading surface. `.prose` caps the column at the measure and binds every element to the
+       theme tokens (prose.css, @import-ed into theme.css). -->
+  <article class="prose">
+    {#if hero}
+      <figure class="hero">
+        <img src={hero.url} alt={hero.alt} />
+      </figure>
+    {/if}
+    <h1>{data.entry.title}</h1>
+    {#if data.entry.date || author}
+      <p class="meta">
+        {#if data.entry.date}
+          <time datetime={data.entry.date}>{formatDate(data.entry.date)}</time>
+        {/if}
+        {#if data.entry.date && author}
+          <span aria-hidden="true"> &middot; </span>
+        {/if}
+        {#if author}
+          <span data-testid="post-author">By <a href={author.permalink}>{author.title}</a></span>
+        {/if}
+      </p>
+    {/if}
+    {@html data.html}
+    {#if related.length}
+      <nav class="related" aria-label="Related posts" data-testid="post-related">
+        <h2>Related posts</h2>
+        <ul>
+          {#each related as ref (ref.concept + '/' + ref.id)}
+            <li><a href={ref.permalink}>{ref.title}</a></li>
           {/each}
         </ul>
-        <p><a href={home.archiveUrl}>All news</a></p>
-      </section>
+      </nav>
     {/if}
-    {@html home.after}
-  {:else}
-    {@html data.html}
-  {/if}
-  {#if related.length}
-    <!-- The resolved related-post edges, each a link to its target permalink. -->
-    <nav class="related" aria-label="Related posts" data-testid="post-related">
-      <h2>Related posts</h2>
-      <ul>
-        {#each related as ref (ref.concept + '/' + ref.id)}
-          <li><a href={ref.permalink}>{ref.title}</a></li>
-        {/each}
-      </ul>
-    </nav>
-  {/if}
-</article>
+  </article>
+{/if}
 
 <style>
-  /* The news section is a peer of the body's h2 sections, so it takes the h2's space above it
-     (prose.css sets `--flow-space` on an h2 itself, which a wrapping section does not inherit). */
-  .news {
-    --flow-space: var(--spacing-xl);
-  }
-  .news > p {
-    margin-top: var(--spacing-s);
-  }
-  /* The news rows are a list for assistive tech only: no bullets, indent, or prose list spacing. */
-  .news__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .news__list > li {
-    margin: 0;
-    padding: 0;
-  }
-  /* The article's one meta line: the archive index's date/muted register (step--1, tabular
-     figures) so the two surfaces read as one shared vocabulary rather than two independent
-     treatments. `.prose > h1 + *`'s spacing rule (prose.css) already gives this its air below the
-     title; this only sets its typography and color. */
+  /* The article's one meta line, in the archive rows' date register so the two read as one
+     vocabulary. `.prose > h1 + *` (prose.css) already spaces it below the title. */
   .meta {
     font-size: var(--text-step--1);
     color: var(--color-muted);
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
   }
   .meta a {
     color: var(--color-primary);
@@ -245,5 +265,18 @@ as it did before the prop existed. -->
     outline: var(--cairn-focus-ring-outline);
     outline-offset: var(--cairn-focus-ring-offset);
     border-radius: var(--cairn-focus-ring-radius);
+  }
+
+  /* The news rows are a list for assistive tech only: no bullets, indent, or prose list spacing.
+     The rule above the first row closes the section head; each row draws its own rule below. */
+  .news__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--border) solid var(--color-card-border);
+  }
+  .news__list > li {
+    margin: 0;
+    padding: 0;
   }
 </style>

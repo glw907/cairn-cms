@@ -263,17 +263,6 @@ func postureRobotsAbsentDetail(reason robotsAbsentReason) string {
 	}
 }
 
-// robotsURL resolves origin's /robots.txt URL. ok is false when origin does not parse as an
-// absolute http or https URL, the one scheme restriction the fetch policy states: any other
-// scheme (a file:// origin, for instance) must never be dialed.
-func robotsURL(origin string) (target *url.URL, ok bool) {
-	u, err := url.Parse(origin)
-	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
-		return nil, false
-	}
-	return u.ResolveReference(&url.URL{Path: "/robots.txt"}), true
-}
-
 // aiPostureEffective is a live probe of the deployed origin's /robots.txt, compared against the
 // adapter's declared aiPosture. It reads siteFacts for the declared posture, so it reports
 // unchecked with factsAbsentDetail when site-facts.json is absent, and it reads Snapshot.Robots for
@@ -284,21 +273,16 @@ var aiPostureEffective = Check{
 	PassTitle: "The stated AI posture is the served one",
 	SkipTitle: "Stated AI posture",
 	Condition: spine.ConditionAIPostureNotEffective,
-	Run: func(s Snapshot) Result {
-		facts, found, err := readSiteFacts(s)
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if !found {
-			return uncheckedResult(factsAbsentDetail)
-		}
-		if !s.Robots.Present {
-			return uncheckedResult(postureRobotsAbsentDetail(s.Robots.Reason))
-		}
-		target, ok := robotsURL(s.PublicOrigin.Value)
-		if !ok {
-			return uncheckedResult(detailPostureBadOrigin)
-		}
-		return evaluatePosture(facts.HasAIPosture, facts.AIPosture, s.Robots.Body, target)
+	run: func(s Snapshot) Result {
+		return withSiteFacts(s, func(facts siteFacts) Result {
+			if !s.Robots.Present {
+				return uncheckedResult(postureRobotsAbsentDetail(s.Robots.Reason))
+			}
+			target, ok := robotsURL(s.PublicOrigin.Value)
+			if !ok {
+				return uncheckedResult(detailPostureBadOrigin)
+			}
+			return evaluatePosture(facts.HasAIPosture, facts.AIPosture, s.Robots.Body, target)
+		})
 	},
 }

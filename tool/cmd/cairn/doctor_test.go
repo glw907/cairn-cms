@@ -8,7 +8,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/colorprofile"
+	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/style"
 )
 
 // startDoctorRobotsServer serves a fixed, unmanaged robots.txt over loopback, so
@@ -270,5 +273,50 @@ func TestADoctorUsageErrorExitsUnknownWithEmptyStdout(t *testing.T) {
 				t.Errorf("stderr = %q, want a cairn: prefixed line", stderr)
 			}
 		})
+	}
+}
+
+// TestDoctorPrintsTheTerminalBodyOnATerminalAndFormatOnAPipe holds writeDoctorReport to its
+// split: a terminal stdout gets the marked body under the directory's name, and a pipe gets
+// doctor.Format's lines byte for byte.
+func TestDoctorPrintsTheTerminalBodyOnATerminalAndFormatOnAPipe(t *testing.T) {
+	origin := startDoctorRobotsServer(t)
+	files := doctorCleanSiteFiles(origin)
+	files["wrangler.jsonc"] = `{
+  "observability": {"enabled": true},
+  "vars": {"PUBLIC_ORIGIN": "` + origin + `"}
+}`
+	snap, err := doctor.NewSnapshot(writeDoctorFixture(t, files))
+	if err != nil {
+		t.Fatal(err)
+	}
+	snap.PublicOrigin = doctor.PublicOrigin{Value: origin, Source: doctor.OriginFromVars}
+	snap.Robots = doctor.FetchRobots(t.Context(), snap.PublicOrigin)
+	checked := doctor.Run(snap)
+	verdict := spine.ExitCode([]spine.SiteVerdicts{doctor.Verdicts(checked)}, nil, 0)
+
+	var pipe, tty strings.Builder
+	if err := writeDoctorReport(&pipe, style.Terminal{TTY: false}, &rootFlags{}, true, snap.Dir, checked, verdict); err != nil {
+		t.Fatal(err)
+	}
+	if want := doctor.Format(checked) + "\n"; pipe.String() != want {
+		t.Errorf("pipe output = %q, want doctor.Format's %q", pipe.String(), want)
+	}
+
+	term := style.Terminal{Profile: colorprofile.ASCII, TTY: true, Columns: 80}
+	if err := writeDoctorReport(&tty, term, &rootFlags{}, true, snap.Dir, checked, verdict); err != nil {
+		t.Fatal(err)
+	}
+	out := tty.String()
+	if strings.Contains(out, "FAIL  ") || strings.Contains(out, "PASS  ") {
+		t.Errorf("terminal output carries a pipe status row:\n%s", out)
+	}
+	for _, want := range []string{
+		"CRITICAL  " + filepath.Base(snap.Dir),
+		style.MarksFor(false).Failing + " Wrangler bindings are missing",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("terminal output carries no %q:\n%s", want, out)
+		}
 	}
 }

@@ -75,7 +75,7 @@ var adminMountShape = Check{
 	PassTitle: "Custom /admin mount is complete",
 	SkipTitle: "Custom /admin mount",
 	Condition: spine.ConditionAdminMountIncomplete,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		text, found, err := readAdminMountText(s)
 		if err != nil {
 			return uncheckedResult(err.Error())

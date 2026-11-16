@@ -65,13 +65,13 @@ var configPublicOrigin = Check{
 	PassTitle: "PUBLIC_ORIGIN is set and valid",
 	SkipTitle: "PUBLIC_ORIGIN",
 	Condition: spine.ConditionConfigPublicOriginInvalid,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		_, found, err := ReadWranglerConfig(s)
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
 		origin := s.PublicOrigin
-		if !found && origin.Source == OriginAbsent {
+		if !found && origin.Source == originAbsent {
 			return skipResult(detailPublicOriginSkip)
 		}
 		if origin.Value == "" {

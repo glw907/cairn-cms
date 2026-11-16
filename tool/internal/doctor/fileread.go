@@ -20,20 +20,11 @@ const cairnModule = "@glw907/cairn-cms"
 // exist or is a dangling symlink; err is non-nil for a containment refusal or any other read
 // failure, a permission-denied file included.
 //
-// The containment form is the stronger one in packages/cairn-cms-dev/src/media-seed/bin.ts (isWithin,
-// realpathNearestAncestor, and the two checks their caller makes), not a textual prefix test.
+// Containment is judged on the resolved real path, not on a textual prefix test.
 func readUnder(dir, relPath string) (body []byte, ok bool, err error) {
-	candidate := filepath.Join(dir, relPath)
-	if !contains(dir, candidate) {
-		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
-	}
-
-	resolved, err := realpathNearestAncestor(candidate)
+	candidate, err := containedPath(dir, relPath)
 	if err != nil {
 		return nil, false, err
-	}
-	if !contains(dir, resolved) {
-		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
 	}
 
 	b, err := os.ReadFile(candidate)
@@ -50,17 +41,9 @@ func readUnder(dir, relPath string) (body []byte, ok bool, err error) {
 // readUnder applies. ok is false when the directory does not exist; err is non-nil for a
 // containment refusal or any other read failure.
 func listUnder(dir, relPath string) (names []string, ok bool, err error) {
-	candidate := filepath.Join(dir, relPath)
-	if !contains(dir, candidate) {
-		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
-	}
-
-	resolved, err := realpathNearestAncestor(candidate)
+	candidate, err := containedPath(dir, relPath)
 	if err != nil {
 		return nil, false, err
-	}
-	if !contains(dir, resolved) {
-		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
 	}
 
 	entries, err := os.ReadDir(candidate)
@@ -74,6 +57,23 @@ func listUnder(dir, relPath string) (names []string, ok bool, err error) {
 		names = append(names, e.Name())
 	}
 	return names, true, nil
+}
+
+// containedPath returns the absolute path of relPath inside dir, or an error when it, or the
+// real location a symlink gives it, falls outside dir. The path need not exist.
+func containedPath(dir, relPath string) (string, error) {
+	candidate := filepath.Join(dir, relPath)
+	if !contains(dir, candidate) {
+		return "", fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
+	}
+	resolved, err := realpathNearestAncestor(candidate)
+	if err != nil {
+		return "", err
+	}
+	if !contains(dir, resolved) {
+		return "", fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
+	}
+	return candidate, nil
 }
 
 // contains reports whether candidate is boundary itself or lives under it. It uses filepath.Rel
@@ -91,8 +91,7 @@ func contains(boundary, candidate string) bool {
 // the nearest existing ancestor is resolved, and any not-yet-existing trailing segments are
 // rejoined unresolved, since nothing can symlink from a path that does not exist. This lets a
 // containment check see through a symlink planted anywhere between the nominal path and its real
-// location, not only through a literal ".." segment. Mirrors
-// packages/cairn-cms-dev/src/media-seed/bin.ts's realpathNearestAncestor.
+// location, not only through a literal ".." segment.
 func realpathNearestAncestor(path string) (string, error) {
 	resolved, err := filepath.EvalSymlinks(path)
 	if err == nil {

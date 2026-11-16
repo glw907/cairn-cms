@@ -11,7 +11,9 @@ require (
 	github.com/charmbracelet/colorprofile v0.4.3
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/charmbracelet/x/exp/teatest/v2 v2.0.0-20261101151554-27ecf3e4d454
+	github.com/charmbracelet/x/vt v0.1.0
 	github.com/clipperhouse/displaywidth v0.11.0
+	github.com/creack/pty v1.1.24
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/zalando/go-keyring v0.2.8

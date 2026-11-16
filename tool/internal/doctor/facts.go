@@ -47,6 +47,20 @@ type siteFactsFile struct {
 	AIPosture          *string        `json:"aiPosture"`
 }
 
+// withSiteFacts runs body against the site's committed facts, and settles the result itself when
+// they cannot be read: unchecked on a read error, and unchecked with factsAbsentDetail when
+// site-facts.json is absent.
+func withSiteFacts(s Snapshot, body func(siteFacts) Result) Result {
+	facts, found, err := readSiteFacts(s)
+	if err != nil {
+		return uncheckedResult(err.Error())
+	}
+	if !found {
+		return uncheckedResult(factsAbsentDetail)
+	}
+	return body(facts)
+}
+
 // readSiteFacts reads and parses s.Dir's committed site-facts.json. found is false when the file
 // does not exist, which every facts-dependent check reports as unchecked with factsAbsentDetail
 // rather than treating as its containment or parse error. err is non-nil for a containment

@@ -136,6 +136,49 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
+- **`cairn --help`, the error printer, and the list views move onto the terminal's shared language, and
+  three variables choose the ground and the plain body.** On a terminal, help no longer paints in the
+  Accent color, and an error prints as a block that carries a fix arrow (`→`) when the error has a typed
+  fix and none when it has not. `cairn sites`, `cairn auth list`, `cairn adopt list`, `cairn auth check`,
+  and the `auth` and `adopt` receipts take the report layout. Body text is the terminal's own
+  foreground: the Text role paints no ink, so it reads on a light or a dark terminal. `--theme`,
+  `CAIRN_THEME` (`dark` or `light`), and `COLORFGBG` (its last field, `7` or `15` for light) choose the
+  palette, in that order, and `CAIRN_PLAIN=1` prints a terminal the plain output a pipe gets, with no
+  progress line, though `cairn new` still opens its terminal view. A value cairn cannot read is
+  ignored. Output to a pipe or a file and `--json` output are byte for byte what they were, except one
+  sentence in `cairn --help` that names `CAIRN_PLAIN`, and one newline: `cairn auth set` now ends its
+  `NAME: ` prompt line on stderr when stdin is a pipe, so the receipt starts at the margin. The
+  256-colour palette is darker on a light ground and lighter on a dark one, so every ink measures at
+  least 4.5:1 against the ground.
+  The admin credentials page documents the variables.
+
+  Consumers must: nothing.
+
+- **`cairn health`, `cairn doctor`, `cairn logs`, and the `cairn sites` status block share one report
+  layout in a terminal.** Their rows sit two columns in from the edge, and their blocks carry
+  lowercase titles such as `failing`, `could not run`, and `what to fix`. In `cairn health` and
+  `cairn doctor`, a check's state shows in the mark that opens its row and in its block's title,
+  and a note carries no mark. `cairn doctor` used to print one line per check in a terminal too;
+  it now folds its passing checks to one count line and its skipped checks to one
+  `does not apply` line. A held check, one acknowledged with `--ack`, takes the `◌` mark. The
+  marks fall back to ASCII when the locale isn't UTF-8, and outside Windows when `LC_ALL`,
+  `LC_CTYPE`, and `LANG` are all unset. When stdout and
+  stderr are both terminals, `cairn health` draws a `Checking <site>` progress line on stderr while
+  it runs and erases it before the report prints. A set `CI` variable, `TERM=dumb`, `--quiet`,
+  `--json`, and `--verbose` each keep the line off. On a terminal, `cairn logs` and `cairn adopt
+  list` set their "not safe to paste" notice in from the margin with a blank line after it, and
+  print it unchanged to a pipe. Output to a pipe or a file and `--json` output don't change.
+
+  Consumers must: nothing.
+
+- **`provider-console` is no longer a fix actor.** No check ever named it, so a fix's `actor` is
+  `operator`, `developer`, or `registrar`. `cairn help agents` drops it from its list of actors, and
+  `schema/cairn-health.schema.json` drops it from the `actor` enum, so a payload naming it no longer
+  validates. `schemaVersion` stays 1, because no `cairn` release has ever written that value. Apart
+  from that one help line, output to a pipe or a file and `--json` output are still what they were.
+
+  Consumers must: remove `provider-console` from any copy of the `actor` enum you keep and from any branch that handles it.
+
 - **A theme manifest now requires `engine`, `kinds`, and `notes`.** `schema/cairn-theme-1.schema.json`
   requires `engine` (a range of the form `>=1.2.0` or `>=1.2.0 <2.0.0`), `kinds` (one to three of
   `blog`, `portfolio`, `docs`, `landing`, and `organization`, listed with their labels in

@@ -14,11 +14,11 @@ func TestEveryCheckDeclaresAPassTitle(t *testing.T) {
 			if c.PassTitle == "" {
 				t.Fatalf("check %q declares no PassTitle", c.ID)
 			}
-			if got := c.lineTitle(StatusPass); got != c.PassTitle {
-				t.Errorf("lineTitle(StatusPass) = %q, want %q", got, c.PassTitle)
+			if got := c.Title(StatusPass); got != c.PassTitle {
+				t.Errorf("Title(StatusPass) = %q, want %q", got, c.PassTitle)
 			}
-			if got := c.lineTitle(StatusFail); got != c.label() {
-				t.Errorf("lineTitle(StatusFail) = %q, want the registry title %q", got, c.label())
+			if got := c.Title(StatusFail); got != c.label() {
+				t.Errorf("Title(StatusFail) = %q, want the registry title %q", got, c.label())
 			}
 		})
 	}
@@ -32,8 +32,8 @@ func TestEveryCheckDeclaresASkipTitle(t *testing.T) {
 			if c.SkipTitle == "" {
 				t.Fatalf("check %q declares no SkipTitle", c.ID)
 			}
-			if got := c.lineTitle(StatusSkip); got != c.SkipTitle {
-				t.Errorf("lineTitle(StatusSkip) = %q, want %q", got, c.SkipTitle)
+			if got := c.Title(StatusSkip); got != c.SkipTitle {
+				t.Errorf("Title(StatusSkip) = %q, want %q", got, c.SkipTitle)
 			}
 		})
 	}

@@ -74,7 +74,7 @@ func TestAuthRoleWiring(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := authRoleWiring.Run(s)
+			result := authRoleWiring.run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -119,7 +119,7 @@ func TestAuthRoleWiringNamesHooksPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			files := map[string]string{"src/content/.cairn/site-facts.json": facts}
 			maps.Copy(files, tt.files)
-			result := authRoleWiring.Run(snapshotWithFiles(t, files))
+			result := authRoleWiring.run(snapshotWithFiles(t, files))
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -151,7 +151,7 @@ func TestAuthRoleWiringRuntimeForms(t *testing.T) {
 				"src/content/.cairn/site-facts.json": facts,
 				"src/hooks.server.ts":                "export const handle = " + tt.call + ";",
 			})
-			result := authRoleWiring.Run(s)
+			result := authRoleWiring.run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}

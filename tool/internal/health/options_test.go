@@ -10,7 +10,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 )
 
-func TestOptionsValidate(t *testing.T) {
+func TestOptionsValidateRejectsZeroFields(t *testing.T) {
 	tests := []struct {
 		name          string
 		o             Options
@@ -24,22 +24,22 @@ func TestOptionsValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.o.Validate()
+			err := tt.o.validate()
 			if tt.wantErrSubstr == "" {
 				if err != nil {
-					t.Errorf("Validate() = %v, want nil", err)
+					t.Errorf("validate() = %v, want nil", err)
 				}
 				return
 			}
 			if err == nil || !strings.Contains(err.Error(), tt.wantErrSubstr) {
-				t.Errorf("Validate() = %v, want an error naming %q", err, tt.wantErrSubstr)
+				t.Errorf("validate() = %v, want an error naming %q", err, tt.wantErrSubstr)
 			}
 		})
 	}
 }
 
 // TestRunRejectsZeroOptions asserts Run itself refuses to sweep with a zero Options, returning
-// the zero Report alongside the error Options.Validate names.
+// the zero Report alongside the error Options.validate names.
 func TestRunRejectsZeroOptions(t *testing.T) {
 	report, err := Run(context.Background(), record.Record{}, Clients{}, nil, Options{}, nil)
 	if err == nil {

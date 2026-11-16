@@ -1682,18 +1682,11 @@ The original decision framing, for the record:
 
 ## Later
 
-- **`tool/internal/health` carries package debt (the harvest's close Go read, 2026-09-30; all
-  predating the harvest).** The Go architecture read graded it sound with nits.
-  `Options.Validate` and `ActorProviderConsole` are exported with no outside caller. The three fix
-  tables are walked by hand in three places, and the anchor and actor tests skip `fixesByReason`;
-  one `allFixes` iterator would cover all three. `check_creds.go:143-144` prints a raw Reason code
-  where `ReasonPhrase` exists. The repo-not-recorded outcome is written three times, and `hasRepo`
-  and `DefaultBranch` live in `check_deploy.go` though three checks share them. The zone-read
-  block repeats in `check_delegation.go`, and about thirty zero-argument message functions could
-  be consts. `diagnoseUnreachable`'s `budget` and `probeServing`'s `domain` are test-only seams.
-  Comment density runs 0.49 against `go/build`'s 0.37 (dated incident narratives, per-function
-  catalogue citations, rebuttals of designs nobody wrote). Trigger: the next tool pass that
-  edits `tool/internal/health` for its own reasons.
+- **`tool/internal/health` carries package debt (the harvest's close Go read, 2026-09-30).** Pass 4
+  of the `tui-language` round cleared the exported-with-no-caller members, the repeated zone read,
+  the zero-argument message functions, the test-only seams, and the comment citations. What stays
+  open is filed in `BACKLOG.md` (#513, #515, #516, #517). Trigger: the next tool pass that edits
+  `tool/internal/health` for its own reasons.
 
 - **`rounded-t-full` and the other side forms of `full` pass `radius-scale` silently on a `badge`
   (theme identity pass B, 2026-09-29).** The rule flags `rounded-full` on an element that carries

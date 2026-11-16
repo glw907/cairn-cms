@@ -1,6 +1,17 @@
 package main
 
-import "github.com/spf13/cobra"
+import (
+	_ "embed"
+
+	"github.com/spf13/cobra"
+)
+
+// agentPage is docs/admin/set-up-with-an-agent.md, the page `cairn new` prints when it has no
+// terminal and no mode flag. `make agent-guide` copies it here, because go:embed reaches only the
+// package's directory, and TestAgentPageMatchesTheDocsPage fails when the copy drifts.
+//
+//go:embed set-up-with-an-agent.md
+var agentPage string
 
 // agentsPageFor returns the page for a build where cairn new is hidden or shown. The setup
 // contract is part of the page only once the command is in the root help, so a hidden command

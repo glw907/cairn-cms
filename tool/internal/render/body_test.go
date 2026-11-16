@@ -213,27 +213,29 @@ func TestNoRail(t *testing.T) {
 	}
 }
 
-// TestStateWordKeptWhereHueCannotCarryIt is criterion 7. The word is dropped only in the colour
-// Unicode tier; the ASCII tier, the plain body, and any colorprofile.ASCII terminal keep it.
-func TestStateWordKeptWhereHueCannotCarryIt(t *testing.T) {
-	tests := []struct {
-		name string
-		in   RenderInput
-		want bool
-	}{
-		{"colour unicode", input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical), false},
-		{"ascii tier", input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, true, spine.VerdictCritical), true},
-		{"no colour on a unicode terminal", input(fixtures.OneSick(), BodySingle, 120, colorprofile.ASCII, false, spine.VerdictCritical), true},
-		{"plain body", input(fixtures.OneSick(), BodyPlain, 120, colorprofile.TrueColor, false, spine.VerdictCritical), true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			text := strings.Join(plainLines(tt.in), "\n")
-			got := strings.Contains(text, "fail") && strings.Contains(text, "skip")
-			if got != tt.want {
-				t.Errorf("state words present = %v, want %v", got, tt.want)
+// TestStateCarriedWhereHueCannotCarryIt is criterion 7. A terminal row carries its state in its
+// mark's shape and its section's title, never in hue alone: every state a row can take draws a
+// distinct mark at both glyph tiers, and each state's rows sit under a title naming it. The plain
+// body, which draws no mark, keeps the state word.
+func TestStateCarriedWhereHueCannotCarryIt(t *testing.T) {
+	for _, ascii := range []bool{false, true} {
+		g := newTheme(true, colorprofile.ASCII, ascii).marks
+		marks := []string{g.Pass, g.Failing, g.FailingWarn, g.CouldNotRun, g.Held}
+		for i, m := range marks {
+			if slices.Contains(marks[i+1:], m) {
+				t.Errorf("ascii %v: two row states share the mark %q", ascii, m)
 			}
-		})
+		}
+		lines := plainLines(input(fixtures.OneSick(), BodySingle, 120, colorprofile.ASCII, ascii, spine.VerdictCritical))
+		for _, label := range []string{labelFailing, labelCouldNotRun, labelHeld} {
+			if !hasTitle(lines, label) {
+				t.Errorf("ascii %v: no %q title at no colour", ascii, label)
+			}
+		}
+	}
+	plain := strings.Join(plainLines(input(fixtures.OneSick(), BodyPlain, 120, colorprofile.TrueColor, false, spine.VerdictCritical)), "\n")
+	if !strings.Contains(plain, "fail") || !strings.Contains(plain, "skip") {
+		t.Errorf("the plain body dropped its state words:\n%s", plain)
 	}
 }
 
@@ -275,30 +277,44 @@ func TestTwoSeverityMark(t *testing.T) {
 	}
 }
 
-// TestSectionLabels is criterion 9: lowercase labels inset into a rule, everything passing
-// folded to one line in a non-OK run, and no domain case-folded anywhere.
+// hasTitle reports whether lines carry label as a section title: the label alone at the margin.
+func hasTitle(lines []string, label string) bool {
+	return slices.Contains(lines, strings.Repeat(" ", colIndent)+label)
+}
+
+// TestSectionLabels is criterion 9: lowercase titles at the margin, everything passing folded to
+// one count line in every run, and no domain case-folded anywhere.
 func TestSectionLabels(t *testing.T) {
 	lines := plainLines(input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical))
-	text := strings.Join(lines, "\n")
 	for _, label := range []string{labelFailing, labelCouldNotRun, labelHeld} {
-		if !strings.Contains(text, "── "+label+" ") {
-			t.Errorf("no inset rule for the %q section", label)
+		if !hasTitle(lines, label) {
+			t.Errorf("no title for the %q section", label)
 		}
 	}
-	if strings.Contains(text, "── "+labelPassing+" ") {
+	if hasTitle(lines, labelPassing) {
 		t.Error("a failing run drew a passing section rather than folding it to one line")
 	}
-	if !strings.Contains(text, "3 passing  serving") {
-		t.Error("the passing checks did not fold to one line")
+	if !slices.Contains(lines, "  ● 3 passing       serving · delegation · publish-path") {
+		t.Errorf("the passing checks did not fold to one count line:\n%s", strings.Join(lines, "\n"))
 	}
 	for _, l := range lines {
 		if l != strings.ToUpper(l) && strings.Contains(l, "MY-SITE") {
 			t.Errorf("line %q case-folded a domain", l)
 		}
 	}
-	ok := strings.Join(plainLines(input(fixtures.Healthy(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictOK)), "\n")
-	if !strings.Contains(ok, "── "+labelPassing+" ") {
-		t.Error("an OK run did not show its work under a passing section")
+	ok := plainLines(input(fixtures.Healthy(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictOK))
+	if hasTitle(ok, labelPassing) || !slices.ContainsFunc(ok, func(l string) bool {
+		return strings.HasPrefix(l, "  ● ") && strings.Contains(l, " passing ")
+	}) {
+		t.Errorf("an OK run did not fold its passing checks to one count line:\n%s", strings.Join(ok, "\n"))
+	}
+	// A folded creds check keeps its credential detail, under the count line at its column.
+	healthy := goldenCase{
+		view: "single", fixture: "healthy", reports: fixtures.Healthy(), body: BodySingle,
+		width: width100, profile: colorprofile.ASCII, dark: true,
+	}.render()
+	if !strings.Contains(healthy, "\n"+strings.Repeat(" ", 20)+"CAIRN_GH_READ_TOKEN read from the keyring") {
+		t.Errorf("a folded creds check dropped its credential detail:\n%s", healthy)
 	}
 }
 
@@ -341,6 +357,44 @@ func TestHyperlinkOnlyForConstrainedTargets(t *testing.T) {
 	}
 }
 
+// TestTheDocLinkSitsAtColumn20WhenItFits draws the one-site report at 80 columns, where the
+// address without its scheme fits on the fix's column 20 hang, and at 59, where the frame is one
+// column and the address sits at the name column. The OSC 8 target keeps the scheme either way.
+func TestTheDocLinkSitsAtColumn20WhenItFits(t *testing.T) {
+	shown := strings.TrimPrefix(fixAnchorBase, "https://")
+	for _, tt := range []struct {
+		width, col int
+	}{{80, 20}, {59, 4}} {
+		frame := Render(input(fixtures.OneSick(), BodySingle, tt.width, colorprofile.TrueColor, false, spine.VerdictCritical)).Lines()
+		found := false
+		for i, l := range plainLines(input(fixtures.OneSick(), BodySingle, tt.width, colorprofile.TrueColor, false, spine.VerdictCritical)) {
+			at := strings.Index(l, shown)
+			if at < 0 {
+				continue
+			}
+			found = true
+			if at != tt.col || strings.TrimSpace(l[:at]) != "" {
+				t.Errorf("width %d: the link starts at cell %d in %q, want cell %d", tt.width, at, l, tt.col)
+			}
+			if strings.Contains(l, "https://") {
+				t.Errorf("width %d: the printed link %q carries its scheme", tt.width, l)
+			}
+			if !strings.Contains(frame[i], "\x1b]8;;"+fixAnchorBase) {
+				t.Errorf("width %d: the link line %q does not target the full URL", tt.width, frame[i])
+			}
+			// The doc link role's ink is what sits between the OSC 8 opener and closer.
+			probe := newTheme(true, colorprofile.TrueColor, false).DocLink("u").Render("cairn.pub/")
+			inked := strings.TrimSuffix(probe[strings.Index(probe, "\a")+1:], "\x1b]8;;\a")
+			if !strings.Contains(frame[i], inked) {
+				t.Errorf("width %d: the link line %q is not drawn in the doc link role", tt.width, frame[i])
+			}
+		}
+		if !found {
+			t.Fatalf("width %d: no line carries %q", tt.width, shown)
+		}
+	}
+}
+
 // TestConditionIDNeverAloneOnALine is criterion 11: across the whole 40-to-400 sweep, no line
 // consists of nothing but a condition id.
 func TestConditionIDNeverAloneOnALine(t *testing.T) {
@@ -359,16 +413,20 @@ func TestConditionIDNeverAloneOnALine(t *testing.T) {
 // trails the fix block's URL line, and below that it trails the check's detail instead.
 func TestConditionIDPlacementByBand(t *testing.T) {
 	cond := string(spine.ConditionEdgeHTTPSNotForced)
-	for _, width := range []int{100, 120, 200} {
+	// The terminal prints the address without its scheme.
+	shown := strings.TrimPrefix(fixAnchorBase, "https://")
+	// At 100 the URL line, at the detail column, has no room left for the id, so it falls back
+	// to the detail.
+	for _, width := range []int{120, 200} {
 		line := lineCarrying(t, width, cond)
-		if !strings.Contains(line, fixAnchorBase) {
+		if !strings.Contains(line, shown) {
 			t.Errorf("width %d: the id sits on %q, want the fix block's URL line", width, line)
 		}
 	}
 	const detail = "Always Use HTTPS is off for the zone"
-	for _, width := range []int{60, 80} {
+	for _, width := range []int{60, 80, 100} {
 		line := lineCarrying(t, width, cond)
-		if strings.Contains(line, fixAnchorBase) {
+		if strings.Contains(line, shown) {
 			t.Errorf("width %d: the id sits on the URL line %q, want the detail line", width, line)
 		}
 		carrier := strings.TrimSpace(strings.TrimSuffix(line, "  "+cond))
@@ -400,14 +458,15 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 	theme := newTheme(true, colorprofile.TrueColor, false)
 	in := input(fixtures.OneSick(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
 
-	text := strings.Join(plainLines(in), "\n")
-	if !strings.Contains(text, theme.marks.NotStarted) {
+	lines := plainLines(in)
+	text := strings.Join(lines, "\n")
+	if !strings.Contains(text, "  "+theme.marks.Held+" https-forced") {
 		t.Error("the held row carries no held glyph")
 	}
 	if !strings.Contains(text, "held until "+fixtures.Now().Add(5*24*time.Hour).Format(time.DateOnly)+", 5 days left") {
 		t.Error("the held row carries no expiry field")
 	}
-	if !strings.Contains(text, "── "+labelHeld+" ") {
+	if !hasTitle(lines, labelHeld) {
 		t.Error("the held row is not under the held section")
 	}
 
@@ -433,11 +492,12 @@ func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 	// A lapsed hold: the check is back among the failures, says when the hold expired, and the
 	// verdict the caller computed is printed unchanged.
 	lapsed := input(fixtures.Hostile(), BodySingle, 120, colorprofile.TrueColor, false, spine.VerdictCritical)
-	lapsedText := strings.Join(plainLines(lapsed), "\n")
+	lapsedLines := plainLines(lapsed)
+	lapsedText := strings.Join(lapsedLines, "\n")
 	if !strings.Contains(lapsedText, "hold expired "+time.Date(2026, 8, 11, 0, 0, 0, 0, time.UTC).Format(time.DateOnly)) {
 		t.Error("a lapsed hold did not say when it expired")
 	}
-	if strings.Contains(lapsedText, "── "+labelHeld+" ") {
+	if hasTitle(lapsedLines, labelHeld) {
 		t.Error("a lapsed hold still held the check out of the failures")
 	}
 	if !strings.Contains(lapsedText, spine.VerdictCritical.String()) {
@@ -727,10 +787,10 @@ func TestStripWidthFormulaIsExact(t *testing.T) {
 	ids := stripColumns()
 	theme := newTheme(true, colorprofile.ASCII, false)
 	siteCol := theme.siteColWidth(reports)
-	// 9 for "blog-site", the widest of the two sites, plus a gutter, plus the nine headings
-	// (creds serving delegation https email deploy publish-path engine errors) with eight
-	// gutters between them, plus a gutter, plus the eight cells CRITICAL needs.
-	const want = 89
+	// The four-cell lead, 9 for "blog-site", the widest of the two sites, plus a gutter, plus
+	// the nine headings (creds serving delegation https email deploy publish-path engine errors)
+	// with eight gutters between them, plus a gutter, plus the eight cells CRITICAL needs.
+	const want = 93
 	if got := theme.stripWidth(stripHeadingsFor(ids), siteCol, verdictColWidth); got != want {
 		t.Fatalf("stripWidth = %d, want %d", got, want)
 	}
@@ -787,7 +847,7 @@ func TestStripMarksAgreeWithTheRowVerdict(t *testing.T) {
 				if v != spine.VerdictCritical {
 					t.Errorf("%s %s: filled mark on a %s row", r.Site, c.ID, v)
 				}
-			case theme.marks.FailingWarn, theme.marks.NotStarted:
+			case theme.marks.FailingWarn, theme.marks.Held:
 				if v == spine.VerdictOK {
 					t.Errorf("%s %s: fail mark on an OK row", r.Site, c.ID)
 				}
@@ -805,7 +865,7 @@ func TestHeldFailureKeepsTheHeldMarkInTheStrip(t *testing.T) {
 		if !c.Acknowledged {
 			continue
 		}
-		if glyph, _ := theme.mark(in, c); glyph != theme.marks.NotStarted {
+		if glyph, _ := theme.mark(in, c); glyph != theme.marks.Held {
 			t.Errorf("%s: held failure drew %q, want the held glyph", c.ID, glyph)
 		}
 	}
@@ -1358,7 +1418,7 @@ func TestFleetOnePassRule(t *testing.T) {
 // leading "site" is what tells the two apart.
 func tableHeadingLine(lines []string) string {
 	for _, l := range lines {
-		if strings.HasPrefix(l, "site ") {
+		if strings.HasPrefix(strings.TrimLeft(l, " "), "site ") {
 			return l
 		}
 	}
@@ -1384,6 +1444,10 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 		}
 		tables++
 
+		if strings.Contains(head, labelChecks) {
+			assertFoldedTable(t, w, head)
+			continue
+		}
 		_, columns := tableFit(theme.siteColWidth(reports), style.ContentWidth(w))
 		for i := range columns {
 			if !strings.Contains(head, tableColumns[i].heading) {
@@ -1411,5 +1475,261 @@ func TestManyTableDrawsEveryColumnWholeAtEveryWidth(t *testing.T) {
 
 	if tables == 0 {
 		t.Fatal("no width in the supported range drew the plain table, so nothing was asserted")
+	}
+}
+
+// assertFoldedTable checks a folded table's heading row: site, verdict, and the one checks
+// column, with no count, engine, or checked heading of its own.
+func assertFoldedTable(t *testing.T, w int, head string) {
+	t.Helper()
+	got := strings.Join(strings.Fields(head), " ")
+	if got != "site verdict checks" {
+		t.Fatalf("width %d: narrow heading row %q, want site, verdict, and checks", w, head)
+	}
+}
+
+// TestATableNarrowerThan60FoldsItsCounts draws one site below and at the one-column threshold.
+// Below it the counts share one checks cell joined by the separator, each count whole, and the
+// count columns are gone; at 60 the count columns draw as before.
+func TestATableNarrowerThan60FoldsItsCounts(t *testing.T) {
+	reports := fixtures.Degraded()
+	for _, w := range []int{59, 50} {
+		lines := plainLines(input(reports, BodyMany, w, colorprofile.ASCII, false, verdictFor(reports)))
+		head := tableHeadingLine(lines)
+		if got := strings.Join(strings.Fields(head), " "); got != "site verdict checks" {
+			t.Fatalf("width %d: heading %q, want site verdict checks", w, head)
+		}
+		// Every heading cell is ASCII, so its byte index is its cell; the row carries a Unicode
+		// mark and is measured in runes.
+		col := strings.Index(head, labelChecks)
+		row := []rune(lines[slices.Index(lines, head)+1])
+		if len(row) <= col {
+			t.Fatalf("width %d: site row %q has no checks cell", w, string(row))
+		}
+		cell := string(row[col:])
+		if cell != "1 failing · 3 could not run" {
+			t.Errorf("width %d: checks cell %q, want %q", w, cell, "1 failing · 3 could not run")
+		}
+		if len(row) > w {
+			t.Errorf("width %d: site row %q is %d cells", w, string(row), len(row))
+		}
+	}
+
+	head := tableHeadingLine(plainLines(input(reports, BodyMany, 60, colorprofile.ASCII, false, verdictFor(reports))))
+	if strings.Contains(head, labelChecks) || !strings.Contains(head, labelCouldNotRun) {
+		t.Errorf("width 60: heading %q, want the count columns unfolded", head)
+	}
+}
+
+// TestATableFoldsOnlyWhenEverySitesCountsFitWhole draws twelve long site names at 59, where the
+// widest row's counts overrun the checks cell. A cell that dropped a count would read as a site
+// without it, so the table keeps its headed count columns and every count in them.
+func TestATableFoldsOnlyWhenEverySitesCountsFitWhole(t *testing.T) {
+	twelve := fixtures.TwelveSites()
+	lines := plainLines(input(twelve, BodyMany, 59, colorprofile.ASCII, false, verdictFor(twelve)))
+	head := tableHeadingLine(lines)
+	if got := strings.Join(strings.Fields(head), " "); got != "site verdict failing could not run" {
+		t.Fatalf("heading %q, want the headed failing and could not run columns", head)
+	}
+	row := strings.Fields(lines[slices.Index(lines, head)+1])
+	if len(row) < 2 || row[len(row)-2] != "1" || row[len(row)-1] != "4" {
+		t.Errorf("first row %q, want its failing and could-not-run counts", row)
+	}
+
+	head = tableHeadingLine(plainLines(input(twelve, BodyMany, 40, colorprofile.ASCII, false, verdictFor(twelve))))
+	if strings.Contains(head, labelChecks) {
+		t.Errorf("width 40: heading %q draws a checks column the counts do not fit", head)
+	}
+}
+
+// TestFoldedCountsJoinTheNonZeroCountsInOrder asserts the checks cell names failing, then could
+// not run, then held, and leaves out a state with nothing in it.
+func TestFoldedCountsJoinTheNonZeroCountsInOrder(t *testing.T) {
+	theme := newTheme(true, colorprofile.ASCII, false)
+	sep := " " + theme.marks.Sep + " "
+	all := sections{
+		Failing:     make([]health.CheckResult, 1),
+		CouldNotRun: make([]health.CheckResult, 2),
+		Held:        make([]health.CheckResult, 1),
+	}
+	tests := []struct {
+		s    sections
+		want string
+	}{
+		{all, "1 failing" + sep + "2 could not run" + sep + "1 held"},
+		{sections{Held: make([]health.CheckResult, 3)}, "3 held"},
+		{sections{}, ""},
+	}
+	for _, tt := range tests {
+		if got := theme.foldedCounts(tt.s); got != tt.want {
+			t.Errorf("foldedCounts = %q, want %q", got, tt.want)
+		}
+	}
+}
+
+// failRow reports whether a de-escaped line is a mark row for an unheld failure.
+func failRow(g style.Marks, l string) bool {
+	return strings.HasPrefix(l, "  "+g.Failing+" ") || strings.HasPrefix(l, "  "+g.FailingWarn+" ")
+}
+
+// TestNothingGreenBelowAFailure is the rule a failing run's ink follows: from the first failing
+// row down, no span carries the OK ink, so the eye that finds the failure finds nothing green
+// after it. It walks every terminal golden case with a failure in it, the doctor frames
+// included. A healthy run is the positive control that the ink searched for is the one the frame
+// really spends, and the no-colour cases assert the passing count still sits below the failure
+// with no escape at all.
+func TestNothingGreenBelowAFailure(t *testing.T) {
+	failing, controlled := 0, false
+	for _, c := range goldenCases() {
+		if c.view != "single" && c.view != "many" && c.view != "doctor" {
+			continue
+		}
+		th := newTheme(c.dark, c.profile, c.ascii)
+		frame := c.render()
+		lines := strings.Split(frame, "\n")
+		first := slices.IndexFunc(lines, func(l string) bool { return failRow(th.marks, stripANSI(l)) })
+		if c.profile == colorprofile.ASCII {
+			if strings.Contains(frame, "\x1b") {
+				t.Errorf("%s: a no-colour frame carries an escape", c.path())
+			}
+			if first >= 0 && c.view != "many" && !slices.ContainsFunc(lines[first:], func(l string) bool {
+				return strings.HasPrefix(l, "  "+th.marks.Pass+" ") && strings.Contains(l, " passing")
+			}) {
+				t.Errorf("%s: no passing count below the failing row", c.path())
+			}
+			continue
+		}
+		ok := inkOf(th, style.RoleOK)
+		for _, r := range []style.Role{style.RoleMuted, style.RoleSubtle, style.RoleText, style.RoleFailing, style.RoleUnknown} {
+			if other := inkOf(th, r); ok == "" || strings.Contains(other, ok) {
+				t.Fatalf("%s: the OK ink %q is not told apart from role %v's %q", c.path(), ok, r, other)
+			}
+		}
+		if verdictFor(c.reports) == spine.VerdictOK && c.view == "single" && strings.Contains(frame, ok) {
+			controlled = true
+		}
+		if first < 0 {
+			continue
+		}
+		failing++
+		for _, l := range lines[first:] {
+			for _, sp := range parseSpans(l) {
+				if strings.Contains(sp.sgr, ok) {
+					t.Errorf("%s: %q carries the OK ink below the first failure", c.path(), sp.text)
+				}
+			}
+		}
+	}
+	if failing == 0 || !controlled {
+		t.Fatalf("asserted %d failing frames, positive control found = %v", failing, controlled)
+	}
+}
+
+// TestNoColourRowsSitOnTheGrid pins the grid in the frames where alignment is all that carries
+// it, measured in cells: at 80 every mark sits at cell 2, every name at cell 4, and every short
+// name's detail at cell 20; at 59 no mark row carries a second column, and the line under it
+// starts at cell 4.
+func TestNoColourRowsSitOnTheGrid(t *testing.T) {
+	th := newTheme(true, colorprofile.ASCII, false)
+	g := th.marks
+	marks := []string{g.Pass, g.Failing, g.FailingWarn, g.CouldNotRun, g.Held}
+	for _, width := range []int{widthNarrow - 1, style.DefaultWidth} {
+		lines := plainLines(input(fixtures.OneSick(), BodySingle, width, colorprofile.ASCII, false, spine.VerdictCritical))
+		rows := 0
+		for i, l := range lines {
+			if !slices.ContainsFunc(marks, func(m string) bool { return strings.HasPrefix(l, "  "+m+" ") }) {
+				continue
+			}
+			rows++
+			_, after, _ := strings.Cut(strings.TrimLeft(l, " "), " ")
+			if after == "" || after[0] == ' ' {
+				t.Errorf("width %d: %q has no name at cell 4", width, l)
+				continue
+			}
+			name, detail, twoColumn := strings.Cut(after, "  ")
+			if width < widthNarrow {
+				if twoColumn {
+					t.Errorf("width %d: %q carries a second column", width, l)
+				}
+				if i+1 < len(lines) && th.Width(lines[i+1])-th.Width(strings.TrimLeft(lines[i+1], " ")) != 4 {
+					t.Errorf("width %d: the line under %q does not start at cell 4: %q", width, l, lines[i+1])
+				}
+				continue
+			}
+			if !twoColumn || th.Width(name) >= 16 {
+				continue
+			}
+			if at := th.Width(l) - th.Width(strings.TrimLeft(detail, " ")); at != 20 {
+				t.Errorf("width %d: %q starts its detail at cell %d, want 20", width, l, at)
+			}
+		}
+		if rows == 0 {
+			t.Fatalf("width %d: no mark row was found, so nothing was asserted", width)
+		}
+	}
+}
+
+// bold reports whether an SGR parameter list sets bold weight. lipgloss writes the weight ahead
+// of any colour, so a leading 1 is the bold parameter and never part of a colour value.
+func bold(sgr string) bool {
+	return sgr == "1" || strings.HasPrefix(sgr, "1;")
+}
+
+// TestNamesAndEventsTakePlainWeight: a site's name in the every-site strip and table, and an
+// event's name in the log body, are Text at plain weight, so bold stays with the verdict word.
+// In the log title only the word "logs" is bold: the site is plain Text and the date Muted.
+func TestNamesAndEventsTakePlainWeight(t *testing.T) {
+	reports := fixtures.TwelveSites()
+	sites := map[string]bool{}
+	for _, r := range reports {
+		sites[r.Site] = true
+	}
+	// 160 draws the labelled strip and 60 the plain table.
+	for _, width := range []int{60, 160} {
+		in := input(reports, BodyMany, width, colorprofile.TrueColor, false, verdictFor(reports))
+		seen := 0
+		for _, sp := range frameSpans(Render(in)) {
+			if !sites[strings.TrimSpace(sp.text)] {
+				continue
+			}
+			seen++
+			if bold(sp.sgr) {
+				t.Errorf("width %d: the site name %q is bold", width, sp.text)
+			}
+		}
+		if seen == 0 {
+			t.Fatalf("width %d: no span carries a site name", width)
+		}
+	}
+
+	theme := newTheme(true, colorprofile.TrueColor, false)
+	f := Render(RenderInput{
+		View: ViewLogs, Width: 100, Dark: true, Profile: colorprofile.TrueColor,
+		Site: "my-site", Entries: goldenLogEntries(), Now: fixtures.Now(),
+	})
+	events := 0
+	for _, sp := range frameSpans(f) {
+		switch text := strings.TrimSpace(sp.text); {
+		case text == logLabel:
+			if !bold(sp.sgr) {
+				t.Errorf("the log title's %q is not bold", text)
+			}
+		case text == "my-site":
+			if sp.sgr != inkOf(theme, style.RoleText) {
+				t.Errorf("the log title's site carries %q, want plain Text", sp.sgr)
+			}
+		case strings.HasPrefix(text, "2026-"):
+			if sp.sgr != inkOf(theme, style.RoleMuted) {
+				t.Errorf("the log title's date carries %q, want Muted", sp.sgr)
+			}
+		case text == "commit.failed" || text == "entry.published":
+			events++
+			if bold(sp.sgr) {
+				t.Errorf("the event name %q is bold", text)
+			}
+		}
+	}
+	if events == 0 {
+		t.Fatal("no span carries an event name, so nothing was asserted")
 	}
 }

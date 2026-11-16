@@ -16,15 +16,16 @@ func sameColor(a, b color.Color) bool {
 	return ar == br && ag == bg && ab == bb && aa == ba
 }
 
-// TestStylesMapEachFieldToItsRole pins which role each named style paints in. The hex values
-// themselves are style's to test.
+// TestStylesMapEachFieldToItsRole pins which role each named style paints in. Text and Title
+// paint in style.RoleInstallerText, the installer's own ink. The hex values themselves are style's
+// to test.
 func TestStylesMapEachFieldToItsRole(t *testing.T) {
 	tests := []struct {
 		name string
 		get  func(Styles) lipgloss.Style
 		role Role
 	}{
-		{"text", func(s Styles) lipgloss.Style { return s.Text }, RoleText},
+		{"text", func(s Styles) lipgloss.Style { return s.Text }, style.RoleInstallerText},
 		{"muted", func(s Styles) lipgloss.Style { return s.Muted }, RoleMuted},
 		{"subtle", func(s Styles) lipgloss.Style { return s.Subtle }, RoleSubtle},
 		{"ok", func(s Styles) lipgloss.Style { return s.OK }, RoleOK},
@@ -32,7 +33,7 @@ func TestStylesMapEachFieldToItsRole(t *testing.T) {
 		{"warn", func(s Styles) lipgloss.Style { return s.Warn }, RoleUnknown},
 		{"accent", func(s Styles) lipgloss.Style { return s.Accent }, RoleAccent},
 		{"rule", func(s Styles) lipgloss.Style { return s.Rule }, RoleRule},
-		{"title", func(s Styles) lipgloss.Style { return s.Title }, RoleText},
+		{"title", func(s Styles) lipgloss.Style { return s.Title }, style.RoleInstallerText},
 		{"accent strong", func(s Styles) lipgloss.Style { return s.AccentStrong }, RoleAccent},
 	}
 	for _, dark := range []bool{false, true} {
@@ -80,7 +81,7 @@ func TestHuhThemeExistsForLightAndDark(t *testing.T) {
 	th := HuhTheme(NewStyles(true, colorprofile.TrueColor))
 	for _, dark := range []bool{true, false} {
 		ref := style.NewTheme(dark, colorprofile.TrueColor, false)
-		text, fail := ref.Color(RoleText), ref.Color(RoleFailing)
+		text, fail := ref.Color(style.RoleInstallerText), ref.Color(RoleFailing)
 		hs := th.Theme(dark)
 		f := hs.Focused
 		if !f.Title.GetBold() || !sameColor(f.Title.GetForeground(), text) {

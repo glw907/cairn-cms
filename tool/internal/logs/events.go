@@ -1,5 +1,7 @@
 package logs
 
+import "slices"
+
 // eventVocabulary is the engine's diagnostic event vocabulary, kept in step with
 // src/lib/log/events.ts by TestEventVocabularyMatchesEngine. It is a Go literal slice rather
 // than a value generated from the TypeScript source, because go-conventions forbids code
@@ -89,7 +91,5 @@ var eventVocabulary = []string{
 // completion. It is a copy, not the package's slice, so a caller mutating the result cannot
 // corrupt the vocabulary every later call reads.
 func Events() []string {
-	out := make([]string, len(eventVocabulary))
-	copy(out, eventVocabulary)
-	return out
+	return slices.Clone(eventVocabulary)
 }

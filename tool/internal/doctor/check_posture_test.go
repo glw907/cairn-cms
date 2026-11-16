@@ -34,7 +34,7 @@ func TestAIPostureEffectiveDeclaredMatchesServed(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1, "aiPosture": "decline"}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := aiPostureEffective.Run(s)
+	result := aiPostureEffective.run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass (detail %q)", result.Status, result.Detail)
 	}
@@ -49,12 +49,13 @@ func TestAIPostureEffectiveDeclaredDoesNotMatchServed(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1, "aiPosture": "invite"}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := runCheck(aiPostureEffective, s).Result
+	cr := runCheck(aiPostureEffective, s)
+	result := cr.Result
 	if result.Status != StatusFail {
 		t.Fatalf("Status = %v, want StatusFail (detail %q)", result.Status, result.Detail)
 	}
-	if result.Severity != spine.WarningFailure {
-		t.Errorf("Severity = %v, want spine.WarningFailure", result.Severity)
+	if cr.checkVerdict().Severity != spine.WarningFailure {
+		t.Errorf("Severity = %v, want spine.WarningFailure", cr.checkVerdict().Severity)
 	}
 }
 
@@ -67,7 +68,7 @@ func TestAIPostureEffectiveNoDeclaredNoDirectives(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := aiPostureEffective.Run(s)
+	result := aiPostureEffective.run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass (detail %q)", result.Status, result.Detail)
 	}
@@ -83,7 +84,7 @@ func TestAIPostureEffectiveManagedLayerTwoUserAgentStarGroups(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := aiPostureEffective.Run(s)
+	result := aiPostureEffective.run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass (detail %q)", result.Status, result.Detail)
 	}
@@ -101,7 +102,7 @@ func TestAIPostureEffectiveForeignContentSignal(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := aiPostureEffective.Run(s)
+	result := aiPostureEffective.run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass (detail %q)", result.Status, result.Detail)
 	}
@@ -119,7 +120,7 @@ func TestAIPostureEffectiveNon200(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := aiPostureEffective.Run(s)
+	result := aiPostureEffective.run(s)
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}
@@ -136,7 +137,7 @@ func TestAIPostureEffectiveUnreachableOrigin(t *testing.T) {
 	srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: closedURL, Source: OriginFromEnv})
-	result := aiPostureEffective.Run(s)
+	result := aiPostureEffective.run(s)
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}
@@ -149,8 +150,8 @@ func TestAIPostureEffectiveUnreachableOrigin(t *testing.T) {
 // is unknown, narrowing what would otherwise be a skip so an offline run's exit code says the
 // check did not observe rather than that it did not apply.
 func TestAIPostureEffectiveNoOriginAtAll(t *testing.T) {
-	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Source: OriginAbsent})
-	result := aiPostureEffective.Run(s)
+	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Source: originAbsent})
+	result := aiPostureEffective.run(s)
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}
@@ -242,7 +243,7 @@ func TestFetchRobotsCarriesNoCredential(t *testing.T) {
 
 // TestFetchRobotsNoOrigin asserts a snapshot with no resolved origin never dials.
 func TestFetchRobotsNoOrigin(t *testing.T) {
-	got := FetchRobots(context.Background(), PublicOrigin{Source: OriginAbsent})
+	got := FetchRobots(context.Background(), PublicOrigin{Source: originAbsent})
 	if got.Present {
 		t.Fatal("Present = true, want false")
 	}

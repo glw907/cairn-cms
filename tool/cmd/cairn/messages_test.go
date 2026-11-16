@@ -21,17 +21,15 @@ const maxCommandBodyLiteral = 30
 
 // probeDumpFiles hold cairn auth check's raw diagnostic dump: permission labels, credential
 // variable names, and provider-classified reason words for whoever is minting the three
-// credentials. probe_token.go's Long text states the design this codifies: "auth check's
+// credentials. auth_check.go's Long text states the design this codifies: "auth check's
 // whole output is identifiers (permission labels, credential variable names, and
-// pass/fail/skip/unknown words)", the same reason copy-standard.md section 3.9 keeps a log
-// line's field values verbatim rather than routing them through the prose table.
-// probe_token.go's genuine prose (Short, Long, Example, and its skip notices) is still moved
+// pass/fail/skip/unknown words)", the same reason a log line's field values stay verbatim
+// rather than routing through the prose table.
+// auth_check.go's genuine prose (Short, Long, Example, and its skip notices) is still moved
 // into messages.go despite this exemption; TestAuthCheckStringsLiveInMessages covers that half
 // directly.
 var probeDumpFiles = map[string]bool{
-	"probe_cloudflare.go": true,
-	"probe_github.go":     true,
-	"probe_token.go":      true,
+	"auth_check.go": true,
 }
 
 // excludedCommandLiterals returns every *ast.BasicLit a cmd/cairn file exempts from
@@ -91,7 +89,7 @@ func TestNoLongProseLiteralOutsideMessages(t *testing.T) {
 	}
 }
 
-// TestAuthCheckStringsLiveInMessages pins the half of probe_token.go's prose the
+// TestAuthCheckStringsLiveInMessages pins the half of auth_check.go's prose the
 // probeDumpFiles exemption above does not cover: its Short, Long, and Example, on both cairn
 // auth check and its Hidden alias cairn auth probe, are still messages.go constants, not
 // literals reintroduced at the call site.
@@ -148,15 +146,14 @@ func messageConstants(t *testing.T) []string {
 	return entries
 }
 
-// TestNoCAIRNPrefixedLiteralOutsideCredentialVars extends Task 19c-i's conflict test over this
-// table: every CAIRN_-prefixed literal messages.go carries is a member of authVariables (built
-// from credentialVars, env.go) or the setup token's variable, which
+// TestNoCAIRNPrefixedLiteralOutsideCredentialVars checks that every CAIRN_-prefixed literal
+// messages.go carries is a member of credentialVars or the setup token's variable, which
 // TestCredentialVariableNamesAreSpelledOnlyInEnvGo already exempts this file to allow.
 func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 	cairnVarPattern := regexp.MustCompile(`CAIRN_[A-Z_]+`)
-	allowed := make(map[string]bool, len(authVariables)+1)
-	for _, v := range authVariables {
-		allowed[v] = true
+	allowed := make(map[string]bool, len(credentialVars)+1)
+	for _, v := range credentialVars {
+		allowed[v.name] = true
 	}
 	// cairn new's agent guide names the setup token's variable, which env.go reads and cairn auth
 	// does not manage.
@@ -164,7 +161,7 @@ func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 	for _, s := range messageConstants(t) {
 		for _, m := range cairnVarPattern.FindAllString(s, -1) {
 			if !allowed[m] {
-				t.Errorf("messages.go entry %q names %q, not a member of authVariables %v", s, m, authVariables)
+				t.Errorf("messages.go entry %q names %q, not a member of credentialVars %v", s, m, credentialVars)
 			}
 		}
 	}
@@ -175,8 +172,7 @@ func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 // pattern generalized from an allow-list check to a real-tree check.
 var cairnBacktickCommandPattern = regexp.MustCompile("`cairn [a-z][a-z -]*`")
 
-// TestNoMessageNamesAnUnknownCairnCommand extends Task 19c-i's conflict test the same way,
-// checked against the real cobra tree cairn builds rather than an allow-list: every backtick-
+// TestNoMessageNamesAnUnknownCairnCommand checks, against the real cobra tree cairn builds rather than an allow-list, that every backtick-
 // quoted "cairn ..." command mention messages.go carries resolves to a command somewhere in
 // newRootCmd's tree.
 func TestNoMessageNamesAnUnknownCairnCommand(t *testing.T) {
@@ -253,23 +249,16 @@ func TestEveryCairnPrefixedMessageFollowsTheErrorGrammar(t *testing.T) {
 	}
 }
 
-// The eight rows copy-standard.md section 3.8 names, one constructor each, plus the fallback.
-// TestEveryEightSection38CaseHasATableEntry exercises each directly so criterion 2's count
-// is proven rather than merely asserted in a comment, and so `unused` never flags the four
-// (noCredentialsError, networkDownError, rateLimitedError, crashedCheckError) that carry no
-// production call site today (see messages.go's comment on why).
-func TestEveryEightSection38CaseHasATableEntry(t *testing.T) {
+// TestEveryTableConstructorBuildsATranslatedError builds one error from each remaining
+// error constructor and asserts each carries the "cairn: " prefix and the translatedError
+// type that keeps translateError from wrapping it a second time.
+func TestEveryTableConstructorBuildsATranslatedError(t *testing.T) {
 	cases := map[string]error{
-		"no credentials":                 noCredentialsError(),
-		"keyring unavailable":            keyringUnavailableError("CAIRN_CF_READ_TOKEN"),
-		"unknown site":                   unknownSiteError("example-a1b2c3"),
-		"network down":                   networkDownError(),
-		"rate limited, no Retry-After":   rateLimitedError(""),
-		"rate limited, with Retry-After": rateLimitedError("5m"),
-		"invalid --since":                invalidSinceError("7"),
-		"usage error, not a credential":  notACredentialError("NOT_A_REAL_VARIABLE"),
-		"usage error, arity":             healthTooManyArgsError(),
-		"a crashed check":                crashedCheckError("deploy"),
+		"keyring unavailable":           keyringUnavailableError("CAIRN_CF_READ_TOKEN"),
+		"unknown site":                  unknownSiteError("example-a1b2c3"),
+		"invalid --since":               invalidSinceError("7"),
+		"usage error, not a credential": notACredentialError("NOT_A_REAL_VARIABLE"),
+		"usage error, arity":            healthTooManyArgsError(),
 	}
 	for label, err := range cases {
 		if err == nil {
@@ -315,8 +304,7 @@ func TestTranslateErrorAckFileUnreadableSinglePrefix(t *testing.T) {
 }
 
 // TestTranslateErrorPrefixesARawError asserts a raw Go error that never went through this
-// table's constructors still reaches an operator with the cairn: prefix, copy-standard.md
-// section 4.2's fallback.
+// table's constructors still reaches an operator with the cairn: prefix.
 func TestTranslateErrorPrefixesARawError(t *testing.T) {
 	raw := errRaw{"open /home/geoff/.config/cairn/sites: permission denied"}
 	got := translateError(raw)

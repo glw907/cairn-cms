@@ -26,14 +26,22 @@ const (
 	RoleUnknown
 	RoleAccent
 	RoleRule
+
+	// RoleInstallerText is the warm near-black or near-white ink the installer's view paints its
+	// body text in, where the CLI's RoleText takes the terminal's own foreground. It sits after
+	// RoleRule so a walk from RoleText to RoleRule covers only the CLI's roles.
+	//
+	// WATCH: remove once the installer paints through the shared terminal language.
+	RoleInstallerText
 )
 
 // ink carries one role's value at every rung a terminal can offer: a hex pair for TrueColor, an
 // xterm-256 pair for the named ANSI256 rung, and one ANSI-16 slot shared by both branches, empty
-// when the role carries no explicit slot at all. RoleText and RoleMuted are the terminal's
-// default foreground at ANSI-16: slot 8 is the background on Solarized Dark, and SGR 2 (faint)
-// measures under 2:1 contrast on several common themes, so neither is ever used for a role that
-// must stay readable.
+// when the role carries no explicit slot at all. RoleText carries no ink at any rung, so body text
+// takes the terminal's own foreground and reads on a dark or a light ground alike. RoleMuted is
+// the terminal's default foreground at ANSI-16: slot 8 is the background on Solarized Dark, and
+// SGR 2 (faint) measures under 2:1 contrast on several common themes, so neither is ever used for
+// a role that must stay readable.
 type ink struct {
 	lightHex, darkHex string
 	light256, dark256 string
@@ -42,30 +50,24 @@ type ink struct {
 
 // warmStone is the one table in this module that writes a hex value.
 var warmStone = map[Role]ink{
-	RoleText:    {"#28231d", "#eae7e3", "235", "255", ""},
-	RoleMuted:   {"#615d57", "#a8a49e", "243", "246", ""},
+	RoleMuted:   {"#615d57", "#a8a49e", "241", "248", ""},
 	RoleSubtle:  {"#504c47", "#c1bdb8", "240", "250", "7"},
-	RoleOK:      {"#197037", "#7ccd8e", "28", "114", "2"},
-	RoleFailing: {"#b71824", "#ff8e86", "160", "210", "1"},
-	RoleUnknown: {"#915200", "#f7ac4d", "130", "215", "3"},
-	RoleAccent:  {"#7246cf", "#9d84ec", "97", "141", "5"},
+	RoleOK:      {"#197037", "#7ccd8e", "22", "114", "2"},
+	RoleFailing: {"#b71824", "#ff8e86", "124", "210", "1"},
+	RoleUnknown: {"#915200", "#f7ac4d", "94", "215", "3"},
+	RoleAccent:  {"#7246cf", "#9d84ec", "61", "141", "5"},
 	// The rule's risk on a Solarized Dark terminal (slot 8 is that theme's background,
 	// so a rule vanishes) is accepted here: a vanished rule costs a separator, not a state,
 	// and it is the one role the ANSI-16 slot-8 test exempts.
 	RoleRule: {"#c9c3bb", "#4a443b", "251", "238", "8"},
+
+	RoleInstallerText: {"#28231d", "#eae7e3", "235", "255", ""},
 }
 
 // NoColor reports whether p carries no colour at all. Unknown and NoTTY count as no colour, so a
 // zero profile reads as a pipe, and no style at such a profile emits an escape byte.
 func NoColor(p colorprofile.Profile) bool {
 	return p <= colorprofile.ASCII
-}
-
-// Pair returns role's light and dark hex colours, for a caller that must hand both to a library
-// that picks the ground itself.
-func Pair(r Role) (light, dark color.Color) {
-	v := warmStone[r]
-	return lipgloss.Color(v.lightHex), lipgloss.Color(v.darkHex)
 }
 
 // Theme resolves a role to a style for one background and one colour profile, and measures text
@@ -104,10 +106,10 @@ func (t Theme) resolve(role Role) color.Color {
 	)
 }
 
-// noInk reports whether role falls back to the terminal's own foreground: no colour at all, or
-// an ANSI-16 terminal and a role with no slot.
+// noInk reports whether role falls back to the terminal's own foreground: RoleText at every
+// profile, no colour at all, or an ANSI-16 terminal and a role with no slot.
 func (t Theme) noInk(role Role) bool {
-	return NoColor(t.profile) || (t.profile == colorprofile.ANSI && warmStone[role].ansi16 == "")
+	return role == RoleText || NoColor(t.profile) || (t.profile == colorprofile.ANSI && warmStone[role].ansi16 == "")
 }
 
 // Color returns role's colour, or lipgloss.NoColor where the role falls back to the terminal's
@@ -120,8 +122,8 @@ func (t Theme) Color(role Role) color.Color {
 }
 
 // Style returns role's style: the zero style at no colour, so a body that leans on colour alone
-// fails visibly rather than in production; the zero style at ANSI-16 for a role with no slot;
-// and role's resolved colour at every other rung.
+// fails visibly rather than in production; the zero style for RoleText, and at ANSI-16 for a
+// role with no slot; and role's resolved colour at every other rung.
 func (t Theme) Style(role Role) lipgloss.Style {
 	s := lipgloss.NewStyle()
 	if t.noInk(role) {
@@ -148,6 +150,18 @@ func (t Theme) Link(role Role, url string) lipgloss.Style {
 		return lipgloss.NewStyle()
 	}
 	return t.Style(role).Hyperlink(url)
+}
+
+// DocLink returns the style a documentation link is drawn in: Text ink with a plain underline
+// (SGR 4), carrying url as an OSC 8 hyperlink. No underline colour is set: lipgloss emits SGR 58
+// in its semicolon form, which a terminal without SGR 58 support can misread as other attributes
+// such as blink or a colour. At no colour it returns the zero style, underline and hyperlink
+// included.
+func (t Theme) DocLink(url string) lipgloss.Style {
+	if NoColor(t.profile) {
+		return lipgloss.NewStyle()
+	}
+	return t.Link(RoleText, url).Underline(true)
 }
 
 // Sized returns role's style constrained to a fixed-width cell: Width(w).MaxWidth(w), padding

@@ -148,6 +148,27 @@ printf %s "$v" | cairn auth set CAIRN_GH_READ_TOKEN
 
 A GitHub token over a public repository can't prove its Contents permission, because GitHub serves a public repository to anyone. A real confirmation needs a site whose repository is private. A private repository that the token can't see returns `not-found`, not `forbidden`. If a repository you expect the token to reach reports `not-found`, check the token's repository list first.
 
+## Set how cairn prints in a terminal
+
+Three environment variables change how `cairn` prints in a terminal. None holds a credential, and none can make a command fail.
+
+| Variable | Value | Effect |
+| --- | --- | --- |
+| `CAIRN_PLAIN` | `1` | Prints the plain output that a pipe receives, with no progress line and ASCII marks, and no color unless you pass `--color always`. Use it with a screen reader. `cairn new` still opens its terminal view. Any other value, including `true`, does nothing. |
+| `CAIRN_THEME` | `dark` or `light` | Picks the palette for your terminal's background. |
+| `COLORFGBG` | A pair such as `0;15` | `cairn` reads the last field as the background color: `7` or `15` means a light background, and any other number means a dark one. |
+
+`cairn` chooses the palette from the first of these that names one:
+
+1. The `--theme` flag.
+2. `CAIRN_THEME`.
+3. `COLORFGBG`.
+4. Dark.
+
+`cairn` ignores a `CAIRN_THEME` value other than `dark` or `light`, and a `COLORFGBG` value whose last field isn't a number, and moves to the next source. An unknown `--theme` value is an error. The three variables don't change `--json` output or output to a pipe or a file.
+
+Body text uses your terminal's own foreground color, so it reads on any background.
+
 ## Replace a token before it expires
 
 `cairn health` reports a token that is close to expiring.

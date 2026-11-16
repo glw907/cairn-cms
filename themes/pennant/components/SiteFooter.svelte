@@ -57,7 +57,7 @@ by the root layout server load; only top-level links with a url render. `/admin/
     background: var(--color-neutral);
     color: var(--color-neutral-content);
     padding-block: 26px;
-    font-size: 0.95rem;
+    font-size: var(--text-step--1);
   }
   .row {
     display: flex;

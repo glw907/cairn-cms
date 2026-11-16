@@ -187,14 +187,14 @@ never a tri-state control.
     margin-right: auto;
     color: inherit;
     text-decoration: none;
-    font-size: 1.45rem;
+    font-size: var(--text-step-2);
   }
   .name {
     min-width: 0;
     overflow-wrap: break-word;
     font-family: var(--font-brand);
     font-weight: 800;
-    font-size: 1.75rem;
+    font-size: var(--text-step-3);
     line-height: 1;
     letter-spacing: var(--tracking-display);
     text-transform: uppercase;
@@ -215,7 +215,7 @@ never a tri-state control.
   .join {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: 1.06rem;
+    font-size: var(--text-step-0);
     line-height: 1.5;
     padding: 6px 12px;
     border-radius: var(--radius-field);
@@ -310,7 +310,7 @@ never a tri-state control.
       flex: 1 1 0;
     }
     .name {
-      font-size: 1.4rem;
+      font-size: var(--text-step-2);
     }
     .tools {
       display: contents;

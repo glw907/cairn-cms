@@ -58,14 +58,9 @@
 html {
   font-size: clamp(1rem, 0.7631rem + 0.2631vw, 1.125rem);
 
-  /* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
-     focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
-     the gap to the header from the same tokens the header uses: the nav links' `min-h-11` touch
-     target (2.75rem, the tallest thing in the row, taller than the wordmark) plus its vertical
-     `--spacing-xs` padding, plus a 1rem cushion, so the offset re-skins with the space scale. At a
-     1280px desktop viewport the rendered header is about 72px (~4.5rem) and this resolves to about
-     87px (~5.4rem), so a jumped-to or focused heading clears the band with a comfortable margin. */
-  scroll-padding-top: calc(2.75rem + 2 * var(--spacing-xs) + 1rem);
+  /* SiteHeader scrolls with the page, so nothing pinned can cover a jumped-to or focused heading.
+     A small gap keeps such a heading off the viewport's top edge. */
+  scroll-padding-top: var(--spacing-m);
 
   /* An in-page anchor jump or a focused heading (the scroll-padding-top offset above) glides
      rather than snaps. The reduced-motion override below restores an instant jump for anyone who
@@ -329,8 +324,11 @@ body {
   outline: var(--cairn-focus-ring-outline);
   outline-offset: var(--cairn-focus-ring-offset);
 }
+/* The fill is color 2, which in some sets and modes sits within 2:1 of the page ground (gold on
+   light, spruce on dark), so the edge comes from base-content at 60%: at least 4.7:1 on base-100
+   in all five sets, light and dark. */
 .pennant-button--filled {
-  border-color: var(--color-secondary);
+  border-color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
   background: var(--color-secondary);
   color: var(--color-secondary-content);
 }
@@ -350,7 +348,12 @@ body {
   font-size: var(--text-step-3);
   text-transform: uppercase;
   letter-spacing: var(--tracking-display);
-  text-decoration: underline var(--site-heading-rule) var(--color-secondary);
+  /* Color 2 on light. On dark, color 2 is often the dark half of the pair (spruce, royal,
+     charcoal) and nearly vanishes, so the rule takes the primary ink, which the audit measures on
+     base-100. `light-dark()` follows the `color-scheme` every dark scope sets, so it holds for the
+     toggle, the system preference, and a dark-default build alike. */
+  text-decoration: underline var(--site-heading-rule)
+    light-dark(var(--color-secondary), var(--color-primary));
   text-decoration-skip-ink: none;
   text-underline-offset: 0.4em;
 }

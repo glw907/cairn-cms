@@ -138,7 +138,7 @@ Pass 1:
   - Task 1: `git cat-file -e HEAD:definitions/kinds.json && git cat-file -e HEAD:definitions/features.json; echo $?` prints 0, and `git cat-file -e HEAD:sets/kinds.json` exits 128.
 - No tracked file names `sets/kinds.json`, apart from `BACKLOG.md`, `CHANGELOG.md`, and the
   dated entries in `MIGRATION-NOTES.md`, which the pass leaves as written. Today: 13 files do.
-  - Tasks 1 to 4 and 8: `git grep -l "sets/kinds.json" HEAD` prints nothing. The plan and the
+  - Tasks 1, 2, 4, and 8: `git grep -l "sets/kinds.json" HEAD -- . ':!BACKLOG.md' ':!CHANGELOG.md' ':!MIGRATION-NOTES.md'` prints nothing, and `git grep -n "sets/kinds.json" HEAD -- MIGRATION-NOTES.md` prints nothing (no dated entry names the path today, and Task 4 corrects the one Unreleased line). `BACKLOG.md` names no such path today. The plan and the
     executor prompt name the old path, so Task 8 deletes both before close (as pennant-4 did in
     `394a18957`). The Unreleased `MIGRATION-NOTES.md` line is corrected (it isn't dated);
     `CHANGELOG.md` keeps its old bullet and gains a new one (Decisions 4).
@@ -307,7 +307,8 @@ Load `cairn-writing-docs` and the writing-voice standard.
    the closest place) naming `definitions/` and `npm run check:definitions`.
 3. `MIGRATION-NOTES.md` Unreleased: step 2 at line 168 reads "one to five ids from
    `definitions/kinds.json`". One new paragraph: a theme may declare up to five kinds and the
-   optional `menus` and `features`; a cairn-cms clone reads the kinds from `definitions/kinds.json`,
+   optional `menus` and `features`; a cairn-cms clone reads the kinds from `definitions/kinds.json`
+   (the paragraph names no old path, so the MIGRATION grep stays empty),
    and the schemas' kind and feature lists are generated, so edit `definitions/` and run
    `node scripts/build/emit-definitions.mjs`. Nothing for a site.
 4. `CHANGELOG.md` Unreleased: leave the theme-manifest bullet at lines 182 to 186 as written. Add
@@ -386,7 +387,7 @@ After Tasks 1, 2, 4, and 5 (there is no Task 3; the review folded it here):
 Before the last CI run, commit the deletion of
 `docs/internal/plans/2026-11-16-foundation-1-definitions-plan.md` and
 `docs/internal/plans/2026-11-16-foundation-1-executor-prompt.txt`, then run
-`git grep -l "sets/kinds.json" HEAD` (prints nothing). The PR body carries `Round: foundation`,
+`git grep -l "sets/kinds.json" HEAD -- . ':!BACKLOG.md' ':!CHANGELOG.md' ':!MIGRATION-NOTES.md'` prints nothing, and `git grep -n "sets/kinds.json" HEAD -- MIGRATION-NOTES.md` prints nothing (no dated entry names the path today, and Task 4 corrects the one Unreleased line). The PR body carries `Round: foundation`,
 `Review: accept, open findings 0`, `Calls: none` (or each call), and no `## Before merge`.
 Then mark the PR ready and hand over by `approval-packet`: under the conductor, `conductor-foundation`
 reads the PR and lands it by step 1 (`round-run.md` "Reading a pass"), since passes 1 to 3 land
@@ -435,7 +436,8 @@ else under a held path is needed.
 10. The two old tests that compared a schema's enum with the kinds file are deleted; the check and
     its test hold the same fact for all three schemas.
 11. The plan and the executor prompt live on the pass branch and are deleted before close, as
-    pennant-4 did, so acceptance item 2's grep holds on the head commit.
+    pennant-4 did, so acceptance item 2's grep holds on the head commit. The grep excludes the
+    three files the item exempts, since `CHANGELOG.md` keeps naming the old path (Decisions 4).
 
 ## Path
 
@@ -478,6 +480,9 @@ One `standards:plan-reviewer` read on 2026-11-16. Folded:
 - The set schema's new `$defs` placement, the screenshot script, the job paths, the hash sort, and
   the test ordering are now written out.
 - Task 3 folded into Task 6.
+- At the pre-launch advisor read: the item-2 grep now carries its exemptions, and a grep of
+  `src/tests/unit` and `scripts/**/*.test.*` found no other test that pins the lists Task 1
+  edits (`close-ci-coverage.test.ts` reads only `CLOSE_COMPONENTS`).
 
 Not folded: the fast lane picks no `test:theme` for a `schema/` change. It predates the pass, and
 Task 7 and CI run `test:theme`.

@@ -5,17 +5,15 @@ import (
 	"strings"
 )
 
-// docsBaseAdmin is the admin docs directory a failure's docs URL resolves against, the same
-// shape internal/render/layout.go's fixAnchorBase carries for the health report. It is not
-// shared with render: a doctor-to-render import would invert render's dependency direction
-// for one string, so the constant is duplicated here instead.
+// docsBaseAdmin is the admin docs directory a failure's docs URL resolves against.
 const docsBaseAdmin = "https://cairn.pub/docs/admin/"
 
-// docsURL builds a failure's docs URL from anchor, a condition's docsAnchor field shaped
+// DocsURL builds a failure's docs URL from anchor, a condition's docsAnchor field shaped
 // "<basename>.md#<fragment>": the published address drops the ".md" the mirror carries. Empty
 // when anchor itself is empty, so a condition carrying no docsAnchor prints no URL line rather
-// than a broken one.
-func docsURL(anchor string) string {
+// than a broken one. The plain report, the JSON payload, and the terminal body all print this
+// one address.
+func DocsURL(anchor string) string {
 	if anchor == "" {
 		return ""
 	}
@@ -28,7 +26,7 @@ func docsURL(anchor string) string {
 func Format(checked []CheckedResult) string {
 	lines := make([]string, 0, len(checked)+8)
 	for _, cr := range checked {
-		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.lineTitle(cr.Result.Status), cr.Result.Detail))
+		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.Title(cr.Result.Status), cr.Result.Detail))
 	}
 
 	for _, cr := range checked {
@@ -38,7 +36,7 @@ func Format(checked []CheckedResult) string {
 		text := conditionText(cr.Check.Condition)
 		lines = append(lines, "", fmt.Sprintf("%s failed.", cr.Check.label()),
 			"  Why: "+text.Why, "  Fix: "+text.Remediation)
-		if url := docsURL(text.DocsAnchor); url != "" {
+		if url := DocsURL(text.DocsAnchor); url != "" {
 			lines = append(lines, "  Docs: "+url)
 		}
 	}
@@ -53,20 +51,4 @@ func Format(checked []CheckedResult) string {
 	))
 
 	return strings.Join(lines, "\n")
-}
-
-// joinOr joins a list of names the way a sentence offers alternatives, matching the copy
-// standard's serial "or": "a or b" for two, and commas with a serial comma before the trailing
-// "or" for three or more.
-func joinOr(items []string) string {
-	switch len(items) {
-	case 0:
-		return ""
-	case 1:
-		return items[0]
-	case 2:
-		return items[0] + " or " + items[1]
-	default:
-		return strings.Join(items[:len(items)-1], ", ") + ", or " + items[len(items)-1]
-	}
 }

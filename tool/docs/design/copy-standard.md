@@ -223,6 +223,10 @@ list). Everywhere else, delete it. The single-site fix line under its own failin
 heading. A nine-row table of `pass` needs no heading but keeps `passing` because the header's tally
 names the same word.
 
+This rule governs the piped form, the output a command prints when standard output is not a
+terminal. On a terminal, the report titles every block it draws, as the Blocks section of
+`terminal-standard.md` describes.
+
 ### 2.4 The grammar of a detail line
 
 **What was measured, in the operator's terms, with the number.**
@@ -324,7 +328,7 @@ One word per concept. The banned column is exhaustive for these sources.
 | concept | the word | never |
 |---|---|---|
 | run verdict | `OK` `WARNING` `CRITICAL` `UNKNOWN` (capitals) | healthy, degraded, critical (lowercase), all clear, no issues, fine |
-| check result | `pass` `fail` `skip` `held` | ok, failing, unknown, ack, acknowledged, passed, error, warn |
+| check result | `pass` `fail` `skip` `held` (in the piped form; a terminal shows the marks and block titles of `terminal-standard.md` instead) | ok, failing, unknown, ack, acknowledged, passed, error, warn |
 | section for skipped checks | `could not run` | unknown, degraded, unavailable, not observable, indeterminate |
 | why a check skipped | the missing input, named | `cred-missing`, `reason.*`, park codes, enums |
 | a failure the operator has accepted for now | `held`, a `hold` | ack, acknowledged, snoozed, muted, suppressed, waived |
@@ -397,6 +401,7 @@ Every user-facing string found in the sources. `delete` means the best rewrite i
 | `mockups-2` plain | `exit 2` | none | keep |
 | `mockups-2` plain | `remedy page: <url>` | nobody says "remedy page" | `docs: <url>` |
 | `mockups-2` plain | `remedy: <text>` | none; matches plugin-output idiom | keep |
+| `cairn health` | `Checking <site>` | none; the progress line on stderr while a run is under way, erased before the report prints | keep |
 
 ### 3.2 Section labels
 
@@ -416,6 +421,9 @@ Every user-facing string found in the sources. `delete` means the best rewrite i
 | `board-3` | `do these, worst first` | the origin of the defect | `what to fix` |
 | `ledger-2` | `── do this next ──` | invented imperative; duplicates the fix line above it | delete |
 | `ledger-2` | `── checks ──` | labels the only thing on screen | delete |
+| `cairn sites` | `credentials` | none; the title over the credential rows under a listing on a terminal, a bare lowercase noun naming what the rows are | keep |
+| `cairn doctor` | `notes` | none; the title over the info results on a terminal, a bare lowercase noun naming what the rows are | keep |
+| `cairn doctor` | `2 do not apply    Media bucket binding · Guard role vocabulary` | none; the muted line the skipped checks fold to on a terminal. A doctor skip means the check's precondition did not hold for this site, so it is not `could not run` | keep |
 
 ### 3.3 The degraded notice and the skip group
 
@@ -523,7 +531,7 @@ Detail lines for the realistic cases. `creds`, `serving`, `delegation`, `https`,
 | `brief-4` | `no issues` | claim in place of a count | `9 passing` |
 | `brief-3` | `all clear  ecxc.ski · cairn.pub` | a whole-run claim describing two of six sites | `2 passing  ecxc.ski · cairn.pub` |
 | `brief-2` | `● 4 healthy  creds · serving · ...` | fifth state word | `● 4 passing  creds · serving · ...` |
-| `board-3` | legend `● ok  ▲ failing  ? could not run  ◌ acknowledged` | three of four words are outside the vocabulary; a legend is a confession that the rows are unreadable | delete; every row carries its state word or its verdict word |
+| `board-3` | legend `● ok  ▲ failing  ? could not run  ◌ acknowledged` | three of four words are outside the vocabulary; a legend is a confession that the rows are unreadable | delete; every row carries its state word or its verdict word (in the piped form; the terminal table has no legend either, since each row carries its mark and its verdict word) |
 | `board-3` | legend `cr creds · sv serving · dl delegation · ...` | the cipher the charter rules out (`family.md:79`) | delete with the cipher |
 | `board-3` | `6 sites   4▲ critical   2● ok` | glyph-in-count; lowercase verdict words | `6 sites  4 CRITICAL · 2 OK` |
 | `brief-3` | `907.LIFE`, `AKSAILINGCLUB.ORG` | a domain is an identifier and is never case-folded | lowercase as given |
@@ -652,6 +660,15 @@ from the code comments marking them instead, not from this section alone.
 | fallback table headings | `site`, `verdict`, `failing`, `could not run`, `held`, `engine`, `checked` | the section vocabulary as column headings, plus the engine version the check now reports as a structured field |
 | status line under a site listing, a token the run could not find | `CAIRN_CF_READ_TOKEN is not set, so creds, email and errors cannot run` | a listing attempts no check, so the past tense above would report a failure that did not happen; this says what the absence will cost |
 | fleet fix list, one remedy covering several sites | `also on: xcathletes.org, cairn.pub` | one remedy is printed once per frame, and the sites it applies to are named in that one entry, ranked, never truncated |
+| `cairn doctor` terminal body, the info results' title | `notes` | an info result is a passing check carrying a note, which no health section word names (3.2) |
+| `cairn --help`, the root's long text (one sentence added) | `Set CAIRN_PLAIN=1 to print plain output at a terminal, the same output a pipe receives.` | the plain-mode ruling asks for `CAIRN_PLAIN` to be documented in `cairn --help`; the sentence names it alone, since no ruling puts `CAIRN_THEME` or `COLORFGBG` in help |
+| `cairn doctor` terminal body, the skipped checks folded to one line | `1 does not apply`, `<n> do not apply` (the verb agrees with the count) | a doctor skip is a precondition that did not hold, not a check that could not run, so 2.9's `could not run` would misreport it (3.2) |
+| `cairn sites` terminal view, the title and the count beside it | `sites`, `3 known` | the title is a bare lowercase noun (2.3); the count is a muted fact on the title's line, never part of the label, so 2.3's no-count rule holds for the label |
+| `cairn sites` and `cairn adopt list` terminal tables, column headers | `site`, `name`, `domain`, `worker`, `repository` | the table block needs a header row, and each is the noun the column holds |
+| `cairn adopt list` terminal view, the two group titles | `ready to adopt`, `no Custom Domain` | a Worker with a domain can be adopted from the listing and one with none cannot, and the titles name that state where the piped listing uses a blank line |
+| `cairn auth list` terminal view, the title | `credentials` | the same noun 3.2 keeps over the credential rows under a site listing |
+| `cairn auth check` terminal report, the section titles | `failing`, `could not run`, `passing` | the section vocabulary of 2.9 over permission rows, in the order health uses |
+| `cairn auth check` terminal report, the fix under a permission the token lacks | `Add the Workers Scripts permission to the token in CAIRN_CF_READ_TOKEN, then run the command again.` | the imperative fix line of 2.5, naming the permission and the variable, since no fix table entry covers a permission |
 
 ---
 

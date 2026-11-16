@@ -407,13 +407,13 @@ func TestDeclaredConditionsExistInTheEngineRegistry(t *testing.T) {
 	}
 }
 
-// TestFixLineActorIsOneOfTheFour asserts every fix line's Actor is one of the four declared
+// TestFixLineActorIsOneOfTheThree asserts every fix line's Actor is one of the three declared
 // values, and that Command is non-empty only when Actor is ActorOperator.
-func TestFixLineActorIsOneOfTheFour(t *testing.T) {
-	valid := map[Actor]bool{ActorOperator: true, ActorDeveloper: true, ActorProviderConsole: true, ActorRegistrar: true}
+func TestFixLineActorIsOneOfTheThree(t *testing.T) {
+	valid := map[Actor]bool{ActorOperator: true, ActorDeveloper: true, ActorRegistrar: true}
 	check := func(key string, fix Fix) {
 		if !valid[fix.Actor] {
-			t.Errorf("%s: Actor = %q, not one of the four declared values", key, fix.Actor)
+			t.Errorf("%s: Actor = %q, not one of the three declared values", key, fix.Actor)
 		}
 		if fix.Command != "" && fix.Actor != ActorOperator {
 			t.Errorf("%s: Command = %q, but Actor = %q (only ActorOperator may carry a Command)", key, fix.Command, fix.Actor)

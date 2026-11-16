@@ -67,7 +67,7 @@ func TestAdminMountShape(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := adminMountShape.Run(s)
+			result := adminMountShape.run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -97,7 +97,7 @@ func TestAdminMountShapeNeverFails(t *testing.T) {
 	}
 	for i, files := range inputs {
 		s := snapshotWithFiles(t, files)
-		result := adminMountShape.Run(s)
+		result := adminMountShape.run(s)
 		if result.Status == StatusFail {
 			t.Errorf("input %d: Status = StatusFail, want never fail (files %+v)", i, files)
 		}

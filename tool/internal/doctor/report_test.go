@@ -229,10 +229,10 @@ func TestGoldenFailureBlockCarriesDocsURL(t *testing.T) {
 // TestDocsURLDropsTheMdExtension pins the published docs URL's exact shape: the mirror's
 // basename without .md, joined to its fragment.
 func TestDocsURLDropsTheMdExtension(t *testing.T) {
-	got := docsURL("is-it-working.md#deploy-the-worker-with-its-bindings")
+	got := DocsURL("is-it-working.md#deploy-the-worker-with-its-bindings")
 	want := "https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings"
 	if got != want {
-		t.Errorf("docsURL = %q, want %q", got, want)
+		t.Errorf("DocsURL = %q, want %q", got, want)
 	}
 }
 
@@ -240,23 +240,16 @@ func TestDocsURLDropsTheMdExtension(t *testing.T) {
 // registry entry this pass raises happens not to hit today but the function must still handle:
 // a report must print no broken URL line for it.
 func TestDocsURLIsEmptyForNoAnchor(t *testing.T) {
-	if got := docsURL(""); got != "" {
-		t.Errorf("docsURL(\"\") = %q, want empty", got)
+	if got := DocsURL(""); got != "" {
+		t.Errorf("DocsURL(\"\") = %q, want empty", got)
 	}
 }
 
-// TestRunStampsResultIDFromCheck holds Run's contract that every Result carries its Check's
-// ID, and that the stamp survives into Verdicts: an exit-code fold keyed on the wrong id would
-// attribute one check's failure to another.
-func TestRunStampsResultIDFromCheck(t *testing.T) {
+// TestVerdictsCarryEachChecksID holds that Verdicts keys each entry on its Check's ID: an
+// exit-code fold keyed on the wrong id would attribute one check's failure to another.
+func TestVerdictsCarryEachChecksID(t *testing.T) {
 	snap := buildSnapshot(t, cleanSiteFiles(), cleanOrigin(), cleanRobots())
 	checked := Run(snap)
-
-	for _, cr := range checked {
-		if cr.Result.ID != cr.Check.ID {
-			t.Errorf("Result.ID = %q, want Check.ID %q", cr.Result.ID, cr.Check.ID)
-		}
-	}
 
 	verdicts := Verdicts(checked)
 	if len(verdicts) != len(checked) {
@@ -266,26 +259,5 @@ func TestRunStampsResultIDFromCheck(t *testing.T) {
 		if verdicts[i].ID != cr.Check.ID {
 			t.Errorf("Verdicts[%d].ID = %q, want %q", i, verdicts[i].ID, cr.Check.ID)
 		}
-	}
-}
-
-// TestJoinOrRendersASerialOrList covers the one-, two-, and three-item shapes a detail's file
-// list takes: a lone name, "a or b", and "a, b, or c" with the serial comma.
-func TestJoinOrRendersASerialOrList(t *testing.T) {
-	tests := []struct {
-		name  string
-		items []string
-		want  string
-	}{
-		{name: "one item", items: []string{"package-lock.json"}, want: "package-lock.json"},
-		{name: "two items", items: []string{"vite.config.js", "vite.config.ts"}, want: "vite.config.js or vite.config.ts"},
-		{name: "three items", items: []string{"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}, want: "package-lock.json, pnpm-lock.yaml, or yarn.lock"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := joinOr(tt.items); got != tt.want {
-				t.Errorf("joinOr(%q) = %q, want %q", tt.items, got, tt.want)
-			}
-		})
 	}
 }

@@ -115,6 +115,13 @@ func TestReportJSONFieldOrderRoundTrips(t *testing.T) {
 	}
 }
 
+// verboseTestField builds a field whose Verbose flag is set, for the render tests.
+func verboseTestField(key string, value any) spine.OutcomeField {
+	f := field(key, value)
+	f.Verbose = true
+	return f
+}
+
 // TestReportJSONDropsVerboseFields covers the non-verbose render's visibility filter: a field a
 // check marked verbose is dropped from the render entirely, key and value both, while a
 // non-verbose field survives with its value intact. Both fields are present in a verbose render.
@@ -127,7 +134,7 @@ func TestReportJSONDropsVerboseFields(t *testing.T) {
 				State: spine.OK,
 				Fields: []spine.OutcomeField{
 					field("errorCount", 3),
-					verboseField("lastBuildSHA", sha),
+					verboseTestField("lastBuildSHA", sha),
 				},
 			},
 		}},
@@ -166,7 +173,7 @@ func TestReportJSONNeverEmitsVerboseKey(t *testing.T) {
 			ID: "deploy",
 			Outcome: spine.Outcome{
 				State:  spine.OK,
-				Fields: []spine.OutcomeField{field("errorCount", 3), verboseField("buildId", "b-1")},
+				Fields: []spine.OutcomeField{field("errorCount", 3), verboseTestField("buildId", "b-1")},
 			},
 		}},
 	}
@@ -193,7 +200,7 @@ func TestReportJSONEmptyFieldsRendersLikeFullyFiltered(t *testing.T) {
 			ID: "deploy",
 			Outcome: spine.Outcome{
 				State:  spine.OK,
-				Fields: []spine.OutcomeField{verboseField("lastBuildSHA", "abc123")},
+				Fields: []spine.OutcomeField{verboseTestField("lastBuildSHA", "abc123")},
 			},
 		}},
 	}
@@ -213,8 +220,8 @@ func TestReportJSONEmptyFieldsRendersLikeFullyFiltered(t *testing.T) {
 
 // TestCheckDetailFieldVisibility pins which keys each flattening check carries into a non-verbose
 // render. A field whose value is enough to look an account, a repository, or a build up is
-// verbose-only, so it must not appear here; a check that adds one through field rather than
-// verboseField goes red.
+// verbose-only, so it must not appear here; a check that adds one through field without
+// setting the Verbose flag goes red.
 func TestCheckDetailFieldVisibility(t *testing.T) {
 	tests := []struct {
 		name   string

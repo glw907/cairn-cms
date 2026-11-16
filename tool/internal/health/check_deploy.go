@@ -21,7 +21,7 @@ const buildStoppedStatus = "stopped"
 // to that this check treats as a working deploy. Every other settled outcome (fail, terminated,
 // skipped, cancelled, or one Cloudflare has not documented yet) is a failed deploy: the fail-open
 // alternative, treating an unrecognized outcome as success, would tell an operator a broken
-// deploy is fine (the Node CLI's runChapter3 draws the same line).
+// deploy is fine.
 const buildOutcomeSuccess = "success"
 
 // buildState is a Workers Builds run's settled state, as deployCheck reports it in its
@@ -30,8 +30,9 @@ type buildState int
 
 // The four buildState values a Workers Builds run can be in.
 const (
-	// buildNone means Builds is connected but has never run a build.
-	buildNone buildState = iota
+	// The zero value means Builds is connected but has never run a build. String names it
+	// "none", so it carries no constant of its own.
+	_ buildState = iota
 	// buildOK means the last build stopped with build_outcome "success".
 	buildOK
 	// buildFailed means the last build stopped with any other settled outcome.
@@ -46,8 +47,6 @@ const (
 // would say less than "no build".
 func (s buildState) String() string {
 	switch s {
-	case buildNone:
-		return "none"
 	case buildOK:
 		return "ok"
 	case buildFailed:
@@ -123,7 +122,7 @@ func (d deployDetail) outcome(state spine.State, reason spine.ReasonCode, code s
 	return spine.Outcome{State: state, Reason: reason, Code: code, Detail: detail, Fields: d.fields()}
 }
 
-// deployCheck ports the site's Workers Builds deploy pipeline: the Worker exists, Builds is
+// deployCheck checks the site's Workers Builds deploy pipeline: the Worker exists, Builds is
 // connected to the site's repository, the last build's settled state, and whether that
 // build's commit is still the repository's default-branch head.
 type deployCheck struct{}
@@ -182,7 +181,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 	if worker == nil {
-		return deployDetail{}.outcome(spine.Failing, "", spine.CodeDeployWorkerNotFound, detailDeployWorkerNotFound())
+		return deployDetail{}.outcome(spine.Failing, "", spine.CodeDeployWorkerNotFound, detailDeployWorkerNotFound)
 	}
 	detail := deployDetail{WorkerExists: true}
 
@@ -195,7 +194,7 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 		return apiErrorOutcome(err)
 	}
 	if len(triggers) == 0 {
-		return detail.outcome(spine.Unknown, spine.APIReason(providers.ReasonBuildsNotConnected), "", detailDeployBuildsNotConnected())
+		return detail.outcome(spine.Unknown, spine.APIReason(providers.ReasonBuildsNotConnected), "", detailDeployBuildsNotConnected)
 	}
 	detail.BuildsConnected = true
 	detail.PushToDeploy = true
@@ -221,11 +220,11 @@ func (deployCheck) Run(ctx context.Context, r record.Record, c Clients, _ Option
 	// against a build that succeeded, so a failed build never measures MainSHA or Behind.
 	if build.Outcome != buildOutcomeSuccess {
 		detail.LastBuild = buildFailed
-		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployBuildFailed())
+		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployBuildFailed)
 	}
 
 	if !hasRepo(r) {
-		return detail.outcome(spine.Unknown, spine.ReasonRepoNotRecorded, "", detailNoRepoRecorded())
+		return detail.outcome(spine.Unknown, spine.ReasonRepoNotRecorded, "", detailNoRepoRecorded)
 	}
 	mainSHA, err := c.GH.HeadSHA(ctx, r.GitHub.Repo.Owner, r.GitHub.Repo.Repo, DefaultBranch(r))
 	if err != nil {
@@ -248,7 +247,7 @@ func actionsDeploy(ctx context.Context, name string, detail deployDetail, c Clie
 		return apiErrorOutcome(err)
 	}
 	if len(deployments) == 0 {
-		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployNoDeployment())
+		return detail.outcome(spine.Failing, "", spine.CodeDeployBuildFailed, detailDeployNoDeployment)
 	}
 	detail.LastBuild = buildOK
 	detail.LastBuildAt = deployments[0].CreatedOn

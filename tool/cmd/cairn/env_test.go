@@ -103,17 +103,17 @@ func TestLoadEnvProviderAnswersWhenEnvironmentAbsent(t *testing.T) {
 func TestLoadEnvAllAbsentIsAllMissing(t *testing.T) {
 	got, missing := loadEnv(fakeEnv(nil))
 
-	for _, name := range authVariables {
-		if from := displayFor(got, name); from != "" {
-			t.Errorf("%s from = %q, want empty", name, from)
+	for _, v := range credentialVars {
+		if from := displayFor(got, v.name); from != "" {
+			t.Errorf("%s from = %q, want empty", v.name, from)
 		}
 	}
 	if len(missing) != 3 {
 		t.Fatalf("missing = %v, want all three variables", missing)
 	}
-	for i, name := range authVariables {
-		if missing[i].Var != name {
-			t.Errorf("missing[%d].Var = %q, want %q", i, missing[i].Var, name)
+	for i, v := range credentialVars {
+		if missing[i].Var != v.name {
+			t.Errorf("missing[%d].Var = %q, want %q", i, missing[i].Var, v.name)
 		}
 	}
 }
@@ -139,7 +139,7 @@ func TestLoadEnvBlankExportedVariableIsMissing(t *testing.T) {
 		t.Error("missing does not list CAIRN_CF_READ_TOKEN, which was exported blank")
 	}
 
-	cmd := newAuthListCmd(deps{env: envFn})
+	cmd := newAuthListCmd(deps{env: envFn, keyringStatus: func(string) (bool, error) { return false, nil }})
 	var out strings.Builder
 	cmd.SetOut(&out)
 	if err := cmd.RunE(cmd, nil); err != nil {
@@ -173,26 +173,6 @@ func TestLoadEnvRecordsProviderError(t *testing.T) {
 	}
 	if !found {
 		t.Error("missing does not list CAIRN_GH_READ_TOKEN, which the provider failed to answer")
-	}
-}
-
-// TestLoadEnvReadsNoColorAndTerm is criterion 16 (Task 20a): loadEnv resolves NO_COLOR and TERM
-// straight from envFn, carrying no Missing entry for either since neither is a credential.
-func TestLoadEnvReadsNoColorAndTerm(t *testing.T) {
-	envFn := fakeEnv(map[string]string{"NO_COLOR": "1", "TERM": "xterm-256color"})
-
-	got, missing := loadEnv(envFn)
-
-	if got.noColorValue() != "1" {
-		t.Errorf("noColorValue() = %q, want %q", got.noColorValue(), "1")
-	}
-	if got.termValue() != "xterm-256color" {
-		t.Errorf("termValue() = %q, want %q", got.termValue(), "xterm-256color")
-	}
-	for _, m := range missing {
-		if m.Var == "NO_COLOR" || m.Var == "TERM" {
-			t.Errorf("missing lists %s, which carries no Missing entry", m.Var)
-		}
 	}
 }
 
@@ -263,11 +243,10 @@ func TestSetupTokenTrimsAndRefusesInnerWhitespace(t *testing.T) {
 }
 
 // TestCredentialVariableNamesAreSpelledOnlyInEnvGo asserts credentialVars is the only place a
-// CAIRN_CF_ or CAIRN_GH_ variable name is spelled. It is scoped narrowly, per the 2026-09-21
-// ratification: non-test .go files under cmd/cairn only (a bare CAIRN_ grep also matches
+// CAIRN_CF_ or CAIRN_GH_ variable name is spelled. It is scoped narrowly: non-test .go files under cmd/cairn only (a bare CAIRN_ grep also matches
 // store/paths.go's CAIRN_STATE_DIR and providers/cloudflare.go's CAIRN_CLOUDFLARE_API_BASE,
 // neither a credential), the CAIRN_CF_/CAIRN_GH_ prefixes only, and env.go and messages.go
-// (created by Task 19c-ii, and exempted here by name in advance) are the two allowed files.
+// are the two allowed files.
 func TestCredentialVariableNamesAreSpelledOnlyInEnvGo(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	if err != nil {
@@ -287,7 +266,7 @@ func TestCredentialVariableNamesAreSpelledOnlyInEnvGo(t *testing.T) {
 		}
 		for _, prefix := range []string{"CAIRN_CF_", "CAIRN_GH_"} {
 			if strings.Contains(string(data), prefix) {
-				t.Errorf("%s spells a %s variable name; read it from credentialVars, authVariables, or one of env's accessors instead", name, prefix)
+				t.Errorf("%s spells a %s variable name; read it from credentialVars or one of env's accessors instead", name, prefix)
 			}
 		}
 	}

@@ -56,7 +56,7 @@ func (f *fakeDeleter) Delete(name string) error {
 // authSetDeps builds the dependency set auth set runs over, from a fake prompt and a fake
 // keyring writer.
 func authSetDeps(read func(*cobra.Command, string) (string, error), w *fakeWriter) deps {
-	return deps{readPassword: read, keyringWriter: w}
+	return deps{env: envOf(nil), readPassword: read, keyringWriter: w}
 }
 
 func TestAuthSetDeclaresNoValueFlagOrPositionalValueArg(t *testing.T) {
@@ -116,8 +116,9 @@ func TestAuthSetPropagatesPromptError(t *testing.T) {
 
 func TestAuthListPrintsProviderAndNoValue(t *testing.T) {
 	d := deps{
-		env:     fakeEnv(map[string]string{"CAIRN_CF_ACCOUNT_ID": "acct-123"}),
-		keyring: fakeProvider{name: "keyring", values: map[string]string{"CAIRN_GH_READ_TOKEN": "ghp_secret"}},
+		env:           fakeEnv(map[string]string{"CAIRN_CF_ACCOUNT_ID": "acct-123"}),
+		keyring:       fakeProvider{name: "keyring", values: map[string]string{"CAIRN_GH_READ_TOKEN": "ghp_secret"}},
+		keyringStatus: func(string) (bool, error) { return false, nil },
 	}
 	cmd := newAuthListCmd(d)
 	var out bytes.Buffer
@@ -207,10 +208,10 @@ func TestAuthSetNamesTheEnvironmentFallbackWhenTheKeyringIsUnavailable(t *testin
 
 // unsetDeps builds the dependency set auth unset runs over.
 func unsetDeps(del *fakeDeleter) deps {
-	return deps{keyringDeleter: del}
+	return deps{env: envOf(nil), keyringDeleter: del}
 }
 
-// TestAuthUnsetTable covers the four rows the ratified 2026-09-21 note asks for: a present entry,
+// TestAuthUnsetTable covers four rows: a present entry,
 // an absent one, an unavailable backend, and a name outside the known set.
 func TestAuthUnsetTable(t *testing.T) {
 	tests := []struct {
@@ -303,7 +304,7 @@ func TestRestoreOnCancelRestoresWhenTheContextCancels(t *testing.T) {
 	}
 }
 
-// TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails covers the ratified 2026-09-21
+// TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails covers the fallback
 // path: under `go test`, stdin is not a terminal, so term.ReadPassword fails and the fallback
 // below reads the injected stream instead of hanging or erroring.
 func TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails(t *testing.T) {
@@ -329,6 +330,21 @@ func TestPromptPasswordFallsBackToStdinWhenTheTerminalReadFails(t *testing.T) {
 				t.Errorf("promptPassword() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+// TestPromptPasswordEndsThePromptLineOnAPipe: with no Enter to end the prompt line, the fallback
+// writes the newline itself, so a piped run's stderr reads `NAME: \n` and never carries the value.
+func TestPromptPasswordEndsThePromptLineOnAPipe(t *testing.T) {
+	var errOut bytes.Buffer
+	cmd := &cobra.Command{}
+	cmd.SetErr(&errOut)
+
+	if _, err := promptPassword(cmd, "CAIRN_GH_READ_TOKEN", strings.NewReader("s3cr3t\n")); err != nil {
+		t.Fatalf("promptPassword() = %v, want nil", err)
+	}
+	if want := "CAIRN_GH_READ_TOKEN: \n"; errOut.String() != want {
+		t.Errorf("stderr = %q, want %q", errOut.String(), want)
 	}
 }
 

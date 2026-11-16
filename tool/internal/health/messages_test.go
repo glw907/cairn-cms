@@ -15,9 +15,8 @@ import (
 )
 
 // maxCheckBodyLiteral is the longest string literal a check_*.go file may carry outside a
-// messages.go table entry, tool/docs/design/copy-standard.md's production rule (section 4.1):
-// a linter cannot find prose scattered across many files, so a check body earns no exception past
-// this length.
+// messages.go table entry: a linter cannot find prose scattered across many files, so a check
+// body earns no exception past this length.
 const maxCheckBodyLiteral = 40
 
 // isErrorConstructorCall reports whether fun is a call to errors.New or fmt.Errorf, the two
@@ -106,8 +105,7 @@ func TestCheckFilesCarryNoLongProseLiterals(t *testing.T) {
 	}
 }
 
-// kebabToken matches a bare hyphenated token with no space, catalogue section 4.4's
-// structural rule: a Detail matching it in full is a machine token sitting in a prose field
+// kebabToken matches a bare hyphenated token with no space: a Detail matching it in full is a machine token sitting in a prose field
 // rather than a sentence.
 var kebabToken = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)+$`)
 
@@ -167,11 +165,9 @@ func allCatalogueStrings() []string {
 	return append(Catalogue(), FixLines()...)
 }
 
-// cairnCommandsCredsGrammarAllows is the literal allow-list criterion 8 of this task calls for:
-// checked against the real cobra tree once Task 19a-i lands it, and by this list until then. The
-// two cairn commands this package's fix table names are "cairn auth set" and "cairn adopt",
-// which the ruled grammar (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-09-14-cairn-tool-1-0-pass.md, Task
-// 19a-i's "Produces") gives as `auth set <name>` and `adopt`.
+// cairnCommandsCredsGrammarAllows is the literal allow-list of cairn commands this package's
+// messages may name: "cairn auth set" and "cairn adopt", the tool's `auth set <name>` and
+// `adopt`.
 var cairnCommandsCredsGrammarAllows = []string{"cairn auth set", "cairn adopt"}
 
 // cairnCommandPattern matches a "cairn <word...>" fragment inside a catalogue string, so
@@ -279,8 +275,9 @@ var messageExemptions = map[string]string{
 	"detailCredsGitHubExpiring":    "Catalogue lists tmplCredsGitHubExpiring, the template this function formats, rather than a fabricated date",
 }
 
-// messageDeclarations parses path and returns every top-level detailXxx function and tmplXxx
-// constant it declares: the two shapes an operator-facing message in this package takes.
+// messageDeclarations parses path and returns every top-level detailXxx function and every
+// detailXxx or tmplXxx constant it declares: the shapes an operator-facing message in this
+// package takes.
 func messageDeclarations(t *testing.T, path string) []string {
 	t.Helper()
 	fset := token.NewFileSet()
@@ -305,7 +302,7 @@ func messageDeclarations(t *testing.T, path string) []string {
 					continue
 				}
 				for _, name := range vs.Names {
-					if strings.HasPrefix(name.Name, "tmpl") {
+					if strings.HasPrefix(name.Name, "tmpl") || strings.HasPrefix(name.Name, "detail") {
 						names = append(names, name.Name)
 					}
 				}

@@ -18,14 +18,14 @@ const (
 
 // configSiteConfig maps siteConfig's outcome onto the check's status words. A found, parsing
 // config with a non-empty siteName passes; a found file that fails the parse predicate fails; no
-// file at any of the four candidate paths is unchecked, never a fail, since there was nothing to
+// file at any of the five candidate paths is unchecked, never a fail, since there was nothing to
 // judge.
 var configSiteConfig = Check{
 	ID:        "config.site-config",
 	PassTitle: "Site config validates",
 	SkipTitle: "Site config",
 	Condition: spine.ConditionConfigSiteConfigInvalid,
-	Run: func(s Snapshot) Result {
+	run: func(s Snapshot) Result {
 		outcome, err := s.siteConfig()
 		if err != nil {
 			return uncheckedResult(err.Error())

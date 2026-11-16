@@ -37,6 +37,11 @@ Every invocation ran on a pseudo-terminal pinned to **100 columns by 40 rows**, 
 `ptycapture.py`, committed beside these files. A pty is what a real reader has: the
 sign-in link prints, clack renders its prompts, and the hold loop behaves as documented.
 
+The two doctor transcripts hold the piped form, the plain report `cairn doctor .` prints when
+standard output is not a terminal. The binary that captured them predates the terminal layout, so
+on the pty it printed that same plain form. A terminal now shows the grouped layout of
+`tool/docs/design/terminal-standard.md`, and the piped form is unchanged by it.
+
 The pass plan specified `script -q`, on the understanding that `-q` suppresses its banner. That
 is wrong for util-linux 2.39.3, whose man page scopes `-q` to "do not write start and done
 messages **to standard output**"; the `Script started on ...` and `Script done on ...` lines
@@ -73,8 +78,8 @@ first-time reader does. The capture printed Node.js 26.13.0 and wrangler 4.156.0
 | File | Command | Outcome |
 | --- | --- | --- |
 | `01-create-cairn-site.txt` | `node bin.mjs`, the `--answer` list below | Exit 0, `This site is set up end to end.` Step `live`, `/` answered 200, `/admin` answered 303 |
-| `04-doctor-report.txt` | `bash -x -c 'cairn doctor .'` | Exit 0, `10 passed, 0 failed, 1 skipped, 0 info, 0 unchecked` |
-| `04b-doctor-report-failing.txt` | `bash -x -c 'cairn doctor .'` with one induced failure | Exit 1, `9 passed, 1 failed, 1 skipped, 0 info, 0 unchecked` |
+| `04-doctor-report.txt` | `bash -x -c 'cairn doctor .'`, the piped form | Exit 0, `10 passed, 0 failed, 1 skipped, 0 info, 0 unchecked` |
+| `04b-doctor-report-failing.txt` | `bash -x -c 'cairn doctor .'` with one induced failure, the piped form | Exit 1, `9 passed, 1 failed, 1 skipped, 0 info, 0 unchecked` |
 
 The scaffold capture, from the scratch directory:
 

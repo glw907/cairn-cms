@@ -21,8 +21,8 @@ type Check struct {
 	// Condition is the cairn-doctor condition id this check's failure raises. A check whose
 	// failure raises no catalogued condition leaves this spine.ConditionNone.
 	Condition spine.Condition
-	// Run measures s and returns the check's settled Result.
-	Run func(s Snapshot) Result
+	// run measures s and returns the check's settled Result.
+	run func(s Snapshot) Result
 }
 
 // Catalogue returns every operator-facing string this package's checks contribute.
@@ -128,9 +128,10 @@ func (c Check) label() string {
 	return conditionText(c.Condition).Title
 }
 
-// lineTitle returns the title a report line prints for status: the PassTitle on a PASS or the
-// SkipTitle on a SKIP when the check declares one, otherwise the registry label.
-func (c Check) lineTitle(status Status) string {
+// Title returns the title a report line prints for status: the PassTitle on a PASS or the
+// SkipTitle on a SKIP when the check declares one, otherwise the registry label. Format and the
+// terminal body both read it, so a check reads the same on a pipe and on a terminal.
+func (c Check) Title(status Status) string {
 	if status == StatusPass && c.PassTitle != "" {
 		return c.PassTitle
 	}
@@ -140,8 +141,9 @@ func (c Check) lineTitle(status Status) string {
 	return c.label()
 }
 
-// checks is the complete doctor check set cairn doctor runs, in report order: the nine
-// file-only checks followed by the three facts-dependent checks.
+// checks is the complete doctor check set cairn doctor runs, in report order. Three read
+// site-facts.json (config.media-bucket, auth.role-wiring, ai.posture-effective); the other nine
+// read the site's files directly.
 var checks = []Check{
 	configBindings,
 	configMediaBucket,
@@ -157,17 +159,17 @@ var checks = []Check{
 	aiPostureEffective,
 }
 
-// CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and its
+// CheckedResult pairs one Check with the Result its run produced. A report's per-check line and its
 // failure block both need the check's label, which lives on Check (its Condition) and not on
 // every Result, so the pair travels together.
 type CheckedResult struct {
 	// Check is the check that ran.
 	Check Check
-	// Result is the settled outcome Check.Run produced against the run's Snapshot.
+	// Result is the settled outcome Check.run produced against the run's Snapshot.
 	Result Result
 }
 
-// Run executes every check in checks against s, in report order, and pairs each with its stamped
+// Run executes every check in checks against s, in report order, and pairs each with its
 // Result.
 func Run(s Snapshot) []CheckedResult {
 	out := make([]CheckedResult, len(checks))
@@ -177,13 +179,7 @@ func Run(s Snapshot) []CheckedResult {
 	return out
 }
 
-// runCheck runs c against s and stamps the Result with c's ID and, on a fail, the severity c's
-// condition declares in the registry, so a check can never disagree with its condition.
+// runCheck runs c against s and pairs c with the Result it produced.
 func runCheck(c Check, s Snapshot) CheckedResult {
-	result := c.Run(s)
-	result.ID = c.ID
-	if result.Status == StatusFail {
-		result.Severity = conditionText(c.Condition).Severity
-	}
-	return CheckedResult{Check: c, Result: result}
+	return CheckedResult{Check: c, Result: c.run(s)}
 }

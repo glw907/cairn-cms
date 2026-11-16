@@ -1,6 +1,7 @@
 package style
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 	"strconv"
@@ -15,6 +16,14 @@ import (
 // terminal owns the background, and this pair exists only so the contrast test can measure every
 // role against it.
 var groundHex = struct{ light, dark string }{"#fdfbf9", "#221f1a"}
+
+// grounds256 adds the second ground of each branch to the reference pair: a cool grey light
+// terminal and the Nord-dark ground the owner's kitty paints. The 256-colour rung is measured
+// against both of each.
+var grounds256 = struct{ light, dark []string }{
+	light: []string{groundHex.light, "#E4E7EC"},
+	dark:  []string{groundHex.dark, "#2e3440"},
+}
 
 // zeroStyleRender is lipgloss.NewStyle().Render("x"): GetForeground() on a style that never had
 // Foreground called returns lipgloss.NoColor{}, a non-nil sentinel, so the "returns the zero
@@ -78,9 +87,10 @@ func contrastRatio(t *testing.T, hexA, hexB string) float64 {
 }
 
 // TestContrastAgainstGround: every text-bearing role clears 4.5:1 against its branch's reference
-// ground. RoleRule is a decorative separator, not text, and is exempt.
+// ground. RoleRule is a decorative separator, not text, and is exempt. RoleText carries no ink of
+// its own, so the terminal's foreground is the only ink it has and there is nothing to measure.
 func TestContrastAgainstGround(t *testing.T) {
-	roles := []Role{RoleText, RoleMuted, RoleSubtle, RoleOK, RoleFailing, RoleUnknown, RoleAccent}
+	roles := []Role{RoleInstallerText, RoleMuted, RoleSubtle, RoleOK, RoleFailing, RoleUnknown, RoleAccent}
 	for _, role := range roles {
 		v := warmStone[role]
 		if got := contrastRatio(t, v.lightHex, groundHex.light); got < 4.5 {
@@ -88,6 +98,43 @@ func TestContrastAgainstGround(t *testing.T) {
 		}
 		if got := contrastRatio(t, v.darkHex, groundHex.dark); got < 4.5 {
 			t.Errorf("role %d dark contrast against ground = %.2f, want >= 4.5", role, got)
+		}
+	}
+}
+
+// xterm256Hex returns the "#rrggbb" of an xterm-256 colour index in the 6x6x6 cube or the grey
+// ramp. Indices 0-15 are the terminal's own palette and carry no fixed value, so they fail the
+// test.
+func xterm256Hex(t *testing.T, code string) string {
+	t.Helper()
+	n, err := strconv.Atoi(code)
+	if err != nil || n < 16 || n > 255 {
+		t.Fatalf("xterm-256 code %q is outside the fixed range 16-255", code)
+	}
+	if n >= 232 {
+		g := 8 + 10*(n-232)
+		return fmt.Sprintf("#%02x%02x%02x", g, g, g)
+	}
+	levels := [6]int{0, 95, 135, 175, 215, 255}
+	n -= 16
+	return fmt.Sprintf("#%02x%02x%02x", levels[n/36], levels[n/6%6], levels[n%6])
+}
+
+// TestContrastAgainstGround256 holds the named 256-colour rung to the same 4.5:1 as the hex rung,
+// against both grounds of each branch.
+func TestContrastAgainstGround256(t *testing.T) {
+	roles := []Role{RoleInstallerText, RoleMuted, RoleSubtle, RoleOK, RoleFailing, RoleUnknown, RoleAccent}
+	for _, role := range roles {
+		v := warmStone[role]
+		for _, g := range grounds256.light {
+			if got := contrastRatio(t, xterm256Hex(t, v.light256), g); got < 4.5 {
+				t.Errorf("role %d light256 %s against %s = %.2f, want >= 4.5", role, v.light256, g, got)
+			}
+		}
+		for _, g := range grounds256.dark {
+			if got := contrastRatio(t, xterm256Hex(t, v.dark256), g); got < 4.5 {
+				t.Errorf("role %d dark256 %s against %s = %.2f, want >= 4.5", role, v.dark256, g, got)
+			}
 		}
 	}
 }
@@ -162,6 +209,7 @@ func TestStyleZeroAtNoColor(t *testing.T) {
 			{"Strong", th.Strong},
 			{"SizedStrong", func(r Role) lipgloss.Style { return th.SizedStrong(r, 1) }},
 			{"Link", func(r Role) lipgloss.Style { return th.Link(r, "https://example.test") }},
+			{"DocLink", func(Role) lipgloss.Style { return th.DocLink("https://example.test") }},
 		}
 		for _, w := range ways {
 			t.Run(p.String()+"/"+w.name, func(t *testing.T) {
@@ -199,6 +247,23 @@ func TestLinkCarriesURLWithColor(t *testing.T) {
 	}
 }
 
+// TestDocLinkIsTextInkWithPlainUnderline: a documentation link keeps its OSC 8 target and takes
+// the Text ink with a plain underline at every colour tier, and sets no underline colour.
+func TestDocLinkIsTextInkWithPlainUnderline(t *testing.T) {
+	const url = "https://example.test"
+	for _, p := range []colorprofile.Profile{colorprofile.TrueColor, colorprofile.ANSI256, colorprofile.ANSI} {
+		th := NewTheme(true, p, false)
+		got := th.DocLink(url).Render("x")
+		want := th.Link(RoleText, url).Underline(true).Render("x")
+		if got != want {
+			t.Errorf("DocLink at %v renders %q, want %q", p, got, want)
+		}
+		if !strings.Contains(got, url) || !strings.Contains(got, "\x1b[4") || strings.Contains(got, "58;") {
+			t.Errorf("DocLink at %v renders %q, want the URL and a plain underline and no SGR 58", p, got)
+		}
+	}
+}
+
 // TestSizedPadsAndCuts is the construction the column bodies use: Style.Width(n).MaxWidth(n).
 func TestSizedPadsAndCuts(t *testing.T) {
 	s := NewTheme(true, colorprofile.TrueColor, false).Sized(RoleText, 10)
@@ -216,8 +281,8 @@ func TestColorResolvesWarmStoneForBothBackgrounds(t *testing.T) {
 		role Role
 		want string
 	}{
-		{"light text", false, RoleText, "#28231d"},
-		{"dark text", true, RoleText, "#eae7e3"},
+		{"light installer text", false, RoleInstallerText, "#28231d"},
+		{"dark installer text", true, RoleInstallerText, "#eae7e3"},
 		{"light muted", false, RoleMuted, "#615d57"},
 		{"dark muted", true, RoleMuted, "#a8a49e"},
 		{"light ok", false, RoleOK, "#197037"},
@@ -236,15 +301,27 @@ func TestColorResolvesWarmStoneForBothBackgrounds(t *testing.T) {
 			if got := th.Style(tt.role).GetForeground(); !sameColor(got, lipgloss.Color(tt.want)) {
 				t.Errorf("Style foreground = %v, want %s", got, tt.want)
 			}
-			light, dark := Pair(tt.role)
-			pick := light
-			if tt.dark {
-				pick = dark
-			}
-			if !sameColor(pick, lipgloss.Color(tt.want)) {
-				t.Errorf("Pair = %v, want %s", pick, tt.want)
-			}
 		})
+	}
+}
+
+// TestTextCarriesNoInk: RoleText paints in the terminal's own foreground at every colour rung and
+// on both grounds, so Style emits no foreground code and Strong emits bold alone.
+func TestTextCarriesNoInk(t *testing.T) {
+	for _, p := range []colorprofile.Profile{colorprofile.TrueColor, colorprofile.ANSI256, colorprofile.ANSI} {
+		for _, dark := range []bool{true, false} {
+			th := NewTheme(dark, p, false)
+			if got := th.Style(RoleText).Render("x"); strings.Contains(got, "38;") || got != zeroStyleRender {
+				t.Errorf("%v dark=%v: Style(RoleText) renders %q, want no foreground code", p, dark, got)
+			}
+			strong := th.Strong(RoleText)
+			if got := strong.Render("x"); strings.Contains(got, "38;") || !strong.GetBold() {
+				t.Errorf("%v dark=%v: Strong(RoleText) renders %q, want bold with no foreground code", p, dark, got)
+			}
+			if _, ok := th.Color(RoleText).(lipgloss.NoColor); !ok {
+				t.Errorf("%v dark=%v: Color(RoleText) = %v, want NoColor", p, dark, th.Color(RoleText))
+			}
+		}
 	}
 }
 

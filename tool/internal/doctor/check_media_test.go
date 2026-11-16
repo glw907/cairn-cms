@@ -57,7 +57,7 @@ func TestConfigMediaBucket(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := configMediaBucket.Run(s)
+			result := configMediaBucket.run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -84,8 +84,8 @@ func TestConfigMediaBucketOwnRemediation(t *testing.T) {
 	if cr.Check.Condition != spine.ConditionConfigMediaBucketMissing {
 		t.Fatalf("Condition = %q, want %q", cr.Check.Condition, spine.ConditionConfigMediaBucketMissing)
 	}
-	if cr.Result.Severity != spine.WarningFailure {
-		t.Errorf("Severity = %v, want spine.WarningFailure", cr.Result.Severity)
+	if cr.checkVerdict().Severity != spine.WarningFailure {
+		t.Errorf("Severity = %v, want spine.WarningFailure", cr.checkVerdict().Severity)
 	}
 
 	mediaText, ok := spine.TextFor(spine.ConditionConfigMediaBucketMissing)

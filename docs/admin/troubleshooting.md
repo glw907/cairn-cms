@@ -11,8 +11,8 @@ Two other pages cover problems at other moments:
 
 Logging has to be on before any section below can help.
 
-1. Run `cairn doctor` and look at the Workers Logs line.
-2. If the line fails, follow [Turn on observability](./is-it-working.md#turn-on-observability).
+1. Run `cairn doctor` and look for the failure `Workers Logs has no sink`.
+2. If the report lists it, follow [Turn on observability](./is-it-working.md#turn-on-observability).
 
 Once logging is on, the site writes one structured record for each meaningful event. Each record carries an event name, a level, a timestamp, and fields that belong to that event.
 

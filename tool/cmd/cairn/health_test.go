@@ -142,7 +142,7 @@ func TestQuietSuppressesTheFrameOnOKAlone(t *testing.T) {
 	}
 }
 
-// TestStatusLineCarriesTheTokenExpiry is the conductor's 2026-09-21 ruling on criterion 11: the
+// TestStatusLineCarriesTheTokenExpiry pins that the
 // expiry reaches the status line from the creds check's structured field whenever the run
 // measured one, inside or outside the fourteen-day warning window. It runs over the production
 // wiring, runStatus and render.Render, rather than over a hand-built Credential.

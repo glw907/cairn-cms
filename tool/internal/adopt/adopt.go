@@ -6,7 +6,6 @@ package adopt
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
@@ -188,30 +187,15 @@ func Adopt(ctx context.Context, st *store.Store, c Candidate, name string, resol
 		r.GitHub.Repo.Owner = owner
 		r.GitHub.Repo.Repo = repo
 	}
-	if err := setNameServers(&r, c.NameServers); err != nil {
-		return record.Record{}, err
+	// Nothing is written when the zone reported no pair, which keeps the key out of a record
+	// that has nothing true to put in it.
+	if len(c.NameServers) > 0 {
+		r.Cloudflare.SetNameServers(c.NameServers)
 	}
 	if err := st.Save(id, r); err != nil {
 		return record.Record{}, fmt.Errorf("adopt: worker %s: %w", c.Worker, err)
 	}
 	return r, nil
-}
-
-// setNameServers writes the zone's assigned nameserver pair under the record's
-// "cloudflare.nameServers" key, the key the Node CLI writes and the delegation check reads.
-// record.Cloudflare does not type that key, so the value travels as an Extra entry; nothing is
-// written at all when the zone reported no pair, which keeps the key out of a record that has
-// nothing true to put in it.
-func setNameServers(r *record.Record, nameServers []string) error {
-	if len(nameServers) == 0 {
-		return nil
-	}
-	raw, err := json.Marshal(nameServers)
-	if err != nil {
-		return fmt.Errorf("adopt: encode nameservers for %s: %w", r.Domain, err)
-	}
-	r.Cloudflare.Extra = append(r.Cloudflare.Extra, record.ExtraField{Key: "nameServers", Value: raw})
-	return nil
 }
 
 // refusePrivateAddress reports an error when domain resolves to any address off the public

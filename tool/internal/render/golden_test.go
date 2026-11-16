@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/colorprofile"
+	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
 	"github.com/glw907/cairn-cms/tool/v2/internal/health"
 	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
@@ -43,6 +44,8 @@ type goldenCase struct {
 	reports []health.Report
 	// entries is the log excerpt the frame draws, empty for a health view.
 	entries []logs.Entry
+	// checked is the doctor run the doctor view draws, empty for every other view.
+	checked []doctor.CheckedResult
 	// body is the layout a health view composes into.
 	body Body
 	// width, profile, dark, and ascii are the four presentation axes.
@@ -339,18 +342,30 @@ func goldenCases() []goldenCase {
 		targeted.profile = p
 		out = append(out, targeted)
 	}
+	// The grid's two narrow bands at no colour, where the frame's alignment is the only thing
+	// carrying it: 80 is the two-column band and 59 the stacked one.
+	for _, width := range []int{widthNarrow - 1, style.DefaultWidth} {
+		bare := base
+		bare.profile = colorprofile.ASCII
+		bare.width = width
+		out = append(out, bare)
+	}
 	light := base
 	light.dark = false
 	ascii := base
 	ascii.ascii = true
-	return append(out, light, ascii)
+	out = append(out, light, ascii)
+	return append(out, tierCases()...)
 }
 
 // render cuts c's frame from the real renderer.
 func (c goldenCase) render() string {
-	view := ViewHealth
-	if c.view == "logs" {
+	view, verdict := ViewHealth, verdictFor(c.reports)
+	switch c.view {
+	case "logs":
 		view = ViewLogs
+	case "doctor":
+		view, verdict = ViewDoctor, doctorVerdict(c.checked)
 	}
 	return strings.Join(Render(RenderInput{
 		View:    view,
@@ -361,9 +376,10 @@ func (c goldenCase) render() string {
 		ASCII:   c.ascii,
 		Reports: c.reports,
 		Entries: c.entries,
+		Checked: c.checked,
 		Site:    "my-site",
 		Status:  statusFor(c.fixture),
-		Verdict: verdictFor(c.reports),
+		Verdict: verdict,
 		Now:     fixtures.Now(),
 	}).Lines(), "\n") + "\n"
 }

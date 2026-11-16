@@ -1,12 +1,11 @@
 // Command copylist prints every operator-facing string this module's messages and fix tables
-// carry, grouped by package and sorted, with no run required: tool/docs/design/copy-standard.md
-// section 4.3's golden generator. `make copy-list` writes its output to
+// carry, grouped by package and sorted, with no run required, the generator of the copy golden.
+// `make copy-list` writes its output to
 // tool/testdata/copy.golden.md, and `make check-copy` asserts a fresh run matches the committed
 // file, so a new string cannot land invisibly.
 //
 // copylist reads the tables as Go values rather than grepping source, which is why it is a
-// second binary in this module rather than a shell script: tool/docs/design/copy-standard.md
-// section 4.3 calls it "the --list flag ... ported", and a Go value is what a shell script
+// second binary in this module rather than a shell script, since a Go value is what a shell script
 // cannot read. The release still builds only ./cmd/cairn; this binary exists for the golden and
 // for `make copy-list`, never for an operator to install.
 package main

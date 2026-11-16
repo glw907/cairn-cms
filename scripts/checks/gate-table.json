@@ -148,6 +148,7 @@
           "keyboard-walk.spec.ts",
           "admin-shell-sidebar.spec.ts",
           "admin-nav-layout.spec.ts",
+          "nav-menus.spec.ts",
           "admin-referrer.spec.ts",
           "admin-sheet.spec.ts",
           "theme-kit.spec.ts",
@@ -225,7 +226,10 @@
           "styleguide.spec.ts"
         ]
       },
-      { "prefixes": ["src/lib/nav/"], "specs": ["admin-nav-layout.spec.ts", "nav-from-config.spec.ts"] },
+      {
+        "prefixes": ["src/lib/nav/"],
+        "specs": ["admin-nav-layout.spec.ts", "nav-from-config.spec.ts", "nav-menus.spec.ts"]
+      },
       { "prefixes": ["src/lib/guidance/"], "specs": ["tidy.spec.ts", "spellcheck.spec.ts"] },
       {
         "prefixes": ["src/lib/github/"],

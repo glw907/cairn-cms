@@ -11,7 +11,7 @@ import { buildIndex } from './index.mjs';
 const ROOT = repoRoot(import.meta.url);
 const read = (rel) => JSON.parse(readFileSync(path.join(ROOT, rel), 'utf8'));
 const schema = read('schema/cairn-catalog-1.schema.json');
-const { kinds: KINDS } = read('sets/kinds.json');
+const { kinds: KINDS } = read('definitions/kinds.json');
 const example = read('scripts/catalog/fixtures/index/design-example.json');
 
 const validate = new Ajv2020({ allErrors: true }).compile(schema);
@@ -73,11 +73,6 @@ test('the schema ignores fields it does not know, so a later field never breaks 
   doc.themes[0].extra = 1;
   doc.themes[0].releases[0].extra = 1;
   assert.deepEqual(errorsOf(doc), []);
-});
-
-test("the schema's kind ids equal the ids in sets/kinds.json", () => {
-  const ids = schema.$defs.kindId.enum;
-  assert.deepEqual(ids, KINDS.map((k) => k.id));
 });
 
 // ---- the generator ----

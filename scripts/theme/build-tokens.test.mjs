@@ -139,10 +139,6 @@ test('the manifest schema takes the catalog fields and refuses what the design e
   assert.deepEqual(mutate((m) => (m.notes = 'x'.repeat(200))), [], '200 characters is allowed');
   assert.ok(mutate((m) => (m.summary = 'x'.repeat(301))).length > 0, '301-character summary');
   assert.deepEqual(mutate((m) => { m.summary = 'x'.repeat(300); m.repository = 'https://example.com/r'; }), [], 'summary and repository');
-
-  const schema = await readJson(path.join(ROOT, 'schema/cairn-theme-1.schema.json'));
-  const kinds = await readJson(path.join(ROOT, 'sets/kinds.json'));
-  assert.deepEqual(schema.properties.kinds.items.enum, kinds.kinds.map((kind) => kind.id));
 });
 
 test('the manifest schema states that an option key is a contract', async () => {

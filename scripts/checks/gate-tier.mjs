@@ -176,7 +176,7 @@ const DIST_SPAWN = 'npx vitest run --project unit-dist-spawn';
 export const FAST_LINE_1_LANE = '';
 
 /** The extra static checks that never touch dist, so they run beside the dist chain. */
-const DIST_FREE_EXTRAS = new Set(['check:tellgrader', 'check:vale-rules']);
+const DIST_FREE_EXTRAS = new Set(['check:tellgrader', 'check:vale-rules', 'check:definitions']);
 
 /**
  * Repo-relative globs whose change reaches the create-cairn-site suite: the launcher package

@@ -250,7 +250,7 @@ export async function run({
     }
 
     const previous = await readIndex(s3, validateIndex);
-    const { kinds } = readJson(path.join(root, 'sets/kinds.json'));
+    const { kinds } = readJson(path.join(root, 'definitions/kinds.json'));
     const listed = (list, field, id) => new Set((previous?.[list] ?? []).find((x) => x[field] === id)?.releases.map((r) => r.version) ?? []);
     const themes = releaseDirs(path.join(root, 'themes'), 'cairn-theme.json').filter(({ manifest }) => !listed('themes', 'id', manifest.id).has(manifest.version));
     const sets = releaseDirs(path.join(root, 'sets'), 'cairn-set.json').filter(({ manifest }) => !listed('sets', 'kind', manifest.kind).has(manifest.version));

@@ -51,19 +51,13 @@
       "pattern": "^>=(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?( <(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?)?$"
     },
     "kinds": {
-      "description": "One to three kinds of site the theme suits, from the closed list in sets/kinds.json. The first is the kind the theme was designed for.",
+      "description": "One to three kinds of site the theme suits, from the closed list in definitions/kinds.json. The first is the kind the theme was designed for.",
       "type": "array",
       "minItems": 1,
       "maxItems": 3,
       "uniqueItems": true,
       "items": {
-        "enum": [
-          "blog",
-          "portfolio",
-          "docs",
-          "landing",
-          "organization"
-        ]
+        "$ref": "#/$defs/kindId"
       }
     },
     "notes": {
@@ -268,6 +262,20 @@
     "spdx": {
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9.+() -]*$"
+    },
+    "kindId": {
+      "description": "Generated from definitions/kinds.json by scripts/build/emit-definitions.mjs.",
+      "enum": [
+        "blog",
+        "portfolio",
+        "docs",
+        "landing",
+        "organization"
+      ]
+    },
+    "featureId": {
+      "description": "Generated from definitions/features.json by scripts/build/emit-definitions.mjs.",
+      "not": {}
     }
   }
 }

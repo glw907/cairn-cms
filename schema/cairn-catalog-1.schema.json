@@ -48,7 +48,7 @@
   },
   "$defs": {
     "kindId": {
-      "description": "The closed list in sets/kinds.json.",
+      "description": "Generated from definitions/kinds.json by scripts/build/emit-definitions.mjs.",
       "enum": [
         "blog",
         "portfolio",

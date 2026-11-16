@@ -19,14 +19,8 @@
       "const": "https://cairn.pub/schemas/cairn-set/1.json"
     },
     "kind": {
-      "description": "The kind of site the set is for, from the closed list in sets/kinds.json.",
-      "enum": [
-        "blog",
-        "portfolio",
-        "docs",
-        "landing",
-        "organization"
-      ]
+      "description": "The kind of site the set is for, from the closed list in definitions/kinds.json.",
+      "$ref": "#/$defs/kindId"
     },
     "version": {
       "description": "Semver for the set itself.",
@@ -77,6 +71,18 @@
           }
         }
       }
+    }
+  },
+  "$defs": {
+    "kindId": {
+      "description": "Generated from definitions/kinds.json by scripts/build/emit-definitions.mjs.",
+      "enum": [
+        "blog",
+        "portfolio",
+        "docs",
+        "landing",
+        "organization"
+      ]
     }
   }
 }

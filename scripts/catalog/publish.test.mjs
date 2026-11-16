@@ -55,7 +55,8 @@ function scratchRoot(edits = {}) {
   const theme = path.join(root, 'themes/waymark');
   cpSync(path.join(REPO, 'themes/waymark'), theme, { recursive: true });
   mkdirSync(path.join(root, 'sets'), { recursive: true });
-  cpSync(path.join(REPO, 'sets/kinds.json'), path.join(root, 'sets/kinds.json'));
+  mkdirSync(path.join(root, 'definitions'), { recursive: true });
+  for (const file of ['kinds.json', 'features.json']) cpSync(path.join(REPO, 'definitions', file), path.join(root, 'definitions', file));
   const editJson = (file, edit) => {
     const manifest = JSON.parse(readFileSync(file, 'utf8'));
     edit(manifest);

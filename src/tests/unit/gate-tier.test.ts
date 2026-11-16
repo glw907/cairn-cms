@@ -59,7 +59,8 @@ describe('the table', () => {
     ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
     ['showcase', 'themes/', 'themes/waymark/theme.css'],
     ['showcase', 'templates/', 'templates/waymark/package.json'],
-    ['showcase', 'sets/', 'sets/kinds.json'],
+    ['showcase', 'sets/', 'sets/organization/cairn-set.json'],
+    ['showcase', 'definitions/', 'definitions/kinds.json'],
     ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
     ['engine', 'src/lib/', 'src/lib/log/index.ts'],
     ['engine', 'scripts/build/', 'scripts/build/build-admin-css.mjs'],
@@ -256,6 +257,11 @@ describe('static check selection', () => {
   it('selects the version-rise leg for the showcase bucket, as a fixed no-range command', () => {
     expect(labelsFor('examples/showcase/package.json')).toContain('check:version-rise');
     expect(table.extraCommands['check:version-rise']).toBe('node scripts/catalog/version-rise.mjs');
+  });
+
+  it('selects the definitions check when a definitions file changes', () => {
+    expect(labelsFor('definitions/kinds.json')).toContain('check:definitions');
+    expect(table.extraCommands['check:definitions']).toBe('node scripts/checks/check-definitions.mjs');
   });
 
   it('hands the runner labels it accepts', () => {

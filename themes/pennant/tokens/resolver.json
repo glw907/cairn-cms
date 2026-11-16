@@ -1,0 +1,32 @@
+{
+  "version": "2025.10",
+  "name": "pennant",
+  "description": "Pennant's resolver: the base set, the color mode, and the colors option, whose five values each set a club's two colors and the text that sits on each.",
+  "sets": {
+    "base": { "sources": [{ "$ref": "tokens.json#/base" }] }
+  },
+  "modifiers": {
+    "mode": {
+      "contexts": {
+        "light": [{ "$ref": "tokens.json#/color/light" }],
+        "dark": [{ "$ref": "tokens.json#/color/dark" }]
+      },
+      "default": "light"
+    },
+    "colors": {
+      "contexts": {
+        "fireweed": [{ "$ref": "tokens.json#/options/colors/fireweed" }],
+        "navy": [{ "$ref": "tokens.json#/options/colors/navy" }],
+        "scarlet": [{ "$ref": "tokens.json#/options/colors/scarlet" }],
+        "purple": [{ "$ref": "tokens.json#/options/colors/purple" }],
+        "orange": [{ "$ref": "tokens.json#/options/colors/orange" }]
+      },
+      "default": "fireweed"
+    }
+  },
+  "resolutionOrder": [
+    { "$ref": "#/sets/base" },
+    { "$ref": "#/modifiers/mode" },
+    { "$ref": "#/modifiers/colors" }
+  ]
+}

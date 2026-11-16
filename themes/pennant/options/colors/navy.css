@@ -1,0 +1,31 @@
+/* The "navy" value of the "colors" option. Built from the theme's tokens by scripts/theme/build-tokens.mjs. Do not edit. */
+:where(:root),:root:has(input.theme-controller[value="pennant"]:checked),[data-theme="pennant"] {
+  --color-neutral: oklch(30% 0.09 260);
+  --color-neutral-content: oklch(98% 0.005 260);
+  --color-secondary: oklch(80% 0.15 85);
+  --color-secondary-content: oklch(22% 0.04 260);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-neutral: oklch(30% 0.09 260);
+    --color-neutral-content: oklch(98% 0.005 260);
+    --color-secondary: oklch(80% 0.15 85);
+    --color-secondary-content: oklch(22% 0.04 260);
+  }
+}
+:root:has(input.theme-controller[value="pennant-dark"]:checked),[data-theme="pennant-dark"] {
+  --color-neutral: oklch(30% 0.09 260);
+  --color-neutral-content: oklch(98% 0.005 260);
+  --color-secondary: oklch(80% 0.15 85);
+  --color-secondary-content: oklch(22% 0.04 260);
+}
+:root {
+  --cairn-opt-color-neutral-light: oklch(30% 0.09 260);
+  --cairn-opt-color-neutral-content-light: oklch(98% 0.005 260);
+  --cairn-opt-color-secondary-light: oklch(80% 0.15 85);
+  --cairn-opt-color-secondary-content-light: oklch(22% 0.04 260);
+  --cairn-opt-color-neutral-dark: oklch(30% 0.09 260);
+  --cairn-opt-color-neutral-content-dark: oklch(98% 0.005 260);
+  --cairn-opt-color-secondary-dark: oklch(80% 0.15 85);
+  --cairn-opt-color-secondary-content-dark: oklch(22% 0.04 260);
+}

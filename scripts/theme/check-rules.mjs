@@ -2,7 +2,7 @@
 // message }` pairs; the runner in check.mjs attaches the rule id. A rule never throws on a theme
 // defect: a theme another rule already reports as broken (an unreadable manifest, a tokens build
 // that cannot run) is skipped, so one defect fails exactly the rule that owns it.
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import postcss from 'postcss';
 import semver from 'semver';
@@ -59,6 +59,9 @@ export function themeContext(dir) {
 /** The manifest's own file name, for failures about it. */
 const MANIFEST = 'cairn-theme.json';
 
+/** The one path `paths-unlisted` admits beyond contract 1's list: a README at the theme root. */
+const THEME_README = 'README.md';
+
 /**
  * What a rule returns: its failures, or its failures with notes the report prints beside them.
  * @typedef {Failure[] | { failures: Failure[], notes: string[] }} RuleResult
@@ -81,9 +84,14 @@ export const STATIC_RULES = {
   'engine-range'({ manifest }) {
     // A range outside the two forms is `manifest-schema`'s to report, so this rule judges only the
     // engine version the range must admit. Plain precedence applies, so `>=0.99.0-0` admits a prerelease.
+    // The range may instead admit only the next prerelease of this engine: a theme that needs this
+    // repository's unreleased engine work publishes before that prerelease exists, and its manifest,
+    // which is permanent, must not tell a site on the current release that it can run the theme.
+    // Nothing later is admitted, so a range can never get ahead of the engine it ships beside.
     if (typeof manifest?.engine !== 'string' || !ENGINE_FORM.test(manifest.engine)) return [];
     const engine = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
-    if (semver.satisfies(engine, manifest.engine, { includePrerelease: true })) return [];
+    const admitted = [engine, semver.inc(engine, 'prerelease')];
+    if (admitted.some((version) => semver.satisfies(version, manifest.engine, { includePrerelease: true }))) return [];
     return [{ file: MANIFEST, message: `engine "${manifest.engine}" does not admit this repository's engine ${engine}` }];
   },
 
@@ -146,9 +154,12 @@ export const STATIC_RULES = {
 
   'paths-unlisted'({ dir }) {
     const allowed = CONTRACT.paths.allowed.map(globRegExp);
-    // fonts/ belongs to the `fonts` rule, which says why a file there is refused.
+    // fonts/ belongs to the `fonts` rule, which says why a file there is refused. A README.md at the
+    // theme root is admitted beside contract 1's paths, which do not list it: it is where a theme
+    // tells a developer how to set it up, and lay-in copies it into the site's src/theme/, where
+    // nothing imports it.
     return filesUnder(dir)
-      .filter((file) => !file.startsWith('fonts/') && !allowed.some((re) => re.test(file)))
+      .filter((file) => !file.startsWith('fonts/') && file !== THEME_README && !allowed.some((re) => re.test(file)))
       .map((file) => ({ file, message: 'the file is not a path contract 1 lists' }));
   },
 
@@ -252,29 +263,148 @@ export const STATIC_RULES = {
     return failures;
   },
 
-  async audit({ dir }) {
+  // A theme with options is audited once per value of each option, the other options at their
+  // defaults, because each value's sheet sets its own colors and the site's chain never reads them:
+  // the audit adds the value's sheet to the chain after theme.css. Each finding that names a daisyUI
+  // block is prefixed with the value and the block's mode. A finding that names no block is
+  // prefixed with the value, or reported once, unprefixed, when every value raises it. The notes
+  // give each value's measured and unmeasured pair counts per mode, since a passing run must show
+  // it measured something under every value.
+  async audit({ dir, manifest }) {
     const audit = await import('../../dist/audit/index.js');
-    const raw = JSON.parse(readFileSync(path.join(ROOT, 'scripts/checks/public-scope.config.json'), 'utf8'));
     const copy = makeShowcaseCopy({ root: ROOT });
     try {
       layIn(dir, copy.dir);
-      const retarget = (p) => (p.startsWith('../../') ? p.slice(3) : p);
-      const file = { ...raw, public: { ...raw.public, scope: raw.public.scope.map(retarget), themeRoots: raw.public.themeRoots.map(retarget) } };
-      const config = audit.resolveConfig(copy.dir, file, (candidate) => existsSync(path.join(copy.dir, candidate)));
-      const rules = audit.selectRules(audit.staticRules(), ['theme-contrast', 'theme-conformance', 'public-literals']);
-      const report = audit.runStatic(config, rules);
-      const failures = report.findings.map((finding) => ({
-        file: finding.file,
-        message: `${finding.ruleId} line ${finding.line}: ${finding.message}`,
-      }));
-      const measured = report.measured.filter((entry) => entry.themes.length > 0);
-      if (measured.length === 0) failures.push({ file: 'theme.css', message: 'the audit measured nothing: no daisyUI theme block was read' });
-      return failures;
+      const picks = optionPicks(dir, manifest);
+      if (picks.length === 0) return auditChain(audit, copy.dir, [THEME_SHEET]).map(({ failure }) => failure);
+      const modeOf = new Map(Object.entries(manifest.colorModes ?? {}).map(([mode, block]) => [block, mode]));
+      /** @type {Map<string, { failure: Failure, labels: string[] }>} */
+      const unscoped = new Map();
+      const failures = [];
+      const notes = [];
+      for (const { label, sheets } of picks) {
+        const options = sheets.map((rel) => withoutHasSelectors(readFileSync(path.join(dir, rel), 'utf8'))).join('\n');
+        writeFileSync(path.join(copy.dir, OPTIONS_SHEET), options);
+        const chain = [THEME_SHEET, OPTIONS_SHEET];
+        for (const { failure, block } of auditChain(audit, copy.dir, chain)) {
+          if (block === undefined) {
+            const key = `${failure.file}|${failure.message}`;
+            const entry = unscoped.get(key) ?? { failure, labels: [] };
+            entry.labels.push(label);
+            unscoped.set(key, entry);
+          } else {
+            failures.push({ file: failure.file, message: `${label} ${modeOf.get(block) ?? block} ${failure.message}` });
+          }
+        }
+        for (const [mode, count] of pairCounts(audit, copy.dir, chain, modeOf)) {
+          notes.push(`${label} ${mode}: ${count.measured} pairs measured, ${count.unmeasured} unmeasured`);
+        }
+      }
+      for (const { failure, labels } of unscoped.values()) {
+        if (labels.length === picks.length) failures.push(failure);
+        else for (const label of labels) failures.push({ file: failure.file, message: `${label} ${failure.message}` });
+      }
+      return { failures, notes };
     } finally {
       copy.remove();
     }
   },
 };
+
+/** The theme's entry stylesheet in a site, the first link of the chain the audit reads. */
+const THEME_SHEET = 'src/theme/theme.css';
+/** Where a site keeps the option sheets it loads, the file the audit writes each value's sheet to. */
+const OPTIONS_SHEET = 'src/site/theme-options.css';
+
+/**
+ * Each option value the audit measures: the value's label and the option sheets its run loads,
+ * that value's sheet beside each other option's default. Empty for a theme with no options, and
+ * for a theme whose manifest or sheets other rules report as broken.
+ * @param {string} dir
+ * @param {any} manifest
+ * @returns {{ label: string, sheets: string[] }[]}
+ */
+function optionPicks(dir, manifest) {
+  const options = Array.isArray(manifest?.options) ? manifest.options : [];
+  const sheet = (key, value) => `options/${key}/${value}.css`;
+  const picks = options.flatMap((option) =>
+    (option.values ?? []).map(({ value }) => ({
+      label: `${option.key}=${value}`,
+      sheets: options.map((other) => sheet(other.key, other.key === option.key ? value : other.default)),
+    })),
+  );
+  // A missing sheet is `paths-required`'s to report.
+  if (picks.some((pick) => pick.sheets.some((rel) => !existsSync(path.join(dir, rel))))) return [];
+  return picks;
+}
+
+/**
+ * An option sheet with every selector that holds `:has(` dropped, and each rule left with none
+ * removed. The audit's scheme model cannot place a `:has()` selector and would record each pair it
+ * sets as unmeasured, while the same rule's `:where(:root)` and `[data-theme]` selectors carry the
+ * same declarations, so dropping them loses no value the audit should measure.
+ * @param {string} css
+ * @returns {string}
+ */
+function withoutHasSelectors(css) {
+  const root = postcss.parse(css);
+  root.walkRules((rule) => {
+    const kept = rule.selectors.filter((selector) => !selector.includes(':has('));
+    if (kept.length === 0) rule.remove();
+    else rule.selectors = kept;
+  });
+  return root.toString();
+}
+
+/**
+ * Run the audit's public rules over a site copy with the given public stylesheet chain. Each
+ * failure carries the daisyUI block a `theme-contrast` finding names, when it names one.
+ * @param {any} audit the `dist/audit` module
+ * @param {string} siteDir
+ * @param {string[]} stylesheets
+ * @returns {{ failure: Failure, block?: string }[]}
+ */
+function auditChain(audit, siteDir, stylesheets) {
+  const raw = JSON.parse(readFileSync(path.join(ROOT, 'scripts/checks/public-scope.config.json'), 'utf8'));
+  const retarget = (p) => (p.startsWith('../../') ? p.slice(3) : p);
+  const file = { ...raw, public: { ...raw.public, scope: raw.public.scope.map(retarget), themeRoots: raw.public.themeRoots.map(retarget) } };
+  // The chain is set on the resolved config, not in the file, so a missing theme.css stays an
+  // unread entry, which `paths-required` reports, rather than a configured path the run throws on.
+  const config = { ...audit.resolveConfig(siteDir, file, (candidate) => existsSync(path.join(siteDir, candidate))), publicStylesheets: stylesheets };
+  const rules = audit.selectRules(audit.staticRules(), ['theme-contrast', 'theme-conformance', 'public-literals']);
+  const report = audit.runStatic(config, rules);
+  const out = report.findings.map((finding) => ({
+    failure: { file: finding.file, message: `${finding.ruleId} line ${finding.line}: ${finding.message}` },
+    block: finding.ruleId === 'theme-contrast' ? /^theme "([^"]+)":/.exec(finding.message)?.[1] : undefined,
+  }));
+  if (!report.measured.some((entry) => entry.themes.length > 0)) {
+    out.push({ failure: { file: 'theme.css', message: 'the audit measured nothing: no daisyUI theme block was read' } });
+  }
+  return out;
+}
+
+/**
+ * The contrast pairs measured and unmeasured in every root state, summed per color mode. A block
+ * the manifest's `colorModes` does not name counts under its own name.
+ * @param {any} audit the `dist/audit` module
+ * @param {string} siteDir
+ * @param {string[]} stylesheets
+ * @param {Map<string, string>} modeOf each daisyUI block name's color mode
+ * @returns {Map<string, { measured: number, unmeasured: number }>}
+ */
+function pairCounts(audit, siteDir, stylesheets, modeOf) {
+  const chain = audit.loadImportChain(siteDir, stylesheets);
+  const { themes } = audit.loadDaisyThemeKeys(siteDir, audit.nodePeers, 'read its built-in theme values to count the measured pairs');
+  const counts = new Map();
+  for (const scheme of audit.measureThemeContrast(chain.files, themes, stylesheets[0]).schemes) {
+    const mode = modeOf.get(scheme.name) ?? scheme.name;
+    const count = counts.get(mode) ?? { measured: 0, unmeasured: 0 };
+    count.measured += scheme.measured;
+    count.unmeasured += scheme.expected - scheme.measured;
+    counts.set(mode, count);
+  }
+  return counts;
+}
 
 /**
  * Whether a URL reaches another host: it has a scheme or starts with `//`.

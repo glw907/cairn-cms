@@ -13,12 +13,12 @@ from it: the setup rebuild (`cairn new`) forms the next release, and nothing shi
 Dev snapshots (engine 0.99.0-dev.2, `create-cairn-site` 2.0.0-dev.9) stay on `gate`. The scripted and naive legs passed;
 only `owner` is missing from `~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`.
 
-<!-- round-report 20261115-203300-0f2b03 -->
-Round tui-language: every cairn command speaks one terminal language, and all four passes are merged
-All four passes are merged. Pass 1 landed as #245, and passes 2 to 4 (#247, #249, #252) merged after your two close packets, in that order, with checks green. The round gives cairn health, logs, sites, doctor, auth, adopt, help and errors one layout, one palette and three tuning variables (CAIRN_THEME, COLORFGBG, CAIRN_PLAIN), and clears the debt in the packages it opened. Output on a pipe stays byte for byte what main prints, except one sentence in cairn --help and one newline on the piped auth set prompt. The installer round is next, after theme-garden G3, on the package this round built.
+<!-- round-report pennant -->
+Pennant 1.0.0 and Waymark 1.2.0 are published, and the Pennant demo is live
+All four passes are merged: #251, #253, #254 and #255. The catalog lists Pennant 1.0.0 and Waymark 1.2.0, and https://demo-pennant.cairn.pub/ serves the Turnagain Geographic Society with the Pennant theme. Nothing waits for Geoff.
 
 Open documents: none.
-Resume from: /var/home/glw907/Projects/initiatives/cairn-setup/plans/2026-11-13-tui-language-conductor-prompt.txt
+Resume from: /var/home/glw907/Projects/initiatives/theme-garden/plans/2026-11-14-pennant-conductor-prompt.txt
 <!-- /round-report -->
 
 Open follow-ups from the round: the C11 comment leftovers (#508, #524), H2 (#515), the light-health cosmetic findings (#523), and pass 2's changelog undercount (#522); filings run #491 to #524.
@@ -41,12 +41,11 @@ What a session needs to know:
 - theme-catalog-1 is merged (#246; `conductor-theme-catalog`). The `catalog` run published Waymark 1.1.0: index
   https://catalog.cairn.pub/index.json. Nothing reads the catalog yet, and BACKLOG #486 comes before a second theme.
 - Round `events` (`conductor-events`): pass 1 `feed` is merged (#250, `buildICalendarResponse` in `/delivery`; no
-  engine release). Passes 2 and 3 wait on Pennant pass 4's accepted review. Resume from
+  engine release). Passes 2 and 3 are held (the design's `Held:` line) and launch nothing. Round two's design, site basics, retires them and builds events as a feature layer. Resume from
   `initiatives/theme-garden/plans/2026-11-14-events-conductor-prompt.txt`.
-- Round `pennant` (`conductor-pennant`): pass 1 `cards` is PR #251 (review `escalate`, one open finding on the
-  `scripts/checks/gate-table.json` path class, two calls for Geoff) and waits for the pennant close packet. Pass 2 `home`
-  is draft PR #253 on `pennant-2` (cut from `pennant-1`), executor `cairn-cms-pennant-2`. Passes 3 and 4 follow; pass 4
-  waits for a close packet. Resume from `initiatives/theme-garden/plans/2026-11-14-pennant-conductor-prompt.txt`.
+- Round `pennant` is closed. Pennant 1.0.0 and Waymark 1.2.0 are published; backlog #539 holds the banner-split hardening for 1.0.1.
+- Next action: round `foundation`. Launch `conductor-foundation` from
+  `initiatives/theme-garden/plans/2026-11-15-foundation-conductor-prompt.txt` once its start line reads true.
 
 ## Open decisions and watches
 

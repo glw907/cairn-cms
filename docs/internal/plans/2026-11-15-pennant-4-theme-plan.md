@@ -49,7 +49,7 @@ shows the grader's renders beside the mockup.
 - **Reviewed.** One `standards:plan-reviewer` read (Opus, `medium`), folded below. The class is
   `ordinary`, which needs none, but merging publishes a permanent release.
 - **Evidence.** Probes ran in a scratch copy at `a6d064500` with dependencies installed (M1 to
-  M24). The probe scripts are in the planner's job `tmp` and aren't kept.
+  M31). The probe scripts are in the planner's job `tmp` and aren't kept.
 
 ### Auto-mode routes
 
@@ -100,6 +100,8 @@ shows the grader's renders beside the mockup.
 | M27 | `gh variable list -e catalog-proving` (read 2026-11-15); `scripts/catalog/publish.mjs:77`, `:296-313` | `DEMO_ORIGIN` is `https://demo-proving.cairn.pub` and `DEMO_WORKER` is `cairn-demo-proving`, with no `{id}`. `releaseDirs` sorts the themes, so the proving run deploys Pennant, confirms it (`catalog: <origin> serves pennant@1.0.0`), then deploys Waymark over it. |
 | M28 | Run `43774294689` (pass 3, green); `.github/workflows/test.yml:15`, `:130-131`; `catalog.yml:44`; `check-render.mjs:30-39`; `viewer/headless.mjs:79-82` | The test job took 24 of its 45 minutes. `test:theme` took 11, and `check:theme -- --catalog` took 2.9 over Waymark's two builds. The render rule builds once per option combination and mode, so Pennant's full run is ten builds, about 14 more minutes, near 40 in all. The catalog publish job took 6 of its 60. The render rule checks each page's status and console errors only. |
 | M29 | `node --version` (v26.13.1 local); `test.yml:26` (Node 24) | Both strip TypeScript types by default, so `check.test.mjs` can import a `.ts` helper with its extension. |
+| M30 | Advisor probe on the options fixture: `theme.css`, then the stripped `tide` sheet plus `modes/light.css`, then an `overrides.css` on `:root, html:root:not([data-theme])` | The audit reads the two-selector rule and the pin with no UNMEASURED row, in all four scheme rows. An override pair at 1.16:1 gives two findings, one per theme, so a bad club pair fails. |
+| M31 | Advisor probe: the fixture's `color-primary` set per mode to `color-mix(in oklch, var(--color-accent) 60%, var(--color-base-content))` | With `$type: color` the tokens schema rejects the string. Untyped (`{"$value": "color-mix(...)"}`, Waymark's `color-card-border` form) it validates, `build-tokens.mjs` writes it to the unlayered `:root` and the dark pins, and the audit measures it per value and per mode: on a dark OS, `--color-primary` on `--color-base-100` reads 8.86 under `tide` and 8.13 under `ember`. |
 | M24 | `BACKLOG.md:9` (#525) | Places a fix to Waymark's 320 px brand overflow in this pass, in `themes/waymark`, which is outside the row. Waymark's kind is `blog`, so its demo never uses the organization set (pass 3's kind lookup), and the overflow never reaches a live demo. |
 
 ## Recorded searches
@@ -157,8 +159,9 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
 - **Design 12.** A change to the organization set raises its version in the same PR.
 - **Design 13.** The engine range: decision 3.
 - **Planner.** CI's test job passes 36 minutes (80% of its 45) on the PR, after decision 18:
-  park with the job's step durations as an owner ask on `.github/workflows/test.yml`'s timeout.
-  The catalog publish job is held to the same 80% of its 60.
+  record the job's step durations as a `Call:` on `.github/workflows/test.yml`'s timeout and
+  go on. A job that times out parks the pass with those durations as an owner ask. The catalog
+  publish job is held to the same rule against its 60.
 - **Planner.** The fonts exceed 400 KiB: drop the latin-ext subsets first, then Barlow 500, and
   never a family. A weight the mockup uses and the budget can't hold is synthesized by the
   nearest kept weight and named in the PR.
@@ -211,7 +214,8 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
    reads fireweed, standing answer 3 fires.
 5. **The link ink derives from color 1.** `--color-primary` is
    `color-mix(in oklch, var(--color-neutral) P%, var(--color-base-content))`, set per mode in
-   `tokens.json` (the `modes/*.css` files are `build-tokens.mjs` output and are never hand
+   `tokens.json` as an untyped `$value` string, never `$type: color`, which the schema rejects
+   (M31) (the `modes/*.css` files are `build-tokens.mjs` output and are never hand
    edited), one P for light and one for dark, so links and the news dates follow color 1 and a
    club's override (item 7) moves them too. T2 picks the two values of P and records the
    measured ratios of every pair the audit gates: `--color-primary` on `--color-base-100` and
@@ -220,9 +224,10 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
    `--color-neutral-content` on `--color-neutral`, and `--color-secondary-content` on
    `--color-secondary`. A set that misses takes standing answer 4: first P, then that set's
    `-content` color within its hue. Grounds stay the mockup's. If no single P per mode clears
-   every set, that set alone gets a literal comma-free `--color-primary` in its option sheet,
-   and the PR records it as a `Call:` with the numbers, saying links in that set don't follow a
-   club's override. [advisor]
+   every set, that set's `-content` and ink tuning stops there and the pass parks with the
+   numbers. A literal `--color-primary` in one option sheet would make it a comma-valued base
+   token and an option token at once, the #412 collision decision 4 avoids, so it takes
+   design standing answer 3's `build-tokens.mjs` fix first. [advisor]
    Call: call 13 says `--color-primary` is "an ink form of color 1 fixed per set and per mode".
    Pennant derives it with one mix per mode instead of a literal per set, so item 7's links
    recolor from the four overrides.
@@ -329,7 +334,9 @@ The twelve in `round-run.md` hold, with the design's thirteen. These bear on thi
 18. **The render rule's full run** renders every option value in the light mode, plus the
     default values in each other mode: six builds for Pennant, not ten (M28). An option sheet
     changes color only, and the rule checks status codes and console errors, which color can't
-    move. Dark contrast is measured by item 1's audit and item 3's axe run. The quick run is
+    move. `renderRule` gets the six from two `runHeadless` calls: every value with
+    `modes: ['light']`, then each option's default with the theme's other modes.
+    `viewer/headless.mjs` doesn't change. Dark contrast is measured by item 1's audit and item 3's axe run. The quick run is
     unchanged. T1 makes the change in `check-render.mjs` with its doc comment, and a
     `check.test.mjs` case asserts the combination list for the options fixture (two values: three
     builds).
@@ -390,13 +397,21 @@ Head, beside T1:
    two-color club and team look that's easy to recolor.", `version: 1.0.0`,
    `notes: First release.`, a summary, `engine` per decision 3, `kinds: ["organization"]`,
    `license: MIT`, `contract: 1`, the color modes, the `colors` option, the three fonts with
-   `OFL-1.1`, and decision 13's screenshots (placeholders until T5).
+   `OFL-1.1`, and decision 13's screenshots. Until T5 they are real PNGs at the listed sizes
+   (1440x960, 1440x960, 390x960) cut from a viewer render, because the group 1 push runs
+   `buildCard` in CI and the PR's `catalog` run, and `buildCard` refuses a first screenshot
+   that isn't exactly 3:2.
 4. Write `components/crest.ts` and `components/Crest.svelte` (decision 8), and
    `components/home-split.ts` (decision 7).
 5. Write `README.md`: the five sets, and the four `overrides.css` lines in decision 6's
    two-selector form.
 6. Copy Waymark's other `components/` and `directives/` unchanged as a starting point so the
    check can render; T3 and T4 replace the components.
+
+The head's fast lane runs no `check:theme` (a `themes/**` diff selects the catalog tests and
+`version-rise`, which skips a new theme), so it stays green before T1 merges. A local
+`check.mjs themes/pennant` in the head fails `engine-range` (M7) until then; run it with
+`--rules` naming every other rule. The group 1 push waits for T1, so CI sees the new rule.
 
 Tail, after T1 merges:
 
@@ -541,6 +556,10 @@ range would tell an rc.4 site it can run a theme that needs passes 1 and 2. Deci
 narrow rule change instead. It also held that links can follow a club's four overrides only if
 the ink derives from `--color-neutral`, which decision 5 builds. The `[advisor]` marks name the
 lines it shaped.
+
+Its pre-launch read added two probes (M30, M31) and four folds: decision 5's ink is untyped and
+its last resort parks instead of forming #412; decision 18 stays inside `check-render.mjs`; T2's
+screenshots are real PNGs before T5; the CI duration rule parks only on a timeout.
 
 ## Plan review fold
 

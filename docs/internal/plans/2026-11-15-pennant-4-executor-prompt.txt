@@ -24,7 +24,7 @@ Rules that hold throughout:
 - Copy the plan's acceptance items into the PR verbatim, each with its evidence. Never edit or drop one. An item that can't be met as written stays verbatim, with the amended check beside it, its reason, and a flag.
 - Colors come from the four custom properties through `color-mix()` in oklch, never relative color syntax. Every value comes from a token. An option sheet holds only comma-free oklch values (plan decision 4).
 - The theme prints no caption and no name on any photo.
-- After the first push, read the CI test job's duration. Past 36 minutes, park with its step durations as an owner ask on the workflow timeout (the plan's CI standing answer).
+- After the first push, read the CI test job's duration. Past 36 minutes, record its step durations as a `Call:` and go on; a job that times out parks the pass (the plan's CI standing answer).
 - Downloads go in their own empty directory under the job's `tmp`, and nothing downloaded is executed or imported; only `.woff2` files are copied out.
 - Harness scripts live under the job's `tmp` and aren't committed; the PR lists each one's command and output path. Local servers bind 127.0.0.1 and stop through `TaskStop` or their own handle.
 - Cleanup beyond the plan goes through `standards:log-issue` and is listed in the PR, never done.

@@ -586,6 +586,15 @@ describe('save on the nav view', () => {
     await expect(admin.actions.save(event)).rejects.toMatchObject({ status: 403 });
   });
 
+  it('403s an editor saving primary under the same owners-only access map', async () => {
+    const rt = runtime();
+    rt.navMenus = menus;
+    rt.access = { nav: ['owner'] };
+    const admin = createCairnAdmin({ runtime: rt, ...deps });
+    const event = actionEvent('/admin/nav/primary', { form: { tree: '[]' } });
+    await expect(admin.actions.save(event)).rejects.toMatchObject({ status: 403 });
+  });
+
   it('404s when the runtime configures no navMenu', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const event = actionEvent('/admin/nav/primary', { form: { tree: '[]' } });

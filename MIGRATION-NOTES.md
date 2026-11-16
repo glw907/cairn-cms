@@ -105,7 +105,7 @@ editor: {
 },
 ```
 
-The sidebar shows one entry per menu, in list order. Bare `/admin/nav` answers 404, so move any link or bookmark to `/admin/nav/<menuName>`. A site entry in `navLayout` whose `href` is `/admin/nav` or starts with `/admin/nav/` throws as a collision, because the engine owns those addresses. A `{ screen: 'nav' }` entry places every declared menu, and with two or more menus it takes no `label`: `validateNavLayout` throws, and each menu's label lives in the `nav` list. A list repeats no `menuName` and holds at most 8 menus, and `defineAdapter` throws on either. Code that read `CairnRuntime.navMenu` reads `CairnRuntime.navMenus` instead, which is an empty list when the site declares no menu.
+The sidebar shows one entry per menu, in list order. Bare `/admin/nav` answers 404, so move any link or bookmark to `/admin/nav/<menuName>`. A site entry in `navLayout` whose `href` is under `/admin/nav/` throws as a collision, because the engine owns those addresses, while a site entry at bare `/admin/nav` still passes validation and now links to a 404. A `{ screen: 'nav' }` entry places every declared menu, and with two or more menus it takes no `label`: `validateNavLayout` throws, and each menu's label lives in the `nav` list. A list repeats no `menuName` and holds at most 8 menus, and `defineAdapter` throws on either. Code that read `CairnRuntime.navMenu` reads `CairnRuntime.navMenus` instead, which is an empty list when the site declares no menu.
 
 A page whose id is `home` can serve `/` on a site that takes the new template routes and Waymark 1.2.0. The engine's exports and the theme contract schema don't change, and a site that already exists is unaffected until it copies the routes. A site that wants the behavior copies `(site)/home.ts` and the changes to `(site)/+page.server.ts`, `(site)/+page.svelte`, `(site)/[...path]/+page.server.ts`, `(site)/[...path=md]/+server.ts`, `(site)/archive/[page]/`, `(site)/preview/[token]/`, and `sitemap.xml/+server.ts` from the template.
 
@@ -113,7 +113,7 @@ A theme author gets one new optional prop on `ArticleView`, `home`, typed `HomeD
 
 The template's `pages` concept gains a `description` and an `image` field, the same as a post's. A site that wants them on its pages adds both to its `pages` fieldset, and existing pages stay valid without them.
 
-The template's root layout reads a `menus.actions` menu from `site.config.yaml` and returns it as `actions` when it holds a link. A site that wants a call-to-action menu adds `actions` to the `editor` block's `nav` list and writes it in `site.config.yaml`, and the admin then edits it at `/admin/nav/actions`. The template lists `actions` among the edited menus. A nav save still rewrites `site.config.yaml` without its comments, so write the menu out instead of leaving it as a commented example.
+The template's root layout reads a `menus.actions` menu from `site.config.yaml` and returns it as `actions` when it holds a link. A site that wants a call-to-action menu adds `actions` to the `editor` block's `nav` list and writes it in `site.config.yaml`, and the admin then edits it at `/admin/nav/actions`. The template lists `actions` among the edited menus. A nav save rewrites `site.config.yaml` without its comments.
 
 The chassis vocabulary's block list grows by one, a `cards` block, and a site that re-emits its chassis gets it. Contract 1 keeps its number, and a theme can style `.cards` further, though the chassis already lays it out and gives it a default look.
 

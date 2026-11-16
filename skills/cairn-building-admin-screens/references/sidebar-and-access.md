@@ -179,7 +179,7 @@ label). The triggers: an icon outside `NavIcon`; a site `href` that collides wit
 view, or two entries sharing an `href`; an unknown screen id, or a screen referenced twice
 (a `hidden` reference counts); `nav` while `editor.nav` declares no menu; a `nav` entry with a
 `label` while `editor.nav` declares two or more menus (`screen "nav" places 2 or more menus, so it
-takes no label`); a site `href` of `/admin/nav` or under `/admin/nav/`; a blank relabel; a blank or duplicate
+takes no label`); a site `href` under `/admin/nav/`; a blank relabel; a blank or duplicate
 section label; empty `children` or a nested section; an undeclared role name. A `defineAccess:`
 or `access:` error names the bad key or role.
 

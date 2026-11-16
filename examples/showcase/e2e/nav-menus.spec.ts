@@ -23,6 +23,22 @@ async function rowsOnScreen(page: Page): Promise<{ label: string; url: string }[
   return labels.map((label, i) => ({ label, url: urls[i] ?? '' }));
 }
 
+test('moving between menus client-side shows the other menu, not the first menu rows', async ({
+  page,
+}) => {
+  await page.goto('/admin/nav/primary');
+  await expect(page.getByRole('heading', { name: 'Navigation', level: 1 })).toBeVisible();
+  await addItemAndSave(page, 'Trails', '/trails');
+  await expect(page).toHaveURL(/\/admin\/nav\/primary\?saved=1$/);
+  await expect(page.locator('input[aria-label="Label"]').last()).toHaveValue('Trails');
+
+  await page.getByRole('link', { name: 'Action links' }).click();
+  await expect(page).toHaveURL(/\/admin\/nav\/actions$/);
+  await expect(page.getByRole('heading', { name: 'Action links', level: 1 })).toBeVisible();
+  const labels = (await rowsOnScreen(page)).map((r) => r.label);
+  expect(labels).not.toContain('Trails');
+});
+
 test('each declared menu opens by name, saves under its own key, and an unknown name is a 404', async ({
   page,
   request,

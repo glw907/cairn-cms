@@ -190,8 +190,8 @@ under `menus.<menuName>` in the site config, and read it in a server load with
 
 The scaffold's root `+layout.server.ts` also reads `readMenu(siteConfig, 'actions', 1)`, the menu for
 call-to-action links such as a Join button. It returns `actions` in the layout data only when the menu
-holds a link, and a theme reads `page.data.actions`. The template ships the menu commented out in
-`site.config.yaml`, and like the footer it is edited in that file until you add it to `editor.nav`.
+holds a link, and a theme reads `page.data.actions`. The template lists `actions` in `editor.nav`, so
+the admin edits it at `/admin/nav/actions` and the first save writes the key to `site.config.yaml`.
 A menu becomes admin-editable once it joins the list.
 
 ## Build failures

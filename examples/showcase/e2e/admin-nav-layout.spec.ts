@@ -27,6 +27,7 @@ test('the sidebar renders the declared navLayout: two named sections, the relabe
   await expect(sections.nth(1).locator('a')).toHaveText([
     'Tags',
     'Navigation',
+    'Action links',
     'Signups',
     'Site settings',
     'Editors',

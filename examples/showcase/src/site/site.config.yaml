@@ -10,8 +10,8 @@ menus:
     # cairn-template:exclude-end
     - label: Admin
       url: /admin
-  # /admin/nav edits only menus.primary (createNavRoutes is bound to that one menu), so this
-  # block is developer-edited: a site owner changes the footer by editing this file directly.
+  # The admin edits menus.primary and menus.actions, one screen each under /admin/nav. The footer
+  # is not listed in editor.nav, so a site owner changes it by editing this file directly.
   footer:
     - label: Writing
       url: /
@@ -20,8 +20,8 @@ menus:
     - label: Feed
       url: /feed.xml
   # The actions menu holds a site's call-to-action links (a Join or Donate button), for a theme
-  # that renders them. Like the footer it is developer-edited in this file. Uncomment it and point
-  # each url at a page the site has.
+  # that renders them. The admin screen starts empty and its first save writes this key. To seed it
+  # here instead, uncomment it and point each url at a page the site has.
   # actions:
   #   - label: Join
   #     url: /join

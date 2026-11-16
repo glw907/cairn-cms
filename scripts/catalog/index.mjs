@@ -82,7 +82,7 @@ function themeRelease(record) {
  * @param {object} input
  * @param {Record<string, any> | null} input.previous The index now published, or `null` for the first.
  * @param {(ThemeRecord | SetRecord)[]} input.releases The releases this run adds.
- * @param {{id: string, label: string, description: string}[]} input.kinds The kinds data, in display order.
+ * @param {{id: string, label: string, description: string, defaultFeatures?: string[]}[]} input.kinds The kinds data, in display order. Only `id`, `label`, and `description` reach the index; a kind's `defaultFeatures` stays in the data and is dropped here.
  * @param {string} input.now The `generated` time, in UTC.
  * @returns {Record<string, any>} A new object; no input is changed.
  * @throws When a release repeats a version, names a kind the kinds data lacks, or lacks a theme's
@@ -134,6 +134,8 @@ export function buildIndex({ previous, releases, kinds, now }) {
     }
   }
 
-  next.kinds = kinds.filter((k) => sets.some((s) => s.kind === k.id && s.releases.length > 0));
+  next.kinds = kinds
+    .filter((k) => sets.some((s) => s.kind === k.id && s.releases.length > 0))
+    .map(({ id, label, description }) => ({ id, label, description }));
   return next;
 }

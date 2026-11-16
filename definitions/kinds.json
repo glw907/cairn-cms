@@ -1,0 +1,34 @@
+{
+  "kinds": [
+    {
+      "id": "blog",
+      "label": "Blog",
+      "description": "Dated posts, newest first. For a journal, a newsletter, or news.",
+      "defaultFeatures": []
+    },
+    {
+      "id": "portfolio",
+      "label": "Portfolio",
+      "description": "Collections of your work, mostly images. For a photographer, a designer, or a maker.",
+      "defaultFeatures": []
+    },
+    {
+      "id": "docs",
+      "label": "Documentation",
+      "description": "Pages in a sidebar, read in order. For a manual, a handbook, or a guide.",
+      "defaultFeatures": []
+    },
+    {
+      "id": "landing",
+      "label": "Product or event page",
+      "description": "One long home page in sections (what it is, what it offers, pricing, questions) that leads to one action. For a product, a project, or an event.",
+      "defaultFeatures": []
+    },
+    {
+      "id": "organization",
+      "label": "Organization",
+      "description": "Several pages about a group, with a news section. For a club, a team, a nonprofit, or a small business.",
+      "defaultFeatures": []
+    }
+  ]
+}

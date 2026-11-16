@@ -63,11 +63,13 @@ is its schema, and the tokens build validates the manifest against it.
 | `description` | Yes | A summary of at most 60 characters. |
 | `version`, `license`, `author` | Yes | The theme's release and attribution. |
 | `engine` | Yes | The engine versions the theme works with, as `>=1.2.0` or `>=1.2.0 <2.0.0` and no other form. State the minimum. While the engine is a prerelease, `>=0.99.0-0` admits every prerelease of 0.99.0. |
-| `kinds` | Yes | One to three kinds of site the theme suits, from `blog`, `portfolio`, `docs`, `landing`, and `organization`. The first is the kind it was designed for. |
+| `kinds` | Yes | One to five kinds of site the theme suits, from `blog`, `portfolio`, `docs`, `landing`, and `organization`. The first is the kind it was designed for. |
 | `notes` | Yes | One line, at most 200 characters, on what this version changed. |
 | `contract` | Yes | The contract version, `1`. |
 | `colorModes` | Yes | The daisyUI theme name of the `light` block and of the `dark` block. |
 | `options` | Yes | Zero to four choices an owner makes. |
+| `menus` | No | The names of the menus the theme shows, as `site.config.yaml` keys them under `menus`. |
+| `features` | No | The features whose views the theme styles. |
 | `summary` | No | A few sentences, at most 300 characters, for the theme's catalog page. |
 | `repository` | No | The URL of the theme's source. |
 | `fonts` | No | Each face, with its license, source, and files. |
@@ -81,8 +83,8 @@ removing one breaks a theme that already uses it.
 
 `engine` is checked twice. The schema accepts only the two forms, and the theme check's
 `engine-range` rule fails when the range doesn't admit the engine version in the repository's
-`package.json`. `kinds` takes its ids from `sets/kinds.json`, which also holds each kind's label and
-description.
+`package.json`. `kinds` takes its ids from `definitions/kinds.json`, which also holds each kind's label and
+description. `features` takes its ids from `definitions/features.json`, which lists none yet.
 
 ## A catalog release
 

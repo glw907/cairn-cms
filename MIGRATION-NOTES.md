@@ -165,13 +165,18 @@ until you add the three fields:
 
 1. Set `engine` to the lowest engine version the theme works with, as `>=1.2.0`, or with an upper
    bound as `>=1.2.0 <2.0.0`. While the engine is a prerelease, `>=0.99.0-0` admits every prerelease of 0.99.0.
-2. Set `kinds` to one to three ids from `sets/kinds.json`, the kind the theme was designed for
+2. Set `kinds` to one to five ids from `definitions/kinds.json`, the kind the theme was designed for
    first.
 3. Set `notes` to one line, at most 200 characters, on what this version changed.
 4. Raise `version` with any change under `themes/<id>/`. CI fails a change that doesn't, since the
    hosted catalog writes each release path once.
 5. Run `npm run check:theme -- themes/<id>`. Its `engine-range` rule fails when `engine` doesn't
    admit the engine version in `package.json`.
+
+A theme may declare up to five kinds and the optional `menus` and `features`. A cairn-cms clone reads
+the kinds from `definitions/kinds.json`. The schemas' kind and feature lists are generated from
+`definitions/`, so edit that directory and run `node scripts/build/emit-definitions.mjs`. A site needs
+nothing.
 
 The release gate is rebuilt around three legs, and the setup docs describe a token option for
 `cairn new`: a Cloudflare API token in `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval.

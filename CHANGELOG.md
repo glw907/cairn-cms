@@ -191,6 +191,14 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: add `engine`, `kinds`, and `notes` to a theme manifest you build or check from a cairn-cms clone. A site's own `src/theme/cairn-theme.json` needs nothing.
 
+- **A theme may declare up to five kinds, `menus`, and `features`.** The kinds are listed in
+  `definitions/kinds.json`, moved from `sets/kinds.json`, and the manifest allows the optional
+  `menus` and `features`. `definitions/features.json` lists the features, none yet, and each kind
+  carries `defaultFeatures`. `scripts/build/emit-definitions.mjs` generates the schemas' kind and
+  feature lists, and `npm run check:definitions` fails when one differs.
+
+  Consumers must: nothing.
+
 - **The house themes publish to a hosted catalog.** A `catalog` workflow publishes each new theme
   release with its archive, images, and demo. `schema/cairn-catalog-1.schema.json` describes the
   catalog's `index.json`, and `schema/cairn-set-1.schema.json` a content set's manifest. CI fails a

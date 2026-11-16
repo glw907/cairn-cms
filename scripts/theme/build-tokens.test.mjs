@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import path from 'node:path';
+import Ajv2020 from 'ajv/dist/2020.js';
 import postcss from 'postcss';
 import tailwind from '@tailwindcss/postcss';
 import { chromium } from 'playwright';
@@ -129,9 +130,6 @@ test('the manifest schema takes the catalog fields and refuses what the design e
     assert.deepEqual(mutate((m) => (m.engine = engine)), [], `engine ${engine}`);
   }
   assert.ok(mutate((m) => delete m.kinds).length > 0, 'no kinds');
-  assert.ok(mutate((m) => (m.kinds = [])).length > 0, 'zero kinds');
-  assert.ok(mutate((m) => (m.kinds = ['blog', 'docs', 'landing', 'portfolio'])).length > 0, 'four kinds');
-  assert.ok(mutate((m) => (m.kinds = ['blog', 'blog'])).length > 0, 'a repeated kind');
   assert.ok(mutate((m) => (m.kinds = ['wiki'])).length > 0, 'an unknown kind');
   assert.deepEqual(mutate((m) => (m.kinds = ['blog', 'docs', 'landing'])), [], 'three kinds');
   assert.ok(mutate((m) => delete m.notes).length > 0, 'no notes');
@@ -139,10 +137,29 @@ test('the manifest schema takes the catalog fields and refuses what the design e
   assert.deepEqual(mutate((m) => (m.notes = 'x'.repeat(200))), [], '200 characters is allowed');
   assert.ok(mutate((m) => (m.summary = 'x'.repeat(301))).length > 0, '301-character summary');
   assert.deepEqual(mutate((m) => { m.summary = 'x'.repeat(300); m.repository = 'https://example.com/r'; }), [], 'summary and repository');
+});
 
+/** The Ajv keywords a manifest breaks, compiled with the options `validateManifest` uses. */
+async function keywordsOf(edit) {
   const schema = await readJson(path.join(ROOT, 'schema/cairn-theme-1.schema.json'));
-  const kinds = await readJson(path.join(ROOT, 'sets/kinds.json'));
-  assert.deepEqual(schema.properties.kinds.items.enum, kinds.kinds.map((kind) => kind.id));
+  const validate = new Ajv2020({ validateFormats: false, allErrors: true }).compile(schema);
+  const manifest = await readJson(path.join(FIXTURE, 'cairn-theme.json'));
+  edit(manifest);
+  validate(manifest);
+  return (validate.errors ?? []).map((e) => e.keyword);
+}
+
+test('the manifest schema bounds kinds and types menus and features, each refusal by its own keyword', async () => {
+  const ids = ['blog', 'portfolio', 'docs', 'landing', 'organization'];
+  assert.deepEqual(await keywordsOf((m) => (m.kinds = ids)), []);
+  assert.deepEqual(await keywordsOf((m) => (m.kinds = [])), ['minItems']);
+  assert.deepEqual(await keywordsOf((m) => (m.kinds = ['blog', 'blog'])), ['uniqueItems']);
+  assert.deepEqual(await keywordsOf((m) => { m.menus = ['main', 'actions']; m.features = []; }), []);
+  assert.deepEqual(await keywordsOf(() => {}), []);
+  assert.deepEqual(await keywordsOf((m) => (m.menus = 'main')), ['type']);
+  assert.deepEqual(await keywordsOf((m) => (m.menus = ['main', 'main'])), ['uniqueItems']);
+  assert.deepEqual(await keywordsOf((m) => (m.menus = ['Main menu'])), ['pattern']);
+  assert.deepEqual(await keywordsOf((m) => (m.features = ['comments'])), ['not']);
 });
 
 test('the manifest schema states that an option key is a contract', async () => {

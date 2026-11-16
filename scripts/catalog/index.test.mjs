@@ -11,7 +11,7 @@ import { buildIndex } from './index.mjs';
 const ROOT = repoRoot(import.meta.url);
 const read = (rel) => JSON.parse(readFileSync(path.join(ROOT, rel), 'utf8'));
 const schema = read('schema/cairn-catalog-1.schema.json');
-const { kinds: KINDS } = read('sets/kinds.json');
+const { kinds: KINDS } = read('definitions/kinds.json');
 const example = read('scripts/catalog/fixtures/index/design-example.json');
 
 const validate = new Ajv2020({ allErrors: true }).compile(schema);
@@ -53,7 +53,7 @@ const refused = {
   'an integrity that is not sha512': (d) => (d.themes[0].releases[0].integrity = 'sha256-abc'),
   'a theme with no releases': (d) => (d.themes[0].releases = []),
   'an engine range of an unlisted form': (d) => (d.themes[0].releases[0].engine = '^1.0.0'),
-  'a theme with four kinds': (d) => (d.themes[0].kinds = ['blog', 'portfolio', 'docs', 'landing']),
+  'a theme with one kind twice': (d) => (d.themes[0].kinds = ['blog', 'blog']),
   'a theme with an unknown kind': (d) => (d.themes[0].kinds = ['shop']),
   'a format that is not an integer': (d) => (d.format = '1'),
   'a missing format': (d) => delete d.format,
@@ -73,11 +73,6 @@ test('the schema ignores fields it does not know, so a later field never breaks 
   doc.themes[0].extra = 1;
   doc.themes[0].releases[0].extra = 1;
   assert.deepEqual(errorsOf(doc), []);
-});
-
-test("the schema's kind ids equal the ids in sets/kinds.json", () => {
-  const ids = schema.$defs.kindId.enum;
-  assert.deepEqual(ids, KINDS.map((k) => k.id));
 });
 
 // ---- the generator ----
@@ -204,11 +199,27 @@ test('a release already in the index is refused, since a release path is written
 test('a set release for blog makes the blog kind appear and no other', () => {
   const next = build({ releases: [themeRecord('1.0.0'), setRecord('blog', '1.0.0')] });
   assert.deepEqual(errorsOf(next), []);
-  assert.deepEqual(next.kinds, [KINDS[0]]);
+  const { id, label, description } = KINDS[0];
+  assert.deepEqual(next.kinds, [{ id, label, description }]);
   assert.deepEqual(next.sets.map((s) => s.kind), ['blog']);
   assert.equal(next.sets[0].releases[0].url, `${base}/sets/blog/1.0.0.tgz`);
   assert.equal(next.sets[0].releases[0].notes, 'Set notes 1.0.0.');
   assert.equal('contract' in next.sets[0].releases[0], false);
+});
+
+test('a theme with five kinds is accepted', () => {
+  const doc = clone(example);
+  doc.themes[0].kinds = KINDS.map((k) => k.id).slice(0, 5);
+  assert.equal(doc.themes[0].kinds.length, 5);
+  assert.deepEqual(errorsOf(doc), []);
+});
+
+test('a kind carrying defaultFeatures yields none in the index', () => {
+  const kinds = KINDS.map((k) => ({ ...k, defaultFeatures: ['x'] }));
+  const next = build({ kinds, releases: [themeRecord('1.0.0'), setRecord('blog', '1.0.0')] });
+  assert.deepEqual(errorsOf(next), []);
+  assert.equal(next.kinds.length, 1);
+  assert.deepEqual(Object.keys(next.kinds[0]), ['id', 'label', 'description']);
 });
 
 test('kinds follow the kinds data order, and only kinds with a set release appear', () => {

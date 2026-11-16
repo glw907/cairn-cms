@@ -260,8 +260,8 @@ export const STATIC_RULES = {
   // A theme with options is audited once per value of each option, the other options at their
   // defaults, because each value's sheet sets its own colors and the site's chain never reads them:
   // the audit adds the value's sheet to the chain after theme.css. Each finding that names a daisyUI
-  // block is prefixed with the value and the block's mode, and a finding every value raises is
-  // reported once, unprefixed. The notes give each value's measured and unmeasured pair counts per
+  // block is prefixed with the value and the block's mode. A finding that names no block is
+  // prefixed with the value, or reported once, unprefixed, when every value raises it. The notes give each value's measured and unmeasured pair counts per
   // mode, since a passing run must show it measured something under every value.
   async audit({ dir, manifest }) {
     const audit = await import('../../dist/audit/index.js');
@@ -360,11 +360,10 @@ function withoutHasSelectors(css) {
 function auditChain(audit, siteDir, stylesheets) {
   const raw = JSON.parse(readFileSync(path.join(ROOT, 'scripts/checks/public-scope.config.json'), 'utf8'));
   const retarget = (p) => (p.startsWith('../../') ? p.slice(3) : p);
-  const file = {
-    ...raw,
-    public: { ...raw.public, scope: raw.public.scope.map(retarget), themeRoots: raw.public.themeRoots.map(retarget), stylesheets },
-  };
-  const config = audit.resolveConfig(siteDir, file, (candidate) => existsSync(path.join(siteDir, candidate)));
+  const file = { ...raw, public: { ...raw.public, scope: raw.public.scope.map(retarget), themeRoots: raw.public.themeRoots.map(retarget) } };
+  // The chain is set on the resolved config, not in the file, so a missing theme.css stays an
+  // unread entry, which `paths-required` reports, rather than a configured path the run throws on.
+  const config = { ...audit.resolveConfig(siteDir, file, (candidate) => existsSync(path.join(siteDir, candidate))), publicStylesheets: stylesheets };
   const rules = audit.selectRules(audit.staticRules(), ['theme-contrast', 'theme-conformance', 'public-literals']);
   const report = audit.runStatic(config, rules);
   const out = report.findings.map((finding) => ({

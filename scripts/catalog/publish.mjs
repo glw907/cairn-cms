@@ -2,7 +2,9 @@
 // The catalog's publish run. For each theme under `themes/` and each set under `sets/` whose
 // version the bucket's `index.json` does not list, it checks the release, builds its archive (and
 // for a theme its card), puts every release object create-only, builds and deploys a theme's demo
-// and waits for the demo to name the release, then writes the next `index.json`, last.
+// and waits for the demo to name the release, then writes the next `index.json`, last. A theme's
+// demo is built over the set `sets/<kind>/` of the first kind its manifest lists when that set
+// exists in the checkout, and over the starter overlay otherwise, at the origin its demo address names.
 //
 //   node scripts/catalog/publish.mjs [--reset]
 //
@@ -301,7 +303,10 @@ export async function run({
       const demo = new URL('/', /** @type {string} */ (env.DEMO_ORIGIN).replaceAll('{id}', manifest.id)).href;
       const out = mkdtempSync(path.join(tmpdir(), 'cairn-demo-'));
       try {
-        const { release } = buildDemo({ root: REPO, themeDir: build.dir, out, worker });
+        const setDir = path.join(root, 'sets', String(manifest.kinds[0]));
+        const set = existsSync(path.join(setDir, 'cairn-set.json')) ? setDir : undefined;
+        log(`catalog: demo for ${manifest.id} uses ${set ? `the ${manifest.kinds[0]} set` : 'the starter overlay'}`);
+        const { release } = buildDemo({ root, themeDir: build.dir, out, worker, origin: new URL(demo).origin, ...(set && { set }) });
         await deploy({ dir: out, worker });
         log(`catalog: deployed ${release} to ${worker}`);
         await waitForDemo({ fetch, now, sleep }, demo, release);

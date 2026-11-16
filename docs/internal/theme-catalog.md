@@ -64,9 +64,14 @@ order:
    card, and each image. A release with no `notes` is refused here.
 3. Writes the archive, the screenshots, and the card create-only, under `themes/<id>/<version>.tgz`
    and `themes/<id>/<version>/`, or `sets/<kind>/<version>.tgz` for a set.
-4. For a theme, builds the demo over `scripts/build/starter-overlay/`, deploys it with the checkout's
-   own `wrangler deploy`, and polls the demo address for up to two minutes until its
-   `cairn-theme-release` marker names the new release.
+4. For a theme, builds the demo, deploys it with the checkout's own `wrangler deploy`, and polls the
+   demo address for up to two minutes until its `cairn-theme-release` marker names the new release.
+   The job picks the demo's content set by the first entry of the theme's manifest `kinds`: it
+   builds over `sets/<kind>/` when that directory holds a `cairn-set.json`, and over
+   `scripts/build/starter-overlay/` otherwise. It builds each demo with its own origin, the origin
+   of `DEMO_ORIGIN` with `{id}` replaced (`new URL(...).origin`), so the canonical links, feeds,
+   and sitemap name the demo's address. The set's `site.config.yaml` is laid over the composed
+   site's, with `siteName` set to the title of the set's home page.
 5. Generates the next `index.json`, validates it against the schema, and writes it last. It's the
    one object a run overwrites.
 
@@ -84,8 +89,10 @@ release. To put your branch's release back, rerun your job from the pull request
 with `gh run rerun <run-id>`.
 
 Every theme's proving demo is the one address `https://demo-proving.cairn.pub`, and the last
-deploy wins. So once `themes/` holds two themes, the proving reference check fails for every theme
-but the last. BACKLOG #486 tracks the fix.
+deploy wins. The reference check groups themes by `theme.demo`. It still checks every card,
+screenshot, and demo address for a 200, and it compares the release marker only for the last theme
+at a shared address, in catalog order. On the real catalog every demo address is unique, so the
+grouping changes nothing there.
 
 To read a catalog the way the workflows do, run the reference check from a clone:
 

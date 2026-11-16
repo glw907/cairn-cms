@@ -1,17 +1,20 @@
 // The demo build: Waymark over the starter overlay, built once, then read as the deployed assets
 // would be. The pages carry the release marker, hold no admin link and no conformance page, every
 // internal address in them lands on a file, and the Wrangler file deploys assets with no script.
-import { test, before, after } from 'node:test';
+// A second build runs over a fixture set, and `writeOrigin` is read on a scratch directory.
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { repoRoot } from '../repo-root.mjs';
-import { buildDemo } from './demo.mjs';
+import { buildDemo, writeOrigin } from './demo.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 const WAYMARK = path.join(ROOT, 'themes/waymark');
 const CONFORMANCE_INDEX = path.join(ROOT, 'scripts/theme/conformance/src/content/.cairn/index.json');
+
+const ORIGIN = 'https://demo-test.example';
 
 /** @type {string} */
 let out;
@@ -42,9 +45,34 @@ function served(address) {
   return candidates.find((candidate) => existsSync(path.join(assets, candidate)) && statSync(path.join(assets, candidate)).isFile());
 }
 
+/**
+ * Assert the five places a demo names its origin: the canonical link and `og:url` of the home page,
+ * the feed's link, a sitemap location, and the `robots.txt` Sitemap line each start with the origin,
+ * and none of the five holds the showcase's address.
+ * @param {string} dir the assets directory
+ * @param {string} origin
+ */
+function assertOrigin(dir, origin) {
+  const read = (/** @type {string} */ name) => readFileSync(path.join(dir, name), 'utf8');
+  const home = read('index.html');
+  const canonical = /<link rel="canonical" href="([^"]*)"/.exec(home)?.[1];
+  const ogUrl = /<meta property="og:url" content="([^"]*)"/.exec(home)?.[1];
+  const feedLink = /<link>([^<]*)<\/link>/.exec(read('feed.xml'))?.[1];
+  const loc = /<loc>([^<]*)<\/loc>/.exec(read('sitemap.xml'))?.[1];
+  const robots = /^Sitemap: (\S+)/m.exec(read('robots.txt'))?.[1];
+  const found = { 'canonical href': canonical, 'og:url content': ogUrl, 'feed.xml link': feedLink, 'sitemap.xml loc': loc, 'robots.txt Sitemap': robots };
+  for (const [place, value] of Object.entries(found)) {
+    assert.ok(value?.startsWith(origin), `${place} is ${value}, not under ${origin}`);
+    assert.ok(!value?.includes('showcase.test'), `${place} holds showcase.test`);
+  }
+  for (const name of ['index.html', 'feed.xml', 'sitemap.xml', 'robots.txt']) {
+    assert.ok(!read(name).includes('showcase.test'), `${name} holds showcase.test`);
+  }
+}
+
 before(() => {
   out = mkdtempSync(path.join(tmpdir(), 'cairn-demo-test-'));
-  buildDemo({ root: ROOT, themeDir: WAYMARK, out, worker: 'cairn-demo-{id}' });
+  buildDemo({ root: ROOT, themeDir: WAYMARK, out, worker: 'cairn-demo-{id}', origin: ORIGIN });
   assets = path.join(out, 'assets');
   files = walk(assets);
 });
@@ -107,4 +135,98 @@ test('the Wrangler file deploys the assets with no script, no route, and no work
   assert.equal('main' in config, false);
   assert.equal('routes' in config, false);
   assert.equal('route' in config, false);
+});
+
+test('the origin is named in the canonical link, og:url, feed, sitemap, and robots.txt, and showcase.test in none', () => {
+  assertOrigin(assets, ORIGIN);
+});
+
+test('writeOrigin writes the origin into cairn.config.ts and throws naming the file when the literal is absent', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'cairn-origin-test-'));
+  try {
+    const file = path.join(dir, 'src/site/cairn.config.ts');
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, "export const publicOrigin = 'https://showcase.test';\n");
+    writeOrigin(dir, 'https://example.org');
+    assert.equal(readFileSync(file, 'utf8'), 'export const publicOrigin = "https://example.org";\n');
+    assert.throws(() => writeOrigin(dir, 'https://example.net'), (error) => error instanceof Error && error.message.includes(file));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+describe('over a set', () => {
+  const TITLE = 'The Fixture Society';
+  /** @type {string} */
+  let scratch;
+  /** @type {string} */
+  let setAssets;
+
+  /**
+   * Write a fixture set into a scratch directory: a `home` page with a title and an image, one
+   * post, and a config carrying the literal the installer overwrites.
+   * @param {string} name the set's directory name
+   * @param {string} homeFront the home page's front matter, between the fences
+   * @returns {string} the set directory
+   */
+  function writeSet(name, homeFront) {
+    const dir = path.join(scratch, name);
+    mkdirSync(path.join(dir, 'src/content/pages'), { recursive: true });
+    mkdirSync(path.join(dir, 'src/content/posts'), { recursive: true });
+    mkdirSync(path.join(dir, 'src/site'), { recursive: true });
+    mkdirSync(path.join(dir, 'static/images'), { recursive: true });
+    const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==';
+    writeFileSync(path.join(dir, 'static/images/pixel.png'), Buffer.from(png, 'base64'));
+    writeFileSync(path.join(dir, 'src/content/pages/home.md'), `---\n${homeFront}\n---\nWelcome to the society.\n\n![A single pixel](/images/pixel.png)\n`);
+    writeFileSync(path.join(dir, 'src/content/posts/2026-11-01-first-post.md'), '---\ntitle: First post\ndate: 2026-11-01\ndescription: The first post.\n---\nA post.\n');
+    writeFileSync(path.join(dir, 'src/site/site.config.yaml'), 'siteName: Waymark\ndescription: A fixture set.\nmenus:\n  primary:\n    - label: Home\n      url: /\n');
+    return dir;
+  }
+
+  before(() => {
+    scratch = mkdtempSync(path.join(tmpdir(), 'cairn-demo-set-test-'));
+    const set = writeSet('set', `title: ${TITLE}`);
+    buildDemo({ root: ROOT, themeDir: WAYMARK, out: path.join(scratch, 'out'), worker: 'cairn-demo-{id}', origin: ORIGIN, set });
+    setAssets = path.join(scratch, 'out/assets');
+  });
+
+  after(() => rmSync(scratch, { recursive: true, force: true }));
+
+  test('the origin is named in all five places and showcase.test in none', () => {
+    assertOrigin(setAssets, ORIGIN);
+  });
+
+  test("the home page's title is the site name, and Waymark is not", () => {
+    const title = /<title>([^<]*)<\/title>/.exec(readFileSync(path.join(setAssets, 'index.html'), 'utf8'))?.[1];
+    assert.ok(title?.includes(TITLE), `the title is ${title}`);
+    assert.ok(!title?.includes('Waymark'), `the title is ${title}`);
+  });
+
+  test('a set whose home page has no title fails naming the file', () => {
+    const set = writeSet('untitled', 'description: No title here.');
+    assert.throws(
+      () => buildDemo({ root: ROOT, themeDir: WAYMARK, out: path.join(scratch, 'untitled-out'), worker: 'cairn-demo-{id}', origin: ORIGIN, set }),
+      (error) => error instanceof Error && error.message.includes(path.join(set, 'src/content/pages/home.md')),
+    );
+    assert.equal(existsSync(path.join(scratch, 'untitled-out')), false);
+  });
+});
+
+describe('over the organization set', () => {
+  /** @type {string} */
+  let setOut;
+  /** @type {string} */
+  let setAssets;
+
+  before(() => {
+    setOut = mkdtempSync(path.join(tmpdir(), 'cairn-demo-organization-'));
+    buildDemo({ root: ROOT, themeDir: WAYMARK, out: setOut, worker: 'cairn-demo-{id}', origin: ORIGIN, set: path.join(ROOT, 'sets/organization') });
+    setAssets = path.join(setOut, 'assets');
+  });
+
+  after(() => rmSync(setOut, { recursive: true, force: true }));
+
+  test('the origin is named in all five places and showcase.test in none', () => {
+    assertOrigin(setAssets, ORIGIN);
+  });
 });

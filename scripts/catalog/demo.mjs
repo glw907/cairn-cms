@@ -3,13 +3,13 @@
 // prerendered pages are served and an unmatched path answers 404. Nothing here reaches a Cloudflare
 // API; the publish step deploys what this leaves.
 //
-//   DEMO_WORKER=cairn-demo-{id} node scripts/catalog/demo.mjs <themeDir> --out <dir>
+//   DEMO_WORKER=cairn-demo-{id} DEMO_ORIGIN=https://{id}.example node scripts/catalog/demo.mjs <themeDir> --out <dir>
 //
 // The Wrangler file is written only into the output directory and never into the repository.
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { isMap, isSeq, parseDocument } from 'yaml';
+import { isMap, isSeq, parse, parseDocument } from 'yaml';
 import { repoRoot } from '../repo-root.mjs';
 import { buildSite, composeSite, readManifest } from '../theme/viewer/site.mjs';
 
@@ -28,6 +28,48 @@ export function writeMarker(siteDir, release) {
   const placeholder = '%sveltekit.head%';
   if (!text.includes(placeholder)) throw new Error(`demo: ${file} has no ${placeholder} to put the release marker before`);
   writeFileSync(file, text.replace(placeholder, `<meta name="${MARKER_NAME}" content="${release}" />\n    ${placeholder}`));
+}
+
+/** The address the showcase's `cairn.config.ts` ships, which no demo may leave in a page. */
+const SHOWCASE_ORIGIN = "'https://showcase.test'";
+
+/**
+ * Replace the showcase's public origin in a site's `src/site/cairn.config.ts`, so the canonical
+ * links, feeds, sitemap, and `robots.txt` of the build name the demo's own address.
+ * @param {string} siteDir
+ * @param {string} origin the demo's origin, with no path
+ */
+export function writeOrigin(siteDir, origin) {
+  const file = path.join(siteDir, 'src/site/cairn.config.ts');
+  const text = readFileSync(file, 'utf8');
+  if (!text.includes(SHOWCASE_ORIGIN)) throw new Error(`demo: ${file} has no ${SHOWCASE_ORIGIN} to replace with the demo origin`);
+  writeFileSync(file, text.replace(SHOWCASE_ORIGIN, JSON.stringify(origin)));
+}
+
+/**
+ * The title of a set's `home` page, which stands in for the owner's name in the demo's site name.
+ * @param {string} set the set directory
+ * @returns {string}
+ */
+function homeTitle(set) {
+  const file = path.join(set, 'src/content/pages/home.md');
+  const front = /^---\r?\n([\s\S]*?)\r?\n---/.exec(readFileSync(file, 'utf8'))?.[1];
+  const title = front === undefined ? undefined : parse(front)?.title;
+  if (typeof title !== 'string' || title.trim() === '') throw new Error(`demo: ${file} has no title in its front matter`);
+  return title;
+}
+
+/**
+ * Lay a set's `site.config.yaml` over a composed site's, with the site name the set's `home` page
+ * title, since the installer's owner name is not there to fill the literal.
+ * @param {string} siteDir
+ * @param {string} set the set directory
+ * @param {string} title
+ */
+function writeSetConfig(siteDir, set, title) {
+  const doc = parseDocument(readFileSync(path.join(set, 'src/site/site.config.yaml'), 'utf8'));
+  doc.set('siteName', title);
+  writeFileSync(path.join(siteDir, 'src/site/site.config.yaml'), doc.toString());
 }
 
 /**
@@ -130,15 +172,19 @@ function compatibilityDate(siteDir) {
  * @param {string} options.themeDir the theme directory
  * @param {string} options.out the output directory; its `assets/` and `wrangler.json` are replaced
  * @param {string} options.worker the Worker's name, with `{id}` standing for the theme id
- * @param {string[]} [options.contentDirs] the content the pages show; the starter overlay when omitted
+ * @param {string} options.origin the demo's public origin, which its canonical links, feeds, and sitemap name
+ * @param {string} [options.set] a set directory, absolute, whose content and config the pages show; the starter overlay when omitted
  * @returns {{ release: string, assets: string, wrangler: string }}
  */
-export function buildDemo({ root, themeDir, out, worker, contentDirs = [path.join(root, 'scripts/build/starter-overlay')] }) {
+export function buildDemo({ root, themeDir, out, worker, origin, set }) {
   const manifest = readManifest(themeDir);
   const release = `${manifest.id}@${manifest.version}`;
-  const site = composeSite({ root, themeDir, contentDirs });
+  const title = set === undefined ? undefined : homeTitle(set);
+  const site = composeSite({ root, themeDir, contentDirs: [set ?? path.join(root, 'scripts/build/starter-overlay')] });
   try {
     writeMarker(site.dir, release);
+    writeOrigin(site.dir, origin);
+    if (set !== undefined) writeSetConfig(site.dir, set, /** @type {string} */ (title));
     removeAdminMenus(site.dir);
     buildSite(site.dir);
     mkdirSync(out, { recursive: true });
@@ -162,10 +208,13 @@ export function buildDemo({ root, themeDir, out, worker, contentDirs = [path.joi
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { positionals, values } = parseArgs({ allowPositionals: true, options: { out: { type: 'string' } } });
   const worker = process.env.DEMO_WORKER;
-  if (positionals.length !== 1 || !values.out || !worker) {
-    console.error('usage: DEMO_WORKER=<name, {id} for the theme id> demo.mjs <themeDir> --out <dir>');
+  const demoOrigin = process.env.DEMO_ORIGIN;
+  if (positionals.length !== 1 || !values.out || !worker || !demoOrigin) {
+    console.error('usage: DEMO_WORKER=<name, {id} for the theme id> DEMO_ORIGIN=<origin, {id} for the theme id> demo.mjs <themeDir> --out <dir>');
     process.exit(2);
   }
-  const { release, assets } = buildDemo({ root: repoRoot(import.meta.url), themeDir: path.resolve(positionals[0]), out: path.resolve(values.out), worker });
+  const themeDir = path.resolve(positionals[0]);
+  const origin = new URL(demoOrigin.replaceAll('{id}', readManifest(themeDir).id)).origin;
+  const { release, assets } = buildDemo({ root: repoRoot(import.meta.url), themeDir, out: path.resolve(values.out), worker, origin });
   console.log(`demo: built ${release} into ${assets}`);
 }

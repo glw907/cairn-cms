@@ -5,16 +5,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { AwsClient } from 'aws4fetch';
+import { parse as parseYaml } from 'yaml';
 import { repoRoot } from '../repo-root.mjs';
 import { buildThemeArchive } from './archive.mjs';
 import { REPLIES, fakeBucket } from './fixtures/r2/fake-bucket.mjs';
 import { run } from './publish.mjs';
 import { createR2 } from './r2.mjs';
+import { runReferenceCheck } from './reference-check.mjs';
 
 const REPO = repoRoot(import.meta.url);
 const validateIndex = new Ajv2020({ allErrors: true }).compile(JSON.parse(readFileSync(path.join(REPO, 'schema/cairn-catalog-1.schema.json'), 'utf8')));
@@ -43,8 +46,9 @@ const sha512 = (bytes) => `sha512-${createHash('sha512').update(bytes).digest('b
 
 /**
  * A scratch repository root holding a copy of Waymark, the kinds data, and optionally the fixture
- * blog set, with an edit applied to each manifest.
- * @param {{ theme?: (m: any) => void, set?: boolean | ((m: any) => void) }} [edits]
+ * blog set, with an edit applied to each manifest. `second` adds another copy of Waymark under
+ * `themes/<id>/`, with that `id` and `name`.
+ * @param {{ theme?: (m: any) => void, set?: boolean | ((m: any) => void), second?: { id: string, name: string } }} [edits]
  */
 function scratchRoot(edits = {}) {
   const root = mkdtempSync(path.join(tmpdir(), 'cairn-publish-'));
@@ -58,6 +62,12 @@ function scratchRoot(edits = {}) {
     writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
   };
   if (edits.theme) editJson(path.join(theme, 'cairn-theme.json'), edits.theme);
+  if (edits.second) {
+    const { id, name } = edits.second;
+    const copy = path.join(root, 'themes', id);
+    cpSync(path.join(REPO, 'themes/waymark'), copy, { recursive: true });
+    editJson(path.join(copy, 'cairn-theme.json'), (m) => Object.assign(m, { id, name }));
+  }
   if (edits.set) {
     const set = path.join(root, 'sets/blog');
     cpSync(path.join(REPO, 'scripts/catalog/fixtures/archive/set-blog'), set, { recursive: true });
@@ -66,9 +76,16 @@ function scratchRoot(edits = {}) {
   return root;
 }
 
+/** A demo page whose head names one release, as a built demo's does. */
+const demoPage = (release) =>
+  new Response(`<!doctype html><html><head><meta name="cairn-theme-release" content="${release}" /></head><body></body></html>`, {
+    headers: { 'content-type': 'text/html' },
+  });
+
 /**
  * A publish run's world: the fake bucket, the R2 client over it, and fakes for the theme check,
- * the demo build, the deploy, the demo address, and the clock.
+ * the demo build, the deploy, the demo address, and the clock. `events` holds, in order, each
+ * `build <release>`, `deploy <release>`, and `poll <release served>` the fakes saw.
  * @param {object} [options]
  * @param {string} [options.root]
  * @param {string} [options.bucket] the fake bucket's name
@@ -94,6 +111,7 @@ function world(options = {}) {
     demos: [],
     deploys: [],
     fetched: [],
+    events: [],
     lines: [],
     live: 'waymark@1.0.0',
     t: Date.parse('2026-11-20T18:04:00Z'),
@@ -122,6 +140,7 @@ function world(options = {}) {
         const manifest = JSON.parse(readFileSync(path.join(args.themeDir, 'cairn-theme.json'), 'utf8'));
         const release = `${manifest.id}@${manifest.version}`;
         w.demos.push({ ...args, release });
+        w.events.push(`build ${release}`);
         mkdirSync(path.join(args.out, 'assets'), { recursive: true });
         return { release, assets: path.join(args.out, 'assets'), wrangler: path.join(args.out, 'wrangler.json') };
       },
@@ -129,15 +148,15 @@ function world(options = {}) {
         w.deploys.push({ ...args, writesBefore: w.bucket.writes.length });
         if (w.deployFails) throw new Error('wrangler deploy exited 1');
         w.live = w.demos.at(-1).release;
+        w.events.push(`deploy ${w.live}`);
         polls = 0;
       },
       fetch: async (url) => {
         w.fetched.push(String(url));
         polls++;
         const release = options.served !== undefined ? options.served : polls > (options.markerAfter ?? 0) ? w.live : 'waymark@1.0.0';
-        return new Response(`<!doctype html><html><head><meta name="cairn-theme-release" content="${release}" /></head><body></body></html>`, {
-          headers: { 'content-type': 'text/html' },
-        });
+        w.events.push(`poll ${release}`);
+        return demoPage(release);
       },
     });
   w.index = () => {
@@ -309,11 +328,157 @@ test('the run checks the theme, builds its demo for the worker, and polls the de
   assert.equal(w.demos.length, 1);
   assert.equal(w.demos[0].themeDir, path.join(w.root, 'themes/waymark'));
   assert.equal(w.demos[0].worker, 'cairn-demo-proving');
-  assert.equal(w.demos[0].root, REPO);
+  assert.equal(w.demos[0].root, w.root);
+  assert.equal(w.demos[0].origin, 'https://demo-waymark.example');
+  assert.equal('set' in w.demos[0], false, 'no sets/blog/ in the scratch root, so the starter overlay');
   assert.equal(w.deploys[0].dir, w.demos[0].out);
   assert.equal(w.deploys[0].worker, 'cairn-demo-proving');
   assert.ok(w.fetched.length >= 3, 'the poll waits for the marker past two stale pages');
   assert.ok(w.fetched.every((url) => url === 'https://demo-waymark.example/'), w.fetched.join(' '));
+});
+
+test('two themes sharing one demo address each deploy and are waited on in turn, and the reference check passes', { timeout: 180_000 }, async () => {
+  /** @type {ReturnType<typeof world> | undefined} */
+  let w;
+  let catalogOrigin = '';
+  // The bucket's objects over HTTP with CORS, standing in for the catalog origin. The schema admits
+  // only https addresses in the index, so the run writes the proving origin and the index is served
+  // with that origin swapped for this server's.
+  const server = createServer((req, res) => {
+    const key = decodeURIComponent(new URL(req.url ?? '/', 'http://127.0.0.1').pathname.slice(1));
+    const object = w?.bucket.store.get(key);
+    const headers = { 'access-control-allow-origin': '*' };
+    if (!object) return res.writeHead(404, headers).end('not found');
+    const body = key === 'index.json' ? object.bytes.toString('utf8').replaceAll(ENV.CATALOG_ORIGIN, catalogOrigin) : object.bytes;
+    res.writeHead(200, { ...headers, 'content-type': object.contentType ?? 'application/octet-stream' }).end(body);
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(undefined)));
+  try {
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('the bucket server has no port');
+    catalogOrigin = `http://127.0.0.1:${address.port}`;
+    const demo = 'https://demo-proving.example/';
+    w = world({ root: scratchRoot({ second: { id: 'waymark-two', name: 'Waymark Two' } }), env: { DEMO_ORIGIN: 'https://demo-proving.example' } });
+    assert.equal(await w.publish(), 0, w.output());
+
+    const order = w.index().themes.map((t) => `${t.id}@${t.releases[0].version}`);
+    assert.deepEqual(order, ['waymark@1.2.0', 'waymark-two@1.2.0']);
+    assert.ok(w.index().themes.every((t) => t.demo === demo), 'both themes share the demo address');
+    assert.deepEqual(
+      w.events,
+      order.flatMap((release) => [`build ${release}`, `deploy ${release}`, `poll ${release}`]),
+      'each theme is built, deployed, and seen at the address before the next, in catalog order',
+    );
+
+    const { live } = w;
+    const result = await runReferenceCheck({
+      catalog: `${catalogOrigin}/index.json`,
+      fetch: async (url, init) => (String(url) === demo ? demoPage(live) : globalThis.fetch(url, init)),
+    });
+    assert.deepEqual(result.failures, []);
+    assert.equal(result.notes.length, 1, result.notes.join('\n'));
+    assert.match(result.notes[0], /^waymark: /);
+  } finally {
+    await new Promise((resolve) => server.close(() => resolve(undefined)));
+  }
+});
+
+test('a theme whose first kind is organization gets the checkout\'s organization set for its demo', async () => {
+  const root = scratchRoot({ theme: (m) => (m.kinds = ['organization', 'blog']) });
+  cpSync(path.join(REPO, 'sets/organization'), path.join(root, 'sets/organization'), { recursive: true });
+  const w = world({ root });
+  assert.equal(await w.publish(), 0, w.output());
+  assert.equal(w.demos.length, 1);
+  assert.equal(w.demos[0].set, path.join(root, 'sets/organization'));
+  assert.equal(w.demos[0].root, root);
+  assert.equal(w.demos[0].origin, 'https://demo-waymark.example');
+  assert.match(w.output(), /demo for waymark uses the organization set/);
+});
+
+/** The pages, posts, menus, and manifest of the organization set, read from the checkout. */
+function readOrganizationSet() {
+  const dir = path.join(REPO, 'sets/organization');
+  const split = (file) => {
+    const raw = readFileSync(file, 'utf8');
+    const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(raw);
+    assert.ok(match, `${file} has no front matter`);
+    return { front: parseYaml(match[1]) ?? {}, body: match[2] };
+  };
+  const collect = (name) => {
+    const folder = path.join(dir, 'src/content', name);
+    return Object.fromEntries(readdirSync(folder).filter((f) => f.endsWith('.md')).map((f) => [f.slice(0, -3), split(path.join(folder, f))]));
+  };
+  return {
+    dir,
+    manifest: JSON.parse(readFileSync(path.join(dir, 'cairn-set.json'), 'utf8')),
+    config: parseYaml(readFileSync(path.join(dir, 'src/site/site.config.yaml'), 'utf8')),
+    pages: collect('pages'),
+    posts: collect('posts'),
+  };
+}
+
+/**
+ * The page links, among the addresses a set's menus and bodies hold, that no page answers: an
+ * address starting with `/` that names no page of the set (its home address, one of its pages, or
+ * an archive page), and any `#anchor`. A `mailto:` link is no page link and is left out.
+ * @param {string[]} pageNames
+ * @param {string[]} addresses
+ */
+function brokenLinks(pageNames, addresses) {
+  const holds = (a) => a === '/' || /^\/archive\/\d+$/.test(a) || pageNames.some((name) => a === `/${name}`);
+  return addresses.filter((a) => a.includes('#') || (a.startsWith('/') && !holds(a)));
+}
+
+/** The addresses of the markdown links in a body. */
+const bodyLinks = (body) => [...body.matchAll(/\]\(([^)\s]+)\)/g)].map((m) => m[1]);
+
+/** The capitalized word pairs a body holds once its email addresses are removed. */
+function capitalizedPairs(body) {
+  const text = body.replace(/\[[^\]]*\]\(mailto:[^)]*\)/g, '').replace(/[\w.+-]+@[\w.-]+/g, '');
+  return text.match(/\b[A-Z][a-z]+(?: [A-Z][a-z]+)+\b/g) ?? [];
+}
+
+/** The society's, the hall's, and the places' names the contact page may hold. */
+const CONTACT_NAMES = ['The Turnagain Geographic Society', 'Turnagain Geographic Society', 'Kittiwake Hall'];
+
+test('the organization set validates and holds what the design names', () => {
+  const set = readOrganizationSet();
+  const validateSet = new Ajv2020({ allErrors: true }).compile(JSON.parse(readFileSync(path.join(REPO, 'schema/cairn-set-1.schema.json'), 'utf8')));
+  assert.ok(validateSet(set.manifest), JSON.stringify(validateSet.errors));
+
+  assert.ok(String(set.pages.home?.front.description ?? '').trim(), 'the home page has a description');
+  assert.equal(set.config.menus.actions.length, 2, 'the actions menu holds two links');
+  assert.equal(Object.keys(set.posts).length, 3, 'the set holds three posts');
+  const footer = set.config.menus.footer.map((item) => item.url);
+  for (const page of ['safeguarding', 'contact']) {
+    assert.ok(set.pages[page], `the set holds a ${page} page`);
+    assert.ok(footer.includes(`/${page}`), `the footer menu links /${page}`);
+  }
+
+  const images = set.manifest.images;
+  assert.ok(images.length >= 4, 'the set lists at least four images');
+  for (const image of images) {
+    assert.ok(image.source && image.license, `${image.path} names a source and a license`);
+    assert.ok(existsSync(path.join(set.dir, image.path)) && statSync(path.join(set.dir, image.path)).isFile(), `${image.path} exists`);
+  }
+
+  const body = set.pages.contact.body;
+  assert.doesNotMatch(body, /\(?\d{3}\)?[ .-]\d{3}[ .-]\d{4}/, 'the contact page holds a phone number');
+  assert.doesNotMatch(body, /\d{7,}/, 'the contact page holds a run of seven numerals');
+  const strangers = capitalizedPairs(body).filter((pair) => !CONTACT_NAMES.includes(pair));
+  assert.deepEqual(strangers, [], 'the contact page names no one outside the society, the hall, and its places');
+
+  const menuLinks = Object.values(set.config.menus).flatMap((items) => items.map((item) => item.url));
+  const cardLinks = Object.values(set.pages).flatMap((page) => bodyLinks(page.body));
+  assert.deepEqual(brokenLinks(Object.keys(set.pages), [...menuLinks, ...cardLinks]), []);
+});
+
+test('the set test fails on a stranger name, a missing page, and an anchor', () => {
+  assert.deepEqual(capitalizedPairs('Write to Jane Smith at [a@b.example](mailto:a@b.example) or c@d.example.'), ['Jane Smith']);
+  assert.deepEqual(capitalizedPairs('Write to [a@b.example](mailto:a@b.example) at Kittiwake Hall.'), ['Kittiwake Hall']);
+  assert.deepEqual(brokenLinks(['contact'], ['/contact', 'mailto:a@b.example', '/archive/1', '/']), []);
+  assert.deepEqual(brokenLinks(['contact'], ['/nowhere']), ['/nowhere']);
+  assert.deepEqual(brokenLinks(['contact'], ['#top', '/contact#hours']), ['#top', '/contact#hours']);
 });
 
 test('every put carries the Cache-Control and Content-Type the catalog sets', async () => {

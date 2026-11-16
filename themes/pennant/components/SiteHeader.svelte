@@ -1,52 +1,55 @@
 <!-- @component
-This site's public header: an owned, copy-in chrome component on the token layer. A sticky
-band over a translucent `base-100` with a hairline bottom, carrying the site's wordmark on the left
-and the primary nav plus the theme toggle on the right. Every colour and size reads a DaisyUI role
-utility or a cairn token (`--font-display`, `--cairn-*`), never a literal, and the inner content caps
-at `--container-measure` so the wordmark's left edge lines up with the article column below it.
+This site's public header: a bar in the club's color 1 (`--color-neutral`, with
+`--color-neutral-content` on it) over a rule in color 2. It carries the crest and the site name on
+the left, up to five primary nav links, a Join button, and the color-mode toggle. Every color reads
+a role custom property, never a literal, and every text and ground pair it paints is one the theme's
+contrast audit measures: `--color-neutral-content` on `--color-neutral` for the bar, its links, its
+focus ring, and the menu, and `--color-secondary-content` on `--color-secondary` for the Join
+button. The inner row caps at `--container-measure-wide`, the home body's width.
 
-The wordmark text is `page.data.siteName`, the root layout server load's one composed reading of
+The site name is `page.data.siteName`, the root layout server load's one composed reading of
 `siteConfig.siteName`; this component never imports `siteConfig` itself. `page.data.siteName` is
 optional in `App.PageData` (a root load that throws before setting it still type-checks), so the
 brand link falls back to an `aria-label` of "Home" rather than shipping with no accessible name.
+The crest's initials come from the same name.
 
-The nav links come from `page.data.nav`, the site's `menus.primary` (`site.config.yaml`), resolved
-by the root layout server load and edited from `/admin/nav`; a site owner edits this file to
-re-shape the chrome itself, and the look re-skins from `theme.css` with no edit here. The current
-route's nav link gets `aria-current="page"` and the accent colour; the `/admin` entry renders
+The nav links come from `page.data.nav`, the site's `menus.primary` (`site.config.yaml`), and only
+the first five top-level links with a url render. The Join button is the first link of
+`page.data.actions`, the site's `menus.actions`; with no such menu, no button renders. The current
+route's link gets `aria-current="page"` and an underline. A link into `/admin` renders
 `rel="external"` (the shared `isAdminHref` predicate, also used by `SiteFooter`) so SvelteKit's
 prerender crawler skips a target that answers every crawl-time request with a 400 by design.
 
-The theme toggle sets `data-theme` on `<html>` between `cairn` and `cairn-dark` and persists the
-choice to a `cairn-site-theme` cookie (path `/`, a year); the inline script in `app.html` reads that
-cookie before first paint so a returning visitor's choice never flashes the system default. With no
-stored choice, `theme.css`'s `prefers-color-scheme` block follows the OS setting live, with no
-JS: the toggle is a standing override from the first explicit choice on, never a tri-state control.
+Under 760px the links fold into a native `<details>` menu that opens with no script, and the site
+name wraps rather than overflowing at 320px. The menu closes on each navigation because it is
+keyed on the path.
 
-The layout is no-JS-first responsive, with a deliberate two-row lockup below the `md` breakpoint
-rather than an unplanned wrap; see the markup comment above the nav/toggle group for the mechanism.
+The color-mode toggle sets `data-theme` on `<html>` between `pennant` and `pennant-dark` and
+persists the choice to a `cairn-site-theme` cookie (path `/`, a year); the inline script in
+`app.html` reads that cookie before first paint so a returning visitor's choice never flashes the
+system default. With no stored choice, the mode sheet's `prefers-color-scheme` block follows the OS
+setting live, with no JS: the toggle is a standing override from the first explicit choice on,
+never a tri-state control.
 -->
 <script lang="ts">
   import { page } from '$app/state';
   import { browser } from '$app/env';
   import { resolveTheme, toggleThemeWithTransition } from '#chassis/theme-toggle.js';
   import type { NavNode } from '@glw907/cairn-cms';
+  import Crest from './Crest.svelte';
   import { isAdminHref } from './admin-link.js';
   import { themeConfig, type Theme } from '../theme-names.js';
 
-  // The root layout server load resolves menus.primary into NavNode[] and hands it down through
-  // page.data (both mounts of this component, the (site) layout and the root +error.svelte, sit
-  // under that same root load). A node with no url is a label-only grouping header; this header
-  // renders only top-level entries with a url, flat.
-  const nav = $derived(
-    (page.data.nav ?? []).filter(
-      (item): item is NavNode & { url: string } => item.url !== undefined,
-    ),
-  );
+  type NavLink = NavNode & { url: string };
 
-  // page.data.siteName is only ever unset when the root load itself throws before reaching this
-  // component (the root +error.svelte mount); 'Home' keeps the brand link's accessible name from
-  // going empty in that case, without inventing a site title.
+  const hasUrl = (item: NavNode): item is NavLink => item.url !== undefined;
+
+  const nav = $derived((page.data.nav ?? []).filter(hasUrl).slice(0, 5));
+
+  // `actions` is not a member of the template's `App.PageData`, so it reads as `any`; the root
+  // layout server load returns it from `readMenu`, which yields NavNode[].
+  const join = $derived(((page.data.actions ?? []) as NavNode[]).filter(hasUrl)[0]);
+
   const siteName = $derived(page.data.siteName ?? '');
 
   /**
@@ -74,59 +77,56 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
   }
 </script>
 
-<header class="site-header sticky top-0 z-20 border-b border-card-border">
-  <div
-    class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-x-m gap-y-2xs px-m py-xs"
-  >
+{#snippet links(list: NavLink[])}
+  {#each list as item (item.url)}
     <a
-      href="/"
-      class="brand-link inline-flex min-h-11 items-center text-base-content no-underline"
-      aria-label={siteName || 'Home'}
+      href={item.url}
+      aria-current={isCurrent(item.url) ? 'page' : undefined}
+      rel={isAdminHref(item.url) ? 'external' : undefined}>{item.label}</a
     >
-      <!-- Nowrap keeps the name on one line at any width; the header's flex-wrap (above) is what
-           makes the row give way, dropping the nav below rather than squeezing the wordmark's letters. -->
-      <span
-        class="whitespace-nowrap font-display font-heading heading-case text-step-1 tracking-tight"
-        >{siteName}</span
-      >
+  {/each}
+{/snippet}
+
+<header class="site-header">
+  <div class="row" class:two-rows={nav.length > 0 || join !== undefined}>
+    <a href="/" class="brand" aria-label={siteName || 'Home'}>
+      <Crest {siteName} />
+      <span class="name">{siteName}</span>
     </a>
 
-    <!-- Below md this group is `contents`: it disappears from the box model, so the nav and the
-         toggle rejoin the outer row's flex flow as flat siblings of the wordmark, where `order`
-         puts the toggle on row one beside the wordmark and the full-width nav on row two beneath it.
-         At md and up the group becomes a real flex box again, and `order-none` restores the source
-         order (nav, then toggle) as one unit, which is the original single-row composition: wordmark
-         left, nav and toggle grouped tight on the right. -->
-    <div class="contents md:flex md:flex-wrap md:items-center md:gap-s">
-      <nav
-        class="site-nav order-2 flex w-full flex-wrap items-center gap-s uppercase text-step--2 md:order-none md:w-auto"
-        aria-label="Primary"
-      >
-        {#each nav as item (item.url)}
-          {@const current = isCurrent(item.url)}
-          <a
-            href={item.url}
-            aria-current={current ? 'page' : undefined}
-            rel={isAdminHref(item.url) ? 'external' : undefined}
-            class="inline-flex min-h-11 items-center px-xs no-underline {current
-              ? 'font-semibold text-primary'
-              : 'font-medium text-muted hover:text-base-content'}"
-          >
-            {item.label}
-          </a>
-        {/each}
-      </nav>
+    <div class="tools">
+      {#if nav.length > 0}
+        <nav class="links" aria-label="Primary">
+          {@render links(nav)}
+        </nav>
+
+        {#key page.url.pathname}
+          <details class="menu">
+            <summary>Menu</summary>
+            <nav class="menu-panel" aria-label="Primary">
+              {@render links(nav)}
+            </nav>
+          </details>
+        {/key}
+      {/if}
+
+      {#if join}
+        <a
+          href={join.url}
+          class="join"
+          rel={isAdminHref(join.url) ? 'external' : undefined}>{join.label}</a
+        >
+      {/if}
 
       <button
         type="button"
         onclick={toggleTheme}
         aria-label={theme === themeConfig.dark ? 'Switch to light mode' : 'Switch to dark mode'}
-        class="theme-toggle cairn-focus-ring order-1 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-field text-muted hover:text-base-content md:order-none"
+        class="toggle"
       >
         {#if theme === themeConfig.dark}
           <!-- Sun: shown while dark is active, click to switch to light. -->
           <svg
-            class="h-5 w-5"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -141,7 +141,7 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
           </svg>
         {:else}
           <!-- Moon: shown while light is active, click to switch to dark. -->
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M20.4 14.9A8.5 8.5 0 1 1 9.6 4.1a7 7 0 0 0 10.8 10.8z" />
           </svg>
         {/if}
@@ -151,38 +151,195 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
 </header>
 
 <style>
-  /* The translucent band and the consistent focus ring read tokens that an inline utility cannot
-     express cleanly (a color-mix background, a backdrop filter). Scoped to this component and gated
-     behind reduced-motion where it animates. */
   .site-header {
-    background: color-mix(in oklab, var(--color-base-100) 88%, transparent);
-    backdrop-filter: saturate(1.4) blur(8px);
+    position: relative;
+    z-index: 20;
+    background: var(--color-neutral);
+    color: var(--color-neutral-content);
+    border-bottom: 5px solid var(--color-secondary);
   }
-  .site-nav a {
-    letter-spacing: var(--cairn-caption-tracking);
-    border-radius: var(--cairn-focus-ring-radius);
-    transition: color 0.15s;
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    max-width: var(--container-measure-wide);
+    margin-inline: auto;
+    padding: 0.75rem 1.75rem;
   }
-  .site-nav a:focus-visible {
-    outline: var(--cairn-focus-ring-outline);
-    outline-offset: var(--cairn-focus-ring-offset);
+
+  /* The links, the Join button, and the toggle wrap as one group, so a row too narrow for all of
+     them drops the whole group to a second line, right-aligned, rather than stranding one piece. */
+  .tools {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
   }
-  .theme-toggle {
-    transition: color 0.15s;
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+    margin-right: auto;
+    color: inherit;
+    text-decoration: none;
+    font-size: 1.45rem;
   }
-  /* The brand link gets the same hover-and-transition idiom as the sibling nav links, so the
-     wordmark reads as tappable rather than inert chrome. */
-  .brand-link {
-    transition: color 0.15s;
+  .name {
+    min-width: 0;
+    overflow-wrap: break-word;
+    font-family: var(--font-brand);
+    font-weight: 800;
+    font-size: 1.75rem;
+    line-height: 1;
+    letter-spacing: var(--tracking-display);
+    text-transform: uppercase;
   }
-  .brand-link:hover {
-    color: var(--color-primary);
+
+  /* Every link, the summary, the Join button, and the toggle paint the bar's own text color, and
+     each marks hover and the current page with an underline rather than a tinted ground, so the
+     bar never paints a pair the contrast audit does not measure. */
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
   }
-  @media (prefers-reduced-motion: reduce) {
-    .site-nav a,
-    .theme-toggle,
-    .brand-link {
-      transition: none;
+  .links a,
+  .menu-panel a,
+  .menu summary,
+  .join {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.06rem;
+    line-height: 1.5;
+    padding: 6px 12px;
+    border-radius: var(--radius-field);
+    color: inherit;
+    text-decoration: none;
+    text-underline-offset: 5px;
+    text-decoration-thickness: 2px;
+  }
+  .links a:hover,
+  .menu-panel a:hover,
+  .join:hover,
+  .site-header [aria-current='page'] {
+    text-decoration-line: underline;
+  }
+
+  .join {
+    padding-inline: 16px;
+    background: var(--color-secondary);
+    color: var(--color-secondary-content);
+  }
+
+  .toggle {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-field);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .toggle svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .menu {
+    display: none;
+  }
+  .menu summary {
+    display: inline-block;
+    cursor: pointer;
+    list-style: none;
+    border: 1px solid color-mix(in oklab, var(--color-neutral-content) 40%, transparent);
+  }
+  .menu summary::-webkit-details-marker {
+    display: none;
+  }
+  .menu[open] summary {
+    border-color: currentColor;
+  }
+  /* The open menu drops below the bar, over the page, on the bar's own ground. It is placed against
+     the header (the positioned ancestor) so it spans the full width whatever the row wraps to. */
+  .menu-panel {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 1.125rem 1rem;
+    background: var(--color-neutral);
+    color: var(--color-neutral-content);
+    border-top: 1px solid color-mix(in oklab, var(--color-neutral-content) 40%, transparent);
+    border-bottom: 5px solid var(--color-secondary);
+  }
+  .menu-panel a {
+    padding-block: 10px;
+  }
+
+  /* The chassis focus ring paints `--color-primary`, which is measured only on the base grounds;
+     on the bar the ring is the bar's own text color. */
+  .site-header :is(a, summary, button):focus-visible {
+    outline: 2px solid var(--color-neutral-content);
+    outline-offset: 2px;
+  }
+
+  @media (min-width: 760px) {
+    .site-header {
+      position: sticky;
+      top: 0;
+    }
+  }
+
+  @media (max-width: 759.98px) {
+    .row {
+      row-gap: 0;
+      padding-inline: 1.125rem;
+    }
+    .brand {
+      flex: 1 1 0;
+    }
+    .name {
+      font-size: 1.4rem;
+    }
+    .tools {
+      display: contents;
+    }
+    .links {
+      display: none;
+    }
+    .menu {
+      display: block;
+      order: 2;
+    }
+    .join {
+      order: 3;
+    }
+    /* The toggle stays on the first row beside the name; the menu and the Join button take the
+       second, so a long name and a long Join label never compete for one line. The full-width
+       pseudo-element is the line break between the rows, and its height is their gap. */
+    .toggle {
+      order: 1;
+    }
+    .menu,
+    .join {
+      flex: none;
+    }
+    .two-rows::after {
+      content: '';
+      order: 1;
+      flex-basis: 100%;
+      height: 0.75rem;
     }
   }
 </style>

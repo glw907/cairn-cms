@@ -48,6 +48,7 @@ bare title. Everything else renders identically on both. -->
   import { page } from '$app/state';
   import { formatDate } from '#chassis/date.js';
   import type { site } from '#chassis/content.js';
+  import { isAdminHref } from './admin-link.js';
   import Crest from './Crest.svelte';
   import EntryRow from './EntryRow.svelte';
   import { splitHomeBanner } from './home-split.js';
@@ -169,9 +170,10 @@ bare title. Everything else renders identically on both. -->
           {/if}
           {#if actions.length}
             <div class="pennant-hero__actions">
-              {#each actions as action, i (i)}
+              {#each actions as action, i (action.url)}
                 <a
                   href={action.url}
+                  rel={isAdminHref(action.url) ? 'external' : undefined}
                   class="pennant-button"
                   class:pennant-button--filled={i === 0}
                   class:pennant-button--quiet={i > 0}>{action.label}</a

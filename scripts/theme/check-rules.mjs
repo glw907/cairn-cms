@@ -267,8 +267,9 @@ export const STATIC_RULES = {
   // defaults, because each value's sheet sets its own colors and the site's chain never reads them:
   // the audit adds the value's sheet to the chain after theme.css. Each finding that names a daisyUI
   // block is prefixed with the value and the block's mode. A finding that names no block is
-  // prefixed with the value, or reported once, unprefixed, when every value raises it. The notes give each value's measured and unmeasured pair counts per
-  // mode, since a passing run must show it measured something under every value.
+  // prefixed with the value, or reported once, unprefixed, when every value raises it. The notes
+  // give each value's measured and unmeasured pair counts per mode, since a passing run must show
+  // it measured something under every value.
   async audit({ dir, manifest }) {
     const audit = await import('../../dist/audit/index.js');
     const copy = makeShowcaseCopy({ root: ROOT });

@@ -236,9 +236,13 @@ on a narrow desktop, and a sticky bar that tall would cover a jumped-to heading.
   }
 
   .join {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
     padding-inline: 16px;
     background: var(--color-secondary);
     color: var(--color-secondary-content);
+    border: 2px solid color-mix(in oklab, var(--color-neutral-content) 70%, transparent);
   }
 
   .toggle {
@@ -247,6 +251,7 @@ on a narrow desktop, and a sticky bar that tall would cover a jumped-to heading.
     flex: none;
     width: 2.75rem;
     height: 2.75rem;
+    border: 2px solid transparent;
     border-radius: var(--radius-field);
     background: transparent;
     color: inherit;
@@ -261,7 +266,9 @@ on a narrow desktop, and a sticky bar that tall would cover a jumped-to heading.
     display: none;
   }
   .menu summary {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
     cursor: pointer;
     list-style: none;
     border: 1px solid color-mix(in oklab, var(--color-neutral-content) 40%, transparent);
@@ -328,9 +335,13 @@ on a narrow desktop, and a sticky bar that tall would cover a jumped-to heading.
     .toggle {
       order: 1;
     }
-    .menu,
-    .join {
+    .menu {
       flex: none;
+    }
+    .join {
+      flex: 0 1 auto;
+      max-width: 100%;
+      overflow-wrap: anywhere;
     }
     .two-rows::after {
       content: '';

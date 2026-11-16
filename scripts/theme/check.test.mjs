@@ -64,9 +64,12 @@ test('waymark passes every rule but render', async () => {
   assert.deepEqual(result.failures, []);
 });
 
-test('pennant passes every rule but render', async () => {
+test('pennant passes every rule but render, and its audit measures every pair under each of its ten states', async () => {
   const result = await checkTheme(PENNANT, { rules: NO_RENDER });
   assert.deepEqual(result.failures, []);
+  const notes = result.notes.map((note) => note.message).filter((message) => message.startsWith('colors='));
+  assert.equal(notes.length, 10);
+  for (const message of notes) assert.match(message, /, 0 unmeasured$/);
 });
 
 test("pennant's manifest names three OFL-1.1 fonts, the organization kind, and its exact description", () => {

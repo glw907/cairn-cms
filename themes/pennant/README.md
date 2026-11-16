@@ -1,9 +1,9 @@
 # Pennant
 
 Pennant is a cairn theme for a club, a team, or a school group. It builds the whole look from
-two colors: color 1 grounds the header and the hero, and color 2 fills the crest and the main
-buttons. The links, the page grounds, and the text take a tint of color 1, so the site reads as
-the club's colors in both the light and the dark color mode.
+two colors: color 1 grounds the header, the footer, and the hero's main button, and color 2 fills
+the crest and the header's Join button. The links, the page grounds, and the text take a tint of
+color 1, so the site reads as the club's colors in both the light and the dark color mode.
 
 ## Color sets
 

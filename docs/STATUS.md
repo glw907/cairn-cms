@@ -6,7 +6,7 @@ Present tense only; history lives in git and PR bodies, orientation in `CLAUDE.m
 
 Published stable: **`0.98.0`** on npm `latest` (`@glw907/cairn-cms`, `@glw907/cairn-cms-dev`).
 The Go `cairn` tool and the `create-cairn-site` launcher are deleted from `main` (pass `tool-delete`, #260); the `cairn` command is being rebuilt inside the engine package.
-`next` serves **`0.99.0-rc.4`**; the launcher no longer exists, and nothing new is published. Geoff ruled on 2026-11-07 that `0.99.0` takes no stable
+`next` serves **`0.99.0-rc.4`**; the launcher is deleted from `main` and nothing new is published. Geoff ruled on 2026-11-07 that `0.99.0` takes no stable
 from it: the setup rebuild (`cairn new`) forms the next release, and nothing ships until then.
 
 ## Immediate next action

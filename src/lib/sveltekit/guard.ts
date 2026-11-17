@@ -208,8 +208,8 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
  * cairn's `*Routes` grammar on a `Handle`-shaped return.
  * @scaffold
  */
-// WATCH: the docs cite the auth.role-wiring check id, which reads a site's createAuthGuard call
-// for its argument shape, so changing this signature breaks that check.
+// WATCH: the rebuilt cairn command's auth.role-wiring check is expected to match this call
+// shape of createAuthGuard, so reshaping it needs that check updated in the same change.
 export function createAuthGuard(config: AuthGuardConfig): Handle {
   const { runtime, identity } = config;
   const vocabulary: RolesDeclaration = runtime.roles ?? DEFAULT_ROLES;

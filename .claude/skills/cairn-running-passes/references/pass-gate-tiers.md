@@ -31,7 +31,7 @@ separate mode (see "Protected paths").
 
 ## The targeted gate
 
-Seven legs, in this order. Each prints only when it applies.
+Five legs, in this order. Each prints only when it applies.
 
 1. `npm run package`, always.
 2. The static checks the diff's buckets select, through the build-once runner:
@@ -190,6 +190,7 @@ Each npm tier's gate string is a strict superset of the npm tier below it: `scri
 on top of the `docs` string, `admin-visual` adds the admin-visual spec run on top
 of that, and `full` adds the remaining CI-only checks plus the whole showcase e2e suite on top of
 `admin-visual`.
+
 | Tier | Trigger (glob, matched per changed path) | Gate string |
 | --- | --- | --- |
 | `docs` | `docs/**`, any `*.md`, `CHANGELOG.md` | `npm run check:docs-gate` |

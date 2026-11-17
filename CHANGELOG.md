@@ -42,7 +42,7 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
   `^8.3.8`, `wrangler` `^4.162.0`, and `prettier` `^3.10.1`. In the admin, a disabled switch that
   is on now shows its knob in the text color at daisyUI's disabled opacity, where it was
   transparent. The engine takes `@lucide/svelte` `^1.72.0` and `@codemirror/lint` `^6.9.8`, and its
-  peer ranges don't move. Building the `cairn` tool from source now needs Go 1.26.7 or newer.
+  peer ranges don't move.
 
   Consumers must: nothing.
 
@@ -79,7 +79,7 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
 - **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A `cairn` Claude Code plugin and marketplace.** `.claude-plugin/marketplace.json` names the marketplace `cairn`, and `plugins/cairn` holds one skill, `cairn-setting-up-a-site`, that runs the plan and apply steps for an owner. A new site's `.claude/settings.json` offers the Svelte, Cloudflare, and daisyUI plugins, and its `.mcp.json` adds the Svelte MCP server. Both READMEs open with "Setting up with an agent".
-- **The site's files move from `src/theme/` to `src/site/`.** `cairn.config.ts`, `site-config.ts`, and `site.config.yaml` now live in `src/site/`, reached by a `#site/*` subpath import, which leaves `src/theme/` to the theme alone. Two stylesheets join them, `src/site/theme-options.css` and `src/site/overrides.css`, linked after the theme's sheets in the layout, the error page, and the adapter's preview `stylesheets`. The engine's fixed site-config path (`DEFAULT_SITE_CONFIG_PATH`) is now `src/site/site.config.yaml`, the Go doctor still finds the old `src/theme/` path as a legacy location, and `@glw907/cairn-cms-dev`'s fake backend seeds the config at the new path.
+- **The site's files move from `src/theme/` to `src/site/`.** `cairn.config.ts`, `site-config.ts`, and `site.config.yaml` now live in `src/site/`, reached by a `#site/*` subpath import, which leaves `src/theme/` to the theme alone. Two stylesheets join them, `src/site/theme-options.css` and `src/site/overrides.css`, linked after the theme's sheets in the layout, the error page, and the adapter's preview `stylesheets`. The engine's fixed site-config path (`DEFAULT_SITE_CONFIG_PATH`) is now `src/site/site.config.yaml`, and `@glw907/cairn-cms-dev`'s fake backend seeds the config at the new path.
 - **A missing site config logs `config.missing`.** The nav, settings, and vocabulary loads each emit a `warn` record with `scope` and `path` when the file is absent, in place of failing without a trace. The `log-events` table lists it.
 - **The directive vocabulary lives in the chassis.** The nine standard directives are in `src/chassis/directives/`, and the adapter builds its `blocks` with `composeBlocks(icons, renderers)`. A theme replaces a directive's `build` through `src/theme/directives/renderers.ts` and cannot add, drop, or rename one. `src/theme/markdown-blocks.ts` is gone, and a theme's islands moved to `src/theme/directives/islands/`.
 - **The chassis gained two roles a theme can set.** `--cairn-eyebrow-case` (default `uppercase`) drives the new `eyebrow-case` utility, and `--cairn-scroll-cue` set to `none` turns off the code block's scroll gradient.

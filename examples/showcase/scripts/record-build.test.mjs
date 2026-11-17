@@ -5,7 +5,7 @@
 // `starter-build.test.mjs` it lives in the showcase's `scripts/`, which the template excludes, runs
 // under the showcase's `vitest run`, and needs the engine built (`npm run package` at the repo root).
 import { execFile } from 'node:child_process';
-import { cp, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,7 +43,14 @@ async function emitSite() {
   const pkg = JSON.parse(await readFile(packagePath, 'utf8'));
   stripLayIn(pkg);
   await writeFile(packagePath, JSON.stringify(pkg, null, 2) + '\n');
-  await symlink(path.join(showcase, 'node_modules'), path.join(dir, 'node_modules'));
+  // Link each installed package rather than the folder: a linked folder would share Vite's
+  // `.vite` pre-bundle cache with `starter-build.test.mjs`, and two builds racing on it fail with
+  // "a new version of the pre-bundle".
+  await mkdir(path.join(dir, 'node_modules'));
+  for (const entry of await readdir(path.join(showcase, 'node_modules'))) {
+    if (entry === '.vite') continue;
+    await symlink(path.join(showcase, 'node_modules', entry), path.join(dir, 'node_modules', entry));
+  }
   const recordPath = path.join(dir, 'cairn-site.json');
   return {
     dir,

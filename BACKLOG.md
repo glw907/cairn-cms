@@ -6,8 +6,6 @@
 
 ## Medium
 
-- [ ] **#562** Lint the deploy and check workflows the starter overlay ships `#improvement` `#cairn-cms` *(2026-11-17)*
-  `scripts/build/setup-overlay/.github/workflows/deploy.yml` and `check.yml` ship in the engine tarball's template, and `deploy.yml` puts `secrets.CLOUDFLARE_API_TOKEN` in each site's environment (lines 31 and 34). The deleted `setup-matrix.yml` ran the only actionlint pass over them, and `src/tests/unit/workflow-yaml.test.ts:464-476` lints only `.github/workflows/`. An expression-injection edit there would ship to every new site unlinted. Pass the two overlay paths to the actionlint run. Found by the closing security read of the Go tool deletion (PR #260).
 - [ ] **#561** The banner on `rotate-the-github-app-key.md` and `credentials.md` tells an owner not to run steps that still work `#bug` `#cairn-cms` *(2026-11-17)*
   The Go tool deletion (PR #260) put "the commands on this page don't run until it ships" at the top of both pages. The rotation steps (`docs/admin/rotate-the-github-app-key.md:39-51`) use `wrangler secret put` alone, and "Remove what an unfinished run holds" (`docs/admin/credentials.md:39-56`) uses keyring commands and the Cloudflare dashboard. An owner with an exposed App key reads that rotation is unavailable. Scope each banner to the `cairn`-command steps, in the route design's page rewrite or sooner.
 - [ ] **#560** `scripts/gate/run-gate.sh` still requires `create-cairn-site@gate` and `grade.mjs` runs the published launcher `#improvement` `#cairn-cms` *(2026-11-17)*
@@ -523,6 +521,9 @@
 - **#185** Re-capture the setup transcript with a neutral scratch path and host: the fixtures retire with the wizard; the goldens replace them (Geoff, 2026-11-08, cairn-setup plan)
 
 ## Done
+- [x] **#562** Lint the deploy and check workflows the starter overlay ships `#improvement` `#cairn-cms` *(2026-11-17 → 2026-11-17)*
+  `scripts/build/setup-overlay/.github/workflows/deploy.yml` and `check.yml` ship in the engine tarball's template, and `deploy.yml` puts `secrets.CLOUDFLARE_API_TOKEN` in each site's environment (lines 31 and 34). The deleted `setup-matrix.yml` ran the only actionlint pass over them, and `src/tests/unit/workflow-yaml.test.ts:464-476` lints only `.github/workflows/`. An expression-injection edit there would ship to every new site unlinted. Pass the two overlay paths to the actionlint run. Found by the closing security read of the Go tool deletion (PR #260).
+  Done: the overlay workflows are linted in `workflow-yaml.test.ts` (PR #260).
 - [x] **#505** Pass 3 left gotchas in the gate and the harness `#improvement` `#cairn-cms` *(2026-11-14 → 2026-11-17)*
   `lane:fast` is not serialized against a sibling worktree's `TestNewE2E*` on port 49152. `cairn-run-gate` reprints a cached red unless given `--fresh`. `cairn health`'s email check does real DNS lookups, so a differential row that needs exit 1 must use `doctor`. A `reporte2e` helper used by an untagged test file must live in an untagged file. Found by pass 3 (PR #249). Placement: the next pass on `scripts/gate` or `internal/testharness`.
   Done: folded into the Go tool deletion (PR #260).

@@ -476,6 +476,27 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     expect(result.status).toBe(0);
   }, 120_000);
 
+  it('passes actionlint over the two workflows the starter overlay ships', () => {
+    // These are not under .github/workflows, so the run above never sees them, and
+    // deploy.yml carries the Cloudflare token to every new site.
+    const result = spawnSync(
+      'go',
+      [
+        'run',
+        'github.com/rhysd/actionlint/cmd/actionlint@v1.7.12',
+        'scripts/build/setup-overlay/.github/workflows/deploy.yml',
+        'scripts/build/setup-overlay/.github/workflows/check.yml'
+      ],
+      { encoding: 'utf8', cwd: REPO_ROOT }
+    );
+    expect(result.error, 'go is not on PATH').toBeUndefined();
+    const findings = `${result.stdout}${result.stderr}`
+      .split('\n')
+      .filter((line) => line !== '' && !line.startsWith('go: downloading '));
+    expect(findings).toEqual([]);
+    expect(result.status).toBe(0);
+  }, 120_000);
+
   describe('the promote script under bash with a stub npm', () => {
     // The stub logs every call; `view` prints the version unless the package is in MISSING.
     function run(version: string, missing = ''): { status: number | null; calls: string[]; out: string } {

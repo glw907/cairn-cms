@@ -294,6 +294,11 @@ command that shows it.
    and one more exclusion, `':!scripts/checks/shipped-anchors.json'`, also prints nothing. Today:
    58 files. That file's note names a released tool tag and is append-only.
    *T1, T2a, T2b. Both commands, run after T2.*
+   *Amended at close through the advisor:* the narrow command also excludes
+   `':!src/tests/unit/check-leaks.test.ts'`, because plan Decision 5 keeps the three
+   `cairn-linux-x64` / `cairn-darwin-arm64` allowance cases in that file (lines 241, 245, 246) to
+   match the allowance at `scripts/checks/check-leaks.mjs:83`, and the unamended command printed
+   that file.
 7. **No gate script names the tool.**
    `node -e 'const p=require("./package.json");console.log(Object.keys(p.scripts).filter(k=>/tool|transcript/.test(k)).join(" "))'`
    prints an empty line. Today: `check:tool-conditions check:tool-heuristics check:transcripts`.

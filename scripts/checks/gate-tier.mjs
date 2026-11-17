@@ -98,6 +98,7 @@ const CI_CHECKS = [
   'npm run check:admin-css-classes',
   'npm run check:rulings-format',
   'npm run check:consumers-must',
+  'npm run check:definitions',
   'npm run check:prose',
   'npm run check:version',
   'npm run check:dev-package',

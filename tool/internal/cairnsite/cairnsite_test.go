@@ -19,6 +19,11 @@ func repoRoot(t *testing.T) string {
 	return root
 }
 
+// lf drops carriage returns, since a Windows checkout may rewrite the repo's JSON files to CRLF.
+func lf(b []byte) string {
+	return strings.ReplaceAll(string(b), "\r\n", "\n")
+}
+
 func TestRoundTripShowcaseRecord(t *testing.T) {
 	want, err := os.ReadFile(filepath.Join(repoRoot(t), "examples", "showcase", cairnsite.File))
 	if err != nil {
@@ -32,7 +37,7 @@ func TestRoundTripShowcaseRecord(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Encode: %v", err)
 	}
-	if string(got) != string(want) {
+	if lf(got) != lf(want) {
 		t.Errorf("round trip differs:\n got %q\nwant %q", got, want)
 	}
 }
@@ -121,7 +126,7 @@ func TestEmbeddedCopyMatchesDefinitions(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(got) != string(want) {
+		if lf(got) != lf(want) {
 			t.Errorf("tool/internal/cairnsite/definitions/%s differs from definitions/%s; run node scripts/build/emit-definitions.mjs", name, name)
 		}
 	}

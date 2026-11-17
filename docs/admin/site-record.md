@@ -4,7 +4,7 @@ This page lists every field of `cairn-site.json`, the file at the root of your s
 
 ## The site record
 
-`cairn new` writes `cairn-site.json` when it creates the site and rewrites its `deploy` values as setup finishes. It writes no TypeScript. The site's `cairn.config.ts` imports the record and reads the public address, the sign-in sender, the GitHub App's identity, and the AI posture from it, so a value that changed after setup is changed in the record.
+`cairn new` writes `cairn-site.json` when it creates the site and rewrites its `deploy` values as setup finishes. It writes no TypeScript. The site's `cairn.config.ts` imports the record and reads the public address, the sign-in sender, the GitHub App's identity, and the AI posture from it, so you change a value in the record. After you change `aiPosture`, run `npx cairn-manifest` to regenerate `src/content/.cairn/site-facts.json`, because a stale copy fails the build.
 
 The record follows a fixed set of rules, written down in [`schema/cairn-site-1.schema.json`](https://github.com/glw907/cairn-cms/blob/main/schema/cairn-site-1.schema.json). The site's build checks the record against those rules before it does anything else. A record that is missing, isn't JSON, or breaks the rules stops the build with one line that names the file and, for a broken rule, the first field at fault. [Check that your site works](./is-it-working.md#validate-the-site-record) covers the same check in `cairn doctor`.
 

@@ -4,9 +4,9 @@ This page lists every field of `cairn-site.json`, the file at the root of your s
 
 ## The site record
 
-`cairn new` writes `cairn-site.json` once, when it creates the site. It writes no TypeScript. The site's `cairn.config.ts` imports the record and reads the public address, the sign-in sender, the GitHub App's identity, and the AI posture from it, so a value that changed after setup is changed in the record.
+`cairn new` writes `cairn-site.json` when it creates the site and rewrites its `deploy` values as setup finishes. It writes no TypeScript. The site's `cairn.config.ts` imports the record and reads the public address, the sign-in sender, the GitHub App's identity, and the AI posture from it, so a value that changed after setup is changed in the record.
 
-The record follows a fixed set of rules, written down in [`schema/cairn-site-1.schema.json`](https://github.com/glw907/cairn-cms/blob/main/schema/cairn-site-1.schema.json). The site's build checks the record against those rules before it does anything else. A record that breaks them stops the build with one line that names the file and the first field at fault. [Check that your site works](./is-it-working.md#validate-the-site-record) covers the same check in `cairn doctor`.
+The record follows a fixed set of rules, written down in [`schema/cairn-site-1.schema.json`](https://github.com/glw907/cairn-cms/blob/main/schema/cairn-site-1.schema.json). The site's build checks the record against those rules before it does anything else. A record that is missing, isn't JSON, or breaks the rules stops the build with one line that names the file and, for a broken rule, the first field at fault. [Check that your site works](./is-it-working.md#validate-the-site-record) covers the same check in `cairn doctor`.
 
 The record is plain JSON. It can't hold comments, and it allows no field that this page doesn't list.
 
@@ -21,8 +21,8 @@ The following table lists every field. A dotted name such as `deploy.github.owne
 | `themeOptions` | The theme's option choices, keyed by the option names in the theme's manifest. | The template | Yes |
 | `aiPosture` | Whether the site invites or declines AI use of its content: `invite` or `decline`. Leave it out until the owner chooses. | `cairn new`, from your answer | No |
 | `scaffold.engine` | The engine version that `cairn new` installed. | `cairn new` | Yes |
-| `scaffold.composer` | The composer that assembled the site, when one did. | The composer | No |
-| `deploy.publicOrigin` | The site's public address: an `https` origin with no path. | `cairn new` | Yes |
+| `scaffold.composer` | The composer that assembled the site, when one did. `cairn new` doesn't write it. | Not set by `cairn new` | No |
+| `deploy.publicOrigin` | The site's public address, written as an `https` origin with no path. | `cairn new` | Yes |
 | `deploy.emailFrom` | The address that sign-in emails come from. | `cairn new` | Yes |
 | `deploy.github.owner` | The GitHub account or organization that owns the repository. | `cairn new` | Yes |
 | `deploy.github.repo` | The repository's name. | `cairn new` | Yes |
@@ -43,7 +43,7 @@ The record holds none of the following.
 
 The public origin appears in two files. `deploy.publicOrigin` in the record is what the build reads for the feed, the sitemap, and canonical links. `PUBLIC_ORIGIN` in the `vars` of `wrangler.jsonc` is the value the Worker reads while it runs. `cairn new` writes both with the same value.
 
-When you move the site to another domain, change both. A site that `cairn new` wrote carries a test that fails when the two differ, and `cairn doctor` reports the mismatch under the `config.public-origin` check, naming both values. A record that is missing or invalid fails the `config.site-record` check instead.
+When you move the site to another domain, change both. A site that `cairn new` wrote carries a unit test that fails when the two differ, which you run with `npm run test:unit`, and `cairn doctor` reports the mismatch under the `config.public-origin` check, naming both values. A record that is missing or invalid fails the `config.site-record` check instead.
 
 ## Add a record to a site that has none
 

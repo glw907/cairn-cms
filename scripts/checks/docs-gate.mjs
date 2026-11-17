@@ -90,6 +90,7 @@ export function buildSteps({ page }) {
     { label: 'check:editor-quotes', ...node('scripts/checks/check-editor-quotes.mjs') },
     { label: 'check:readiness', ...node('scripts/checks/check-readiness.mjs') },
     { label: 'check:tool-conditions', ...node('scripts/checks/check-tool-conditions.mjs') },
+    { label: 'check:site-record-page', ...node('scripts/checks/check-site-record-page.mjs') },
     { label: 'check:options', ...node('scripts/checks/check-options.mjs') },
     { label: 'check:tiers', ...node('scripts/checks/check-tiers.mjs') },
     // Workstation-only: skips with one line and passes when the tellgrader binary is absent (CI).

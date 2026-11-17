@@ -344,6 +344,12 @@
 
 ## Low
 
+- [ ] **#544** Rename the `navMenu` test names and the `navMenuLabel` fixture option to the `navMenus` wording `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-16)*
+  `src/tests/unit/cairn-admin-actions.test.ts:598` and `:917`, `cairn-admin-load.test.ts:234`, `nav-routes-load.test.ts:142`, `nav-layout-resolve.test.ts:157`, `content-routes-layout.test.ts:148` and `:256` still say "navMenu", and `src/tests/component/CairnAdminShell.test.ts:63-112` names a fixture option `navMenuLabel` beside the `navMenus` override. Found by the whole-branch review of foundation-2 (PR #257). Reads wrong, breaks nothing.
+
+- [ ] **#543** Guard the menu crumb's `decodeURIComponent` in `CairnAdminShell.svelte` `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-16)*
+  `src/lib/admin/CairnAdminShell.svelte:509` (and the older entry crumb near `:522`) decodes a pathname segment inside a `$derived.by`, and `/admin/nav/%E0` would throw a `URIError` if the shell ever rendered it. The server 404s a malformed segment first, so nothing reaches it today. Fix: try/catch with the raw segment as the fallback, and match the menu on its decoded name, since `encodeURIComponent` and a browser encode `!'()*` differently. Found by the foundation-2 reviews (PR #257).
+
 - [ ] **#542** Build `NavTree.svelte`'s copy from the menu's label, so the Action links screen stops saying "Save navigation" `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-16)*
   `src/lib/admin/NavTree.svelte` keeps "Navigation saved.", the `Navigation items` list label, and "Save navigation" for every menu, so the `actions` screen reads as if it edited the main navigation. Menu-neutral copy changes the `refused-forms.spec.ts` selectors and the admin baselines, so the menus pass (foundation-2) left it. Fix: derive the strings from `data.menu.label`, update the selectors, regenerate the baselines.
 

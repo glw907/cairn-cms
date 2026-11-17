@@ -14,11 +14,6 @@ import {
   stripLayIn,
 } from './bake-template.mjs';
 
-// The showcase's placeholder backend call, which `cairn new` rewrites in a pushed scaffold
-// (tool/internal/setup/scaffold/substitute.go pins the same text).
-const TEMPLATE_GITHUB_APP_LITERAL =
-  "createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' })";
-
 // Published specs, so a bake under test never depends on what the monorepo's versions
 // happen to be. The resolved defaults have their test below.
 const PUBLISHED_SPECS = { engineSpec: '^0.94.0', devSpec: '^0.1.0' };
@@ -50,17 +45,13 @@ test('bake emits a real tree, not just a rewritten package.json', async (t) => {
   await access(path.join(to, 'wrangler.jsonc'));
 });
 
-// The rot gate: `cairn new` rewrites this exact literal in a pushed scaffold's cairn.config.ts.
-// Pinning it here means showcase drift that changes the backend line's shape fails this fast
-// bake test, rather than surfacing only inside a live setup run against real GitHub.
-test('the baked template\'s cairn.config.ts carries the exact createGithubApp(...) literal `cairn new` targets', async (t) => {
+// The App identity lives in the record, which the setup tool writes, so a baked template that
+// loses the record or its deploy values would leave the tool nothing to fill in.
+test('the baked template carries cairn-site.json with the showcase deploy values', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
-  const config = await readFile(path.join(to, 'src/site/cairn.config.ts'), 'utf8');
-  assert.ok(
-    config.includes(TEMPLATE_GITHUB_APP_LITERAL),
-    `expected the baked cairn.config.ts to contain "${TEMPLATE_GITHUB_APP_LITERAL}"`,
-  );
+  const record = JSON.parse(await readFile(path.join(to, 'cairn-site.json'), 'utf8'));
+  assert.deepEqual(record.deploy.github, { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' });
 });
 
 // @glw907/cairn-cms-dev first published at the 0.95.0-rc.1 cut, so bake() now resolves a usable

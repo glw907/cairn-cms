@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"go.yaml.in/yaml/v3"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/cairnsite"
 )
 
 func TestScaffoldWritesTheSite(t *testing.T) {
@@ -56,19 +58,36 @@ func TestScaffoldWritesTheSite(t *testing.T) {
 		t.Errorf("description = %q, want the neutral line and none of the template's", cfg.Description)
 	}
 
-	cairn := readFile(t, dir, "src/site/cairn.config.ts")
-	for _, want := range []string{
-		"aiPosture: 'invite',",
-		"createGithubApp({ owner: 'octo-owner', repo: 'my-caf-the-site', branch: 'trunk', appId: '424242', installationId: '737373' })",
-		"email: { from: 'no-reply@example.test' }",
-		"export const publicOrigin = 'https://blog.example.test'",
-	} {
-		if !strings.Contains(cairn, want) {
-			t.Errorf("cairn.config.ts lacks %q", want)
-		}
+	rec, err := cairnsite.Decode([]byte(readFile(t, dir, targets.SiteRecord)))
+	if err != nil {
+		t.Fatalf("the written record does not decode: %v", err)
 	}
-	if strings.Contains(cairn, "Left unset here on purpose") {
-		t.Error("cairn.config.ts still carries the unset-posture comment")
+	wantDeploy := cairnsite.Deploy{
+		PublicOrigin: "https://blog.example.test",
+		EmailFrom:    "no-reply@example.test",
+		GitHub:       cairnsite.GitHub{Owner: "octo-owner", Repo: "my-caf-the-site", Branch: "trunk", AppID: "424242", InstallationID: "737373"},
+	}
+	if rec.Deploy != wantDeploy {
+		t.Errorf("record deploy = %+v, want %+v", rec.Deploy, wantDeploy)
+	}
+	if rec.AIPosture != "invite" || rec.Scaffold.Engine != testVersion || rec.Kind != "blog" {
+		t.Errorf("record posture %q, engine %q, kind %q; want invite, %q, and the template's blog", rec.AIPosture, rec.Scaffold.Engine, rec.Kind, testVersion)
+	}
+
+	// Only the site name and description lines differ from the template, so its comments and
+	// layout survive.
+	tplLines := strings.Split(readTemplateFile(t, targets.SiteConfig), "\n")
+	gotLines := strings.Split(siteConfig, "\n")
+	if len(tplLines) != len(gotLines) {
+		t.Fatalf("site.config.yaml has %d lines, the template %d", len(gotLines), len(tplLines))
+	}
+	for i := range tplLines {
+		if strings.HasPrefix(tplLines[i], "siteName:") || strings.HasPrefix(tplLines[i], "description:") {
+			continue
+		}
+		if tplLines[i] != gotLines[i] {
+			t.Errorf("line %d changed: %q became %q", i+1, tplLines[i], gotLines[i])
+		}
 	}
 
 	wrangler := readFile(t, dir, "wrangler.jsonc")
@@ -214,6 +233,7 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 	site := testSite()
 	early := site
 	early.DatabaseID = ""
+	early.AppID, early.InstallationID = "111", "222"
 	first, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Env: testEnv(), Dir: dir})
 	if err != nil {
 		t.Fatalf("Write: %v", err)
@@ -225,6 +245,14 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 		t.Errorf("the first pass did not name the package:\n%s", got)
 	}
 
+	earlyRec, err := cairnsite.Decode([]byte(readFile(t, dir, targets.SiteRecord)))
+	if err != nil {
+		t.Fatalf("decode the first-pass record: %v", err)
+	}
+	if g := earlyRec.Deploy.GitHub; g.AppID != "111" || g.InstallationID != "222" {
+		t.Errorf("the first pass wrote App ids %q and %q, want the early 111 and 222", g.AppID, g.InstallationID)
+	}
+
 	fin := FinalizeConfig{Dir: first.Dir, Base: first.CommitSHA, Site: site, Commit: testCommit(), Env: testEnv()}
 	second, err := Finalize(t.Context(), fin)
 	if err != nil {
@@ -233,8 +261,12 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 	if got := readFile(t, dir, targets.Wrangler); !strings.Contains(got, `"database_id": "`+site.DatabaseID+`"`) {
 		t.Errorf("the second pass did not write the database id:\n%s", got)
 	}
-	if got := readFile(t, dir, targets.CairnConfig); !strings.Contains(got, "branch: 'trunk'") {
-		t.Errorf("the second pass did not write the App literal")
+	rec, err := cairnsite.Decode([]byte(readFile(t, dir, targets.SiteRecord)))
+	if err != nil {
+		t.Fatalf("decode the second-pass record: %v", err)
+	}
+	if rec.Deploy.GitHub.AppID != site.AppID || rec.Deploy.GitHub.InstallationID != site.InstallationID {
+		t.Errorf("the second pass did not write the App identity into the record: got %+v, want ids %q and %q", rec.Deploy.GitHub, site.AppID, site.InstallationID)
 	}
 
 	again, err := Finalize(t.Context(), fin)
@@ -279,8 +311,8 @@ func TestUpdateInstallationCommitsTheSettingsAlone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UpdateInstallation: %v", err)
 	}
-	if got := gitOut(t, dir, "diff", "--name-only", "HEAD^", "HEAD"); got != targets.CairnConfig {
-		t.Errorf("the commit touches %q, want only %s", got, targets.CairnConfig)
+	if got := gitOut(t, dir, "diff", "--name-only", "HEAD^", "HEAD"); got != targets.SiteRecord {
+		t.Errorf("the commit touches %q, want only %s", got, targets.SiteRecord)
 	}
 	if got := gitOut(t, dir, "log", "-1", "--format=%s"); got != InstallationMessage {
 		t.Errorf("the commit's message = %q", got)
@@ -372,7 +404,7 @@ func readTemplateFile(t *testing.T, rel string) string {
 
 func TestAMissingAnchorFailsNamingTheFileAndLeavesNothing(t *testing.T) {
 	for _, rel := range []string{
-		targets.PackageJSON, targets.SiteConfig, targets.CairnConfig, targets.Wrangler,
+		targets.PackageJSON, targets.SiteConfig, targets.SiteRecord, targets.Wrangler,
 		targets.Deploy, targets.SiteFacts, targets.GitignoreShipped,
 	} {
 		t.Run(rel, func(t *testing.T) {
@@ -411,9 +443,8 @@ func TestEachAnchorOfAFileFailsWhenOnlyItIsMissing(t *testing.T) {
 	tests := []struct {
 		rel, drop string
 	}{
-		{targets.CairnConfig, "email: { from: 'cms@showcase.test' }"},
-		{targets.CairnConfig, "export const publicOrigin = 'https://showcase.test'"},
-		{targets.CairnConfig, "createGithubApp({ owner: 'showcase'"},
+		{targets.SiteRecord, `"emailFrom"`},
+		{targets.SiteRecord, `"installationId"`},
 		{targets.Wrangler, `"bucket_name": "cairn-showcase-media"`},
 		{targets.Wrangler, `"PUBLIC_ORIGIN"`},
 		{targets.PackageJSON, `"@glw907/cairn-cms": `},
@@ -450,6 +481,36 @@ func TestSiteConfigRefusesADuplicateDescription(t *testing.T) {
 	err := editSiteConfig(dir, testSite(), "")
 	if err == nil || !strings.Contains(err.Error(), "description") || !strings.Contains(err.Error(), rel) {
 		t.Errorf("error = %v, want a duplicate description error naming %s", err, rel)
+	}
+}
+
+func TestSetDescriptionKeepsEverythingElse(t *testing.T) {
+	in := "# head\nsiteName: Waymark   # keep\ndescription: Café sample # tail\nnested:\n    description: other\n"
+	got, err := setDescription(in, `"New."`, "site.config.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "# head\nsiteName: Waymark   # keep\ndescription: \"New.\"\nnested:\n    description: other\n"
+	if got != want {
+		t.Errorf("setDescription =\n%q\nwant\n%q", got, want)
+	}
+	for _, bad := range []string{"siteName: x\n", "description: |\n  a\n  b\n"} {
+		if _, err := setDescription(bad, `"New."`, "site.config.yaml"); err == nil {
+			t.Errorf("setDescription accepted %q", bad)
+		}
+	}
+}
+
+func TestNamesAppNamesTheMissingRecord(t *testing.T) {
+	dir, res := scaffoldOK(t, testSite())
+	gitOut(t, dir, "rm", "--quiet", targets.SiteRecord)
+	gitOut(t, dir, "-c", "user.name=t", "-c", "user.email=t@example.test", "commit", "--quiet", "-m", "drop the record")
+	_, err := NamesApp(t.Context(), testEnv(), dir, gitOut(t, dir, "rev-parse", "HEAD"), testSite())
+	if err == nil || !strings.Contains(err.Error(), targets.SiteRecord) {
+		t.Errorf("NamesApp error = %v, want one naming %s", err, targets.SiteRecord)
+	}
+	if ok, err := NamesApp(t.Context(), testEnv(), dir, res.CommitSHA, testSite()); err != nil || !ok {
+		t.Errorf("NamesApp at the scaffold commit = %v, %v; want true", ok, err)
 	}
 }
 
@@ -579,7 +640,7 @@ func TestTargetPathsAreNamedOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	paths := []string{
-		targets.PackageJSON, targets.SiteConfig, targets.CairnConfig, targets.Wrangler,
+		targets.PackageJSON, targets.SiteConfig, targets.SiteRecord, targets.Wrangler,
 		targets.Deploy, targets.SiteFacts,
 	}
 	for _, f := range files {

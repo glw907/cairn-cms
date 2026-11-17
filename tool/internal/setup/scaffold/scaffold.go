@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/cairnsite"
 )
 
 // ConfigMessage is the message of the second commit, the one that writes the site's Cloudflare
@@ -107,24 +109,29 @@ func Finalize(ctx context.Context, cfg FinalizeConfig) (string, error) {
 const InstallationMessage = "Update the GitHub App installation"
 
 // SettingsFile is the site file that holds the GitHub App identity, in slash form under the
-// site folder.
-func SettingsFile() string { return targets.CairnConfig }
+// site folder: the site record.
+func SettingsFile() string { return targets.SiteRecord }
 
-// NamesApp reports whether the site's settings at commit in dir hold s's GitHub App identity,
-// its installation id included. env is the environment git starts from, as Config.Env.
+// NamesApp reports whether the site record at commit in dir holds s's GitHub App identity, its
+// installation id included. A commit with no record, or one the record's rules refuse, is an
+// error naming the record. env is the environment git starts from, as Config.Env.
 func NamesApp(ctx context.Context, env map[string]string, dir, commit string, s Site) (bool, error) {
-	content, err := git(ctx, env, dir, nil, "show", commit+":"+targets.CairnConfig)
+	content, err := git(ctx, env, dir, nil, "show", commit+":"+targets.SiteRecord)
+	if err != nil {
+		return false, fmt.Errorf("scaffold: read %s at %s: %w", targets.SiteRecord, commit, err)
+	}
+	r, err := cairnsite.Decode([]byte(content))
 	if err != nil {
 		return false, err
 	}
-	return strings.Contains(content, githubApp(s)), nil
+	return r.Deploy.GitHub == siteDeploy(s).GitHub, nil
 }
 
 // UpdateInstallation writes cfg.Site's GitHub App identity over the one a finalized site's
-// settings hold and commits that file alone on Base with InstallationMessage, returning the new
+// record holds and commits that file alone on Base with InstallationMessage, returning the new
 // SHA. Like Finalize it takes a folder at Base or at a commit whose parent is Base, which it
 // resets to Base first, so the caller must know that it made that commit and never pushed it. At
-// Base itself nothing is reset, and nothing but the settings file goes into the commit. A failed
+// Base itself nothing is reset, and nothing but the record goes into the commit. A failed
 // edit or commit restores the file.
 func UpdateInstallation(ctx context.Context, cfg FinalizeConfig) (string, error) {
 	if err := cfg.Site.validate(true); err != nil {
@@ -144,10 +151,10 @@ func UpdateInstallation(ctx context.Context, cfg FinalizeConfig) (string, error)
 	var sha string
 	err = editInstallation(cfg.Dir, cfg.Site)
 	if err == nil {
-		sha, err = commitFile(ctx, cfg.Env, cfg.Dir, targets.CairnConfig, c)
+		sha, err = commitFile(ctx, cfg.Env, cfg.Dir, targets.SiteRecord, c)
 	}
 	if err != nil {
-		_, _ = git(ctx, cfg.Env, cfg.Dir, nil, "checkout", "--quiet", "HEAD", "--", targets.CairnConfig)
+		_, _ = git(ctx, cfg.Env, cfg.Dir, nil, "checkout", "--quiet", "HEAD", "--", targets.SiteRecord)
 		return "", err
 	}
 	return sha, nil

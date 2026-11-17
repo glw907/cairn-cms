@@ -1,16 +1,22 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup"
 	"github.com/glw907/cairn-cms/tool/v2/internal/setup/agentview"
@@ -95,8 +101,21 @@ func validateAgainstSchema(t *testing.T, events []map[string]any) {
 	}
 }
 
+// schemaRoot is the document a local "#/$defs/<name>" reference resolves in. Only the site
+// record's schema uses one, and its validation sets this first.
+var schemaRoot map[string]any
+
 func schemaProblems(value any, schema map[string]any, path string) []string {
 	var out []string
+	if ref, ok := schema["$ref"].(string); ok {
+		name, local := strings.CutPrefix(ref, "#/$defs/")
+		defs, _ := schemaRoot["$defs"].(map[string]any)
+		target, _ := defs[name].(map[string]any)
+		if !local || target == nil {
+			return []string{fmt.Sprintf("%s refers to %s, which the schema does not define", path, ref)}
+		}
+		out = append(out, schemaProblems(value, target, path)...)
+	}
 	if want, ok := schema["type"].(string); ok {
 		got := ""
 		switch v := value.(type) {
@@ -499,6 +518,7 @@ func TestNewE2EApplyCreatesTheSiteFromTheEditedPlan(t *testing.T) {
 	if status := r.status(); !strings.Contains(status, "finished  step live") {
 		t.Errorf("status after the run = %q, want the record finished", status)
 	}
+	checkWrittenSite(t, r, filepath.Join(r.c.Dir, "example-site"))
 
 	// No credential, one-time code, or sign-in token reached any output or any file setup wrote
 	// outside the keyring.
@@ -579,5 +599,117 @@ func TestNewE2EAStoppedApplyIsUnfinishedAndResumes(t *testing.T) {
 	}
 	if status := r.status(); !strings.Contains(status, "finished  step live") {
 		t.Errorf("status after the resume = %q", status)
+	}
+}
+
+// checkWrittenSite proves the site setup wrote: the record against its schema and the run's own
+// answers, the wrangler origin against the record's, every .ts file against the engine's
+// template, and the keyring's write log against the record's bytes.
+func checkWrittenSite(t *testing.T, r *e2eRun, site string) {
+	t.Helper()
+	root, err := providers.RepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	recordBytes, err := os.ReadFile(filepath.Join(site, "cairn-site.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	schemaBytes, err := os.ReadFile(filepath.Join(root, "schema", "cairn-site-1.schema.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var record map[string]any
+	if err := json.Unmarshal(recordBytes, &record); err != nil {
+		t.Fatalf("cairn-site.json is not JSON: %v", err)
+	}
+	if err := json.Unmarshal(schemaBytes, &schemaRoot); err != nil {
+		t.Fatal(err)
+	}
+	for _, problem := range schemaProblems(record, schemaRoot, "$") {
+		t.Errorf("cairn-site.json: %s", problem)
+	}
+	if record["aiPosture"] != "decline" {
+		t.Errorf("aiPosture = %v, want the run's decline", record["aiPosture"])
+	}
+	wantDeploy := map[string]any{
+		"publicOrigin": "https://blog." + e2eZone,
+		"emailFrom":    "no-reply@blog." + e2eZone,
+		"github": map[string]any{
+			"owner": e2eOwner, "repo": "example-site", "branch": "main",
+			"appId": strconv.FormatInt(e2eAppID, 10), "installationId": strconv.FormatInt(e2eInstall2, 10),
+		},
+	}
+	if !reflect.DeepEqual(record["deploy"], wantDeploy) {
+		t.Errorf("deploy = %v, want %v", record["deploy"], wantDeploy)
+	}
+
+	snap, err := doctor.NewSnapshot(site)
+	if err != nil {
+		t.Fatal(err)
+	}
+	facts, found, err := doctor.ReadWranglerConfig(snap)
+	if err != nil || !found {
+		t.Fatalf("read wrangler.jsonc: found %v, err %v", found, err)
+	}
+	if want := asMap(record["deploy"])["publicOrigin"]; !facts.HasPublicOrigin || facts.PublicOrigin != want {
+		t.Errorf("wrangler PUBLIC_ORIGIN = %q, want the record's %v", facts.PublicOrigin, want)
+	}
+
+	// The template's .ts files carry no per-site text, so the written copies match the tarball's
+	// tree, where the setup overlay replaces a template file of the same path.
+	var checked int
+	err = filepath.WalkDir(site, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() && d.Name() == ".git" {
+			return filepath.SkipDir
+		}
+		if d.IsDir() || !strings.HasSuffix(p, ".ts") {
+			return nil
+		}
+		rel, _ := filepath.Rel(site, p)
+		want, err := os.ReadFile(filepath.Join(root, "scripts", "build", "setup-overlay", rel))
+		if errors.Is(err, fs.ErrNotExist) {
+			want, err = os.ReadFile(filepath.Join(root, "templates", "waymark", rel))
+		}
+		if err != nil {
+			return err
+		}
+		got, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		if !bytes.Equal(got, want) {
+			t.Errorf("%s differs from the engine template", rel)
+		}
+		checked++
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if checked == 0 {
+		t.Error("the written site holds no .ts file to compare")
+	}
+
+	// Everything setup stored in the keyring, deleted since or not, stays out of the record.
+	writes := r.c.KeyringWrites()
+	if !slices.ContainsFunc(writes, func(w testharness.KeyringWrite) bool { return strings.HasPrefix(w.Name, "setup/") }) {
+		t.Errorf("the keyring write log holds no setup/ entry: %v", writes)
+	}
+	for _, w := range writes {
+		if w.Value == "" {
+			continue
+		}
+		quoted, err := json.Marshal(w.Value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		escaped := quoted[1 : len(quoted)-1]
+		if bytes.Contains(recordBytes, []byte(w.Value)) || bytes.Contains(recordBytes, escaped) {
+			t.Errorf("the record holds the value stored as %s", w.Name)
+		}
 	}
 }

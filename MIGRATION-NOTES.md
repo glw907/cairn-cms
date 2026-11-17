@@ -220,6 +220,15 @@ in a terminal, and `cairn health` adds a progress line on stderr there. Nothing 
 output to a pipe or a file and `--json` output are unchanged. A script that reads what these
 commands print should read `--json`, or their output through a pipe, never a terminal's screen.
 
+A site that `cairn new` wrote before this release has no `cairn-site.json`, so `cairn doctor` reports `config.site-record` failing until you add one. To add it:
+
+1. Create `cairn-site.json` at the site's root with the shape that [the site record page](https://github.com/glw907/cairn-cms/blob/main/docs/admin/site-record.md) lists: `kind`, `features`, `themeOptions`, `scaffold.engine`, and `deploy`, plus `aiPosture` if the site states one.
+2. Fill the `deploy` values from the site's `cairn.config.ts` and `wrangler.jsonc`. `publicOrigin` is the site's address, `emailFrom` is the sign-in sender, and `github` holds the five values from the `createGithubApp` call.
+3. Point `cairn.config.ts` at the record: import `../../cairn-site.json`, and read the origin, the sender, the GitHub values, and `aiPosture` from it in place of the literals.
+4. Run `cairn doctor`. The `config.site-record` check passes, and `config.public-origin` fails if `PUBLIC_ORIGIN` in `wrangler.jsonc` names a different host than `deploy.publicOrigin`.
+
+A `cairn new` setup that an older `cairn` began and a newer one resumes past the scaffold step stops, because the site has no record. Start that setup again.
+
 ## 0.99.0-rc.4
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,

@@ -108,7 +108,7 @@ func (cr CheckedResult) checkVerdict() spine.CheckVerdict {
 	v := spine.CheckVerdict{ID: cr.Check.ID, State: facts.state}
 	switch facts.state {
 	case spine.Failing:
-		v.Severity = conditionText(cr.Check.Condition).Severity
+		v.Severity = cr.Check.text().Severity
 	case spine.Unknown:
 		v.Reason = facts.reason
 	}

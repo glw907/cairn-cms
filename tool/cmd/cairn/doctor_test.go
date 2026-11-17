@@ -58,6 +58,9 @@ func doctorCleanSiteFiles(origin string) map[string]string {
 		"migrations/0004_login_nonce.sql":                                "-- nonce\n",
 		"node_modules/@glw907/cairn-cms/package.json":                    `{"peerDependencies": {}}`,
 		"package-lock.json":                                              `{"packages":{}}`,
+		"cairn-site.json": `{"kind":"blog","features":[],"themeOptions":{},"scaffold":{"engine":"0.99.0"},` +
+			`"deploy":{"publicOrigin":"` + origin + `","emailFrom":"cms@example.com",` +
+			`"github":{"owner":"o","repo":"r","branch":"main","appId":"1","installationId":"2"}}}`,
 	}
 }
 

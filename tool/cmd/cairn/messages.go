@@ -345,8 +345,8 @@ const (
 		"never a registered site id, and defaults to the current directory.\n\n" +
 		"Checks run in this order, each with the severity its failure carries:\n" +
 		"  config.bindings blocker, config.media-bucket warning, config.observability warning,\n" +
-		"  config.csrf-trusted-origins warning, config.site-config blocker, config.public-origin blocker,\n" +
-		"  config.no-referrer-blanket warning, admin.mount-shape (never fails),\n" +
+		"  config.csrf-trusted-origins warning, config.site-config blocker, config.site-record blocker,\n" +
+		"  config.public-origin blocker, config.no-referrer-blanket warning, admin.mount-shape (never fails),\n" +
 		"  config.migrations warning, config.dependency-floors blocker, auth.role-wiring warning, ai.posture-effective warning.\n\n" +
 		"Each check settles to PASS, FAIL, SKIP, INFO, or UNCHECKED. FAIL is CRITICAL for a blocker and\n" +
 		"WARNING for a warning; UNCHECKED is UNKNOWN (the input could not be observed); the rest are OK.\n" +

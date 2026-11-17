@@ -32,12 +32,14 @@ const cleanWranglerJSONC = `{
 // skip rather than a pass needing more fixture).
 func cleanSiteFiles() map[string]string {
 	return map[string]string{
-		"wrangler.jsonc":                                                 cleanWranglerJSONC,
-		"vite.config.ts":                                                 viteConfigNoCsrf,
-		"src/hooks.server.ts":                                            "import { createAuthGuard } from '@glw907/cairn-cms';\nexport const handle = createAuthGuard();\n",
-		"src/site/site.config.yaml":                                      "siteName: Test Site\n",
-		"src/routes/admin/+layout.svelte":                                "<!-- CairnAdminShell --><script>runtime.shellLoad()</script>",
-		"src/content/.cairn/site-facts.json":                             `{"version":1}`,
+		"wrangler.jsonc":                     cleanWranglerJSONC,
+		"vite.config.ts":                     viteConfigNoCsrf,
+		"src/hooks.server.ts":                "import { createAuthGuard } from '@glw907/cairn-cms';\nexport const handle = createAuthGuard();\n",
+		"src/site/site.config.yaml":          "siteName: Test Site\n",
+		"cairn-site.json":                    siteRecordFixture("https://example.com"),
+		"src/routes/admin/+layout.svelte":    "<!-- CairnAdminShell --><script>runtime.shellLoad()</script>",
+		"src/content/.cairn/site-facts.json": `{"version":1}`,
+
 		"node_modules/@glw907/cairn-cms/migrations/0000_auth.sql":        "-- auth\n",
 		"node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql": "-- nonce\n",
 		"migrations/0000_auth.sql":                                       "-- auth\n",

@@ -84,9 +84,9 @@ off. The save rewrites only `tidy.conventions`, so a comment inside that block i
 
 ## Set the AI posture
 
-1. On the adapter, set `aiPosture: 'decline'` (or `'invite'`). Unset emits nothing, byte-identical
-   to a site that never states one.
-2. Pass it to the robots route. Setting it on the adapter alone changes nothing served: the route
+1. In `cairn-site.json`, set `"aiPosture": "decline"` (or `"invite"`). `cairn.config.ts` reads it
+   onto the adapter. Unset emits nothing, byte-identical to a site that never states one.
+2. Pass it to the robots route. Setting it on the adapter or in the record alone changes nothing served: the route
    must hand it to `buildRobotsResponse`. Older scaffolds omit this line.
 
    ```ts

@@ -113,7 +113,7 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
 3. If `/healthz?live=1` reports the detail `key_refused`, or `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: 401`, GitHub refused the signed request.
 
-   A 401 means GitHub refused the signed request, and the error page comes from that refusal. The request also carries the App id, so first confirm that the `appId` in your site's `createGithubApp` call matches the App's settings page. If it matches, roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
+   A 401 means GitHub refused the signed request, and the error page comes from that refusal. The request also carries the App id, so first confirm that the `deploy.github.appId` in your site's `cairn-site.json` matches the App's settings page. If it matches, roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 
 4. If `/healthz?live=1` reports the detail `installation_not_found`, `installation_suspended`, `token_request_refused`, or `unreachable`, or a `github.unreachable` record carries any status other than 401, check the causes below first and leave the key alone for now.
 
@@ -123,11 +123,11 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
    If GitHub is up, check five things:
 
-   - The `repo` in your site's `createGithubApp` call matches the repository's current name on GitHub.
+   - The `deploy.github.repo` in your site's `cairn-site.json` matches the repository's current name on GitHub.
    - The App's installation includes that repository. On [GitHub's installations page](https://github.com/settings/installations), open the App and check the repository access.
    - The App holds Contents read and write permission. Check the permissions on the App's settings page.
    - The installation isn't suspended. Check its status on [GitHub's installations page](https://github.com/settings/installations).
-   - The `installationId` in your site's `createGithubApp` call matches the App's installation. The id is the last part of the installation page's URL on GitHub.
+   - The `deploy.github.installationId` in your site's `cairn-site.json` matches the App's installation. The id is the last part of the installation page's URL on GitHub.
 
    A plain `/healthz` stays `ok: true` in this case, because that check never requests a token.
 

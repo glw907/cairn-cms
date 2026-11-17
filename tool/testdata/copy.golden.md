@@ -153,8 +153,8 @@ and commit the diff.
 
 Checks run in this order, each with the severity its failure carries:
   config.bindings blocker, config.media-bucket warning, config.observability warning,
-  config.csrf-trusted-origins warning, config.site-config blocker, config.public-origin blocker,
-  config.no-referrer-blanket warning, admin.mount-shape (never fails),
+  config.csrf-trusted-origins warning, config.site-config blocker, config.site-record blocker,
+  config.public-origin blocker, config.no-referrer-blanket warning, admin.mount-shape (never fails),
   config.migrations warning, config.dependency-floors blocker, auth.role-wiring warning, ai.posture-effective warning.
 
 Each check settles to PASS, FAIL, SKIP, INFO, or UNCHECKED. FAIL is CRITICAL for a blocker and
@@ -556,15 +556,21 @@ Continue one with --resume <id>, or start a new site with --new.
 - ; %s is plain http, so it also admits a network attacker on that origin
 - AUTH_DB (d1_databases)
 - AUTH_DB's migrations_dir is outside the site directory or is not a readable folder, so it was not read
+- Correct cairn-site.json at the site's root to match the field the detail names. The site record page lists every field and its allowed values.
 - EMAIL (send_email)
 - EMAIL and AUTH_DB are declared
+- PUBLIC_ORIGIN in wrangler.jsonc is %s, but deploy.publicOrigin in cairn-site.json is %s
 - PUBLIC_ORIGIN is %s (%s)
 - PUBLIC_ORIGIN is not a valid URL, got %s
 - PUBLIC_ORIGIN is not configured
 - PUBLIC_ORIGIN must be https in production, got %s
+- Site record does not validate
 - adapter declares media bucket %s but no matching r2_buckets binding is in wrangler
 - aiPosture is '%s', and %s carries directives consistent with it.%s
 - aiPosture is '%s', but %s carries %s.%s
+- cairn-site.json holds the site's kind, features, theme options, and deploy values. The site's build checks it and stops when it is missing or breaks the record's rules.
+- cairn-site.json parses and follows the record's rules
+- cairn-site.json: file not found at the site's root
 - could not reach the resolved origin's /robots.txt
 - createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles
 - createAuthGuard is passed the declared role vocabulary (heuristic text read)
@@ -603,6 +609,7 @@ Continue one with --resume <id>, or start a new site with --new.
 - parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
 - pnpm-lock.yaml did not parse
 - serve strict-origin-when-cross-origin (or same-origin) as the site default
+- site-record.md#the-site-record
 - svelte.config.js is still present, so a csrf key in it could not be checked; move the SvelteKit config into the sveltekit() call in the Vite config and delete the file
 - the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
 - the adapter declares custom roles (%s) but createAuthGuard in %s is not passed { runtime }; this engine raises a TypeError on a missing runtime, so the guard cannot read the site's roles (heuristic text read)

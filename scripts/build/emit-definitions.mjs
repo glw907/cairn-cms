@@ -3,7 +3,7 @@
 // feature ids; each schema carries a generated `$defs` entry per list, and every property that
 // names an id refers to that entry, so no hand text sits inside the generated part.
 // check-definitions.mjs regenerates into memory and fails on any byte that differs.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,7 +17,18 @@ export const TARGETS = [
   { file: 'schema/cairn-catalog-1.schema.json', defs: ['kindId'] },
   { file: 'schema/cairn-set-1.schema.json', defs: ['kindId'] },
   { file: 'schema/cairn-theme-1.schema.json', defs: ['kindId', 'featureId'] },
+  { file: 'schema/cairn-site-1.schema.json', defs: ['kindId', 'featureId'] },
 ];
+
+/**
+ * Byte copies of the definition files that the Go tool embeds. A Go `embed` can't reach a folder
+ * above its module, so the tool carries its own copy; `check-definitions.mjs` and a Go test both
+ * fail when a copy drifts.
+ */
+export const GO_COPIES = ['kinds', 'features'].map((name) => ({
+  from: `definitions/${name}.json`,
+  file: `tool/internal/cairnsite/definitions/${name}.json`,
+}));
 
 const SOURCES = { kindId: 'kinds', featureId: 'features' };
 
@@ -78,9 +89,9 @@ function defEntry(def, definitions) {
 }
 
 /**
- * Regenerates every target schema in memory, without touching disk.
+ * Regenerates every target schema and the Go copies in memory, without touching disk.
  * @param {string} root Directory that holds `definitions/` and `schema/`.
- * @returns {Record<string, string>} Repo-relative schema path to its full file contents.
+ * @returns {Record<string, string>} Repo-relative path to its full file contents.
  */
 export function buildSchemas(root) {
   const definitions = readDefinitions(root);
@@ -92,18 +103,22 @@ export function buildSchemas(root) {
     for (const def of defs) schema.$defs[def] = defEntry(def, definitions);
     out[file] = `${JSON.stringify(schema, null, 2)}\n`;
   }
+  for (const { from, file } of GO_COPIES) out[file] = readFileSync(resolve(root, from), 'utf8');
   return out;
 }
 
 /**
- * Writes the regenerated schemas under a root. Refuses unsound definitions.
+ * Writes the regenerated schemas and the Go copies under a root. Refuses unsound definitions.
  * @returns {string[]} The files written.
  */
 export function writeSchemas(root) {
   const problems = definitionProblems(readDefinitions(root));
   if (problems.length > 0) throw new Error(problems.join('\n'));
   const schemas = buildSchemas(root);
-  for (const [file, contents] of Object.entries(schemas)) writeFileSync(resolve(root, file), contents);
+  for (const [file, contents] of Object.entries(schemas)) {
+    mkdirSync(dirname(resolve(root, file)), { recursive: true });
+    writeFileSync(resolve(root, file), contents);
+  }
   return Object.keys(schemas);
 }
 

@@ -91,6 +91,69 @@ func TestConfigPublicOrigin(t *testing.T) {
 	}
 }
 
+// TestConfigPublicOriginAgainstRecord proves the wrangler var is compared with the site record's
+// deploy.publicOrigin: a difference fails naming both, equal origins pass, and a site with no
+// record keeps the check's behavior without one. The environment fallback is never compared.
+func TestConfigPublicOriginAgainstRecord(t *testing.T) {
+	const wrangler = `{"vars": {"PUBLIC_ORIGIN": "https://example.com"}}`
+	varsOrigin := PublicOrigin{Value: "https://example.com", Source: OriginFromVars}
+	tests := []struct {
+		name       string
+		files      map[string]string
+		origin     PublicOrigin
+		wantStatus Status
+		wantDetail string
+	}{
+		{
+			name: "fail: the two origins differ",
+			files: map[string]string{
+				"wrangler.jsonc":  wrangler,
+				"cairn-site.json": siteRecordFixture("https://other.example.org"),
+			},
+			origin:     varsOrigin,
+			wantStatus: StatusFail,
+			wantDetail: "PUBLIC_ORIGIN in wrangler.jsonc is https://example.com, but deploy.publicOrigin in cairn-site.json is https://other.example.org",
+		},
+		{
+			name: "pass: the two origins match",
+			files: map[string]string{
+				"wrangler.jsonc":  wrangler,
+				"cairn-site.json": siteRecordFixture("https://example.com"),
+			},
+			origin:     varsOrigin,
+			wantStatus: StatusPass,
+			wantDetail: "PUBLIC_ORIGIN is https://example.com (wrangler vars)",
+		},
+		{
+			name:       "pass: no record",
+			files:      map[string]string{"wrangler.jsonc": wrangler},
+			origin:     varsOrigin,
+			wantStatus: StatusPass,
+			wantDetail: "PUBLIC_ORIGIN is https://example.com (wrangler vars)",
+		},
+		{
+			name: "pass: the origin came from the environment, so the record is not compared",
+			files: map[string]string{
+				"wrangler.jsonc":  `{}`,
+				"cairn-site.json": siteRecordFixture("https://other.example.org"),
+			},
+			origin:     PublicOrigin{Value: "https://example.com", Source: OriginFromEnv},
+			wantStatus: StatusPass,
+			wantDetail: "PUBLIC_ORIGIN is https://example.com (environment)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := snapshotWithFiles(t, tt.files)
+			s.PublicOrigin = tt.origin
+			result := configPublicOrigin.run(s)
+			if result.Status != tt.wantStatus || result.Detail != tt.wantDetail {
+				t.Errorf("got %v %q, want %v %q", result.Status, result.Detail, tt.wantStatus, tt.wantDetail)
+			}
+		})
+	}
+}
+
 // TestLoopbackHostAgreement pins that config.public-origin and config.csrf-trusted-origins
 // draw the loopback line in the same place, and that it is the engine's: requireOrigin
 // (src/lib/env.ts) treats only localhost and 127.0.0.1 as local, so the IPv6 loopback, a

@@ -3,6 +3,7 @@ SKIP  Media bucket binding: no media assets configured
 FAIL  Workers Logs has no sink: observability.enabled is not true
 PASS  Trusted origins keep SvelteKit's origin check: no csrf.trustedOrigins entries in vite.config.ts, so SvelteKit's default origin check covers every route (heuristic text read)
 PASS  Site config validates: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
+PASS  Site record validates: cairn-site.json parses and follows the record's rules
 PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is https://example.com (wrangler vars)
 PASS  No site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
 INFO  Custom /admin mount looks incomplete: no wired /admin mount detected; mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin({ runtime }).shellLoad, and the /admin/[...path] catch-all rendering CairnAdmin
@@ -16,4 +17,4 @@ Workers Logs has no sink failed.
   Fix: Set observability.enabled to true in wrangler.jsonc, then re-deploy.
   Docs: https://cairn.pub/docs/admin/is-it-working#turn-on-observability
 
-7 passed, 1 failed, 2 skipped, 1 info, 1 unchecked
+8 passed, 1 failed, 2 skipped, 1 info, 1 unchecked

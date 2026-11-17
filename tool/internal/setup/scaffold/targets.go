@@ -9,7 +9,7 @@ package scaffold
 var targets = struct {
 	PackageJSON string
 	SiteConfig  string
-	CairnConfig string
+	SiteRecord  string
 	Wrangler    string
 	Deploy      string
 	SiteFacts   string
@@ -20,7 +20,7 @@ var targets = struct {
 }{
 	PackageJSON:      "package.json",
 	SiteConfig:       "src/site/site.config.yaml",
-	CairnConfig:      "src/site/cairn.config.ts",
+	SiteRecord:       "cairn-site.json",
 	Wrangler:         "wrangler.jsonc",
 	Deploy:           ".github/workflows/deploy.yml",
 	SiteFacts:        "src/content/.cairn/site-facts.json",

@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/cairnsite"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
@@ -1322,13 +1323,28 @@ func (w *world) writeSite(ctx context.Context, cfg scaffold.Config) (scaffold.Re
 	return scaffold.Result{Dir: cfg.Dir, CommitSHA: gitRun(w.t, cfg.Dir, "rev-parse", "HEAD"), EngineVersion: w.template.Version}, nil
 }
 
-// siteConfig is the site file that carries the GitHub App identity.
-const siteConfig = "src/site/cairn.config.ts"
+// siteRecord is the site file that carries the GitHub App identity.
+const siteRecord = "cairn-site.json"
 
-// appLiteral is the createGithubApp call the scaffold's second pass writes for s.
-func appLiteral(s scaffold.Site) string {
-	return "createGithubApp({ owner: '" + s.Owner + "', repo: '" + s.Repo + "', branch: '" + s.DefaultBranch +
-		"', appId: '" + s.AppID + "', installationId: '" + s.InstallationID + "' })"
+// recordFor is the site record the scaffold's second pass writes for s.
+func recordFor(t *testing.T, s scaffold.Site) []byte {
+	t.Helper()
+	out, err := cairnsite.Encode(cairnsite.Record{
+		Kind:     "blog",
+		Scaffold: cairnsite.Scaffold{Engine: "0.0.0"},
+		Deploy: cairnsite.Deploy{
+			PublicOrigin: "https://" + s.Address,
+			EmailFrom:    s.EmailFrom,
+			GitHub: cairnsite.GitHub{
+				Owner: s.Owner, Repo: s.Repo, Branch: s.DefaultBranch,
+				AppID: s.AppID, InstallationID: s.InstallationID,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
 }
 
 // finalizeSite is the second pass in miniature: the database id and the App identity written
@@ -1347,12 +1363,8 @@ func (w *world) finalizeSite(ctx context.Context, cfg scaffold.FinalizeConfig) (
 	if err := os.WriteFile(filepath.Join(cfg.Dir, "wrangler.jsonc"), []byte(cfg.Site.DatabaseID+"\n"), 0o644); err != nil {
 		return "", err
 	}
-	config := filepath.Join(cfg.Dir, filepath.FromSlash(siteConfig))
-	if err := os.MkdirAll(filepath.Dir(config), 0o755); err != nil {
-		return "", err
-	}
-	src := "export const github = " + appLiteral(cfg.Site) + ";\n"
-	if err := os.WriteFile(config, []byte(src), 0o644); err != nil {
+	config := filepath.Join(cfg.Dir, filepath.FromSlash(siteRecord))
+	if err := os.WriteFile(config, recordFor(w.t, cfg.Site), 0o644); err != nil {
 		return "", err
 	}
 	gitRun(w.t, cfg.Dir, "add", "--all")

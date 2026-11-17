@@ -67,3 +67,29 @@ func TestFiveConfigCheckLabelsMatchRegistryTitle(t *testing.T) {
 		})
 	}
 }
+
+// TestConditionNoneCheckCarriesItsOwnText asserts a check that raises no registry condition
+// supplies the whole failure text itself, since text() has no registry entry to fall back on: a
+// title, a why, a fix, a docs anchor, and the severity its failure raises.
+func TestConditionNoneCheckCarriesItsOwnText(t *testing.T) {
+	for _, c := range checks {
+		if c.Condition != spine.ConditionNone {
+			continue
+		}
+		t.Run(c.ID, func(t *testing.T) {
+			text := c.text()
+			if text.Title == "" || text.Why == "" || text.Remediation == "" || text.DocsAnchor == "" {
+				t.Errorf("text() = %+v, want a title, why, fix, and docs anchor", text)
+			}
+			if got := c.label(); got != text.Title {
+				t.Errorf("label() = %q, want its own title %q", got, text.Title)
+			}
+			if got := c.Title(StatusFail); got != text.Title {
+				t.Errorf("Title(StatusFail) = %q, want %q", got, text.Title)
+			}
+		})
+	}
+	if configSiteRecord.text().Severity != spine.CriticalFailure {
+		t.Errorf("config.site-record severity = %v, want spine.CriticalFailure", configSiteRecord.text().Severity)
+	}
+}

@@ -10,11 +10,13 @@ import { checkDefinitions } from '../checks/check-definitions.mjs';
 
 const REPO = repoRoot(import.meta.url);
 
-/** A scratch root holding copies of `definitions/` and `schema/`. */
+/** A scratch root holding copies of `definitions/`, `schema/`, and the Go tool's embedded copy. */
 function scratchRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'cairn-definitions-'));
   cpSync(path.join(REPO, 'definitions'), path.join(root, 'definitions'), { recursive: true });
   cpSync(path.join(REPO, 'schema'), path.join(root, 'schema'), { recursive: true });
+  const goCopy = 'tool/internal/cairnsite/definitions';
+  cpSync(path.join(REPO, goCopy), path.join(root, goCopy), { recursive: true });
   return root;
 }
 
@@ -29,7 +31,7 @@ test('the committed schemas match definitions/', () => {
   assert.deepEqual(checkDefinitions(REPO), []);
 });
 
-test('a sixth kind reaches $defs.kindId in all three schemas', () => {
+test('a sixth kind reaches $defs.kindId in every target schema', () => {
   const root = scratchRoot();
   editJson(path.join(root, 'definitions/kinds.json'), (data) => {
     data.kinds.push({ id: 'gallery', label: 'Gallery', description: 'Pictures.', defaultFeatures: [] });
@@ -100,4 +102,41 @@ test('a feature listed in features.json is accepted by the theme schema and anot
   writeSchemas(root);
   assert.deepEqual(await keywordsIn(root, (m) => (m.features = ['test-feature'])), []);
   assert.deepEqual(await keywordsIn(root, (m) => (m.features = ['other'])), ['enum']);
+});
+
+test('a Go copy that differs from definitions/ fails the check and is named', () => {
+  const root = scratchRoot();
+  editJson(path.join(root, 'tool/internal/cairnsite/definitions/kinds.json'), (data) => {
+    data.kinds.pop();
+  });
+  const problems = checkDefinitions(root);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /^tool\/internal\/cairnsite\/definitions\/kinds\.json:/);
+});
+
+/** Compiles the committed site-record schema with Ajv 2020. */
+async function siteValidator() {
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js');
+  const schema = readJson(path.join(REPO, 'schema/cairn-site-1.schema.json'));
+  return new Ajv2020({ validateFormats: false, allErrors: true }).compile(schema);
+}
+
+const showcaseRecord = () => readJson(path.join(REPO, 'examples/showcase/cairn-site.json'));
+
+test('the site-record schema accepts the showcase record', async () => {
+  const validate = await siteValidator();
+  assert.equal(validate(showcaseRecord()), true, JSON.stringify(validate.errors));
+});
+
+test('the site-record schema refuses an unknown key, an unknown kind, and a missing origin', async () => {
+  const validate = await siteValidator();
+  const keywordsFor = (edit) => {
+    const record = showcaseRecord();
+    edit(record);
+    assert.equal(validate(record), false);
+    return validate.errors.map((error) => error.keyword);
+  };
+  assert.ok(keywordsFor((r) => (r.extra = 1)).includes('additionalProperties'));
+  assert.ok(keywordsFor((r) => (r.kind = 'nope')).includes('enum'));
+  assert.ok(keywordsFor((r) => delete r.deploy.publicOrigin).includes('required'));
 });

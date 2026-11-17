@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/cairnsite"
 	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
@@ -24,6 +25,9 @@ const (
 	// detailPublicOriginSkip is config.public-origin's skip detail: neither the wrangler vars
 	// nor the environment named an origin.
 	detailPublicOriginSkip = "no wrangler config found and PUBLIC_ORIGIN is not in the environment"
+	// tmplPublicOriginMismatch is config.public-origin's fail detail template when the wrangler
+	// var and the site record's deploy.publicOrigin name different origins.
+	tmplPublicOriginMismatch = "PUBLIC_ORIGIN in wrangler.jsonc is %s, but deploy.publicOrigin in cairn-site.json is %s"
 	// sourceWranglerVars and sourceEnvironment name the two origins Snapshot.PublicOrigin can
 	// resolve from, in the pass detail.
 	sourceWranglerVars = "wrangler vars"
@@ -54,6 +58,25 @@ func validatePublicOrigin(origin string) (failDetail string, ok bool) {
 	return "", true
 }
 
+// recordOriginMismatch compares the wrangler config's PUBLIC_ORIGIN var with the site record's
+// deploy.publicOrigin. It compares the var alone, never the environment fallback, and reports no
+// mismatch when either side is unset or the record is missing or invalid, which
+// config.site-record reports on its own.
+func recordOriginMismatch(s Snapshot, facts WranglerFacts) (detail string, mismatch bool) {
+	if !facts.HasPublicOrigin {
+		return "", false
+	}
+	body, ok, err := s.readFile(cairnsite.File)
+	if err != nil || !ok {
+		return "", false
+	}
+	record, err := cairnsite.Decode(body)
+	if err != nil || record.Deploy.PublicOrigin == facts.PublicOrigin {
+		return "", false
+	}
+	return fmt.Sprintf(tmplPublicOriginMismatch, facts.PublicOrigin, record.Deploy.PublicOrigin), true
+}
+
 // configPublicOrigin validates the site's public origin. Snapshot.PublicOrigin is resolved by the
 // command layer, wrangler vars taking precedence over the environment, before any check runs; this
 // check reads wrangler.jsonc/wrangler.toml itself only to learn whether a wrangler config was found
@@ -66,7 +89,7 @@ var configPublicOrigin = Check{
 	SkipTitle: "PUBLIC_ORIGIN",
 	Condition: spine.ConditionConfigPublicOriginInvalid,
 	run: func(s Snapshot) Result {
-		_, found, err := ReadWranglerConfig(s)
+		facts, found, err := ReadWranglerConfig(s)
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
@@ -78,6 +101,9 @@ var configPublicOrigin = Check{
 			return failResult(detailPublicOriginUnconfigured)
 		}
 		if detail, ok := validatePublicOrigin(origin.Value); !ok {
+			return failResult(detail)
+		}
+		if detail, mismatch := recordOriginMismatch(s, facts); mismatch {
 			return failResult(detail)
 		}
 		source := sourceEnvironment

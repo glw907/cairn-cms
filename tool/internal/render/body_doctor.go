@@ -150,8 +150,11 @@ func (t theme) doctorFailRows(cr doctor.CheckedResult, glyph string, role style.
 	col := t.DetailColumn(name, width)
 	out := style.MarkRow(t.Theme, glyph, role, name, sanitize(cr.Result.Detail), width)
 	// The lookup cannot miss: Title above has already panicked for a failing check whose
-	// condition has no registry entry.
-	text, _ := spine.TextFor(cr.Check.Condition)
+	// condition has no registry entry. A check with no condition carries its own text.
+	text := cr.Check.Text
+	if cr.Check.Condition != spine.ConditionNone {
+		text, _ = spine.TextFor(cr.Check.Condition)
+	}
 	out = append(out, style.ContinuationLine(t.Theme, style.RoleMuted, sanitize(text.Why), col, width)...)
 	return append(out, t.fixLines(text.Remediation, doctor.DocsURL(text.DocsAnchor), col, width)...)
 }

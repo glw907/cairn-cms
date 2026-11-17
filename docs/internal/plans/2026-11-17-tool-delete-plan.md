@@ -95,9 +95,9 @@ disposition for every hit; a hit outside it falls under standing answer 15.
 
 ## Skills the executor loads
 
-`pass-core` with `references/executor.md` and `references/advisor.md`, then `cairn-pass` and the
-repo's `cairn-running-passes`. `cairn-writing-engine-code` before T1 and for the `src/lib`
-comments. `cairn-writing-docs` and `writing-voice` before the note, the changelog entry, and
+`pass-core` with `references/executor.md`, `references/round-run.md`, and `references/advisor.md`,
+then `cairn-pass` and the repo's `cairn-running-passes`. `cairn-writing-engine-code` before T1 and
+for the `src/lib` comments, and `standards:ts-conventions` for every comment reworded. `cairn-writing-docs` and `writing-voice` before the note, the changelog entry, and
 STATUS. `standards:log-issue` for anything found beyond the pass. `approval-packet` at the
 hand-over.
 

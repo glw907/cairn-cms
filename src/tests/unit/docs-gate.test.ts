@@ -27,6 +27,7 @@ describe('buildSteps', () => {
     'check:editor-quotes',
     'check:readiness',
     'check:tool-conditions',
+    'check:site-record-page',
     'check:options',
     'check:tiers',
     'check:tellgrader',

@@ -29,6 +29,7 @@ The following table routes you by what is happening now.
 
 - [Set up a site with an agent](./set-up-with-an-agent.md) hands setup to a coding agent, from flags and a plan file.
 - [Setup reference](./setup-reference.md) lists every flag, derived name, step, event, and exit code of `cairn new`, generated from the code.
+- [Site record reference](./site-record.md) lists every field of `cairn-site.json`, the file that holds the facts a site's setup recorded.
 - [Deploys](./deploys.md) explains how the site deploys and how to move it to Cloudflare's own build service.
 - [Suggested plugins](./suggested-plugins.md) lists the Claude Code plugins a new site offers and how to install them.
 - [Rotate the GitHub App key](./rotate-the-github-app-key.md) replaces the key your site signs its commits with.

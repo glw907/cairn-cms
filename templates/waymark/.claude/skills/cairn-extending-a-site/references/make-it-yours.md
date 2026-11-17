@@ -5,8 +5,9 @@ then run `npx cairn-manifest` and `npm run check`.
 
 1. **Name and description.** Set `siteName` and `description` in `src/site/site.config.yaml`.
    The home page intro, the feed, and the page metadata read `description`.
-2. **Public origin.** Set `publicOrigin` in `src/site/cairn.config.ts` to the address the site
-   will live at, so the feed and the sitemap carry the right address.
+2. **Public origin.** Set `deploy.publicOrigin` in `cairn-site.json` to the address the site
+   will live at, so the feed and the sitemap carry the right address, and set `PUBLIC_ORIGIN` in
+   `wrangler.jsonc` to the same host.
 3. **Sample posts.** Delete the files under `src/content/posts/` and write your own. Each post
    names an `author`; the sample ones point at the `author` page.
 4. **Sample pages.** Rewrite `src/content/pages/about.md`, `author.md`, and `contact.md`, and put your

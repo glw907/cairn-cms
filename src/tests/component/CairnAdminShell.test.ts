@@ -287,20 +287,16 @@ describe('CairnAdminShell', () => {
     expect(dialogLabel).not.toBe(input.getAttribute('placeholder'));
   });
 
-  it('keys the palette results on a unique command label', async () => {
-    // The each block keys on cmd.label rather than the index, so the population (nav destinations
-    // plus View site and theme) must carry no duplicate label, or two commands would collide on one
-    // key.
-    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+  it('renders a site nav entry whose href duplicates a built-in command', async () => {
+    // A site entry at '/' shares an href with the built-in View the live site command, so the
+    // palette keys by index and both rows render.
+    const layout = flatLayoutWith([{ label: 'Home', icon: 'inbox', href: '/' }]);
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
-    // role="option" lives on the row's real <a>/<button>, not the wrapping <li> (a listbox option
-    // is children-presentational, so a focusable descendant under it is invalid).
-    const labels = Array.from(dialog.querySelectorAll('[role="option"]')).map(
-      (el) => el.textContent?.trim() ?? '',
-    );
-    expect(labels.length).toBeGreaterThan(0);
-    expect(new Set(labels).size).toBe(labels.length);
+    const labels = Array.from(dialog.querySelectorAll('[role="option"]')).map((el) => el.textContent?.trim() ?? '');
+    expect(labels.some((l) => l.includes('Home'))).toBe(true);
+    expect(labels.some((l) => l.includes('View the live site'))).toBe(true);
   });
 
   it('exposes the palette input as a combobox pointed at its listbox', async () => {

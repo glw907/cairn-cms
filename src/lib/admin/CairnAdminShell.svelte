@@ -989,7 +989,8 @@ a screen reader announces it once.
             {#if paletteResults.length === 0}
               <li role="presentation" class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</li>
             {:else}
-              {#each paletteResults as cmd, i (cmd.href ?? cmd.label)}
+              <!-- The list is derived and stateless, so index keys are safe and href and label can both repeat. -->
+              {#each paletteResults as cmd, i (i)}
                 <li role="presentation">
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,

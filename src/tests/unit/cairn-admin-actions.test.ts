@@ -19,6 +19,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'Test Site',
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
     concepts: [
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
@@ -547,21 +548,56 @@ describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', 
 });
 
 describe('save on the nav view', () => {
-  it('delegates to navSaveAction when a navMenu is configured', async () => {
+  const menus = [
+    { menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
+    { menuName: 'actions', label: 'Action links', maxDepth: 1 },
+  ];
+  const owner = { email: 'own@t', displayName: 'Own', role: 'owner' as const, capability: 'owner' as const };
+
+  it('delegates to navSaveAction for the menu in the path and redirects to that menu', async () => {
     // navSaveAction is a head-guarded atomic commit, so the stateful double seeds main with the YAML and
     // answers the ref read, the head-guarded commit sequence, and the write.
-    const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary: []\n' } });
+    const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary: []\n  actions: []\n' } });
     gh.install();
     const rt = runtime();
-    rt.navMenu = { menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+    rt.navMenus = menus;
     const admin = createCairnAdmin({ runtime: rt, ...deps });
-    const event = actionEvent('/admin/nav', { form: { tree: JSON.stringify([{ label: 'Home', url: '/' }]) } });
-    await expectRedirect(admin.actions.save(event), '/admin/nav?saved=1');
+    const form = { tree: JSON.stringify([{ label: 'Home', url: '/' }]) };
+    await expectRedirect(admin.actions.save(actionEvent('/admin/nav/primary', { form })), '/admin/nav/primary?saved=1');
+    await expectRedirect(admin.actions.save(actionEvent('/admin/nav/actions', { form, editor: owner })), '/admin/nav/actions?saved=1');
+  });
+
+  it('lets an owner save under the same owners-only access map', async () => {
+    new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  actions: []\n' } }).install();
+    const rt = runtime();
+    rt.navMenus = menus;
+    rt.access = { nav: ['owner'] };
+    const admin = createCairnAdmin({ runtime: rt, ...deps });
+    const event = actionEvent('/admin/nav/actions', { form: { tree: '[]' }, editor: owner });
+    await expectRedirect(admin.actions.save(event), '/admin/nav/actions?saved=1');
+  });
+
+  it('403s an editor when the access map names nav for owners only', async () => {
+    const rt = runtime();
+    rt.navMenus = menus;
+    rt.access = { nav: ['owner'] };
+    const admin = createCairnAdmin({ runtime: rt, ...deps });
+    const event = actionEvent('/admin/nav/actions', { form: { tree: '[]' } });
+    await expect(admin.actions.save(event)).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('403s an editor saving primary under the same owners-only access map', async () => {
+    const rt = runtime();
+    rt.navMenus = menus;
+    rt.access = { nav: ['owner'] };
+    const admin = createCairnAdmin({ runtime: rt, ...deps });
+    const event = actionEvent('/admin/nav/primary', { form: { tree: '[]' } });
+    await expect(admin.actions.save(event)).rejects.toMatchObject({ status: 403 });
   });
 
   it('404s when the runtime configures no navMenu', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
-    const event = actionEvent('/admin/nav', { form: { tree: '[]' } });
+    const event = actionEvent('/admin/nav/primary', { form: { tree: '[]' } });
     await expect(admin.actions.save(event)).rejects.toMatchObject({ status: 404 });
   });
 });
@@ -632,7 +668,7 @@ describe('settings view', () => {
   function tidyRuntime(): CairnRuntime {
     return {
       ...runtime(),
-      navMenu: { menuName: 'primary', label: 'Nav', maxDepth: 2 },
+      navMenus: [{ menuName: 'primary', label: 'Nav', maxDepth: 2 }],
       tidy: { enabled: true, model: 'claude-sonnet-5' },
     };
   }
@@ -881,7 +917,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     // No navMenu configured, so the nav branch of save's delegate throws error(404) itself.
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
-    const event = actionEvent('/admin/nav', { form: { tree: '[]' } });
+    const event = actionEvent('/admin/nav/primary', { form: { tree: '[]' } });
     await expect(admin.actions.save(event)).rejects.toMatchObject({ status: 404 });
     expect(errorSpy).not.toHaveBeenCalled();
   });

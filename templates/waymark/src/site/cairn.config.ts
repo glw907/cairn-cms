@@ -180,11 +180,13 @@ export const cairn = defineAdapter({
     islands: siteIslands,
   },
   editor: {
-    nav: {
-      menuName: 'primary',
-      label: 'Navigation',
-      maxDepth: 2,
-    },
+    // The admin edits each menu listed here. A theme reads `actions` when it renders
+    // call-to-action links (Pennant's header button); Waymark doesn't, so with Waymark the
+    // sidebar lists a menu the theme ignores. Drop the entry if your theme never reads it.
+    nav: [
+      { menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+      { menuName: 'actions', label: 'Action links', maxDepth: 1 },
+    ],
     // The site's whole declared sidebar, the organize-your-admin-nav guide's worked shape: a
     // Content group for what an editor authors and owns, then a trailing Site group for site
     // management, inbound data, configuration, and roster. The custom and engine doors both place

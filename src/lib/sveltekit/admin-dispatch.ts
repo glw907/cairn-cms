@@ -16,7 +16,7 @@ export type AdminView =
   | { view: 'edit'; concept: ConceptDescriptor; id: string }
   | { view: 'history'; concept: ConceptDescriptor; id: string }
   | { view: 'editors' }
-  | { view: 'nav' }
+  | { view: 'nav'; menu: string }
   | { view: 'media' }
   | { view: 'settings' }
   | { view: 'vocabulary' }
@@ -60,7 +60,6 @@ export function parseAdminPath(
     const [head] = segments;
     if (head === 'login') return { view: 'login' };
     if (head === 'editors') return { view: 'editors' };
-    if (head === 'nav') return { view: 'nav' };
     // media is a separate view, a peer of editors and nav, so it is decided here before the
     // reserved-no-view check. /admin/media/<anything> 404s because media is in the reserved set,
     // which is the correct shape.
@@ -82,6 +81,9 @@ export function parseAdminPath(
   if (segments.length === 2) {
     const [head, tail] = segments;
     if (head === 'auth') return tail === 'confirm' ? { view: 'confirm' } : null;
+    // Each declared menu has its own screen at /admin/nav/<name>. The segment is already decoded
+    // above; the caller checks it against the declared menus, and bare /admin/nav is null.
+    if (head === 'nav') return { view: 'nav', menu: tail };
     if (RESERVED_SEGMENTS.has(head)) return null;
     const concept = findConcept(concepts, head);
     if (!concept || !isValidId(tail)) return null;

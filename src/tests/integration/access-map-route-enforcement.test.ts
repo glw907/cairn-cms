@@ -59,6 +59,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'Access Site',
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
     concepts: [concept('posts'), concept('pages')],
     backend: createGithubApp(REPO),
     email: { from: 'cms@test' },

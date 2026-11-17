@@ -362,7 +362,7 @@ export function createContentRoutesContext(config: ContentRoutesConfig): Content
   if (runtime.navLayout) {
     validateNavLayout(runtime.navLayout, {
       conceptIds: runtime.concepts.map((concept) => concept.id),
-      navMenuConfigured: runtime.navMenu !== undefined,
+      navMenuCount: runtime.navMenus.length,
       roleNames: Object.keys(runtime.roles ?? DEFAULT_ROLES),
     });
   }

@@ -52,7 +52,7 @@ function routesFor(editor?: CairnAdapter['editor']) {
   const rt = composed(editor);
   const runtime = baseRuntime({
     concepts: [],
-    navMenu: rt.navMenu,
+    navMenus: rt.navMenus,
     siteConfigPath: rt.siteConfigPath,
     manifestPath: MANIFEST_PATH,
     tidy: { enabled: true, model: 'claude-sonnet-5' },

@@ -64,7 +64,8 @@ title the menu's declared label; the sortable-list card below stays untouched.
   // It suppresses the Svelte compiler warning that `data` (a prop) is referenced outside a
   // reactive context. The form submits through `use:enhance`, so a refused save answers in place
   // and `rows` keeps the working (drag-reordered, edited) tree. Only a save that goes through
-  // loads a fresh document, and `rows` then reseeds from `data.tree`.
+  // loads a fresh document, and `rows` then reseeds from `data.tree`. Moving to another menu
+  // remounts this component, because CairnAdmin keys it by the menu name.
   let rows = $state<Row[]>(untrack(() => flatten(data.tree, 0, [])));
   // depth is 0-based internally; maxDepth in the config is 1-based (1 = flat, 2 = one nesting level)
   const maxDepthIndex = $derived(data.menu.maxDepth - 1);

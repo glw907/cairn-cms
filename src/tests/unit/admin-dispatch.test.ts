@@ -18,8 +18,10 @@ describe('parseAdminPath', () => {
     ['/admin/auth/confirm/', { view: 'confirm' }],
     ['/admin/editors', { view: 'editors' }],
     ['/admin/editors/', { view: 'editors' }],
-    ['/admin/nav', { view: 'nav' }],
-    ['/admin/nav/', { view: 'nav' }],
+    ['/admin/nav/primary', { view: 'nav', menu: 'primary' }],
+    ['/admin/nav/primary/', { view: 'nav', menu: 'primary' }],
+    // The segment is decoded once, so an encoded percent stays a literal `%` for the caller to refuse.
+    ['/admin/nav/%25', { view: 'nav', menu: '%' }],
     ['/admin/media', { view: 'media' }],
     ['/admin/media/', { view: 'media' }],
   ];
@@ -111,7 +113,9 @@ describe('parseAdminPath', () => {
     '/admin/auth/other',
     '/admin/login/extra',
     '/admin/editors/alice',
-    '/admin/nav/main',
+    '/admin/nav',
+    '/admin/nav/',
+    '/admin/nav/main/extra',
     '/admin/unknown/some-id',
     // Three or more segments.
     '/admin/posts/2026-01-01-hello/extra',

@@ -50,6 +50,7 @@ export function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     media: { enabled: false },
     vocabulary: [],
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
     ...overrides,
   };
 }

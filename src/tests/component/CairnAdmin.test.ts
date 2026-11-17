@@ -252,6 +252,7 @@ describe('form-action contract', () => {
       email: { from: 'cms@test' },
       manifestPath: 'src/content/.cairn/index.json',
       mediaManifestPath: 'src/content/.cairn/media.json',
+      navMenus: [],
       media: { enabled: false },
     vocabulary: [],
     };

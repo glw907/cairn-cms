@@ -501,6 +501,13 @@ a screen reader announces it once.
   const crumbs = $derived.by<Crumb[]>(() => {
     const segs = (shell?.pathname ?? '').split('/').filter(Boolean); // ['admin', concept, id?, 'history'?]
     if (segs.length < 2 || segs[0] !== 'admin') return [];
+    // A menu editor lives at /admin/nav/<menu>: one crumb, labeled by that menu's sidebar entry, so
+    // the trail never links the bare /admin/nav (which 404s) and the tab title reads the menu's label.
+    if (segs[1] === 'nav' && segs[2]) {
+      const href = `/admin/nav/${segs[2]}`;
+      const entry = paletteNavItems.find((item) => item.href === href);
+      return [{ label: entry?.label ?? decodeURIComponent(segs[2]) }];
+    }
     const conceptId = segs[1];
     const concept = shell?.concepts.find((c) => c.id === conceptId);
     // A custom screen carries no concept, so resolve its href to the developer's nav label too; the
@@ -982,7 +989,8 @@ a screen reader announces it once.
             {#if paletteResults.length === 0}
               <li role="presentation" class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</li>
             {:else}
-              {#each paletteResults as cmd, i (cmd.label)}
+              <!-- The list is derived and stateless, so index keys are safe and href and label can both repeat. -->
+              {#each paletteResults as cmd, i (i)}
                 <li role="presentation">
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,

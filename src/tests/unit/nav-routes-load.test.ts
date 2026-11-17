@@ -5,7 +5,7 @@ import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-h
 import { testEvent } from '../helpers/test-event.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
-function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
+function runtime(navMenus: CairnRuntime['navMenus']): CairnRuntime {
   return baseRuntime({
     concepts: [
       postsConcept(),
@@ -16,7 +16,7 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
         validate: () => ({ ok: true as const, data: {} }),
       },
     ],
-    navMenu,
+    navMenus,
   });
 }
 
@@ -24,7 +24,9 @@ function loadEvent(search = '') {
   return contentEvent({ url: `https://t.example/admin/nav${search}`, editor: { email: 'e@t', displayName: 'E', role: 'editor', capability: 'editor' } });
 }
 
-const NAV = { menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+const NAV = [{ menuName: 'primary', label: 'Primary nav', maxDepth: 2 }];
+
+const TWO = [...NAV, { menuName: 'actions', label: 'Action links', maxDepth: 1 }];
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -40,7 +42,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes({ runtime: runtime(NAV) });
-    const data = await routes.navLoad(loadEvent());
+    const data = await routes.navLoad(loadEvent(), 'primary');
     expect(data.menu).toEqual({ name: 'primary', label: 'Primary nav', maxDepth: 2 });
     expect(data.tree).toEqual([{ label: 'Home', url: '/' }]);
     expect(data.pages).toEqual([{ label: 'about', url: '/about' }]);
@@ -53,7 +55,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes({ runtime: runtime(NAV) });
-    const data = await routes.navLoad(loadEvent());
+    const data = await routes.navLoad(loadEvent(), 'primary');
     expect(data.tree).toEqual([]);
   });
 
@@ -64,7 +66,7 @@ describe('navLoad', () => {
     }));
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const routes = createNavRoutes({ runtime: runtime(NAV) });
-    await routes.navLoad(loadEvent());
+    await routes.navLoad(loadEvent(), 'primary');
     const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; scope?: string; path?: string });
     const missing = records.filter((r) => r.event === 'config.missing');
     expect(missing).toHaveLength(1);
@@ -77,7 +79,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes({ runtime: runtime(NAV) });
-    const data = await routes.navLoad(loadEvent('?error=You+have+been+signed+out'));
+    const data = await routes.navLoad(loadEvent('?error=You+have+been+signed+out'), 'primary');
     expect(data).not.toHaveProperty('error');
   });
 
@@ -89,7 +91,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes({ runtime: runtime(NAV) });
-    const data = await routes.navLoad(loadEvent());
+    const data = await routes.navLoad(loadEvent(), 'primary');
     expect(data.tree).toEqual([]);
   });
 
@@ -101,7 +103,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes({ runtime: runtime(NAV) });
-    await routes.navLoad(loadEvent());
+    await routes.navLoad(loadEvent(), 'primary');
     const records = errorSpy.mock.calls.map(
       (c) => c[0] as { event?: string; conditionId?: string; scope?: string; error?: string },
     );
@@ -123,7 +125,7 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes({ runtime: runtime(NAV) });
-    await routes.navLoad(loadEvent());
+    await routes.navLoad(loadEvent(), 'primary');
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
@@ -133,13 +135,13 @@ describe('navLoad', () => {
       return new Response('Not Found', { status: 404 });
     }));
     const routes = createNavRoutes({ runtime: runtime(NAV) });
-    const data = await routes.navLoad(loadEvent('?saved=1'));
+    const data = await routes.navLoad(loadEvent('?saved=1'), 'primary');
     expect(data.saved).toBe(true);
   });
 
   it('404s when no navMenu is configured', async () => {
-    const routes = createNavRoutes({ runtime: runtime(undefined) });
-    await expect(routes.navLoad(loadEvent())).rejects.toMatchObject({ status: 404 });
+    const routes = createNavRoutes({ runtime: runtime([]) });
+    await expect(routes.navLoad(loadEvent(), 'primary')).rejects.toMatchObject({ status: 404 });
   });
 
   it('refuses a none-capability session with 403 (the nav editor is an engine admin-mutation surface)', async () => {
@@ -148,6 +150,38 @@ describe('navLoad', () => {
       url: 'https://t.example/admin/nav',
       locals: { cairnEditor: { email: 'inst@t', displayName: 'Inst', role: 'staff', capability: 'none' } },
     });
-    await expect(routes.navLoad(event)).rejects.toMatchObject({ status: 403 });
+    await expect(routes.navLoad(event, 'primary')).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('loads each declared menu with its own tree and 404s an undeclared name', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('site.config.yaml')) {
+        return new Response(
+          'siteName: S\nmenus:\n  primary:\n    - label: Home\n      url: /\n  actions:\n    - label: Join\n      url: /join\n',
+          { status: 200 },
+        );
+      }
+      if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
+      return new Response('Not Found', { status: 404 });
+    }));
+    const routes = createNavRoutes({ runtime: runtime(TWO) });
+    const primary = await routes.navLoad(loadEvent(), 'primary');
+    const actions = await routes.navLoad(loadEvent(), 'actions');
+    expect(primary.menu.name).toBe('primary');
+    expect(primary.tree).toEqual([{ label: 'Home', url: '/' }]);
+    expect(actions.menu).toEqual({ name: 'actions', label: 'Action links', maxDepth: 1 });
+    expect(actions.tree).toEqual([{ label: 'Join', url: '/join' }]);
+    await expect(routes.navLoad(loadEvent(), 'nope')).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('refuses a none-capability session with 403 for both declared names and an undeclared one', async () => {
+    const routes = createNavRoutes({ runtime: runtime(TWO) });
+    const event = testEvent({
+      url: 'https://t.example/admin/nav/actions',
+      locals: { cairnEditor: { email: 'inst@t', displayName: 'Inst', role: 'staff', capability: 'none' } },
+    });
+    for (const name of ['primary', 'actions', 'nope']) {
+      await expect(routes.navLoad(event, name)).rejects.toMatchObject({ status: 403 });
+    }
   });
 });

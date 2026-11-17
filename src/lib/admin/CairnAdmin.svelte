@@ -105,7 +105,12 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 {:else if data.view === 'editors'}
   <ManageEditors data={data.page} {form} />
 {:else if data.view === 'nav'}
-  <NavTree data={data.page} form={form as ContentFormFailure | null} />
+  <!-- The single mount reuses this component across /admin/nav/primary -> /admin/nav/actions,
+       and NavTree seeds its rows once, so the menu name keys it: crossing menus remounts it and
+       stops one menu's rows saving into another. -->
+  {#key data.page.menu.name}
+    <NavTree data={data.page} form={form as ContentFormFailure | null} />
+  {/key}
 {:else if data.view === 'media'}
   <CairnMediaLibrary data={data.page} form={form as ContentFormFailure | null} />
 {:else if data.view === 'settings'}

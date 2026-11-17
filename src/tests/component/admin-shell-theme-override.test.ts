@@ -21,7 +21,7 @@ function data(theme: 'cairn-admin' | 'cairn-admin-dark' = 'cairn-admin') {
     siteName: 'Test Site',
     user: editor,
     concepts,
-    nav: resolveNavLayout({ layout: undefined, concepts, navMenuLabel: null, editor }),
+    nav: resolveNavLayout({ layout: undefined, concepts, navMenus: [], editor }),
     pathname: '/admin/posts',
     theme,
     collapsedNav: null as string[] | null,

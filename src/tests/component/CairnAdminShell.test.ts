@@ -38,7 +38,7 @@ function data(
     siteName: 'Test Site',
     user: editor,
     concepts,
-    nav: resolveNavLayout({ layout: undefined, concepts, navMenuLabel: navLabel, editor }),
+    nav: resolveNavLayout({ layout: undefined, concepts, navMenus: navLabel === null ? [] : [{ name: 'primary', label: navLabel }], editor }),
     pathname,
     theme: 'cairn-admin' as const,
     collapsedNav: null as string[] | null,
@@ -86,6 +86,8 @@ function dataWithLayout(
     capability?: 'owner' | 'editor' | 'none';
     role?: 'owner' | 'editor';
     navMenuLabel?: string | null;
+    /** Several declared menus; wins over `navMenuLabel`. */
+    navMenus?: { name: string; label: string }[];
     concepts?: { id: string; label: string }[];
     /**
      * Simulates the persisted `cairn-admin-nav-collapsed` cookie's decoded set: `null` (the
@@ -107,7 +109,7 @@ function dataWithLayout(
     siteName: 'Test Site',
     user: editor,
     concepts: capability === 'none' ? [] : concepts,
-    nav: resolveNavLayout({ layout, concepts, navMenuLabel, editor }),
+    nav: resolveNavLayout({ layout, concepts, navMenus: overrides.navMenus ?? (navMenuLabel === null ? [] : [{ name: 'primary', label: navMenuLabel }]), editor }),
     pathname: overrides.pathname ?? '/admin/posts',
     theme: 'cairn-admin' as const,
     collapsedNav: overrides.collapsedNav ?? null,
@@ -285,20 +287,16 @@ describe('CairnAdminShell', () => {
     expect(dialogLabel).not.toBe(input.getAttribute('placeholder'));
   });
 
-  it('keys the palette results on a unique command label', async () => {
-    // The each block keys on cmd.label rather than the index, so the population (nav destinations
-    // plus View site and theme) must carry no duplicate label, or two commands would collide on one
-    // key.
-    const screen = await render(CairnAdminShell, { data: data(true), children: child });
+  it('renders a site nav entry whose href duplicates a built-in command', async () => {
+    // A site entry at '/' shares an href with the built-in View the live site command, so the
+    // palette keys by index and both rows render.
+    const layout = flatLayoutWith([{ label: 'Home', icon: 'inbox', href: '/' }]);
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     const dialog = document.querySelector<HTMLDialogElement>('dialog.modal')!;
-    // role="option" lives on the row's real <a>/<button>, not the wrapping <li> (a listbox option
-    // is children-presentational, so a focusable descendant under it is invalid).
-    const labels = Array.from(dialog.querySelectorAll('[role="option"]')).map(
-      (el) => el.textContent?.trim() ?? '',
-    );
-    expect(labels.length).toBeGreaterThan(0);
-    expect(new Set(labels).size).toBe(labels.length);
+    const labels = Array.from(dialog.querySelectorAll('[role="option"]')).map((el) => el.textContent?.trim() ?? '');
+    expect(labels.some((l) => l.includes('Home'))).toBe(true);
+    expect(labels.some((l) => l.includes('View the live site'))).toBe(true);
   });
 
   it('exposes the palette input as a combobox pointed at its listbox', async () => {
@@ -476,6 +474,27 @@ describe('CairnAdminShell', () => {
   it('shows the owner role in the user menu', async () => {
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText(/owner/i)).toBeInTheDocument();
+  });
+
+  it('titles a menu editor by its menu label and marks only its own entry active', async () => {
+    const navMenus = [
+      { name: 'primary', label: 'Navigation' },
+      { name: 'actions', label: 'Action links' },
+    ];
+    const layout = flatLayoutWith([], { navMenuLabel: 'Navigation' });
+    const screen = await render(CairnAdminShell, {
+      data: dataWithLayout(layout, { pathname: '/admin/nav/actions', navMenus }),
+      children: child,
+    });
+    expect(document.title).toBe('Action links · Test Site');
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    const actionsLink = sidebar.getByRole('link', { name: 'Action links' });
+    await expect.element(actionsLink).toHaveAttribute('href', '/admin/nav/actions');
+    await expect.element(actionsLink).toHaveAttribute('aria-current', 'page');
+    const primaryLink = sidebar.getByRole('link', { name: 'Navigation' });
+    await expect.element(primaryLink).toHaveAttribute('href', '/admin/nav/primary');
+    await expect.element(primaryLink).not.toHaveAttribute('aria-current');
+    expect(screen.container.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull();
   });
 
   it('derives breadcrumbs from the path inside an entry route', async () => {

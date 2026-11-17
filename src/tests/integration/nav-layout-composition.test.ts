@@ -58,6 +58,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'Team Site',
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
     concepts: [
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
@@ -156,6 +157,7 @@ function accessRuntime(): CairnRuntime {
   return {
     siteName: 'Access Site',
     siteConfigPath: 'src/lib/site.config.yaml',
+    navMenus: [],
     concepts: [
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',

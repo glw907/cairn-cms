@@ -85,6 +85,10 @@ func TestDecodeRefusals(t *testing.T) {
 		{"unknown top-level key", func(s string) string { return strings.Replace(s, `"kind"`, `"extra": 1, "kind"`, 1) }, `unknown field "extra"`},
 		{"unknown kind", func(s string) string { return strings.Replace(s, `"blog"`, `"nope"`, 1) }, `cairn-site.json: kind "nope" is not one of blog, portfolio, docs, landing, organization`},
 		{"missing origin", func(s string) string { return strings.Replace(s, `"publicOrigin": "https://showcase.test",`, ``, 1) }, `cairn-site.json: deploy.publicOrigin is required`},
+		{"null origin", func(s string) string {
+			return strings.Replace(s, `"publicOrigin": "https://showcase.test"`, `"publicOrigin": null`, 1)
+		}, `cairn-site.json: deploy.publicOrigin is required`},
+		{"null features", func(s string) string { return strings.Replace(s, `"features": []`, `"features": null`, 1) }, `cairn-site.json: features is required`},
 		{"missing engine", func(s string) string { return strings.Replace(s, `"engine": "0.99.0-rc.4"`, ``, 1) }, `cairn-site.json: scaffold.engine is required`},
 		{"missing installation id", func(s string) string { return strings.Replace(s, `"installationId": "2"`, `"x": "2"`, 1) }, `cairn-site.json: deploy.github.installationId is required`},
 		{"unknown feature", func(s string) string { return strings.Replace(s, `"features": []`, `"features": ["comments"]`, 1) }, `cairn-site.json: feature "comments" is not one of (none yet)`},

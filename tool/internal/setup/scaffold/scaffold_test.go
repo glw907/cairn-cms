@@ -233,6 +233,7 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 	site := testSite()
 	early := site
 	early.DatabaseID = ""
+	early.AppID, early.InstallationID = "111", "222"
 	first, err := Write(t.Context(), Config{Template: tpl, Site: early, Commit: testCommit(), Env: testEnv(), Dir: dir})
 	if err != nil {
 		t.Fatalf("Write: %v", err)
@@ -244,6 +245,14 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 		t.Errorf("the first pass did not name the package:\n%s", got)
 	}
 
+	earlyRec, err := cairnsite.Decode([]byte(readFile(t, dir, targets.SiteRecord)))
+	if err != nil {
+		t.Fatalf("decode the first-pass record: %v", err)
+	}
+	if g := earlyRec.Deploy.GitHub; g.AppID != "111" || g.InstallationID != "222" {
+		t.Errorf("the first pass wrote App ids %q and %q, want the early 111 and 222", g.AppID, g.InstallationID)
+	}
+
 	fin := FinalizeConfig{Dir: first.Dir, Base: first.CommitSHA, Site: site, Commit: testCommit(), Env: testEnv()}
 	second, err := Finalize(t.Context(), fin)
 	if err != nil {
@@ -252,8 +261,12 @@ func TestWriteThenFinalizeSplitsTheSettingsIntoASecondCommit(t *testing.T) {
 	if got := readFile(t, dir, targets.Wrangler); !strings.Contains(got, `"database_id": "`+site.DatabaseID+`"`) {
 		t.Errorf("the second pass did not write the database id:\n%s", got)
 	}
-	if got := readFile(t, dir, targets.SiteRecord); !strings.Contains(got, `"branch": "trunk"`) {
-		t.Errorf("the second pass did not write the App identity into the record:\n%s", got)
+	rec, err := cairnsite.Decode([]byte(readFile(t, dir, targets.SiteRecord)))
+	if err != nil {
+		t.Fatalf("decode the second-pass record: %v", err)
+	}
+	if rec.Deploy.GitHub.AppID != site.AppID || rec.Deploy.GitHub.InstallationID != site.InstallationID {
+		t.Errorf("the second pass did not write the App identity into the record: got %+v, want ids %q and %q", rec.Deploy.GitHub, site.AppID, site.InstallationID)
 	}
 
 	again, err := Finalize(t.Context(), fin)

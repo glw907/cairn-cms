@@ -106,10 +106,10 @@ func Encode(r Record) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// present reports whether the dotted path exists in a decoded JSON object.
+// present reports whether the dotted path holds a non-null value in a decoded JSON object.
 func present(node map[string]any, path []string) bool {
-	child, ok := node[path[0]]
-	if !ok {
+	child := node[path[0]]
+	if child == nil {
 		return false
 	}
 	if len(path) == 1 {

@@ -700,7 +700,15 @@ func checkWrittenSite(t *testing.T, r *e2eRun, site string) {
 		t.Errorf("the keyring write log holds no setup/ entry: %v", writes)
 	}
 	for _, w := range writes {
-		if w.Value != "" && bytes.Contains(recordBytes, []byte(w.Value)) {
+		if w.Value == "" {
+			continue
+		}
+		quoted, err := json.Marshal(w.Value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		escaped := quoted[1 : len(quoted)-1]
+		if bytes.Contains(recordBytes, []byte(w.Value)) || bytes.Contains(recordBytes, escaped) {
 			t.Errorf("the record holds the value stored as %s", w.Name)
 		}
 	}

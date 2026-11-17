@@ -30,20 +30,18 @@ export function writeMarker(siteDir, release) {
   writeFileSync(file, text.replace(placeholder, `<meta name="${MARKER_NAME}" content="${release}" />\n    ${placeholder}`));
 }
 
-/** The address the showcase's `cairn.config.ts` ships, which no demo may leave in a page. */
-const SHOWCASE_ORIGIN = "'https://showcase.test'";
-
 /**
- * Replace the showcase's public origin in a site's `src/site/cairn.config.ts`, so the canonical
- * links, feeds, sitemap, and `robots.txt` of the build name the demo's own address.
+ * Set the public origin in a site's `cairn-site.json`, so the canonical links, feeds, sitemap, and
+ * `robots.txt` of the build name the demo's own address.
  * @param {string} siteDir
  * @param {string} origin the demo's origin, with no path
  */
 export function writeOrigin(siteDir, origin) {
-  const file = path.join(siteDir, 'src/site/cairn.config.ts');
-  const text = readFileSync(file, 'utf8');
-  if (!text.includes(SHOWCASE_ORIGIN)) throw new Error(`demo: ${file} has no ${SHOWCASE_ORIGIN} to replace with the demo origin`);
-  writeFileSync(file, text.replace(SHOWCASE_ORIGIN, JSON.stringify(origin)));
+  const file = path.join(siteDir, 'cairn-site.json');
+  const record = JSON.parse(readFileSync(file, 'utf8'));
+  if (typeof record.deploy?.publicOrigin !== 'string') throw new Error(`demo: ${file} has no deploy.publicOrigin to set to the demo origin`);
+  record.deploy.publicOrigin = origin;
+  writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
 }
 
 /**

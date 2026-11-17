@@ -1,12 +1,39 @@
 import adapter from '@sveltejs/adapter-cloudflare';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { defineConfig } from 'vite';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { defineConfig, type Plugin } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { cairnManifest } from '@glw907/cairn-cms/vite';
+import { checkSiteRecord } from './src/site/record-check.ts';
+
+/**
+ * Fails the build with one line when `cairn-site.json` is missing or breaks the record's rules.
+ * It runs first and synchronously, so the line prints before `cairn.config.ts` imports the record.
+ */
+function siteRecord(): Plugin {
+  return {
+    name: 'site-record',
+    buildStart: {
+      order: 'pre',
+      sequential: true,
+      handler() {
+        const engine = dirname(createRequire(import.meta.url).resolve('@glw907/cairn-cms/package.json'));
+        const problem = checkSiteRecord(
+          fileURLToPath(new URL('./cairn-site.json', import.meta.url)),
+          join(engine, 'schema/cairn-site-1.schema.json'),
+        );
+        if (problem !== undefined) throw new Error(problem);
+      },
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
+    siteRecord(),
     tailwindcss(),
     // The whole SvelteKit config lives here, so the site carries no svelte.config.js. The
     // #chassis, #site, #theme, and #lib specifiers are subpath imports declared in package.json:

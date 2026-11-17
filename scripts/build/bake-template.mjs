@@ -50,7 +50,7 @@ in without an email loop, and nothing you write there touches GitHub or sends re
 Work down this list once:
 
 - Set \`siteName\` and \`description\` in \`src/site/site.config.yaml\`. The home page intro reads \`description\`.
-- Set \`publicOrigin\` in \`src/site/cairn.config.ts\` to the address your site will live at.
+- Set \`deploy.publicOrigin\` in \`cairn-site.json\` to the address your site will live at.
 - Replace the sample posts in \`src/content/posts\` and the pages in \`src/content/pages\` with your own.
 - Edit the menus and tags in \`src/site/site.config.yaml\`.
 - Run \`npx cairn-manifest\` after adding, removing, or renaming a content file.
@@ -170,6 +170,7 @@ Add your project-specific guidance here; \`cairn-guidance install\` only ever re
 
 Imports use the aliases in \`package.json\`: \`#site/*\`, \`#theme/*\`, \`#chassis/*\`, and \`#lib/*\`, not \`$lib\`.
 
+- \`cairn-site.json\`: the site record, the facts the setup tool wrote once. Edit it by hand when they change.
 - \`src/site\`: the site's files (\`site.config.yaml\`, \`cairn.config.ts\`, \`theme-options.css\`, \`overrides.css\`). Edit these.
 - \`src/theme\`: the theme's components and look (\`theme.css\`), laid in from the theme you chose.
 - \`src/chassis\`: the public reading layer (tokens, prose styles, content readers, feeds). Change it last.

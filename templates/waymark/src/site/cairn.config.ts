@@ -25,13 +25,29 @@ import themeCss from '#theme/theme.css?url';
 import siteCss from '#theme/site.css?url';
 import themeOptionsCss from '#site/theme-options.css?url';
 import overridesCss from '#site/overrides.css?url';
+import siteRecordJson from '../../cairn-site.json';
 
 /**
- * The site's public origin as a literal: the feed, sitemap, robots.txt, and canonical links read
- * it at build time. `PUBLIC_ORIGIN` in `wrangler.jsonc` is the Worker's runtime value for the same
- * host, so a hand change to the domain edits both. Setup rewrites both together, then rebuilds.
+ * The deploy values and the AI posture this module reads from `cairn-site.json`. The tool writes
+ * the record once and you may edit it. JSON widens its strings, so this declares the shape and
+ * the build-time check in `vite.config.ts` is what makes the cast true.
  */
-export const publicOrigin = 'https://showcase.test';
+interface SiteRecord {
+  aiPosture?: 'invite' | 'decline';
+  deploy: {
+    publicOrigin: string;
+    emailFrom: string;
+    github: { owner: string; repo: string; branch: string; appId: string; installationId: string };
+  };
+}
+const siteRecord = siteRecordJson as SiteRecord;
+
+/**
+ * The site's public origin: the feed, sitemap, robots.txt, and canonical links read it at build
+ * time. `PUBLIC_ORIGIN` in `wrangler.jsonc` is the Worker's runtime value for the same host, so a
+ * hand change to the domain edits both.
+ */
+export const publicOrigin = siteRecord.deploy.publicOrigin;
 
 // The real render path: parse markdown through the engine so registered blocks render. The
 // chassis's proseTypography remark plugin smartens quotes, dashes, and ellipses in body prose;
@@ -152,21 +168,16 @@ export const cairn = defineAdapter({
       },
     }),
   },
-  // prettier-ignore
-  backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
-  // A verified sender literal, not derived from publicOrigin or any other URL host: Cloudflare Email
+  backend: createGithubApp(siteRecord.deploy.github),
+  // A verified sender, not derived from publicOrigin or any other URL host: Cloudflare Email
   // Routing verifies a sender address, not a domain owned by inference, so deriving one from a
   // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
-  email: { from: 'cms@showcase.test' },
+  email: { from: siteRecord.deploy.emailFrom },
   // The media R2 binding (hoisted above so this and createMediaResolver share one literal). The fake
   // R2 double rides the Worker env in dev; a real site binds it in wrangler.jsonc and mounts the
   // /media delivery route.
   media,
-  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the
-  // site's robots.txt route passes it to buildRobotsResponse, and CairnAdapter.aiPosture
-  // documents both values; the cairn-extending-a-site skill helps pick.
-  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate
-  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.
+  aiPosture: siteRecord.aiPosture,
   rendering: {
     // Render through the engine so registered blocks (the callout) produce their markup; the
     // engine's pipeline already wraps every table in a scrollable, labeled region by default

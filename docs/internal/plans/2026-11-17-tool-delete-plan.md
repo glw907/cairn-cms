@@ -283,6 +283,9 @@ command that shows it.
    prints three lines: the `actions/setup-go` step in `test.yml`, its `go-version` line, and the
    `spawnSync('go', ...)` call in `workflow-yaml.test.ts`. Today: 23 lines.
    *T1 and T2b. That command.*
+   *Amended at close through the advisor:* the command prints four lines. The fourth is the
+   `'go',` argument of the overlay-workflow lint test added at close in `workflow-yaml.test.ts`
+   (line 483), which is the workflow linter, the one use this item allows.
 6. **Nothing outside history names a deleted path.** With `RUN` set to
    `make -C tool|check:tool-|check-tool-|tool-conditions|pack-platforms|setup-matrix|tool\.yml|tool/(internal|cmd|testdata|scripts|Makefile|docs|v2)|packages/create-cairn-site|check:transcripts|transcript-blocks|cairn-(linux|darwin|win32)-`,
    the command

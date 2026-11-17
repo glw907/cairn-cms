@@ -11,6 +11,7 @@ package secrets
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"os"
@@ -51,10 +52,15 @@ func fileGet(svc, name string) (string, error) {
 }
 
 // fileSet writes through a temporary file and a rename, so a reader in another process sees the
-// old value or the new one, never a partial write.
+// old value or the new one, never a partial write. It also appends the write to .writes beside
+// the entries, which a delete never removes, so a harness can prove what a run stored after the
+// run has deleted it.
 func fileSet(svc, name, value string) error {
 	path, err := filePath(svc, name)
 	if err != nil {
+		return err
+	}
+	if err := logWrite(filepath.Dir(path), name, value); err != nil {
 		return err
 	}
 	tmp, err := os.CreateTemp(filepath.Dir(path), ".entry-*")
@@ -75,6 +81,22 @@ func fileSet(svc, name, value string) error {
 		return err
 	}
 	return os.Rename(tmp.Name(), path)
+}
+
+func logWrite(dir, name, value string) error {
+	line, err := json.Marshal(map[string]string{"name": name, "value": value})
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(filepath.Join(dir, ".writes"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	if _, err := f.Write(append(line, '\n')); err != nil {
+		_ = f.Close()
+		return err
+	}
+	return f.Close()
 }
 
 func fileDelete(svc, name string) error {

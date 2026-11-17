@@ -208,8 +208,8 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
  * cairn's `*Routes` grammar on a `Handle`-shaped return.
  * @scaffold
  */
-// WATCH: check:tool-heuristics greps this exact signature for the Go tool's auth.role-wiring
-// heuristic, which reads a site's createAuthGuard call for its argument shape.
+// WATCH: the docs cite the auth.role-wiring check id, which reads a site's createAuthGuard call
+// for its argument shape, so changing this signature breaks that check.
 export function createAuthGuard(config: AuthGuardConfig): Handle {
   const { runtime, identity } = config;
   const vocabulary: RolesDeclaration = runtime.roles ?? DEFAULT_ROLES;

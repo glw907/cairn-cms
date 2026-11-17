@@ -6,7 +6,7 @@
 // `/admin-toolkit` instead. The Warm Stone theme ships as a CSS side effect imported by the
 // components that set `data-theme="cairn-admin"`.
 export { default as CairnAdmin } from './CairnAdmin.svelte';
-// WATCH: check:tool-heuristics greps this exact export for the Go tool's admin.mount-shape
-// heuristic, which matches a site's source on the literal name CairnAdminShell.
+// WATCH: the docs cite the admin.mount-shape check id, which matches a site's source on the
+// literal name CairnAdminShell, so renaming this export breaks that check.
 export { default as CairnAdminShell } from './CairnAdminShell.svelte';
 export { default as CsrfField } from './CsrfField.svelte';

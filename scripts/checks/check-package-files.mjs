@@ -37,7 +37,7 @@ export function checkPackageFiles(filePaths) {
 // The per-version record a consumer reads to take an upgrade. It ships at the package root.
 const MIGRATION_NOTES_PATH = 'MIGRATION-NOTES.md';
 
-// The published JSON schemas the Go tool's `--json` payloads declare by `$id`, packed from schema/.
+// The published JSON schemas the `cairn` command's `--json` payloads declare by `$id`, packed from schema/.
 const SCHEMA_DIR = 'schema';
 
 // The front door's two files: the evaluator's page and the architecture page.

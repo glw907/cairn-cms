@@ -285,7 +285,7 @@ async function e2eFlagSet(mode: string): Promise<boolean> {
  * Beside the content manifest it verifies `site-facts.json` in `buildStart`, on every build. The
  * file carries `version` (always `1`) and, omitted when the adapter declares none, `mediaBucketBinding`
  * (`cairn.media.bucketBinding`), `roles` (`cairn.roles`) and `aiPosture` (`cairn.aiPosture`): the
- * values the Go `cairn` tool cannot read, since only Node can evaluate the adapter through Vite. The
+ * values a non-Node reader cannot read, since only Node can evaluate the adapter through Vite. The
  * backend owner and repo and the email `from` never appear in it. Three outcomes follow. A missing
  * file is not drift: the build proceeds with one warning naming `npx cairn-manifest`, since no
  * site's `build` script runs that command. A present file that no longer matches the adapter fails
@@ -663,7 +663,7 @@ export async function readAdapterFacts(cwd: string = process.cwd()): Promise<Ada
  *  adapter-derived fields omitted when the adapter declares none rather than written as null, one
  *  stable key order, one trailing newline, so the build-time verify compares byte-for-byte with no
  *  normalization. `owner`, `repo`, and `from` are never accepted here: the file carries only what a
- *  Go process (which cannot evaluate a site's adapter) needs.
+ *  non-Node reader (which cannot evaluate a site's adapter) needs.
  */
 export function formatSiteFacts(facts: AdapterFacts): string {
   const out: { version: 1; mediaBucketBinding?: string; roles?: RolesDeclaration; aiPosture?: AiPosture } = {

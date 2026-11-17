@@ -1,6 +1,6 @@
 ---
 name: cairn-running-passes
-description: Runs a pass of work on the cairn-cms engine from a clone: worktree setup, the committed fast lane, the full-suite home, the risk-class path map, review checklists by path, and the close checklist. Use when planning, executing, or closing a change to the engine or its Go tool, or when picking a risk class.
+description: Runs a pass of work on the cairn-cms engine from a clone: worktree setup, the committed fast lane, the full-suite home, the risk-class path map, review checklists by path, and the close checklist. Use when planning, executing, or closing a change to the engine, or when picking a risk class.
 ---
 
 # Running a cairn-cms pass
@@ -21,13 +21,13 @@ The second install keeps the worktree's showcase off the main checkout's engine.
 
 ## Gates
 
-**Fast lane.** After each task commits, run `npm run lane:fast -- --range <base>..HEAD`. It runs the legs `node scripts/checks/gate-tier.mjs --fast --range <base>..HEAD` prints and runs every leg of a line and fails at the end of it, a red line stops the lines after it, and an empty classifier output fails. The `tool` class gate is `make -C tool check`. A workspace suite such as `npm test -w packages/create-cairn-site` is Node-only; the root `npm test` drives Chromium. A lone unrelated test failure, or `Cannot connect to the server in 60 seconds`, is a known trap: `cairn-writing-engine-code`'s `durable-gotchas.md` carries the rerun rule.
+**Fast lane.** After each task commits, run `npm run lane:fast -- --range <base>..HEAD`. It runs the legs `node scripts/checks/gate-tier.mjs --fast --range <base>..HEAD` prints and runs every leg of a line and fails at the end of it, a red line stops the lines after it, and an empty classifier output fails. A workspace suite is Node-only; the root `npm test` drives Chromium. A lone unrelated test failure, or `Cannot connect to the server in 60 seconds`, is a known trap: `cairn-writing-engine-code`'s `durable-gotchas.md` carries the rerun rule.
 
 **Full suite.** Continuous integration on the draft pull request runs the whole suites. The first push opens a draft PR, since the workflows fire on `pull_request` and on push only to `main` and `rebuild`. Run `npm test`, then `npm run check:close`, locally only when CI is unavailable. Pass the end-to-end step `--grep-invert "site home|archive page 2"` locally. A docs-only change skips `npm test` and runs `check:close`. List every retried test from CI output in the pull request body: a retry that passed is flake evidence, not green.
 
 ## Risk classes
 
-- `auth-data`: `src/lib/{auth,auth-crypto,github}/**`, `src/lib/sveltekit/{csrf*,auth-*,commit-log,guard,preview}.ts`, `src/lib/admin/{csrf-context.ts,CsrfField.svelte}`, `migrations*/**`, `examples/showcase/migrations*/**`, `templates/*/migrations*/**`, `**/hooks.server.ts`, `**/preview/\[token\]/**` (escaped, because `[token]` is a character class in a pathspec), `**/admin/signups/**`, `tool/internal/secrets/**`, `tool/internal/setup/{loopback,signin,runner}*`, `tool/internal/providers/{cloudflare_oauth,github_app}*`, `wrangler.*`.
+- `auth-data`: `src/lib/{auth,auth-crypto,github}/**`, `src/lib/sveltekit/{csrf*,auth-*,commit-log,guard,preview}.ts`, `src/lib/admin/{csrf-context.ts,CsrfField.svelte}`, `migrations*/**`, `examples/showcase/migrations*/**`, `templates/*/migrations*/**`, `**/hooks.server.ts`, `**/preview/\[token\]/**` (escaped, because `[token]` is a character class in a pathspec), `**/admin/signups/**`, `wrangler.*`.
 - `runner`: `scripts/checks/**`, `scripts/gate/**`, `scripts/release/**`, `.github/workflows/**`, `.github/ci-green.json`.
 - `ordinary`: everything else.
 
@@ -44,7 +44,7 @@ A chassis task (`examples/showcase/src/chassis/`, `templates/waymark/`) takes th
 
 ## Review checklists by path
 
-The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, action, or hook code; `standards:cloudflare-workers-reviewer` for Worker, D1, and `wrangler.*`; `standards:web-auth-security-reviewer` for every `auth-data` path; `standards:daisyui-a11y-reviewer` for markup, styles, and theme config; and the `standards:go-conventions` skill for `tool/**`.
+The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, action, or hook code; `standards:cloudflare-workers-reviewer` for Worker, D1, and `wrangler.*`; `standards:web-auth-security-reviewer` for every `auth-data` path; and `standards:daisyui-a11y-reviewer` for markup, styles, and theme config.
 
 ## Close checklist
 

@@ -1,5 +1,7 @@
 # What cairn is
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 ## Contents
 
 - [Purpose](#purpose)
@@ -93,7 +95,7 @@ This single rule adjudicates any scope question without an enumerated denylist:
 
 ### The `cairn` tool is the operator's cockpit, not engine surface
 
-The boundary above governs the engine a consumer site inherits. The Go `cairn` tool
+The boundary above governs the engine a consumer site inherits. The `cairn` tool
 (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`) is a different thing:
 an owner-side product over every cairn site a machine knows, and by decision an operator
 cockpit (Geoff, 2026-08-20). It replicates administrative operations the web admin also offers,
@@ -103,12 +105,12 @@ about what a consumer inherits; the operator's own console is where the owner's 
 accumulates, and it stays lean by the same test, one job served by the thinnest mechanism.
 
 The `cairn` CLI is an assumed part of the cairn system, never an optional companion (Geoff,
-2026-09-21). It ships apart from the npm package only because its install targets differ
-(`go install` and prebuilt binaries per platform). Two consequences follow. Docs, the site
+2026-09-21). It is being rebuilt inside the npm package, after its earlier Go implementation was deleted.
+Two consequences follow. Docs, the site
 upgrade brief, the scaffold, and the admin track may assume the operator has `cairn`
 installed, and no docs or packaging answer treats it as a separate product. And its contract lives in the
-binary (`cairn help agents` and each command's `--help`), its operator how-tos under
-`docs/admin/`, while `tool/docs/` keeps only ADRs, design inputs, and the operator runbooks.
+command (`cairn help agents` and each command's `--help`), and its operator how-tos under
+`docs/admin/`.
 
 ## Threat position (Geoff, 2026-09-30; the sign-in flow named, 2026-10-08)
 

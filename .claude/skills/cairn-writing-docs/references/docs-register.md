@@ -1,5 +1,7 @@
 # The docs register
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 ## Contents
 
 - [The base guides](#the-base-guides)
@@ -257,9 +259,9 @@ cannot: which sense of "the package" or "the tool" is meant.
 | Thing | Name | Rule |
 |---|---|---|
 | The system | cairn, lowercase, in prose | At a sentence start it stays lowercase, and the sentence is rewritten to avoid that where possible (Google's capitalization guide: "If an official name begins with a lowercase letter, then put it in lowercase even at the start of a sentence. But it's better to revise the sentence to avoid putting a lowercase word at the start, if possible."). "Cairn" capitalized appears only inside a quoted UI string, because the admin's wordmark, "Powered by Cairn", and the `Sign in · Cairn` title are capitalized on screen, and a doc quoting the screen keeps the screen's case. |
-| The npm library a site imports from | the engine, in prose | Never the compound "cairn engine". The CLI's copy standard (`tool/docs/design/copy-standard.md`) fixes the same word for operators. |
+| The npm library a site imports from | the engine, in prose | Never the compound "cairn engine". |
 | The same, as an artifact | `@glw907/cairn-cms` where the reader types or reads it; the package for facts about the tarball, its files, install, and module resolution | "The package is ESM-only" is a package fact; "the engine renders the preview" is an engine fact. |
-| The Go CLI | the `cairn` CLI; a command always carries its verb: `cairn health`, `cairn adopt` | No bare "the CLI" (Google's word list: "Don't use CLI generically"; the docs name five CLIs). A bare `` `cairn` `` code span is an identifier prefix (the ambient `cairn` namespace, the `cairn/<concept>/<id>` holding branch), never the command. Google's code-in-text guidance: "use code font for the command and ordinary font for the name of the project or product." |
+| The CLI | the `cairn` CLI; a command always carries its verb: `cairn health`, `cairn adopt` | No bare "the CLI" (Google's word list: "Don't use CLI generically"; the docs name five CLIs). A bare `` `cairn` `` code span is an identifier prefix (the ambient `cairn` namespace, the `cairn/<concept>/<id>` holding branch), never the command. Google's code-in-text guidance: "use code font for the command and ordinary font for the name of the project or product." |
 | The scaffolder | `cairn new` for the command, and `npm create cairn-site` for the launcher that starts it; the setup command after the first mention on a page | A code identifier is not a sentence subject twenty times on a non-developer page. |
 | Other npm bins | `cairn-audit`, `cairn-guidance`, `cairn-doctor`, always by name | |
 | The editing surface | the admin; `/admin` for the path | |
@@ -271,7 +273,7 @@ cannot: which sense of "the package" or "the tool" is meant.
 | Also named | the GitHub App, shortened to the App after its first mention on a page; the Worker | The capital A marks the short form as the GitHub App, never an app in general (Geoff, 2026-10-25). |
 | The starter a new site begins from | the Waymark template for the files the setup command copies, and the `templates/waymark/` copy; the Waymark theme for its look | Pick the word by sense: "Waymark is the only template the setup command ships", "Waymark, cairn's reference reading theme". Geoff ruled the split on 2026-10-25. |
 | The people a site signs in beside the editors | a second sign-in group | Never "second audience" or "second population"; the page "Add a second sign-in group" fixes the name. |
-| Retired as names | the library (the word stays for the media library and the content library); the Go tool; the binary, except for the install artifact itself; a bare "the tool"; "second audience"; "second population" | |
+| Retired as names | the library (the word stays for the media library and the content library); the binary, except for the install artifact itself; a bare "the tool"; "second audience"; "second population" | |
 <!-- vale Google.Quotes = YES -->
 
 **Admin or public, built-in or custom.** cairn has two surfaces, the admin and the public site. A
@@ -299,19 +301,18 @@ plain lowercase prose for the system.
 <!-- vale Google.Quotes = NO -->
 <!-- "Powered by Cairn" here is the bare-quoted form the paragraph names, and moving its
      period inside would misquote it. -->
-**Enforcement and scope.** `Cairn.Names` (error) catches "the Go tool" and a stray capital
-"Cairn" in prose. "The tool," "the package," "the binary," and "the CLI" take a writer's second
-look rather than a rule, since each is still the right word in the sense the table above carves
+**Enforcement and scope.** `Cairn.Names` (error) catches a stray capital
+"Cairn" in prose. "The tool," "the package," "the binary," and "the CLI" take a
+writer's second look rather than a rule, since each is still the right word in the sense the table above carves
 out. The rule's escape for the quoted-UI exception is code font: a quoted screen string goes in a
 code span (`` `Powered by Cairn` ``), which Vale skips, and that is the sanctioned form, never
 a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose word "Cairn"
 inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
 already sits in a code span, so the rule never sees it as prose to begin with.
-The narrative arms (`docs/admin/`, `docs/editors/`) were rebuilt stage by stage, and each stage wrote to this table from its first page. A new page, or a page already open for an unrelated edit, writes to this table now. `tool/docs/` still sits outside `.vale.ini`'s scope; the credentials and tripwire pages it once held now live in `docs/admin/`, where the Names rule reaches them.
-
+The narrative arms (`docs/admin/`, `docs/editors/`) were rebuilt stage by stage, and each stage wrote to this table from its first page. A new page, or a page already open for an unrelated edit, writes to this table now.
 A further rule carries the admin-or-public split's own retired compounds, kept out of
 `Cairn.Names` since that rule is case-sensitive by necessity (matching the capital wordmark) and
-its message is about the Go tool and the capital "Cairn", not about a component surface.
+its message is about the capital "Cairn", not about a component surface.
 `Cairn.ComponentNames` (error) catches "engine public component", "public engine component",
 "chassis component", and "site component", since each names no page on a narrative arm; a page
 says "custom public component" instead. "Engine component" and "custom component" take a

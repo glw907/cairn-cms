@@ -195,7 +195,7 @@ test('bake keeps the emitted .gitignore under its real name, covering the secret
 
 // The rot gate against npm's packlist: it drops any file literally named ".gitignore" from a
 // published tarball, so bakeForPacking (the release bake's entry point) must rename
-// the emitted copy to a dot-free name before packing; the Go scaffold step renames it back on the way out.
+// the emitted copy to a dot-free name before packing; the scaffold step renames it back on the way out.
 test('bakeForPacking renames the emitted .gitignore to a dot-free "gitignore", covering the secret-bearing entries', async (t) => {
   const to = await tempTarget(t);
   await bakeForPacking({ to, ...PUBLISHED_SPECS });

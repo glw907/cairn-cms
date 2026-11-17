@@ -1,7 +1,6 @@
 // cairn-cms: the committed fast lane. It runs the legs `gate-tier.mjs --fast` prints for a range,
 // in order. A line runs all its legs and fails at its end if any failed; a red line stops the lines
-// after it. Anyone with a clone can run it (an edit to a path the Go tests read also needs Go and
-// Vale installed); a maintainer's
+// after it. Anyone with a clone can run it; a maintainer's
 // lane-aware wrapper runs the same legs and adds shared locks, which this script does not need.
 //
 // Interface: `node scripts/checks/fast-lane.mjs [--range <base>..HEAD]`, defaulting to

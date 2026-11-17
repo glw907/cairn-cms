@@ -1,5 +1,5 @@
 // The site-config path is fixed at the scaffold's own, which a committed twin keeps equal to the file
-// the scaffold bakes and the Go doctor embeds. The nav editor, Settings, and the tag vocabulary all
+// the scaffold bakes. The nav editor, Settings, and the tag vocabulary all
 // read and commit it, and the adapter has no knob to move it.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

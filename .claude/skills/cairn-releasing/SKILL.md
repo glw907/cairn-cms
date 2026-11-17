@@ -9,6 +9,8 @@ description: >
 
 # Releasing cairn
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 A cairn-cms release is a deliberate, occasional act. A finished pass finalizes its `CHANGELOG.md` entry
 under `## Unreleased`, leaves `package.json` alone, and holds. `main` stays releasable, so completed work
 accumulates unpublished until a release is warranted, and this skill is that separate publish step. The
@@ -16,11 +18,9 @@ governing rule lives in `CLAUDE.md` ("Working here").
 
 A session loads this skill itself, and the approval sits on the act, not the load. Steps 1 to 7 and 10
 cut a candidate and gate it on the `gate` dist-tag, which no `latest` install sees. A session runs them when
-Geoff asks for a release or a plan he approved names the cut. A prerelease `tool/v*` tag also publishes to
-`gate`, so it and the rerun of a failed publish (under step 9) go with them. Step 8 moves `next` to a passed
+Geoff asks for a release or a plan he approved names the cut. The rerun of a failed publish (under step 9) goes with them. Step 8 moves `next` to a passed
 candidate, and step 9 puts a stable on `latest`. A session runs those only on Geoff's word in chat or an
-approved packet that names the version, and step 9 also waits on his install, as it says. The four owner
-steps under step 9 stay Geoff's.
+approved packet that names the version, and step 9 also waits on his install, as it says.
 
 Every mechanical step is a command under `scripts/release/`. Each takes the version, exits 0 or 1, and
 ends with one `Next:` line naming what to run after it. This skill keeps four judgment calls (whether a
@@ -80,8 +80,8 @@ behavior and changelog-described behavior outside option-bearing types. It finds
 re-check existing pages whose code changed.
 
 - **Window.** From the last engine tag whose release commit body carries a "Doc-code sweep" record, to `main`. Find the tags
-  with `git tag --list 'v[0-9]*' --sort=-v:refname | grep -v -e '-'`: the `v[0-9]*` glob skips the
-  repo's `tool/v*` tags, and the `grep` drops prerelease tags. A cut that ran no sweep leaves no record,
+  with `git tag --list 'v[0-9]*' --sort=-v:refname | grep -v -e '-'`: the `v[0-9]*` glob skips
+  tags that do not start with a version, and the `grep` drops prerelease tags. A cut that ran no sweep leaves no record,
   so its range rolls into the next window. The first window is seeded at `v0.98.0`, since the planning
   sweep (`86fd134c`) ran after that cut and no release commit records one yet.
 - **Finders.** Work from three inputs: the `scripts/checks/api-surface.md` diff over the window, the
@@ -168,8 +168,8 @@ breaks `npm run package`. Write the concrete token. A quick check:
 
 **An rc is cut only for an actual release candidate, once the install process is effective and tested.**
 A build made to prove something, such as a proving round or a probe, is a dev snapshot on `gate`: a
-`<x.y.z>-dev.<n>` prerelease published by a `workflow_dispatch` of `publish.yml` (engine) or `tool.yml`
-(tool) on `main` with `snapshot` set, with no GitHub release, no `v*` or `tool/v*` tag, and no CHANGELOG
+`<x.y.z>-dev.<n>` prerelease published by a `workflow_dispatch` of `publish.yml` on `main` with
+`snapshot` set, with no GitHub release, no `v*` tag, and no CHANGELOG
 release heading, and `latest` and `next` never move. Otherwise a polish loop publishes 10 or 20 rcs. Cut
 the rc once, at the end of the loop. The snapshot procedure is in `cairn-proving-setup`. Geoff, 2026-11-09,
 recorded in the setup tooling plan (initiatives `782a946`).
@@ -246,8 +246,7 @@ is on Workers Paid (the estate inventory records both). A candidate for a gate r
 check:close` on the default lane, since the light lane runs out of memory on it (#370).
 
 The `## Gate` table in the candidate's release body has one row per leg, each carrying the cairn-cms
-commit the leg ran against with the engine and tool versions. A tool-only round publishes a new
-`tool/v2.0.0-rc.<n>` and no engine version, which is why the rows are keyed on commits.
+commit the leg ran against with the engine version. The rows are keyed on commits.
 `scripts/gate/verdict.mjs <x.y.z-rc.N>` exits 0 only with one `pass` row per leg: `scripted` at the
 release's own commit, and `naive` and `owner` at commits with no change under a rerun path up to it.
 `node scripts/gate/record.mjs carry --version <x.y.z-rc.N> --from <commit> --to <commit>` copies the
@@ -286,8 +285,7 @@ Note the newest publish `workflow_dispatch` run id first (`gh run list --workflo
 workflow_dispatch --json databaseId,headBranch`), since the dispatch may not print its run URL. The
 `promote` job refuses unless the gate table passes `verdict.mjs`, then moves `next` to the
 version on the engine and the dev package. A `latest` never moves to a candidate: the engine packages'
-stays on the last stable, and the launcher's is set by the tool release (see "The launcher and its
-platform packages"). Then:
+stays on the last stable. Then:
 
 ```bash
 gh run watch <run-id> --exit-status
@@ -332,45 +330,6 @@ config on npmjs.org is the suspect, not the code: the org/user, repository, work
 trusted-publisher configuration defaults to `npm stage publish`, so it needs publish chosen as its
 allowed action. Do not bump the version again to retry; fix the config and rerun the same release's
 workflow with `gh run rerun <run-id> --failed`.
-
-### The launcher and its platform packages
-
-`create-cairn-site` and the six `@glw907/cairn-<os>-<cpu>` packages (`darwin`, `linux`, `win32`, each on
-`x64` and `arm64`) are not part of the engine's lockstep and `publish.yml` never touches them. They version
-with the Go tool and publish from `tool.yml`'s `publish-npm` job when a `tool/vX.Y.Z` tag is pushed: the
-release job packs them with `scripts/release/pack-platforms.mjs` at the tag's version, and `publish-npm`
-publishes the six platform packages first and the launcher last, with provenance, to `gate` for a
-prerelease and `latest` for a stable. Only a push of a `tool/v*` tag publishes. A `workflow_dispatch`
-run, on a branch or on a tag ref, packs and dry-runs without publishing.
-
-Four owner steps come before the first tool tag, and none can be done by the workflow:
-
-1. **Allow the tag in the `npm-publish` environment.** Its deployment policy allows tags matching `v*`
-   only, and `*` does not cross `/`, so `tool/v1.2.0` is refused at the gate after the GitHub Release is
-   already created. Add a second tag policy, `tool/v*`. Never widen it to `*`: that lets any branch
-   deploy to the environment that holds trusted publishing for the engine too. Prove it with one
-   prerelease tag before the real cut.
-2. **Protect the tags.** The `release-tags` ruleset covers `refs/tags/v*` only. Add `refs/tags/tool/v*`
-   (update and deletion rules), so a published version's tag cannot be moved or recreated.
-3. **Publish each new package once by hand**, because npm cannot bind a trusted publisher to a package
-   that does not exist. The six platform packages are new. `create-cairn-site` already exists, with its
-   trusted publisher bound to `publish.yml`, so it needs only the rebind in 3.3. For each package:
-   1. Pack with `node scripts/release/pack-platforms.mjs --version <x.y.z> --binaries <dir> --out <dir>`,
-      from binaries laid out `<os>-<cpu>/cairn` (`cairn.exe` on Windows), or take the tarballs from the
-      `npm-tarballs` artifact of a dispatch run on `main`, verified first with `gh attestation verify
-      <archive> --repo glw907/cairn-cms --source-ref refs/heads/main`.
-   2. Publish with the owner's npm login: `npm publish <tarball> --access public`.
-   3. Bind the trusted publisher: `npm trust github <package> --repo glw907/cairn-cms --file tool.yml
-      --env npm-publish --allow-publish`. The `--env` is load-bearing: `tool.yml`'s release job holds an
-      id-token for the attestation, and only the environment binding keeps it from publishing.
-4. **Retire the wizard's dist-tags.** After the first tool publish, `next` and `gate` still point at
-   `create-cairn-site@0.99.0-rc.4`, the wizard that writes the GitHub App's secrets to disk in plaintext.
-   Run `npm dist-tag rm create-cairn-site next` and `npm deprecate create-cairn-site@"<1.0.0" "Retired:
-   use the latest version, which installs the cairn tool."`.
-
-Do the six platform packages, then `create-cairn-site`. After that every tool tag publishes by itself, and
-the already-published guard lets a re-run recover a release that failed partway. A stable tool tag moves
-`latest` for all seven packages, so never tag an older stable after a newer one.
 
 ## 10. Judgment call: when something fails
 

@@ -45,7 +45,6 @@ describe('no tracked admin.css names the engine dist layout', () => {
   it('scans every admin.css under the switched trees for a literal cairn-cms/dist reference', () => {
     const roots = [
       resolve(ROOT, 'examples/showcase/src'),
-      resolve(ROOT, 'packages/create-cairn-site/template'),
       resolve(ROOT, 'templates/waymark'),
       resolve(ROOT, 'claude'),
     ];

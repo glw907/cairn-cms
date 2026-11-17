@@ -4,7 +4,6 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
-  CREATE_CAIRN_SITE_TRIGGERS,
   FAST_LINE_1_LANE,
   PASS_CLASSES,
   TIER_GATES,
@@ -47,7 +46,6 @@ describe('the table', () => {
     ['docs', '.tellgrader.json', '.tellgrader.json'],
     ['docs', 'skills/', 'skills/cairn-consulting-the-engine/SKILL.md'],
     ['docs', 'claude/', 'claude/CLAUDE.md'],
-    ['toolTestdata', 'tool/testdata/flags.json', 'tool/testdata/flags.json'],
     ['scripts', 'scripts/', 'scripts/checks/check-idioms.mjs'],
     ['scripts', 'src/tests/', 'src/tests/unit/gate-tier.test.ts'],
     ['scripts', '.github/', '.github/workflows/test.yml'],
@@ -61,7 +59,6 @@ describe('the table', () => {
     ['showcase', 'templates/', 'templates/waymark/package.json'],
     ['showcase', 'sets/', 'sets/organization/cairn-set.json'],
     ['showcase', 'definitions/', 'definitions/kinds.json'],
-    ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
     ['engine', 'src/lib/', 'src/lib/log/index.ts'],
     ['engine', 'scripts/build/', 'scripts/build/build-admin-css.mjs'],
     ['engine', 'packages/cairn-cms-dev/', 'packages/cairn-cms-dev/package.json'],
@@ -355,33 +352,6 @@ describe('the component leg', () => {
   });
 });
 
-describe('the create-cairn-site leg', () => {
-  const SUITE = 'npm test -w packages/create-cairn-site';
-  // One path per trigger entry.
-  const scaffolding = ['packages/create-cairn-site/bin.mjs', 'scripts/release/pack-platforms.mjs'];
-
-  it('names a row for every trigger', () => {
-    for (const glob of CREATE_CAIRN_SITE_TRIGGERS) {
-      expect(scaffolding.some((path) => matchesPattern(path, glob)), glob).toBe(true);
-    }
-  });
-
-  for (const path of scaffolding) {
-    it(`runs the suite when ${path} changes`, () => {
-      expect(decideGate([path]).gate).toContain(` && ${SUITE}`);
-    });
-  }
-
-  it('leaves the suite out for a library path', () => {
-    expect(decideGate(['src/lib/foo/bar.ts']).gate).not.toContain(SUITE);
-  });
-
-  it('leaves the suite out for the showcase and the emitter, which the launcher no longer reads', () => {
-    expect(decideGate(['examples/showcase/package.json']).gate).not.toContain(SUITE);
-    expect(decideGate(['scripts/build/emit-template.mjs']).gate).not.toContain(SUITE);
-  });
-});
-
 describe('the e2e leg', () => {
   const AUTH = ['access-map.spec.ts', 'csrf-origin.spec.ts', 'golden-path.spec.ts'];
   const specs = (paths: string[], options: { passClass?: string | null; paint?: 'yes' | 'no' } = {}) =>
@@ -425,7 +395,7 @@ describe('the e2e leg', () => {
   });
 
   it('accepts each pass class and refuses an unknown one', () => {
-    expect(PASS_CLASSES).toEqual(['auth-data', 'engine-logic', 'paint', 'sweep', 'docs', 'tool']);
+    expect(PASS_CLASSES).toEqual(['auth-data', 'engine-logic', 'paint', 'sweep', 'docs']);
     for (const passClass of PASS_CLASSES) expect(() => decideGate(['README.md'], { passClass })).not.toThrow();
     expect(() => decideGate(['README.md'], { passClass: 'nope' })).toThrow(/unknown --class/);
   });
@@ -479,8 +449,8 @@ describe('the e2e leg', () => {
 });
 
 describe('decideGate', () => {
-  it('orders the legs: package, static checks, node projects, component, scaffold suite, e2e', () => {
-    const gate = decideGate(['examples/showcase/src/routes/(site)/+page.svelte', 'src/lib/log/index.ts', 'packages/create-cairn-site/bin.mjs'], {
+  it('orders the legs: package, static checks, node projects, component, e2e', () => {
+    const gate = decideGate(['examples/showcase/src/routes/(site)/+page.svelte', 'src/lib/log/index.ts'], {
       selected: ['a.test.ts'],
     }).gate;
     const marks = [
@@ -488,7 +458,6 @@ describe('decideGate', () => {
       'npm run check:close',
       'npm run test:node-projects',
       'npm run test:component',
-      'npm test -w packages/create-cairn-site',
       'export E2E_PORT=4392',
     ].map((mark) => gate.indexOf(mark));
     expect(marks.every((at) => at >= 0)).toBe(true);
@@ -500,34 +469,13 @@ describe('decideGate', () => {
     expect(decideGate(['README.md']).gate).toContain('npm run test:node-projects');
   });
 
-  it('resolves a tool-only diff to the tool gate and a mixed diff to the targeted gate then the tool gate', () => {
-    expect(decideGate(['tool/internal/spine/chapter.go'])).toMatchObject({
-      tier: 'tool',
-      gate: 'make -C tool check',
-    });
-    const mixed = decideGate(['src/lib/log/index.ts', 'tool/main.go']);
-    expect(mixed.tier).toBe('targeted+tool');
-    expect(mixed.gate.startsWith('npm run package && ')).toBe(true);
-    expect(mixed.gate.endsWith(' && make -C tool check')).toBe(true);
-  });
-
   it('refuses an empty path list rather than choosing a gate', () => {
     expect(() => decideGate([])).toThrow(/no changed paths/);
   });
 
-  it('routes tool/**/*.md to the tool gate, not the docs checks', () => {
-    expect(decideGate(['tool/docs/getting-started.md'])).toMatchObject({ tier: 'tool', gate: 'make -C tool check' });
-  });
-
   it('matches by prefix, never by substring', () => {
-    // "tooling/" and "docs/tool/" hold "tool/" but are not under it; "administrator/" holds "admin".
-    expect(decideGate(['tooling/x.go']).tier).toBe('targeted');
-    expect(decideGate(['docs/tool/x.md']).gate).not.toContain('make -C tool check');
+    // "administrator/" holds "admin" but is not under it.
     expect(e2eSpecs(['src/lib/administrator/x.ts'], {}, context).specs).not.toContain('admin-visual.spec.ts');
-  });
-
-  it('leaves the create-cairn-site suite out for a templates/ path alone, which the bake writes but never reads', () => {
-    expect(decideGate(['templates/waymark/src/hooks.server.ts']).gate).not.toContain('npm test -w packages/create-cairn-site');
   });
 
   it('classifies a diff that deletes docs pages as a docs diff with no component or e2e leg', () => {
@@ -548,7 +496,7 @@ describe('decideGate', () => {
 describe('--pin', () => {
   it('prints each old tier string unchanged, whatever the diff', () => {
     expect(TIER_ORDER).toEqual(['docs', 'scripts', 'engine', 'admin-visual', 'full']);
-    for (const tier of [...TIER_ORDER, 'tool']) {
+    for (const tier of TIER_ORDER) {
       expect(decideGate(['src/lib/log/index.ts'], { pin: tier })).toEqual({
         tier,
         reason: 'pin',
@@ -571,7 +519,7 @@ describe('--pin', () => {
 
   it('keeps the engine string byte-identical to the one the runner has always run', () => {
     expect(TIER_GATES.engine).toBe(
-      'npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site',
+      'npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism',
     );
   });
 });
@@ -618,9 +566,9 @@ describe('parseArgs', () => {
 });
 
 describe('TIER_GATES', () => {
-  it('names the five npm tiers and the tool tier, each with its own gate string', () => {
+  it('names the five tiers, each with its own gate string', () => {
     for (const tier of TIER_ORDER) expect(typeof TIER_GATES[tier]).toBe('string');
-    expect(TIER_GATES.tool).toBe('make -C tool check');
+    expect(Object.keys(TIER_GATES).sort()).toEqual([...TIER_ORDER].sort());
   });
 
   it('scripts and engine share the identical gate string', () => {
@@ -981,15 +929,6 @@ describe('the fast lane', () => {
     expect(other).not.toContain('edit-page-state-reset-coverage');
   });
 
-  it('keeps tool/testdata/flags.json in the npm checks and maps it to check:symbols', () => {
-    const { lines } = decideFastGate(['tool/testdata/flags.json'], { selected: [] });
-    expect(lines[0]).toContain('check:symbols');
-    expect(lines[0]).toContain('make -C tool check');
-    expect(decideGate(['tool/testdata/flags.json'], { selected: [] }).gate).toContain('check:symbols');
-    expect(labelsFor('tool/testdata/flags.json')).toContain('check:symbols');
-    expect(decideFastGate(['tool/internal/spine/chapter.go'], { selected: [] }).lines).toEqual(['make -C tool check']);
-  });
-
   it('runs unit-dist-spawn after the unit leg when src/lib/internal.ts changes, and not otherwise', () => {
     const spawn = 'npx vitest run --project unit-dist-spawn';
     const [line1] = decideFastGate(['src/lib/internal.ts'], { selected: [] }).lines;
@@ -1071,18 +1010,8 @@ describe('the fast lane', () => {
     expect(decideFastGate(['CHANGELOG.md'], { selected: [] }).lines[0]).not.toContain('vitest');
   });
 
-  it('adds the Go tool gate for a path the Go tests read outside tool/, and for no other', () => {
-    for (const path of ['src/lib/log/events.ts', 'docs/admin/tripwire.md', 'scripts/checks/shipped-anchors.json']) {
-      expect(decideFastGate([path], { selected: [] }).lines[0], path).toContain('make -C tool check');
-    }
-    for (const path of [SRC_PATH, 'docs/editors/index.md']) {
-      expect(decideFastGate([path], { selected: [] }).lines[0], path).not.toContain('make -C tool check');
-    }
-    expect(decideGate(['src/lib/log/events.ts'], { selected: [] }).tier).toBe('targeted+tool');
-  });
-
   it('lists only paths that exist on disk in the table keys and the slug test', () => {
-    for (const path of [...table.toolInputs, ...table.unitSelectable, 'src/tests/unit/github-slug-contract.test.ts']) {
+    for (const path of [...table.unitSelectable, 'src/tests/unit/github-slug-contract.test.ts']) {
       expect(existsSync(resolve(process.cwd(), path)), path).toBe(true);
     }
   });
@@ -1099,13 +1028,6 @@ describe('the fast lane', () => {
       expect(typeCheck, path).toBeGreaterThan(at);
       expect(line1.slice(at, typeCheck), path).not.toContain('& pids=');
     }
-  });
-
-  it('adds the Go tool gate to line 1 for a tool path and runs a tool-only diff as that gate alone', () => {
-    expect(decideFastGate(['tool/internal/spine/chapter.go'], { selected: [] }).lines).toEqual(['make -C tool check']);
-    expect(decideFastGate([SRC_PATH, 'tool/internal/spine/chapter.go'], { selected: [] }).lines[0]).toContain(
-      'make -C tool check',
-    );
   });
 
   it('prints neither a bare npm run package nor the whole close runner, whatever the diff', () => {

@@ -9,9 +9,7 @@ name: design
 on:
   push:
     branches: [main, rebuild]
-    paths-ignore: ['tool/**']
   pull_request:
-    paths-ignore: ['tool/**']
 
 jobs:
   design:

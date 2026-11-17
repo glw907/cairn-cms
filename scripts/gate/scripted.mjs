@@ -115,9 +115,8 @@ const enter = [{ key: 'Enter' }];
 
 /**
  * Every screen the interactive `cairn new` paints, most advanced first so a receipt of an
- * earlier answer never shadows the screen being asked. The texts come from
- * `tool/internal/ui/newview/catalogue.go`; a screen's description, which shows only while its form
- * is active, tells it from the receipt that outlives it.
+ * earlier answer never shadows the screen being asked. A screen's description, which shows only
+ * while its form is active, tells it from the receipt that outlives it.
  * @type {Screen[]}
  */
 export const SCREENS = [

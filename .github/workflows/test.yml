@@ -3,9 +3,7 @@ name: test
 on:
   push:
     branches: [main, rebuild]
-    paths-ignore: ['tool/**']
   pull_request:
-    paths-ignore: ['tool/**']
 
 jobs:
   test:
@@ -31,8 +29,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             examples/showcase/package-lock.json
-      # workflow-yaml.test.ts runs actionlint through `go run`, and the runner image lists Go only
-      # under its cached tools, not on PATH.
+      # workflow-yaml.test.ts runs actionlint through `go run`, and the runner image keeps Go in its
+      # cache, not on PATH.
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: '1.26.x'
@@ -79,12 +77,10 @@ jobs:
       - name: Report retried tests
         if: always()
         run: node scripts/ci/retries-notice.mjs "$RUNNER_TEMP/vitest-node-retries.json" "$RUNNER_TEMP/vitest-component-retries.json"
-      # Two node:test suites vitest does not reach. The emitter's own tests, and the launcher's:
-      # the launcher test builds the Go tool and packs it into a platform package, so it needs Go,
-      # which the setup-go step above supplies. Both gate the scaffolded output, so a break here
-      # ships a broken first-run experience while every vitest project stays green.
+      # The emitter's own node:test suite, which vitest does not reach. It gates the scaffolded
+      # output, so a break here ships a broken first-run experience while every vitest project
+      # stays green.
       - run: npm run test:emit
-      - run: npm test -w packages/create-cairn-site
       - run: npm run check:package
       # The cairn-audit pack smoke test: a real install of the packed engine in an empty directory,
       # with the optional daisyUI and Tailwind peers absent and then present. Needs the registry.
@@ -150,17 +146,15 @@ jobs:
             | sudo tar -xz -C /usr/local/bin vale
           vale --version
       # The docs gate: every CI check that reads a doc arm's content (check:docs, check:vale,
-      # check:vale-rules, check:leaks, check:symbols, check:snippets, check:transcripts,
-      # check:visuals, check:editor-quotes, check:readiness, check:tool-conditions,
-      # check:options, check:tiers, and check:tellgrader, which skips itself in
+      # check:vale-rules, check:leaks, check:symbols, check:snippets, check:visuals,
+      # check:editor-quotes, check:readiness, check:options, check:tiers, and
+      # check:tellgrader, which skips itself in
       # CI because the binary is absent),
       # run through the one docs-gate.mjs script so CI and a single-page run read the identical list. It runs here, after Vale is installed, since check:vale is one of its
       # components. Error-tier only for Vale: warnings and suggestions are advisory and are not
       # gated (the standing repo rule). The Google and Microsoft style packages are vendored under
       # .vale/styles, so this runs offline against the exact rules committed to the repo.
       - run: npm run check:docs-gate
-      # Tripwire for the engine literals `cairn doctor`'s heuristics grep for.
-      - run: npm run check:tool-heuristics
       - run: npm run check:comments
       - if: failure() || cancelled()
         uses: ./.github/actions/install-diagnostics

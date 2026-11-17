@@ -215,13 +215,8 @@ export function profileFor(relPath) {
   if (
     /^(?:skills|claude|migrations)\//.test(path) ||
     path.startsWith('examples/showcase/src/chassis/') ||
-    path.startsWith('src/lib/reproductions/') ||
-    path === 'tool/cmd/cairn/messages.go'
+    path.startsWith('src/lib/reproductions/')
   ) {
-    return { tier: 'T2', classes: all, mode: 'whole' };
-  }
-  if (
-    /^packages\/create-cairn-site\/(?:bin\.mjs|README\.md)$/.test(path)) {
     return { tier: 'T2', classes: all, mode: 'whole' };
   }
   if (/^src\/lib\/.+\.(?:ts|svelte)$/.test(path)) {
@@ -495,9 +490,6 @@ export const SCAN_ROOTS = [
   'examples/showcase/README.md',
   'examples/showcase/src/chassis',
   'src/lib',
-  'tool/cmd/cairn/messages.go',
-  'packages/create-cairn-site/bin.mjs',
-  'packages/create-cairn-site/README.md',
   ...TEMPLATE_ROOTS,
 ];
 

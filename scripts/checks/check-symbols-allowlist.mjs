@@ -4,33 +4,18 @@
 // with no reason is how a gate quietly stops gating, so review one on sight if it ever appears.
 //
 // Keyed `<class>:<token>`, matching the class and exact token text `check-symbols.mjs` extracts
-// (a CLI flag keeps its leading `--`; an environment variable, file path, and log event are the
-// bare token; an export carries just the identifier, not its resolved subpath).
+// (an environment variable, file path, and log event are the bare token; an export carries just
+// the identifier, not its resolved subpath).
 export const ALLOWLIST = new Set([
-  // Third-party CLI flags: npm, npx' passthrough to a script, wrangler, and cairn's other
-  // CLIs (cairn-audit, and cairn-media-seed from the dev package), none of which this gate resolves against
-  // (only the launcher's `cairn new` flags and the Go tool's flag list are ground truth here).
-  'cli-flag:--prefix', // npm's flag, not create-cairn-site's
-  'cli-flag:--local', // wrangler d1's flag
-  'cli-flag:--remote', // wrangler d1's flag
-  'cli-flag:--command', // wrangler d1 execute's flag
-  'cli-flag:--env-file', // wrangler types' flag, the regenerate command a scaffold's worker-configuration.d.ts records
-  'cli-flag:--include-runtime', // wrangler types' flag, the same recorded command
-  'cli-flag:--port', // wrangler dev's flag, shown after `npm run preview --`
-  'cli-flag:--var', // wrangler dev's flag, shown after `npm run preview --`
-  'cli-flag:--rule', // cairn-audit's flag, not create-cairn-site's
-  'cli-flag:--fail-on', // cairn-audit's flag, not create-cairn-site's
-  'cli-flag:--from', // cairn-media-seed's flag, not create-cairn-site's
-  'cli-flag:--header', // cairn-media-seed's flag, not create-cairn-site's
-  'cli-flag:--help', // cairn-audit's, cairn-media-seed's, and cairn-manifest's flag, not create-cairn-site's
-  'cli-flag:--template', // sv create's flag, not create-cairn-site's
-  'cli-flag:--types', // sv create's flag, not create-cairn-site's
-  'cli-flag:--no-add-ons', // sv create's flag, not create-cairn-site's
-  'cli-flag:--strict', // cairn-guidance check's flag, not create-cairn-site's
-
-  'cli-flag:--user', // systemctl's flag, in docs/admin/tripwire.md's systemd example
-  'cli-flag:--now', // systemctl enable's flag, in docs/admin/tripwire.md's systemd example
   'env-var:XDG_CONFIG_HOME', // the XDG base-directory variable docs/admin/credentials.md names for the Linux registry path
+  // Variables the docs cite that only the `cairn` command read. The command is being rebuilt and
+  // keeps these names, so no source in this repo carries them until it ships.
+  'env-var:CAIRN_PLAIN', // read by the `cairn` command, which is being rebuilt
+  'env-var:CAIRN_THEME', // read by the `cairn` command, which is being rebuilt
+  'env-var:CAIRN_STATE_DIR', // read by the `cairn` command, which is being rebuilt
+  'env-var:CAIRN_CF_ACCOUNT_ID', // read by the `cairn` command, which is being rebuilt
+  'env-var:CAIRN_CF_READ_TOKEN', // read by the `cairn` command, which is being rebuilt
+  'env-var:CAIRN_GH_READ_TOKEN', // read by the `cairn` command, which is being rebuilt
 
   // Site-relative illustrative file paths: the conventional layout a worked example shows for a
   // reader's site, never a path in cairn's own repo, so the filesystem check correctly

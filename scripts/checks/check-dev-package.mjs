@@ -21,7 +21,6 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const TSCONFIG = 'packages/cairn-cms-dev/tsconfig.json';
 const ESLINT_PATH = 'packages/cairn-cms-dev/src';
 const MANIFEST = 'packages/cairn-cms-dev/package.json';
-const SCAFFOLD_MANIFEST = 'packages/create-cairn-site/package.json';
 const EXPECTED_REPOSITORY_URL = 'git+https://github.com/glw907/cairn-cms.git';
 
 /**
@@ -44,16 +43,16 @@ export function checkRepository(manifest, path) {
 }
 
 /**
- * Check both workspace manifests for the fields their OIDC publishes depend on, namely the
+ * Check the workspace manifest for the fields its OIDC publish depends on, namely the
  * repository URL. The 0.95.0 cut is why this exists: the dev backend's first publish was done by
  * hand, so the OIDC path had never run against this manifest, and the release published the
- * engine while this half failed. The create-cairn-site manifest publishes the same way.
- * @returns {boolean} true when every manifest carries a repository URL matching the engine's
+ * engine while this half failed.
+ * @returns {boolean} true when the manifest carries a repository URL matching the engine's
  */
 function checkManifest() {
   console.log('== package manifests (the fields provenance validation reads) ==');
   let ok = true;
-  for (const path of [MANIFEST, SCAFFOLD_MANIFEST]) {
+  for (const path of [MANIFEST]) {
     const result = checkRepository(JSON.parse(readFileSync(resolve(ROOT, path), 'utf8')), path);
     if (!result.ok) {
       console.log(result.error);
@@ -61,7 +60,7 @@ function checkManifest() {
       ok = false;
     }
   }
-  if (ok) console.log('repository.url matches the engine repository in both manifests');
+  if (ok) console.log('repository.url matches the engine repository in the dev-package manifest');
   return ok;
 }
 

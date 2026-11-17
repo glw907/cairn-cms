@@ -74,12 +74,12 @@ describe('verdict from the release body', () => {
     expect(result.reasons.join('\n')).toMatch(/scripted passed at ccc3333/);
   });
 
-  it('fails naming naive when a tool-only change under tool/internal/setup follows its row on the same engine version', async () => {
+  it('fails naming naive when a change under templates/ follows its row on the same engine version', async () => {
     const text = body(three({ naive: { commit: 'aaa1111' } }));
-    const result = await run(text, { aaa1111: ['tool/internal/setup/steps.go'] });
+    const result = await run(text, { aaa1111: ['templates/waymark/package.json'] });
     expect(result.ok).toBe(false);
     expect(result.reasons).toHaveLength(1);
-    expect(result.reasons[0]).toMatch(/^naive passed at aaa1111, and tool\/internal\/setup\/steps\.go changed/);
+    expect(result.reasons[0]).toMatch(/^naive passed at aaa1111, and templates\/waymark\/package\.json changed/);
   });
 
   it('names each missing leg', async () => {

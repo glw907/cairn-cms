@@ -20,16 +20,6 @@ export const TARGETS = [
   { file: 'schema/cairn-site-1.schema.json', defs: ['kindId', 'featureId'] },
 ];
 
-/**
- * Byte copies of the definition files that the Go tool embeds. A Go `embed` can't reach a folder
- * above its module, so the tool carries its own copy; `check-definitions.mjs` and a Go test both
- * fail when a copy drifts.
- */
-export const GO_COPIES = ['kinds', 'features'].map((name) => ({
-  from: `definitions/${name}.json`,
-  file: `tool/internal/cairnsite/definitions/${name}.json`,
-}));
-
 const SOURCES = { kindId: 'kinds', featureId: 'features' };
 
 /**
@@ -89,7 +79,7 @@ function defEntry(def, definitions) {
 }
 
 /**
- * Regenerates every target schema and the Go copies in memory, without touching disk.
+ * Regenerates every target schema in memory, without touching disk.
  * @param {string} root Directory that holds `definitions/` and `schema/`.
  * @returns {Record<string, string>} Repo-relative path to its full file contents.
  */
@@ -103,12 +93,11 @@ export function buildSchemas(root) {
     for (const def of defs) schema.$defs[def] = defEntry(def, definitions);
     out[file] = `${JSON.stringify(schema, null, 2)}\n`;
   }
-  for (const { from, file } of GO_COPIES) out[file] = readFileSync(resolve(root, from), 'utf8');
   return out;
 }
 
 /**
- * Writes the regenerated schemas and the Go copies under a root. Refuses unsound definitions.
+ * Writes the regenerated schemas under a root. Refuses unsound definitions.
  * @returns {string[]} The files written.
  */
 export function writeSchemas(root) {

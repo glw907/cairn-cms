@@ -45,7 +45,6 @@ export const RULES = {
   'package.json': everyLine((l) => VERSION_LINE.test(l)),
   'package-lock.json': everyLine((l) => VERSION_LINE.test(l)),
   'packages/cairn-cms-dev/package.json': everyLine((l) => VERSION_LINE.test(l)),
-  'packages/create-cairn-site/package.json': everyLine((l) => VERSION_LINE.test(l)),
   'templates/waymark/package.json': everyLine((l) => PIN_LINE.test(l)),
   'templates/waymark/.claude/cairn/VERSION': everyLine((l) => BARE_VERSION.test(l)),
   'CHANGELOG.md': everyLine((l) => HEADING.test(l) || SIZE_MARKER.test(l) || RELEASED_LINE.test(l)),

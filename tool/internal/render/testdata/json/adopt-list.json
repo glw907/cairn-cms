@@ -1,1 +1,0 @@
-{"schemaVersion":1,"kind":"adoptCandidates","verdict":"OK","exitCode":0,"containsPersonalData":true,"candidates":[{"worker":"my-site","repo":"my-org/my-site","zone":"my-site","domain":"my-site","accountId":"0123456789abcdef0123456789abcdef","connected":true,"adopted":false,"adoptable":false}]}

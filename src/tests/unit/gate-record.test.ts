@@ -140,23 +140,14 @@ describe('the table', () => {
 describe('the rerun paths', () => {
   it('match each listed pattern and miss neighbours', () => {
     const hits = [
-      'tool/internal/setup/steps.go',
-      'tool/internal/setup/loopback/pages/consent.html',
-      'tool/internal/providers/cloudflare_write.go',
-      'tool/internal/secrets/keyring.go',
-      'tool/internal/ui/newview/failure.go',
-      'tool/cmd/cairn/new.go',
-      'tool/cmd/cairn/new_agent.go',
-      'tool/cmd/cairn/help_agents.go',
-      'packages/create-cairn-site/bin.mjs',
       'templates/waymark/package.json',
       'scripts/build/setup-overlay/.github/workflows/deploy.yml',
       'plugins/cairn/skills/x/SKILL.md',
       'README.md',
       'docs/admin/setup.md',
     ];
-    const misses = ['tool/internal/render/json.go', 'tool/cmd/cairn/doctor.go', 'tool/cmd/cairn/sub/new.go', 'docs/editors/a.md', 'src/lib/x.ts', 'examples/showcase/README.md', 'CHANGELOG.md'];
-    expect(RERUN_PATHS).toHaveLength(12);
+    const misses = ['docs/editors/a.md', 'templatesx/a.json', 'docs/adminx.md', 'src/lib/x.ts', 'examples/showcase/README.md', 'CHANGELOG.md'];
+    expect(RERUN_PATHS).toHaveLength(5);
     expect(rerunPathsTouched(hits)).toEqual(hits);
     expect(rerunPathsTouched(misses)).toEqual([]);
   });
@@ -206,8 +197,8 @@ describe('carry', () => {
   });
 
   it('refuses a rerun-path diff naming the file, and writes nothing', async () => {
-    const stub = fakeGh({ code: 0, stdout: body() }, compareOf(['src/lib/x.ts', 'tool/internal/setup/steps.go']));
-    await expect(carry({ version: '0.99.0-rc.4', from: 'abc1234', to: 'def5678', notesDir: await notesDir(), gh: stub.gh })).rejects.toThrow(/tool\/internal\/setup\/steps\.go/);
+    const stub = fakeGh({ code: 0, stdout: body() }, compareOf(['src/lib/x.ts', 'templates/waymark/package.json']));
+    await expect(carry({ version: '0.99.0-rc.4', from: 'abc1234', to: 'def5678', notesDir: await notesDir(), gh: stub.gh })).rejects.toThrow(/templates\/waymark\/package\.json/);
     expect(stub.calls.some((args) => args[1] === 'edit')).toBe(false);
   });
 

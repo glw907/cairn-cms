@@ -1,9 +1,0 @@
-extends: existence
-message: "'%s' reads as slop. Use a plain word."
-level: error
-ignorecase: true
-tokens:
-  - tapestry
-  - multifaceted
-  - testament
-  - seamless

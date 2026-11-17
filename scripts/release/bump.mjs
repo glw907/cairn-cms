@@ -67,7 +67,7 @@ export function bump(run, { root, version, date }) {
   const lockLine = `"version": "${current}"`;
   const lock = read('package-lock.json');
   const lockCount = lock.split(lockLine).length - 1;
-  if (lockCount !== 4) return fail(`package-lock.json holds ${lockCount} lines at ${current}, expected 4`);
+  if (lockCount !== 3) return fail(`package-lock.json holds ${lockCount} lines at ${current}, expected 3`);
   next['package-lock.json'] = replaceAll(lock, lockLine, `"version": "${version}"`);
 
   const changelog = read('CHANGELOG.md');

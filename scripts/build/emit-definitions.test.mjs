@@ -10,13 +10,11 @@ import { checkDefinitions } from '../checks/check-definitions.mjs';
 
 const REPO = repoRoot(import.meta.url);
 
-/** A scratch root holding copies of `definitions/`, `schema/`, and the Go tool's embedded copy. */
+/** A scratch root holding copies of `definitions/` and `schema/`. */
 function scratchRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'cairn-definitions-'));
   cpSync(path.join(REPO, 'definitions'), path.join(root, 'definitions'), { recursive: true });
   cpSync(path.join(REPO, 'schema'), path.join(root, 'schema'), { recursive: true });
-  const goCopy = 'tool/internal/cairnsite/definitions';
-  cpSync(path.join(REPO, goCopy), path.join(root, goCopy), { recursive: true });
   return root;
 }
 
@@ -102,16 +100,6 @@ test('a feature listed in features.json is accepted by the theme schema and anot
   writeSchemas(root);
   assert.deepEqual(await keywordsIn(root, (m) => (m.features = ['test-feature'])), []);
   assert.deepEqual(await keywordsIn(root, (m) => (m.features = ['other'])), ['enum']);
-});
-
-test('a Go copy that differs from definitions/ fails the check and is named', () => {
-  const root = scratchRoot();
-  editJson(path.join(root, 'tool/internal/cairnsite/definitions/kinds.json'), (data) => {
-    data.kinds.pop();
-  });
-  const problems = checkDefinitions(root);
-  assert.equal(problems.length, 1);
-  assert.match(problems[0], /^tool\/internal\/cairnsite\/definitions\/kinds\.json:/);
 });
 
 /** Compiles the committed site-record schema with Ajv 2020. */

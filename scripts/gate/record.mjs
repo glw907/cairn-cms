@@ -29,13 +29,6 @@ export const REPO = 'glw907/cairn-cms';
  * path segment.
  */
 export const RERUN_PATHS = [
-  'tool/internal/setup/**',
-  'tool/internal/providers/**',
-  'tool/internal/secrets/**',
-  'tool/internal/ui/newview/**',
-  'tool/cmd/cairn/new*.go',
-  'tool/cmd/cairn/help_agents.go',
-  'packages/create-cairn-site/**',
   'templates/**',
   'scripts/build/setup-overlay/**',
   'plugins/cairn/**',

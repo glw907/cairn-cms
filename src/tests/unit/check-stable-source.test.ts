@@ -222,8 +222,7 @@ describe('the ignore set against what ships', () => {
     const inputs = new Set<string>();
     for (const [dir, rel] of [
       ['', 'package.json'],
-      ['packages/cairn-cms-dev', 'packages/cairn-cms-dev/package.json'],
-      ['packages/create-cairn-site', 'packages/create-cairn-site/package.json']
+      ['packages/cairn-cms-dev', 'packages/cairn-cms-dev/package.json']
     ]) {
       for (const entry of manifest(rel).files) {
         if (entry.startsWith('!')) continue;

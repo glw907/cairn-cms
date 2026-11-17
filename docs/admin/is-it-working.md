@@ -175,7 +175,7 @@ A PASS covers only those two files. It says nothing about a policy set in a modu
 
 **`config.site-config-invalid`, a blocker.** `site.config.yaml` doesn't parse, or it lacks a `siteName`, so the site can't resolve its content at all. The check looks for the file at four conventional paths and reports UNCHECKED when it finds none.
 
-**Ask a developer:** the error names the failing field. Correct `site.config.yaml` to match.
+**Ask a developer:** when the record breaks a rule, the error names the failing field. Correct `site.config.yaml` to match.
 
 ## Validate the site record
 
@@ -183,7 +183,7 @@ A PASS covers only those two files. It says nothing about a policy set in a modu
 
 The `PUBLIC_ORIGIN` check also fails when the `PUBLIC_ORIGIN` in the wrangler config's `vars` differs from `deploy.publicOrigin` in `cairn-site.json`. The error names both values.
 
-**Ask a developer:** the error names the failing field. Correct `cairn-site.json` to match, or make the two origins agree, then redeploy.
+**Ask a developer:** when the record breaks a rule, the error names the failing field. Correct `cairn-site.json` to match, or make the two origins agree, then redeploy.
 
 ## Meet the dependency floors
 

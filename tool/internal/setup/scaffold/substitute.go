@@ -8,6 +8,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode/utf8"
+
+	"go.yaml.in/yaml/v3"
+
+	"github.com/glw907/cairn-cms/tool/v2/internal/cairnsite"
 )
 
 // Posture values the template's aiPosture field takes. "none" is never written.
@@ -94,10 +99,11 @@ func (s Site) validate(needDB bool) error {
 
 // The two passes of edits. The first needs only what the approvals and the summary settled; the
 // second writes the settings that name the Cloudflare resources, which exist only after the
-// first pass has run.
+// first pass has run. The site record is written in the first pass, since only that pass has
+// the engine version, and its deploy values are written again in the second.
 var (
-	firstPass  = []func(string, Site, string) error{editPackageJSON, editSiteConfig, editDeploy, editSiteFacts, restoreGitignore}
-	secondPass = []func(string, Site, string) error{editCairnConfig, editWrangler}
+	firstPass  = []func(string, Site, string) error{editPackageJSON, editSiteConfig, editSiteRecord, editDeploy, editSiteFacts, restoreGitignore}
+	secondPass = []func(string, Site, string) error{editRecordDeploy, editWrangler}
 )
 
 // substitute applies steps to the site tree at dir. Each edit names its file and the anchor it
@@ -180,83 +186,119 @@ func editPackageJSON(dir string, s Site, engineVersion string) error {
 // its heading, so it says nothing the owner did not write but that the site is new.
 const neutralDescription = "A new site built with cairn."
 
-var (
-	topDescriptionRE  = regexp.MustCompile(`(?m)^description:`)
-	descriptionLineRE = regexp.MustCompile(`(?m)^description:.*$`)
-)
-
 // editSiteConfig writes the site name and replaces the template's sample description with
-// neutralDescription. A second top-level description key, which every YAML parser rejects,
-// fails here rather than in the first build.
+// neutralDescription. The description is set at its value's position in the parsed document, so
+// every other line of the file stays byte for byte as the template has it. A second top-level
+// description key, which every YAML parser rejects, fails here rather than in the first build.
 func editSiteConfig(dir string, s Site, _ string) error {
 	return edit(dir, targets.SiteConfig, func(c string) (string, error) {
 		c, err := replaceExact(c, "siteName: Waymark", "siteName: "+quote(s.Name), targets.SiteConfig)
 		if err != nil {
 			return "", err
 		}
-		c, err = replacePattern(c, descriptionLineRE, "description: "+quote(neutralDescription), targets.SiteConfig)
-		if err != nil {
-			return "", err
-		}
-		if n := len(topDescriptionRE.FindAllString(c, -1)); n > 1 {
-			return "", fmt.Errorf("scaffold: %s would carry %d top-level description keys after the site name is written", targets.SiteConfig, n)
-		}
-		return c, nil
+		return setDescription(c, quote(neutralDescription), targets.SiteConfig)
 	})
 }
 
-const aiPostureComment = `  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the
-  // site's robots.txt route passes it to buildRobotsResponse, and CairnAdapter.aiPosture
-  // documents both values; the cairn-extending-a-site skill helps pick.
-  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate
-  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.`
-
-const githubAppTemplate = "createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' })"
-
-var (
-	emailFromRE      = regexp.MustCompile(`email:\s*\{\s*from:\s*'[^']*'\s*\}`)
-	publicOriginTSRE = regexp.MustCompile(`export const publicOrigin\s*=\s*'[^']*'`)
-	// githubAppRE matches the call githubApp writes, whatever ids it holds.
-	githubAppRE = regexp.MustCompile(`createGithubApp\(\{ owner: '[^']*', repo: '[^']*', branch: '[^']*', appId: '[^']*', installationId: '[^']*' \}\)`)
-)
-
-// githubApp is the GitHub App identity the site's settings carry, with the repository's real
-// default branch.
-func githubApp(s Site) string {
-	return "createGithubApp({ owner: '" + s.Owner + "', repo: '" + s.Repo + "', branch: '" + s.DefaultBranch +
-		"', appId: '" + s.AppID + "', installationId: '" + s.InstallationID + "' })"
+// setDescription replaces the one-line value of the top-level description key with value, which
+// must be a valid YAML scalar. It never re-encodes the document, which would re-indent comments.
+func setDescription(content, value, rel string) (string, error) {
+	var doc yaml.Node
+	if err := yaml.Unmarshal([]byte(content), &doc); err != nil {
+		return "", fmt.Errorf("scaffold: parse %s: %w", rel, err)
+	}
+	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {
+		return "", fmt.Errorf("scaffold: expected %s to be a mapping, but it is not", rel)
+	}
+	var found []*yaml.Node
+	m := doc.Content[0]
+	for i := 0; i+1 < len(m.Content); i += 2 {
+		if m.Content[i].Value == "description" {
+			found = append(found, m.Content[i+1])
+		}
+	}
+	switch {
+	case len(found) == 0:
+		return "", fmt.Errorf("scaffold: expected to find a top-level description in %s, but it is missing", rel)
+	case len(found) > 1:
+		return "", fmt.Errorf("scaffold: %s would carry %d top-level description keys after the site name is written", rel, len(found))
+	}
+	v := found[0]
+	if v.Kind != yaml.ScalarNode || v.Style&(yaml.LiteralStyle|yaml.FoldedStyle) != 0 || strings.Contains(v.Value, "\n") {
+		return "", fmt.Errorf("scaffold: expected the description in %s to be a one-line value", rel)
+	}
+	lines := strings.SplitAfter(content, "\n")
+	if v.Line < 1 || v.Line > len(lines) {
+		return "", fmt.Errorf("scaffold: the description in %s is at line %d, which is out of range", rel, v.Line)
+	}
+	line := lines[v.Line-1]
+	body := strings.TrimRight(line, "\r\n")
+	ending := line[len(body):]
+	start := 0
+	for range v.Column - 1 {
+		_, n := utf8.DecodeRuneInString(body[start:])
+		if n == 0 {
+			return "", fmt.Errorf("scaffold: the description in %s is at column %d, which is out of range", rel, v.Column)
+		}
+		start += n
+	}
+	lines[v.Line-1] = body[:start] + value + ending
+	return strings.Join(lines, ""), nil
 }
 
-// editCairnConfig writes the posture block, the GitHub App identity with the repository's real
-// default branch, the sender address, and the site's origin.
-func editCairnConfig(dir string, s Site, _ string) error {
-	return edit(dir, targets.CairnConfig, func(c string) (string, error) {
-		block := "  // aiPosture states this site's stance toward AI training crawlers; the site's robots.txt\n" +
-			"  // route passes it to buildRobotsResponse, and CairnAdapter.aiPosture\n" +
-			"  // documents both values; the cairn-extending-a-site skill helps pick.\n" +
-			"  aiPosture: '" + s.Posture + "',"
-		c, err := replaceExact(c, aiPostureComment, block, targets.CairnConfig)
+// siteDeploy is the deploy section of the record for s.
+func siteDeploy(s Site) cairnsite.Deploy {
+	return cairnsite.Deploy{
+		PublicOrigin: "https://" + s.Address,
+		EmailFrom:    s.EmailFrom,
+		GitHub: cairnsite.GitHub{
+			Owner: s.Owner, Repo: s.Repo, Branch: s.DefaultBranch,
+			AppID: s.AppID, InstallationID: s.InstallationID,
+		},
+	}
+}
+
+// editRecord decodes the site record under dir, applies fn, and writes it back through the
+// record's own encoder, so it is the only code that writes the file.
+func editRecord(dir string, fn func(*cairnsite.Record)) error {
+	return edit(dir, targets.SiteRecord, func(c string) (string, error) {
+		r, err := cairnsite.Decode([]byte(c))
 		if err != nil {
 			return "", err
 		}
-		if c, err = replaceExact(c, githubAppTemplate, githubApp(s), targets.CairnConfig); err != nil {
+		fn(&r)
+		out, err := cairnsite.Encode(r)
+		if err != nil {
 			return "", err
 		}
-		if c, err = replacePattern(c, emailFromRE, "email: { from: '"+s.EmailFrom+"' }", targets.CairnConfig); err != nil {
-			return "", err
-		}
-		return replacePattern(c, publicOriginTSRE, "export const publicOrigin = 'https://"+s.Address+"'", targets.CairnConfig)
+		return string(out), nil
 	})
 }
 
-// editInstallation writes the GitHub App identity over the one a finalized site's settings hold.
+// editSiteRecord writes the posture, the engine version the site installs, and the deploy values
+// into the template's record.
+func editSiteRecord(dir string, s Site, engineVersion string) error {
+	return editRecord(dir, func(r *cairnsite.Record) {
+		r.AIPosture = s.Posture
+		r.Scaffold.Engine = engineVersion
+		r.Deploy = siteDeploy(s)
+	})
+}
+
+// editRecordDeploy writes the record's deploy values again once the second pass has the final
+// App identity.
+func editRecordDeploy(dir string, s Site, _ string) error {
+	return editRecord(dir, func(r *cairnsite.Record) { r.Deploy = siteDeploy(s) })
+}
+
+// editInstallation writes the App identity over the one a finalized site's record holds.
 func editInstallation(dir string, s Site) error {
-	return edit(dir, targets.CairnConfig, func(c string) (string, error) {
-		return replacePattern(c, githubAppRE, githubApp(s), targets.CairnConfig)
-	})
+	return editRecord(dir, func(r *cairnsite.Record) { r.Deploy.GitHub = siteDeploy(s).GitHub })
 }
 
-var publicOriginJSONRE = regexp.MustCompile(`"PUBLIC_ORIGIN":\s*"[^"]*"`)
+// templatePublicOrigin is the template's PUBLIC_ORIGIN entry, swapped as exact text so the
+// file's comments survive.
+const templatePublicOrigin = `"PUBLIC_ORIGIN": "http://localhost:4173"`
 
 // editWrangler names the Worker and its two resources, writes the real database id and the
 // origin, and inserts the account id the template lacks after the top-level name.
@@ -269,13 +311,14 @@ func editWrangler(dir string, s Site, _ string) error {
 			{`"database_id": "00000000-0000-0000-0000-000000000000"`, `"database_id": "` + s.DatabaseID + `"`},
 			{`"bucket_name": "cairn-showcase-media"`, `"bucket_name": "` + s.Bucket + `"`},
 		}
+		swaps = append(swaps, struct{ anchor, repl string }{templatePublicOrigin, `"PUBLIC_ORIGIN": "https://` + s.Address + `"`})
 		var err error
 		for _, sw := range swaps {
 			if c, err = replaceExact(c, sw.anchor, sw.repl, rel); err != nil {
 				return "", err
 			}
 		}
-		return replacePattern(c, publicOriginJSONRE, `"PUBLIC_ORIGIN": "https://`+s.Address+`"`, rel)
+		return c, nil
 	})
 }
 
@@ -298,7 +341,7 @@ type siteFacts struct {
 
 // editSiteFacts regenerates the committed facts after the posture edit. The engine's
 // build-time check compares the file byte for byte against the adapter's facts, so a posture
-// written into cairn.config.ts and not here fails the site's first build.
+// written into the site record and not here fails the site's first build.
 func editSiteFacts(dir string, s Site, _ string) error {
 	return edit(dir, targets.SiteFacts, func(c string) (string, error) {
 		var facts siteFacts

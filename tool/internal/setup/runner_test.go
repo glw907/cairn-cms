@@ -27,6 +27,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glw907/cairn-cms/tool/v2/internal/cairnsite"
 	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
@@ -2150,12 +2151,13 @@ func reinstallAfter(t *testing.T, w *world, step string, asked *[]string) string
 // configAt reads the site's settings file at rev in the git repository at dir.
 func configAt(t *testing.T, dir, rev string) string {
 	t.Helper()
-	return gitRun(t, dir, "show", rev+":"+siteConfig)
+	return gitRun(t, dir, "show", rev+":"+siteRecord)
 }
 
-// namesInstall reports whether a settings file's App identity names installation id.
+// namesInstall reports whether a site record's App identity names installation id.
 func namesInstall(config string, id int64) bool {
-	return strings.Contains(config, "installationId: '"+strconv.FormatInt(id, 10)+"' })")
+	r, err := cairnsite.Decode([]byte(config))
+	return err == nil && r.Deploy.GitHub.InstallationID == strconv.FormatInt(id, 10)
 }
 
 // assertSettingsFollowTheReinstall checks a run that ended live after a reinstall past the commit

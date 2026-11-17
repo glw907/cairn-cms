@@ -14,10 +14,10 @@ Dev snapshots (engine 0.99.0-dev.2, `create-cairn-site` 2.0.0-dev.9) stay on `ga
 only `owner` is missing from `~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`.
 
 <!-- round-report foundation -->
-Round foundation is running: pass 1 has landed and pass 2 is next
-Pass 1 of six is merged (#256): the page-kind list now lives in `definitions/kinds.json` and the schemas are generated from it. Nothing a visitor sees changed. Pass 2 is launching. Nothing waits for Geoff yet.
+Round foundation is holding after pass 3, and one call waits for Geoff
+Passes 1 and 2 are merged (#256, #257). Pass 3 `record` is ready as #258 (`auth-data`, one call) and waits for the close packet. Geoff ruled that pass 4 holds until the brainstorm on updating a site is complete, so no pass 4 launches and passes 5 and 6 wait. Nothing a visitor sees changed.
 
-Open documents: none.
+Open documents: `20261117-073728-22e0c0` (answered, the hold). The hold ends on the id of a second answered document the desk sends.
 Resume from: /var/home/glw907/Projects/initiatives/theme-garden/plans/2026-11-15-foundation-conductor-prompt.txt
 <!-- /round-report -->
 

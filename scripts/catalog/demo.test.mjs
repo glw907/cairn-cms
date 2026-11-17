@@ -141,14 +141,17 @@ test('the origin is named in the canonical link, og:url, feed, sitemap, and robo
   assertOrigin(assets, ORIGIN);
 });
 
-test('writeOrigin writes the origin into cairn.config.ts and throws naming the file when the literal is absent', () => {
+test('writeOrigin sets deploy.publicOrigin in cairn-site.json and throws naming the file when the record lacks it', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'cairn-origin-test-'));
   try {
-    const file = path.join(dir, 'src/site/cairn.config.ts');
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, "export const publicOrigin = 'https://showcase.test';\n");
+    const file = path.join(dir, 'cairn-site.json');
+    writeFileSync(file, `${JSON.stringify({ kind: 'blog', deploy: { publicOrigin: 'https://showcase.test', emailFrom: 'cms@showcase.test' } }, null, 2)}\n`);
     writeOrigin(dir, 'https://example.org');
-    assert.equal(readFileSync(file, 'utf8'), 'export const publicOrigin = "https://example.org";\n');
+    assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), {
+      kind: 'blog',
+      deploy: { publicOrigin: 'https://example.org', emailFrom: 'cms@showcase.test' },
+    });
+    writeFileSync(file, '{ "kind": "blog" }\n');
     assert.throws(() => writeOrigin(dir, 'https://example.net'), (error) => error instanceof Error && error.message.includes(file));
   } finally {
     rmSync(dir, { recursive: true, force: true });

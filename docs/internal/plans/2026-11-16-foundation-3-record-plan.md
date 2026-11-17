@@ -15,7 +15,7 @@ Outcome: A site has `cairn-site.json` at its root, checked by `schema/cairn-site
 `cairn.config.ts` imports it, the Go tool writes it once, and the tool rewrites no TypeScript
 source. `docs/admin/` has one reference page for the record.
 
-Planned path: 215 minutes against the design's 110 (parking ceiling 220, standing answer 20). See
+Planned path: 220 minutes against the design's 110 (parking ceiling 220, standing answer 20). See
 "Path".
 
 Scope premise (`cairn-judging-scope`): the record holds facts that have no other home, and it
@@ -115,7 +115,7 @@ pass can meet:
 - 18: plan against the files as merged. Done at `604b4596d`, main after PR #257.
 - 19: a needed change under `.github/**`, `scripts/release/**`, or `.claude/settings*` is left
   alone and recorded for the round's `merge` document. See "Held paths".
-- 20: over 220 path minutes at planning parks (twice the design's 110). 215 planned.
+- 20: over 220 path minutes at planning parks (twice the design's 110). 220 planned, at the ceiling and not over it.
 
 The run's ceilings are the ones the design names: the round stops new launches past 1,380 path
 minutes, and the usage ceiling is 85 percent of the weekly allowance. Retries go on while each
@@ -202,8 +202,8 @@ Pass 3:
     test case that drops one row and fails; `npm run check:docs-gate` exit 0 after the last docs
     edit, run again in Task 9; the fact-checker's JSON with no finding, quoted in the PR.
 - `make -C tool check` passes.
-  - Tasks 1, 2, 4, and 6 run it on the light lane, and the executor runs it at each pair's join;
-    CI's `tool` workflow on the head.
+  - Tasks 1, 2, 4, and 6 run it on the light lane, the executor runs it at the 2/3 and 4/5 joins
+    and in Task 9; CI's `tool` workflow on the head.
 
 ## Skills the executor loads
 
@@ -221,9 +221,11 @@ task, run the fast lane: the legs `node scripts/checks/gate-tier.mjs --fast --ra
 prints, each through `cairn-run-gate`, with the `tool` leg as `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`.
 Task 1 runs first. Tasks 2 and 3 run as a pair once Task 1 lands, then Tasks 4 and 5, then Tasks 6
 and 7. Each pair task goes to a `cairn-implementer` (Sonnet, medium) in its own worktree, which
-pays its own setup. At each pair's join, the executor merges the first task, then the second, and
-runs the fast lane on the joined branch before the next pair starts. Push once Task 1 lands, which
-opens the draft PR, and push after each join.
+pays its own setup. At the 2/3 and 4/5 joins, the executor merges the first task, then the
+second, and runs the fast lane on the joined branch, the tool leg included, before the next pair
+starts. The 6/7 join has no run of its own: neither task changes a file the public output is built
+from, so Task 8's parity can't move, and Task 9 runs the fast lane on the whole branch before the
+reviews. Push once Task 1 lands, which opens the draft PR, and push after each join.
 
 The record's shape, used throughout:
 
@@ -326,7 +328,9 @@ normalization. Skip `shoot-admin.mjs`: this pass changes no admin screen. Run `h
    developer may edit it.
 2. `examples/showcase/src/site/record-check.ts`: the check (mechanism table), exported for its
    test, and a plugin in `examples/showcase/vite.config.ts`, first in `plugins`, with
-   `buildStart: { order: 'pre', sequential: true, handler }`. `ajv` joins the showcase's
+   `buildStart: { order: 'pre', sequential: true, handler }`. The handler is synchronous
+   (`readFileSync`, validate, throw), so its order never rests on how Vite 8 honors the async
+   flag, and Task 5's failing builds prove the order. `ajv` joins the showcase's
    devDependencies at `^8.20.0`; refresh the lockfile with `npm install --prefix examples/showcase`,
    bare. The messages: a missing file prints `cairn-site.json: not found at <path>`; invalid JSON
    prints `cairn-site.json: not valid JSON (<parser message>)`; a schema failure prints
@@ -335,14 +339,17 @@ normalization. Skip `shoot-admin.mjs`: this pass changes no admin screen. Run `h
    and a missing `deploy.publicOrigin` each give their one line.
 4. `npm run emit:template`, then `npm run check:template`. `scripts/build/bake-template.test.mjs`
    drops `TEMPLATE_GITHUB_APP_LITERAL` and asserts the baked record's `deploy.github`.
+   `scripts/build/bake-template.mjs:53`, the baked README's step to set `publicOrigin` in
+   `cairn.config.ts`, names `deploy.publicOrigin` in `cairn-site.json` instead, and `:173`'s file
+   list adds `cairn-site.json` at the root.
 5. `scripts/catalog/demo.mjs` `writeOrigin` sets `deploy.publicOrigin` in `cairn-site.json` by
    key, and throws when the record lacks it; `demo.test.mjs` follows.
 6. `npm --prefix examples/showcase run build` and `npm --prefix examples/showcase run test:unit`.
    The template's `cairn.config.ts` changes here, so the fast lane runs the Go gate (Task 1's
    `toolInputs`). On this branch alone the e2e's byte compare doesn't exist yet and the scaffold
-   no longer edits the file once Task 2 joins; if the Go gate fails here on the old scaffold's
-   `cairn.config.ts` anchors, the task reports the failing test, and the executor's join run
-   after Task 2 merges is the gate that must pass.
+   no longer edits the file once Task 2 joins. The dispatch tells the implementer to skip the
+   tool leg on this branch and never repair it: the old scaffold's `cairn.config.ts` anchors fail
+   until Task 2 merges, and the executor's join run is the tool gate for both tasks.
 
 ### Task 4: the doctor (pair with Task 5, 40 min)
 
@@ -415,9 +422,10 @@ normalization. Skip `shoot-admin.mjs`: this pass changes no admin screen. Run `h
    whether it's required), what it leaves out (the theme, the Cloudflare names, the site name,
    any secret), and that the public origin is stated twice and the site's test and `cairn doctor`
    catch a mismatch. List it in `docs/admin/README.md`.
-2. `scripts/checks/check-site-record-page.mjs` (mechanism table), in `docs-gate.mjs`'s list, with
-   a test case run by the docs gate itself or added to an existing test file the root scripts
-   already run (the root `package.json` is outside the row).
+2. `scripts/checks/check-site-record-page.mjs` (mechanism table), in `docs-gate.mjs`'s list.
+   Its test is `src/tests/unit/check-site-record-page.test.ts`, beside the other check tests,
+   with a case that drops one row and fails, and `src/tests/unit/docs-gate.test.ts` adds the new
+   label to the list it pins (Decisions 2).
 3. Correct what the change makes wrong, from the recorded searches: the setup pages' sentences
    about `cairn.config.ts` holding the origin, sender, App identity, or posture;
    `skills/cairn-extending-a-site` references the same. `is-it-working.md`'s new check entry is
@@ -441,7 +449,9 @@ shots.
 
 ### Task 9: whole-branch review (10 min)
 
-1. `npm run check:template`, `npm run check:docs-gate`, `npm run check:definitions`, each bare.
+1. The fast lane over `604b4596d..HEAD`, the tool leg included, which gates the 6/7 join; then
+   `npm run check:template`, `npm run check:docs-gate`, `npm run check:definitions`, each bare.
+   The two reviews below are dispatched first and read while these run.
 2. Dispatch `standards:diff-reviewer` at whole-branch scope with this plan and the design, and
    `standards:web-auth-security-reviewer` on the runner test changes, `UpdateInstallation`,
    `NamesApp`, the keyring write log, and the record's no-secret test. Fold every finding, then
@@ -484,7 +494,9 @@ shots.
    `demo.test.mjs` (the demo's origin write), `tool/testdata/copy.golden.md` (regenerated from the
    doctor's catalogue), and `tool/internal/doctor/**`, `tool/internal/secrets/keyring_e2e.go`, and
    `tool/internal/testharness/**` (inside `tool/internal/**`, named here because the design's note
-   says "the scaffold and the embedded copy"). None is under `src/lib/**`, so none parks the pass.
+   says "the scaffold and the embedded copy"), and `src/tests/unit/check-site-record-page.test.ts`
+   and `src/tests/unit/docs-gate.test.ts` (the page check's test and the gate's pinned label list).
+   None is under `src/lib/**`, so none parks the pass.
 3. `Call:` "The Go tool writes it once" reads as one writer that owns the file: the first pass
    writes the whole record, and the second pass and `UpdateInstallation` change only `deploy`
    through the same encoder. Nothing else in the tool opens the file, and nothing opens a `.ts`
@@ -543,12 +555,12 @@ shots.
 | 0 base builds, scripts, screenshots, hash | 25 |
 | 1 schema, generator, Go copy, `cairnsite`, the template's record | 35 |
 | 2 and 3, as a pair, with the join run | 35 |
-| 4 and 5, as a pair (Task 4 sets it) | 40 |
-| 6 and 7, as a pair | 25 |
+| 4 and 5, as a pair (Task 4 sets it), with the join run | 45 |
+| 6 and 7, as a pair, no join run (Task 9 runs the fast lane) | 25 |
 | 8 head build, parity, three verifiers | 35 |
 | 9 whole-branch and security reviews and their folds | 10 |
 | 10 delete, hand over (CI off the path) | 10 |
-| Path (pairs overlap) | 215 |
+| Path (pairs overlap) | 220 |
 
 Each `cairn-implementer` worktree pays its own setup (two `npm ci` runs and a package), which the
 task minutes carry.
@@ -556,13 +568,13 @@ task minutes carry.
 ## Planning misses
 
 - `[file-list]` `scripts/catalog/demo.mjs`, the doctor, the catalogue golden, the keyring store,
-  and the harness (Decisions 2).
+  the harness, and the two `src/tests/unit` files (Decisions 2).
 - `[mechanism]` The runner test fakes that make the class `auth-data` (Decisions 1).
 - `[mechanism]` The doctor's four text lookups for a `ConditionNone` check (Decisions 5).
 - `[mechanism]` The fake keyring keeps no history (Decisions 14).
 - `[design-gap]` The composer version, the record's nesting, and `cairn add` (Decisions 8, 9,
   and 15).
-- `[estimate]` 215 against 110: the parity builds every pass owes, the rebuild tests, and the
+- `[estimate]` 220 against 110: the parity builds every pass owes, the rebuild tests, and the
   doctor.
 
 ## Review folded
@@ -572,7 +584,7 @@ folded:
 
 - Blocker, the keyring proof read an empty store: Task 6 adds a write log (Decisions 14).
 - Tasks 2 and 3 weren't independent: the template's record moves to Task 1, and the executor runs
-  the fast lane at each pair's join.
+  the fast lane at the 2/3 and 4/5 joins. The 6/7 join is gated by Task 9's run.
 - A `ConditionNone` failure also reaches `report.go:36-38` and `result.go:111`: one `text()`
   method at all four sites, Task 4 raised to 40 minutes (Decisions 5).
 - The doctor on a missing record: it fails, as the design's row says (Decisions 12).

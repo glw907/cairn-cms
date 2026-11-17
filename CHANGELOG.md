@@ -2,7 +2,9 @@
 
 <!-- release-size: minor -->
 
-- **A site keeps its deploy facts in `cairn-site.json`, and the build and `cairn doctor` check it.** The record sits at the site's root and holds the kind, features, theme options, optional AI posture, the engine version `cairn new` installed, and the deploy values: public origin, sign-in sender, and the GitHub App's identity. `cairn new` writes it when it creates the site, rewrites only its `deploy` values later, and rewrites no TypeScript, and `cairn.config.ts` imports it. The record's rules are `schema/cairn-site-1.schema.json`, and a site's build stops on a missing, unparseable, or rule-breaking record with one line that names the file and, for a broken rule, the field. `cairn doctor` gains the `config.site-record` check, and its `config.public-origin` check now fails when `PUBLIC_ORIGIN` in `wrangler.jsonc` differs from `deploy.publicOrigin`, naming both. A new page, `docs/admin/site-record.md`, lists every field. The engine reads nothing new, so a site on an earlier version keeps working until it takes the new tool, whose doctor reports the missing record.
+- **The Go tool is removed.** The `cairn` command, the `create-cairn-site` launcher, and the per-platform packages are gone from the repository, and the command is being rebuilt inside the `@glw907/cairn-cms` package.
+
+- **A site keeps its deploy facts in `cairn-site.json`, and the build checks it.** The record sits at the site's root and holds the kind, features, theme options, optional AI posture, the engine version, and the deploy values: public origin, sign-in sender, and the GitHub App's identity. `cairn.config.ts` imports it. The record's rules are `schema/cairn-site-1.schema.json`, and a site's build stops on a missing, unparseable, or rule-breaking record with one line that names the file and, for a broken rule, the field. A new page, `docs/admin/site-record.md`, lists every field.
 
 - **`editor.nav` takes a list of menus, and the admin edits each one at `/admin/nav/<menuName>`.** Each listed menu gets its own sidebar entry, in list order, and saves under its own key in `site.config.yaml`, so saving one menu leaves the others alone. The save's commit message names the menu, and the tab title reads its label. Bare `/admin/nav` now answers 404, and so does a menu name the list doesn't declare. A `navLayout` entry `{ screen: 'nav' }` places every declared menu, and takes no `label` when the list holds two or more. `CairnRuntime.navMenu` becomes `navMenus`, a list that is empty when no menu is declared. `defineAdapter` throws at build for the old single-object form, for a repeated `menuName`, and for more than 8 menus. The showcase, and so the template, lists `primary` and the Pennant `actions` menu.
 
@@ -44,146 +46,9 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
-- **The release gate is rebuilt around three legs, and the setup docs gain the token option.** The agent page and the `cairn-setting-up-a-site` plugin skill say how to run `cairn` as one bare background command and how `CAIRN_CF_SETUP_TOKEN` replaces the Cloudflare approval. They also say to run `npx create-cairn-site` with no npx option such as `--yes` in front of the name, no version or tag on it, and no `new` after it, since an option or a tag can keep the call inside the sandbox and the launcher already runs `cairn new`. `cairn new --plan`, `--apply`, and `--resume` now stop at once, with a message that says why, when the call runs inside Claude Code's sandbox, where the approval tab can't be reached. A subdomain given with `--host` is now checked for records on the subdomain, and no longer refused for the records on its zone's apex. The rulings ledger records the verdict.
+- **The release gate is rebuilt around three legs.** The rulings ledger records the verdict.
 
   Consumers must: nothing.
-
-- **`cairn new` no longer refuses a domain's bare address for its mail records.** The opening check
-  counts only A, AAAA, and CNAME records on an address, so an apex that holds an MX and an SPF TXT
-  passes, and a domain with live mail can host the site where its owner expects. An address with an A,
-  AAAA, or CNAME record or a Worker on it is refused as before. The three admin pages that described the
-  refusal say which records count.
-
-  Consumers must: nothing.
-
-- **`cairn new` no longer times out on a site that is already live, and its progress screen names the
-  address you chose.** After it attaches the domain, setup asks the zone's nameserver for each address
-  before it makes the first request to the site. A resolver that is asked for a host the zone doesn't have
-  yet keeps that answer for the zone's negative TTL, 30 minutes on Cloudflare, so an early request left
-  setup unable to see a site that was serving over HTTPS, and the 15-minute wait ended in a timeout. The
-  wait counts inside the same 15 minutes, and setup goes on to the ordinary check if the nameserver can't
-  be asked. The progress step reads "Connect gate.example.org" when you set a subdomain on the summary, where
-  it showed the bare domain.
-
-  Consumers must: nothing.
-
-- **`cairn new` tells an agent what to do the first time it runs it.** `cairn --help` points to
-  `cairn new`, and `cairn new --help` explains the two ways to run it, lists the answer flags first,
-  and gives examples. The sandbox refusal tells an agent to run the same call again outside the
-  sandbox, where it used to suggest asking the owner. The agent page, `cairn help agents`, and the
-  `cairn-setting-up-a-site` skill add the token's permissions, how long a run takes, and a warning not
-  to look up the new address before the summary. A subdomain `--host` now names its zone, so `--zone`
-  is needed only when the host names none, and the launcher drops a leading `new`.
-
-  Consumers must: nothing.
-
-- **A provider's refusal now shows its cause.** A `step_failed` event's `failure` may carry a `detail`
-  with the provider, its reason, the HTTP status, the error code, and the method and path of the
-  request, such as `cloudflare: forbidden (status 403, code 10000) on GET /zones/<id>/dns_records`. The
-  stderr print and the failure screen show it as a fifth line. A 403 now reads as a missing
-  permission, a 401 as a credential the provider didn't accept, and a 429, a 5xx, or a rate-limited 403
-  as a wait. The next step names the provider that refused, and only a failure with no provider answer
-  still says to check the internet connection. The event schema gains the optional `detail` field.
-
-  Consumers must: nothing.
-
-- **An agent now makes the bare `cairn` call before it asks about the sandbox.** A `sandbox.excludedCommands`
-  entry for `cairn *` or `npx create-cairn-site *` runs the call outside the sandbox with no prompt. Otherwise the
-  call stops with a message, and the agent retries with the Bash tool's `dangerouslyDisableSandbox` parameter. When the
-  owner has switched that off with `allowUnsandboxedCommands: false`, the retry stops with the same message and the
-  agent asks the owner to add the exclusion. The agent page, the skill, `cairn help agents`, and the refusal say so, and
-  the page and the skill say to visit the address once the `summary` event arrives.
-
-  Consumers must: nothing.
-
-- **Setup shows why a request got no answer, and retries a lookup that dropped.** A request that got no answer from
-  Cloudflare or GitHub now carries a `detail` with the method, the host, and the kind of failure (a failed lookup, a
-  timeout, a refused connection, a TLS or proxy error, or a connection that closed), where it showed only "Check your
-  internet connection". The detail names a fixed kind, never the transport's raw text, which can quote a proxy address.
-  A lookup or connection that failed before the request left is tried up to three times with a 1 and 2 second pause, a
-  timeout or a dropped connection is repeated only for a read-only request, a certificate error never is, and a response
-  with any status is never retried. This applies to the Cloudflare, GitHub, and npm clients, so the health checks that use
-  them repeat a failed read the same way, and the serving and HTTPS probes keep one attempt. Every stop built from a
-  provider error carries the detail, including the one for the GitHub App's installations and the one for the
-  template download from npm. When the check of those installations fails to list them before any exists, it reads as an
-  ordinary provider stop, and a failed deletion of one still warns that it may reach every repository. While the domain
-  step waits for the site, a nameserver lookup that fails for a reason other than "not found" is retried for about a
-  minute before the ordinary wait takes over, so an early lookup of the site's address is far less likely to make the
-  computer remember a missing name.
-
-  Consumers must: nothing.
-
-- **The sandbox refusal gives the bare retry first.** A call that ran inside the sandbox now gets three steps in
-  order: run the same call again, bare; then the Bash tool's `dangerouslyDisableSandbox` parameter; then ask the
-  owner for the two exclusions. An exclusion matches only the text of the call, so a `cd`, a pipe, a redirect, `;`,
-  `&&`, an option before `create-cairn-site`, or a version or tag stops the match even when the owner already set
-  the exclusions. The refusal used to lead with the parameter and keep the bare rule in a closing clause of one long
-  line, and a naive agent that piped its call asked the owner to add exclusions that were already there. `--plan`
-  keeps the refusal, since it runs the approvals. The agent page, the skill, `cairn help agents`, and the refusal
-  give the same order.
-
-  Consumers must: nothing.
-
-- **Setup's instructions name each page's real button and switch.** A first run through the real Cloudflare and
-  GitHub pages with no token showed six wrong labels. Cloudflare's button is Authorize, not Allow, and API Tokens
-  Write (no colon) is a switch under Sensitive scopes that the owner turns on, not a choice to select. GitHub's first
-  button reads Create GitHub App, and its last reads Approve, Install, & Authorize, not Approve. The site's confirm
-  page button reads Confirm sign-in, not Sign in. The terminal screen, the setup tab's approval and error pages, the
-  `sentence` field of the agent lane's waiting events, and the admin docs (`create-your-site`, `setup-recovery`,
-  `setup-reference`) now say so. `create-your-site` also tells the owner to check the account Cloudflare shows and
-  to expect GitHub's confirm-access page. The done screen's revoke line and `credentials` name Access Management,
-  then Connected Applications, where Cloudflare lists the grant as cairn, instead of "Manage OAuth authorizations".
-
-  Consumers must: nothing.
-
-- **The setup screens no longer let an Enter accept a domain unread.** The browser screen shows its
-  Enter hint only once setup has armed the browser step, and the account and domain choosers start with
-  no selection when the account holds several, so the first arrow key selects the first row.
-
-  Consumers must: nothing.
-
-- **`cairn --help`, the error printer, and the list views move onto the terminal's shared language, and
-  three variables choose the ground and the plain body.** On a terminal, help no longer paints in the
-  Accent color, and an error prints as a block that carries a fix arrow (`→`) when the error has a typed
-  fix and none when it has not. `cairn sites`, `cairn auth list`, `cairn adopt list`, `cairn auth check`,
-  and the `auth` and `adopt` receipts take the report layout. Body text is the terminal's own
-  foreground: the Text role paints no ink, so it reads on a light or a dark terminal. `--theme`,
-  `CAIRN_THEME` (`dark` or `light`), and `COLORFGBG` (its last field, `7` or `15` for light) choose the
-  palette, in that order, and `CAIRN_PLAIN=1` prints a terminal the plain output a pipe gets, with no
-  progress line, though `cairn new` still opens its terminal view. A value cairn cannot read is
-  ignored. Output to a pipe or a file and `--json` output are byte for byte what they were, except one
-  sentence in `cairn --help` that names `CAIRN_PLAIN`, and one newline: `cairn auth set` now ends its
-  `NAME: ` prompt line on stderr when stdin is a pipe, so the receipt starts at the margin. The
-  256-colour palette is darker on a light ground and lighter on a dark one, so every ink measures at
-  least 4.5:1 against the ground.
-  The admin credentials page documents the variables.
-
-  Consumers must: nothing.
-
-- **`cairn health`, `cairn doctor`, `cairn logs`, and the `cairn sites` status block share one report
-  layout in a terminal.** Their rows sit two columns in from the edge, and their blocks carry
-  lowercase titles such as `failing`, `could not run`, and `what to fix`. In `cairn health` and
-  `cairn doctor`, a check's state shows in the mark that opens its row and in its block's title,
-  and a note carries no mark. `cairn doctor` used to print one line per check in a terminal too;
-  it now folds its passing checks to one count line and its skipped checks to one
-  `does not apply` line. A held check, one acknowledged with `--ack`, takes the `◌` mark. The
-  marks fall back to ASCII when the locale isn't UTF-8, and outside Windows when `LC_ALL`,
-  `LC_CTYPE`, and `LANG` are all unset. When stdout and
-  stderr are both terminals, `cairn health` draws a `Checking <site>` progress line on stderr while
-  it runs and erases it before the report prints. A set `CI` variable, `TERM=dumb`, `--quiet`,
-  `--json`, and `--verbose` each keep the line off. On a terminal, `cairn logs` and `cairn adopt
-  list` set their "not safe to paste" notice in from the margin with a blank line after it, and
-  print it unchanged to a pipe. Output to a pipe or a file and `--json` output don't change.
-
-  Consumers must: nothing.
-
-- **`provider-console` is no longer a fix actor.** No check ever named it, so a fix's `actor` is
-  `operator`, `developer`, or `registrar`. `cairn help agents` drops it from its list of actors, and
-  `schema/cairn-health.schema.json` drops it from the `actor` enum, so a payload naming it no longer
-  validates. `schemaVersion` stays 1, because no `cairn` release has ever written that value. Apart
-  from that one help line, output to a pipe or a file and `--json` output are still what they were.
-
-  Consumers must: remove `provider-console` from any copy of the `actor` enum you keep and from any branch that handles it.
 
 - **A theme manifest now requires `engine`, `kinds`, and `notes`.** `schema/cairn-theme-1.schema.json`
   requires `engine` (a range of the form `>=1.2.0` or `>=1.2.0 <2.0.0`), `kinds` (one to three of
@@ -212,12 +77,8 @@ The emit takes `src/content/` and `static/` from `scripts/build/starter-overlay/
 
   Consumers must: nothing.
 
-- **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`, which the `cairn new` setup command will fetch in a later change. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
-- **A new CI matrix scaffolds the setup answers.** `setup-matrix` scaffolds every answer combination from a packed engine tarball and runs `npm run check`, `npx cairn-manifest`, and `npm run build` on each.
-- **The admin docs describe `cairn new`.** `before-you-start`, `create-your-site`, `own-your-domain`, `setup-recovery`, `troubleshooting`, and `credentials` are rebuilt for the new setup, and four pages are new: `set-up-with-an-agent`, `deploys`, `suggested-plugins`, and the generated `setup-reference`. The agent page is also embedded in the `cairn` binary, and a test fails when the copy drifts.
+- **The engine package now ships the Waymark site template and a theme catalog.** The tarball carries `template/waymark/` (the composed starter plus its deploy and check workflows) and `template/catalog.json`. Nothing in a site changes: the files sit beside `dist`, and no export or entry point moves.
 - **A `cairn` Claude Code plugin and marketplace.** `.claude-plugin/marketplace.json` names the marketplace `cairn`, and `plugins/cairn` holds one skill, `cairn-setting-up-a-site`, that runs the plan and apply steps for an owner. A new site's `.claude/settings.json` offers the Svelte, Cloudflare, and daisyUI plugins, and its `.mcp.json` adds the Svelte MCP server. Both READMEs open with "Setting up with an agent".
-- **`cairn new` is shown, and `npm create cairn-site` becomes a launcher.** The JavaScript wizard under `packages/create-cairn-site` is gone. The package now holds only `bin.mjs`, which finds the prebuilt `cairn` binary in one of six optional platform packages (`@glw907/cairn-<os>-<cpu>`) and runs `cairn new` with every flag passed through. The tool release (`tool.yml`, a `tool/v*` tag) packs and publishes the six platform packages and the launcher at the tool's version, so the launcher no longer versions with the engine, and `publish.yml` and `scripts/release/*` drop it from the engine's lockstep. The template bake, the transcript corpus, and the site-config path moved to `scripts/build/` and `tool/testdata/`, and `check:symbols` reads `cairn new`'s flags from the tool's `flags.json`.
-
 - **The site's files move from `src/theme/` to `src/site/`.** `cairn.config.ts`, `site-config.ts`, and `site.config.yaml` now live in `src/site/`, reached by a `#site/*` subpath import, which leaves `src/theme/` to the theme alone. Two stylesheets join them, `src/site/theme-options.css` and `src/site/overrides.css`, linked after the theme's sheets in the layout, the error page, and the adapter's preview `stylesheets`. The engine's fixed site-config path (`DEFAULT_SITE_CONFIG_PATH`) is now `src/site/site.config.yaml`, the Go doctor still finds the old `src/theme/` path as a legacy location, and `@glw907/cairn-cms-dev`'s fake backend seeds the config at the new path.
 - **A missing site config logs `config.missing`.** The nav, settings, and vocabulary loads each emit a `warn` record with `scope` and `path` when the file is absent, in place of failing without a trace. The `log-events` table lists it.
 - **The directive vocabulary lives in the chassis.** The nine standard directives are in `src/chassis/directives/`, and the adapter builds its `blocks` with `composeBlocks(icons, renderers)`. A theme replaces a directive's `build` through `src/theme/directives/renderers.ts` and cannot add, drop, or rename one. `src/theme/markdown-blocks.ts` is gone, and a theme's islands moved to `src/theme/directives/islands/`.

@@ -6,13 +6,13 @@ Present tense only; history lives in git and PR bodies, orientation in `CLAUDE.m
 
 Published stable: **`0.98.0`** on npm `latest` (`@glw907/cairn-cms`, `@glw907/cairn-cms-dev`).
 The Go `cairn` tool and the `create-cairn-site` launcher are deleted from `main` (pass `tool-delete`, #260); the `cairn` command is being rebuilt inside the engine package.
-`next` and `create-cairn-site@latest` serve **`0.99.0-rc.4`**. Geoff ruled on 2026-11-07 that `0.99.0` takes no stable
+`next` serves **`0.99.0-rc.4`**; the launcher no longer exists, and nothing new is published. Geoff ruled on 2026-11-07 that `0.99.0` takes no stable
 from it: the setup rebuild (`cairn new`) forms the next release, and nothing ships until then.
 
 ## Immediate next action
 
-Dev snapshots (engine 0.99.0-dev.2, `create-cairn-site` 2.0.0-dev.9) stay on `gate`. The scripted and naive legs passed;
-only `owner` is missing from `~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`.
+Dev snapshots (engine 0.99.0-dev.2) stay on `gate`; nothing new is published. The next design is the route that
+rebuilds the `cairn` command inside the engine package.
 
 <!-- round-report foundation -->
 Round foundation is holding after pass 3, and one call waits for Geoff

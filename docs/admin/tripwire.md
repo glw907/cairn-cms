@@ -1,5 +1,7 @@
 # Run cairn on a schedule
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 `cairn` adds no `tripwire` subcommand. The tripwire is `cairn health` itself, run on a schedule
 and wired to page someone on a non-zero exit. This page has a working example for each of three
 schedulers: `systemd`, `launchd`, and Windows Task Scheduler. Pick the one that matches your

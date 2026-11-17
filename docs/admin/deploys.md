@@ -1,5 +1,7 @@
 # Deploys
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 A site that `cairn new` sets up deploys itself each time a commit reaches the repository's default branch. A GitHub Actions workflow in the repository runs the deploy, using a key that setup stores as a repository secret. This page shows how to read a deploy's result, recover from a failed first deploy, and move the site to Workers Builds, Cloudflare's build service, by hand. It also explains how the deploy works and what limit a busy site can reach.
 
 The page is for the person who owns the site's repository. Reading the page needs no code, and the move to Workers Builds needs access to the Cloudflare dashboard and the repository's settings on GitHub. For a run that stopped before the site went live, read [Recover a setup that stopped](./setup-recovery.md).

@@ -1,5 +1,7 @@
 # cairn showcase
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 This is Waymark, cairn's starter template: a complete, working cairn site built in the DaisyUI and Tailwind idiom. The engine's e2e and design suites run against this directory in CI. The `cairn-extending-a-site` skill's adopt-cairn reference builds the same engine wiring by hand in a bare SvelteKit app.
 
 The showcase depends on cairn through the relative `file:../..` path, so it always builds against the engine version in this checkout, not a published release.

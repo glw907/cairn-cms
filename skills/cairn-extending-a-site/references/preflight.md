@@ -1,5 +1,7 @@
 # Pre-flight
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 Run this before calling a piece of extension work done, whether it built a custom admin screen,
 a login channel, or anything else that reaches into a cairn seam.
 

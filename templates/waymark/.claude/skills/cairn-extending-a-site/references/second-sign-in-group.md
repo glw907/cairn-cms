@@ -1,5 +1,7 @@
 # Add a second sign-in group
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 Owner and editor by magic link stay the zero-config default and stay on it. A second audience
 (staff, members, customers) takes one of two mechanisms. What that audience is, and its records,
 stay site code.

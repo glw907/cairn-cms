@@ -1,6 +1,6 @@
 {
   "name": "cairn",
-  "description": "Sets up a new cairn site with an agent through cairn new.",
+  "description": "Sets up a new cairn site with an agent through cairn new. The cairn command is being rebuilt inside the @glw907/cairn-cms package, and the commands in this skill don't run until it ships.",
   "author": {
     "name": "Geoff Wright"
   },

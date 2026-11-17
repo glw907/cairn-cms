@@ -1,5 +1,7 @@
 # Suggested plugins
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 A site that `cairn new` sets up carries Claude Code settings that suggest three plugins, and a `.mcp.json` file that adds the Svelte Model Context Protocol (MCP) server. You install a fourth plugin, `cairn`, before the site exists. This page lists them and shows how each person installs their copy. It is for the owner or developer who opens the site's folder in Claude Code, and it leaves out what each plugin teaches.
 
 ## What the site suggests

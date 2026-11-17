@@ -1,5 +1,7 @@
 # Set up a site with an agent
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 A coding agent can set up a cairn site from flags and a plan file, with no prompt in a terminal. The agent runs `cairn new` in two calls: one writes a plan and creates nothing on Cloudflare, and the second creates the site from that plan once the owner has reviewed it. The owner still approves each browser step, because setup reaches into the owner's Cloudflare and GitHub accounts and the agent can't consent for them.
 
 This page is for two readers. If you own the site, hand this page to your agent. If you are the agent, it is the whole contract, and the generated [setup reference](./setup-reference.md) lists every flag, derived name, step, event, and exit code. To answer the questions yourself in a terminal, start with `npm create cairn-site` instead, which installs the `cairn` CLI and runs `cairn new`. A run with no terminal and no mode flag prints the agent guide.

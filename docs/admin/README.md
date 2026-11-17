@@ -1,5 +1,7 @@
 # Set up and run a cairn site
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 A person who is comfortable pasting a command into a terminal and following written steps exactly can set up and run a cairn site without writing code. The setup command, `cairn new`, does the work. Start it with `npm create cairn-site`, or hand it to a coding agent. These pages explain what setup does, state what it costs, and explain how to resume a setup that stopped.
 
 If you write content on a site that someone else set up, you want the editors' help instead, which opens from the admin's **Help** link. If you build custom screens or features on cairn, start from the [cairn repository](https://github.com/glw907/cairn-cms), whose README routes a developer.

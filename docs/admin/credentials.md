@@ -1,5 +1,7 @@
 # Give cairn its credentials
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 Two kinds of credential belong to a cairn site, and this page covers both in two halves. The first half is for the person who ran setup, `cairn new`: it holds a few credentials on your computer while it runs, and it deletes them when the site goes live. The second half is for the person who runs health checks: the `cairn` CLI holds two read-only tokens, which it uses to check a live site's Cloudflare zone and its GitHub repository. The halves share nothing, so read the one that fits your job.
 
 ## What setup holds

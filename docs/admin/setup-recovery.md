@@ -1,5 +1,7 @@
 # Recover a setup that stopped
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 Setup saves its progress as it goes, so a step that fails, a browser tab you close, or a run you interrupt never costs you the steps before it. This page is for the moment a `cairn new` run stopped and you need to know what it kept and what to do next. It covers a run that stopped before the site went live, and it expects only that you saw setup stop. Each stop below is classed as one of three next steps: wait, act, or ask someone else.
 
 Two other pages cover problems at other moments:

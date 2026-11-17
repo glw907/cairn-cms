@@ -1,5 +1,7 @@
 # Debug a running site
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 Contents:
 
 - [Logs first](#logs-first)

@@ -1,5 +1,7 @@
 # Create your site
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 A cairn site runs on accounts you own: a GitHub account holds its content, and a Cloudflare account runs it. The setup command, `npm create cairn-site`, creates the site, connects it to both, deploys it, and signs you in as its owner. It installs the `cairn` CLI and runs its `cairn new` command. You answer two questions in the terminal, approve four requests in one browser tab, confirm the summary, and then wait while setup runs. This page walks one run from an empty terminal to a signed-in admin.
 
 The page is for someone who is comfortable pasting a command into a terminal and clicking through a dashboard, and who writes no code. [Before you start](./before-you-start.md) covers what setup creates and what it costs. [Own your domain](./own-your-domain.md) covers a domain and the email that comes with it, and [Recover a setup that stopped](./setup-recovery.md) covers a run that stops partway.
@@ -131,7 +133,7 @@ The done screen names your live address, says whether you're signed in, and list
 1. Open the live address. The starter site loads.
 2. Open `/admin` on the same address. You're signed in, or the setup tab shows a **Confirm sign-in** button.
 3. Open the site's folder on your computer. Setup left a working copy there, with `origin` pointing at your repository.
-4. Run `cairn doctor` from the folder. The setup command installed the `cairn` CLI; if `cairn` isn't on your path, install it from the [release page](https://github.com/glw907/cairn-cms/releases). [Check that your site works](./is-it-working.md) explains each result.
+4. Run `cairn doctor` from the folder. [Check that your site works](./is-it-working.md) explains each result.
 
 If the done screen says setup didn't run dependency install scripts, run `npm rebuild` in the folder. Before you add a second writer, read [what a second writer needs](./before-you-start.md#what-a-second-writer-needs).
 

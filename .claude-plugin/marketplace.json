@@ -10,7 +10,7 @@
     {
       "name": "cairn",
       "source": "./plugins/cairn",
-      "description": "Sets up a new cairn site with an agent: the cairn new plan and apply steps, each approval handed to the person, and the hand-off to the site's own skills."
+      "description": "Sets up a new cairn site with an agent: the cairn new plan and apply steps, each approval handed to the person, and the hand-off to the site's own skills. The cairn command is being rebuilt inside the @glw907/cairn-cms package, and the commands in this skill don't run until it ships."
     }
   ]
 }

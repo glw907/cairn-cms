@@ -1,5 +1,7 @@
 # Rotate the GitHub App key
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 Your site commits every save and publish through a GitHub App, and the App signs each request with a private key. The key never expires, so the one your site uses stays in service until you replace it. Rotate it when the key may have been exposed, when someone who held it leaves, or on a schedule you set. This page shows how to replace the key on a site that [`cairn new`](./create-your-site.md) set up.
 
 An App can hold several private keys at once, and a new key doesn't cancel the old one. That overlap lets you generate the new key beside the old one, push it to your site, and confirm it works before you delete the old key. Your site keeps publishing throughout.

@@ -1,5 +1,7 @@
 # The cairn new setup reference
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 This page is generated from the code by `make reference`. Do not edit it by hand.
 
 It describes how to run `cairn new` without a terminal: the flags that answer each question, the

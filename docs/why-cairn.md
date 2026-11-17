@@ -1,5 +1,7 @@
 # Why cairn
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 Before cairn, the small organizations I run sites for lived on WordPress, and later on static site generators with a git-backed editor in front. WordPress was hard to manage and hard to design in, a mass of plugins and theme customization that resisted integration with anything else, and casual editors found its block editor confusing. The static site generators were much cleaner technically, but the problem of editing for non-technical people remained. The aim was a clean place for editors to write, and a site that is dependable and cheap for the person who runs it.
 
 Today, cairn is an editor-first, git-backed content management system (CMS) for SvelteKit sites hosted on Cloudflare. It is also a toolkit that a developer extends into the organization's admin. It was first framed for small organizations. Since a site can replace the default sign-in with its identity provider, cairn also suits larger organizations, especially ones already committed to Cloudflare.

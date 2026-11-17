@@ -344,6 +344,8 @@
 
 ## Low
 
+- [ ] **#545** A single-menu `navLayout` relabel changes the sidebar entry but not the screen's `<h1>` `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-16)*
+  `NavTree.svelte:138` titles the page with `data.menu.label` from `editor.nav`, while the sidebar entry shows the `navLayout` relabel from `checkEngineRef` in `admin-nav.ts`, so a site that relabels its one menu sees two names for it. Two menus take no relabel, so only a one-menu site is affected. Found by the menus pass (PR #257).
 - [ ] **#544** Rename the `navMenu` test names and the `navMenuLabel` fixture option to the `navMenus` wording `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-16)*
   `src/tests/unit/cairn-admin-actions.test.ts:598` and `:917`, `cairn-admin-load.test.ts:234`, `nav-routes-load.test.ts:142`, `nav-layout-resolve.test.ts:157`, `content-routes-layout.test.ts:148` and `:256` still say "navMenu", and `src/tests/component/CairnAdminShell.test.ts:63-112` names a fixture option `navMenuLabel` beside the `navMenus` override. Found by the whole-branch review of foundation-2 (PR #257). Reads wrong, breaks nothing.
 

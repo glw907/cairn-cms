@@ -84,6 +84,7 @@ The following table maps each report title to its section and to the command tha
 | Site-wide Referrer-Policy | [Scope a site-wide no-referrer policy](#scope-a-site-wide-no-referrer-policy) | `cairn doctor` |
 | PUBLIC_ORIGIN | [Set the public origin](#set-the-public-origin) | `cairn doctor` |
 | Site config | [Validate the site config](#validate-the-site-config) | `cairn doctor` |
+| Site record | [Validate the site record](#validate-the-site-record) | `cairn doctor` |
 | Framework dependencies | [Meet the dependency floors](#meet-the-dependency-floors) | `cairn doctor` |
 | AI posture | [Make the stated AI posture effective](#make-the-stated-ai-posture-effective) | `cairn doctor` |
 | Guard role vocabulary | [Provision the auth store](#provision-the-auth-store) | `cairn doctor` |
@@ -175,6 +176,14 @@ A PASS covers only those two files. It says nothing about a policy set in a modu
 **`config.site-config-invalid`, a blocker.** `site.config.yaml` doesn't parse, or it lacks a `siteName`, so the site can't resolve its content at all. The check looks for the file at four conventional paths and reports UNCHECKED when it finds none.
 
 **Ask a developer:** the error names the failing field. Correct `site.config.yaml` to match.
+
+## Validate the site record
+
+**`config.site-record`, a blocker.** `cairn-site.json` at the site's root is missing, isn't valid JSON, or breaks the record's rules, such as an unknown key, a kind that isn't on the list, or no `deploy.publicOrigin`. The site's build reads this file and stops when it fails, so the site can't deploy. This check raises no condition of its own, so it appears in a report under the title `Site record does not validate`.
+
+The `PUBLIC_ORIGIN` check also fails when the `PUBLIC_ORIGIN` in the wrangler config's `vars` differs from `deploy.publicOrigin` in `cairn-site.json`. The error names both values.
+
+**Ask a developer:** the error names the failing field. Correct `cairn-site.json` to match, or make the two origins agree, then redeploy.
 
 ## Meet the dependency floors
 

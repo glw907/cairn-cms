@@ -21,6 +21,9 @@ type Check struct {
 	// Condition is the cairn-doctor condition id this check's failure raises. A check whose
 	// failure raises no catalogued condition leaves this spine.ConditionNone.
 	Condition spine.Condition
+	// Text is the failure text of a check that raises no catalogued condition. text reads it only
+	// when Condition is spine.ConditionNone.
+	Text spine.ConditionText
 	// run measures s and returns the check's settled Result.
 	run func(s Snapshot) Result
 }
@@ -45,6 +48,13 @@ func Catalogue() []string {
 		detailPublicOriginSkip,
 		sourceWranglerVars,
 		sourceEnvironment,
+		detailSiteRecordPass,
+		detailSiteRecordMissing,
+		titleSiteRecordInvalid,
+		whySiteRecordInvalid,
+		fixSiteRecordInvalid,
+		docsSiteRecordInvalid,
+		tmplPublicOriginMismatch,
 		detailSiteConfigPass,
 		tmplSiteConfigNotFound,
 		detailEnginePackageJSONNotFound,
@@ -122,10 +132,19 @@ func conditionText(id spine.Condition) spine.ConditionText {
 	return text
 }
 
-// label returns c's registry-sourced label: its condition's title in the embedded mirror. A
-// check with no condition (Condition: spine.ConditionNone) has no label.
+// text returns c's failure text: its own Text when it raises no condition, else its condition's
+// entry in the embedded mirror.
+func (c Check) text() spine.ConditionText {
+	if c.Condition == spine.ConditionNone {
+		return c.Text
+	}
+	return conditionText(c.Condition)
+}
+
+// label returns c's failure title: its own Text's title when it raises no condition, else its
+// condition's title in the embedded mirror.
 func (c Check) label() string {
-	return conditionText(c.Condition).Title
+	return c.text().Title
 }
 
 // Title returns the title a report line prints for status: the PassTitle on a PASS or the
@@ -142,7 +161,7 @@ func (c Check) Title(status Status) string {
 }
 
 // checks is the complete doctor check set cairn doctor runs, in report order. Three read
-// site-facts.json (config.media-bucket, auth.role-wiring, ai.posture-effective); the other nine
+// site-facts.json (config.media-bucket, auth.role-wiring, ai.posture-effective); the other ten
 // read the site's files directly.
 var checks = []Check{
 	configBindings,
@@ -150,6 +169,7 @@ var checks = []Check{
 	configObservability,
 	configCsrfTrustedOrigins,
 	configSiteConfig,
+	configSiteRecord,
 	configPublicOrigin,
 	configNoReferrerBlanket,
 	adminMountShape,

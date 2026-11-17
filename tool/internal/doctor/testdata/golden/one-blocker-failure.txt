@@ -3,6 +3,7 @@ SKIP  Media bucket binding: no media assets configured
 PASS  Workers Logs has a sink: observability.enabled is true
 PASS  Trusted origins keep SvelteKit's origin check: no csrf.trustedOrigins entries in vite.config.ts, so SvelteKit's default origin check covers every route (heuristic text read)
 PASS  Site config validates: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
+PASS  Site record validates: cairn-site.json parses and follows the record's rules
 PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is https://example.com (wrangler vars)
 PASS  No site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
 PASS  Custom /admin mount is complete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
@@ -16,4 +17,4 @@ Wrangler bindings are missing failed.
   Fix: Declare the send_email binding as EMAIL and the d1_databases binding as AUTH_DB in wrangler.jsonc (or wrangler.toml), then re-deploy.
   Docs: https://cairn.pub/docs/admin/is-it-working#deploy-the-worker-with-its-bindings
 
-8 passed, 1 failed, 3 skipped, 0 info, 0 unchecked
+9 passed, 1 failed, 3 skipped, 0 info, 0 unchecked

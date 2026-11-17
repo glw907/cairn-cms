@@ -3,6 +3,7 @@ SKIP  Media bucket binding: no media assets configured
 PASS  Workers Logs has a sink: observability.enabled is true
 FAIL  Trusted origins bypass SvelteKit's origin check: csrf.trustedOrigins in vite.config.ts bypasses SvelteKit's origin check: "*" turns the check off on every route, /admin included (heuristic text read)
 PASS  Site config validates: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
+PASS  Site record validates: cairn-site.json parses and follows the record's rules
 PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is https://example.com (wrangler vars)
 PASS  No site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
 PASS  Custom /admin mount is complete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
@@ -16,4 +17,4 @@ Trusted origins bypass SvelteKit's origin check failed.
   Fix: Remove the "*" and "null" entries from csrf.trustedOrigins in the Vite config. List only the exact origins that must post to the site, since each one also widens SvelteKit's check on /admin.
   Docs: https://cairn.pub/docs/admin/is-it-working#keep-sveltekits-origin-check-on
 
-9 passed, 1 failed, 2 skipped, 0 info, 0 unchecked
+10 passed, 1 failed, 2 skipped, 0 info, 0 unchecked

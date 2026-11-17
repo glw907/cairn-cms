@@ -33,7 +33,7 @@ func Format(checked []CheckedResult) string {
 		if cr.Result.Status != StatusFail {
 			continue
 		}
-		text := conditionText(cr.Check.Condition)
+		text := cr.Check.text()
 		lines = append(lines, "", fmt.Sprintf("%s failed.", cr.Check.label()),
 			"  Why: "+text.Why, "  Fix: "+text.Remediation)
 		if url := DocsURL(text.DocsAnchor); url != "" {

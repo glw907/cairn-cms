@@ -20,7 +20,9 @@ function siteRecord(): Plugin {
       order: 'pre',
       sequential: true,
       handler() {
-        const engine = dirname(createRequire(import.meta.url).resolve('@glw907/cairn-cms/package.json'));
+        const engine = dirname(
+          createRequire(import.meta.url).resolve('@glw907/cairn-cms/package.json'),
+        );
         const problem = checkSiteRecord(
           fileURLToPath(new URL('./cairn-site.json', import.meta.url)),
           join(engine, 'schema/cairn-site-1.schema.json'),

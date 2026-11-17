@@ -6,8 +6,8 @@ import Ajv2020 from 'ajv/dist/2020.js';
 
 /**
  * Check a site record against its schema.
- * @param recordFile absolute path of the site's `cairn-site.json`
- * @param schemaFile absolute path of the engine's `cairn-site-1.schema.json`
+ * @param recordFile - absolute path of the site's `cairn-site.json`
+ * @param schemaFile - absolute path of the engine's `cairn-site-1.schema.json`
  * @returns one line naming the first problem, or `undefined` when the record is valid
  */
 export function checkSiteRecord(recordFile: string, schemaFile: string): string | undefined {
@@ -30,6 +30,9 @@ export function checkSiteRecord(recordFile: string, schemaFile: string): string 
       : first.keyword === 'additionalProperties'
         ? (first.params as { additionalProperty: string }).additionalProperty
         : '';
-  const field = [...first.instancePath.split('/').filter(Boolean), ...(key === '' ? [] : [key])].join('.');
+  const field = [
+    ...first.instancePath.split('/').filter(Boolean),
+    ...(key === '' ? [] : [key]),
+  ].join('.');
   return `cairn-site.json: ${field === '' ? '(root)' : field} ${first.message ?? 'is invalid'}`;
 }

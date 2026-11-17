@@ -36,7 +36,9 @@ describe('checkSiteRecord', () => {
   });
 
   it('names invalid JSON', () => {
-    expect(checkSiteRecord(write('{ nope'), schemaFile)).toMatch(/^cairn-site\.json: not valid JSON \(.+\)$/);
+    expect(checkSiteRecord(write('{ nope'), schemaFile)).toMatch(
+      /^cairn-site\.json: not valid JSON \(.+\)$/,
+    );
   });
 
   it('names an unknown key', () => {

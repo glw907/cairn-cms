@@ -1,0 +1,19 @@
+{
+  "kind": "blog",
+  "features": [],
+  "themeOptions": {},
+  "scaffold": {
+    "engine": "0.99.0-rc.4"
+  },
+  "deploy": {
+    "publicOrigin": "https://showcase.test",
+    "emailFrom": "cms@showcase.test",
+    "github": {
+      "owner": "showcase",
+      "repo": "demo",
+      "branch": "main",
+      "appId": "1",
+      "installationId": "2"
+    }
+  }
+}

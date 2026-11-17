@@ -65,7 +65,10 @@
     "schema/",
     "examples/showcase/src/site/site.config.yaml",
     "tool/testdata/fixtures/",
-    "scripts/checks/shipped-anchors.json"
+    "scripts/checks/shipped-anchors.json",
+    "definitions/",
+    "templates/",
+    "scripts/build/setup-overlay/"
   ],
   "scriptsTestOnly": [
     "scripts/catalog/",

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cairn.pub/schemas/cairn-site/1.json",
+  "title": "cairn site record, contract 1",
+  "description": "The record, cairn-site.json, at the root of a site. It holds the facts about a site that have no other home: its kind, its features, its theme options, the engine that scaffolded it, and the deploy values the setup tool writes once. cairn.config.ts imports it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "features",
+    "themeOptions",
+    "scaffold",
+    "deploy"
+  ],
+  "properties": {
+    "kind": {
+      "description": "The kind of site, from the closed list in definitions/kinds.json.",
+      "$ref": "#/$defs/kindId"
+    },
+    "features": {
+      "description": "The features the site turns on, from the closed list in definitions/features.json.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/featureId"
+      }
+    },
+    "themeOptions": {
+      "description": "The theme's option choices, keyed by the option keys in the theme's manifest.",
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      }
+    },
+    "aiPosture": {
+      "description": "Whether the site invites or declines AI use of its content. Absent until the owner chooses.",
+      "enum": [
+        "invite",
+        "decline"
+      ]
+    },
+    "scaffold": {
+      "description": "What wrote the site.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine"
+      ],
+      "properties": {
+        "engine": {
+          "description": "The engine version the setup tool installed.",
+          "type": "string"
+        },
+        "composer": {
+          "description": "The composer that assembled the site, when one did.",
+          "type": "string"
+        }
+      }
+    },
+    "deploy": {
+      "description": "The values the setup tool writes once when it deploys the site.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "publicOrigin",
+        "emailFrom",
+        "github"
+      ],
+      "properties": {
+        "publicOrigin": {
+          "description": "The site's public address, an https origin with no path.",
+          "type": "string"
+        },
+        "emailFrom": {
+          "description": "The address sign-in emails come from.",
+          "type": "string"
+        },
+        "github": {
+          "description": "The GitHub repository and App that commit the site's content.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "owner",
+            "repo",
+            "branch",
+            "appId",
+            "installationId"
+          ],
+          "properties": {
+            "owner": {
+              "description": "The GitHub account or organization that owns the repository.",
+              "type": "string"
+            },
+            "repo": {
+              "description": "The repository's name.",
+              "type": "string"
+            },
+            "branch": {
+              "description": "The branch the CMS commits to.",
+              "type": "string"
+            },
+            "appId": {
+              "description": "The GitHub App's id.",
+              "type": "string"
+            },
+            "installationId": {
+              "description": "The id of the App's installation on the repository.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "kindId": {
+      "description": "Generated from definitions/kinds.json by scripts/build/emit-definitions.mjs.",
+      "enum": [
+        "blog",
+        "portfolio",
+        "docs",
+        "landing",
+        "organization"
+      ]
+    },
+    "featureId": {
+      "description": "Generated from definitions/features.json by scripts/build/emit-definitions.mjs.",
+      "not": {}
+    }
+  }
+}

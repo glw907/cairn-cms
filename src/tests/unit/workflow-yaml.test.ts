@@ -611,6 +611,7 @@ describe('catalog.yml proves a publish on a pull request and publishes for real 
     'scripts/catalog/**',
     'scripts/theme/**',
     'scripts/build/starter-overlay/**',
+    'definitions/**',
     '.github/workflows/catalog.yml'
   ];
   const ON_PULL_REQUEST = "github.event_name == 'pull_request'";

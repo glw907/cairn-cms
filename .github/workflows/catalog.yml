@@ -17,6 +17,7 @@ on:
       - 'scripts/catalog/**'
       - 'scripts/theme/**'
       - 'scripts/build/starter-overlay/**'
+      - 'definitions/**'
       - '.github/workflows/catalog.yml'
   push:
     branches: [main]
@@ -27,6 +28,7 @@ on:
       - 'scripts/catalog/**'
       - 'scripts/theme/**'
       - 'scripts/build/starter-overlay/**'
+      - 'definitions/**'
       - '.github/workflows/catalog.yml'
   workflow_dispatch:
 

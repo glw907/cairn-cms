@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -221,4 +223,31 @@ func (c *Case) KeyringEntries() map[string]string {
 		entries[name] = string(value)
 	}
 	return entries
+}
+
+// KeyringWrite is one value the tagged build stored, in write order.
+type KeyringWrite struct {
+	Name, Value string
+}
+
+// KeyringWrites returns every value the run stored in the keyring, deleted or not, in write
+// order. It is empty when nothing was stored.
+func (c *Case) KeyringWrites() []KeyringWrite {
+	c.t.Helper()
+	data, err := os.ReadFile(filepath.Join(c.KeyringDir, ".writes"))
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		c.t.Fatal(err)
+	}
+	var out []KeyringWrite
+	for line := range strings.SplitSeq(strings.TrimSuffix(string(data), "\n"), "\n") {
+		var w struct{ Name, Value string }
+		if err := json.Unmarshal([]byte(line), &w); err != nil {
+			c.t.Fatalf("keyring write log line %q: %v", line, err)
+		}
+		out = append(out, KeyringWrite(w))
+	}
+	return out
 }

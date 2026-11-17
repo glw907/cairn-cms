@@ -412,13 +412,23 @@ func TestFileStoreRoundTripsAcrossProcesses(t *testing.T) {
 	}
 
 	run("write")
-	files, err := os.ReadDir(dir)
-	if err != nil || len(files) != 1 {
-		t.Fatalf("after the write process the store holds %d files (%v), want 1", len(files), err)
+	// The write log is a dot file beside the entries, not an entry.
+	entries := func() []os.DirEntry {
+		files, err := os.ReadDir(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return slices.DeleteFunc(files, func(f os.DirEntry) bool { return strings.HasPrefix(f.Name(), ".") })
+	}
+	if files := entries(); len(files) != 1 {
+		t.Fatalf("after the write process the store holds %d files, want 1", len(files))
 	}
 	run("read")
-	if files, _ := os.ReadDir(dir); len(files) != 0 {
+	if files := entries(); len(files) != 0 {
 		t.Errorf("after the read process deleted the entry the store holds %d files, want 0", len(files))
+	}
+	if log, err := os.ReadFile(filepath.Join(dir, ".writes")); err != nil || !strings.Contains(string(log), `"name":"`) {
+		t.Errorf("the write log = %q (%v), want the write recorded", log, err)
 	}
 }
 

@@ -62,6 +62,19 @@ test('a default feature that features.json does not list fails, naming the kind 
   assert.match(problems[0], /"comments"/);
 });
 
+test('definitions problems and per-file drift are reported in one run', () => {
+  const root = scratchRoot();
+  editJson(path.join(root, 'definitions/kinds.json'), (data) => {
+    data.kinds.find((kind) => kind.id === 'blog').defaultFeatures = ['comments'];
+  });
+  editJson(path.join(root, 'schema/cairn-set-1.schema.json'), (schema) => {
+    schema.$defs.kindId.enum = schema.$defs.kindId.enum.filter((id) => id !== 'docs');
+  });
+  const problems = checkDefinitions(root);
+  assert.ok(problems.some((line) => /"blog"/.test(line)));
+  assert.ok(problems.some((line) => /^schema\/cairn-set-1\.schema\.json:/.test(line)));
+});
+
 test('an empty feature list is accepted as the empty set by the theme schema', async () => {
   const { default: Ajv2020 } = await import('ajv/dist/2020.js');
   const ajv = new Ajv2020({ validateFormats: false, allErrors: true });

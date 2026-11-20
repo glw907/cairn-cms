@@ -1,7 +1,8 @@
 // cairn-cms: the definitions drift gate. The closed kind and feature lists live in definitions/,
 // and the schemas carry generated copies (see scripts/build/emit-definitions.mjs). This
-// regenerates the schemas into memory and fails on the first byte that differs from a committed
-// file, so an edit to definitions/ that forgets to regenerate is a red gate.
+// regenerates the schemas into memory and fails on any byte that differs from a committed
+// file, reporting the definitions' problems and the per-file drift in one run, so an edit to
+// definitions/ that forgets to regenerate is a red gate.
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +17,6 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
  */
 export function checkDefinitions(root) {
   const problems = definitionProblems(readDefinitions(root));
-  if (problems.length > 0) return problems;
   for (const [file, expected] of Object.entries(buildSchemas(root))) {
     if (!existsSync(resolve(root, file)) || readFileSync(resolve(root, file), 'utf8') !== expected) {
       problems.push(`${file}: does not match definitions/; run "node scripts/build/emit-definitions.mjs" and commit the result`);

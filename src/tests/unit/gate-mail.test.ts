@@ -119,12 +119,12 @@ describe('findSignInMessage', () => {
     expect(reason).not.toContain('settings/keys');
   });
 
-  /** A server that answers every request with `handler`, returning its origin. */
-  async function listen(handler: (request: import('node:http').IncomingMessage, response: import('node:http').ServerResponse, origin: string) => void) {
-    const server = createServer((request, response) => handler(request, response, `http://127.0.0.1:${(server.address() as AddressInfo).port}`));
+  /** A server bound to `host` that answers every request with `handler`, returning its origin. */
+  async function listen(handler: (request: import('node:http').IncomingMessage, response: import('node:http').ServerResponse, origin: string) => void, host = '127.0.0.1') {
+    const server = createServer((request, response) => handler(request, response, `http://${host}:${(server.address() as AddressInfo).port}`));
     servers.push(server);
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    await new Promise<void>((resolve) => server.listen(0, host, resolve));
+    return `http://${host}:${(server.address() as AddressInfo).port}`;
   }
 
   it('re-sends the credentials when the session URL redirects to another origin, which fetch would strip', async () => {
@@ -156,9 +156,9 @@ describe('findSignInMessage', () => {
       response.statusCode = 308;
       response.setHeader('location', `${target}/.well-known/jmap`);
       response.end();
-    });
+    }, '127.0.0.2');
     // A different hostname, as 907.life to ward.907.life is: that is what makes fetch drop Authorization.
-    const result = await findSignInMessage({ ...base, sessionUrl: `${front.replace('127.0.0.1', 'localhost')}/.well-known/jmap`, trustedHosts: ['127.0.0.1'], ...clock() });
+    const result = await findSignInMessage({ ...base, sessionUrl: `${front}/.well-known/jmap`, trustedHosts: ['127.0.0.1'], ...clock() });
     expect(result).toMatchObject({ found: true, from: MAIL_SENDER });
   });
 
@@ -170,8 +170,8 @@ describe('findSignInMessage', () => {
       response.statusCode = 308;
       response.setHeader('location', `${target}/.well-known/jmap`);
       response.end();
-    });
-    const result = await findSignInMessage({ ...base, sessionUrl: `${front.replace('127.0.0.1', 'localhost')}/.well-known/jmap`, ...clock() });
+    }, '127.0.0.2');
+    const result = await findSignInMessage({ ...base, sessionUrl: `${front}/.well-known/jmap`, ...clock() });
     expect(result.found).toBe(false);
     expect((result as { reason: string }).reason).toContain('not a trusted host');
   });

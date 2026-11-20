@@ -25,9 +25,9 @@
 // The default output is the targeted gate. Its legs run in this order:
 //
 //   1. `npm run package`, unconditionally.
-//   2. The static checks the diff's buckets select, through the build-once runner's subset form
-//      (`npm run check:close -- <label>...`, see close-prebuilt.mjs), plus the few checks that sit
-//      outside check:close.
+//   2. The static checks the diff's buckets select: the close group's rows through the group
+//      runner's subset form, then each other picked row through its own npm script. The rows and
+//      groups live in registry.mjs.
 //   3. The whole node projects. They hold the guard tests that read files, spawn scripts, or walk
 //      trees, which no import graph can see.
 //   4. The component project, narrowed to the tests Vitest's related selection picks for the
@@ -36,8 +36,8 @@
 //      the leg, since the component project cannot see it.
 //   5. The e2e specs the table's map selects, at zero retries, on a separate port.
 //
-// The buckets, the per-check bucket lists, the no-check list, the e2e map, and the protected paths
-// live in gate-table.json beside this file. Fail closed: a path the table cannot place runs every
+// The buckets, the no-check list, the e2e map, and the protected paths live in gate-table.json
+// beside this file, and each row's buckets live on the row in registry.mjs. Fail closed: a path the table cannot place runs every
 // static check and the whole e2e suite, a selection that cannot be computed runs the whole
 // component project, and any failure prints nothing on stdout and exits non-zero.
 //
@@ -59,21 +59,31 @@ import { posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import { COMPONENT_RERUN_TRIGGERS } from '../test/component-rerun-triggers.mjs';
-import { CLOSE_COMPONENTS, PACKAGE_PREFIX, closeSteps } from './close-prebuilt.mjs';
+import { CHECKS, GROUPS } from './registry.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 
 /** The repo-relative path of the committed bucket, e2e-map, and protected-path table. */
 export const TABLE_PATH = 'scripts/checks/gate-table.json';
 
+/** @typedef {import('./registry.mjs').Check} Check */
+
+/**
+ * The rows of one registry group, in that group's run order.
+ * @param {string} group - A key of `GROUPS`.
+ * @returns {Check[]} The member rows.
+ */
+function groupRows(group) {
+  return CHECKS.filter((row) => row.groups[group] !== undefined).sort((a, b) => a.groups[group] - b.groups[group]);
+}
+
 // The five npm gate strings are cumulative, each a strict superset of every tier below it, built
 // by concatenation rather than five independent literals so the superset relationship cannot
 // drift.
 //
-// DOCS_GATE is the one `check:docs-gate` script (scripts/checks/docs-gate.mjs), which owns the
-// full docs check list. That list already includes check:snippets and check:symbols, so
-// FULL_GATE does not repeat them.
-const DOCS_GATE = 'npm run check:docs-gate';
+// DOCS_GATE is the script of the registry's docs-gate group, which runs the whole docs check list.
+// That list already holds the snippet and symbol checks, so FULL_GATE does not repeat them.
+const DOCS_GATE = `npm run ${GROUPS['docs-gate']}`;
 // Stock `npm test` runs the vitest component project (real Chromium) in parallel with the three
 // node projects, and that parallel component run stalls on the maintainer's workstation. This
 // gate runs the node projects first, then the component project alone with file parallelism off,
@@ -81,41 +91,14 @@ const DOCS_GATE = 'npm run check:docs-gate';
 // as separate steps without `--no-file-parallelism`; this serialization is local-gate-only.
 const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
-// The CI `test` job's remaining steps, in test.yml's order, so the full tier proves everything
-// CI would. The steps already in a lower tier (`npm run check`, the test projects, the docs gate)
-// and the install and bake steps a local gate cannot run are not
-// repeated; the gate-tier test pins this list against test.yml.
-const CI_CHECKS = [
-  'npm run test:emit',
-  'npm run check:package',
-  'npm run check:audit-pack',
-  'npm run check:self-use',
-  'npm run check:custom-surface',
-  'npm run check:chassis-boundary',
-  'npm run check:cm-internals',
-  'npm run check:idioms',
-  'npm run check:invisible-craft',
-  'npm run check:admin-css-classes',
-  'npm run check:rulings-format',
-  'npm run check:consumers-must',
-  'npm run check:definitions',
-  'npm run check:prose',
-  'npm run check:version',
-  'npm run check:dev-package',
-  'npm run check:template',
-  'npm run check:consumers',
-  'npm --prefix examples/showcase run check',
-  'npm --prefix examples/showcase run check:cairn',
-  'npm --prefix examples/showcase run test:unit',
-  'npm --prefix examples/showcase run format:check',
-  'npm run check:public-skill',
-  'npm run test:theme',
-  'npm run check:theme -- --catalog',
-  'npm run test:catalog',
-  // CI passes the event's range; with none, the check compares the merge base with origin/main.
-  'node scripts/catalog/version-rise.mjs',
-].join(' && ');
-const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && ${CI_CHECKS} && npm --prefix examples/showcase run test:e2e`;
+// The full group's rows in its order: the CI `test` job's steps that no lower tier runs, so the full
+// tier proves everything CI would. The install and bake steps a local gate cannot run are left out,
+// and the gate-tier test pins this list against test.yml. With no range, the version-rise row
+// compares the merge base with origin/main, where CI passes the event's range.
+const FULL_CHECKS = groupRows('full')
+  .map((row) => [`npm run ${row.name}`, ...(row.groupArgs?.full ? ['--', ...row.groupArgs.full] : [])].join(' '))
+  .join(' && ');
+const FULL_GATE = `${ADMIN_VISUAL_GATE} && ${FULL_CHECKS} && npm --prefix examples/showcase run test:e2e`;
 
 /**
  * The gate string for every tier. `scripts` and `engine` run the identical string (both are
@@ -160,9 +143,6 @@ const DIST_SPAWN = 'npx vitest run --project unit-dist-spawn';
  */
 export const FAST_LINE_1_LANE = '';
 
-/** The extra static checks that never touch dist, so they run beside the dist chain. */
-const DIST_FREE_EXTRAS = new Set(['check:tellgrader', 'check:vale-rules', 'check:definitions']);
-
 // Test trees the component project never includes, so a change there reaches no component test.
 const NODE_ONLY_TESTS = ['src/tests/unit/**', 'src/tests/integration/**', 'src/tests/lab/**', 'src/tests/types/**'];
 
@@ -172,8 +152,6 @@ const NODE_ONLY_TESTS = ['src/tests/unit/**', 'src/tests/integration/**', 'src/t
  * @property {string[]} noCheck - Paths no check and no test reads.
  * @property {string[]} unitSelectable - Paths whose fast-lane unit tests are picked by `vitest related`; any other live npm path runs the whole unit project.
  * @property {string[]} scriptsTestOnly - Script directories only tests and the comment lint read.
- * @property {Record<string, string[]>} checks - Check label to the buckets that select it.
- * @property {Record<string, string>} extraCommands - Checks outside check:close, by label.
  * @property {{ floor: { prefixes: string[], specs: string[] }, unmappedLib: string[], authData: string[], paint: string[], map: { prefixes: string[], specs: string[] }[] }} e2e - The e2e map.
  * @property {string[]} protected - Paths whose change waits for CI green.
  */
@@ -255,10 +233,10 @@ export function loadTable(root = ROOT) {
  * @typedef {object} Context
  * @property {string} root - The repo root the context reads.
  * @property {GateTable} table - The parsed table.
- * @property {string[]} labels - Every selectable check label, in run order, extras last.
- * @property {string[]} closeLabels - The check:close component labels.
- * @property {Set<string>} packagePrefixed - Labels whose script starts with the package build.
- * @property {Map<string, Set<string>>} closures - Label to the script files its entry reaches.
+ * @property {string[]} labels - Every row the fast lane can pick: the close rows in close order, then the other rows with buckets.
+ * @property {string[]} closeLabels - The close group's row names, in its run order.
+ * @property {Map<string, Check>} rows - Each row the fast lane can pick, by name.
+ * @property {Map<string, Set<string>>} closures - Row name to the script files its command reaches.
  * @property {Set<string>} exportEntries - Source files behind a package export.
  */
 
@@ -275,20 +253,13 @@ export function loadContext(root = ROOT) {
   if (cached) return cached;
   const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
   const table = loadTable(root);
-  const steps = closeSteps(pkg.scripts);
-  const closeLabels = steps.map((step) => step.label);
-  /** @type {Map<string, string>} */
-  const bodies = new Map(steps.map((step, index) => [step.label, closeBody(CLOSE_COMPONENTS[index], pkg.scripts)]));
-  // Only a component that names an npm script can carry the prefix through that script's body; a
-  // literal command that starts with the build is a mistake the unit tests refuse.
-  const packagePrefixed = new Set(
-    steps
-      .filter((step, index) => /^npm run \S+$/.test(CLOSE_COMPONENTS[index]))
-      .filter((step) => bodies.get(step.label)?.startsWith(PACKAGE_PREFIX))
-      .map((step) => step.label),
+  const closeRows = groupRows('close');
+  const closeLabels = closeRows.map((row) => row.name);
+  const universe = [...closeRows, ...CHECKS.filter((row) => row.groups.close === undefined && row.buckets.length > 0)];
+  const rows = new Map(universe.map((row) => [row.name, row]));
+  const closures = new Map(
+    universe.map((row) => [row.name, scriptClosure([row.command, ...(row.targets ?? [])].join(' '), root)]),
   );
-  for (const [label, command] of Object.entries(table.extraCommands)) bodies.set(label, command);
-  const closures = new Map([...bodies].map(([label, body]) => [label, scriptClosure(body, root)]));
   const exportEntries = new Set();
   for (const target of JSON.stringify(pkg.exports ?? {}).matchAll(/"\.\/dist\/([^"]+?)\.(?:d\.ts|js)"/g)) {
     exportEntries.add(`src/lib/${target[1]}.ts`);
@@ -296,25 +267,14 @@ export function loadContext(root = ROOT) {
   const context = {
     root,
     table,
-    labels: [...closeLabels, ...Object.keys(table.extraCommands)],
+    labels: [...rows.keys()],
     closeLabels,
-    packagePrefixed,
+    rows,
     closures,
     exportEntries,
   };
   contexts.set(root, context);
   return context;
-}
-
-/**
- * The script text a close component runs, for reading which script files it names.
- * @param {string} component - A CLOSE_COMPONENTS entry.
- * @param {Record<string, string>} scripts - package.json's scripts block.
- * @returns {string} The component's script body, or the component text itself.
- */
-function closeBody(component, scripts) {
-  const named = component.match(/^npm run (\S+)$/);
-  return named ? (scripts[named[1]] ?? component) : component;
 }
 
 /**
@@ -369,8 +329,8 @@ export function isNoCheck(path, context) {
 
 /**
  * The static checks a diff selects. A path the table cannot place selects every check, so does a
- * script file no check reaches (unless only tests read that directory), and a check the table
- * leaves unlisted and whose script does not start with the package build runs on every diff.
+ * script file no check reaches (unless only tests read that directory), and a row with no buckets
+ * that does not build runs on every diff.
  * @param {string[]} paths - The diff's paths.
  * @param {Context} context - The check universe and table.
  * @returns {{ labels: string[], all: boolean, reasons: string[] }} The selected labels in run order.
@@ -391,8 +351,8 @@ export function selectChecks(paths, context) {
       continue;
     }
     for (const label of context.labels) {
-      const listed = table.checks[label];
-      const wants = listed ?? (context.packagePrefixed.has(label) ? ['engine'] : null);
+      const row = /** @type {Check} */ (context.rows.get(label));
+      const wants = row.buckets.length > 0 ? row.buckets : row.build ? ['engine'] : null;
       if (wants === null || wants.some((bucket) => buckets.has(bucket))) picked.add(label);
     }
     if (path.startsWith('scripts/') && !matchesAny(path, table.scriptsTestOnly)) {
@@ -441,19 +401,19 @@ function shellQuote(word) {
 }
 
 /**
- * The static leg: the selected close checks through the build-once runner, then the extras.
+ * The static leg: the selected close rows through the group runner, which builds once, then each
+ * other selected row through its own script.
  * @param {string[]} labels - Selected labels in run order.
  * @param {Context} context - The check universe and table.
  * @returns {string[]} Zero to several `&&`-joined commands.
  */
 function staticLeg(labels, context) {
   const closeSelected = labels.filter((label) => context.closeLabels.includes(label));
+  const close = `npm run ${GROUPS.close}`;
   const commands = [];
-  if (closeSelected.length === context.closeLabels.length) commands.push('npm run check:close');
-  else if (closeSelected.length > 0) commands.push(`npm run check:close -- ${closeSelected.map(shellQuote).join(' ')}`);
-  for (const label of labels) {
-    if (context.table.extraCommands[label]) commands.push(context.table.extraCommands[label]);
-  }
+  if (closeSelected.length === context.closeLabels.length) commands.push(close);
+  else if (closeSelected.length > 0) commands.push(`${close} -- ${closeSelected.map(shellQuote).join(' ')}`);
+  for (const label of labels) if (!context.closeLabels.includes(label)) commands.push(`npm run ${label}`);
   return commands;
 }
 
@@ -699,15 +659,13 @@ export function decideFastGate(paths, opts = {}) {
   notes.push(...checks.reasons);
   notes.push(`static checks: ${checks.labels.length === 0 ? 'none' : checks.labels.join(', ')}`);
   const closeLabels = checks.labels.filter((label) => label !== 'check' && context.closeLabels.includes(label));
-  const extraLabels = checks.labels.filter((label) => context.table.extraCommands[label]);
+  const otherLabels = checks.labels.filter((label) => !context.closeLabels.includes(label));
   chain.push(...staticLeg(closeLabels, context));
   // The type check always runs, after the close runner: the root program loads dist through the
   // package's self-import, so it must not read dist while the runner rebuilds it. The close runner
   // never repeats it.
   chain.push('npm run check');
-  for (const label of extraLabels) {
-    (DIST_FREE_EXTRAS.has(label) ? parallel : chain).push(context.table.extraCommands[label]);
-  }
+  for (const label of otherLabels) (context.rows.get(label)?.distFree ? parallel : chain).push(`npm run ${label}`);
   if (live.some((path) => pathBuckets(path, context).has('docs'))) chain.push(DOCS_GATE);
   if (unit) chain.push(unit);
   // The dist-spawn project execs the built `dist/internal.js`; the unit project excludes it.

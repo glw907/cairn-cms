@@ -242,8 +242,7 @@ owner meets it:
 
 Before the first leg, run `bash scripts/gate/run-gate.sh --smoke` and `bash scripts/gate/run-gate.sh
 sweep --check-scopes`, and check that the account's Email Sending product is live and that the account
-is on Workers Paid (the estate inventory records both). A candidate for a gate round runs `npm run
-check:close` on the default lane, since the light lane runs out of memory on it (#370).
+is on Workers Paid (the estate inventory records both).
 
 The `## Gate` table in the candidate's release body has one row per leg, each carrying the cairn-cms
 commit the leg ran against with the engine version. The rows are keyed on commits.

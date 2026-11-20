@@ -22,9 +22,9 @@ import {
   sequentially,
   tableProblems,
 } from '../../../scripts/checks/gate-tier.mjs';
-import { CLOSE_COMPONENTS, PACKAGE_PREFIX, closeSteps, selectSteps } from '../../../scripts/checks/close-prebuilt.mjs';
+import { CHECKS } from '../../../scripts/checks/registry.mjs';
+import { groupSteps } from '../../../scripts/checks/run.mjs';
 import { COMPONENT_RERUN_TRIGGERS } from '../../../scripts/test/component-rerun-triggers.mjs';
-import { buildSteps } from '../../../scripts/checks/docs-gate.mjs';
 import { RERUN_TRIGGER_PATHS } from './_rerun-trigger-paths.js';
 
 const SCRIPT = resolve(process.cwd(), 'scripts/checks/gate-tier.mjs');
@@ -33,6 +33,9 @@ const { table } = context;
 
 /** The static check labels a path set selects. */
 const labelsFor = (...paths: string[]) => selectChecks(paths, context).labels;
+
+/** The fast lane's line 1 for a path set, with no component selection. */
+const fastLine = (...paths: string[]) => decideFastGate(paths, { selected: [] }).lines[0];
 
 describe('the table', () => {
   // One real path per pattern, so a pattern that matches nothing fails its own row. The dot
@@ -59,6 +62,8 @@ describe('the table', () => {
     ['showcase', 'templates/', 'templates/waymark/package.json'],
     ['showcase', 'sets/', 'sets/organization/cairn-set.json'],
     ['showcase', 'definitions/', 'definitions/kinds.json'],
+    ['theme', 'scripts/theme/', 'scripts/theme/check.mjs'],
+    ['plugins', 'plugins/', 'plugins/cairn/skills/cairn-setting-up-a-site/SKILL.md'],
     ['engine', 'src/lib/', 'src/lib/log/index.ts'],
     ['engine', 'scripts/build/', 'scripts/build/build-admin-css.mjs'],
     ['engine', 'packages/cairn-cms-dev/', 'packages/cairn-cms-dev/package.json'],
@@ -110,6 +115,7 @@ describe('the table', () => {
     expect(table.protected).toEqual([
       'scripts/checks/gate-table.json',
       'scripts/checks/gate-tier.mjs',
+      'scripts/checks/registry.mjs',
       'scripts/test/component-rerun-triggers.mjs',
       '.github/ci-green.json',
       '.github/workflows/',
@@ -158,23 +164,20 @@ describe('static check selection', () => {
   });
 
   it('leaves no close component unclassified, so a new one is placed on purpose', () => {
-    const unlisted = context.closeLabels.filter(
-      (label) => !(label in table.checks) && !context.packagePrefixed.has(label),
-    );
+    const closeRows = CHECKS.filter((row) => context.closeLabels.includes(row.name));
+    const unlisted = closeRows.filter((row) => row.buckets.length === 0 && !row.build).map((row) => row.name);
     expect(unlisted).toEqual([]);
-    for (const label of Object.keys(table.checks)) expect(context.labels, label).toContain(label);
+    for (const row of CHECKS.filter((entry) => entry.buckets.length > 0)) expect(context.labels, row.name).toContain(row.name);
   });
 
-  it('spells a package-building close component as an npm run script, never as a literal command', () => {
-    // The classifier reads the package prefix off a script's body, so a literal component that
-    // carries the prefix would run without the engine bucket and still pass the guard above.
-    const literal = CLOSE_COMPONENTS.filter((component) => !/^npm run \S+$/.test(component));
-    expect(literal.length).toBeGreaterThan(0);
-    for (const component of literal) expect(component.startsWith(PACKAGE_PREFIX), component).toBe(false);
+  it('asks for dist only through a row\'s build field, never through its command', () => {
+    // The classifier reads the build off the row, so a command that built for itself would run
+    // without the engine bucket and still pass the guard above.
+    expect(CHECKS.filter((row) => row.command.includes('npm run package')).map((row) => row.name)).toEqual([]);
   });
 
-  it('gives every package-building check the engine bucket unless the table lists it', () => {
-    const inherited = [...context.packagePrefixed].filter((label) => !(label in table.checks));
+  it('gives every package-building check the engine bucket unless its row lists buckets', () => {
+    const inherited = CHECKS.filter((row) => row.build && row.buckets.length === 0).map((row) => row.name);
     expect(inherited.length).toBeGreaterThan(0);
     for (const label of inherited) expect(labelsFor('src/lib/foo/bar.ts'), label).toContain(label);
   });
@@ -190,8 +193,8 @@ describe('static check selection', () => {
   ];
 
   it('pins the dist-surface checks', () => {
-    const listed = Object.keys(table.checks).filter(
-      (label) => context.packagePrefixed.has(label) && !table.checks[label].includes('engine'),
+    const listed = CHECKS.filter((row) => row.build && row.buckets.length > 0 && !row.buckets.includes('engine')).map(
+      (row) => row.name,
     );
     expect(listed.sort()).toEqual([...distSurface].sort());
   });
@@ -225,7 +228,7 @@ describe('static check selection', () => {
       expect(picked, page).toEqual(expect.arrayContaining(['check:docs', 'check:vale', 'check:leaks', 'check:tellgrader']));
       expect(picked, page).not.toContain('check:audit-pack');
       expect(picked, page).not.toContain('check:surface');
-      expect(decideGate([page]).gate, page).toContain('node scripts/checks/check-tellgrader.mjs');
+      expect(decideGate([page]).gate, page).toContain('npm run check:tellgrader');
     }
   });
 
@@ -233,8 +236,7 @@ describe('static check selection', () => {
     for (const path of ['.vale/styles/Cairn/Headings.yml', '.vale.ini']) {
       expect(labelsFor(path), path).toContain('check:vale-rules');
     }
-    const step = buildSteps({ page: null }).find((entry) => entry.label === 'check:vale-rules');
-    expect(table.extraCommands['check:vale-rules']).toBe([step?.command, ...(step?.args ?? [])].join(' '));
+    expect(fastLine('.vale.ini')).toContain('npm run check:vale-rules');
   });
 
   it('selects the checks a script file reaches through its imports, and every check for a file none reach', () => {
@@ -248,32 +250,43 @@ describe('static check selection', () => {
     const picked = selectChecks(['scripts/catalog/index.mjs'], context);
     expect(picked.all).toBe(false);
     expect(picked.labels).toContain('test:catalog');
-    expect(table.extraCommands['test:catalog']).toBe('npm run test:catalog');
+    expect(fastLine('scripts/catalog/index.mjs')).toContain('npm run test:catalog');
   });
 
   it('selects the version-rise leg for the showcase bucket, as a fixed no-range command', () => {
     expect(labelsFor('examples/showcase/package.json')).toContain('check:version-rise');
-    expect(table.extraCommands['check:version-rise']).toBe('node scripts/catalog/version-rise.mjs');
+    expect(fastLine('examples/showcase/package.json')).toContain('npm run check:version-rise');
   });
 
   it('selects the definitions check when a definitions file changes', () => {
     expect(labelsFor('definitions/kinds.json')).toContain('check:definitions');
-    expect(table.extraCommands['check:definitions']).toBe('node scripts/checks/check-definitions.mjs');
+    expect(fastLine('definitions/kinds.json')).toContain('npm run check:definitions');
   });
 
   it('hands the runner labels it accepts', () => {
-    const scripts = JSON.parse(readFileSync('package.json', 'utf8')).scripts;
-    const steps = closeSteps(scripts);
+    const steps = groupSteps(CHECKS, 'close', []);
     const picked = labelsFor('src/lib/foo/bar.ts', 'examples/showcase/package.json').filter((label) =>
       context.closeLabels.includes(label),
     );
-    expect(() => selectSteps(steps, picked)).not.toThrow();
-    expect(steps.map((step) => step.label)).toEqual(context.closeLabels);
-    expect(CLOSE_COMPONENTS.length).toBe(context.closeLabels.length);
+    expect(() => groupSteps(CHECKS, 'close', picked)).not.toThrow();
+    expect(steps.map((step) => step.name)).toEqual(context.closeLabels);
+    expect(steps.length).toBe(context.closeLabels.length);
   });
 
-  it('quotes a label that holds spaces', () => {
-    expect(decideGate(['examples/showcase/package.json']).gate).toContain("'npm --prefix examples/showcase run check'");
+  it('passes a showcase change\'s rows to the runner by name', () => {
+    const gate = decideGate(['examples/showcase/package.json']).gate;
+    expect(gate).toMatch(/npm run check:close -- [^&]*\bcheck:showcase-types\b/);
+    expect(gate).not.toContain('npm --prefix examples/showcase run check ');
+  });
+
+  it('selects test:theme for a theme script, without the every-check fallback', () => {
+    const picked = selectChecks(['scripts/theme/viewer/site.mjs'], context);
+    expect(picked.all).toBe(false);
+    expect(picked.labels).toContain('test:theme');
+  });
+
+  it('selects test:emit for a plugin skill', () => {
+    expect(labelsFor('plugins/cairn/skills/x/SKILL.md')).toContain('test:emit');
   });
 });
 
@@ -622,9 +635,14 @@ const CI_EQUIVALENTS: Record<string, string[]> = {
   'node scripts/checks/check-admin-css-classes.mjs': ['npm run check:admin-css-classes'],
   'node scripts/checks/check-consumers.mjs': ['npm run check:consumers'],
   'node scripts/checks/check-public-skill.mjs': ['npm run check:public-skill'],
-  // CI passes the event's range; the local gate runs the no-range form, which compares the merge
-  // base with origin/main to HEAD.
-  'node scripts/catalog/version-rise.mjs --range "$BASE..HEAD"': ['node scripts/catalog/version-rise.mjs'],
+  // CI runs the showcase's own scripts directly; the local gate runs each through its row's script.
+  'npm --prefix examples/showcase run check': ['npm run check:showcase-types'],
+  'npm --prefix examples/showcase run check:cairn': ['npm run check:showcase-cairn'],
+  'npm --prefix examples/showcase run test:unit': ['npm run check:showcase-unit'],
+  'npm --prefix examples/showcase run format:check': ['npm run check:showcase-format'],
+  // CI passes the event's range; the local gate runs the row's no-range form, which compares the
+  // merge base with origin/main to HEAD.
+  'node scripts/catalog/version-rise.mjs --range "$BASE..HEAD"': ['npm run check:version-rise'],
 };
 
 // A CI step with no local gate command, each with the reason it stays out of the tier.
@@ -736,11 +754,8 @@ describe('the full tier against CI', () => {
   });
 
   it('runs the catalog tests and the version-rise check in its fast-lane form', () => {
-    const legs = (JSON.parse(readFileSync(resolve(process.cwd(), 'scripts/checks/gate-table.json'), 'utf8')) as {
-      extraCommands: Record<string, string>;
-    }).extraCommands;
-    expect(gateCommands.has(legs['test:catalog'])).toBe(true);
-    expect(gateCommands.has(legs['check:version-rise'])).toBe(true);
+    expect(gateCommands.has('npm run test:catalog')).toBe(true);
+    expect(gateCommands.has('npm run check:version-rise')).toBe(true);
   });
 });
 

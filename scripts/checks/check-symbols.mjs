@@ -345,13 +345,16 @@ const PACKAGE_PATH_PREFIXES = ['node_modules/@glw907/cairn-cms/', '@glw907/cairn
 /**
  * Whether a literal repository-relative path exists on disk, resolving an installed-package
  * path against its source first. A site-relative path (`src/access.ts`) also resolves against
- * the scaffolded site in `templates/waymark/`, since the pages describe a reader's fresh site.
+ * the scaffolded site in `templates/waymark/` and against the setup overlay in
+ * `scripts/build/setup-overlay/`, since the pages describe a reader's fresh site and `cairn new`
+ * lays the overlay over the template.
  * @param {string} path
  * @param {string} root
  */
 export function pathExists(path, root = ROOT) {
   if (existsSync(join(root, path))) return true;
   if (existsSync(join(root, 'templates/waymark', path))) return true;
+  if (existsSync(join(root, 'scripts/build/setup-overlay', path))) return true;
   for (const prefix of PACKAGE_PATH_PREFIXES) {
     if (path.startsWith(prefix)) return existsSync(join(root, path.slice(prefix.length)));
   }

@@ -2,123 +2,119 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import {
-  CLOSE_COMPONENTS,
-  PACKAGE_PREFIX,
-  closeSteps,
-  missingInstalls,
-  runClose,
-  selectSteps,
-} from '../../../scripts/checks/close-prebuilt.mjs';
+import { missingInstalls } from '../../../scripts/checks/close-prebuilt.mjs';
+import { CHECKS } from '../../../scripts/checks/registry.mjs';
+import { groupSteps, runSteps } from '../../../scripts/checks/run.mjs';
 
 const PACKAGE_JSON = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')) as {
   scripts: Record<string, string>;
 };
 
-type Step = { label: string; command: string };
+const BASE = JSON.parse(
+  readFileSync(resolve(process.cwd(), 'src/tests/unit/fixtures/check-names-base.json'), 'utf8'),
+) as { builtAtBase: string[] };
 
-describe('closeSteps', () => {
-  const rows: { name: string; scripts: Record<string, string>; components: string[]; want: Step[] }[] = [
+type Step = { name: string; command: string; targets: string[]; words: string[]; build: boolean };
+type Row = { name: string; command: string; build: boolean; buckets: string[]; groups: Record<string, number> };
+
+/** A fixture row in the one test group `g`. */
+function row(name: string, command: string, place: number, build = false): Row {
+  return { name, command, build, buckets: [], groups: { g: place } };
+}
+
+/** The step a fixture row becomes when nothing narrows or extends it. */
+function step(name: string, command: string, build = false): Step {
+  return { name, command, targets: [], words: [], build };
+}
+
+describe('groupSteps on fixture rows', () => {
+  const rows: { name: string; rows: Row[]; want: Step[] }[] = [
     {
-      name: 'drops the leading build from a component whose script starts with it',
-      scripts: { 'check:a': 'npm run package && node a.mjs && node b.mjs' },
-      components: ['npm run check:a'],
-      want: [{ label: 'check:a', command: 'node a.mjs && node b.mjs' }],
+      name: 'runs a row that builds as its command, the build left to the runner',
+      rows: [row('check:a', 'node a.mjs && node b.mjs', 1, true)],
+      want: [step('check:a', 'node a.mjs && node b.mjs', true)],
     },
     {
-      name: 'runs a component with no build through npm, exactly as the list spells it',
-      scripts: { 'check:b': 'node b.mjs' },
-      components: ['npm run check:b'],
-      want: [{ label: 'check:b', command: 'npm run check:b' }],
+      name: 'runs a row with no build as its command',
+      rows: [row('check:b', 'node b.mjs', 1)],
+      want: [step('check:b', 'node b.mjs')],
     },
     {
-      name: 'runs a component that is not an `npm run` of this package verbatim',
-      scripts: {},
-      components: ['npm --prefix examples/showcase run check'],
-      want: [{ label: 'npm --prefix examples/showcase run check', command: 'npm --prefix examples/showcase run check' }],
+      name: 'runs a raw-command row verbatim',
+      rows: [row('check:showcase-types', 'npm --prefix examples/showcase run check', 1)],
+      want: [step('check:showcase-types', 'npm --prefix examples/showcase run check')],
     },
     {
-      name: 'keeps list order across mixed components',
-      scripts: { 'check:a': 'npm run package && node a.mjs', 'check:b': 'node b.mjs' },
-      components: ['npm run check:b', 'npm run check:a', 'npm --prefix x run y'],
-      want: [
-        { label: 'check:b', command: 'npm run check:b' },
-        { label: 'check:a', command: 'node a.mjs' },
-        { label: 'npm --prefix x run y', command: 'npm --prefix x run y' },
-      ],
+      name: 'keeps group order across mixed rows',
+      rows: [row('check:a', 'node a.mjs', 2, true), row('check:y', 'npm --prefix x run y', 3), row('check:b', 'node b.mjs', 1)],
+      want: [step('check:b', 'node b.mjs'), step('check:a', 'node a.mjs', true), step('check:y', 'npm --prefix x run y')],
     },
   ];
 
-  for (const row of rows) {
-    it(row.name, () => {
-      expect(closeSteps(row.scripts, row.components)).toEqual(row.want);
+  for (const entry of rows) {
+    it(entry.name, () => {
+      expect(groupSteps(entry.rows, 'g', [])).toEqual(entry.want);
     });
   }
 
-  const refusals: { name: string; scripts: Record<string, string>; components: string[]; error: RegExp }[] = [
-    { name: 'a component script package.json lacks', scripts: {}, components: ['npm run check:gone'], error: /lacks/ },
+  const refusals: { name: string; rows: Row[]; names: string[]; error: RegExp }[] = [
+    { name: 'a row name the group lacks', rows: [row('check:a', 'node a.mjs', 1)], names: ['check:gone'], error: /check:gone/ },
     {
-      name: 'a component that builds twice',
-      scripts: { 'check:a': 'npm run package && node a.mjs && npm run package' },
-      components: ['npm run check:a'],
-      error: /twice/,
+      name: 'a row whose command builds at its start',
+      rows: [row('check:a', 'npm run package && node a.mjs', 1)],
+      names: [],
+      error: /npm run package/,
     },
     {
-      name: 'a component that builds somewhere other than its start',
-      scripts: { 'check:a': 'node a.mjs && npm run package' },
-      components: ['npm run check:a'],
-      error: /other than its start/,
+      name: 'a row whose command builds at its end',
+      rows: [row('check:a', 'node a.mjs && npm run package', 1)],
+      names: [],
+      error: /npm run package/,
     },
   ];
 
-  for (const row of refusals) {
-    it(`refuses ${row.name}`, () => {
-      expect(() => closeSteps(row.scripts, row.components)).toThrow(row.error);
+  for (const entry of refusals) {
+    it(`refuses ${entry.name}`, () => {
+      expect(() => groupSteps(entry.rows, 'g', entry.names)).toThrow(entry.error);
     });
   }
 });
 
-describe('the exported component list', () => {
-  const steps = closeSteps(PACKAGE_JSON.scripts);
+describe('the close group', () => {
+  const steps = groupSteps(CHECKS, 'close', []);
+  const closeNames = steps.map((entry) => entry.name);
 
-  it('holds 34 components with no duplicate label', () => {
-    expect(CLOSE_COMPONENTS).toHaveLength(34);
-    expect(new Set(steps.map((step) => step.label)).size).toBe(34);
+  it('holds 34 rows with no duplicate name', () => {
+    expect(steps).toHaveLength(34);
+    expect(new Set(closeNames).size).toBe(34);
   });
 
-  it('makes check:close the runner, no longer a chain', () => {
-    expect(PACKAGE_JSON.scripts['check:close']).toBe('node scripts/checks/close-prebuilt.mjs');
+  it('makes check:close the group runner, no longer a chain', () => {
+    expect(PACKAGE_JSON.scripts['check:close']).toBe('node scripts/checks/run.mjs close');
     expect(PACKAGE_JSON.scripts['check:close:prebuilt']).toBeUndefined();
   });
 
   it('never rebuilds the package inside a step', () => {
-    for (const step of steps) expect(step.command, step.label).not.toContain('npm run package');
+    for (const entry of steps) expect(entry.command, entry.name).not.toContain('npm run package');
   });
 
-  it('drops the build from every component whose own script starts with it, and from nothing else', () => {
-    for (const [index, component] of CLOSE_COMPONENTS.entries()) {
-      const name = component.match(/^npm run (\S+)$/)?.[1];
-      const body = name ? PACKAGE_JSON.scripts[name] : undefined;
-      const want = body?.startsWith(PACKAGE_PREFIX) ? body.slice(PACKAGE_PREFIX.length) : component;
-      expect(steps[index].command, component).toBe(want);
-    }
+  it('asks for the build on exactly the close rows whose script built at the base', () => {
+    const building = steps.filter((entry) => entry.build).map((entry) => entry.name);
+    expect(building.sort()).toEqual(BASE.builtAtBase.filter((name) => closeNames.includes(name)).sort());
   });
 
-  it('finds the package-building components the runner exists to deduplicate', () => {
-    const building = CLOSE_COMPONENTS.filter((component) => {
-      const name = component.match(/^npm run (\S+)$/)?.[1];
-      return name !== undefined && PACKAGE_JSON.scripts[name].startsWith(PACKAGE_PREFIX);
-    });
-    expect(building.length).toBeGreaterThan(10);
+  it('finds the package-building rows the runner exists to deduplicate', () => {
+    expect(steps.filter((entry) => entry.build).length).toBeGreaterThan(10);
   });
 });
 
 describe('check:package', () => {
-  const standalone = PACKAGE_JSON.scripts['check:package'];
-  const inRunner = closeSteps(PACKAGE_JSON.scripts).find((step) => step.label === 'check:package');
+  const standalone = CHECKS.find((entry) => entry.name === 'check:package');
+  const inRunner = groupSteps(CHECKS, 'close', []).find((entry) => entry.name === 'check:package');
 
   it('still builds when run as its own npm script', () => {
-    expect(standalone.startsWith(PACKAGE_PREFIX)).toBe(true);
+    expect(PACKAGE_JSON.scripts['check:package']).toBe('node scripts/checks/run.mjs check:package');
+    expect(standalone?.build).toBe(true);
   });
 
   it('does not build, and does not let attw pack through the prepare script, inside the runner', () => {
@@ -130,42 +126,39 @@ describe('check:package', () => {
   });
 });
 
-describe('selectSteps', () => {
-  const steps: Step[] = [
-    { label: 'check:a', command: 'a' },
-    { label: 'check:b', command: 'b' },
-    { label: 'check:c', command: 'c' },
-  ];
+describe('groupSteps names', () => {
+  const rows = [row('check:a', 'a', 1), row('check:b', 'b', 2), row('check:c', 'c', 3)];
 
   it('returns every step when no name is given', () => {
-    expect(selectSteps(steps, [])).toEqual(steps);
+    expect(groupSteps(rows, 'g', []).map((entry) => entry.name)).toEqual(['check:a', 'check:b', 'check:c']);
   });
 
-  it('returns only the named steps, in list order whatever order the names came in', () => {
-    expect(selectSteps(steps, ['check:c', 'check:a']).map((step) => step.label)).toEqual(['check:a', 'check:c']);
+  it('returns only the named steps, in group order whatever order the names came in', () => {
+    expect(groupSteps(rows, 'g', ['check:c', 'check:a']).map((entry) => entry.name)).toEqual(['check:a', 'check:c']);
   });
 
-  it('rejects a name that is not in the list', () => {
-    expect(() => selectSteps(steps, ['check:a', 'check:nope'])).toThrow(/check:nope/);
+  it('rejects a name that is not in the group', () => {
+    expect(() => groupSteps(rows, 'g', ['check:a', 'check:nope'])).toThrow(/check:nope/);
   });
 
-  it('rejects a name that is not in the real component list', () => {
-    expect(() => selectSteps(closeSteps(PACKAGE_JSON.scripts), ['check:made-up'])).toThrow(/check:made-up/);
+  it('rejects a name that is not in the real close group', () => {
+    expect(() => groupSteps(CHECKS, 'close', ['check:made-up'])).toThrow(/check:made-up/);
   });
 });
 
-describe('runClose', () => {
+describe('runSteps', () => {
   /** A harness that records the build count and the steps it was asked to run. */
   function harness(failing: string[] = [], buildOk = true) {
     const calls = { build: 0, ran: [] as string[], out: [] as string[], err: [] as string[] };
     const options = {
+      group: 'close',
       build: () => {
         calls.build += 1;
         return buildOk;
       },
-      run: (step: Step) => {
-        calls.ran.push(step.label);
-        return !failing.includes(step.label);
+      run: (entry: { name: string; command: string }) => {
+        calls.ran.push(entry.name);
+        return !failing.includes(entry.name);
       },
       now: (() => {
         let tick = 0;
@@ -178,15 +171,11 @@ describe('runClose', () => {
     return { calls, options };
   }
 
-  const steps: Step[] = [
-    { label: 'check:a', command: 'a' },
-    { label: 'check:b', command: 'b' },
-    { label: 'check:c', command: 'c' },
-  ];
+  const steps: Step[] = [step('check:a', 'a'), step('check:b', 'b'), step('check:c', 'c')];
 
   it('builds once, runs every step, and exits 0 when all pass', () => {
     const { calls, options } = harness();
-    expect(runClose(steps, options)).toBe(0);
+    expect(runSteps(steps, options)).toBe(0);
     expect(calls.build).toBe(1);
     expect(calls.ran).toEqual(['check:a', 'check:b', 'check:c']);
   });
@@ -194,7 +183,7 @@ describe('runClose', () => {
   it('returns 1 before the build and prints both installs when svelte-package is absent', () => {
     const { calls, options } = harness();
     const exists = (path: string) => !path.endsWith('svelte-package') && !path.endsWith('showcase/node_modules');
-    expect(runClose(steps, { ...options, exists })).toBe(1);
+    expect(runSteps(steps, { ...options, exists })).toBe(1);
     expect(calls.build).toBe(0);
     expect(calls.ran).toEqual([]);
     const printed = calls.err.join('\n');
@@ -211,27 +200,28 @@ describe('runClose', () => {
 
   it('runs only the named steps and still builds once', () => {
     const { calls, options } = harness();
-    expect(runClose(selectSteps(steps, ['check:b']), options)).toBe(0);
+    const rows = [row('check:a', 'a', 1), row('check:b', 'b', 2), row('check:c', 'c', 3)];
+    expect(runSteps(groupSteps(rows, 'g', ['check:b']), options)).toBe(0);
     expect(calls.build).toBe(1);
     expect(calls.ran).toEqual(['check:b']);
   });
 
   it('exits non-zero after running every other step when one fails', () => {
     const { calls, options } = harness(['check:a']);
-    expect(runClose(steps, options)).toBe(1);
+    expect(runSteps(steps, options)).toBe(1);
     expect(calls.ran).toEqual(['check:a', 'check:b', 'check:c']);
     expect(calls.err.join('\n')).toContain('check:a');
   });
 
   it('runs no step and exits non-zero when the build fails', () => {
     const { calls, options } = harness([], false);
-    expect(runClose(steps, options)).toBe(1);
+    expect(runSteps(steps, options)).toBe(1);
     expect(calls.ran).toEqual([]);
   });
 
   it('prints each check\'s seconds', () => {
     const { calls, options } = harness();
-    runClose(steps, options);
+    runSteps(steps, options);
     const timed = calls.out.filter((line) => /^check:[abc] \d+\.\ds$/.test(line));
     expect(timed).toEqual(['check:a 2.5s', 'check:b 2.5s', 'check:c 2.5s']);
   });
@@ -240,13 +230,13 @@ describe('runClose', () => {
     const dir = mkdtempSync(join(tmpdir(), 'close-runner-'));
     try {
       const marker = join(dir, 'ran-after-failure');
-      const exitCode = runClose(
-        [
-          { label: 'fails', command: 'exit 3' },
-          { label: 'after', command: `touch "${marker}"` },
-        ],
-        { build: () => true, out: () => {}, err: () => {}, exists: () => true },
-      );
+      const exitCode = runSteps([step('fails', 'exit 3'), step('after', `touch "${marker}"`)], {
+        group: 'close',
+        build: () => true,
+        out: () => {},
+        err: () => {},
+        exists: () => true,
+      });
       expect(exitCode).toBe(1);
       expect(existsSync(marker)).toBe(true);
     } finally {

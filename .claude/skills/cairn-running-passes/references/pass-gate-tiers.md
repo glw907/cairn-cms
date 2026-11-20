@@ -34,13 +34,13 @@ separate mode (see "Protected paths").
 Five legs, in this order. Each prints only when it applies.
 
 1. `npm run package`, always.
-2. The static checks the diff's buckets select, through the build-once runner:
-   `npm run check:close -- <label>...` (see `scripts/checks/close-prebuilt.mjs`; bare
-   `npm run check:close` when the selection is every close check), then the few checks that sit
-   outside `check:close`: `test:emit`, the showcase's `test:unit`, and
-   tellgrader (local only; it skips itself when the binary is absent). The runner builds `dist`
-   once for the whole subset. Leg 1's build and the runner's own build are two builds of the same
-   tree; the runner has no flag to skip its build.
+2. The static checks the diff's buckets select, through the check runner `scripts/checks/run.mjs`:
+   `npm run check:close -- <name>...` (bare `npm run check:close` when the selection is every
+   close check), then each selected check that sits outside the close group through its own npm
+   script, such as `test:emit`, `check:showcase-unit`, and tellgrader (local only; it skips itself
+   when the binary is absent). The registry `scripts/checks/registry.mjs` is the list of checks, and
+   the runner builds `dist` once for the whole subset. Leg 1's build and the runner's own build are
+   two builds of the same tree; the runner has no flag to skip its build.
 3. `npm run test:node-projects`, always whole. The node projects hold the guard tests that read
    files, spawn scripts, or walk trees, which no import graph sees, so a docs-only diff runs them
    too.
@@ -63,15 +63,17 @@ Five legs, in this order. Each prints only when it applies.
 
 ### Buckets and the static checks
 
-`scripts/checks/gate-table.json` holds the table. A path belongs to every bucket whose pattern
-matches it:
+`scripts/checks/gate-table.json` holds the path buckets, and each row of `scripts/checks/registry.mjs`
+names the buckets that pick it. A path belongs to every bucket whose pattern matches it:
 
 | Bucket | Patterns |
 | --- | --- |
 | docs | `docs/`, `*.md`, `**/*.md`, `.vale/`, `.vale.ini`, `.tellgrader.json`, `skills/`, `claude/` |
 | scripts | `scripts/`, `src/tests/`, `.github/`, `eslint.config.js`, `tsdoc.json`, `vitest.config.ts`, `wrangler.test.jsonc` |
 | harness | `.claude/` |
-| showcase | `examples/showcase/`, `templates/` |
+| showcase | `examples/showcase/`, `themes/`, `templates/`, `sets/`, `definitions/` |
+| theme | `scripts/theme/` |
+| plugins | `plugins/` |
 | engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |
 | export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `scripts/checks/api-surface.md`, `schema/`, `skills/`, `claude/` |
 
@@ -81,29 +83,33 @@ path, and anything else is a glob. Dot paths (`.vale/`, `.vale.ini`, `.tellgrade
 cross a dot directory, so such a glob would match nothing. The classifier refuses a table that
 writes one.
 
-The table's `checks` map lists, per check label, the buckets that select it. Rules the map does not
-spell out:
+Each registry row's `buckets` field lists the buckets that select it. The fast lane picks a row when
+the diff's path is in one of them. Rules the field does not spell out:
 
-- A close check whose own `package.json` script starts with `npm run package` and that the map
-  does not list is selected by the engine bucket.
-- The six dist-surface checks (`check:package`, `check:surface`, `check:self-use`,
+- A row with no buckets that builds `dist` is selected by the engine bucket.
+- The dist-surface checks (`check:package`, `check:surface`, `check:self-use`,
   `check:audit-pack`, `check:consumers`, `check:public-skill`) list the export-surface bucket and
   no engine bucket, so an `index.ts` change (or a `package.json` export entry) selects them and
-  another `src/lib` file does not. Only `check:public-skill` also lists the docs bucket, because
+  another `src/lib` file does not. `check:self-use`, `check:consumers`, and `check:public-skill`
+  also list the showcase bucket. Only `check:public-skill` also lists the docs bucket, because
   it reads the `cairn-styling-public-pages` skill's stylesheet contract; `check:surface` reads the built types and its golden file and no page, so a docs change does not
   select it. `check:options` keeps the engine bucket beside export surface and docs: a public option or type
   can change in a non-index file, and it must see it. A non-index change that alters the shape
-  of an export is left to CI for the six.
-- `check:vale-rules` (the Cairn rule cases `vale test` runs inside the docs gate) is a docs-bucket
-  extra, so a `.vale/` or `.vale.ini` change runs it.
-- A `scripts/` file selects the checks whose script reaches it by a relative import, plus the
-  bucket's own checks. A `scripts/` file no check reaches (and that is not under
-  `scripts/ci/`, `scripts/test/`, or the classifier and its table, which only tests and the comment
-  lint read) selects every static check.
-- A close check the map neither lists nor builds the package for runs on every diff.
+  of an export is left to CI for the dist-surface checks.
+- `check:vale-rules` (the Cairn rule cases `vale test` runs inside the docs gate) lists the docs
+  bucket, so a `.vale/` or `.vale.ini` change runs it.
+- A `scripts/` file selects the rows whose command reaches it by a relative import, plus the
+  bucket's own rows. A `scripts/` file no row reaches (and that is not under
+  `scripts/catalog/`, `scripts/ci/`, `scripts/test/`, or the classifier and its table, which only
+  tests and the comment lint read) selects every static check.
+- A close row with no buckets that does not build `dist` runs on every diff.
 - The docs bucket selects tellgrader and the docs checks.
+- The theme bucket (`scripts/theme/`) selects `test:theme`, and the plugins bucket (`plugins/`)
+  selects `test:emit`.
 - The harness bucket (`.claude/`) selects only `check` and `test:emit`. A diff confined to
   `.claude/` therefore runs those two, no component leg, and no e2e spec.
+- A new check is a row in the registry plus the script the row runs, and every row also needs
+  its `package.json` entry, which `check-registry.test.ts` enforces. `npm run check:close -- <name>` runs a subset of the close group by name.
 - A path in no bucket and not on the no-check list selects every static check and the whole e2e
   suite. The no-check list is `.gitattributes` and `knip.jsonc`, the only tracked root files no
   check and no test reads; a unit test pins its members.
@@ -137,17 +143,18 @@ check never hides a unit red. It runs on the heavy lane, cairn-run-gate's
 default, with no lane prefix.
 
 - A serial group that runs every leg and fails at the end, because each of its parts builds or reads `dist` and a build beside a reader
-  races: `npm run check:close -- <labels>` for the diff's static checks (minus the type check), then
+  races: `npm run check:close -- <names>` for the diff's static checks (minus the type check), then
   the type check (`npm run check`, whose program loads `dist` through the package's self-import),
-  then `test:emit`, and the showcase's `test:unit` where the diff selects
-  them, then `npm run check:docs-gate` when a docs path changed, then the unit tests related to the
+  then each other selected row that is not `distFree` (`test:emit` and `check:showcase-unit`, for
+  example), then `npm run check:docs-gate` when a docs path changed, then the unit tests related to the
   diff (`npx vitest related --run --passWithNoTests --project unit <paths>`; the whole `unit`
   project when the diff deletes or renames a path under `src/` or `scripts/`, or holds a live path
   outside the table's `unitSelectable` list or a `src/` file that is not code). A live `docs/` or
   `MIGRATION-NOTES.md` path adds the slug contract test, which reads those files at run time.
   Named gap: `vitest related` follows imports and never sees a file a unit test reads at run time,
   so a `src/` code edit can miss one of the 38 unit tests that do; CI is their home.
-- Beside the chain, concurrently: tellgrader and the Cairn Vale rule-case tests.
+- Beside the chain, concurrently: the selected rows the registry marks `distFree` (`check:definitions`,
+  tellgrader, and the Cairn Vale rule-case tests).
 
 `--fast` accepts `--class` and `--paint` and ignores them, since they only shape the e2e leg that
 CI carries.
@@ -172,8 +179,9 @@ measured outside it.
 
 `gate-tier.mjs --range <base>..HEAD --protected` prints `ciWait` when any path in the range matches
 the table's `protected` list and prints nothing otherwise, exiting 0 either way. The list is
-the table itself, `scripts/checks/gate-tier.mjs`, `scripts/test/component-rerun-triggers.mjs`,
-`.github/ci-green.json`, and `.github/workflows/`. The mode reads the list at `<base>` (`git show
+the table itself, `scripts/checks/gate-tier.mjs`, the registry `scripts/checks/registry.mjs` (whose
+rows hold each check's buckets), `scripts/test/component-rerun-triggers.mjs`, `.github/ci-green.json`,
+and `.github/workflows/`. The mode reads the list at `<base>` (`git show
 <base>:scripts/checks/gate-table.json`), so a range that deletes its own entry still flags; a table
 that is absent or unreadable at `<base>` prints `ciWait` with the reason on stderr. A git failure
 exits non-zero with empty stdout. The default mode's gate string is never altered by a protected
@@ -197,14 +205,15 @@ of that, and `full` adds the remaining CI-only checks plus the whole showcase e2
 | `scripts` | `scripts/**`, `src/tests/**`, any `*.test.ts`/`*.spec.ts` | docs string + `&& npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism` |
 | `engine` | `src/lib/**/*.ts`, excluding `src/lib/admin/**`, `src/lib/public/**`, and `src/lib/admin-toolkit/**` | same string as `scripts` |
 | `admin-visual` | `src/lib/admin/**` (Svelte components and `cairn-admin.css`) or `src/lib/admin-toolkit/**` (the shared admin-table components) | scripts/engine string + `&& npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts` |
-| `full` | `src/lib/render/**` (the render seam), `src/lib/public/**` (the built-in public components, since they render on the public site), `examples/showcase/src/chassis/**`, `examples/showcase/src/theme/**`, and `themes/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | admin-visual string + `&& npm run check:comments && npm run check:surface`, then every other check the CI `test` job runs (`npm run test:emit`, `check:package`, `check:audit-pack`, `check:self-use`, `check:custom-surface`, `check:chassis-boundary`, `check:cm-internals`, `check:idioms`, `check:invisible-craft`, `check:admin-css-classes`, `check:rulings-format`, `check:consumers-must`, `check:prose`, `check:version`, `check:dev-package`, `check:template`, `check:consumers`, the showcase's `check`, `check:cairn`, `test:unit` and `format:check`, `check:public-skill`, and the theme garden's `npm run test:theme` and `npm run check:theme -- --catalog`, which a change under `themes/` must pass; a change under `scripts/theme/` runs `npm run test:theme` itself), then `npm --prefix examples/showcase run test:e2e` |
+| `full` | `src/lib/render/**` (the render seam), `src/lib/public/**` (the built-in public components, since they render on the public site), `examples/showcase/src/chassis/**`, `examples/showcase/src/theme/**`, and `themes/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | admin-visual string + `&&` then every row of the registry's `full` group as its own `npm run` script, in that group's order (`check:comments` first, then `check:surface`, then the rest of the checks the CI `test` job runs, with the theme garden's `test:theme` and `check:theme -- --catalog`), then `npm --prefix examples/showcase run test:e2e` |
 
-The `docs` gate string is `scripts/checks/docs-gate.mjs` (`npm run check:docs-gate`), the one
-runner that carries every check that reads a doc arm's content: check:docs, check:vale,
-check:leaks, check:symbols, check:snippets, check:visuals,
-check:editor-quotes, check:readiness, and check:options. Every tier above `docs`
-carries it once, through the superset chain, so `full`'s own explicit checks list does not repeat
-check:snippets or check:symbols.
+The `docs` gate string is `npm run check:docs-gate`. It runs the `docs-gate` group of
+`scripts/checks/run.mjs`, the one runner that carries every check that reads a doc arm's content:
+check:docs, check:vale, check:vale-rules, check:leaks, check:symbols, check:snippets,
+check:visuals, check:editor-quotes, check:readiness, check:site-record-page, check:options,
+check:tiers, and tellgrader. `npm run check:docs-gate -- --page <path>` narrows the page checks to
+one page. Every tier above `docs` carries the group once, through the superset chain, so the `full`
+group does not repeat check:snippets or check:symbols.
 
 ## The pin
 

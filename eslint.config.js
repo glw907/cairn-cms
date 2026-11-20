@@ -46,6 +46,8 @@ const COMMENT_GLOBS = [
 const SCRIPT_FILES = [
   'scripts/checks/close-prebuilt.mjs',
   'scripts/checks/gate-tier.mjs',
+  'scripts/checks/registry.mjs',
+  'scripts/checks/run.mjs',
   'scripts/ci/retries-notice.mjs',
   'scripts/ci/vitest-retry-reporter.mjs',
 ];

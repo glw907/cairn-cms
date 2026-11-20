@@ -1,20 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { parseArgs, buildSteps } from '../../../scripts/checks/docs-gate.mjs';
+import { parseArgs, groupSteps } from '../../../scripts/checks/run.mjs';
+import { CHECKS } from '../../../scripts/checks/registry.mjs';
+
+/** The docs-gate group's steps, narrowed to `page` when one is given. */
+function docsGate(page: string | null) {
+  return groupSteps(CHECKS, 'docs-gate', [], { page });
+}
 
 describe('parseArgs', () => {
   it('defaults page to null when no flag is given', () => {
-    expect(parseArgs([])).toEqual({ page: null, prebuilt: false });
+    expect(parseArgs(['docs-gate'])).toMatchObject({ group: true, name: 'docs-gate', page: null });
   });
 
-  it('parses --prebuilt as a flag that takes no value', () => {
-    expect(parseArgs(['--prebuilt', '--page', 'docs/a.md'])).toEqual({
-      page: 'docs/a.md',
-      prebuilt: true,
-    });
+  it('refuses --prebuilt, which nothing calls', () => {
+    expect(() => parseArgs(['docs-gate', '--prebuilt', '--page', 'docs/a.md'])).toThrow(/--prebuilt/);
   });
 });
 
-describe('buildSteps', () => {
+describe('the docs-gate group', () => {
   const LABELS = [
     'check:docs',
     'check:vale',
@@ -32,60 +35,54 @@ describe('buildSteps', () => {
   ];
 
   it('runs exactly the docs-gate list from the spec, in order', () => {
-    const steps = buildSteps({ page: null });
-    expect(steps.map((step) => step.label)).toEqual(LABELS);
+    expect(docsGate(null).map((step) => step.name)).toEqual(LABELS);
   });
 
   it('runs every component directly (node or vale), never through an "npm run check:*" wrapper, since the runner builds dist once itself', () => {
-    const steps = buildSteps({ page: null });
-    for (const step of steps) expect(step.command).not.toBe('npm');
+    for (const step of docsGate(null)) expect(step.command, step.name).not.toMatch(/^npm /);
   });
 
   it('scopes Vale to the fixed default path list when no --page is given', () => {
-    const steps = buildSteps({ page: null });
-    const vale = steps.find((step) => step.label === 'check:vale');
-    expect(vale?.args).toEqual(['--minAlertLevel=error', 'docs', 'README.md', 'examples/showcase/README.md']);
+    const vale = docsGate(null).find((step) => step.name === 'check:vale');
+    expect(vale?.command).toBe('vale --minAlertLevel=error');
+    expect(vale?.targets).toEqual(['docs', 'README.md', 'examples/showcase/README.md']);
   });
 
   it('scopes Vale to only the given --page path', () => {
-    const steps = buildSteps({ page: 'docs/editors/write-in-the-editor.md' });
-    const vale = steps.find((step) => step.label === 'check:vale');
-    expect(vale?.args).toEqual(['--minAlertLevel=error', 'docs/editors/write-in-the-editor.md']);
+    const vale = docsGate('docs/editors/write-in-the-editor.md').find((step) => step.name === 'check:vale');
+    expect(vale?.command).toBe('vale --minAlertLevel=error');
+    expect(vale?.targets).toEqual(['docs/editors/write-in-the-editor.md']);
   });
 
   it('runs the Cairn rules\' vale test cases over both test files under the fixture config in tree mode', () => {
-    const steps = buildSteps({ page: null });
-    const rules = steps.find((step) => step.label === 'check:vale-rules');
-    expect(rules?.command).toBe('vale');
-    expect(rules?.args).toEqual([
-      '--config=.vale/tests/vale.ini',
-      'test',
-      '.vale/styles/Cairn/Headings.test.yml',
-      '.vale/styles/Cairn/ProseProcedure.test.yml',
-    ]);
+    const rules = docsGate(null).find((step) => step.name === 'check:vale-rules');
+    expect(rules?.command).toBe(
+      'vale --config=.vale/tests/vale.ini test .vale/styles/Cairn/Headings.test.yml .vale/styles/Cairn/ProseProcedure.test.yml',
+    );
+    expect(rules?.targets).toEqual([]);
   });
 
   it('leaves the rule test cases out of a page-scoped run', () => {
-    const steps = buildSteps({ page: 'docs/editors/write-in-the-editor.md' });
-    expect(steps.map((step) => step.label)).not.toContain('check:vale-rules');
+    const steps = docsGate('docs/editors/write-in-the-editor.md');
+    expect(steps.map((step) => step.name)).not.toContain('check:vale-rules');
   });
 
   it('scopes check:tellgrader to only the given --page path and scans the tree otherwise', () => {
-    const unscoped = buildSteps({ page: null }).find((step) => step.label === 'check:tellgrader');
-    expect(unscoped?.args).toEqual(['scripts/checks/check-tellgrader.mjs']);
-    const scoped = buildSteps({ page: 'docs/editors/write-in-the-editor.md' }).find(
-      (step) => step.label === 'check:tellgrader',
-    );
-    expect(scoped?.args).toEqual(['scripts/checks/check-tellgrader.mjs', 'docs/editors/write-in-the-editor.md']);
+    const unscoped = docsGate(null).find((step) => step.name === 'check:tellgrader');
+    expect(unscoped?.command).toBe('node scripts/checks/check-tellgrader.mjs');
+    expect(unscoped?.targets).toEqual([]);
+    const scoped = docsGate('docs/editors/write-in-the-editor.md').find((step) => step.name === 'check:tellgrader');
+    expect(scoped?.command).toBe('node scripts/checks/check-tellgrader.mjs');
+    expect(scoped?.targets).toEqual(['docs/editors/write-in-the-editor.md']);
   });
 
   it('leaves every other component unscoped by --page', () => {
-    const scoped = buildSteps({ page: 'docs/editors/write-in-the-editor.md' });
-    const unscoped = buildSteps({ page: null });
+    const scoped = docsGate('docs/editors/write-in-the-editor.md');
+    const unscoped = docsGate(null);
     for (const label of LABELS) {
       if (['check:vale', 'check:vale-rules', 'check:tellgrader'].includes(label)) continue;
-      const scopedStep = scoped.find((step) => step.label === label);
-      const unscopedStep = unscoped.find((step) => step.label === label);
+      const scopedStep = scoped.find((step) => step.name === label);
+      const unscopedStep = unscoped.find((step) => step.name === label);
       expect(scopedStep).toEqual(unscopedStep);
     }
   });

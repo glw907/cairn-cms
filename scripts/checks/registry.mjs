@@ -297,7 +297,7 @@ export const CHECKS = deepFreeze(
       command:
         'node --test scripts/build/emit-definitions.test.mjs scripts/build/emit-template.test.mjs scripts/build/emit-template-dir.test.mjs scripts/build/bake-template.test.mjs scripts/build/starter-overlay.test.mjs scripts/build/pack-engine-template.test.mjs scripts/build/plugin-manifests.test.mjs scripts/theme/theme-names.test.mjs scripts/theme/build-tokens.test.mjs scripts/theme/contract.test.mjs scripts/theme/lay-in.test.mjs .claude/skills/cairn-writing-docs/evals/run.test.mjs .claude/skills/cairn-writing-docs/evals/run-site.test.mjs',
       build: false,
-      buckets: ['showcase', 'engine', 'harness'],
+      buckets: ['showcase', 'engine', 'harness', 'plugins'],
       groups: { full: 3 },
     },
     {
@@ -311,7 +311,7 @@ export const CHECKS = deepFreeze(
       name: 'test:theme',
       command: 'node --test --test-force-exit --test-concurrency=2 scripts/theme/*.test.mjs',
       build: false,
-      buckets: [],
+      buckets: ['theme'],
       groups: { full: 26 },
     },
     {

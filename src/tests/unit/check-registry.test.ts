@@ -12,6 +12,13 @@ const BASE = JSON.parse(
   renamed: Record<string, string>;
 };
 
+const SCRIPTS = (
+  JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')) as { scripts: Record<string, string> }
+).scripts;
+
+// The root scripts that are rows under their own names, which the held CI and the engine tier call.
+const ROOT_ROWS = ['check', 'test:emit', 'test:catalog', 'test:theme'];
+
 const renamed = (name: string) => BASE.renamed[name] ?? name;
 const original = Object.fromEntries(Object.entries(BASE.renamed).map(([from, to]) => [to, from]));
 const rowNames = CHECKS.map((row) => row.name);
@@ -44,5 +51,24 @@ describe('the check registry', () => {
       expect(new Set(places).size, group).toBe(places.length);
     }
     expect(CHECKS.filter((row) => row.command.includes('npm run package')).map((row) => row.name)).toEqual([]);
+  });
+
+  it('gives every row and every group with a script exactly one run.mjs script, and no script a stray', () => {
+    const runnerScripts = Object.keys(SCRIPTS).filter((name) => name.startsWith('check:') || ROOT_ROWS.includes(name));
+    const targets = new Map([
+      ...rowNames.map((name) => [name, name] as const),
+      ...Object.entries(GROUPS).flatMap(([group, script]) => (script === null ? [] : [[script, group] as const])),
+    ]);
+    const strays = runnerScripts.filter((name) => SCRIPTS[name] !== `node scripts/checks/run.mjs ${targets.get(name)}`);
+    expect(strays).toEqual([]);
+    const unscripted = [...targets.keys()].filter((name) => !runnerScripts.includes(name));
+    expect(unscripted).toEqual([]);
+  });
+
+  it('leaves the build out of every check script', () => {
+    const building = Object.keys(SCRIPTS).filter(
+      (name) => name.startsWith('check:') && SCRIPTS[name].includes('npm run package'),
+    );
+    expect(building).toEqual([]);
   });
 });

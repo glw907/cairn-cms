@@ -16,7 +16,7 @@ const SCRIPTS = (
   JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')) as { scripts: Record<string, string> }
 ).scripts;
 
-// The root scripts that are rows under their own names, which the held CI and the engine tier call.
+// The root scripts that are rows under their own names, which the CI workflows and the engine tier call.
 const ROOT_ROWS = ['check', 'test:emit', 'test:catalog', 'test:theme'];
 
 const renamed = (name: string) => BASE.renamed[name] ?? name;

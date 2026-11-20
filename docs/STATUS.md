@@ -65,3 +65,7 @@ What a session needs to know:
   (`trig_0193pPNoyxsTGeUhF1xx7woa`).
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries).
+
+## checks-1 executor
+
+Session `cairn-cms-checks-1` (id `ddb72035`), PR #261, branch `checks-1`. The conductor lands it.

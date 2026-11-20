@@ -71,4 +71,12 @@ describe('the check registry', () => {
     );
     expect(building).toEqual([]);
   });
+
+  it('names every row the fast lane can never pick, so a new one is a decision', () => {
+    // A row outside the close with no buckets is dropped from the fast lane's universe (#485).
+    const never = CHECKS.filter((row) => !Object.hasOwn(row.groups, 'close') && row.buckets.length === 0).map(
+      (row) => row.name,
+    );
+    expect(never.sort()).toEqual(['check:site-record-page', 'check:theme']);
+  });
 });

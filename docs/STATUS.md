@@ -14,12 +14,12 @@ from it: the setup rebuild (`cairn new`) forms the next release, and nothing shi
 Dev snapshots (engine 0.99.0-dev.2) stay on `gate`; nothing new is published. The next design is the route that
 rebuilds the `cairn` command inside the engine package.
 
-<!-- round-report foundation -->
-Round foundation is holding after pass 3, and one call waits for Geoff
-Passes 1 and 2 are merged (#256, #257). Pass 3 `record` is ready as #258 (`auth-data`, one call) and waits for the close packet. Geoff ruled that pass 4 holds until the brainstorm on updating a site is complete, so no pass 4 launches and passes 5 and 6 wait. Nothing a visitor sees changed.
-
-Open documents: `20261117-073728-22e0c0` (answered, the hold). The hold ends on the id of a second answered document the desk sends.
-Resume from: /var/home/glw907/Projects/initiatives/theme-garden/plans/2026-11-15-foundation-conductor-prompt.txt
+<!-- round-report route -->
+The route's round `checks` is running: passes `checks-1`, `checks-2`, `checks-3` in that order, one list of checks and one runner that CI calls.
+Round order and design: /var/home/glw907/Projects/initiatives/theme-garden/specs/2026-11-17-route-rounds.md. Pull request #259 landed before the round began, so its CI edits are replaced by `checks-3`.
+Open documents: none.
+Resume from: /var/home/glw907/Projects/initiatives/theme-garden/plans/2026-11-17-route-checks-conductor-prompt.txt
+Next launch: planner `cairn-cms-checks-1-plan` from plans/2026-11-17-route-checks-1-planner-prompt.txt.
 <!-- /round-report -->
 
 <!-- round-report pennant -->
@@ -52,8 +52,7 @@ What a session needs to know:
   engine release). Passes 2 and 3 are held (the design's `Held:` line) and launch nothing. Round two's design, site basics, retires them and builds events as a feature layer. Resume from
   `initiatives/theme-garden/plans/2026-11-14-events-conductor-prompt.txt`.
 - Round `pennant` is closed. Pennant 1.0.0 and Waymark 1.2.0 are published; backlog #539 holds the banner-split hardening for 1.0.1.
-- Next action: round `foundation`. Launch `conductor-foundation` from
-  `initiatives/theme-garden/plans/2026-11-15-foundation-conductor-prompt.txt` once its start line reads true.
+- Next action: round `checks` is running under `conductor-cairn-cms`; see the route block above.
 
 ## Open decisions and watches
 

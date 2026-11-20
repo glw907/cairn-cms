@@ -108,8 +108,8 @@ the diff's path is in one of them. Rules the field does not spell out:
   selects `test:emit`.
 - The harness bucket (`.claude/`) selects only `check` and `test:emit`. A diff confined to
   `.claude/` therefore runs those two, no component leg, and no e2e spec.
-- A new check is a row in the registry plus the script the row runs, and a `check:*` row also needs
-  its `package.json` entry. `npm run check:close -- <name>` runs a subset of the close group by name.
+- A new check is a row in the registry plus the script the row runs, and every row also needs
+  its `package.json` entry, which `check-registry.test.ts` enforces. `npm run check:close -- <name>` runs a subset of the close group by name.
 - A path in no bucket and not on the no-check list selects every static check and the whole e2e
   suite. The no-check list is `.gitattributes` and `knip.jsonc`, the only tracked root files no
   check and no test reads; a unit test pins its members.
@@ -145,7 +145,7 @@ default, with no lane prefix.
 - A serial group that runs every leg and fails at the end, because each of its parts builds or reads `dist` and a build beside a reader
   races: `npm run check:close -- <names>` for the diff's static checks (minus the type check), then
   the type check (`npm run check`, whose program loads `dist` through the package's self-import),
-  then each other selected row that reads `dist` (`test:emit` and `check:showcase-unit`, for
+  then each other selected row that is not `distFree` (`test:emit` and `check:showcase-unit`, for
   example), then `npm run check:docs-gate` when a docs path changed, then the unit tests related to the
   diff (`npx vitest related --run --passWithNoTests --project unit <paths>`; the whole `unit`
   project when the diff deletes or renames a path under `src/` or `scripts/`, or holds a live path
@@ -179,8 +179,9 @@ measured outside it.
 
 `gate-tier.mjs --range <base>..HEAD --protected` prints `ciWait` when any path in the range matches
 the table's `protected` list and prints nothing otherwise, exiting 0 either way. The list is
-the table itself, `scripts/checks/gate-tier.mjs`, `scripts/test/component-rerun-triggers.mjs`,
-`.github/ci-green.json`, and `.github/workflows/`. The mode reads the list at `<base>` (`git show
+the table itself, `scripts/checks/gate-tier.mjs`, the registry `scripts/checks/registry.mjs` (whose
+rows hold each check's buckets), `scripts/test/component-rerun-triggers.mjs`, `.github/ci-green.json`,
+and `.github/workflows/`. The mode reads the list at `<base>` (`git show
 <base>:scripts/checks/gate-table.json`), so a range that deletes its own entry still flags; a table
 that is absent or unreadable at `<base>` prints `ciWait` with the reason on stderr. A git failure
 exits non-zero with empty stdout. The default mode's gate string is never altered by a protected

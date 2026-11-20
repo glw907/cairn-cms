@@ -13,7 +13,7 @@
  * @property {string} name - The npm script that runs the row through `run.mjs`.
  * @property {string} command - The shell command, run through `sh -c` from the repo root.
  * @property {boolean} build - Whether a run of this row alone builds `dist` first.
- * @property {readonly string[]} buckets - The gate-table buckets that pick the row in the fast lane. With none, the fast lane sends a row that builds to `engine` and picks any other row for every diff.
+ * @property {readonly string[]} buckets - The gate-table buckets that pick the row in the fast lane. With none, the fast lane sends a row that builds to `engine`, picks a `close` row for every diff, and never picks any other row.
  * @property {Readonly<Record<string, number>>} groups - Each group the row belongs to, mapped to its place in that group's run order.
  * @property {Readonly<Record<string, readonly string[]>>} [groupArgs] - Words a run of the named group appends to the command.
  * @property {readonly string[]} [targets] - Default trailing words, which a `--page` run replaces with the page.

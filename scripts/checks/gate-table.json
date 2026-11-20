@@ -265,6 +265,7 @@
   "protected": [
     "scripts/checks/gate-table.json",
     "scripts/checks/gate-tier.mjs",
+    "scripts/checks/registry.mjs",
     "scripts/test/component-rerun-triggers.mjs",
     ".github/ci-green.json",
     ".github/workflows/"

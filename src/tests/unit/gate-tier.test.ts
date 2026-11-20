@@ -115,6 +115,7 @@ describe('the table', () => {
     expect(table.protected).toEqual([
       'scripts/checks/gate-table.json',
       'scripts/checks/gate-tier.mjs',
+      'scripts/checks/registry.mjs',
       'scripts/test/component-rerun-triggers.mjs',
       '.github/ci-green.json',
       '.github/workflows/',

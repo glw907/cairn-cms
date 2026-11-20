@@ -111,6 +111,18 @@ describe('pathExists', () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  it('resolves a path that only the setup overlay carries', () => {
+    const root = mkdtempSync(join(tmpdir(), 'check-symbols-overlay-'));
+    try {
+      mkdirSync(join(root, 'scripts/build/setup-overlay/.github/workflows'), { recursive: true });
+      writeFileSync(join(root, 'scripts/build/setup-overlay/.github/workflows/deploy.yml'), '');
+      expect(pathExists('.github/workflows/deploy.yml', root)).toBe(true);
+      expect(pathExists('.github/workflows/other.yml', root)).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('extractFilePaths', () => {

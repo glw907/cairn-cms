@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isActionable } from './check-consumers-must.mjs';
+import { isActionable, unreleasedWindow } from './check-consumers-must.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const RULE = 'a minor is for a new subsystem or a breaking change, a patch is everything else; every minor or major carries a release-size marker';
@@ -68,22 +68,6 @@ export function compareVersions(a, b) {
     }
   }
   return 0;
-}
-
-/**
- * Slice the `## Unreleased` window out of a CHANGELOG, from its heading to the next `## ` heading
- * (of any kind) or the end of the text. Returns null when there is no `## Unreleased` heading, the
- * ordinary case once a window has been cut and renamed to a version.
- * @param {string} changelogText the full CHANGELOG.md text
- * @returns {string | null}
- */
-export function unreleasedWindow(changelogText) {
-  const heading = changelogText.match(/^## Unreleased\b.*$/m);
-  if (!heading) return null;
-  const afterHeading = (heading.index ?? 0) + heading[0].length;
-  const nextHeading = changelogText.slice(afterHeading).match(/^## .+$/m);
-  const end = nextHeading ? afterHeading + (nextHeading.index ?? 0) : changelogText.length;
-  return changelogText.slice(afterHeading, end);
 }
 
 /**

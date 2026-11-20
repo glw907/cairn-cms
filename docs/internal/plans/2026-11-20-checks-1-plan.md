@@ -126,7 +126,7 @@ Recorded at the base, in this worktree, on 2026-11-20.
 | --- | --- | --- |
 | `name` | The npm script that runs the row: `node scripts/checks/run.mjs <name>`. | the labels in all four homes |
 | `command` | The shell command the runner runs, with no leading build. | the script bodies, `extraCommands`, the docs-gate `node(...)` calls |
-| `build` | `true` when the row reads `dist` and needs it built first. | `PACKAGE_PREFIX` on a script body |
+| `build` | `true` when a run of the row alone builds `dist` first. A group run builds whatever the flags say (see "The runner"). | `PACKAGE_PREFIX` on a script body |
 | `buckets` | The `gate-table.json` buckets that select the row in the fast lane. A row with no buckets keeps today's rule (M8): it falls to `engine` when `build` is true, and is picked for every diff otherwise. | `gate-table.json` `checks` |
 | `groups` | An object from each group the row belongs to (`close`, `docs-gate`, `full`) to its place in that group's run order. | `CLOSE_COMPONENTS`, `buildSteps`, `CI_CHECKS` |
 | `groupArgs` | Words a group run appends, by group. Only `check:theme` has one: `{ full: ['--catalog'] }`. | the `-- --catalog` in `CI_CHECKS` |
@@ -189,8 +189,13 @@ node scripts/checks/run.mjs <group> [<row> ...] [--page <path>]
   refuses an unknown name before the build, as `selectSteps` does today. `--page <path>` is
   accepted by the `docs-gate` group only and applies the rows' `page` and `targets` fields. The
   group's `groupArgs` are appended to each row that has them. Any other flag is refused.
-- The runner runs `npm run package` once before the first row when any selected row has `build:
-  true`, and not at all otherwise. There is no `--prebuilt`, since nothing calls it (M6).
+- A group run builds `dist` once with `npm run package` before its first row, every time, as
+  `runClose` and `docs-gate.mjs` do today. The close's `check` row and its three showcase rows
+  read `dist` without building it at the base, so a close subset needs the build whatever its
+  rows' flags say. A row run builds once when its row has `build: true`, and not at all
+  otherwise. There is no `--prebuilt`, since nothing calls it (M6).
+- `groupSteps` refuses a row whose command holds `npm run package`, so a row asks for `dist`
+  only through `build`.
 - A `close` group run first runs `missingInstalls()`, imported from `close-prebuilt.mjs`, as
   `runClose` does today. No other run checks the installs. A held workflow step that runs before
   the showcase install keeps working (M13).
@@ -265,8 +270,8 @@ worktree off the pass branch, and each dispatch names its model and effort. Afte
    the `theme` and `plugins` buckets.
 2. Write `scripts/checks/run.mjs` as "The runner" sets out, moving `runClose`'s loop and
    `runStep`'s env from `close-prebuilt.mjs` and `buildSteps`'s page handling from
-   `docs-gate.mjs`. Leave `close-prebuilt.mjs`, `docs-gate.mjs`, and `package.json` as they are,
-   since T4 switches the callers. Doc comments follow `standards:ts-conventions`, with no em dash.
+   `docs-gate.mjs`. Leave `close-prebuilt.mjs`, `docs-gate.mjs`, and `package.json`'s check
+   scripts as they are, since T4 switches the callers. Doc comments follow `standards:ts-conventions`, with no em dash.
 3. Add `scripts/checks/registry.mjs` and `scripts/checks/run.mjs` to the three comment-lint lists
    (M21), beside `close-prebuilt.mjs` and `gate-tier.mjs`.
 4. Add `src/tests/unit/check-registry.test.ts` with the cases that hold before `package.json`
@@ -281,7 +286,8 @@ worktree off the pass branch, and each dispatch names its model and effort. Afte
    `close-prebuilt.test.ts:248` does, because CI's unit job runs before the showcase install
    (plan review S2):
    - A group run over three fixture rows, two of them `build: true`, calls the `build` seam once
-     (route item 2's third test). With no `build: true` row it calls it zero times.
+     (route item 2's third test). A row run calls it once for a `build: true` row and zero times
+     for any other.
    - A spawned fixture script calls `runSteps` with three rows whose middle row runs `node -e
      "process.exit(1)"`. The process exits non-zero, its output holds `<middle row>: FAIL`, and
      the third row's verdict line follows it (route item 6).
@@ -570,6 +576,10 @@ probe matches, and the retired-form search (T5 step 5) has no open hit.
 - **The fast lane spells every row as `npm run <name>`.** This gives one spelling per check across
   the fast lane and the full tier, and changes the raw-command assertions in T4's table. Passed
   over: emitting each row's raw command, which keeps those assertions but leaves two spellings.
+- **A group run always builds; a row run builds by its flag** `[advisor]`. Both groups build every
+  run today, and four close rows read `dist` with no flag. Passed over: building only for a
+  flagged row, which runs a showcase-only close subset against a stale `dist`. Reversing it needs
+  a `reads-dist` flag on those four rows.
 - **The install check runs for the `close` group only**, as today. Held CI and `publish.yml` keep
   working.
 - **`--prebuilt` is dropped.** Nothing calls it, and a retired flag on the new runner would keep an

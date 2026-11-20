@@ -96,6 +96,7 @@ jobs:
       - run: node scripts/checks/check-admin-css-classes.mjs
       - run: npm run check:rulings-format
       - run: npm run check:consumers-must
+      - run: npm run check:definitions
       - run: npm run check:prose
       - run: npm run check:version
       - run: npm run check:dev-package

@@ -1,5 +1,7 @@
 # Set up a site with an agent
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 A coding agent can set up a cairn site from flags and a plan file, with no prompt in a terminal. The agent runs `cairn new` in two calls: one writes a plan and creates nothing on Cloudflare, and the second creates the site from that plan once the owner has reviewed it. The owner still approves each browser step, because setup reaches into the owner's Cloudflare and GitHub accounts and the agent can't consent for them.
 
 This page is for two readers. If you own the site, hand this page to your agent. If you are the agent, it is the whole contract, and the generated [setup reference](./setup-reference.md) lists every flag, derived name, step, event, and exit code. To answer the questions yourself in a terminal, start with `npm create cairn-site` instead, which installs the `cairn` CLI and runs `cairn new`. A run with no terminal and no mode flag prints the agent guide.
@@ -61,7 +63,6 @@ cairn new --dry-run --json --name "My Site" --host example.com --email me@exampl
 
 With `--json`, the dry run writes one payload to stdout:
 
-<!-- transcript: tool/testdata/transcripts/06-cairn-new-dry-run-json.txt -->
 ```
 {"schemaVersion":1,"kind":"dryRun","siteName":"My Site","repository":"my-site","worker":"my-site","database":"my-site-auth","bucket":"my-site-media","app":"cairn-my-site","folder":"./my-site","ownerEmail":"me@example.com","posture":"decline"}
 ```
@@ -122,7 +123,6 @@ Leave the new address alone until the `summary` event arrives. Then visit it to 
 
 A usage error exits 3 before anything runs and leaves stdout empty. The message goes to stderr, and this block merges both streams:
 
-<!-- transcript: tool/testdata/transcripts/08-cairn-new-usage-error.txt -->
 ```
 cairn: --posture is required with --dry-run.
 Run `cairn new --help` for the flags

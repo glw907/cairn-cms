@@ -15,8 +15,8 @@
 // Tree mode (no `--page`) also runs `vale test` over the Cairn rules' cases, since a rule's
 // pass and fail cases guard the rule itself, not any one page.
 //
-// `dist` is built exactly once, before any component runs. Six of the checks (check:snippets,
-// check:visuals, check:readiness, check:tool-conditions, check:options, check:tiers) call
+// `dist` is built exactly once, before any component runs. Five of the checks (check:snippets,
+// check:visuals, check:readiness, check:options, check:tiers) call
 // `npm run package` themselves when run as their own npm script, so this runner calls each component's underlying node script directly and pays that cost once.
 import { spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
@@ -85,11 +85,9 @@ export function buildSteps({ page }) {
     { label: 'check:leaks', ...node('scripts/checks/check-leaks.mjs') },
     { label: 'check:symbols', ...node('scripts/checks/check-symbols.mjs') },
     { label: 'check:snippets', ...node('scripts/checks/check-snippets.mjs') },
-    { label: 'check:transcripts', ...node('scripts/checks/transcript-blocks.mjs') },
     { label: 'check:visuals', ...node('scripts/checks/check-visuals.mjs') },
     { label: 'check:editor-quotes', ...node('scripts/checks/check-editor-quotes.mjs') },
     { label: 'check:readiness', ...node('scripts/checks/check-readiness.mjs') },
-    { label: 'check:tool-conditions', ...node('scripts/checks/check-tool-conditions.mjs') },
     { label: 'check:site-record-page', ...node('scripts/checks/check-site-record-page.mjs') },
     { label: 'check:options', ...node('scripts/checks/check-options.mjs') },
     { label: 'check:tiers', ...node('scripts/checks/check-tiers.mjs') },

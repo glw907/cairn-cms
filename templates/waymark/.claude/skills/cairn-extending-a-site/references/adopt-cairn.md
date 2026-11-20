@@ -1,5 +1,7 @@
 # Add cairn to an existing SvelteKit app
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 A scaffolded site already has all of this. On a hand-built app, wire
 the engine in this order, then content, then (only if asked) the admin and production.
 

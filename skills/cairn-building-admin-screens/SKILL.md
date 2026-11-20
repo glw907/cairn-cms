@@ -5,6 +5,8 @@ description: Guides building, gating, arranging, or reviewing a screen inside a 
 
 # cairn-building-admin-screens
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 A custom admin screen is a SvelteKit route under `src/routes/admin/` that renders inside
 `CairnAdminShell`. The engine's TSDoc carries each export's contract; this skill carries the
 recipes, the orderings, and the traps between exports. Open the reference for the job.

@@ -1,5 +1,5 @@
 ---
-paths: ["src/lib/**", "packages/**", "templates/**", "tool/cmd/**", "tool/internal/**"]
+paths: ["src/lib/**", "packages/**", "templates/**"]
 ---
 
 If this change alters behavior an editor or admin page could describe (a screen, a command, a

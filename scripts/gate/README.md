@@ -37,6 +37,9 @@ how a backgrounded run finished.
 
 ## The runs
 
+The `naive` and `scripted` runs wait for the new `cairn` command, which is being rebuilt. Until it
+ships, neither run has a command to drive.
+
 `probe`, `naive`, and `scripted` start a run in the clean room and return at once, printing the run
 id, the tmux session, and the run directory. Watch with a Monitor, never `run_in_background`. The
 run id is `YYMMDDHHMM` in UTC, so the owner card's site name is `Cairn gate <run id>`, and setup's
@@ -56,10 +59,8 @@ Neither `naive` nor `scripted` takes an EXIT teardown, since the run goes on aft
 
 `scripted` sets up `gate.carin-test.org` in zone `carin-test.org` (`--host` and `--zone`), never the bare
 domain: a record on the bare address or `www` is a standing stop, and the apex holds the mail records.
-`--cairn-bin <path>` swaps the registry launcher for a `cairn` binary built from the branch
-(`make -C tool build`, then `--cairn-bin tool/cairn`), so a fix is proved before it publishes. The run
-keeps a copy of the binary, and its `harness.json` says `local` with the tool recorded as `local build at
-<commit>` (the commit of the checkout the harness runs from, so build there), and `verdict.mjs` refuses a row whose tool reads `local build`. A local run is never the release gate's `scripted` row, which runs the published candidate.
+The `naive` and `scripted` runs wait for the rebuilt `cairn` command, so neither has a command to
+drive until it ships.
 A fix to the engine package (the template, the scaffold's output) still needs an engine snapshot, since
 the build resolves the engine from the registry.
 

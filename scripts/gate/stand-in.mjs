@@ -31,11 +31,8 @@ import { makeSession } from './gate.mjs';
  */
 
 /**
- * The pages the setup tab shows, keyed by the Go identifier after `Page` (or `page`) in
- * `tool/internal/setup/tab.go` and `loopback/pages.go`. A test reads those files and fails when a
- * kind there has no entry here, so a new tab page cannot ship unread. Headings and control names
- * come from `loopback/pages/*.html`. `Redirect` is `null`: it is a 302 the browser follows, never a
- * page.
+ * The pages the setup tab shows, keyed by page kind. `Redirect` is `null`: it is a 302 the browser
+ * follows, never a page.
  * @type {Record<string, TabPage | null>}
  */
 export const TAB_PAGES = {

@@ -34,8 +34,7 @@ Steps, in order:
    -var-home-glw907-Projects-cairn-cms), skip every directory whose name holds docs-eval-, trig-,
    docs-trigger-, skill-trigger, -eval-, or format-test (the eval and trigger-test worktrees), and keep transcripts
    modified after "since". A transcript qualifies when it holds an Edit, Write, or NotebookEdit
-   call whose file_path is under docs/editors/, docs/admin/, src/lib, packages, templates, tool/cmd,
-   or tool/internal.
+   call whose file_path is under docs/editors/, docs/admin/, src/lib, packages, or templates.
    Read up to 30, newest first. Add Geoff's stored decisions and notes since "since" on the
    cycle's documents and on any merge document whose pull request changes a docs/editors/ or
    docs/admin/ page. Each document is a folder ~/.local/state/approval-queue/store/<id>/ holding

@@ -37,7 +37,7 @@ export function checkPackageFiles(filePaths) {
 // The per-version record a consumer reads to take an upgrade. It ships at the package root.
 const MIGRATION_NOTES_PATH = 'MIGRATION-NOTES.md';
 
-// The published JSON schemas the Go tool's `--json` payloads declare by `$id`, packed from schema/.
+// The published JSON schemas the `cairn` command's `--json` payloads declare by `$id`, packed from schema/.
 const SCHEMA_DIR = 'schema';
 
 // The front door's two files: the evaluator's page and the architecture page.
@@ -361,23 +361,6 @@ function reachableRuleBasenames(root) {
   return /** @type {{ static: Set<string> }} */ (result);
 }
 
-/**
- * Check a packed file list for a leaked `tool/` path. `tool/` is a separate Go module with its
- * own gate and release, not a package export, so any packed path under it is a `files` mistake.
- * @param {string[]} filePaths the paths npm would include in the tarball
- * @returns {{ ok: true } | { ok: false, error: string }}
- */
-export function checkNoToolPathPacked(filePaths) {
-  const leaked = filePaths.filter((p) => p.startsWith('tool/'));
-  if (leaked.length > 0) {
-    return {
-      ok: false,
-      error: `the packed tarball carries tool/ paths (${leaked.join(', ')}); tool/ is a separate Go module and must never reach package.json "files"`
-    };
-  }
-  return { ok: true };
-}
-
 // The template tree `pack-engine-template.mjs` writes. The composed tree's `.gitignore` ships as
 // `gitignore` because npm's packlist drops the dotted name, so its absence means the script did
 // not run before the pack.
@@ -491,13 +474,6 @@ function main() {
   const reachabilityResult = checkRuleReachability(files, reachable.static);
   if (!reachabilityResult.ok) {
     console.error(`check-package-files: ${reachabilityResult.error}`);
-    process.exitCode = 1;
-    return;
-  }
-
-  const noToolResult = checkNoToolPathPacked(files);
-  if (!noToolResult.ok) {
-    console.error(`check-package-files: ${noToolResult.error}`);
     process.exitCode = 1;
     return;
   }

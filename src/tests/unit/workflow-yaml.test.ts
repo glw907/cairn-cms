@@ -107,9 +107,10 @@ describe('.github/ci-green.json classifies every workflow by trigger shape', () 
     expect(listed.length).toBe(new Set(listed).size);
   });
 
-  it('gives each expected workflow a pull_request trigger that ignores only tool/**', () => {
+  it('gives each expected workflow a bare pull_request trigger with no path filter', () => {
     for (const path of green.expected) {
-      expect(triggers(loadWorkflow(asName(path))).pull_request, path).toEqual({ 'paths-ignore': ['tool/**'] });
+      // A bare `pull_request:` key parses as null, so a missing key (undefined) fails here.
+      expect(triggers(loadWorkflow(asName(path))).pull_request, path).toBeNull();
     }
   });
 
@@ -126,8 +127,8 @@ describe('.github/ci-green.json classifies every workflow by trigger shape', () 
     }
   });
 
-  it('names the tool tree as the only ignored prefix', () => {
-    expect(green.ignorePrefixes).toEqual(['tool/']);
+  it('ignores no path prefix, so every path counts', () => {
+    expect(green.ignorePrefixes).toEqual([]);
   });
 });
 
@@ -277,14 +278,6 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     expect(early?.run).toContain('set snapshot or promote, not both');
     const pack = (jobs.build.steps ?? []).find((s) => (s.run ?? '').includes('pack-engine-template'));
     expect(pack?.run).toContain('--engine-spec "$SNAPSHOT" --dev-spec "$SNAPSHOT"');
-  });
-
-  it("tool.yml publishes a snapshot's npm packages but makes a GitHub release for a tag only", () => {
-    const toolJobs = (loadWorkflow('tool.yml').jobs ?? {}) as Record<string, Job & { steps?: PublishStep[] }>;
-    expect(toolJobs['publish-npm'].if).toContain("inputs.snapshot != ''");
-    const release = (toolJobs.release.steps ?? []).find((s) => (s.run ?? '').includes('gh release create'));
-    expect(release?.if).toContain("startsWith(github.ref, 'refs/tags/tool/v')");
-    expect(release?.if).toContain("github.event_name == 'push'");
   });
 
   it('grants id-token to the publishing jobs and promote only, each under the npm-publish environment', () => {
@@ -476,6 +469,27 @@ describe('publish.yml gates a candidate before it reaches next', () => {
     });
     expect(result.error, 'go is not on PATH').toBeUndefined();
     // A cold module cache prints "go: downloading" progress on stderr; only findings count.
+    const findings = `${result.stdout}${result.stderr}`
+      .split('\n')
+      .filter((line) => line !== '' && !line.startsWith('go: downloading '));
+    expect(findings).toEqual([]);
+    expect(result.status).toBe(0);
+  }, 120_000);
+
+  it('passes actionlint over the two workflows the starter overlay ships', () => {
+    // These are not under .github/workflows, so the run above never sees them, and
+    // deploy.yml carries the Cloudflare token to every new site.
+    const result = spawnSync(
+      'go',
+      [
+        'run',
+        'github.com/rhysd/actionlint/cmd/actionlint@v1.7.12',
+        'scripts/build/setup-overlay/.github/workflows/deploy.yml',
+        'scripts/build/setup-overlay/.github/workflows/check.yml'
+      ],
+      { encoding: 'utf8', cwd: REPO_ROOT }
+    );
+    expect(result.error, 'go is not on PATH').toBeUndefined();
     const findings = `${result.stdout}${result.stderr}`
       .split('\n')
       .filter((line) => line !== '' && !line.startsWith('go: downloading '));

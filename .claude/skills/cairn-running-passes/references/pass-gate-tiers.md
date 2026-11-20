@@ -10,7 +10,6 @@ workstation wrapper. A contributor runs the same legs through `npm run lane:fast
 - [The fast lane](#the-fast-lane)
 - [Protected paths](#protected-paths)
 - [The pinned tiers](#the-pinned-tiers)
-- [The `tool` tier and mixed diffs](#the-tool-tier-and-mixed-diffs)
 - [The pin](#the-pin)
 - [Verified against the showcase Playwright config (2026-09-15)](#verified-against-the-showcase-playwright-config-2026-09-15)
 
@@ -32,13 +31,13 @@ separate mode (see "Protected paths").
 
 ## The targeted gate
 
-Seven legs, in this order. Each prints only when it applies.
+Five legs, in this order. Each prints only when it applies.
 
 1. `npm run package`, always.
 2. The static checks the diff's buckets select, through the build-once runner:
    `npm run check:close -- <label>...` (see `scripts/checks/close-prebuilt.mjs`; bare
    `npm run check:close` when the selection is every close check), then the few checks that sit
-   outside `check:close`: `check:tool-heuristics`, `test:emit`, the showcase's `test:unit`, and
+   outside `check:close`: `test:emit`, the showcase's `test:unit`, and
    tellgrader (local only; it skips itself when the binary is absent). The runner builds `dist`
    once for the whole subset. Leg 1's build and the runner's own build are two builds of the same
    tree; the runner has no flag to skip its build.
@@ -55,17 +54,12 @@ Seven legs, in this order. Each prints only when it applies.
    when every path is a docs-bucket path, a harness-bucket path, or on the no-check list, since the
    component project cannot see them; stderr says so. A selection that cannot be computed runs the
    whole project.
-5. `npm test -w packages/create-cairn-site`, when a path matches `packages/create-cairn-site/**` or
-   `scripts/release/pack-platforms*`. The suite builds the Go tool, so it needs Go.
-6. The e2e specs the map selects (below), at zero retries, behind
+5. The e2e specs the map selects (below), at zero retries, behind
    `export E2E_PORT=4392 && ! ss -Htln 'sport = :4392' | grep -q .` so a listener already on the
    port fails the gate instead of testing the wrong site. A selection that holds
    `site-visual.spec.ts`, or the whole suite, appends `--grep-invert "site home|archive page 2"`,
    the two tests this workstation's Chromium renders off CI's baselines (`durable-gotchas.md`);
    CI runs them whole.
-7. `make -C tool check`, when the diff holds a `tool/**` path or a path the Go tests read outside
-   `tool/` (the table's `toolInputs`: an edit to one of those needs Go and Vale installed). A
-   tool-only diff prints just this.
 
 ### Buckets and the static checks
 
@@ -77,7 +71,7 @@ matches it:
 | docs | `docs/`, `*.md`, `**/*.md`, `.vale/`, `.vale.ini`, `.tellgrader.json`, `skills/`, `claude/` |
 | scripts | `scripts/`, `src/tests/`, `.github/`, `eslint.config.js`, `tsdoc.json`, `vitest.config.ts`, `wrangler.test.jsonc` |
 | harness | `.claude/` |
-| showcase | `examples/showcase/`, `templates/`, `packages/create-cairn-site/` |
+| showcase | `examples/showcase/`, `templates/` |
 | engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |
 | export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `scripts/checks/api-surface.md`, `schema/`, `skills/`, `claude/` |
 
@@ -145,7 +139,7 @@ default, with no lane prefix.
 - A serial group that runs every leg and fails at the end, because each of its parts builds or reads `dist` and a build beside a reader
   races: `npm run check:close -- <labels>` for the diff's static checks (minus the type check), then
   the type check (`npm run check`, whose program loads `dist` through the package's self-import),
-  then `check:tool-heuristics`, `test:emit`, and the showcase's `test:unit` where the diff selects
+  then `test:emit`, and the showcase's `test:unit` where the diff selects
   them, then `npm run check:docs-gate` when a docs path changed, then the unit tests related to the
   diff (`npx vitest related --run --passWithNoTests --project unit <paths>`; the whole `unit`
   project when the diff deletes or renames a path under `src/` or `scripts/`, or holds a live path
@@ -153,9 +147,7 @@ default, with no lane prefix.
   `MIGRATION-NOTES.md` path adds the slug contract test, which reads those files at run time.
   Named gap: `vitest related` follows imports and never sees a file a unit test reads at run time,
   so a `src/` code edit can miss one of the 38 unit tests that do; CI is their home.
-- Beside the chain, concurrently: tellgrader, the Cairn Vale rule-case tests, and `make -C tool
-  check` when the diff holds a `tool/**` path or a `toolInputs` path (the files the Go tests read
-  outside `tool/`; Go and Vale must be installed). A tool-only diff prints just the tool gate.
+- Beside the chain, concurrently: tellgrader and the Cairn Vale rule-case tests.
 
 `--fast` accepts `--class` and `--paint` and ignores them, since they only shape the e2e leg that
 CI carries.
@@ -197,35 +189,26 @@ Each npm tier's gate string is a strict superset of the npm tier below it: `scri
 `check`, the node test projects, and the component project run serially (`--no-file-parallelism`)
 on top of the `docs` string, `admin-visual` adds the admin-visual spec run on top
 of that, and `full` adds the remaining CI-only checks plus the whole showcase e2e suite on top of
-`admin-visual`. A sixth tier, `tool`, stands outside that chain (see below).
+`admin-visual`.
 
 | Tier | Trigger (glob, matched per changed path) | Gate string |
 | --- | --- | --- |
 | `docs` | `docs/**`, any `*.md`, `CHANGELOG.md` | `npm run check:docs-gate` |
-| `scripts` | `scripts/**`, `src/tests/**`, `packages/create-cairn-site/**`, any `*.test.ts`/`*.spec.ts` | docs string + `&& npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site` |
+| `scripts` | `scripts/**`, `src/tests/**`, any `*.test.ts`/`*.spec.ts` | docs string + `&& npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism` |
 | `engine` | `src/lib/**/*.ts`, excluding `src/lib/admin/**`, `src/lib/public/**`, and `src/lib/admin-toolkit/**` | same string as `scripts` |
 | `admin-visual` | `src/lib/admin/**` (Svelte components and `cairn-admin.css`) or `src/lib/admin-toolkit/**` (the shared admin-table components) | scripts/engine string + `&& npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts` |
-| `full` | `src/lib/render/**` (the render seam), `src/lib/public/**` (the built-in public components, since they render on the public site), `examples/showcase/src/chassis/**`, `examples/showcase/src/theme/**`, and `themes/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | admin-visual string + `&& npm run check:comments && npm run check:surface`, then every other check the CI `test` job runs (`npm run test:emit`, `check:package`, `check:audit-pack`, `check:self-use`, `check:custom-surface`, `check:chassis-boundary`, `check:cm-internals`, `check:idioms`, `check:invisible-craft`, `check:admin-css-classes`, `check:rulings-format`, `check:consumers-must`, `check:prose`, `check:version`, `check:dev-package`, `check:template`, `check:consumers`, the showcase's `check`, `check:cairn`, `test:unit` and `format:check`, `check:public-skill`, `check:tool-heuristics`, and the theme garden's `npm run test:theme` and `npm run check:theme -- --catalog`, which a change under `themes/` must pass; a change under `scripts/theme/` runs `npm run test:theme` itself), then `npm --prefix examples/showcase run test:e2e` |
-| `tool` | `tool/**`, the Go `cairn` CLI module, including its own `tool/**/*.md` | `make -C tool check` |
+| `full` | `src/lib/render/**` (the render seam), `src/lib/public/**` (the built-in public components, since they render on the public site), `examples/showcase/src/chassis/**`, `examples/showcase/src/theme/**`, and `themes/**` (theme/chassis CSS), `examples/showcase/src/routes/(site)/**` (a public route), any path containing `-snapshots/` or ending `.png`/`.jpg`/`.jpeg`/`.webp` (a visual baseline) | admin-visual string + `&& npm run check:comments && npm run check:surface`, then every other check the CI `test` job runs (`npm run test:emit`, `check:package`, `check:audit-pack`, `check:self-use`, `check:custom-surface`, `check:chassis-boundary`, `check:cm-internals`, `check:idioms`, `check:invisible-craft`, `check:admin-css-classes`, `check:rulings-format`, `check:consumers-must`, `check:prose`, `check:version`, `check:dev-package`, `check:template`, `check:consumers`, the showcase's `check`, `check:cairn`, `test:unit` and `format:check`, `check:public-skill`, and the theme garden's `npm run test:theme` and `npm run check:theme -- --catalog`, which a change under `themes/` must pass; a change under `scripts/theme/` runs `npm run test:theme` itself), then `npm --prefix examples/showcase run test:e2e` |
 
 The `docs` gate string is `scripts/checks/docs-gate.mjs` (`npm run check:docs-gate`), the one
 runner that carries every check that reads a doc arm's content: check:docs, check:vale,
-check:leaks, check:symbols, check:snippets, check:transcripts, check:visuals,
-check:editor-quotes, check:readiness, check:tool-conditions, and check:options. Every tier above `docs`
+check:leaks, check:symbols, check:snippets, check:visuals,
+check:editor-quotes, check:readiness, and check:options. Every tier above `docs`
 carries it once, through the superset chain, so `full`'s own explicit checks list does not repeat
-check:snippets, check:transcripts, or check:symbols.
-
-## The `tool` tier and mixed diffs
-
-`tool/**` (the Go module) has its own gate: it proves three Go legs, not any npm script, and an npm
-gate proves nothing about Go code. `decideGate` splits a diff's changed paths into `tool/` and
-everything else first. A diff whose paths are all under `tool/` prints `make -C tool check` alone.
-A mixed diff prints the targeted gate for the non-`tool/` paths followed by `&& make -C tool check`.
+check:snippets or check:symbols.
 
 ## The pin
 
-`--pin <tier>` prints that tier's string and nothing else, in either direction; `tool` is a valid
-pin alongside the five npm tiers. A plan task pins a tier when its diff cannot size the change
+`--pin <tier>` prints that tier's string and nothing else, in either direction, for any of the five npm tiers. A plan task pins a tier when its diff cannot size the change
 itself (for example, a token value a later pass will wire into a component that does not exist
 yet). A pin beats `--paint` and `--class`. `--pin docs` is the standing escape hatch for a
 comment-only workflow edit that a task's own review has confirmed changes no behavior.

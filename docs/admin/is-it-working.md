@@ -1,5 +1,7 @@
 # Check that your site works
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 The `cairn doctor` command checks a cairn site's configuration and prints a report of every check. When a check fails, the report also prints a link to the section of this page that explains the check. Each section covers one check, so a reader arrives from one result and needs only that section. `cairn doctor` reads the files in the site's folder, makes one request for the site's `robots.txt`, needs no credential, and changes nothing.
 
 The following list routes you to the right page for each situation.
@@ -10,9 +12,8 @@ The following list routes you to the right page for each situation.
 
 ## Run the check
 
-1. Install the `cairn` CLI from the [release page](https://github.com/glw907/cairn-cms/releases). If you already have Go installed, `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest` also works.
-2. Open a terminal in the site's folder.
-3. Run the check:
+1. Open a terminal in the site's folder.
+2. Run the check:
 
    ```
    cairn doctor
@@ -22,7 +23,6 @@ In a terminal, the report groups the checks under headings: failing checks first
 
 The following report comes from a run against a site just after its first deploy. Every line passed except one skip, which the sections after the report explain.
 
-<!-- transcript: tool/testdata/transcripts/04-doctor-report.txt -->
 ```
 + cairn doctor .
 PASS  Wrangler bindings are declared: EMAIL and AUTH_DB are declared
@@ -49,7 +49,6 @@ A skip is neither a pass nor a failure. The one in the preceding report belongs 
 
 When a check fails, the report adds a block that names the problem and gives the link:
 
-<!-- transcript: tool/testdata/transcripts/04b-doctor-report-failing.txt -->
 ```
 FAIL  Workers Logs has no sink: observability.enabled is not true
 [...]

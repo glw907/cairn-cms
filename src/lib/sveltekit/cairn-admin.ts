@@ -387,8 +387,8 @@ export interface CairnAdminRoutes {
    *  the path (`/admin/nav/<name>`).
    */
   load: InternalCairnAdminRoutes['load'];
-  // WATCH: check:tool-heuristics greps this exact member for the Go tool's admin.mount-shape
-  // heuristic, which proves a site's admin layout calls .shellLoad.
+  // WATCH: the rebuilt cairn command's admin.mount-shape check is expected to match the call
+  // .shellLoad, so renaming this member needs that check updated in the same change.
   shellLoad: InternalCairnAdminRoutes['shellLoad'];
   /**
    * Every named admin action. Each parses the pathname as `load` does and throws a 404 when the

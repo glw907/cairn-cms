@@ -4,7 +4,7 @@
 // anything an edit diverged from, and a MANIFEST of what it wrote). `check` reports whether the
 // tree, the import line, and the gate wiring match what the package expects, printing PASS or
 // FIX per line; it exits 0 unless --strict is given and any line reports FIX. Bad flags go to stderr with exit
-// 2, matching the doctor and audit bins' convention.
+// 2, matching the audit bin's convention.
 import { readFile, readdir } from 'node:fs/promises';
 import { join, resolve, sep } from 'node:path';
 import { formatCheckReport, hasFixes, runGuidanceCheck } from './check.js';

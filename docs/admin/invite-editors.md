@@ -1,5 +1,7 @@
 # Invite editors
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 An editor on a cairn site is someone who signs in and writes, and the site's owner decides who is on that list. Adding a person takes one short form on the **Editors** screen. The person then signs themselves in with a link that cairn emails them. This page is for the owner who wants to add, remove, or change the role of the people who write on the site. The setup command, `cairn new`, makes the sign-in email address you confirmed the first owner, as [Create your site](./create-your-site.md) shows.
 
 ## Prerequisites

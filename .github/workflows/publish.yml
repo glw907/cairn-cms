@@ -12,9 +12,7 @@ name: Publish to npm
 # publish job uploads one tarball with `--ignore-scripts`, so no lifecycle script runs where the
 # OIDC token is. A candidate publishes to `gate`, which no tester's install command reads. A
 # candidate that passed the release gate moves to `next` through a dispatch on the candidate's
-# tag ref: `gh workflow run publish.yml --ref v<V> -f promote=<V>`. The `create-cairn-site`
-# launcher and its platform packages are not in this file: they version with the Go tool and
-# publish from tool.yml.
+# tag ref: `gh workflow run publish.yml --ref v<V> -f promote=<V>`.
 # The `verdict` job reads the gate's record first, and `promote` needs it.
 
 # A dev snapshot is a test build made to prove something, such as a proving round. It is
@@ -22,8 +20,7 @@ name: Publish to npm
 # no tag, no CHANGELOG heading. The build job stamps that version into both manifests in the
 # runner's checkout, so the template inside the tarball pins it, and the snapshot goes to `gate`
 # and nowhere else. An rc is cut only for a real release candidate (the cairn-releasing skill).
-# A snapshot waits for `test` and `e2e` on main's head, and neither runs for a tool-only commit
-# (`paths-ignore: tool/**`), so a dispatch on one waits out `ci-green`'s deadline and fails.
+# A snapshot waits for `test` and `e2e` on main's head.
 # The `npm-publish` environment must allow the `main` branch beside its tag policies.
 
 on:
@@ -160,7 +157,7 @@ jobs:
           done
       # A committed, in-sync lockfile lets this job resolve the exact dependency tree every other
       # workflow in the repo already installs with (test.yml, e2e.yml, design.yml,
-      # tsgo.yml, tool-conditions.yml), so the published build gets the same reproducibility
+      # tsgo.yml), so the published build gets the same reproducibility
       # guarantee: an out-of-sync lockfile fails the install loudly instead of a floating resolve
       # silently drifting the published tarball's dependency tree from what CI proved. `npm ci`
       # runs the root `prepare`, which builds both packages' dist/.
@@ -340,7 +337,6 @@ jobs:
   # dependencies and checks out nothing: it needs only npm and the OIDC token, and an install here
   # would run a lockfile's scripts with a publish-capable token in reach. The version arrives
   # through `env:` and the script validates it, so no expression expands inside the shell text.
-  # The launcher is not here: it versions with the tool and takes `latest` from the tool release.
   # A split `next` is recovered by dispatching the same version again, since `dist-tag add` is
   # idempotent.
   promote:

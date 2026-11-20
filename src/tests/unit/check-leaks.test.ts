@@ -47,7 +47,6 @@ describe('profileFor', () => {
       'claude/CLAUDE.md',
       'examples/showcase/src/chassis/README.md',
       'src/lib/reproductions/fixtures.ts',
-      'tool/cmd/cairn/messages.go',
       'templates/waymark/wrangler.jsonc',
     ]) {
       expect(profileFor(path)?.tier, path).toBe('T2');
@@ -475,15 +474,6 @@ describe('runLeakCheck over a tree', () => {
     expect(runLeakCheck(root).findings).toEqual([]);
     const leaked = tree({ 'templates/waymark/src/chassis/README.md': 'Modeled on 907.life.\n' });
     expect(runLeakCheck(leaked).findings.map((finding) => finding.cls)).toEqual(['C1']);
-  });
-
-  it('scans the create-cairn-site launcher and readme at T2', () => {
-    const pkg = 'packages/create-cairn-site';
-    for (const path of [`${pkg}/bin.mjs`, `${pkg}/README.md`]) {
-      const { findings } = runLeakCheck(tree({ [path]: 'Modeled on 907.life.\n' }));
-      expect(findings.map((finding) => finding.cls), path).toEqual(['C1']);
-    }
-    expect(profileFor(`${pkg}/bin.mjs`)).toEqual({ tier: 'T2', classes: ['C1', 'C2', 'C3', 'C4'], mode: 'whole' });
   });
 
   it('formats errors first and folds released-CHANGELOG warnings into one count line', () => {

@@ -1,5 +1,7 @@
 # Durable gotchas
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 Four sections describe the maintainer's workstation wrapper, `cairn-run-gate`, and its hooks: "The
 component project stalls under file parallelism" (its command lines), "`npm run check` runs out of
 memory in the light gate lane", "`/tmp` is a size-limited tmpfs", and the two sections on piping a
@@ -43,7 +45,6 @@ and `npm run lane:fast` replaces the lane they name.
 - [A D1 statement change needs the dev fake database](#a-d1-statement-change-needs-the-dev-fake-database)
 - [`check:comments` rejects shapes the other gates accept](#checkcomments-rejects-shapes-the-other-gates-accept)
 - [A local `check:vale` can differ from CI's pinned Vale](#a-local-checkvale-can-differ-from-cis-pinned-vale)
-- [Editing `tool/`, the Go CLI](#editing-tool-the-go-cli)
 - [Showcase chrome traps](#showcase-chrome-traps)
 - [A rename sweep edits the living docs only](#a-rename-sweep-edits-the-living-docs-only)
 - [`git commit -- <path>` commits unstaged hunks too](#git-commit----path-commits-unstaged-hunks-too)
@@ -327,7 +328,7 @@ for that reason alone. Run the setup before trusting a red or a green:
   resolves the main checkout's `node_modules` through the parent directories and tests the wrong
   tree. `check-public-skill.test.ts` skips itself when the showcase has no `tailwindcss` binary.
 - `npm run package`, which builds `dist`. The same test skips without `dist/audit/index.js`, and
-  `emit-tool-conditions.mjs` and `check-readiness.mjs` read `dist` rather than the TypeScript source.
+  `check-readiness.mjs` reads `dist` rather than the TypeScript source.
 - `npx svelte-kit sync` in the showcase, which its `npm run check` script runs first. Without it
   `check-public-skill.test.ts` fails with `TSCONFIG_ERROR` for the missing
   `examples/showcase/.svelte-kit/tsconfig.json`. The output is gitignored.
@@ -363,7 +364,7 @@ strings out of any scanned root, or exclude the directory.
 On this workstation `/tmp` is a tmpfs of about 8 GB shared with every other session, and shared
 means one fixed name is one file for every implementer. Two implementers wrote `/tmp/lane.log`, and
 one read the other's `cannot load .../dist/sveltekit/index.d.ts` as its own red lane. Log inside the
-worktree (`node_modules/.lane.log`). A Go link step
+worktree (`node_modules/.lane.log`). A link step
 that fails with a quota error is the machine, not the code: check `df -h /tmp` before reading it as
 a build break. The theme fixture's template arm installs a whole site under `os.tmpdir()`, so set
 `TMPDIR` to a directory on disk (`TMPDIR=$HOME/.cache/cairn-tmp`) before running it
@@ -464,11 +465,6 @@ seconds without a rebuild.
 - A path inside a fenced block's `//` comment is checked against the repo root, not the doc's
   directory. `// see [x](../../../../docs/admin/README.md)` extracts `admin/README.md`, which does not
   exist. Cite another doc by bare filename or in prose, with no slash.
-- A `--flag` in a fenced shell block resolves only against `cairn new`'s flags and the Go tool's flag list (`tool/testdata/flags.json`).
-  `npx cairn-audit --help` in a fenced example fails as an unresolved `cli-flag` until
-  `scripts/checks/check-symbols-allowlist.mjs` carries a `'cli-flag:--help'` entry with a comment
-  naming the real tool. The same flag in a table cell is never scanned, which makes the failure look
-  inconsistent. Grep the allowlist first, since another tool may already have claimed the flag name.
 - Any SCREAMING_SNAKE_CASE token in code voice is an `env-var` claim. A vendor's error codes, such
   as jose's `ERR_JWT_EXPIRED` in a recipe's `switch (err.code)`, share the shape and have no source
   match. Add them to the allowlist, keyed `<class>:<token>`, each with a one-line reason.
@@ -520,9 +516,7 @@ exact length, so bump it. `check:readiness` requires a `docsAnchor` that is on t
 `scripts/checks/shipped-anchors.json` list (or, once the admin arm holds a page, a real heading
 there), unless an allowlist entry excuses it, and the allowlist is deliberately empty. Two
 conditions may share one anchor, which is the cheap path when an existing section covers the
-reader's situation. The registry is mirrored into `tool/internal/spine/conditions.json`, which
-`check:tool-conditions` compares byte for byte; regenerate it with
-`node scripts/build/emit-tool-conditions.mjs`. Throw it as `CairnError(id, { cause, message })`; the
+reader's situation. Throw it as `CairnError(id, { cause, message })`; the
 custom `message` should name the fix, since the default is the condition's `title`.
 
 A new `CairnLogEvent` is two edits. Add the union arm in `src/lib/log/events.ts` and a row in the
@@ -563,35 +557,6 @@ workstation's copy can be newer (3.24.0). On an earlier drift the newer binary r
 `vale --version` with the pin when `check:vale` is red on a page you did not touch, and confirm with
 `git diff --stat main -- <file>`. If the file matches `main`, it is a toolchain difference, not a
 regression, and an unrelated task does not fix it.
-
-## Editing `tool/`, the Go CLI
-
-`tool/` is a separate module with its own gate (`make -C tool check`). These traps each cost a
-gate round.
-
-- `tidy-check` runs `go mod tidy` and then `git diff --exit-code -- go.mod go.sum`. It proves the
-  committed module files are tidy, so a correct but uncommitted `go.mod` change fails. Commit it
-  first.
-- `tool/internal/render/purity_test.go` counts the module's direct requires. Importing a package that
-  was only an indirect require (`github.com/spf13/pflag` through cobra) promotes it to direct and
-  fails the count, because ADR-0002 makes each direct dependency a deliberate decision. Avoid the
-  import, or raise the count with a comment saying why.
-- `cmd/copylist` extracts only `*ast.BasicLit` constants from `cmd/cairn/messages.go`. A constant
-  built with `+` never reaches `testdata/copy.golden.md`, while a single raw-string constant such as
-  `agentsPage` does. Editing `agentsPage` takes `make -C tool copy-list` and a committed golden;
-  editing a concatenated `Long` string does not. A help string cannot read a constant from another
-  package, since the extraction parses source.
-- `cairn help agents` is capped by `agentsPageLineBound` in `cmd/cairn/help_agents_test.go`. Raise it
-  the way the constant's doc comment records, with the reason, not silently.
-- `govulncheck` reports only a reachable vulnerability. To prove the gate can fail, pin a vulnerable
-  module and call the vulnerable function from `main()`, confirm the red, then remove both. An unused
-  import is silently excluded.
-- `tool/tools/go.mod` holds the tool binaries in a `tool (...)` block. Build them with
-  `go build -C tools -o <path> <package>`, never a global install, so the product module's `go.mod`
-  stays free of tooling.
-- A repo-wide test that greps for the literal `//go:build` finds its own source
-  (`tool/internal/hygiene/buildtags_test.go` skips itself). Skip the test file's path in the walk
-  instead of obfuscating the string.
 
 ## Showcase chrome traps
 

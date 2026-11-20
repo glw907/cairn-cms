@@ -1,5 +1,7 @@
 # Own your domain
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 A cairn site serves from a domain that is active on Cloudflare, and setup connects that domain for you. This page is for the person who is about to run setup, or already has, and wants to use a domain registered somewhere else. It gets the domain onto Cloudflare and states what the sign-in email does to the domain's mail. It leaves the run itself to [Create your site](./create-your-site.md), and a part that stalls to [Recover a setup that stopped](./setup-recovery.md).
 
 ## Prerequisites

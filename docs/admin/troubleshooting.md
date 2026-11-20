@@ -1,5 +1,7 @@
 # Troubleshoot a live site
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 A cairn site writes a log record for every event that matters, and each symptom below names the event to look for. This page is for the owner of a live site made by `cairn new` who sees it do something wrong when no `cairn doctor` check names the problem. Each section gives what you see, what it means, and the log event that confirms the cause. A cause you can fix yourself comes with the fix. A cause that needs code changed says so and points a developer to the [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md).
 
 Two other pages cover problems at other moments:

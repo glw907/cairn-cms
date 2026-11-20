@@ -5,6 +5,8 @@ description: Sets up a new cairn site with `cairn new`. Use when a person asks t
 
 # Set up a cairn site
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
+
 `cairn new` creates the site's GitHub repository, its Cloudflare Worker, database, and media bucket, and signs the person in as the owner. The person approves each step in their browser. This skill covers how to run it for them. `cairn new --help` lists the flags, `cairn help agents` lists the events and exit codes, and the [set up with an agent](https://github.com/glw907/cairn-cms/blob/main/docs/admin/set-up-with-an-agent.md) page is the human-readable version. Read those instead of guessing.
 
 ## Before you run it

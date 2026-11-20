@@ -1,5 +1,7 @@
 # Site record reference
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 This page lists every field of `cairn-site.json`, the file at the root of your site that holds the facts about it that have no other home. It is for the person who runs the site and needs to read the record, correct a value, or add a record to a site that has none. It assumes you can open a file in a text editor. It doesn't cover the theme, the Cloudflare names, or the site's name, which the record leaves out.
 
 ## The site record

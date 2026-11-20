@@ -1,5 +1,7 @@
 # cairn
 
+The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands on this page don't run until it ships.
+
 cairn is an editor-first, git-backed content management system (CMS) for SvelteKit sites on Cloudflare, and a toolkit a developer extends for an organization. It is free, MIT-licensed code.
 
 ```

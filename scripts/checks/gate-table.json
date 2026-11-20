@@ -20,8 +20,7 @@
       "wrangler.test.jsonc"
     ],
     "harness": [".claude/"],
-    "toolTestdata": ["tool/testdata/flags.json"],
-    "showcase": ["examples/showcase/", "themes/", "templates/", "sets/", "definitions/", "packages/create-cairn-site/"],
+    "showcase": ["examples/showcase/", "themes/", "templates/", "sets/", "definitions/"],
     "engine": [
       "src/lib/",
       "scripts/build/",
@@ -58,18 +57,6 @@
     ".vale.ini",
     ".tellgrader.json"
   ],
-  "toolInputs": [
-    "src/lib/log/events.ts",
-    "scripts/checks/fixtures/consumers-must/cases.json",
-    "docs/admin/",
-    "schema/",
-    "examples/showcase/src/site/site.config.yaml",
-    "tool/testdata/fixtures/",
-    "scripts/checks/shipped-anchors.json",
-    "definitions/",
-    "templates/",
-    "scripts/build/setup-overlay/"
-  ],
   "scriptsTestOnly": [
     "scripts/catalog/",
     "scripts/ci/",
@@ -92,15 +79,13 @@
     "check:idioms": ["engine", "scripts"],
     "check:invisible-craft": ["engine", "showcase"],
     "check:readiness": ["docs", "engine"],
-    "check:tool-conditions": ["docs", "engine"],
     "check:docs": ["docs"],
     "check:rulings-format": ["docs"],
     "check:consumers-must": ["docs", "scripts"],
     "check:editor-quotes": ["docs", "engine"],
     "check:leaks": ["docs", "engine", "showcase"],
     "check:visuals": ["docs", "engine"],
-    "check:transcripts": ["docs", "showcase"],
-    "check:symbols": ["docs", "engine", "showcase", "toolTestdata"],
+    "check:symbols": ["docs", "engine", "showcase"],
     "check:snippets": ["docs", "engine"],
     "check:prose": ["engine"],
     "check:version": ["docs", "engine"],
@@ -113,7 +98,6 @@
     "check:vale": ["docs"],
     "check:comments": ["engine", "showcase", "scripts"],
     "check:public-tokens": ["engine", "showcase"],
-    "check:tool-heuristics": ["engine"],
     "test:emit": ["showcase", "engine", "harness"],
     "test:catalog": ["scripts", "showcase"],
     "check:version-rise": ["showcase"],
@@ -123,7 +107,6 @@
     "check:vale-rules": ["docs"]
   },
   "extraCommands": {
-    "check:tool-heuristics": "npm run check:tool-heuristics",
     "test:emit": "npm run test:emit",
     "test:catalog": "npm run test:catalog",
     "check:version-rise": "node scripts/catalog/version-rise.mjs",

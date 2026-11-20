@@ -51,7 +51,7 @@ describe('checkDistOnly', () => {
 
 describe('checkRepository', () => {
   const url = 'git+https://github.com/glw907/cairn-cms.git';
-  const good = { repository: { type: 'git', url, directory: 'packages/create-cairn-site' } };
+  const good = { repository: { type: 'git', url, directory: 'packages/cairn-cms-dev' } };
 
   it('passes a manifest whose repository url matches', () => {
     expect(checkRepository(good, 'x/package.json')).toEqual({ ok: true });
@@ -67,7 +67,7 @@ describe('checkRepository', () => {
     expect(checkRepository({ repository: { url: 'git+https://github.com/other/repo.git' } }, 'x').ok).toBe(false);
   });
 
-  it.each(['packages/cairn-cms-dev/package.json', 'packages/create-cairn-site/package.json'])(
+  it.each(['packages/cairn-cms-dev/package.json'])(
     'passes the real manifest %s',
     (path) => {
       const manifest = JSON.parse(readFileSync(resolve(__dirname, '../../..', path), 'utf8'));

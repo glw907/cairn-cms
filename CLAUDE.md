@@ -2,8 +2,8 @@
 
 An embedded, magic-link, GitHub-committing CMS for SvelteKit and Cloudflare, published to npm as
 `@glw907/cairn-cms` (MIT). `examples/showcase` is a self-contained SvelteKit site that consumes the
-package through `file:../..` and proves every change. The Go `cairn` tool in `tool/` is a separate
-module with its own gate.
+package through `file:../..` and proves every change. The `cairn` command is being rebuilt
+inside the package; its earlier Go implementation is deleted.
 
 ## Scope: read before any scope-affecting change
 
@@ -37,8 +37,6 @@ before a pass builds on it.
   `## Unreleased` and stops. Publishing is a separate act with two triggers: a consumer site needs the
   change now, or a coherent capability has landed. Default to holding. The `cairn-releasing` skill is
   the procedure; the path to `1.0` is in `ROADMAP.md` ("Toward 1.0").
-- `tool/` is the Go tool. Load `standards:go-conventions` for every file under it, and `standards:golang-spf13-cobra` for
-  `tool/cmd/cairn`. Its architecture is in `tool/docs/adr/0001-the-spine-is-the-product.md`.
 
 ## Skills, agents, and rules in this repo
 

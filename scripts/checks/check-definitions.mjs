@@ -32,6 +32,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     for (const problem of problems) console.error(`  ${problem}`);
     process.exitCode = 1;
   } else {
-    console.log('check-definitions: OK (4 schemas and 2 Go copies match definitions/)');
+    console.log('check-definitions: OK (4 schemas match definitions/)');
   }
 }

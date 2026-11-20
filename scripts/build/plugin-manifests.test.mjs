@@ -7,19 +7,6 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const readJson = (rel) => JSON.parse(readFileSync(path.join(root, rel), 'utf8'));
 
-test('every flag the setup skill names is one the Go tool has', () => {
-  const skill = readFileSync(
-    path.join(root, 'plugins/cairn/skills/cairn-setting-up-a-site/SKILL.md'),
-    'utf8',
-  );
-  const known = new Set(readJson('tool/testdata/flags.json').flags);
-  const named = new Set(skill.match(/--[a-z][a-z-]*/g) ?? []);
-  assert.ok(named.size > 0, 'the skill names no flag, so the check proves nothing');
-  for (const flag of named) {
-    assert.ok(known.has(flag), `SKILL.md names ${flag}, which tool/testdata/flags.json lacks`);
-  }
-});
-
 test('the site declares exactly the vendor marketplaces, their plugins, and the Svelte server', () => {
   const settings = readJson('scripts/build/setup-overlay/.claude/settings.json');
   const sources = Object.fromEntries(
@@ -56,9 +43,4 @@ test('the root readme opens with the agent setup section', () => {
     .split('\n')
     .find((line) => line.startsWith('## '));
   assert.equal(firstH2, '## Setting up with an agent', 'README.md opens with the wrong section');
-});
-
-test('the launcher readme points an agent at the agent setup page', () => {
-  const launcher = readFileSync(path.join(root, 'packages/create-cairn-site/README.md'), 'utf8');
-  assert.match(launcher, /docs\/admin\/set-up-with-an-agent\.md/);
 });

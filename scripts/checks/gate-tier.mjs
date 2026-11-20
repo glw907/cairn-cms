@@ -13,11 +13,11 @@
 // `--fast` is the inner-loop lane, the legs a pass session runs after each task while CI carries
 // the whole suites. Line 1 runs the non-browser legs and fails if any fails: the static checks the
 // diff's buckets select, the type check, the unit tests related to the diff, the docs gate when a
-// docs path changed, and the Go tool gate when `tool/**` changed. The legs that build or read dist
+// docs path changed. The legs that build or read dist
 // run one after another in one group that runs every leg and fails at the end, so a static red never
 // hides a unit red; the rest run beside it. A live npm path `vitest related` cannot see (outside the
-// table's unitSelectable list, or a src file that is not code) runs the whole unit project, and a
-// path in the table's toolInputs, which the Go tests read, adds the Go tool gate. `--fast` ignores `--class` and `--paint`, which only
+// table's unitSelectable list, or a src file that is not code) runs the whole unit project.
+// `--fast` ignores `--class` and `--paint`, which only
 // shape the e2e leg the fast lane leaves to CI. Line 2 appears only when the diff reaches component tests; it runs the
 // related component tests alone and is always heavy (a browser). The fast lane runs no whole node
 // project and no e2e. Line 1 runs on the heavy lane (see FAST_LINE_1_LANE).
@@ -34,9 +34,7 @@
 //      diff. The whole project runs on a rerun trigger, a deleted or renamed path under `src/`, or an
 //      empty selection. A diff whose every path is a docs or harness path (or a path no check reads) skips
 //      the leg, since the component project cannot see it.
-//   5. The create-cairn-site suite, when the diff touches the package, the showcase it bakes from,
-//      the emitter, or the root package.json.
-//   6. The e2e specs the table's map selects, at zero retries, on a separate port.
+//   5. The e2e specs the table's map selects, at zero retries, on a separate port.
 //
 // The buckets, the per-check bucket lists, the no-check list, the e2e map, and the protected paths
 // live in gate-table.json beside this file. Fail closed: a path the table cannot place runs every
@@ -44,8 +42,6 @@
 // component project, and any failure prints nothing on stdout and exits non-zero.
 //
 // `--pin <tier>` bypasses all of it and prints the old tier string for that tier, unchanged.
-// `tool/**`, the Go `cairn` CLI module, keeps a separate gate (`make -C tool check`): a diff with
-// paths on both sides runs the targeted gate and then the tool gate.
 //
 // `--protected` is a separate mode. It prints `ciWait` when the range touches a path on the table's
 // protected list and nothing otherwise, exiting zero either way. It reads the list at `<base>`, so a
@@ -56,9 +52,7 @@
 // can affect (Memon et al., "Taming Google-Scale Continuous Testing", ICSE-SEIP 2017), applied
 // where the graph is sound: the component project, the slowest serialized leg.
 //
-// This classifier chooses a gate, never a gate lane. A plan that pins the light lane for a Go-only
-// pass must not carry that pin onto a mixed diff whose npm half launches a browser suite; the lane
-// decision stays with the caller.
+// This classifier chooses a gate, never a gate lane; the lane decision stays with the caller.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { posix, relative, resolve } from 'node:path';
@@ -74,26 +68,22 @@ export const TABLE_PATH = 'scripts/checks/gate-table.json';
 
 // The five npm gate strings are cumulative, each a strict superset of every tier below it, built
 // by concatenation rather than five independent literals so the superset relationship cannot
-// drift. TOOL_GATE stands alone: `make -C tool check` proves the Go module's three legs and
-// is never folded into or out of the npm chain.
+// drift.
 //
 // DOCS_GATE is the one `check:docs-gate` script (scripts/checks/docs-gate.mjs), which owns the
-// full docs check list. That list already includes check:snippets, check:transcripts, and
-// check:symbols, so FULL_GATE does not repeat them.
+// full docs check list. That list already includes check:snippets and check:symbols, so
+// FULL_GATE does not repeat them.
 const DOCS_GATE = 'npm run check:docs-gate';
 // Stock `npm test` runs the vitest component project (real Chromium) in parallel with the three
 // node projects, and that parallel component run stalls on the maintainer's workstation. This
 // gate runs the node projects first, then the component project alone with file parallelism off,
 // so the local gate stays reliable. CI's `test.yml` runs `test:node-projects` and `test:component`
 // as separate steps without `--no-file-parallelism`; this serialization is local-gate-only.
-// `npm test` (root) never reaches the create-cairn-site workspace member's `node --test`
-// suite, so its invocation is appended here too, to keep the five-tier superset chain intact
-// rather than adding a sixth severity level for one workspace member.
-const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site`;
+const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
 // The CI `test` job's remaining steps, in test.yml's order, so the full tier proves everything
-// CI would. The steps already in a lower tier (`npm run check`, the test projects, the docs gate,
-// the create-cairn-site suite) and the install and bake steps a local gate cannot run are not
+// CI would. The steps already in a lower tier (`npm run check`, the test projects, the docs gate)
+// and the install and bake steps a local gate cannot run are not
 // repeated; the gate-tier test pins this list against test.yml.
 const CI_CHECKS = [
   'npm run test:emit',
@@ -118,7 +108,6 @@ const CI_CHECKS = [
   'npm --prefix examples/showcase run test:unit',
   'npm --prefix examples/showcase run format:check',
   'npm run check:public-skill',
-  'npm run check:tool-heuristics',
   'npm run test:theme',
   'npm run check:theme -- --catalog',
   'npm run test:catalog',
@@ -126,13 +115,11 @@ const CI_CHECKS = [
   'node scripts/catalog/version-rise.mjs',
 ].join(' && ');
 const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && ${CI_CHECKS} && npm --prefix examples/showcase run test:e2e`;
-const TOOL_GATE = 'make -C tool check';
 
 /**
  * The gate string for every tier. `scripts` and `engine` run the identical string (both are
  * "prove the code and its tests"); each of the five npm tiers' strings is a superset of the one
- * below it. `tool` is the one exception: it is not part of that superset chain, so its string
- * shares nothing with the other five.
+ * below it.
  * @type {Record<string, string>}
  */
 export const TIER_GATES = {
@@ -141,26 +128,23 @@ export const TIER_GATES = {
   engine: SCRIPTS_GATE,
   'admin-visual': ADMIN_VISUAL_GATE,
   full: FULL_GATE,
-  tool: TOOL_GATE,
 };
 
-/** The five npm tier names, ascending severity; `--pin` accepts these and `tool`. */
+/** The five tier names, ascending severity; `--pin` accepts these. */
 export const TIER_ORDER = ['docs', 'scripts', 'engine', 'admin-visual', 'full'];
 
 /** The values `--class` accepts; only `auth-data` changes the output. */
-export const PASS_CLASSES = ['auth-data', 'engine-logic', 'paint', 'sweep', 'docs', 'tool'];
+export const PASS_CLASSES = ['auth-data', 'engine-logic', 'paint', 'sweep', 'docs'];
 
 const NODE_PROJECTS = 'npm run test:node-projects';
 const COMPONENT_FULL = 'npm run test:component -- --no-file-parallelism';
 const COMPONENT_SELECTED = 'CAIRN_RELATED_RUN=1 npm run test:component -- --no-file-parallelism';
-const CREATE_CAIRN_SITE = 'npm test -w packages/create-cairn-site';
 const E2E_PORT = '4392';
 const E2E_GUARD = `export E2E_PORT=${E2E_PORT} && ! ss -Htln 'sport = :${E2E_PORT}' | grep -q .`;
 const E2E_RUN = 'npm --prefix examples/showcase run test:e2e -- --retries=0';
 const E2E_VISUAL_INVERT = ' --grep-invert "site home|archive page 2"';
 const SITE_VISUAL = 'site-visual.spec.ts';
 const SLUG_CONTRACT_TEST = 'src/tests/unit/github-slug-contract.test.ts';
-const TOOL_FLAGS_FIXTURE = 'tool/testdata/flags.json';
 const INTERNAL_ENTRY = 'src/lib/internal.ts';
 const DIST_SPAWN = 'npx vitest run --project unit-dist-spawn';
 
@@ -178,15 +162,6 @@ export const FAST_LINE_1_LANE = '';
 /** The extra static checks that never touch dist, so they run beside the dist chain. */
 const DIST_FREE_EXTRAS = new Set(['check:tellgrader', 'check:vale-rules', 'check:definitions']);
 
-/**
- * Repo-relative globs whose change reaches the create-cairn-site suite: the launcher package
- * itself and the platform packer its test runs. The suite builds the Go tool, so it needs Go.
- */
-export const CREATE_CAIRN_SITE_TRIGGERS = [
-  'packages/create-cairn-site/**',
-  'scripts/release/pack-platforms*',
-];
-
 // Test trees the component project never includes, so a change there reaches no component test.
 const NODE_ONLY_TESTS = ['src/tests/unit/**', 'src/tests/integration/**', 'src/tests/lab/**', 'src/tests/types/**'];
 
@@ -195,7 +170,6 @@ const NODE_ONLY_TESTS = ['src/tests/unit/**', 'src/tests/integration/**', 'src/t
  * @property {Record<string, string[]>} buckets - Bucket name to its path patterns.
  * @property {string[]} noCheck - Paths no check and no test reads.
  * @property {string[]} unitSelectable - Paths whose fast-lane unit tests are picked by `vitest related`; any other live npm path runs the whole unit project.
- * @property {string[]} toolInputs - Paths outside `tool/` the Go tests read, so a change runs the Go tool gate.
  * @property {string[]} scriptsTestOnly - Script directories only tests and the comment lint read.
  * @property {Record<string, string[]>} checks - Check label to the buckets that select it.
  * @property {Record<string, string>} extraCommands - Checks outside check:close, by label.
@@ -241,7 +215,6 @@ function allPatterns(table) {
     ...Object.values(table.buckets).flat(),
     ...table.noCheck,
     ...table.unitSelectable,
-    ...table.toolInputs,
     ...table.scriptsTestOnly,
     ...table.protected,
     ...table.e2e.floor.prefixes,
@@ -397,7 +370,7 @@ export function isNoCheck(path, context) {
  * The static checks a diff selects. A path the table cannot place selects every check, so does a
  * script file no check reaches (unless only tests read that directory), and a check the table
  * leaves unlisted and whose script does not start with the package build runs on every diff.
- * @param {string[]} paths - The diff's non-tool paths.
+ * @param {string[]} paths - The diff's paths.
  * @param {Context} context - The check universe and table.
  * @returns {{ labels: string[], all: boolean, reasons: string[] }} The selected labels in run order.
  */
@@ -432,16 +405,6 @@ export function selectChecks(paths, context) {
   }
   const labels = all ? context.labels : context.labels.filter((label) => picked.has(label));
   return { labels, all, reasons };
-}
-
-/**
- * Whether a path belongs to the Go tool alone. `tool/testdata/flags.json` is also read by the npm
- * check `check:symbols`, so it counts as an npm path too.
- * @param {string} path - A repo-relative path.
- * @returns {boolean} True for a path only the Go gate sizes.
- */
-function isToolPath(path) {
-  return path.startsWith('tool/') && path !== TOOL_FLAGS_FIXTURE;
 }
 
 /**
@@ -506,7 +469,7 @@ function isDocsOnlyPath(path, context) {
 
 /**
  * How the component project runs for a diff.
- * @param {string[]} paths - The diff's non-tool paths.
+ * @param {string[]} paths - The diff's paths.
  * @param {string[]} deleted - The paths the diff deletes, renames away included.
  * @param {Context} context - The check universe and table.
  * @returns {{ mode: 'skip' | 'full' | 'select', reason: string, reach: string[] }} `select` means
@@ -529,7 +492,7 @@ export function componentPlan(paths, deleted, context) {
 
 /**
  * The e2e specs a diff reaches.
- * @param {string[]} paths - The diff's non-tool paths.
+ * @param {string[]} paths - The diff's paths.
  * @param {{ passClass?: string | null, paint?: 'yes' | 'no' }} options - The `--class` value and the paint flag.
  * @param {Context} context - The check universe and table.
  * @returns {{ all: boolean, specs: string[] }} The whole suite, or the sorted spec names.
@@ -584,7 +547,7 @@ function e2eLeg(selection) {
 
 /**
  * @typedef {object} Decision
- * @property {string} tier - `targeted`, `tool`, `targeted+tool`, or the pinned tier.
+ * @property {string} tier - `targeted` or the pinned tier.
  * @property {string} reason - `computed` or `pin`.
  * @property {string[]} decidingPaths - Always empty for a pin.
  * @property {string} gate - The gate string.
@@ -604,7 +567,7 @@ export function decideGate(paths, opts = {}) {
   const { paint = 'no', pin = null, passClass = null, deleted = [], selected = null, root = ROOT } = opts;
   if (pin) {
     if (!Object.hasOwn(TIER_GATES, pin)) {
-      const known = [...TIER_ORDER, 'tool'].join(', ');
+      const known = TIER_ORDER.join(', ');
       throw new Error(`gate-tier: unknown --pin tier "${pin}" (want one of ${known})`);
     }
     return { tier: pin, reason: 'pin', decidingPaths: [], gate: TIER_GATES[pin], notes: [] };
@@ -614,25 +577,20 @@ export function decideGate(paths, opts = {}) {
   }
 
   if (paths.length === 0) throw new Error('gate-tier: no changed paths to size a gate from');
-  const toolPaths = paths.filter((path) => isToolPath(path));
-  const npmPaths = paths.filter((path) => !isToolPath(path));
-  if (npmPaths.length === 0) {
-    return { tier: 'tool', reason: 'computed', decidingPaths: toolPaths, gate: TIER_GATES.tool, notes: [] };
-  }
 
   const context = loadContext(root);
   /** @type {string[]} */
   const notes = [];
   const legs = ['npm run package'];
 
-  const checks = selectChecks(npmPaths, context);
+  const checks = selectChecks(paths, context);
   notes.push(...checks.reasons);
   notes.push(`static checks: ${checks.labels.length === 0 ? 'none' : checks.labels.join(', ')}`);
   legs.push(...staticLeg(checks.labels, context));
 
   legs.push(NODE_PROJECTS);
 
-  const plan = componentPlan(npmPaths, deleted, context);
+  const plan = componentPlan(paths, deleted, context);
   if (plan.mode === 'skip') {
     notes.push(`component project skipped: ${plan.reason}`);
   } else if (plan.mode === 'select' && selected && selected.length > 0) {
@@ -644,23 +602,10 @@ export function decideGate(paths, opts = {}) {
     legs.push(COMPONENT_FULL);
   }
 
-  if (npmPaths.some((path) => matchesAny(path, CREATE_CAIRN_SITE_TRIGGERS))) legs.push(CREATE_CAIRN_SITE);
-
-  const e2e = e2eLeg(e2eSpecs(npmPaths, { passClass, paint }, context));
+  const e2e = e2eLeg(e2eSpecs(paths, { passClass, paint }, context));
   if (e2e) legs.push(e2e);
 
-  const gate = legs.join(' && ');
-  const toolRunPaths = [...toolPaths, ...npmPaths.filter((path) => matchesAny(path, context.table.toolInputs))];
-  if (toolRunPaths.length === 0) {
-    return { tier: 'targeted', reason: 'computed', decidingPaths: [], gate, notes };
-  }
-  return {
-    tier: 'targeted+tool',
-    reason: 'computed',
-    decidingPaths: toolRunPaths,
-    gate: `${gate} && ${TIER_GATES.tool}`,
-    notes,
-  };
+  return { tier: 'targeted', reason: 'computed', decidingPaths: [], gate: legs.join(' && '), notes };
 }
 
 /**
@@ -706,8 +651,6 @@ export function sequentially(commands) {
 export function decideFastGate(paths, opts = {}) {
   const { deleted = [], selected = null, root = ROOT } = opts;
   if (paths.length === 0) throw new Error('gate-tier: no changed paths to size a gate from');
-  let toolRun = paths.some((path) => path.startsWith('tool/'));
-  const npmPaths = paths.filter((path) => !isToolPath(path));
   /** @type {string[]} */
   const notes = [];
   // Legs that read or rebuild dist (the close runner and the docs gate build it, the unit tests and
@@ -722,70 +665,66 @@ export function decideFastGate(paths, opts = {}) {
   /** @type {string | null} */
   let unit = null;
 
-  if (npmPaths.length > 0) {
-    const context = loadContext(root);
-    const live = npmPaths.filter((path) => !isNoCheck(path, context));
-    const goneSet = new Set(deleted);
-    if (npmPaths.some((path) => matchesAny(path, context.table.toolInputs))) toolRun = true;
-    const codeFile = /\.(?:ts|js|mjs|svelte)$/;
-    const unitInputs = npmPaths.filter((path) => /^src\//.test(path) && !goneSet.has(path) && codeFile.test(path));
-    // A live docs or migration-notes path is read at run time by the slug contract test, which no
-    // import graph links to it.
-    if (live.some((path) => path.startsWith('docs/') || path === 'MIGRATION-NOTES.md')) {
-      unitInputs.push(SLUG_CONTRACT_TEST);
-    }
-    for (const test of unitTestsNaming(unitInputs, root)) {
-      if (!unitInputs.includes(test)) unitInputs.push(test);
-    }
-    const unselectable = live.find(
-      (path) => !matchesAny(path, context.table.unitSelectable) || (path.startsWith('src/') && !codeFile.test(path)),
-    );
-    if (deleted.some((path) => /^(?:src|scripts)\//.test(path))) {
-      unit = 'npx vitest run --project unit';
-      notes.push('unit tests: whole project (a src or scripts path was deleted or renamed away)');
-    } else if (unselectable !== undefined) {
-      unit = 'npx vitest run --project unit';
-      notes.push(`unit tests: whole project (${unselectable} is not a path vitest related can select from)`);
-    } else if (unitInputs.length > 0) {
-      unit = `npx vitest related --run --passWithNoTests --project unit ${unitInputs.map(shellQuote).join(' ')}`;
-      notes.push(`unit tests: related to ${unitInputs.length} path(s)`);
-    } else {
-      notes.push('unit tests: none (no src source path changed)');
-    }
-
-    const checks = selectChecks(npmPaths, context);
-    notes.push(...checks.reasons);
-    notes.push(`static checks: ${checks.labels.length === 0 ? 'none' : checks.labels.join(', ')}`);
-    const closeLabels = checks.labels.filter((label) => label !== 'check' && context.closeLabels.includes(label));
-    const extraLabels = checks.labels.filter((label) => context.table.extraCommands[label]);
-    chain.push(...staticLeg(closeLabels, context));
-    // The type check always runs, after the close runner: the root program loads dist through the
-    // package's self-import, so it must not read dist while the runner rebuilds it. The close runner
-    // never repeats it.
-    chain.push('npm run check');
-    for (const label of extraLabels) {
-      (DIST_FREE_EXTRAS.has(label) ? parallel : chain).push(context.table.extraCommands[label]);
-    }
-    if (live.some((path) => pathBuckets(path, context).has('docs'))) chain.push(DOCS_GATE);
-    if (unit) chain.push(unit);
-    // The dist-spawn project execs the built `dist/internal.js`; the unit project excludes it.
-    if (npmPaths.includes(INTERNAL_ENTRY) && !goneSet.has(INTERNAL_ENTRY)) chain.push(DIST_SPAWN);
-
-    const plan = componentPlan(npmPaths, deleted, context);
-    if (plan.mode === 'skip') {
-      notes.push(`component tests skipped: ${plan.reason}`);
-    } else if (plan.mode === 'select' && selected !== null && selected.length === 0) {
-      notes.push('component tests: none relate to the diff');
-    } else if (plan.mode === 'select' && selected !== null) {
-      notes.push(`component tests: ${selected.length} related test file(s)`);
-      lines.push(`${COMPONENT_SELECTED} ${selected.map(shellQuote).join(' ')}`);
-    } else {
-      const why = plan.mode === 'select' ? 'selection could not be computed' : plan.reason;
-      notes.push(`component tests: whole project (${why})`);
-      lines.push(COMPONENT_FULL);
-    }
+  const context = loadContext(root);
+  const live = paths.filter((path) => !isNoCheck(path, context));
+  const goneSet = new Set(deleted);
+  const codeFile = /\.(?:ts|js|mjs|svelte)$/;
+  const unitInputs = paths.filter((path) => /^src\//.test(path) && !goneSet.has(path) && codeFile.test(path));
+  // A live docs or migration-notes path is read at run time by the slug contract test, which no
+  // import graph links to it.
+  if (live.some((path) => path.startsWith('docs/') || path === 'MIGRATION-NOTES.md')) {
+    unitInputs.push(SLUG_CONTRACT_TEST);
   }
-  if (toolRun) parallel.push(TOOL_GATE);
+  for (const test of unitTestsNaming(unitInputs, root)) {
+    if (!unitInputs.includes(test)) unitInputs.push(test);
+  }
+  const unselectable = live.find(
+    (path) => !matchesAny(path, context.table.unitSelectable) || (path.startsWith('src/') && !codeFile.test(path)),
+  );
+  if (deleted.some((path) => /^(?:src|scripts)\//.test(path))) {
+    unit = 'npx vitest run --project unit';
+    notes.push('unit tests: whole project (a src or scripts path was deleted or renamed away)');
+  } else if (unselectable !== undefined) {
+    unit = 'npx vitest run --project unit';
+    notes.push(`unit tests: whole project (${unselectable} is not a path vitest related can select from)`);
+  } else if (unitInputs.length > 0) {
+    unit = `npx vitest related --run --passWithNoTests --project unit ${unitInputs.map(shellQuote).join(' ')}`;
+    notes.push(`unit tests: related to ${unitInputs.length} path(s)`);
+  } else {
+    notes.push('unit tests: none (no src source path changed)');
+  }
+
+  const checks = selectChecks(paths, context);
+  notes.push(...checks.reasons);
+  notes.push(`static checks: ${checks.labels.length === 0 ? 'none' : checks.labels.join(', ')}`);
+  const closeLabels = checks.labels.filter((label) => label !== 'check' && context.closeLabels.includes(label));
+  const extraLabels = checks.labels.filter((label) => context.table.extraCommands[label]);
+  chain.push(...staticLeg(closeLabels, context));
+  // The type check always runs, after the close runner: the root program loads dist through the
+  // package's self-import, so it must not read dist while the runner rebuilds it. The close runner
+  // never repeats it.
+  chain.push('npm run check');
+  for (const label of extraLabels) {
+    (DIST_FREE_EXTRAS.has(label) ? parallel : chain).push(context.table.extraCommands[label]);
+  }
+  if (live.some((path) => pathBuckets(path, context).has('docs'))) chain.push(DOCS_GATE);
+  if (unit) chain.push(unit);
+  // The dist-spawn project execs the built `dist/internal.js`; the unit project excludes it.
+  if (paths.includes(INTERNAL_ENTRY) && !goneSet.has(INTERNAL_ENTRY)) chain.push(DIST_SPAWN);
+
+  const plan = componentPlan(paths, deleted, context);
+  if (plan.mode === 'skip') {
+    notes.push(`component tests skipped: ${plan.reason}`);
+  } else if (plan.mode === 'select' && selected !== null && selected.length === 0) {
+    notes.push('component tests: none relate to the diff');
+  } else if (plan.mode === 'select' && selected !== null) {
+    notes.push(`component tests: ${selected.length} related test file(s)`);
+    lines.push(`${COMPONENT_SELECTED} ${selected.map(shellQuote).join(' ')}`);
+  } else {
+    const why = plan.mode === 'select' ? 'selection could not be computed' : plan.reason;
+    notes.push(`component tests: whole project (${why})`);
+    lines.push(COMPONENT_FULL);
+  }
 
   // The chain's close runner builds dist once itself, so line 1 carries no `npm run package`.
   const body = concurrently([...(chain.length > 0 ? [sequentially(chain)] : []), ...parallel]);
@@ -971,8 +910,7 @@ async function main() {
 
   if (fast) {
     try {
-      const npmPaths = paths.filter((path) => !isToolPath(path));
-      const plan = npmPaths.length > 0 ? componentPlan(npmPaths, deleted, loadContext()) : null;
+      const plan = paths.length > 0 ? componentPlan(paths, deleted, loadContext()) : null;
       const selected = plan?.mode === 'select' ? await selectComponentTests(plan.reach) : null;
       const decision = decideFastGate(paths, { deleted, selected });
       console.error('gate-tier: fast lane');
@@ -987,8 +925,7 @@ async function main() {
   try {
     let selected = null;
     if (!pin) {
-      const npmPaths = paths.filter((path) => !isToolPath(path));
-      const plan = npmPaths.length > 0 ? componentPlan(npmPaths, deleted, loadContext()) : null;
+      const plan = paths.length > 0 ? componentPlan(paths, deleted, loadContext()) : null;
       if (plan?.mode === 'select') selected = await selectComponentTests(plan.reach);
     }
     const decision = decideGate(paths, { paint, pin, passClass, deleted, selected });

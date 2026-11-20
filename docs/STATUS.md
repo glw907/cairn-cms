@@ -4,14 +4,15 @@ Present tense only; history lives in git and PR bodies, orientation in `CLAUDE.m
 
 ## Current state
 
-Published stable: **`0.98.0`** on npm `latest` (`@glw907/cairn-cms`, `@glw907/cairn-cms-dev`); the Go tool is `tool/v1.1.0`.
-`next` and `create-cairn-site@latest` serve **`0.99.0-rc.4`**. Geoff ruled on 2026-11-07 that `0.99.0` takes no stable
+Published stable: **`0.98.0`** on npm `latest` (`@glw907/cairn-cms`, `@glw907/cairn-cms-dev`).
+The Go `cairn` tool and the `create-cairn-site` launcher are deleted from `main` (pass `tool-delete`, #260); the `cairn` command is being rebuilt inside the engine package.
+`next` serves **`0.99.0-rc.4`**; the launcher is deleted from `main` and nothing new is published. Geoff ruled on 2026-11-07 that `0.99.0` takes no stable
 from it: the setup rebuild (`cairn new`) forms the next release, and nothing ships until then.
 
 ## Immediate next action
 
-Dev snapshots (engine 0.99.0-dev.2, `create-cairn-site` 2.0.0-dev.9) stay on `gate`. The scripted and naive legs passed;
-only `owner` is missing from `~/.local/state/cairn-gate/records/gate-0.99.0-dev.2.md`.
+Dev snapshots (engine 0.99.0-dev.2) stay on `gate`; nothing new is published. The next design is the route that
+rebuilds the `cairn` command inside the engine package.
 
 <!-- round-report foundation -->
 Round foundation is holding after pass 3, and one call waits for Geoff
@@ -36,8 +37,7 @@ Open follow-ups from the round: the C11 comment leftovers (#508, #524), H2 (#515
    installs Survey with the wide All-repositories grant accepted (#473), and starts with `npm_config_tag=gate npm create cairn-site`.
 2. At the start of that sitting, in order: Claude rehearses the tokenless path as Geoff's account (his step is the
    passkey), refreshes the walk-through at `~/.local/state/cairn-rehearsal/907-walkthrough/`, and deletes the App and
-   test site; deletes the old leftovers after a dry run (two Cloudflare user tokens, seven test Apps); on Geoff's "starting", shows the two-DNS-deletion dry run (`dns-prep.md`) and deletes them. No
-   `make -C tool check` runs while his setup is live (port 49152).
+   test site; deletes the old leftovers after a dry run (two Cloudflare user tokens, seven test Apps); on Geoff's "starting", shows the two-DNS-deletion dry run (`dns-prep.md`) and deletes them.
 
 What a session needs to know:
 - Held paths go to Geoff in one small packet: `.github/**`, `scripts/release/**`, `.claude/settings*`, the sweep's

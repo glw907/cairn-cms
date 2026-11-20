@@ -134,16 +134,16 @@ export async function runCheck(name, body) { ... }
   `${name}: OK` when there are no problems, `${name}: FAIL` otherwise. The line has no detail.
   A check that reports a count prints it from its body, before the verdict. The verdict print is
   one source line holding both words, so item 2's grep counts `shared.mjs`.
-- An info line a check prints on success keeps its detail and its name prefix and drops the verdict
-  word: `check-options: OK (412 option paths)` becomes `check-options: 412 option paths`, then the
-  helper prints `check-options: OK`. A per-item line that passes takes a neutral phrase the check's
+- An info line a check prints on success keeps its detail, takes the `runCheck` name as its prefix,
+  and drops the verdict word: `check:options: OK (412 option paths)` becomes
+  `check-options: 412 option paths`, then the helper prints `check-options: OK`. A per-item line that passes takes a neutral phrase the check's
   meaning gives: `check-skill-budget: <path> OK (n/m estimated tokens)` becomes
   `check-skill-budget: <path> within budget (n/m estimated tokens)`, and
   `custom-surface [x]: PASS` becomes `custom-surface [x]: clean`. A per-item failure becomes a
   returned problem.
-- A problem keeps its text. Where the main body adds a name prefix at print time, the prefix goes,
-  since the verdict line names the check. Text an exported function returns keeps every word, apart
-  from a verdict word in a success line (`editorQuotesReport`, M11, which keeps its signature and
+- A problem keeps its text byte for byte, any prefix included: the body returns the string it
+  printed before. Text an exported function returns keeps every word too, apart from a verdict word
+  in a success line (`editorQuotesReport`, M11, which keeps its signature and
   `ok`; its line becomes `check-editor-quotes: 1 quotes grounded`, and the assertion at
   `check-editor-quotes.test.ts:230` changes those words only).
 - It sets `process.exitCode` to 0 or 1. It never calls `process.exit`. Exit 2 is gone from the
@@ -255,13 +255,16 @@ through `register-check`.
    script out of every row's command with `/\bnode (scripts\/\S+\.mjs)/g`, which leaves out
    `node --test` rows by construction; `check-stable-source.mjs` is added to the list by hand. For
    each script not in `SKIP`, the file imports from `shared.mjs`, calls `runCheck(` once, and matches
-   neither `process.exit` nor a verdict print. The verdict match runs over the whole file's text, so
+   neither a `process.exit` call (`/\bprocess\.exit\s*\(/`, so `process.exitCode` doesn't trip it)
+   nor a verdict print. The test also asserts that the extraction yields 36 paths (M4's 32, the
+   theme check, version-rise, and the two build scripts), so an empty or short set can't pass. The verdict match runs over the whole file's text, so
    a call that spans lines is caught (M8):
    `/(console\.(log|error)|process\.std(out|err)\.write)\([^;]*?\b(PASS|FAILED|OK|FAIL)\b/`. Run
    over `scripts/checks/*.mjs` at base it flags 28 files: M8's 25 and three whose only verdict
    spans lines (planner probe, 2026-11-20). A narrower form that stops at a quote misses
    `check-public-scope.mjs:123`, whose verdict word sits in a quoted ternary. The implementer shows
-   the 28 before trusting the test. For `check-stable-source.mjs` the test also finds a
+   the 28 before trusting the test. Every match at base is a verdict print the conversion removes,
+   none in a comment or rule text, and none spans more than two lines (planner probe). For `check-stable-source.mjs` the test also finds a
    `console.log` whose text holds `sha: ${`. A row with no `node` script needs nothing of its own, since the runner's line ends
    it. `SKIP` is a frozen map of path to the round that deletes it:
    `scripts/checks/check-chassis-boundary.mjs` to `made-site-3` (round 8), and
@@ -404,6 +407,8 @@ Filed through `standards:log-issue` and listed in the PR:
 
 - `scripts/theme/`, `scripts/catalog/`, and `scripts/build/` scripts still work out their root
   inline. They aren't check scripts, so this pass leaves them.
+- Some problem lines carry an old self-name (`check:options: ...`) beside the new verdict name
+  (`check-options: FAIL`). Problems keep their text in this pass, so the names converge in a later one.
 
 ## Decisions
 
@@ -428,8 +433,10 @@ Filed through `standards:log-issue` and listed in the PR:
   adds two exports and moves the scripts that would use them.
 - **Info lines keep the name and drop the verdict word**, and a problem keeps its text. Passed over:
   dropping the name from every info line, which loses the line's owner in a group run.
-- **A CHANGELOG entry for the theme check only.** The other checks run in this repo alone, and their
-  output reaches no site developer.
+- **A CHANGELOG entry for the theme check only.** No check script ships (`package.json` `files`
+  holds no `scripts/theme`, `scripts/catalog`, or check script), so the `shared.mjs` import breaks no
+  consumer. The shipped page `checking-a-theme.md` documents the theme check's output, so that
+  change is one a site developer can see. The other checks reach no one outside this repo.
 
 ## Calls for Geoff
 
@@ -458,7 +465,7 @@ folded here.
 | 11 | T3b at 90; work 355, path 532; the formula's source cited. |
 | 12 | M4 at 32 and 35 edits; M11 corrected. |
 | 13 | Decisions: no subprocess or file-walk export. |
-| 14 | `shared-throw.mjs`; `--list` and `--update` placed; the extraction regex; problem text rule. |
+| 14 | `shared-throw.mjs`; `--list` and `--update` placed; the extraction regex with a 36-path count; problems keep their text byte for byte (an advisor read chose this over dropping prefixes), the name mismatch filed under "Found, not done". |
 | 15 | T4 step 3 writes the command and says how an outside hit closes. |
 | 16 | Acceptance 7 runs two rules that build no site. |
 | 17 | Declined. `advisor.md` sends a conflict and an unmeetable check to `## Calls for Geoff` with an `[advisor]` line, so both stay. |

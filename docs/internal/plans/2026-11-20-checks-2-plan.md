@@ -26,9 +26,10 @@ Worktree `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/checks-2`, branc
 from `main` at `66aa3352d` (the merge of #261, `checks-1`). Class `runner`. Base `BASE=66aa3352d`.
 Every command runs from the worktree root, and every diff is `git diff 66aa3352d...HEAD`.
 
-Planned work is 325 minutes and the planned path is 493 (work times 1.3 plus 70). The design figure
-is 180 and the estimate 288, so the path is under the 576 that would park the plan. T3a and T3b run
-as a pair, so the wall clock is about 60 minutes shorter than the path. A run whose path passes 576
+Planned work is 355 minutes and the planned path is 532 (work times 1.3 plus 70, the figure the
+`checks-1` plan used at its line 26 under `planner.md:27`). The design figure is 180 and the
+estimate 288, so the path is under the 576 that would park the plan. T3a and T3b run as a pair, so
+the wall clock is about 60 minutes shorter than the path. A run whose path passes 576
 minutes stops through `advisor.md`.
 
 ## Pre-flight
@@ -45,9 +46,11 @@ GitHub, or npm.
 - Evidence: the mechanism table below. Every row is a probe run in this worktree at `66aa3352d` on
   2026-11-20, or a quoted source line.
 - Held files: one. `scripts/release/preflight.mjs:15` changes its import path, and nothing else in
-  it changes (M9, Decisions). The conductor was told on 2026-11-20. Under standing answer 24 the
-  queue page approves that edit, and under standing answer 25 the pass sends its own `merge`
-  document when its PR is ready, in place of landing by `approval-packet` step 1. No workflow file
+  it changes (M9, Decisions). The conductor was told on 2026-11-20. Standing answer 24 doesn't
+  cover the edit, since the route's `checks-2` row lists only `scripts/checks/*.mjs`
+  (`route-rounds.md:348`). The edit is disclosed in, and approved through, the pass's own `merge`
+  document, which standing answer 25 has it send when its PR is ready in place of landing by
+  `approval-packet` step 1. No workflow file
   and no `.github/ci-green.json` is edited. No setting, hook, or skill outside the repo is edited
   (standing answer 19).
 
@@ -58,7 +61,7 @@ GitHub, or npm.
 | Classifier unavailable | Retry the same call once after a short wait. |
 | Destructive or Unwanted, Interfere With Workloads: `pkill -f lane:fast`, `kill`, `git push --delete` | Never stop a process or a session, and never delete a remote ref. Wait for another session's heavy run with a Monitor until-loop on `pgrep -f 'vite build\|vitest'`. |
 | Modify Shared Resources: a backlog commit in the main checkout | Commit only in the pass worktree, by named path, never `-a` or `git add -A`. |
-| Undermining Oversight, Self-Modification: a loop that edits many files | Edit each file with the Edit tool, one file per call. The 33 script conversions are 33 Edit sessions, never a `sed`, `python`, or `node` loop. `.claude/settings*` is never edited. |
+| Undermining Oversight, Self-Modification: a loop that edits many files | Edit each file with the Edit tool, one file per call. The 35 conversions are 35 Edit sessions, never a `sed`, `python`, or `node` loop. `.claude/settings*` is never edited. |
 | Merge Without Review | The executor merges nothing. The conductor lands the PR. |
 
 ## Mechanism table
@@ -68,20 +71,22 @@ GitHub, or npm.
 | M1 | `registry.mjs` holds 44 rows, and `node scripts/checks/run.mjs --list` prints 44 names. Every `package.json` `check:*` script is `node scripts/checks/run.mjs <row>`. | probe; `package.json:37-99` |
 | M2 | After every step, `run.mjs` prints `${step.name}: OK` or `: FAIL` on stdout. A group ends `${script}: OK (N check(s))` or `N check(s) failed: ...`. `check:close` ends `check:close: OK (34 check(s))`. | `run.mjs`; PR #261 |
 | M3 | The registry rows run 37 repo scripts (M4). The rest run tools only: `check`, the four `check:showcase-*`, `check:vale`, `check:vale-rules`, `test:emit`, `test:theme`, `test:catalog`. | probe over `CHECKS[].command` |
-| M4 | Scripts the rows run: 30 under `scripts/checks/*.mjs`, `check-comments.sh` (bash), `scripts/theme/check.mjs`, `scripts/catalog/version-rise.mjs`, and `scripts/build/pack-engine-template.mjs` and `scripts/build/emit-template-dir.mjs`. `check-chassis-boundary.mjs` is one of the 30. | probe |
+| M4 | Scripts the rows run: 32 under `scripts/checks/*.mjs`, `check-comments.sh` (bash), `scripts/theme/check.mjs`, `scripts/catalog/version-rise.mjs`, and `scripts/build/pack-engine-template.mjs` and `scripts/build/emit-template-dir.mjs`. `check-chassis-boundary.mjs` is one of the 32. With `check-stable-source.mjs` (M5) the conversions are 32 `.mjs` files under `scripts/checks`, then the theme check, version-rise, and the `.sh`: 35 edits. | probe; review 12 |
 | M5 | `check-stable-source.mjs` has no row. The release hook `.claude/hooks/release-cut-guard.mjs:430-440` runs it, needs exit 0, and reads `/^sha: ([0-9a-f]{40})$/m` from its stdout. `scripts/release/{verify,wait,status,withdraw,preflight}.mjs` import its `PACKAGES` and `RULES`. | source |
 | M6 | Item 1's grep matches 19 files at base, not 22: `check-admin-prose`, `-audit-pack`, `-consumers`, `-consumers-must`, `-definitions`, `-dev-package`, `-options`, `-package-files`, `-readiness`, `-rulings-format`, `-site-record-page`, `-stable-source`, `-surface`, `-symbols`, `-tellgrader`, `-tiers`, `-version`, `-visuals`, and `docs-links`. `check-chassis-boundary.mjs` isn't among them. | probe |
 | M7 | 17 files in `scripts/checks` call `repoRoot(` from `scripts/repo-root.mjs`. 14 are check scripts; `run.mjs`, `close-prebuilt.mjs`, and `gate-tier.mjs` aren't. `repo-root.mjs`'s header calls it "the target for that convergence, not yet the sole source of it". | probe; `scripts/repo-root.mjs:1-5` |
-| M8 | Item 2's grep matches 25 files at base, not 28, `check-chassis-boundary.mjs` and `check-stable-source.mjs` among them. `PASS` is printed by `check-audit-pack`, `-chassis-boundary`, `-cm-internals`, `-custom-surface`, and `-public-scope`; `FAILED` by `check-consumers` and `check-dev-package`, and by `check-comments.sh` (`check:comments FAILED`). | probe |
+| M8 | Item 2's grep matches 25 files at base, not 28, `check-chassis-boundary.mjs` and `check-stable-source.mjs` among them. `run.mjs` isn't, since it prints through `out(...)` (`run.mjs:188`). Four success verdicts span lines, with `OK` on the line after `console.log(`, so the grep misses them: `check-idioms.mjs:499-501`, `check-readiness.mjs:287-289`, `check-snippets.mjs:549-551`, `check-package-files.mjs:497-499`. Some 19 success lines read `<name>: OK (<count>)` (`check-options.mjs:393`, `check-leaks.mjs:574`, `docs-links.mjs:270`, `check-tiers.mjs:91`), and two scripts print per-item verdicts (`check-custom-surface.mjs:216-218`, `check-skill-budget.mjs:298`). `PASS` is printed by `check-audit-pack`, `-chassis-boundary`, `-cm-internals`, `-custom-surface`, and `-public-scope`; `FAILED` by `check-consumers` and `check-dev-package`, and by `check-comments.sh` (`check:comments FAILED`). | probe |
 | M9 | `check-consumers-must.mjs:10` imports `unreleasedWindow` from `./check-version.mjs`, and `check-version.mjs:11` imports `isActionable` from `./check-consumers-must.mjs`. Outside the pair, `scripts/release/preflight.mjs:15` imports `unreleasedWindow` from `check-version.mjs`, `notes.mjs:12` imports `LINE` from `check-consumers-must.mjs`, and `bump.mjs:14` imports `checkVersion`. No test imports `unreleasedWindow`. | probe |
 | M10 | 43 test files import from `scripts/checks/`, by `grep -rlE "^import .*scripts/checks/\|await import\(.*scripts/checks/\|from '.*scripts/checks/" src/tests \| wc -l`. 49 mention the path. | probe |
-| M11 | Three tests spawn a check or the runner. `check-run.test.ts:79-83` reads `middle: FAIL` and `last: OK` from stdout. `check-stable-source.test.ts` stubs its runner. `check-leaks.test.ts` spawns the script. `check-editor-quotes.test.ts:230` pins `check-editor-quotes: OK (1 quotes grounded)` as a returned line. | source |
+| M11 | Three tests spawn a check or the runner. `check-run.test.ts:79-83` reads `middle: FAIL` and `last: OK` from stdout. `check-stable-source.test.ts` stubs its runner, and `release-cut-guard.test.ts:17,34` writes a stub `check-stable-source.mjs`, so neither runs the real script. `check-leaks.test.ts` imports the module and runs `git ls-files`. `check-editor-quotes.test.ts:230` pins `check-editor-quotes: OK (1 quotes grounded)`, a line the exported `editorQuotesReport` returns (`check-editor-quotes.mjs:273`). | source; review 7, 12 |
 | M12 | `check-idioms` rule 2 bans `process.exit` in `scripts/checks/*.mjs`. Rule 3 bans two self-names in one file, matched on a string literal's leader (`SELF_IDENTITY_LEADER`, `check-idioms.mjs:152`). A template literal such as `` `${name}: OK` `` has no literal leader. | `check-idioms.mjs:6-13`, `:150-171` |
 | M13 | `check-admin-css-classes.mjs` and `check-invisible-craft.mjs` exit 2 on an error, and `scripts/theme/check.mjs` returns 2 on a usage error or a throw. No test asserts a check's exit 2; `audit/config.test.ts:351` asserts the `cairn-audit` bin's, which is out of scope. | probe |
 | M14 | `scripts/theme/check.mjs --json` prints one JSON document. `scripts/theme/viewer/interactive.mjs:132-141` runs it with `--json` and `JSON.parse`s stdout. No registry row passes `--json`. | source |
 | M15 | `skills/cairn-styling-public-pages/references/checking-a-theme.md:21-22` documents the theme check's output: "`check:theme: <id> pass` or `fail`, then one line per failure". It ships in the package. | source |
 | M16 | `scripts/catalog/version-rise.mjs:69-79` ends with `process.exit(1)` on a problem; `version-rise.test.mjs:48-70` asserts exit status 1 and 0 only. | source |
 | M17 | `check-comments.sh` (15 lines) runs eslint and echoes `check:comments OK` or `check:comments FAILED`. Its eslint list names `scripts/checks/{close-prebuilt,gate-tier,registry,run}.mjs`. | source |
+| M19 | `templates/waymark/.claude/skills/cairn-styling-public-pages/references/checking-a-theme.md` is a byte-identical copy of the skill page (M15). `bake-template.mjs:189-208` copies it, and `check:template`, in `close`, fails on drift until `npm run emit:template` is run. | probe; review 1 |
+| M20 | `check-audit-pack.mjs` ends with a bare `main();`, and `check-consumers.mjs` is top-level code from line 33 with no `main` and no guard. No test imports either. | review 6 |
 | M18 | `CHANGELOG.md` opens `## Unreleased` with a `release-size: minor` marker, and every entry carries a `Consumers must:` line. | source |
 
 ## Searches
@@ -93,7 +98,7 @@ GitHub, or npm.
 | `grep -rn "theme/check.mjs\|check:theme"` | 20 | M14, M15 |
 | `grep -rlE "toContain\(['\"\`][a-z:-]+: (OK\|PASS\|FAIL)" src/tests/unit` | 2, neither a check's verdict | M11 |
 | `grep -rn "exitCodeFor" scripts src/tests` outside the two scripts | 9, all the audit library's own | M13 |
-| Retired-form search (T4 step 3): `PASS`, `FAILED`, and exit 2 of a check, in `~/.dotfiles/claude`, every `~/Projects/*/.claude` and `skills/`, and `~/Projects/initiatives` prompts | run at T4 | `ready.md` "A retired form" |
+| Retired-form search (T4 step 3), command in T4 | run at T4 | `ready.md` "A retired form" |
 
 ## Skills the executor loads
 
@@ -129,6 +134,18 @@ export async function runCheck(name, body) { ... }
   `${name}: OK` when there are no problems, `${name}: FAIL` otherwise. The line has no detail.
   A check that reports a count prints it from its body, before the verdict. The verdict print is
   one source line holding both words, so item 2's grep counts `shared.mjs`.
+- An info line a check prints on success keeps its detail and its name prefix and drops the verdict
+  word: `check-options: OK (412 option paths)` becomes `check-options: 412 option paths`, then the
+  helper prints `check-options: OK`. A per-item line that passes takes a neutral phrase the check's
+  meaning gives: `check-skill-budget: <path> OK (n/m estimated tokens)` becomes
+  `check-skill-budget: <path> within budget (n/m estimated tokens)`, and
+  `custom-surface [x]: PASS` becomes `custom-surface [x]: clean`. A per-item failure becomes a
+  returned problem.
+- A problem keeps its text. Where the main body adds a name prefix at print time, the prefix goes,
+  since the verdict line names the check. Text an exported function returns keeps every word, apart
+  from a verdict word in a success line (`editorQuotesReport`, M11, which keeps its signature and
+  `ok`; its line becomes `check-editor-quotes: 1 quotes grounded`, and the assertion at
+  `check-editor-quotes.test.ts:230` changes those words only).
 - It sets `process.exitCode` to 0 or 1. It never calls `process.exit`. Exit 2 is gone from the
   checks (M13).
 - `name` is the script's file name without `.mjs` (`check-idioms`, `docs-links`,
@@ -159,11 +176,11 @@ Record at `66aa3352d`, in the PR body's `## Base`, each command and its output:
 
 1. Write `scripts/checks/shared.mjs` as "The helper" says.
 2. Add it to `check-comments.sh`'s eslint list, beside `run.mjs`.
-3. Add `scripts/checks/fixtures/shared-pass.mjs` and `shared-fail.mjs`: each calls `runCheck`
-   with a fixed name and a body returning no problem or one.
+3. Add `scripts/checks/fixtures/shared-pass.mjs`, `shared-fail.mjs`, and `shared-throw.mjs`: each
+   calls `runCheck` with its own name and a body that returns no problem, returns one, or throws.
 4. Write `src/tests/unit/check-shared.test.ts`. It spawns each fixture and expects stdout's last
    line `shared-pass: OK` with status 0, and `shared-fail: FAIL` with status 1 and the problem on
-   stderr. A body that throws gives `FAIL` and status 1. Through `runSteps` from `run.mjs`, one step
+   stderr, and `shared-throw: FAIL` with status 1 and the error's message on stderr. Through `runSteps` from `run.mjs`, one step
    whose command is `true` and one whose command is `false` end their output `<name>: OK` and
    `<name>: FAIL` (structure item 2's "a registry entry that names a command").
 5. Move `unreleasedWindow` from `check-version.mjs` into `check-consumers-must.mjs`, beside `LINE`
@@ -175,7 +192,7 @@ Record at `66aa3352d`, in the PR body's `## Base`, each command and its output:
 7. Rewrite `scripts/repo-root.mjs`'s header: every check script now takes its root through
    `shared.mjs`, and the other `scripts/` trees import `repoRoot` directly.
 
-### T3a and T3b. The conversions (60 minutes each; Sonnet at `medium`; a pair)
+### T3a and T3b. The conversions (T3a 60 minutes, T3b 90; Sonnet at `medium`; a pair)
 
 Each check script below takes `ROOT` from `./shared.mjs` (or `runCheck` from
 `../checks/shared.mjs` outside `scripts/checks`), and ends through one `runCheck` call. In each
@@ -184,9 +201,14 @@ script:
 - Its own root computation goes: the inline `resolve(dirname(fileURLToPath(...)), '../..')`, the
   `new URL('..', ...)` form, or its own `repoRoot(import.meta.url)` call. Unused imports go with it.
 - Its main body returns its problem lines in place of printing a verdict and setting
-  `process.exitCode`. A line it printed on success, such as a count, stays as an info line.
+  `process.exitCode`. A line it printed on success, such as a count, stays as an info line in the
+  form "The helper" gives, and a problem keeps its text as it says.
 - The `runCheck` call sits where the script's main runs today, inside its existing entry guard, so a
-  test that imports the script's functions runs nothing.
+  test that imports the script's functions runs nothing. Two scripts have no guard (M20):
+  `check-audit-pack.mjs` takes `runCheck` in place of its bare `main();`, and `check-consumers.mjs`
+  wraps its top-level body in one body function that `runCheck` calls.
+- A mode that isn't a check prints and returns with no verdict line: `check-admin-prose --list`
+  (`:295`). `check-surface --update` (`:346`) writes the baseline and does end through `runCheck`.
 - Its exports, its problem text, and which input fails stay as they are. Its tests change only where
   they pin a verdict word or an exit 2 (structure item 4).
 - `check-idioms` passes on the file (M12).
@@ -206,27 +228,41 @@ T3b: `check-public-skill`, `check-readiness`, `check-rulings-format`, `check-sel
 
 Three need more than the pattern:
 
-- `check-stable-source.mjs`: on success the body prints `HEAD is a stable cut of v<next>` and the
-  `sha: <sha>` line on stdout, so the release hook's regex still finds it (M5). `PACKAGES`, `RULES`,
-  and `checkStableSource` stay exported.
+- `check-stable-source.mjs`: on success the body prints `check-stable-source: HEAD is a stable cut
+  of v<next>` and `sha: <sha>` through `console.log`, on stdout, so the release hook's regex still
+  finds it (M5). `PACKAGES`, `RULES`, and `checkStableSource` stay exported. The hook's tests stub the
+  script (M11), so T4's test carries the proof against the real file.
 - `scripts/theme/check.mjs`: the text paths (a theme directory, `--catalog`) run through `runCheck`
-  named `check:theme`, and keep their per-theme lines. A usage error becomes a problem. `--json`
-  prints the document alone and sets the exit code from its verdict, with no verdict line, so
-  stdout stays one JSON document for the viewer (M14). Its `node --test` suites still pass.
+  named `check:theme`. The body prints the per-theme lines on stdout as today, failure lines
+  included, and returns one problem per failed theme, `<id> failed`. A usage error becomes a problem
+  and goes through `runCheck` even when `--json` is present, `--catalog --json` among them. A valid
+  `--json` run prints the document alone and sets the exit code from its verdict, with no verdict
+  line, so stdout stays one JSON document for the viewer (M14). Its `node --test` suites still pass.
 - `check-comments.sh`: bash can't import the helper. Its two echo lines become `check-comments: OK`
   and `check-comments: FAIL`, and its exit code stays.
 
-T3b also lands the two outside edits these change. `checking-a-theme.md:21-22` says the text output
-ends with one `check:theme: OK` or `check:theme: FAIL` line after the per-theme lines. A CHANGELOG
-entry under `## Unreleased` says the same of the theme check, notes that a usage error now exits 1,
-and ends `Consumers must: nothing.` Both go through `register-check`.
+T3b also lands the outside edits these change. `checking-a-theme.md:21-22` says the text output
+ends with one `check:theme: OK` or `check:theme: FAIL` line after the per-theme lines. Then
+`npm run emit:template` re-bakes its twin in `templates/waymark/.claude/` (M19), and the changed
+`templates/waymark/**` files are committed by path; `node scripts/build/emit-template-dir.mjs
+--check` exits 0. A CHANGELOG entry under `## Unreleased` says the same of the theme check, notes
+that a usage error now exits 1, and ends `Consumers must: nothing.` The page edit and the entry go
+through `register-check`.
 
 ### T4. The registry test and the records (40 minutes; Sonnet at `medium`)
 
 1. Write `src/tests/unit/check-form.test.ts`. It reads `CHECKS` from `registry.mjs` and pulls each
-   `node <path>.mjs` script out of every row's command. For each script not in `SKIP`, the file
-   imports from `shared.mjs`, calls `runCheck(` once, and matches neither item 2's verdict regex nor
-   `process.exit`. A row with no `node` script needs nothing of its own, since the runner's line ends
+   script out of every row's command with `/\bnode (scripts\/\S+\.mjs)/g`, which leaves out
+   `node --test` rows by construction; `check-stable-source.mjs` is added to the list by hand. For
+   each script not in `SKIP`, the file imports from `shared.mjs`, calls `runCheck(` once, and matches
+   neither `process.exit` nor a verdict print. The verdict match runs over the whole file's text, so
+   a call that spans lines is caught (M8):
+   `/(console\.(log|error)|process\.std(out|err)\.write)\([^;]*?\b(PASS|FAILED|OK|FAIL)\b/`. Run
+   over `scripts/checks/*.mjs` at base it flags 28 files: M8's 25 and three whose only verdict
+   spans lines (planner probe, 2026-11-20). A narrower form that stops at a quote misses
+   `check-public-scope.mjs:123`, whose verdict word sits in a quoted ternary. The implementer shows
+   the 28 before trusting the test. For `check-stable-source.mjs` the test also finds a
+   `console.log` whose text holds `sha: ${`. A row with no `node` script needs nothing of its own, since the runner's line ends
    it. `SKIP` is a frozen map of path to the round that deletes it:
    `scripts/checks/check-chassis-boundary.mjs` to `made-site-3` (round 8), and
    `scripts/build/pack-engine-template.mjs` and `scripts/build/emit-template-dir.mjs` to `stock-1`
@@ -235,13 +271,18 @@ and ends `Consumers must: nothing.` Both go through `register-check`.
 2. The same test asserts that no file in `scripts/checks/*.mjs` but `shared.mjs` and the skipped
    script matches item 1's grep or calls `repoRoot(` itself, apart from `run.mjs`,
    `close-prebuilt.mjs`, and `gate-tier.mjs`, which aren't check scripts (M7).
-3. Run the retired-form search in "Searches" for `PASS` and `FAILED` verdicts and a check's exit 2.
-   List every hit in the PR; the pass doesn't land while one is open.
+3. Run the retired-form search:
+   `grep -rnE "(check[-:][a-z-]+|custom-surface[^:]*): .*\b(PASS|FAILED)\b|check:comments (OK|FAILED)|check:theme: <id> pass|exits? 2" ~/.dotfiles/claude ~/Projects/*/.claude ~/Projects/*/skills --include=*.md --include=*.txt`, then the same pattern over
+   `~/Projects/initiatives` with `--include='*prompt*'`.
+   List every hit in the PR. A hit in this repo is fixed in the pass. A hit outside it can't be
+   edited (standing answer 19), so it is filed through `standards:log-issue` against its repo and
+   listed, and the filing closes it.
 4. Update `docs/STATUS.md` on the branch with the pass's state.
 
 ### T5. Acceptance run (30 minutes; the executor)
 
 Run every command in `## Acceptance` at the head, bare, and paste each output into the PR body.
+After the last docs edit, run `npm run check:docs-gate` bare as well.
 
 ### Lane runs (60 minutes)
 
@@ -283,10 +324,11 @@ dropped:
    `check:comments` does, and expects a last line of the form `<name>: OK` or `<name>: FAIL`.
    Today: 28 files print a verdict, with `PASS` in 5 and `FAILED` in 2.
 
-   Amended check: the grep prints 3, `shared.mjs`, `run.mjs`, and the skipped
-   `check-chassis-boundary.mjs` (base 25, M8). With `| grep -v check-chassis-boundary` before
-   `wc -l`, it prints 2. Rule 4 and the stopped-work row "It skips scripts the route deletes"
-   license the note. The new test is `check-shared.test.ts`. Tasks T2, T3a, T3b.
+   The check holds as written: the grep prints 2, `shared.mjs` and the skipped
+   `check-chassis-boundary.mjs` (base 25, M8). The runner prints through `out(...)`, which the grep
+   doesn't match; it uses the same form. The grep is line-based and misses a call that spans lines,
+   so T4's whole-file match is the stronger proof. The new test is `check-shared.test.ts`. Tasks
+   T2, T3a, T3b, T4.
 3. The mutual import is gone. Check: `grep -c 'check-version' scripts/checks/check-consumers-must.mjs`
    prints 0. Today: 1, with 1 the other way.
 
@@ -325,16 +367,18 @@ Added checks:
    `scripts/release/preflight.mjs`, and its diff is the one import line.
 6. `node .claude/hooks/release-cut-guard.mjs` keeps its tests: `npx vitest run
    src/tests/unit/release-cut-guard.test.ts src/tests/unit/release-bump.test.ts` passes.
-7. `node scripts/theme/check.mjs themes/waymark --json | node -e
-   "JSON.parse(require('fs').readFileSync(0,'utf8'))"` exits 0.
+7. `node scripts/theme/check.mjs themes/waymark --json --rules manifest-schema,tokens-schema | node -e
+   "JSON.parse(require('fs').readFileSync(0,'utf8'))"` exits 0. The two rules build no site.
 8. The retired-form search lists no open hit.
+9. `grep -cE "check-comments: (OK|FAIL)" scripts/checks/check-comments.sh` prints 2.
+10. `node scripts/build/emit-template-dir.mjs --check` exits 0.
 
 ## Standing answers
 
 - A file the design didn't list (standing answer 16): `scripts/release/preflight.mjs` (held, M9),
   `scripts/theme/check.mjs`, `scripts/catalog/version-rise.mjs`, `check-comments.sh`,
-  `checking-a-theme.md`, `CHANGELOG.md`, `docs/STATUS.md`, and the fixtures and tests the tasks
-  name. Any other goes under `## Decisions`.
+  `checking-a-theme.md` and its baked twin under `templates/waymark/.claude/`, `CHANGELOG.md`,
+  `docs/STATUS.md`, and the fixtures and tests the tasks name. Any other goes under `## Decisions`.
 - A verdict that changes after a task is fixed in the script, and the fixture stays as it was
   (structure design standing answer 21).
 - A check removed with its code (standing answer 23): none.
@@ -379,6 +423,11 @@ Filed through `standards:log-issue` and listed in the PR:
 - **`check-stable-source.mjs` converts** though it has no row: item 2's grep counts it.
 - **`check-comments.sh` stays bash**, with its lines in the new form. Porting it to `.mjs` is more
   than the outcome needs.
+- **The helper has no subprocess or file-walk export.** The structure row (`:481`) names both; the
+  route's row and the binding items don't, and none of the 35 conversions needs one. Reversing it
+  adds two exports and moves the scripts that would use them.
+- **Info lines keep the name and drop the verdict word**, and a problem keeps its text. Passed over:
+  dropping the name from every info line, which loses the line's owner in a group run.
 - **A CHANGELOG entry for the theme check only.** The other checks run in this repo alone, and their
   output reaches no site developer.
 
@@ -391,4 +440,26 @@ Filed through `standards:log-issue` and listed in the PR:
 
 ## Plan review fold
 
-Filled when the review is folded.
+The review is `2026-11-20-checks-2-plan-review.md`: not ready, three blocking findings. Each is
+folded here.
+
+| # | Fold |
+| --- | --- |
+| 1 | M19; T3b re-emits the template; acceptance 10; standing answers list the twin. |
+| 2 | Item 2's check holds unamended at 2; M8 notes `run.mjs` prints through `out`. |
+| 3 | "The helper" gives the info-line and per-item rule with examples. |
+| 4 | M8 names the four multi-line verdicts; T4 step 1 matches whole-file text and shows it fails at base. |
+| 5 | "The helper" names `editorQuotesReport` and the `:230` assertion. |
+| 6 | M20; T3a/T3b name `check-audit-pack` and `check-consumers`. |
+| 7 | T3b and T4 step 1 prove the `sha:` line against the real script. |
+| 8 | Pre-flight: the held edit's authority is the pass's `merge` document, not standing answer 24. |
+| 9 | T3b states the theme check's failure path and `--catalog --json`. |
+| 10 | T5 runs `npm run check:docs-gate`. |
+| 11 | T3b at 90; work 355, path 532; the formula's source cited. |
+| 12 | M4 at 32 and 35 edits; M11 corrected. |
+| 13 | Decisions: no subprocess or file-walk export. |
+| 14 | `shared-throw.mjs`; `--list` and `--update` placed; the extraction regex; problem text rule. |
+| 15 | T4 step 3 writes the command and says how an outside hit closes. |
+| 16 | Acceptance 7 runs two rules that build no site. |
+| 17 | Declined. `advisor.md` sends a conflict and an unmeetable check to `## Calls for Geoff` with an `[advisor]` line, so both stay. |
+| 18 | The executor prompt names the same three lane runs. |

@@ -6,6 +6,14 @@
 
 ## Medium
 
+- [ ] **#563** `scripts/checks/close-prebuilt.mjs` holds only `missingInstalls`, kept for the release preflight `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
+  The held `scripts/release/preflight.mjs:14` imports `missingInstalls` from it, so the file stays a one-export module with a name its content no longer matches. Found by `checks-1` (PR #261). Placement: the next release pass that touches `scripts/release/`; move the function beside the preflight and delete the file.
+- [ ] **#564** No test pins that a docs-gate or row run never checks the installs, and `--page` can leave a docs-gate run empty `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
+  Only a `close` run checks the installs (`scripts/checks/run.mjs`), and `checks-3` relies on it, but `check-run.test.ts` has no case where `exists: () => false` leaves a docs-gate or row run unrefused. Separately, `docs-gate check:vale-rules --page docs/x.md` narrows to zero steps, still builds, and prints `check:docs-gate: OK (0 check(s))`. Found by `checks-1`'s whole-branch review (PR #261). Placement: `checks-3`, or the next pass on `scripts/checks/run.mjs`.
+- [ ] **#565** `durable-gotchas.md` still tells a caller to put the heap prefix on `npm run check` `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
+  `.claude/skills/cairn-writing-engine-code/references/durable-gotchas.md:339-348` predates the `check` row, which now sets the 6144 heap itself, so the advice is redundant. Found by `checks-1`'s whole-branch review (PR #261). Placement: the next pass that edits that file.
+- [ ] **#566** A worktree-isolated agent refuses `git show <rev>:<path>` in a loop or `$(...)` and a node probe from `/tmp` `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
+  `git archive <rev> <paths> -o node_modules/x.tar` then `tar -xf` returns base copies in one plain call, and the Write tool under `node_modules/` holds a probe script. A candidate for `durable-gotchas.md`. Found by `checks-1`'s T3 and T4 agents (PR #261). Placement: the next pass that edits `durable-gotchas.md`, with #565.
 - [ ] **#561** The banner on `rotate-the-github-app-key.md` and `credentials.md` tells an owner not to run steps that still work `#bug` `#cairn-cms` *(2026-11-17)*
   The Go tool deletion (PR #260) put "the commands on this page don't run until it ships" at the top of both pages. The rotation steps (`docs/admin/rotate-the-github-app-key.md:39-51`) use `wrangler secret put` alone, and "Remove what an unfinished run holds" (`docs/admin/credentials.md:39-56`) uses keyring commands and the Cloudflare dashboard. An owner with an exposed App key reads that rotation is unavailable. Scope each banner to the `cairn`-command steps, in the route design's page rewrite or sooner.
 - [ ] **#560** `scripts/gate/run-gate.sh` still requires `create-cairn-site@gate` and `grade.mjs` runs the published launcher `#improvement` `#cairn-cms` *(2026-11-17)*

@@ -5,11 +5,10 @@
 // entry no longer present fails as stale, so the snapshot only shrinks. The comparison is a multiset
 // because the same text can be legacy twice and still be new a third time.
 import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { unreleasedWindow } from './check-version.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const CHANGELOG_PATH = 'CHANGELOG.md';
 const BASELINE_PATH = 'scripts/checks/consumers-must-baseline.json';
 
@@ -36,6 +35,22 @@ export function isActionable(text) {
     if (m && m[1] !== 'nothing.') return true;
   }
   return false;
+}
+
+/**
+ * Slice the `## Unreleased` window out of a CHANGELOG, from its heading to the next `## ` heading
+ * (of any kind) or the end of the text. Returns null when there is no `## Unreleased` heading, the
+ * ordinary case once a window has been cut and renamed to a version.
+ * @param {string} changelogText the full CHANGELOG.md text
+ * @returns {string | null}
+ */
+export function unreleasedWindow(changelogText) {
+  const heading = changelogText.match(/^## Unreleased\b.*$/m);
+  if (!heading) return null;
+  const afterHeading = (heading.index ?? 0) + heading[0].length;
+  const nextHeading = changelogText.slice(afterHeading).match(/^## .+$/m);
+  const end = nextHeading ? afterHeading + (nextHeading.index ?? 0) : changelogText.length;
+  return changelogText.slice(afterHeading, end);
 }
 
 /**
@@ -99,8 +114,7 @@ function readBaseline() {
     if (!Array.isArray(data) || data.some((x) => typeof x !== 'string')) throw new Error('not an array of strings');
     return /** @type {string[]} */ (data);
   } catch (e) {
-    console.error(`check-consumers-must: cannot read ${BASELINE_PATH}: ${e instanceof Error ? e.message : e}`);
-    return null;
+    throw new Error(`check-consumers-must: cannot read ${BASELINE_PATH}: ${e instanceof Error ? e.message : e}`);
   }
 }
 
@@ -110,10 +124,6 @@ function main() {
   const headingLine = changelog.split('\n').findIndex((l) => /^## Unreleased\b/.test(l)) + 1;
   const found = findOffGrammarLines(windowText);
   const baseline = readBaseline();
-  if (baseline === null) {
-    process.exitCode = 1;
-    return;
-  }
   const { added, stale } = compareBaseline(found, baseline);
 
   if (process.argv.includes('--update')) {
@@ -122,20 +132,19 @@ function main() {
     for (const l of added) console.log(`  + ${l.text}`);
     for (const s of stale) console.log(`  - ${s}`);
     console.log(`check-consumers-must: baseline rewritten (${next.length} entries, ${added.length} added, ${stale.length} removed)`);
-    return;
+    return [];
   }
 
   if (added.length === 0 && stale.length === 0) {
-    console.log(`check-consumers-must: OK (${found.length} legacy off-grammar lines, no new ones)`);
-    return;
+    console.log(`check-consumers-must: ${found.length} legacy off-grammar lines, no new ones`);
+    return [];
   }
-  console.error(`check-consumers-must: ${added.length} new off-grammar line(s), ${stale.length} stale baseline entr${stale.length === 1 ? 'y' : 'ies'}\n`);
-  for (const l of added) {
-    console.error(`  ${CHANGELOG_PATH}:${headingLine + l.line - 1}: ${l.reason}\n    ${l.text}`);
-  }
-  for (const s of stale) console.error(`  ${BASELINE_PATH}: stale entry (no longer in Unreleased)\n    ${s}`);
-  console.error('\nPut the line on grammar; `--update` is for a legacy line changed or removed.');
-  process.exitCode = 1;
+  return [
+    `check-consumers-must: ${added.length} new off-grammar line(s), ${stale.length} stale baseline entr${stale.length === 1 ? 'y' : 'ies'}\n`,
+    ...added.map((l) => `  ${CHANGELOG_PATH}:${headingLine + l.line - 1}: ${l.reason}\n    ${l.text}`),
+    ...stale.map((s) => `  ${BASELINE_PATH}: stale entry (no longer in Unreleased)\n    ${s}`),
+    '\nPut the line on grammar; `--update` is for a legacy line changed or removed.',
+  ];
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) main();
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) runCheck('check-consumers-must', main);

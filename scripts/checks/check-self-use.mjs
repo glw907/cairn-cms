@@ -41,10 +41,8 @@ import { readFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
-import { repoRoot } from '../repo-root.mjs';
 import { buildSurfaceModel } from './check-surface.mjs';
-
-const ROOT = repoRoot(import.meta.url);
+import { ROOT, runCheck } from './shared.mjs';
 const ALLOWLIST_PATH = resolve(ROOT, 'scripts/checks/check-self-use-allowlist.json');
 
 // The auth/security paths the showcase remedy is refused for, relative to ROOT. A directory
@@ -206,8 +204,8 @@ export function analyzeSurface(model) {
 /** @typedef {{ name: string, ledger?: string, "no-ledger-row"?: boolean, reason: string }} AllowlistEntry */
 
 /**
- * @returns {{ entries: AllowlistEntry[] } | null} null when the allowlist cannot be read or
- *   parsed (the diagnostic is already printed and `process.exitCode` set; the caller must stop)
+ * @returns {{ entries: AllowlistEntry[] }}
+ * @throws {Error} when the allowlist cannot be read or parsed; `runCheck` reports the message as the problem
  */
 function loadAllowlist() {
   /** @type {string} */
@@ -215,16 +213,12 @@ function loadAllowlist() {
   try {
     raw = readFileSync(ALLOWLIST_PATH, 'utf8');
   } catch (err) {
-    console.error(`check-self-use: could not read ${relative(ROOT, ALLOWLIST_PATH)}: ${err instanceof Error ? err.message : err}`);
-    process.exitCode = 1;
-    return null;
+    throw new Error(`check-self-use: could not read ${relative(ROOT, ALLOWLIST_PATH)}: ${err instanceof Error ? err.message : err}`);
   }
   try {
     return JSON.parse(raw);
   } catch (err) {
-    console.error(`check-self-use: ${relative(ROOT, ALLOWLIST_PATH)} is not valid JSON: ${err instanceof Error ? err.message : err}`);
-    process.exitCode = 1;
-    return null;
+    throw new Error(`check-self-use: ${relative(ROOT, ALLOWLIST_PATH)} is not valid JSON: ${err instanceof Error ? err.message : err}`);
   }
 }
 
@@ -298,16 +292,13 @@ export function formatViolations({ unlisted, unreasoned }) {
 function main() {
   const model = buildSurfaceModel();
   const analysis = analyzeSurface(model);
-  const allowlist = loadAllowlist();
-  if (!allowlist) return;
-  const { entries } = allowlist;
+  const { entries } = loadAllowlist();
   const result = findViolations(analysis, entries);
   if (result.ok) {
-    console.log(`check-self-use OK (${analysis.length} public exports, ${entries.length} allowlisted)`);
-    return;
+    console.log(`check-self-use: ${analysis.length} public exports, ${entries.length} allowlisted`);
+    return [];
   }
-  console.error(formatViolations(result));
-  process.exitCode = 1;
+  return [formatViolations(result)];
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await runCheck('check-self-use', main);

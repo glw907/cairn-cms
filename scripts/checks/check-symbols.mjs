@@ -39,13 +39,12 @@
 // surface shape with a real class here without being one; genuine collisions found while
 // building this gate are dispositioned in `check-symbols-allowlist.mjs`, each with a reason.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { resolve, dirname, join, relative } from 'node:path';
+import { resolve, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { ALLOWLIST } from './check-symbols-allowlist.mjs';
 import { TOOL_CHECK_IDS, RETIRED_TOOL_CHECK_IDS } from './tool-check-ids.mjs';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+import { ROOT, runCheck } from './shared.mjs';
 
 // The published docs this gate covers. An `optional` entry is skipped while it does not exist, since
 // a track being rebuilt can hold no page. Every other entry must exist: a missing root README or
@@ -476,14 +475,10 @@ export function findUnresolvedSymbols(root = ROOT) {
 function main() {
   const findings = findUnresolvedSymbols();
   if (findings.length === 0) {
-    console.log(`check-symbols: OK (${filesInScope().length} files, no unresolved symbol)`);
-    return;
+    console.log(`check-symbols: ${filesInScope().length} files, no unresolved symbol`);
+    return [];
   }
-  console.error(`check-symbols: ${findings.length} unresolved symbol(s)\n`);
-  for (const { file, line, class: cls, token } of findings) {
-    console.error(`  ${file}:${line}  [${cls}]  ${token}`);
-  }
-  process.exitCode = 1;
+  return findings.map(({ file, line, class: cls, token }) => `  ${file}:${line}  [${cls}]  ${token}`);
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) main();
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) await runCheck('check-symbols', main);

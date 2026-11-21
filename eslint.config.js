@@ -48,6 +48,7 @@ const SCRIPT_FILES = [
   'scripts/checks/gate-tier.mjs',
   'scripts/checks/registry.mjs',
   'scripts/checks/run.mjs',
+  'scripts/checks/shared.mjs',
   'scripts/ci/retries-notice.mjs',
   'scripts/ci/vitest-retry-reporter.mjs',
 ];

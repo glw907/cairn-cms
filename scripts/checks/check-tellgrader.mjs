@@ -18,10 +18,9 @@
 // the published tree; with paths it scans only those (the docs gate passes `--page`).
 import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
-import { resolve, dirname, relative, join } from "node:path";
+import { resolve, relative, join } from "node:path";
 import { fileURLToPath } from "node:url";
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+import { ROOT, runCheck } from "./shared.mjs";
 
 // Directories under docs/ that are not published pages, and the rolling ledger beside them.
 const UNPUBLISHED_DIRS = new Set(["internal", "plans"]);
@@ -68,9 +67,9 @@ function main() {
   const probe = spawnSync("tellgrader", ["--help"], { encoding: "utf8" });
   if (probe.error) {
     console.log(
-      "check:tellgrader: skipped, tellgrader is not installed (workstation tool)",
+      "check-tellgrader: skipped, tellgrader is not installed (workstation tool)",
     );
-    return;
+    return [];
   }
   const pages =
     process.argv.length > 2 ? process.argv.slice(2) : publishedPages();
@@ -84,25 +83,20 @@ function main() {
     });
     if (run.status === 0) continue;
     if (run.status !== 2) {
-      console.error(
+      return [
         `check:tellgrader: tellgrader failed on ${page}: ${run.stderr.trim()}`,
-      );
-      process.exitCode = 1;
-      return;
+      ];
     }
     failures.push(...gatingLines(JSON.parse(run.stdout)));
   }
   if (failures.length === 0) {
-    console.log(`check:tellgrader: OK (${pages.length} page(s))`);
-    return;
+    console.log(`check-tellgrader: ${pages.length} page(s)`);
   }
-  for (const line of failures) console.error(line);
-  console.error(`check:tellgrader: ${failures.length} gating finding(s)`);
-  process.exitCode = 1;
+  return failures;
 }
 
 if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 )
-  main();
+  await runCheck("check-tellgrader", main);

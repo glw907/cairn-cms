@@ -3,10 +3,10 @@
 // naming each field one has and the other lacks. A property that holds further properties is a
 // group, not a field: only its leaves need a row.
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCHEMA = 'schema/cairn-site-1.schema.json';
 const PAGE = 'docs/admin/site-record.md';
 
@@ -63,15 +63,12 @@ export function checkSiteRecordPage(schema, markdown) {
 function main() {
   const schema = JSON.parse(readFileSync(resolve(ROOT, SCHEMA), 'utf8'));
   const problems = checkSiteRecordPage(schema, readFileSync(resolve(ROOT, PAGE), 'utf8'));
-  if (problems.length > 0) {
-    console.error(`check-site-record-page: ${problems.length} problem(s)`);
-    for (const p of problems) console.error(`  ${p}`);
-    process.exitCode = 1;
-    return;
+  if (problems.length === 0) {
+    console.log(`check-site-record-page: ${schemaFields(schema).length} fields, each with a row in ${PAGE}`);
   }
-  console.log(`check-site-record-page: OK (${schemaFields(schema).length} fields, each with a row in ${PAGE})`);
+  return problems.map((p) => `  ${p}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  await runCheck('check-site-record-page', main);
 }

@@ -6,11 +6,11 @@
 // marker; a patch carries none. The core is a pure function so the test calls it directly; the CLI
 // reads the files and prints the terse pass/fail line.
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isActionable, unreleasedWindow } from './check-consumers-must.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const RULE = 'a minor is for a new subsystem or a breaking change, a patch is everything else; every minor or major carries a release-size marker';
 
 // A version heading: `X.Y.Z`, optionally with a SemVer prerelease suffix (`0.94.0-rc.1`). Build
@@ -222,14 +222,11 @@ function main() {
   const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
   const changelog = readFileSync(resolve(ROOT, 'CHANGELOG.md'), 'utf8');
   const result = checkVersion(pkg.version, changelog);
-  if (!result.ok) {
-    console.error(`check-version: ${result.error}`);
-    process.exitCode = 1;
-    return;
-  }
-  console.log(`check-version: OK (${result.bump})`);
+  if (!result.ok) return [`check-version: ${result.error}`];
+  console.log(`check-version: ${result.bump}`);
+  return [];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  await runCheck('check-version', main);
 }

@@ -8,8 +8,8 @@ cd "$(dirname "$0")/../.."
 
 echo "== eslint (TSDoc structure + the em-dash ban on src/lib, the showcase, and the named scripts) =="
 if npx --no-install eslint src/lib examples/showcase/src examples/showcase/e2e scripts/checks/close-prebuilt.mjs scripts/checks/gate-tier.mjs scripts/checks/registry.mjs scripts/checks/run.mjs scripts/checks/shared.mjs scripts/ci/retries-notice.mjs scripts/ci/vitest-retry-reporter.mjs; then
-  echo "check:comments OK"
+  echo "check-comments: OK"
 else
-  echo "check:comments FAILED"
+  echo "check-comments: FAIL"
   exit 1
 fi

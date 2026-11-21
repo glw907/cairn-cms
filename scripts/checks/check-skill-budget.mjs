@@ -15,7 +15,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { repoRoot } from '../repo-root.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
 /** The ratified ceiling for each skill's always-loaded core. */
 export const SKILL_BUDGET_TOKENS = 3500;
@@ -291,44 +291,36 @@ async function actualTierMap(root) {
 }
 
 async function main() {
-  const root = repoRoot(import.meta.url);
+  const root = ROOT;
   const { ok, results } = checkAllSkillBudgets(root);
+  /** @type {string[]} */
+  const problems = [];
   for (const result of results) {
     if (result.ok) {
-      console.log(`check-skill-budget: ${result.path} OK (${result.tokens}/${result.budget} estimated tokens)`);
+      console.log(`check-skill-budget: ${result.path} within budget (${result.tokens}/${result.budget} estimated tokens)`);
     } else {
-      console.error(`check-skill-budget: ${result.path}: ${result.error}`);
+      problems.push(`check-skill-budget: ${result.path}: ${result.error}`);
     }
   }
-  const formProblems = checkSkillForm(root);
-  for (const problem of formProblems) console.error(`check-skill-budget: ${problem}`);
-  if (!ok || formProblems.length > 0) {
-    process.exitCode = 1;
-    return;
-  }
+  for (const problem of checkSkillForm(root)) problems.push(`check-skill-budget: ${problem}`);
+  if (!ok || problems.length > 0) return problems;
 
   if (!results.some((r) => shouldCheckTierMap(r.path))) {
     console.log('check-skill-budget: tier map skipped (cairn-building-admin-screens not packaged)');
-    return;
+    return [];
   }
   if (!distRulesAvailable(root)) {
     console.log('check-skill-budget: tier map skipped (dist/ absent; run npm run package first)');
-    return;
+    return [];
   }
 
   const text = readFileSync(resolve(root, ADMIN_SCREENS_PATH), 'utf8');
   const tierMapResult = checkTierMap(parseTierMap(text), await actualTierMap(root));
-  if (!tierMapResult.ok) {
-    console.error(`check-skill-budget: ${tierMapResult.error}`);
-    process.exitCode = 1;
-    return;
-  }
+  if (!tierMapResult.ok) return [`check-skill-budget: ${tierMapResult.error}`];
   console.log('check-skill-budget: tier map matches the rule registries');
+  return [];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch((err) => {
-    console.error(`check-skill-budget: ${err instanceof Error ? err.message : String(err)}`);
-    process.exitCode = 1;
-  });
+  await runCheck('check-skill-budget', main);
 }

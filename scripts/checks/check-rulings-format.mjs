@@ -3,10 +3,10 @@
 // entry must name the evidence that would reopen it. A ruling with no reopen condition is a decision
 // nobody can revisit, and the ledger keeps only rulings a session might need to revisit.
 import { readFileSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const LEDGER_PATH = 'docs/internal/engine-rulings.md';
 
 const ENTRY_HEADING = /^## /;
@@ -77,13 +77,8 @@ const MESSAGES = {
 function main() {
   const entries = parseEntries(readFileSync(join(ROOT, LEDGER_PATH), 'utf8'));
   const problems = findFormatProblems(entries);
-  if (problems.length === 0) {
-    console.log(`check-rulings-format: OK (${entries.length} entries)`);
-    return;
-  }
-  console.error(`check-rulings-format: ${problems.length} problem(s)\n`);
-  for (const p of problems) console.error(`  ${LEDGER_PATH}:${p.line}: ${p.text}: ${MESSAGES[p.kind]}`);
-  process.exitCode = 1;
+  if (problems.length === 0) console.log(`check-rulings-format: ${entries.length} entries`);
+  return problems.map((p) => `  ${LEDGER_PATH}:${p.line}: ${p.text}: ${MESSAGES[p.kind]}`);
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) main();
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) await runCheck('check-rulings-format', main);

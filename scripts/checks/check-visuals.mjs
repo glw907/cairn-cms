@@ -19,11 +19,10 @@
 // package`) imports the built `dist/reproductions/manifest.js`. A caller that already has both in
 // hand (a test, importing straight from source under vitest) can call the scan functions directly.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { resolve, dirname, join, relative } from 'node:path';
+import { resolve, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+import { ROOT, runCheck } from './shared.mjs';
 
 // The published docs directories plus the front-door index. `docs/internal` is a contributor zone
 // with its filing rules, not a published page set, so it stays out of this gate the same way it
@@ -364,18 +363,9 @@ async function main() {
   console.log(
     `check-visuals: scanned ${filesScanned} file(s), found ${diagrams} diagram(s), ${repros} repro(s), and ${images} image(s)`,
   );
-  if (violations.length === 0) {
-    console.log('check-visuals: OK');
-    return;
-  }
-  console.error(`check-visuals: ${violations.length} violation(s)`);
-  for (const v of violations) console.error(`  ${v.message}`);
-  process.exitCode = 1;
+  return violations.map((v) => `  ${v.message}`);
 }
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-  main().catch((err) => {
-    console.error(err);
-    process.exitCode = 1;
-  });
+  await runCheck('check-visuals', main);
 }

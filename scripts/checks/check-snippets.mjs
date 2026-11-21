@@ -61,11 +61,9 @@ import ts from 'typescript';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
 import { surfaceSubpaths } from './check-surface.mjs';
-
-const ROOT = repoRoot(import.meta.url);
+import { ROOT, runCheck } from './shared.mjs';
 // The published docs directories, each walked when it exists (a track being rebuilt can hold no
 // page), and the root migration notes, which must exist.
 const DOC_DIRS = ['docs/admin', 'docs/editors'];
@@ -541,27 +539,28 @@ function main() {
   );
 
   if (skipped.length) {
-    console.log(`check:snippets: ${skipped.length} opted-out block(s):`);
+    console.log(`check-snippets: ${skipped.length} opted-out block(s):`);
     for (const s of skipped) console.log(`  ${s.file}:${s.fenceLine}  ${s.reason}`);
   }
 
   if (problems.length === 0) {
     console.log(
-      `check:snippets: OK (${units.length} block(s) typechecked, ${skipped.length} opted out, ${excluded} excluded as declaration-only or scriptless)`,
+      `check-snippets: ${units.length} block(s) typechecked, ${skipped.length} opted out, ${excluded} excluded as declaration-only or scriptless`,
     );
-    return;
+    return [];
   }
 
-  console.error(`check:snippets: ${problems.length} problem(s) across ${units.length} checked block(s)\n`);
+  /** @type {string[]} */
+  const lines = [];
   let last = '';
   for (const p of problems) {
     if (p.file !== last) {
-      console.error(`  ${p.file}`);
+      lines.push(`  ${p.file}`);
       last = p.file;
     }
-    console.error(`    :${p.line}  ${p.message.split('\n')[0]}`);
+    lines.push(`    :${p.line}  ${p.message.split('\n')[0]}`);
   }
-  process.exitCode = 1;
+  return lines;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await runCheck('check-snippets', main);

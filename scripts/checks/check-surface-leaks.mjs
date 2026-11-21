@@ -24,11 +24,9 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
-import { repoRoot } from '../repo-root.mjs';
 import { moduleExports } from './dts-exports.mjs';
 import { buildSurfaceModel, surfaceSubpaths } from './check-surface.mjs';
-
-const ROOT = repoRoot(import.meta.url);
+import { ROOT, runCheck } from './shared.mjs';
 const REGISTRY_PATH = resolve(ROOT, 'scripts/checks/check-surface-leaks.json');
 
 // --- the known type universe: every type/interface/enum src/lib declares, exported or not -----
@@ -387,8 +385,8 @@ export function formatLeakViolations({ unrecorded, stale, unreasoned }) {
 
 /**
  * Read and parse the leak registry.
- * @returns {RegistryEntry[] | null} null when the registry cannot be read or parsed (the
- *   diagnostic is already printed and `process.exitCode` set; the caller must stop)
+ * @returns {RegistryEntry[]}
+ * @throws {Error} when the registry cannot be read or parsed; `runCheck` reports the message as the problem
  */
 function loadRegistry() {
   /** @type {string} */
@@ -396,16 +394,12 @@ function loadRegistry() {
   try {
     raw = readFileSync(REGISTRY_PATH, 'utf8');
   } catch (err) {
-    console.error(`check-surface-leaks: could not read ${relative(ROOT, REGISTRY_PATH)}: ${err instanceof Error ? err.message : err}`);
-    process.exitCode = 1;
-    return null;
+    throw new Error(`check-surface-leaks: could not read ${relative(ROOT, REGISTRY_PATH)}: ${err instanceof Error ? err.message : err}`);
   }
   try {
     return JSON.parse(raw).leaks ?? [];
   } catch (err) {
-    console.error(`check-surface-leaks: ${relative(ROOT, REGISTRY_PATH)} is not valid JSON: ${err instanceof Error ? err.message : err}`);
-    process.exitCode = 1;
-    return null;
+    throw new Error(`check-surface-leaks: ${relative(ROOT, REGISTRY_PATH)} is not valid JSON: ${err instanceof Error ? err.message : err}`);
   }
 }
 
@@ -413,14 +407,12 @@ function main() {
   const model = buildSurfaceModel();
   const derived = deriveLeaks(model);
   const registry = loadRegistry();
-  if (!registry) return;
   const result = findLeakViolations(derived, registry);
   if (result.ok) {
-    console.log(`check-surface-leaks: OK (${derived.length} recorded leaks)`);
-    return;
+    console.log(`check-surface-leaks: ${derived.length} recorded leaks`);
+    return [];
   }
-  console.error(formatLeakViolations(result));
-  process.exitCode = 1;
+  return [formatLeakViolations(result)];
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await runCheck('check-surface-leaks', main);

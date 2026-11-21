@@ -15,8 +15,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { moduleExports } from './dts-exports.mjs';
 import { surfaceSubpaths } from './check-surface.mjs';
-
-const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
+import { ROOT, runCheck } from './shared.mjs';
 
 /** @typedef {'Extension' | 'Unstable' | 'Scaffold'} Tier */
 
@@ -88,12 +87,9 @@ function main() {
     const summary = Object.entries(counts)
       .map(([tier, count]) => `${count} ${tier}`)
       .join(', ');
-    console.log(`check:tiers: OK (${entries.length} exports: ${summary})`);
-    return;
+    console.log(`check-tiers: ${entries.length} exports: ${summary}`);
   }
-  for (const failure of failures) console.error(`check:tiers: ${failure}`);
-  console.error(`check:tiers: ${failures.length} defect(s)`);
-  process.exitCode = 1;
+  return failures.map((failure) => `check:tiers: ${failure}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await runCheck('check-tiers', main);

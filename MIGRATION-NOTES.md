@@ -229,6 +229,8 @@ A site that `cairn new` wrote before this release has no `cairn-site.json`, so `
 
 A `cairn new` setup that an older `cairn` began and a newer one resumes past the scaffold step stops, because the site has no record. Start that setup again.
 
+The theme check's text output now ends with one `check:theme: OK` or `check:theme: FAIL` line. A usage error or a thrown error exits 1, where it exited 2, and the `--catalog` lines for a missing theme or manifest go to stderr. A valid `--json` run is unchanged. A script that tests for exit 2, or reads those catalog lines from stdout, should test for a non-zero exit and read stderr. A site needs nothing otherwise.
+
 ## 0.99.0-rc.4
 
 This release has no upgrade path from an earlier version. Rebuild the site from `create-cairn-site`,

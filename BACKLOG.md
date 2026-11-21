@@ -6,6 +6,18 @@
 
 ## Medium
 
+- [ ] **#570** The scripts under `scripts/theme/`, `scripts/catalog/` and `scripts/build/` still compute their repo root inline `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
+  `shared.mjs` serves only `scripts/checks`, so these scripts keep their own `resolve(dirname(fileURLToPath(...)))` lines beside `repoRoot` in `scripts/repo-root.mjs`. Found by `checks-2` (PR #262). Placement: `stock-1` (round 5) for `scripts/build`, which it deletes; a tidy pass for the rest.
+
+- [ ] **#569** Some converted checks print an old self-name line above the new verdict line `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
+  `scripts/checks/check-surface.mjs:355` and `:376`, and `check-surface-leaks.mjs:363`, still open a problem line with `check-surface:` or `check-surface-leaks:`, so a failed run prints that name twice, once as the problem and once as `<name>: FAIL`. Found by `checks-2` (PR #262). Placement: a tidy pass.
+
+- [ ] **#568** `npx eslint` does not flag an unused binding in `scripts/checks/*.mjs` `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
+  `scripts/checks/check-version.mjs:177` destructures `pPatch` and never reads it, and the lint stays green. A rule such as `no-unused-vars` for these scripts would catch it. Found by `checks-2` (PR #262). Placement: a tidy pass, as a lint-config change.
+
+- [ ] **#567** A script is linted only when both `check-comments.sh` and `eslint.config.js` `SCRIPT_FILES` name it `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
+  The two lists drift: `scripts/checks/shared.mjs` was in neither until `checks-2` added it to both. Derive one list from the other, or add the rule to `durable-gotchas.md` under `cairn-writing-engine-code`. Found by `checks-2` (PR #262). Placement: a tidy pass.
+
 - [ ] **#563** `scripts/checks/close-prebuilt.mjs` holds only `missingInstalls`, kept for the release preflight `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*
   The held `scripts/release/preflight.mjs:14` imports `missingInstalls` from it, so the file stays a one-export module with a name its content no longer matches. Found by `checks-1` (PR #261). Placement: the next release pass that touches `scripts/release/`; move the function beside the preflight and delete the file.
 - [ ] **#564** No test pins that a docs-gate or row run never checks the installs, and `--page` can leave a docs-gate run empty `#improvement` `#cairn-cms` `#tooling` *(2026-11-20)*

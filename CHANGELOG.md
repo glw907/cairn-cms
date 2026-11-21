@@ -98,7 +98,7 @@ Consumers must: keep the site config at `src/site/site.config.yaml`, the only pa
 
 Consumers must: replace an `uppercase` class on an eyebrow with the `eyebrow-case` utility and set the case through `--cairn-eyebrow-case`, and use `--cairn-scroll-cue` for the code block's scroll cue.
 
-- **The theme check's text output ends with one verdict line.** After the per-theme lines, `check:theme: OK` or `check:theme: FAIL` closes the run. A usage error now exits 1, where it exited 2. `--json` output is unchanged.
+- **The theme check's text output ends with one verdict line.** After the per-theme lines, `check:theme: OK` or `check:theme: FAIL` closes the run. A usage error or a thrown error now exits 1, where it exited 2, and the `--catalog` problem lines for a missing theme or manifest go to stderr. A valid `--json` run is unchanged.
 
   Consumers must: nothing.
 

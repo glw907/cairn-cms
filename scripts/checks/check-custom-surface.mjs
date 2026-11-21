@@ -15,9 +15,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
-import { repoRoot } from '../repo-root.mjs';
-
-const ROOT = repoRoot(import.meta.url);
+import { ROOT, runCheck } from './shared.mjs';
 
 /**
  * The css with every `/* … *\/` comment blanked to whitespace. The signal scans below brace-match and
@@ -209,18 +207,14 @@ export function evaluate(tree, budget) {
 
 function main() {
   const budget = JSON.parse(readFileSync(resolve(ROOT, 'scripts/checks/custom-surface-budget.json'), 'utf8'));
-  let failed = false;
+  /** @type {string[]} */
+  const problems = [];
   for (const [name, tree] of Object.entries(budget.trees)) {
     const { pass, failures } = evaluate(tree, tree.budget);
-    if (pass) {
-      console.log(`custom-surface [${name}]: PASS`);
-    } else {
-      console.error(`custom-surface [${name}]: FAIL`);
-      for (const f of failures) console.error(`  ${f}`);
-      failed = true;
-    }
+    if (pass) console.log(`custom-surface [${name}]: clean`);
+    else problems.push(`custom-surface [${name}]: FAIL`, ...failures.map((f) => `  ${f}`));
   }
-  if (failed) process.exitCode = 1;
+  return problems;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) runCheck('check-custom-surface', main);

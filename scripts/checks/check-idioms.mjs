@@ -82,9 +82,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, relative, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
-import { repoRoot } from '../repo-root.mjs';
-
-const ROOT = repoRoot(import.meta.url);
+import { ROOT, runCheck } from './shared.mjs';
 const FIXTURES_PREFIX = 'scripts/checks/fixtures/';
 
 // Assembled, not written as the literal substring, so this file never itself contains the exact
@@ -497,12 +495,11 @@ function main() {
   const total = Object.values(violations).reduce((n, hits) => n + hits.length, 0);
   if (total === 0) {
     console.log(
-      'check-idioms: OK (2-space indentation, no direct process.exit calls in scripts/checks, one self-identity spelling per gate, no planning paths, pass-scoped references, or consumer hostnames in src/lib, no unescaped as-never casts in src/tests, no files in the retired planning folder)',
+      'check-idioms: 2-space indentation, no direct process.exit calls in scripts/checks, one self-identity spelling per gate, no planning paths, pass-scoped references, or consumer hostnames in src/lib, no unescaped as-never casts in src/tests, no files in the retired planning folder',
     );
-    return;
+    return [];
   }
-  console.error(formatViolations(violations));
-  process.exitCode = 1;
+  return [formatViolations(violations)];
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) runCheck('check-idioms', main);

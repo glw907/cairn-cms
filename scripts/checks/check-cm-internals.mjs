@@ -7,9 +7,8 @@ import { readFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
-import { repoRoot } from '../repo-root.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = repoRoot(import.meta.url);
 // Three regexes with three jobs. TOKEN is GLOBAL (for matchAll) and must never be reused for `.test()`
 // (a global regex's .test() advances lastIndex and is stateful across calls). HAS_CM is the stateless
 // boolean for the staleness guard. DYNAMIC catches a dynamically composed CHROME name; cairn's
@@ -64,13 +63,7 @@ function main() {
   }
   const files = allow.enumeratedFiles.map((rel) => ({ path: rel, source: readFileSync(resolve(ROOT, rel), 'utf8') }));
   const all = [...failures, ...evaluate(files, allow).failures];
-  if (all.length === 0) {
-    console.log('cm-internals: PASS');
-    return;
-  }
-  console.error('cm-internals: FAIL');
-  for (const f of all) console.error(`  ${f}`);
-  process.exitCode = 1;
+  return all.map((f) => `  ${f}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) runCheck('check-cm-internals', main);

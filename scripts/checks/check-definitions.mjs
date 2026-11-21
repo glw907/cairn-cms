@@ -4,11 +4,10 @@
 // file, reporting the definitions' problems and the per-file drift in one run, so an edit to
 // definitions/ that forgets to regenerate is a red gate.
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSchemas, definitionProblems, readDefinitions } from '../build/emit-definitions.mjs';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+import { ROOT, runCheck } from './shared.mjs';
 
 /**
  * Checks the definitions and every schema generated from them.
@@ -26,12 +25,9 @@ export function checkDefinitions(root) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const problems = checkDefinitions(ROOT);
-  if (problems.length > 0) {
-    console.error(`check-definitions: ${problems.length} problem(s)`);
-    for (const problem of problems) console.error(`  ${problem}`);
-    process.exitCode = 1;
-  } else {
-    console.log('check-definitions: OK (4 schemas match definitions/)');
-  }
+  runCheck('check-definitions', () => {
+    const problems = checkDefinitions(ROOT);
+    if (problems.length === 0) console.log('check-definitions: 4 schemas match definitions/');
+    return problems.map((problem) => `  ${problem}`);
+  });
 }

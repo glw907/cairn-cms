@@ -227,7 +227,7 @@ describe('editorQuotesReport, by whether docs/editors holds a page', () => {
   it('passes a rebuilt page whose quote a shipped string grounds', () => {
     expect(editorQuotesReport(tree({ [PAGE]: SAMPLE_PAGE }))).toEqual({
       ok: true,
-      lines: ['check-editor-quotes: OK (1 quotes grounded)'],
+      lines: ['check-editor-quotes: 1 quotes grounded'],
     });
   });
 

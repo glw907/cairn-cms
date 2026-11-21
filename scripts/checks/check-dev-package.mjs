@@ -14,10 +14,9 @@
 // Wired as `npm run check:dev-package`. Exits non-zero if any check fails.
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+import { ROOT, runCheck } from './shared.mjs';
 const TSCONFIG = 'packages/cairn-cms-dev/tsconfig.json';
 const ESLINT_PATH = 'packages/cairn-cms-dev/src';
 const MANIFEST = 'packages/cairn-cms-dev/package.json';
@@ -158,22 +157,21 @@ function run(label, args) {
   return result.status === 0;
 }
 
-/** Run every check, then report and set a failing exit code when any check failed. */
+/**
+ * Run every check and return one problem per step that failed; each step has already printed its detail.
+ * @returns {string[]}
+ */
 function main() {
-  const tscOk = run('tsc --noEmit (dev-package types)', ['tsc', '--noEmit', '-p', TSCONFIG]);
-  const lintOk = run('eslint (TSDoc structure + the em-dash ban on the dev-package)', ['eslint', ESLINT_PATH]);
-  const manifestOk = checkManifest();
-  const versionOk = checkVersion();
-  const distOk = checkDist();
-
-  if (tscOk && lintOk && manifestOk && versionOk && distOk) {
-    console.log('check:dev-package OK');
-  } else {
-    console.log('check:dev-package FAILED');
-    process.exitCode = 1;
-  }
+  const steps = [
+    ['tsc --noEmit', run('tsc --noEmit (dev-package types)', ['tsc', '--noEmit', '-p', TSCONFIG])],
+    ['eslint', run('eslint (TSDoc structure + the em-dash ban on the dev-package)', ['eslint', ESLINT_PATH])],
+    ['package manifest', checkManifest()],
+    ['version match', checkVersion()],
+    ['dist-only exports and files', checkDist()],
+  ];
+  return steps.filter(([, ok]) => !ok).map(([step]) => `check-dev-package: ${step} failed`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  runCheck('check-dev-package', main);
 }

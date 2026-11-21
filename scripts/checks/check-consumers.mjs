@@ -27,10 +27,9 @@
 // non-zero, so a worktree run fails LOUD with a concrete next step (`cd examples/showcase && npm
 // install`, or trust CI's clean checkout) rather than silently passing or silently misreporting.
 import { spawnSync } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SHOWCASE = resolve(ROOT, 'examples/showcase');
 
 /**
@@ -47,24 +46,27 @@ function run(label, command, args, cwd) {
   return result.status === 0;
 }
 
-const showcaseOk = run('showcase svelte-check (consumer typecheck)', 'npm', ['run', 'check'], SHOWCASE);
-
-if (!showcaseOk) {
-  console.log(
-    '\ncheck:consumers: the showcase typecheck failed. If this is a feature worktree whose ' +
-      'examples/showcase/node_modules still shares the root symlink (never locally `npm ' +
-      'install`-ed inside examples/showcase), the errors above may be the known dual vite/kit ' +
-      'install collision (ROADMAP "Small DX debt") rather than a real regression: run `cd ' +
-      'examples/showcase && npm install` and retry, or trust a clean checkout / CI. This script ' +
-      'does not suppress the failure either way.'
-  );
+/**
+ * Typecheck both consumers and return a problem for each that fails.
+ * @returns {string[]}
+ */
+function checkConsumers() {
+  /** @type {string[]} */
+  const problems = [];
+  const showcaseOk = run('showcase svelte-check (consumer typecheck)', 'npm', ['run', 'check'], SHOWCASE);
+  if (!showcaseOk) {
+    problems.push(
+      '\ncheck:consumers: the showcase typecheck failed. If this is a feature worktree whose ' +
+        'examples/showcase/node_modules still shares the root symlink (never locally `npm ' +
+        'install`-ed inside examples/showcase), the errors above may be the known dual vite/kit ' +
+        'install collision (ROADMAP "Small DX debt") rather than a real regression: run `cd ' +
+        'examples/showcase && npm install` and retry, or trust a clean checkout / CI. This script ' +
+        'does not suppress the failure either way.'
+    );
+  }
+  const devPackageOk = run('packages/cairn-cms-dev typecheck (via check:dev-package)', 'npm', ['run', 'check:dev-package'], ROOT);
+  if (!devPackageOk) problems.push('check:consumers: the packages/cairn-cms-dev typecheck failed.');
+  return problems;
 }
 
-const devPackageOk = run('packages/cairn-cms-dev typecheck (via check:dev-package)', 'npm', ['run', 'check:dev-package'], ROOT);
-
-if (showcaseOk && devPackageOk) {
-  console.log('check:consumers OK');
-} else {
-  console.log('check:consumers FAILED');
-  process.exitCode = 1;
-}
+runCheck('check-consumers', checkConsumers);

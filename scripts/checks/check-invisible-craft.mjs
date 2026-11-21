@@ -37,9 +37,8 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scopeReport } from './audit-gate.mjs';
-import { repoRoot } from '../repo-root.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = repoRoot(import.meta.url);
 const RULE_IDS = [
   'gap-scale',
   'token-colors',
@@ -108,14 +107,14 @@ async function main() {
       (candidate) => existsSync(resolve(ROOT, candidate))
     );
     const report = scopeReport(runStatic(config, staticRules().filter((rule) => !rule.publicScope)), RULE_IDS);
+    if (exitCodeFor(report) !== 0) return [formatReport(report)];
     console.log(formatReport(report));
-    process.exitCode = exitCodeFor(report);
+    return [];
   } catch (err) {
-    console.error(`check-invisible-craft: ${err instanceof Error ? err.message : String(err)}`);
-    process.exitCode = 2;
+    return [`check-invisible-craft: ${err instanceof Error ? err.message : String(err)}`];
   }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  runCheck('check-invisible-craft', main);
 }

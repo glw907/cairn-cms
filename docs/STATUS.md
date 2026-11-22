@@ -15,10 +15,12 @@ Dev snapshots (engine 0.99.0-dev.2) stay on `gate`; nothing new is published. Th
 rebuilds the `cairn` command inside the engine package.
 
 <!-- round-report route -->
-Round `checks` is closing: `checks-1` landed (#261), `checks-2` waits for Geoff's merge approval (#262, one held-file edit), and `checks-3` is dropped on Geoff's answer in this session on 2026-11-20.
-Open documents: `20261121-021448-0d08c4` (merge of #262).
+Cairn route, round checks: one list of checks and one runner have landed, and CI still calls its own commands
+Round `checks` has closed. `checks-1` (#261) made `scripts/checks/registry.mjs` the one list with `run.mjs` as its runner, and `checks-2` (#262) gave every check script one form. `checks-3`, which makes CI call the runner, was dropped on Geoff's answer. Nothing waits for Geoff.
+
+Open documents: none (report `20261122-002054-18a85a` sent).
 Resume from: /var/home/glw907/Projects/initiatives/theme-garden/plans/2026-11-17-route-checks-conductor-prompt.txt
-Next launch: none until the document is answered; then the round report.
+Next launch: /var/home/glw907/Projects/initiatives/theme-garden/plans/2026-11-17-route-surface-conductor-prompt.txt (round `surface`; the desk launches it once its start line holds).
 <!-- /round-report -->
 
 <!-- round-report pennant -->

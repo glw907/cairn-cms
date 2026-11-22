@@ -8,10 +8,9 @@
 // module.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { resolve, dirname, posix as posixPath } from 'node:path';
+import { resolve, posix as posixPath } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+import { ROOT, runCheck } from './shared.mjs';
 
 // One .sql migration under migrations/ is the floor. The auth store cannot be provisioned without
 // them, and they reach a registry consumer only through the packed tarball (no repo checkout).
@@ -437,68 +436,53 @@ function main() {
 
   const migrationsResult = checkPackageFiles(files);
   if (!migrationsResult.ok) {
-    console.error(`check-package-files: ${migrationsResult.error}`);
-    process.exitCode = 1;
-    return;
+    return [`check-package-files: ${migrationsResult.error}`];
   }
 
   const docsResult = checkDocsPacked(files, requiredDocsPaths(ROOT));
   if (!docsResult.ok) {
-    console.error(`check-package-files: ${docsResult.error}`);
-    process.exitCode = 1;
-    return;
+    return [`check-package-files: ${docsResult.error}`];
   }
 
   const skillResult = checkSkillPacked(files);
   if (!skillResult.ok) {
-    console.error(`check-package-files: ${skillResult.error}`);
-    process.exitCode = 1;
-    return;
+    return [`check-package-files: ${skillResult.error}`];
   }
 
   const claudeTreeResult = checkClaudeTreePacked(files);
   if (!claudeTreeResult.ok) {
-    console.error(`check-package-files: ${claudeTreeResult.error}`);
-    process.exitCode = 1;
-    return;
+    return [`check-package-files: ${claudeTreeResult.error}`];
   }
 
   const templateResult = checkTemplatePacked(files);
   if (!templateResult.ok) {
-    console.error(`check-package-files: ${templateResult.error}`);
-    process.exitCode = 1;
-    return;
+    return [`check-package-files: ${templateResult.error}`];
   }
 
   const reachable = reachableRuleBasenames(ROOT);
   const reachabilityResult = checkRuleReachability(files, reachable.static);
   if (!reachabilityResult.ok) {
-    console.error(`check-package-files: ${reachabilityResult.error}`);
-    process.exitCode = 1;
-    return;
+    return [`check-package-files: ${reachabilityResult.error}`];
   }
 
   // The only check here that reads the exports map rather than the packed file list.
   const packageJson = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
   const workerResult = checkWorkerCondition(packageJson.exports);
   if (!workerResult.ok) {
-    console.error(`check-package-files: ${workerResult.error}`);
-    process.exitCode = 1;
-    return;
+    return [`check-package-files: ${workerResult.error}`];
   }
 
   const apiSurfaceResult = checkApiSurfacePacked(files);
   if (!apiSurfaceResult.ok) {
-    console.error(`check-package-files: ${apiSurfaceResult.error}`);
-    process.exitCode = 1;
-    return;
+    return [`check-package-files: ${apiSurfaceResult.error}`];
   }
 
   console.log(
-    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the migration notes and schemas packed, the packaged skill packed, the API surface snapshot packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
+    `check-package-files: ${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the migration notes and schemas packed, the packaged skill packed, the API surface snapshot packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated`
   );
+  return [];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  runCheck('check-package-files', main);
 }

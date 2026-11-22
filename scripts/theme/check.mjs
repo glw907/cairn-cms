@@ -12,6 +12,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
+import { runCheck } from '../checks/shared.mjs';
 import { STATIC_RULES, themeContext } from './check-rules.mjs';
 
 const ROOT = repoRoot(import.meta.url);
@@ -102,6 +103,13 @@ function print(result) {
   for (const note of result.notes) console.log(`  note ${note.rule}  ${note.message}`);
 }
 
+/**
+ * Run the check over the arguments. A text run ends through `runCheck` with its verdict line. A
+ * valid `--json` run prints the document alone and sets the exit code itself, so stdout stays one
+ * JSON document; a usage error or a throw goes through `runCheck` in either mode.
+ * @param {string[]} args the command-line arguments after the script name
+ * @returns {Promise<void>}
+ */
 async function main(args) {
   const json = args.includes('--json');
   const catalog = args.includes('--catalog');
@@ -109,31 +117,39 @@ async function main(args) {
   const rules = rulesAt >= 0 ? (args[rulesAt + 1] ?? '').split(',').filter(Boolean) : undefined;
   const positional = args.filter((arg, i) => !arg.startsWith('--') && args[i - 1] !== '--rules');
   if (catalog === (positional.length > 0) || (catalog && json)) {
-    console.error('usage: check.mjs <themeDir> [--json] [--rules <ids>]\n       check.mjs --catalog');
-    return 2;
+    return runCheck('check:theme', () => ['usage: check.mjs <themeDir> [--json] [--rules <ids>]\n       check.mjs --catalog']);
   }
-  try {
-    if (!catalog) {
+  if (json) {
+    try {
       const result = await checkTheme(positional[0], { rules });
-      if (json) console.log(JSON.stringify(result, null, 2));
-      else print(result);
-      return result.verdict === 'pass' ? 0 : 1;
+      console.log(JSON.stringify(result, null, 2));
+      process.exitCode = result.verdict === 'pass' ? 0 : 1;
+    } catch (error) {
+      await runCheck('check:theme', () => [`check:theme: ${error instanceof Error ? error.message : String(error)}`]);
     }
-    const { dirs, problems } = catalogThemes();
-    for (const problem of problems) console.log(`check:theme: ${problem}`);
-    let failed = problems.length > 0;
-    for (const { dir } of dirs) {
-      const result = await checkTheme(dir, { rules });
-      print(result);
-      if (result.verdict === 'fail') failed = true;
-    }
-    return failed ? 1 : 0;
-  } catch (error) {
-    console.error(`check:theme: ${error instanceof Error ? error.message : String(error)}`);
-    return 2;
+    return;
   }
+  await runCheck('check:theme', async () => {
+    try {
+      if (!catalog) {
+        const result = await checkTheme(positional[0], { rules });
+        print(result);
+        return result.verdict === 'pass' ? [] : [`${result.theme} failed`];
+      }
+      const { dirs, problems } = catalogThemes();
+      const found = problems.map((problem) => `check:theme: ${problem}`);
+      for (const { dir } of dirs) {
+        const result = await checkTheme(dir, { rules });
+        print(result);
+        if (result.verdict === 'fail') found.push(`${result.theme} failed`);
+      }
+      return found;
+    } catch (error) {
+      return [`check:theme: ${error instanceof Error ? error.message : String(error)}`];
+    }
+  });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  process.exitCode = await main(process.argv.slice(2));
+  await main(process.argv.slice(2));
 }

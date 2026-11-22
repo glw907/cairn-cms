@@ -29,9 +29,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
-import { repoRoot } from '../repo-root.mjs';
-
-const ROOT = repoRoot(import.meta.url);
+import { ROOT, runCheck } from './shared.mjs';
 const EDITORS_DIR = 'docs/editors';
 const DOC = 'docs/editors/when-something-goes-wrong.md';
 
@@ -270,7 +268,7 @@ export function editorQuotesReport(root) {
   const candidates = files.flatMap(candidatesForFile);
   const stranded = findStrandedQuotes(markdown, candidates);
   if (stranded.length === 0) {
-    return { ok: true, lines: [`check-editor-quotes: OK (${extractDocQuotes(markdown).length} quotes grounded)`] };
+    return { ok: true, lines: [`check-editor-quotes: ${extractDocQuotes(markdown).length} quotes grounded`] };
   }
   return {
     ok: false,
@@ -284,8 +282,9 @@ export function editorQuotesReport(root) {
 
 function main() {
   const { ok, lines } = editorQuotesReport(ROOT);
-  for (const line of lines) (ok ? console.log : console.error)(line);
-  if (!ok) process.exitCode = 1;
+  if (!ok) return lines;
+  for (const line of lines) console.log(line);
+  return [];
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) runCheck('check-editor-quotes', main);

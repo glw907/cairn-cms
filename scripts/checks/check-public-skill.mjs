@@ -34,7 +34,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { repoRoot } from '../repo-root.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
 /**
  * The engine's built-in directive names, which the render step handles and a site cannot register
@@ -547,18 +547,12 @@ export async function runGate(root) {
 }
 
 async function main() {
-  const { problems, summary } = await runGate(repoRoot(import.meta.url));
-  if (problems.length > 0) {
-    for (const problem of problems) console.error(`check-public-skill: ${problem}`);
-    process.exitCode = 1;
-    return;
-  }
+  const { problems, summary } = await runGate(ROOT);
+  if (problems.length > 0) return problems.map((problem) => `check-public-skill: ${problem}`);
   console.log(`check-public-skill: ${summary}`);
+  return [];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch((err) => {
-    console.error(`check-public-skill: ${err instanceof Error ? err.message : String(err)}`);
-    process.exitCode = 1;
-  });
+  await runCheck('check-public-skill', main);
 }

@@ -1,8 +1,8 @@
-// cairn-cms: the scripts/ tree's repo-root resolver. Every gate lives one level under a
-// scripts/ subdirectory (checks/, build/, or lab/), two directories below the repo root, so
-// `import.meta.url` resolves the same way from each. A dozen-plus gates still spell out
-// `resolve(dirname(fileURLToPath(import.meta.url)), '../..')` inline rather than import this;
-// this module is the target for that convergence, not yet the sole source of it.
+// cairn-cms: the scripts/ tree's repo-root resolver. Every caller lives one level under a
+// scripts/ subdirectory, two directories below the repo root, so `import.meta.url` resolves the
+// same way from each. Every check script under scripts/checks takes its root through
+// scripts/checks/shared.mjs. Other scripts/ trees import repoRoot too, and a few still compute their
+// root inline (BACKLOG #570).
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

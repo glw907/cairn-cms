@@ -22,12 +22,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { repoRoot } from '../repo-root.mjs';
 import { makeShowcaseCopy } from '../lab/theme-fixture-copy.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
 /** @typedef {import('../../src/lib/audit/types.js').AuditReport} AuditReport */
 
-const ROOT = repoRoot(import.meta.url);
 const SHOWCASE = resolve(ROOT, 'examples/showcase');
 const CONFIG = resolve(ROOT, 'scripts/checks/public-scope.config.json');
 const FIXTURE_THEME = resolve(ROOT, 'scripts/lab/theme-fixture/theme.css');
@@ -120,14 +119,12 @@ async function main() {
       }
     }
     const code = publicScopeExitCode(runs);
-    console.log(`\ncheck:public-tokens: ${code === 0 ? 'PASS' : 'FAIL'}`);
-    process.exitCode = code;
+    return code === 0 ? [] : ['\ncheck:public-tokens: FAIL'];
   } catch (err) {
-    console.error(`check-public-scope: ${err instanceof Error ? err.message : String(err)}`);
-    process.exitCode = 2;
+    return [`check-public-scope: ${err instanceof Error ? err.message : String(err)}`];
   }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  runCheck('check-public-scope', main);
 }

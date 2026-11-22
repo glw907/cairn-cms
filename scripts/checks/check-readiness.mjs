@@ -19,11 +19,10 @@
 // the checklist: the page must exist, and every live and shipped anchor must resolve on it, so a
 // renamed or split checklist fails instead of disarming the gate.
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { resolve, dirname, relative } from 'node:path';
+import { resolve, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { headingAnchors } from './docs-links.mjs';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+import { ROOT, runCheck } from './shared.mjs';
 const DOC = 'docs/admin/is-it-working.md';
 const ADMIN_DIR = 'docs/admin';
 const CONDITIONS_JS = 'dist/diagnostics/conditions.js';
@@ -263,9 +262,7 @@ export function readinessProblemsForArm(conditions, adminHasPages, docText, ship
 async function main() {
   const distPath = resolve(ROOT, CONDITIONS_JS);
   if (!existsSync(distPath)) {
-    console.error(`missing ${CONDITIONS_JS}; run "npm run package" first`);
-    process.exitCode = 2;
-    return;
+    return [`missing ${CONDITIONS_JS}; run "npm run package" first`];
   }
   const { allConditions } = await import(pathToFileURL(distPath).href);
   const conditions = allConditions();
@@ -275,21 +272,17 @@ async function main() {
   const shipped = loadShippedAnchors(resolve(ROOT, SHIPPED_ANCHORS_PATH), ROOT);
   const problems = readinessProblemsForArm(conditions, adminHasPages, docText, shipped);
 
-  if (problems.length > 0) {
-    console.error(`check-readiness: ${problems.length} problem(s)`);
-    for (const p of problems) console.error(`  ${p}`);
-    process.exitCode = 1;
-    return;
-  }
+  if (problems.length > 0) return problems.map((p) => `  ${p}`);
   if (adminHasPages) {
-    console.log(`check-readiness: OK (${conditions.length} conditions, ${shipped.anchors.length} shipped anchors anchored in ${DOC})`);
+    console.log(`check-readiness: ${conditions.length} conditions, ${shipped.anchors.length} shipped anchors anchored in ${DOC}`);
   } else {
     console.log(
-      `check-readiness: OK in list mode (${ADMIN_DIR} holds no page; ${conditions.length} conditions' docsAnchors all on the ${shipped.anchors.length}-entry ${SHIPPED_ANCHORS_PATH})`
+      `check-readiness: list mode (${ADMIN_DIR} holds no page; ${conditions.length} conditions' docsAnchors all on the ${shipped.anchors.length}-entry ${SHIPPED_ANCHORS_PATH})`
     );
   }
+  return [];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await main();
+  await runCheck('check-readiness', main);
 }

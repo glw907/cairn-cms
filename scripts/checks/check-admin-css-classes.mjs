@@ -27,9 +27,8 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scopeReport } from './audit-gate.mjs';
-import { repoRoot } from '../repo-root.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = repoRoot(import.meta.url);
 const RULE_IDS = ['no-uncompiled-class'];
 
 async function main() {
@@ -37,14 +36,14 @@ async function main() {
     const { exitCodeFor, formatReport, loadConfig, runStatic, staticRules } = await import('../../dist/audit/index.js');
     const rules = staticRules().filter((rule) => !rule.publicScope);
     const report = scopeReport(runStatic(loadConfig(ROOT), rules), RULE_IDS);
+    if (exitCodeFor(report) !== 0) return [formatReport(report)];
     console.log(formatReport(report));
-    process.exitCode = exitCodeFor(report);
+    return [];
   } catch (err) {
-    console.error(`check-admin-css-classes: ${err instanceof Error ? err.message : String(err)}`);
-    process.exitCode = 2;
+    return [`check-admin-css-classes: ${err instanceof Error ? err.message : String(err)}`];
   }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  runCheck('check-admin-css-classes', main);
 }

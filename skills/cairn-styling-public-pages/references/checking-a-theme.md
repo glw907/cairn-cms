@@ -19,8 +19,9 @@ npm run check:theme -- <themeDir> --rules paths-required,fonts
 npm run check:theme -- --catalog
 ```
 
-The check prints `check:theme: <id> pass` or `fail`, then one line per failure with its rule, file,
-and message. `--json` prints the verdict as one document that validates against
+The check prints `check:theme: <id> pass` or `fail` for each theme, with one line per failure giving
+its rule, file, and message. The text output then ends with one `check:theme: OK` or
+`check:theme: FAIL` line. `--json` prints the verdict as one document that validates against
 `schema/cairn-theme-check.schema.json`: a `failures` list of `file`, `rule`, and `message`, and a
 `notes` list of what a passing rule measured. `--rules` runs only the named rules. `--catalog` checks
 every directory under `themes/` and fails when `themes/` holds no theme or a directory has no

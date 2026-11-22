@@ -11,10 +11,9 @@
 // then prints the sha it read so the release is created with that sha literally. The rules are a
 // pure function over a command runner, so the tests need no registry or repository state.
 import { spawnSync } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+import { ROOT, runCheck } from './shared.mjs';
 
 export const PACKAGES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
 
@@ -191,15 +190,12 @@ function main() {
     return { status: r.status, stdout: r.stdout ?? '' };
   };
   const result = checkStableSource(run);
-  if (!result.ok) {
-    for (const e of result.errors) console.error(`check-stable-source: ${e}`);
-    process.exitCode = 1;
-    return;
-  }
-  console.log(`check-stable-source: OK, HEAD is a stable cut of v${result.next}`);
+  if (!result.ok) return result.errors.map((e) => `check-stable-source: ${e}`);
+  console.log(`check-stable-source: HEAD is a stable cut of v${result.next}`);
   console.log(`sha: ${result.sha}`);
+  return [];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  await runCheck('check-stable-source', main);
 }

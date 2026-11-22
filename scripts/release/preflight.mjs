@@ -12,7 +12,7 @@ import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PACKAGES } from '../checks/check-stable-source.mjs';
 import { missingInstalls } from '../checks/close-prebuilt.mjs';
-import { unreleasedWindow } from '../checks/check-version.mjs';
+import { unreleasedWindow } from '../checks/check-consumers-must.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 

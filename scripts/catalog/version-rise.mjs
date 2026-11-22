@@ -7,6 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import semver from 'semver';
+import { runCheck } from '../checks/shared.mjs';
 
 /** The manifest file name for each catalog root. */
 const MANIFESTS = { themes: 'cairn-theme.json', sets: 'cairn-set.json' };
@@ -67,14 +68,14 @@ function resolveRange(argv) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  try {
-    const { base, head } = resolveRange(process.argv.slice(2));
-    const problems = findProblems(base, head);
-    for (const problem of problems) console.error(problem);
-    if (problems.length) process.exit(1);
-    console.log('version-rise: every changed theme and set raised its version.');
-  } catch (error) {
-    console.error(`version-rise: ${error.message}`);
-    process.exit(1);
-  }
+  await runCheck('version-rise', () => {
+    try {
+      const { base, head } = resolveRange(process.argv.slice(2));
+      const problems = findProblems(base, head);
+      if (problems.length === 0) console.log('version-rise: every changed theme and set raised its version.');
+      return problems;
+    } catch (error) {
+      return [`version-rise: ${error.message}`];
+    }
+  });
 }

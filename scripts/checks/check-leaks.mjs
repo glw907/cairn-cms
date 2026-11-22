@@ -45,9 +45,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { repoRoot } from '../repo-root.mjs';
-
-const ROOT = repoRoot(import.meta.url);
+import { ROOT, runCheck } from './shared.mjs';
 
 const TERMS = JSON.parse(readFileSync(new URL('./leak-terms.json', import.meta.url), 'utf8'));
 
@@ -566,12 +564,9 @@ function main() {
   const errors = findings.filter((entry) => entry.severity === 'error');
   const warnings = findings.length - errors.length;
   for (const line of formatFindings(findings, argv.includes('--warnings'))) console.log(line);
-  if (errors.length > 0) {
-    console.error(`check:leaks: ${errors.length} error(s), ${warnings} warning(s) across ${scanned} file(s)`);
-    process.exitCode = 1;
-    return;
-  }
-  console.log(`check:leaks: OK (${scanned} file(s), ${warnings} warning(s))`);
+  if (errors.length > 0) return [`check:leaks: ${errors.length} error(s), ${warnings} warning(s) across ${scanned} file(s)`];
+  console.log(`check-leaks: ${scanned} file(s), ${warnings} warning(s)`);
+  return [];
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) runCheck('check-leaks', main);

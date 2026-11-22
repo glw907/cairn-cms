@@ -27,10 +27,9 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join, relative } from 'node:path';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PACKAGE = '@glw907/cairn-cms';
 
 /**
@@ -246,15 +245,14 @@ function main() {
       .filter((path) => path.endsWith('.d.ts'))
       .filter((path) => readFileSync(join(dist, path), 'utf8').includes('culori'));
     if (naming.length > 0) throw new CheckFailure(`installed declarations name culori: ${naming.join(', ')}`);
-    console.log('\nNo installed dist .d.ts names culori.');
+    console.log('\ncheck-audit-pack: no installed dist .d.ts names culori');
 
-    console.log('\ncheck:audit-pack: PASS');
+    return [];
   } catch (err) {
-    console.error(`\ncheck:audit-pack: FAIL: ${err instanceof Error ? err.message : String(err)}`);
-    process.exitCode = 1;
+    return [`\ncheck:audit-pack: FAIL: ${err instanceof Error ? err.message : String(err)}`];
   } finally {
     cleanup();
   }
 }
 
-main();
+runCheck('check-audit-pack', main);

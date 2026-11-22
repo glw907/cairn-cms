@@ -64,6 +64,9 @@ What a session needs to know:
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries).
 
-## checks-1 executor
+## checks-2 executor
 
-Session `cairn-cms-checks-1` (id `ddb72035`), PR #261, branch `checks-1`. The conductor lands it.
+Session `cairn-cms-checks-2`, PR #262, branch `checks-2`, class `runner`. `scripts/checks/shared.mjs` (`ROOT`,
+`runCheck`) is in and every check script a registry row runs ends in one `<name>: OK` or `<name>: FAIL` line;
+`check-form.test.ts` holds the registry to it. The pass edits one held line (`scripts/release/preflight.mjs:15`) and
+carries three `[advisor]` calls, so it lands through a `merge` document. The conductor lands it.

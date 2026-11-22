@@ -17,8 +17,7 @@
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join, relative, sep, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+import { ROOT, runCheck } from './shared.mjs';
 const ROOT_DOCS = ['README.md', 'SECURITY.md', 'ROADMAP.md', 'CHANGELOG.md', 'MIGRATION-NOTES.md', 'CONTRIBUTING.md'];
 // Captured third-party pages keep their original links, so the link gate skips them.
 // Planning records are write-once history, so their links are never repaired. Matched by path
@@ -267,24 +266,21 @@ function main() {
   );
 
   if (broken.length === 0 && !unreleasedMismatch) {
-    console.log(`docs-links: OK (${scanned} files, every relative link and anchor resolves)`);
-    return;
+    console.log(`docs-links: ${scanned} files, every relative link and anchor resolves`);
+    return [];
   }
-  if (unreleasedMismatch) {
-    console.error(`docs-links: ${unreleasedMismatch}\n`);
-  }
-  if (broken.length > 0) {
-    console.error(`docs-links: ${broken.length} broken link(s) across ${scanned} files\n`);
-    let last = '';
-    for (const b of broken.sort((a, c) => a.file.localeCompare(c.file) || a.line - c.line)) {
-      if (b.file !== last) {
-        console.error(`  ${b.file}`);
-        last = b.file;
-      }
-      console.error(`    :${b.line}  ${b.dest}  -- ${b.reason}`);
+  /** @type {string[]} */
+  const problems = [];
+  if (unreleasedMismatch) problems.push(`docs-links: ${unreleasedMismatch}\n`);
+  let last = '';
+  for (const b of broken.sort((a, c) => a.file.localeCompare(c.file) || a.line - c.line)) {
+    if (b.file !== last) {
+      problems.push(`  ${b.file}`);
+      last = b.file;
     }
+    problems.push(`    :${b.line}  ${b.dest}  -- ${b.reason}`);
   }
-  process.exitCode = 1;
+  return problems;
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) main();
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) await runCheck('docs-links', main);

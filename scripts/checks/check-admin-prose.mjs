@@ -19,10 +19,10 @@
 //   node scripts/checks/check-admin-prose.mjs          scan and fail on a hit
 //   node scripts/checks/check-admin-prose.mjs --list    print every extracted string, grouped by file
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ADMIN_DIR = join(ROOT, 'src', 'lib', 'admin');
 const PUBLIC_DIR = join(ROOT, 'src', 'lib', 'public');
 // Every barrel this gate scans, relative-path tag first so a reported finding names which one.
@@ -259,44 +259,52 @@ function listCopy(files) {
   }
 }
 
-// Scan every file, report each tell on stderr, and exit 1 on any hit (0 when clean).
-/** @param {{ label: string, path: string }[]} files */
+// Scan every file and return each tell as a problem line.
+/**
+ * @param {{ label: string, path: string }[]} files
+ * @returns {string[]}
+ */
 function scanCopy(files) {
+  /** @type {string[]} */
+  const problems = [];
   let hits = 0;
   for (const file of files) {
     const copy = copyForFile(file);
     for (const s of copy) {
       for (const issue of scan(s)) {
         hits += 1;
-        console.error(`${file.label}: [${issue.kind}]`);
-        console.error(`  "${s}"`);
-        console.error(`  ${issue.hint}`);
+        problems.push(`${file.label}: [${issue.kind}]`, `  "${s}"`, `  ${issue.hint}`);
       }
     }
   }
   if (hits > 0) {
-    console.error(`\nadmin-copy prose gate: ${hits} tell(s) found. Rewrite in a plain human voice.`);
-    console.error('Run `node scripts/checks/check-admin-prose.mjs --list` to read all admin copy at once.');
-    process.exitCode = 1;
-    return;
+    problems.push(
+      `\nadmin-copy prose gate: ${hits} tell(s) found. Rewrite in a plain human voice.`,
+      'Run `node scripts/checks/check-admin-prose.mjs --list` to read all admin copy at once.',
+    );
+    return problems;
   }
-  console.log(`admin-copy prose gate: clean (${files.length} components scanned).`);
+  console.log(`check-admin-prose: ${files.length} components scanned`);
+  return problems;
 }
 
-function main() {
-  // The Svelte components under every scanned barrel, plus the named `.ts` copy modules (admin-only
-  // today), the latter checked for existence so a rename surfaces here rather than silently
-  // dropping its coverage.
+/**
+ * The files to scan: the Svelte components under every scanned barrel, plus the named `.ts` copy
+ * modules (admin-only today), the latter checked for existence so a rename surfaces here rather
+ * than silently dropping its coverage.
+ * @returns {{ label: string, path: string }[]}
+ */
+function scannedFiles() {
   const tsModules = TS_COPY_MODULES.filter((f) => existsSync(join(ADMIN_DIR, f))).map((f) => ({
     label: `admin/${f}`,
     path: join(ADMIN_DIR, f),
   }));
-  const files = [...SCAN_DIRS.flatMap(componentFiles), ...tsModules];
-  if (process.argv.includes('--list')) listCopy(files);
-  else scanCopy(files);
+  return [...SCAN_DIRS.flatMap(componentFiles), ...tsModules];
 }
 
-// Run as a script, not on import (the unit test imports the extractors directly).
+// Run as a script, not on import (the unit test imports the extractors directly). `--list` reads
+// the copy and is no check, so it prints no verdict.
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  if (process.argv.includes('--list')) listCopy(scannedFiles());
+  else runCheck('check-admin-prose', () => scanCopy(scannedFiles()));
 }

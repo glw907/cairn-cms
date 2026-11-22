@@ -11,12 +11,12 @@
 // argv flag.
 import ts from 'typescript';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enumerateExports, moduleExports, loadDts } from './dts-exports.mjs';
 import { normalizeSignature } from './normalize-signature.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SNAPSHOT = 'scripts/checks/api-surface.md';
 const BANNER = 'GENERATED — run `npm run check:surface -- --update` to regenerate';
 
@@ -351,35 +351,34 @@ function main() {
   // the snapshot cannot record a new duplicate as settled surface.
   const duplicates = findHomeViolations(model);
   if (duplicates.length) {
-    console.error('check-surface: the one-path rule failed.');
-    console.error(formatHomeViolations(duplicates));
-    console.error('\nEvery public name imports from one subpath. Drop the export from all but one barrel.');
-    process.exitCode = 1;
-    return;
+    return [
+      'check-surface: the one-path rule failed.',
+      formatHomeViolations(duplicates),
+      '\nEvery public name imports from one subpath. Drop the export from all but one barrel.',
+    ];
   }
   if (update) {
     writeFileSync(snapshotPath, `${emitted}\n`);
     console.log(`check-surface: wrote ${SNAPSHOT}`);
-    return;
+    return [];
   }
   if (!existsSync(snapshotPath)) {
-    console.error(`check-surface: missing ${SNAPSHOT}; run "npm run check:surface -- --update" to generate it`);
-    process.exitCode = 1;
-    return;
+    return [`check-surface: missing ${SNAPSHOT}; run "npm run check:surface -- --update" to generate it`];
   }
   // The file is written with a trailing newline; compare against the same form.
   const committed = readFileSync(snapshotPath, 'utf8');
   const result = diffSurface(committed, `${emitted}\n`);
   if (result.ok) {
-    console.log('check-surface: OK (surface matches the committed snapshot)');
-    return;
+    console.log('check-surface: surface matches the committed snapshot');
+    return [];
   }
-  console.error('check-surface: the public surface drifted from the committed snapshot.');
-  console.error(formatDrift(result.drift));
-  console.error(`\nIf this change is intended, run "npm run check:surface -- --update" and commit ${SNAPSHOT}.`);
-  process.exitCode = 1;
+  return [
+    'check-surface: the public surface drifted from the committed snapshot.',
+    formatDrift(result.drift),
+    `\nIf this change is intended, run "npm run check:surface -- --update" and commit ${SNAPSHOT}.`,
+  ];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  await runCheck('check-surface', main);
 }

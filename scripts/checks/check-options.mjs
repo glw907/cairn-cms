@@ -35,8 +35,8 @@ import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { moduleExports } from './dts-exports.mjs';
 import { surfaceSubpaths } from './check-surface.mjs';
+import { ROOT, runCheck } from './shared.mjs';
 
-const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const DECL_ROOT = join(ROOT, 'dist');
 
 /** Exported functions whose parameters are option-bearing roots. */
@@ -389,13 +389,8 @@ function main() {
   const failures = [...walkFailures, ...checkOptionDocs({ generated: paths })];
   // A floor, so a walk that reaches no roots cannot print OK over nothing (263 paths at the time of writing).
   if (paths.length < 100) failures.push(`only ${paths.length} option paths were walked; the roots found no declarations`);
-  if (failures.length === 0) {
-    console.log(`check:options: OK (${paths.length} option paths)`);
-    return;
-  }
-  for (const failure of failures) console.error(`check:options: ${failure}`);
-  console.error(`check:options: ${failures.length} defect(s)`);
-  process.exitCode = 1;
+  if (failures.length === 0) console.log(`check-options: ${paths.length} option paths`);
+  return failures.map((failure) => `check:options: ${failure}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) runCheck('check-options', main);

@@ -9,8 +9,8 @@ You never change the skill, the agent, or a rule outside the change rule in
 you start any claude session, and stop if an init event shows apiKeySource other than none.
 
 Arm the API-drop wake-up first: /loop with no interval, with a 1200 to 1800 second fallback that
-resumes at the first step whose output is missing. Each end below (step 1's skip, the dry-run end,
-and step 5's end) cancels that wake-up and schedules no further one.
+resumes at the first step whose output is missing. Each end (the API-key stop above, step 1's skip,
+the dry-run end, and step 5's end) cancels that wake-up and schedules no further one.
 
 The dates. "Since" is the date in ~/.local/state/cairn-docs-cycle/last when that file exists, else
 2026-10-26. The run month is today's YYYY-MM. Keep your working files in
@@ -78,7 +78,9 @@ Steps, in order:
    EnterWorktree. In the worktree, add the entry to history.md, write step 3's dates into the "Last
    read" column of sources.md, and make each graduation (the case moved to the regression suite in
    evals.json), then commit them on that branch.
-   Run the cairn fast lane through cairn-run-gate from the worktree root,
+   Set up the worktree from its root with
+   `npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)`,
+   then run the cairn fast lane through cairn-run-gate from the worktree root,
    `cairn-run-gate 'npm run lane:fast -- --range origin/main..HEAD'`, re-issued on exit 75 until a
    `gate exit:` line prints. A nonzero gate exit does not stop the cycle: open the pull request
    anyway and name the red gate in its body. Push the branch and open the pull request with `gh pr create`. Its

@@ -1,11 +1,11 @@
 ---
 name: cairn-writing-engine-code
-description: Writes cairn engine code to its idiom charter and avoids its known operational traps. Use when adding or changing code under src/lib, when a pass writes tests, or when a Cloudflare email error, a visual baseline mismatch, a consumer engine pin, or a Vite parse error of dist Svelte files appears.
+description: Writes cairn engine code to its idiom charter and avoids its known operational traps. Use when adding or changing code under src/lib, when a task writes tests, or when a Cloudflare email error, a visual baseline mismatch, a consumer engine pin, or a Vite parse error of dist Svelte files appears.
 ---
 
 # Writing engine code
 
-Read `references/code-idioms.md` before writing a new pattern in `src/lib`. It sets one obvious way for each recurring pattern, and a pass checks its diff against it.
+Read `references/code-idioms.md` before writing a new pattern in `src/lib`. It sets one obvious way for each recurring pattern, and a task checks its diff against it.
 
 Read `references/durable-gotchas.md` when a symptom matches one of its anchors. It covers Cloudflare email (`E_SENDER_NOT_VERIFIED` also means an unverified destination), the consumer engine pin (`link:consumer`), a worktree showcase end-to-end run that proves the main checkout's engine until reinstalled, CI baselines this workstation's Chromium cannot reproduce, and Vite 8 parsing dist `.svelte` TypeScript as JavaScript.
 

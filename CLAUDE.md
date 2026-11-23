@@ -17,23 +17,21 @@ Leanness is the point. "Out of scope" is often the correct answer. Before adding
 subsystem, an actor, or new surface, load the `cairn-judging-scope` skill. Rulings already made live
 in `docs/internal/engine-rulings.md` (`grep '^## '` is its index); read the entry before re-arguing a
 settled item. Consuming sites send briefs to `docs/internal/consultations/`, and each needs a verdict
-before a pass builds on it.
+before a task builds on it.
 
 ## Working here
 
 - `docs/STATUS.md` holds the current state and the next action. `BACKLOG.md` holds open items,
   `ROADMAP.md` what comes next.
-- Cut a worktree off `main` for each pass so `main` stays releasable. The `cairn-running-passes` skill
-  has the setup command, the risk classes, and the close checklist. After each task, run
-  `npm run lane:fast -- --range <base>..HEAD`. CI on the pull request carries the whole suites.
-- Every change reaches a pull request through agents: hand each task to `cairn-implementer`, which
-  works in its own worktree, and dispatch `standards:diff-reviewer` on the branch before you open the
-  pull request. Fold what the reviewer finds first.
+- Build each piece of work from a spec, per `building-from-specs`, in a worktree off `main` so `main`
+  stays releasable. The `cairn-build` skill has the setup command, the gate, the risk classes, and the
+  close checklist. CI on the pull request carries the whole suites. A fresh `standards:diff-reviewer`
+  reads the branch before the pull request is marked ready.
 - The plugin `standards` supplies the review agents (`standards:diff-reviewer`,
   `standards:svelte-reviewer`, `standards:cloudflare-workers-reviewer`,
   `standards:web-auth-security-reviewer`, `standards:daisyui-a11y-reviewer`) and craft skills. Accept the
   folder's trust dialog and it loads. Cloud sessions get only what is committed here.
-- A pass never bumps the version or publishes. It finalizes its `CHANGELOG.md` entry under
+- A task never bumps the version or publishes. It finalizes its `CHANGELOG.md` entry under
   `## Unreleased` and stops. Publishing is a separate act with two triggers: a consumer site needs the
   change now, or a coherent capability has landed. Default to holding. The `cairn-releasing` skill is
   the procedure; the path to `1.0` is in `ROADMAP.md` ("Toward 1.0").
@@ -44,10 +42,9 @@ before a pass builds on it.
 - `cairn-writing-engine-code`: the idiom charter and the operational traps.
 - `cairn-following-admin-design`: the admin design system, behind a rule on `src/lib/admin`.
 - `cairn-following-public-design`: the public theme, behind a rule on `src/lib/public`.
-- `cairn-running-passes`, `cairn-releasing`: pass mechanics and the release procedure.
+- `cairn-build`: the facts a task session needs. `cairn-releasing`: the release procedure.
 - `cairn-writing-docs`: the docs procedure, with the register.
-- Agents: `cairn-implementer` (one task in its own worktree), `engine-triage` (consultation briefs),
-  `docs-fact-checker`.
+- Agents: `engine-triage` (consultation briefs), `docs-fact-checker`.
 - `.claude/rules/` holds the rules that load by path.
 
 ## Documentation is a pass dimension
@@ -76,7 +73,7 @@ operationally meaningful event through one chokepoint, `src/lib/log/` (envelope 
 at a send-failure or guard rejection (check `reason`); a save that does nothing points at a commit
 failure (`conflict` is a stale-edit collision, `error` the GitHub failure). On Cloudflare, Workers Logs
 is the query surface. Records carry an editor's email, never a token or session id; check a record
-before pasting it in public. A pass that adds a diagnosable code path gives it an event in the
+before pasting it in public. A change that adds a diagnosable code path gives it an event in the
 vocabulary, not a bare `console` call, and updates the table. `createLogger` is public from `/log`.
 
 ## Authoring

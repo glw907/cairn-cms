@@ -574,11 +574,11 @@ width, where the band's ground color should touch both viewport edges.
 ## A rename sweep edits the living docs only
 
 A drift-hunt after a rename or a public-surface narrowing edits the living docs: the doc comments,
-the packaged skills, the guides, and the `engine-rulings.md` ledger. Point-in-time documents (an open plan on its pass
+the packaged skills, the guides, and the `engine-rulings.md` ledger. Point-in-time documents (an open spec on its
 branch, a released `CHANGELOG.md` section) describe what was true when they were written, so a
 hit there is evidence to leave alone. A plan's rename table is the task's source text. A grep hit is
 also not drift when the sentence never claims the name is public.
-`.claude/skills/cairn-running-passes/references/admin-smoke-test.md` names internal source paths and
+`.claude/skills/cairn-build/references/admin-smoke-test.md` names internal source paths and
 raw `?/actionName` forms on purpose, to point a curl recipe at the source. Ask of each hit whether the
 sentence claims the name is reachable through the narrowed public surface.
 

@@ -1,4 +1,4 @@
-# Pass gate tiers
+# Gate tiers
 
 The lane names below (`light`, `heavy`) and the `cairn-run-gate` strings belong to the maintainer's
 workstation wrapper. A contributor runs the same legs through `npm run lane:fast`, which executes
@@ -15,7 +15,7 @@ workstation wrapper. A contributor runs the same legs through `npm run lane:fast
 
 
 The per-task gate a diff demands. The classifier is `scripts/checks/gate-tier.mjs`; its own header
-carries the same rules this page states. A pass session calls
+carries the same rules this page states. A task session calls
 
 `node scripts/checks/gate-tier.mjs --range <base>..HEAD [--fast] [--paint yes|no] [--class <passClass>] [--pin <tier>]`
 
@@ -24,8 +24,8 @@ and the paths and rules behind each, print to stderr. An empty range, a git fail
 `--class`, or an unknown `--pin` prints nothing on stdout and exits non-zero, so the caller falls
 back to the plan's gate. An unknown flag exits 2 with nothing on stdout.
 
-The default output is the targeted gate below, which a pass runs when CI is not its full-suite
-home. `--fast` prints the fast lane, the inner-loop gate a pass runs after each task. `--pin <tier>`
+The default output is the targeted gate below, which a task runs when CI is not its full-suite
+home. `--fast` prints the fast lane, the inner-loop gate a task runs after each commit. `--pin <tier>`
 prints one of the old tier strings (kept under "The pinned tiers") unchanged, and `--protected` is a
 separate mode (see "Protected paths").
 
@@ -132,7 +132,7 @@ The table's `e2e` block selects specs per path:
 
 ## The fast lane
 
-`--fast` prints the legs a pass session runs after each task while CI carries the whole suites. It
+`--fast` prints the legs a task session runs after each commit while CI carries the whole suites. It
 prints one or two lines, each a complete gate string for `cairn-run-gate`. It runs no whole node
 project and no e2e, and its output holds no bare `npm run package` and no bare `npm run check:close`
 (the close runner is only ever given a label subset, and it builds `dist` itself). `--fast` cannot
@@ -218,7 +218,7 @@ group does not repeat check:snippets or check:symbols.
 ## The pin
 
 `--pin <tier>` prints that tier's string and nothing else, in either direction, for any of the five npm tiers. A plan task pins a tier when its diff cannot size the change
-itself (for example, a token value a later pass will wire into a component that does not exist
+itself (for example, a token value a later task will wire into a component that does not exist
 yet). A pin beats `--paint` and `--class`. `--pin docs` is the standing escape hatch for a
 comment-only workflow edit that a task's own review has confirmed changes no behavior.
 
@@ -228,6 +228,6 @@ comment-only workflow edit that a task's own review has confirmed changes no beh
 project named `admin-visual` to pass to `--project`; the plan's draft gate string for that tier
 assumed one exists. The `admin-visual` gate string above instead targets the spec file directly
 (`npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`), which Playwright resolves
-against `testDir: 'e2e'` the same way a bare filename argument always has. If a later pass adds
+against `testDir: 'e2e'` the same way a bare filename argument always has. If a later task adds
 named projects to that config, this page and the classifier's `TIER_GATES.admin-visual` string
 should move to `--project admin-visual` instead.

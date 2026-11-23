@@ -19,8 +19,8 @@
 The agent-facing idiom charter: one obvious way per pattern, each rule anchored to the
 best existing file (imitate the exemplar; the rule is a summary of it). Derived from the
 2026-07-01 eleven-subsystem survey (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-code-polish-survey.md`)
-during the code polish pass. This is a standing pass dimension: a pass that changes an idiom
-updates this file, the same as a doc comment. Comments and TSDoc are gate-enforced
+during the code polish pass. This is a standing dimension of every task: a task that changes an idiom
+updates this page, the same as a doc comment. Comments and TSDoc are gate-enforced
 elsewhere (`check:comments`) and not restated here.
 
 ## Errors and results
@@ -137,7 +137,7 @@ elsewhere (`check:comments`) and not restated here.
 ## Logging
 
 - **L1.** The `src/lib/log` chokepoint is the only emitter; event names are the public
-  contract and never change in a polish pass. Pure layers stay silent; the one true IO glue
+  contract and never change during the polish loop. Pure layers stay silent; the one true IO glue
   point per flow logs counts, not payloads (exemplar: `media/reconcile.ts:runReconcile`).
 - **L2.** Repeated log-emission at multiple call sites is factored into a tiny helper
   (exemplar: `content-routes.ts` `logCommitFailed`).

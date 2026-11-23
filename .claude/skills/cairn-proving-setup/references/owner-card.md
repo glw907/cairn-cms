@@ -1,6 +1,6 @@
 # The owner card
 
-What the conductor answers when the naive agent asks the owner. Answer from this card and nothing
+What the session running the loop answers when the naive agent asks the owner. Answer from this card and nothing
 else about the owner. A question the card does not cover gets a reasonable owner's answer and one line
 in the run's friction list.
 

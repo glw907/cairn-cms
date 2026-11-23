@@ -1,6 +1,6 @@
-// cairn-cms: the per-task gate classifier. A pass session runs it after a task commits and before
+// cairn-cms: the per-task gate classifier. A task session runs it after a task commits and before
 // the gate, so the gate string a task runs is sized to its committed diff, not the plan's forecast.
-// .claude/skills/cairn-running-passes/references/pass-gate-tiers.md is the page a reviewer reads to reproduce a classification.
+// .claude/skills/cairn-build/references/gate-tiers.md is the page a reviewer reads to reproduce a classification.
 //
 // Interface: `node scripts/checks/gate-tier.mjs --range <base>..HEAD [--fast] [--paint yes|no]
 // [--class <passClass>] [--pin <tier>]`. On success the gate string is the ONLY line on stdout (the
@@ -10,7 +10,7 @@
 // gets a shell-safe empty string rather than a bogus gate command. An unknown flag exits 2 with
 // nothing on stdout.
 //
-// `--fast` is the inner-loop lane, the legs a pass session runs after each task while CI carries
+// `--fast` is the inner-loop lane, the legs a task session runs after each commit while CI carries
 // the whole suites. Line 1 runs the non-browser legs and fails if any fails: the static checks the
 // diff's buckets select, the type check, the unit tests related to the diff, the docs gate when a
 // docs path changed. The legs that build or read dist
@@ -133,7 +133,7 @@ const INTERNAL_ENTRY = 'src/lib/internal.ts';
 const DIST_SPAWN = 'npx vitest run --project unit-dist-spawn';
 
 /**
- * The lane prefix on fast-lane line 1 (.claude/skills/cairn-running-passes/references/pass-gate-tiers.md, "The fast lane"). Empty
+ * The lane prefix on fast-lane line 1 (.claude/skills/cairn-build/references/gate-tiers.md, "The fast lane"). Empty
  * means the heavy lane, cairn-run-gate's default. Measured 2026-10-10 over c495ed11~1..8e2b7d29:
  * three `Memory peak` values of 2G, under the light lane's 3G cap, yet the leg failed there. Node
  * sizes its default heap from the cgroup limit, about 1GB under the light cap, and a dist-reading check

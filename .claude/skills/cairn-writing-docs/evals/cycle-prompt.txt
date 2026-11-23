@@ -18,11 +18,13 @@ The dates. "Since" is the date in ~/.local/state/cairn-docs-cycle/last when that
 
 Steps, in order:
 
-1. Sample real sessions. First look for last month's pull request still open: run
-   `gh pr list --repo glw907/cairn-cms --state open --search "head:docs-cycle-"`. If one is open,
-   write one line naming it to ~/.local/state/cairn-docs-cycle/<YYYY-MM>/skipped, write today's
-   date into ~/.local/state/cairn-docs-cycle/last, and end: the month is skipped. In a dry run,
-   report the open pull request and end without writing skipped or last.
+1. Sample real sessions. First look for an earlier month's pull request still open: run
+   `gh pr list --repo glw907/cairn-cms --state open --search "head:docs-cycle-"` and ignore the
+   branch docs-cycle-<YYYY-MM> for the run month, which an earlier run of this month may have
+   opened. If another is open, write one line naming it to
+   ~/.local/state/cairn-docs-cycle/<YYYY-MM>/skipped and end: the month is skipped. Leave
+   ~/.local/state/cairn-docs-cycle/last as it is, so the next cycle's "since" date reaches back over
+   the skipped month. In a dry run, report the open pull request and end without writing skipped.
    Claude Code keeps each session's transcript at
    ~/.claude/projects/<dir>/<session-id>.jsonl, where <dir> is the working directory with / and .
    turned into -. Take the cairn-cms directories (names starting

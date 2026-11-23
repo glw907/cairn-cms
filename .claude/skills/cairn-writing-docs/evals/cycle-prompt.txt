@@ -9,7 +9,8 @@ You never change the skill, the agent, or a rule outside the change rule in
 you start any claude session, and stop if an init event shows apiKeySource other than none.
 
 Arm the API-drop wake-up first: /loop with no interval, with a 1200 to 1800 second fallback that
-resumes at the first step whose output is missing.
+resumes at the first step whose output is missing. Each end below (step 1's skip, the dry-run end,
+and step 5's end) cancels that wake-up and schedules no further one.
 
 The dates. "Since" is the date in ~/.local/state/cairn-docs-cycle/last when that file exists, else
 2026-10-26. The run month is today's YYYY-MM. Keep your working files in
@@ -20,7 +21,8 @@ Steps, in order:
 1. Sample real sessions. First look for last month's pull request still open: run
    `gh pr list --repo glw907/cairn-cms --state open --search "head:docs-cycle-"`. If one is open,
    write one line naming it to ~/.local/state/cairn-docs-cycle/<YYYY-MM>/skipped, write today's
-   date into ~/.local/state/cairn-docs-cycle/last, and end: the month is skipped.
+   date into ~/.local/state/cairn-docs-cycle/last, and end: the month is skipped. In a dry run,
+   report the open pull request and end without writing skipped or last.
    Claude Code keeps each session's transcript at
    ~/.claude/projects/<dir>/<session-id>.jsonl, where <dir> is the working directory with / and .
    turned into -. Take the cairn-cms directories (names starting
@@ -50,8 +52,9 @@ Steps, in order:
    never quote a private path, a secret, or a person.
 
 3. Check the guidance. Reread each source in .claude/skills/cairn-writing-docs/evals/sources.md and note any
-   change that bears on the skill. Write today's date into the "Last read" column of each source you
-   read, and commit that edit on step 5's branch.
+   change that bears on the skill. Record each source you read and today's date in
+   ~/.local/state/cairn-docs-cycle/<YYYY-MM>/sources-read.md, and change no file in the checkout:
+   step 5 writes those dates into the "Last read" column of sources.md on its branch.
 
 4. Run both suites on main with the current default models: from the main checkout, start `node
    .claude/skills/cairn-writing-docs/evals/run.mjs main --suite all` as a background command and wait for it
@@ -64,18 +67,21 @@ Steps, in order:
 
 5. Write the history entry and open the pull request. Rows are failure modes, guidance changes,
    model changes, and graduations. Rows the history marks as dropped earlier are not raised again
-   unless the evidence is new; hold at most 30 rows. Write one entry in
-   .claude/skills/cairn-writing-docs/evals/history.md in the entry format it holds: the month, the
-   models, the sample size, both suites' scores, and each row with its recommended call (now,
-   defer, or drop) and "outcome: Geoff's call". In a dry run, write the entry to
-   ~/.local/state/cairn-docs-cycle/<YYYY-MM>/history-entry.md instead, report its path and a
-   one-line summary, and end: commit nothing, push nothing, and open no pull request.
-   Otherwise make a worktree off origin/main on a branch docs-cycle-<YYYY-MM>. Work by absolute
-   path and `git -C`; never call EnterWorktree. On that branch commit the history entry, step 3's
-   sources.md dates, and each graduation (the case moved to the regression suite in evals.json).
+   unless the evidence is new; hold at most 30 rows. The entry follows the format
+   .claude/skills/cairn-writing-docs/evals/history.md holds: the month, the models, the sample
+   size, both suites' scores, and each row with its recommended call (now, defer, or drop) and
+   "outcome: Geoff's call". In a dry run, write the entry to
+   ~/.local/state/cairn-docs-cycle/<YYYY-MM>/history-entry.md, report its path and a one-line
+   summary, and end: change no file in the checkout, commit nothing, push nothing, and open no
+   pull request. Otherwise make a worktree off origin/main on a branch docs-cycle-<YYYY-MM>, and
+   change no file in the main checkout. Work by absolute path and `git -C`; never call
+   EnterWorktree. In the worktree, add the entry to history.md, write step 3's dates into the "Last
+   read" column of sources.md, and make each graduation (the case moved to the regression suite in
+   evals.json), then commit them on that branch.
    Run the cairn fast lane through cairn-run-gate from the worktree root,
    `cairn-run-gate 'npm run lane:fast -- --range origin/main..HEAD'`, re-issued on exit 75 until a
-   `gate exit:` line prints. Push the branch and open the pull request with `gh pr create`. Its
+   `gate exit:` line prints. A nonzero gate exit does not stop the cycle: open the pull request
+   anyway and name the red gate in its body. Push the branch and open the pull request with `gh pr create`. Its
    title and first paragraph say what the month found. Under `## For Geoff`, each row is a
    paragraph that says what the row is and gives the evidence, with the session ids and counts,
    then the options **now**, **defer**, and **drop**, and one recommended with its reason. A

@@ -4,14 +4,14 @@ description: >
   Cuts and publishes the cairn-cms npm package (`@glw907/cairn-cms`). Use on any intent to publish,
   ship, cut, release, tag, or push out cairn; when merged-and-green work on `main` is ready to go out;
   when picking the next version or finalizing the CHANGELOG; or when a consumer site needs a new export
-  on the registry. Not for a pass that holds unpublished (`cairn-running-passes`) or a site deploy.
+  on the registry. Not for a task that holds unpublished (`cairn-build`) or a site deploy.
 ---
 
 # Releasing cairn
 
 The `cairn` command is being rebuilt inside the `@glw907/cairn-cms` package, and the commands in this skill don't run until it ships.
 
-A cairn-cms release is a deliberate, occasional act. A finished pass finalizes its `CHANGELOG.md` entry
+A cairn-cms release is a deliberate, occasional act. A finished task finalizes its `CHANGELOG.md` entry
 under `## Unreleased`, leaves `package.json` alone, and holds. `main` stays releasable, so completed work
 accumulates unpublished until a release is warranted, and this skill is that separate publish step. The
 governing rule lives in `CLAUDE.md` ("Working here").
@@ -41,7 +41,7 @@ Stop here unless one of two triggers holds:
    site's `main` must never reference an export the registry lacks).
 2. A coherent capability or initiative has landed and is worth making available, at its natural boundary.
 
-A finished pass is not itself a trigger. An internal-only change a consumer never imports (for example the
+A finished task is not itself a trigger. An internal-only change a consumer never imports (for example the
 admin idiomatic re-expression, which re-expresses admin CSS and components) does not warrant a release; it
 rides the next consumer-facing cut. If neither trigger holds, do not release: confirm the work sits under
 `## Unreleased` and stop. A version number is a public, immutable signal, so cutting one for every small
@@ -49,8 +49,8 @@ change just burns numbers. When in doubt, hold.
 
 ## 2. Confirm the window is on `main` and the gate is green
 
-The release publishes from `main`. Each pass in the window reaches `main` through its own PR
-(`standards:running-passes` "Close"), so confirm each is merged; a pass branch is never pushed to `main` to
+The release publishes from `main`. Each task in the window reaches `main` through its own pull request
+(`building-from-specs` "Merging"), so confirm each is merged; a task branch is never pushed to `main` to
 stage a cut.
 
 Dependencies are current before the gate runs. A release starts from the newest production version of
@@ -123,7 +123,7 @@ instruction; phrases like "point release" are ambiguous and a passing size call 
 final content anyway. When the derived size disagrees with what was said earlier, state the rule, name
 the derived number, and confirm the mismatch in one sentence.
 
-Set the version only now, at the cut. Never pre-number a held pass, since a later pass can roll
+Set the version only now, at the cut. Never pre-number a held task, since a later task can roll
 into the same release and leave that number unpublished.
 
 ## 5. Judgment call: the notes
@@ -132,7 +132,7 @@ Fold the window first. When an earlier candidate of the same version exists, `##
 into that candidate's section (the way the `0.99.0-rc.3` cut did) and committed on its own, because `bump`
 refuses while `## Unreleased` sits above a heading on the same numeric core. `bump` renames the heading. Scrub any stale "stays unpublished
 until then" or "set at release time" phrasing from the section, and add the matching entry to
-`MIGRATION-NOTES.md` if the pass did not. A stable's diff from its final candidate may change only
+`MIGRATION-NOTES.md` if the task did not. A stable's diff from its final candidate may change only
 version fields, pins, and headings, so the scrub belongs at the candidate cut, and a stable that would
 need one cuts another candidate.
 
@@ -233,7 +233,7 @@ a caret when the stable lands.
 A candidate on `gate` is judged by three legs before anyone installs it, each proving setup the way an
 owner meets it:
 
-- **`naive`**: an agent with no context sets up a site from the public docs while a conductor plays the
+- **`naive`**: an agent with no context sets up a site from the public docs while the session running the loop plays the
   owner (`cairn-proving-setup`; `run-gate.sh naive`).
 - **`scripted`**: a scripted human drives the interactive `cairn new` and the browser half
   (`run-gate.sh scripted`).
@@ -258,7 +258,7 @@ The standing answers when a leg fails:
 - A failure fixes forward to the next candidate, and the rows carry only across a diff that the rule
   allows.
 - A harness-only fix, one that changes only paths that ship in no package, does not force a new
-  candidate (see the ruling 10 carve-out in `cairn-running-passes`), and the gate reruns on the candidate
+  candidate (see the ruling 10 carve-out in `cairn-build`), and the gate reruns on the candidate
   already out.
 - A first deploy that fails on a provider outage gets one rerun after 15 minutes.
 - A GitHub page the harness cannot pass is never defeated: rerun once headed, and if it holds, ask
@@ -266,11 +266,11 @@ The standing answers when a leg fails:
 - A `naive` run that stalls, runs past its caps, or hits the budget stop (five naive runs or $100) is
   graded with `--end stall` or `--end budget` and follows `cairn-proving-setup`.
 
-**Standing rule (#349).** A pass that changes `scripts/gate/` ends with one run against the current
+**Standing rule (#349).** A task that changes `scripts/gate/` ends with one run against the current
 `gate` candidate, through each leg its change touches, so the harness and the new product code are
 proven together before anything publishes. Any unexpected failure is a harness gap, fixed before the
-next cut. The retired wizard's candidate cannot serve for the pass that rebuilt the gate around `cairn
-new`, so that pass's live proof is the first round of the setup-tooling loop.
+next cut. The retired wizard's candidate cannot serve for the task that rebuilt the gate around `cairn
+new`, so that task's live proof is the first round of the setup-tooling loop.
 
 ## 8. Promote a passed candidate
 
@@ -368,10 +368,10 @@ then push the sites. Flag any deferred live admin smoke tied to a site cutover.
 
 ### The retrospective
 
-Each release leaves the next one smoother (Geoff, 2026-11-03). File every friction point met during the
+Each release leaves the next one smoother (Geoff, 2026-11-03). File every backlog item met during the
 cut, the gate, or the publish to `BACKLOG.md` as it happens, with its mechanism, and prefer a script,
 check, or gate over a prose step. The stable's release commit body ends with a fixed paragraph headed
-"Release retrospective", in this order: how many candidates the version took, how many friction items
+"Release retrospective", in this order: how many candidates the version took, how many backlog items
 were filed, how many of those were fixed before the stable, and the backlog numbers of the rest.
 
 ## References
@@ -380,4 +380,4 @@ were filed, how many of those were fixed before the stable, and the backlog numb
 - The commands: `scripts/release/` (each file's header states its interface), and `.github/workflows/publish.yml`.
 - The gate harness: `scripts/gate/README.md`.
 - The path to 1.0 and its readiness checklist: `ROADMAP.md` ("Toward 1.0").
-- The pass that produces the held window, and the carve-out for harness-only fixes: `cairn-running-passes`.
+- The task that produces the held window, and the carve-out for harness-only fixes: `cairn-build`.

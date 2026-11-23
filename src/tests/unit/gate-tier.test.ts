@@ -905,7 +905,7 @@ describe('--protected', () => {
   });
 });
 
-// The fast lane (--fast): the inner-loop legs a pass session runs after each task. Line 1 is the
+// The fast lane (--fast): the inner-loop legs a task session runs after each commit. Line 1 is the
 // non-browser legs run concurrently, line 2 the related component tests, and CI carries the rest.
 describe('the fast lane', () => {
   const SRC_PATH = 'src/lib/log/index.ts';
@@ -1007,7 +1007,7 @@ describe('the fast lane', () => {
       'package.json',
       'scripts/checks/gate-table.json',
       'examples/showcase/e2e/a.spec.ts',
-      '.claude/skills/cairn-running-passes/SKILL.md',
+      '.claude/skills/cairn-build/SKILL.md',
       'CLAUDE.md',
       '.github/workflows/test.yml',
       'skills/cairn-extending-a-site/SKILL.md',
@@ -1061,7 +1061,7 @@ describe('the fast lane', () => {
     }
   });
 
-  // The lane (pass-gate-tiers.md, "The fast lane"): the light lane's cap starves Node's default heap
+  // The lane (gate-tiers.md, "The fast lane"): the light lane's cap starves Node's default heap
   // and a dist-reading check fails there, so line 1 stays on the heavy lane. A lane change is proven by a
   // run under its own cap, and the constant is pinned here.
   it('leaves line 1 and line 2 on the heavy lane, with no lane prefix', () => {

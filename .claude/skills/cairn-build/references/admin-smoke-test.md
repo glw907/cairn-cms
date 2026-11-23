@@ -1,4 +1,4 @@
-# Admin smoke test (local, per pass)
+# Admin smoke test (local, per task)
 
 ## Contents
 
@@ -9,9 +9,9 @@
 - [Appendix: Media actions](#appendix-media-actions)
 
 
-How to exercise a site's embedded `/admin` against a real Worker each pass, without the
+How to exercise a site's embedded `/admin` against a real Worker each task, without the
 email round-trip. Run this on both consumer sites (ecnordic-ski and 907-life) after the
-package gates pass; it is the live half of the cairn-pass verification.
+package gates pass; it is the live half of a task's verification.
 
 > **Custom-domain sites: smoke against the deployed https Worker, not local http.** Both
 > consumer sites declare a `custom_domain` route in `wrangler.toml` (`pattern = "907.life"`,
@@ -151,7 +151,7 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
    spent link lands on `/admin/login?error=no-pending-request`; that is the correct refusal, so a
    "not signed in" check must allow it. The token is stored hashed and
    cannot be replayed from the database, which is why the inserted session row is the no-email
-   shortcut for the curl smoke itself. Record the results in the pass log. A real login in Firefox
+   shortcut for the curl smoke itself. Record the results in the pull request. A real login in Firefox
    stays a user step only for a go-live check of a deployed site.
 
 ## Notes

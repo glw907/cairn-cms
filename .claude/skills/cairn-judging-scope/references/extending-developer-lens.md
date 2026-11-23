@@ -65,7 +65,7 @@ event, so the enforced, versioned boundary has to be right before the stable rel
 ## The four diagnostic questions
 
 The redesign answers these against the charter's boundary. They are diagnostics for that pass, not a
-checklist for every pass (the charter premise check is the standing dimension):
+checklist for every task (the charter premise check is the standing dimension):
 
 1. **Extend the admin skeleton.** Can a developer add an admin screen, panel, or action through a
    thin supported seam, without forking the catch-all `load`/`actions` or editing the `CairnAdmin`

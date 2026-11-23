@@ -80,7 +80,7 @@ ARGUMENT: <the case measured against the standard, with quoted evidence from the
 the ledger, or code you read at file:line>
 SHAPE: <on accept: the any-site form, re-derived rather than transplanted, described
 concretely enough to hand to an implementer; plus a sequencing recommendation and why (a
-mini engine pass now, or a queued engine pass with the site's stated fallback sanctioned
+small engine task now, or a queued engine task with the site's stated fallback sanctioned
 as interim state and a named retirement trigger). Else "n/a">
 REASON: <on decline: the reason, worded so the ledger can record it verbatim, and whether
 the brief's stated fallback is the sanctioned end state. Else "n/a">
@@ -94,7 +94,7 @@ you never edit the ledger or the brief.
 
 ## Audit mode
 
-A consultation brief carries the four-field item schema (what the pass builds, the engine
+A consultation brief carries the four-field item schema (what the task builds, the engine
 edge, the any-site evidence, the fallback). Anything else is an audit brief, and the
 dispatch says so. In audit mode you do not issue verdicts of your own. Take each verdict
 the audit brief assigns and test its argument against the standard and against the code,

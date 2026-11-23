@@ -10,7 +10,7 @@ why it works the way it does, start with
 
 1. Clone the repository and open it in Claude Code, accepting the folder's trust dialog.
 2. Install both trees once, with `npm ci` and `npm ci --prefix examples/showcase`, and install Vale and `gh`, since the fast lane runs the showcase's checks and `check:vale`.
-3. Make the change, then run the fast lane with `npm run lane:fast -- --range <base>..HEAD` after each commit. A larger task goes to the `cairn-implementer` agent in its own worktree.
+3. Make the change, then run the fast lane with `npm run lane:fast -- --range <base>..HEAD` after each commit.
 4. Before you open the pull request, dispatch the `standards:diff-reviewer` agent on the branch and fold its findings.
 5. Open a pull request against `main`. CI runs the whole suites and is the merge authority.
 6. Work that touches a real Cloudflare, GitHub, or npm account needs your own credentials.
@@ -69,7 +69,7 @@ writing a page a reviewer will grade on register.
 Open the clone in Claude Code and accept the folder's trust dialog; the repository's skills, agents,
 and rules load, and so does the `standards` plugin that supplies the review agents. The plugin's repository,
 `glw907/standards`, is public, so it installs with no access grant. The
-`cairn-running-passes` skill covers worktree setup, the fast lane (`npm run lane:fast`), and the
+`cairn-build` skill covers worktree setup, the fast lane (`npm run lane:fast`), and the
 risk classes.
 
 - A new clone's first Claude Code session starts without the plugin. Start it once as

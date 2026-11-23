@@ -38,13 +38,10 @@ before a task builds on it.
 
 ## Skills, agents, and rules in this repo
 
-- `cairn-judging-scope`: the scope charter and the extending-developer lens.
-- `cairn-writing-engine-code`: the idiom charter and the operational traps.
-- `cairn-following-admin-design`: the admin design system, behind a rule on `src/lib/admin`.
-- `cairn-following-public-design`: the public theme, behind a rule on `src/lib/public`.
-- `cairn-build`: the facts a task session needs. `cairn-releasing`: the release procedure.
-- `cairn-writing-docs`: the docs procedure, with the register.
-- Agents: `engine-triage` (consultation briefs), `docs-fact-checker`.
+- Skills: `cairn-build`, `cairn-releasing`, `cairn-proving-setup`, `cairn-judging-scope`,
+  `cairn-writing-engine-code`, `cairn-writing-docs`, `cairn-following-admin-design` (behind a rule on
+  `src/lib/admin`), and `cairn-following-public-design` (behind a rule on `src/lib/public`).
+- Agents: `engine-triage`, `docs-fact-checker`.
 - `.claude/rules/` holds the rules that load by path.
 
 ## Documentation is a pass dimension

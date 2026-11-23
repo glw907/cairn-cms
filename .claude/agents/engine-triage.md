@@ -80,7 +80,7 @@ ARGUMENT: <the case measured against the standard, with quoted evidence from the
 the ledger, or code you read at file:line>
 SHAPE: <on accept: the any-site form, re-derived rather than transplanted, described
 concretely enough to hand to an implementer; plus a sequencing recommendation and why (a
-a small engine task now, or a queued engine task with the site's stated fallback sanctioned
+small engine task now, or a queued engine task with the site's stated fallback sanctioned
 as interim state and a named retirement trigger). Else "n/a">
 REASON: <on decline: the reason, worded so the ledger can record it verbatim, and whether
 the brief's stated fallback is the sanctioned end state. Else "n/a">

@@ -14,8 +14,8 @@ workstation wrapper. A contributor runs the same legs through `npm run lane:fast
 - [Verified against the showcase Playwright config (2026-09-15)](#verified-against-the-showcase-playwright-config-2026-09-15)
 
 
-The per-task gate a diff demands. The classifier is `scripts/checks/gate-tier.mjs`; its own header
-carries the same rules this page states. A task session calls
+The per-task gate a diff demands. The classifier is `scripts/checks/gate-tier.mjs`; its header
+points here for the rules. A task session calls
 
 `node scripts/checks/gate-tier.mjs --range <base>..HEAD [--fast] [--paint yes|no] [--class <passClass>] [--pin <tier>]`
 

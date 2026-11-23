@@ -8,7 +8,6 @@
   "enabledPlugins": {
     "standards@glw907-standards": true
   },
-  "worktree": { "baseRef": "head" },
   "permissions": {
     "allow": [
       "Bash(node scripts/checks/fast-lane.mjs*)",
@@ -17,7 +16,6 @@
       "Bash(npm run check*)",
       "Bash(npm test*)",
       "Bash(npm run test:*)",
-      "Bash(make -C tool check)",
       "Bash(node scripts/release/*)",
       "Bash(gh workflow run publish.yml --ref v* -f promote=*)"
     ]

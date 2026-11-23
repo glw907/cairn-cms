@@ -44,21 +44,20 @@ before a task builds on it.
 - Agents: `engine-triage`, `docs-fact-checker`.
 - `.claude/rules/` holds the rules that load by path.
 
-## Documentation is a pass dimension
+## Documentation ships with each change
 
-Every pass updates the docs for what it changed. A developer's contract is each export's doc comment,
+Every change updates the docs for what it changed. A developer's contract is each export's doc comment,
 and a developer's job is taught by the packaged skills under `skills/`: `check:options` fails on a
 public option member with no doc comment, `check:tiers` on an export with no tier tag, and
 `check:package` on the entry points. The published docs are two tracks under `docs/`, one reader
 each: `admin/` and `editors/`, plus `why-cairn.md` for an evaluator. A page serves one track or it
 is two pages.
 
-- A pass that changes a public behavior edits the affected pages in the same PR, checked by
+- A change to a public behavior edits the affected pages in the same pull request, checked by
   `npm run check:docs-gate`. Load the `cairn-writing-docs` skill for that edit.
-- A deficiency found on a published page is fixed on the page in the same pass.
-- `MIGRATION-NOTES.md` (upgrade steps and per-version notes) is maintained every pass.
-- A friction finding goes to `BACKLOG.md` through `/standards:log-issue`, or is fixed in the pass that meets it.
-  There is no friction log.
+- A deficiency found on a published page is fixed on the page in the same pull request.
+- `MIGRATION-NOTES.md` (upgrade steps and per-version notes) is kept current in every pull request.
+- A finding goes to `BACKLOG.md` through `/standards:log-issue`, or is fixed in the pull request that meets it.
 - cairn.pub renders the doc arms from its installed engine version, so docs on `main` go public at
   the next release and pin bump.
 

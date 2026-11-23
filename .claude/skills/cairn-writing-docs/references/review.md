@@ -1,15 +1,15 @@
 # Fact-check a docs change and hand it over
 
-Read this when a docs change is gated and ready for review. A docs pull request goes through its
-pass's normal hand-over. The `approval-packet` skill owns the document, its check, its send, and
-the answer, so this page names only what is particular to docs.
+Read this when a docs change is gated and ready for review. A docs pull request goes through the
+hand-over in `building-from-specs`, "The pull request", so this page names only what is particular
+to docs.
 
 ## Contents
 
 1. Fact-check in a fresh context
 2. Settle each finding
 3. Land the pull request when no call is left
-4. Ask each call in the close packet
+4. Ask each call under `## For Geoff`
 
 ## 1. Fact-check in a fresh context
 
@@ -37,35 +37,26 @@ The agent returns one JSON array, one element per claim in the changed lines:
 
 ## 3. Land the pull request when no call is left
 
-The docs pull request needs no document of its own. Once CI is green, run:
+The docs pull request needs no document of its own. Once CI is green, the pull request is ready for
+Geoff's approval by number. Its body names each changed page and says in one plain sentence what the
+pages now say.
 
-```bash
-approval-queue land <owner/repo#n> "<one plain sentence on what the pages now say>"
-```
+## 4. Ask each call under `## For Geoff`
 
-Under a round conductor, the round report names each changed page.
-
-## 4. Ask each call in the close packet
-
-Each call is a `:::question` in the pass's close packet, a document of kind `merge` that you
-write per the `approval-packet` skill. Under a conductor, the conductor sends it. The paragraph
-that asks the question quotes the whole sentence and states both readings: what the fact-check
-found, with its `source`, and why the author wrote it. The block after it gives two options:
+Each call goes under `## For Geoff` in the pull request body. The entry quotes the whole sentence
+and states both readings: what the fact-check found, with its `source`, and why the author wrote
+it. It then gives two options and recommends one, with the reason:
 
 ```markdown
 **Keep "<the whole sentence>"?** The fact-check found <its reading>, from `<source>`. The author
 wrote it because <the author's reading>.
 
-:::question <a few words naming the sentence>
 - **Apply the fix**: the page says "<proposed>".
 - **Keep the text**: the page stands as written.
-:::
+
+Recommended: **<option>**, because <the reason>.
 ```
 
-Mark one option `{recommended}` when you have a view, and give the reason in the text.
-
-On approve, run `approval-queue merge <id>`. Where Geoff's answer is **Apply the fix**, the merged
-page still carries the old text: open a follow-up pull request with the proposed text and land it
-with `approval-queue land`. On send-back, read `approval-queue notes <id>`, answer
-each thread with `approval-queue reply <id> <thread> <text.md>`, fix forward, and return the
-document with `approval-queue send --returns <id> <doc.md>`.
+The page keeps the author's text until Geoff answers. He answers in his terminal, and his session
+applies the answer on the branch before the merge, so an **Apply the fix** answer needs no
+follow-up pull request.

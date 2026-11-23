@@ -1,7 +1,8 @@
 # Eval history
 
-One entry per monthly cycle, newest first. The cycle writes the entry after it acts on Geoff's
-ruling. Scores are `passed/graded` per suite on `main`, with pass^k beside them.
+One entry per monthly cycle, newest first. The cycle writes the entry on its pull request's
+branch, and Geoff's session records each of his calls there before the merge. Scores are `passed/graded` per suite on `main`, with pass^k beside
+them.
 
 ## Entry format
 

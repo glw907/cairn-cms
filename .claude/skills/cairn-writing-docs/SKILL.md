@@ -26,7 +26,7 @@ Every case ends the same way: gate, fact-check, hand-over (`references/review.md
    naming the symbol, and a search for the symbol alone misses it. When the search finds nothing,
    say so in your reply and show the command.
 2. Skip history: released `CHANGELOG.md` sections, `MIGRATION-NOTES.md` below
-   `## Unreleased`, and an open plan on its pass branch says what was true at its date.
+   `## Unreleased`, and an open spec on its branch says what was true at its date.
 3. Edit each sentence the change makes false. Read the code before you write a claim, and keep the
    `file:line` that settles it for your reply. A rename repoints every hit, so a second `git grep` of
    the old name in `docs/` and `README.md` comes back empty.
@@ -35,7 +35,7 @@ Every case ends the same way: gate, fact-check, hand-over (`references/review.md
 5. Run `npm run check:surface -- --update` when the public surface changed, and commit
    `scripts/checks/api-surface.md`. Add the `CHANGELOG.md` entry under `## Unreleased`, and for a
    breaking change a `Consumers must:` line there and in `MIGRATION-NOTES.md`. The
-   `cairn-running-passes` skill owns those rules.
+   `cairn-build` skill owns those rules.
 6. Run the checks in "Checks".
 
 ## B. A page is wrong or incomplete
@@ -68,7 +68,7 @@ Every case ends the same way: gate, fact-check, hand-over (`references/review.md
    fact-check your edit in the context that wrote it: a fresh context finds what the writing context cannot
    (<https://code.claude.com/docs/en/best-practices>, "A fresh context improves code review").
 3. Settle each finding and hand the pull request over as `references/review.md` says: land it
-   when no call is left, or ask each call in the pass's close packet.
+   when no call is left, or ask each call under `## For Geoff`, as `references/review.md` says.
 
 ## Where a correction lands
 

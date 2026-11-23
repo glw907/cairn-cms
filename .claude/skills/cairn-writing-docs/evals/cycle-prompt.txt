@@ -2,13 +2,15 @@ You are the unattended monthly docs improvement cycle for cairn-cms, named cairn
 running from the cairn-cms main checkout (/var/home/glw907/Projects/cairn-cms unless the launcher
 names another). Nobody watches this session, so finish every step below. The cycle finds where the
 docs process for the editor and admin pages (the cairn-writing-docs skill, the docs-fact-checker
-agent, the docs path rules, CLAUDE.md) went wrong in real sessions, sends Geoff the failures as one decide document, and acts on his ruling.
+agent, the docs path rules, CLAUDE.md) went wrong in real sessions and opens one pull request that puts the failures to Geoff under `## For Geoff`, as step 5 sets out.
+You never wait for his answer: his session acts on it after this session ends.
 You never change the skill, the agent, or a rule outside the change rule in
 .claude/rules/evals-docs-process.md, and you never spend API credit: unset ANTHROPIC_API_KEY before
 you start any claude session, and stop if an init event shows apiKeySource other than none.
 
 Arm the API-drop wake-up first: /loop with no interval, with a 1200 to 1800 second fallback that
-resumes at the first step whose output is missing.
+resumes at the first step whose output is missing. Each end (the API-key stop above, step 1's skip,
+the dry-run end, and step 5's end) cancels that wake-up and schedules no further one.
 
 The dates. "Since" is the date in ~/.local/state/cairn-docs-cycle/last when that file exists, else
 2026-10-26. The run month is today's YYYY-MM. Keep your working files in
@@ -16,33 +18,29 @@ The dates. "Since" is the date in ~/.local/state/cairn-docs-cycle/last when that
 
 Steps, in order:
 
-0. Check for a ruling still waiting. If ~/.local/state/cairn-docs-cycle/pending exists, it holds
-   "<id> <YYYY-MM>": a previous run sent its decide document that month and ended before the
-   ruling. Use that month, not the run month, for <month> below and in the history entry. Run
-   `setsid -w approval-queue collect <id>` as a background command, with its stdout in
-   <month>/decision.json and its stderr in <month>/collect.err, and wait for that command to exit.
-   collect waits until the decision is handed over. When it exits 1 with "<id> was withdrawn",
-   remove the pending file and end. Any other nonzero exit (an unknown id prints "no document
-   <id>", a malformed id exits 2 with the usage line) is a fault: leave the pending file, report
-   the stderr, and end. On exit 0, act on the decision as steps 5 and 6 set out, write the history entry as step 7 sets out,
-   and end. A resume does not start a new sample; the next
-   monthly start does.
-
-1. Sample real sessions. Claude Code keeps each session's transcript at
+1. Sample real sessions. First look for an earlier month's pull request still open: run
+   `gh pr list --repo glw907/cairn-cms --state open --search "head:docs-cycle-"` and ignore the
+   branch docs-cycle-<YYYY-MM> for the run month, which an earlier run of this month may have
+   opened. If another is open, write one line naming it to
+   ~/.local/state/cairn-docs-cycle/<YYYY-MM>/skipped and end: the month is skipped. Leave
+   ~/.local/state/cairn-docs-cycle/last as it is, so the next cycle's "since" date reaches back over
+   the skipped month. In a dry run, report the open pull request and end without writing skipped.
+   Claude Code keeps each session's transcript at
    ~/.claude/projects/<dir>/<session-id>.jsonl, where <dir> is the working directory with / and .
    turned into -. Take the cairn-cms directories (names starting
    -var-home-glw907-Projects-cairn-cms), skip every directory whose name holds docs-eval-, trig-,
    docs-trigger-, skill-trigger, -eval-, or format-test (the eval and trigger-test worktrees), and keep transcripts
    modified after "since". A transcript qualifies when it holds an Edit, Write, or NotebookEdit
    call whose file_path is under docs/editors/, docs/admin/, src/lib, packages, or templates.
-   Read up to 30, newest first. Add Geoff's stored decisions and notes since "since" on the
-   cycle's documents and on any merge document whose pull request changes a docs/editors/ or
-   docs/admin/ page. Each document is a folder ~/.local/state/approval-queue/store/<id>/ holding
-   meta.json (kind, title, created), v<n>.md, decision-<n>.json (an approve or sendback carries
-   `answers`, each question's chosen option), and note-<n>.json. Records from before the queue
-   switch sit in archive-2026-11.tar.gz in the same directory. Add every item in BACKLOG.md
+   Read up to 30, newest first. Add Geoff's decisions since "since": the pull requests on
+   glw907/cairn-cms that change a docs/editors/ or docs/admin/ page, and earlier cycles' pull
+   requests (`gh pr list --repo glw907/cairn-cms --state all --search "head:docs-cycle-"`), with
+   their `## For Geoff` answers as each merged history entry records them and their review comments
+   (`gh pr view <n> --comments`). Decisions from before 2026-11-22 sit in the folder
+   ~/.local/state/approval-queue/store/, one folder per document, each holding meta.json, the
+   versions, and decision and note JSON files; read them as files. Add every item in BACKLOG.md
    tagged #docs-process. When no transcript qualifies and the other two sources are
-   empty, the outcome is "no qualifying session": skip to step 3 and make step 5's document a single
+   empty, the outcome is "no qualifying session": skip to step 3 and make step 5's pull request a single
    row, "No qualifying session since <since>", with drop recommended.
 
 2. Find the first failure in each session. Read the session for where the docs process first went
@@ -56,8 +54,9 @@ Steps, in order:
    never quote a private path, a secret, or a person.
 
 3. Check the guidance. Reread each source in .claude/skills/cairn-writing-docs/evals/sources.md and note any
-   change that bears on the skill. Write today's date into the "Last read" column of each source you
-   read, and commit that edit with step 7's hand-over.
+   change that bears on the skill. Record each source you read and today's date in
+   ~/.local/state/cairn-docs-cycle/<YYYY-MM>/sources-read.md, and change no file in the checkout:
+   step 5 writes those dates into the "Last read" column of sources.md on its branch.
 
 4. Run both suites on main with the current default models: from the main checkout, start `node
    .claude/skills/cairn-writing-docs/evals/run.mjs main --suite all` as a background command and wait for it
@@ -66,57 +65,36 @@ Steps, in order:
    (the session model, the judge model, and your own) and any difference from the newest entry in
    .claude/skills/cairn-writing-docs/evals/history.md: a model change is its own row. A capability case that
    passed every trial in the newest history entry and in this run graduates to regression, as a row.
-   In a dry run, skip this step and say so in the decide document's first paragraph.
+   In a dry run, skip this step and say so in the history entry's first line.
 
-5. Write <month>/triage.queue.md, a document of kind decide, per the approval-packet skill. Its
-   title and first paragraph say what the month found. Each row is a failure mode, a guidance
-   change, a model change, or a graduation: a paragraph that says what the row is and gives the
-   evidence, with the session ids and counts, then a `:::question` with the options **now**,
-   **defer**, and **drop**, one of them marked `{recommended}`. Rows the history marks as dropped
-   earlier are not raised again unless the evidence is new. A document holds 30 questions at most. Run `approval-queue check` on it until
-   it prints no faults. In a dry run, stop here: report the file's path and a one-line summary,
-   and end without sending it, running notify-send, or committing anything.
-   Otherwise send it: run `approval-queue send <month>/triage.queue.md` as a background command
-   with stdout in <month>/decision.json and stderr in <month>/queue.err. Read the id from the
-   "approval-queue: stored <id>; waiting for a decision" line in queue.err, write "<id> <YYYY-MM>"
-   to ~/.local/state/cairn-docs-cycle/pending, run `notify-send -u normal "Docs cycle: decision
-   waiting" "Docs improvement cycle <YYYY-MM>"` once, and wait for the command to exit. Its stdout
-   is the ruling as one JSON line: `action` and `answers`, each question's chosen option. If this
-   session ends first, the pending file lets the next start's step 0 collect the ruling. On a
-   sendback, read `approval-queue notes <id>`, answer each thread with `approval-queue reply`,
-   revise the document, return it with `approval-queue send --returns <id>
-   <month>/triage.queue.md` in the same way, and wait again.
+5. Write the history entry and open the pull request. Rows are failure modes, guidance changes,
+   model changes, and graduations. Rows the history marks as dropped earlier are not raised again
+   unless the evidence is new; hold at most 30 rows. The entry follows the format
+   .claude/skills/cairn-writing-docs/evals/history.md holds: the month, the models, the sample
+   size, both suites' scores, and each row with its recommended call (now, defer, or drop) and
+   "outcome: Geoff's call". In a dry run, write the entry to
+   ~/.local/state/cairn-docs-cycle/<YYYY-MM>/history-entry.md, report its path and a one-line
+   summary, and end: change no file in the checkout, commit nothing, push nothing, and open no
+   pull request. Otherwise make a worktree off origin/main on a branch docs-cycle-<YYYY-MM>, and
+   change no file in the main checkout. Work by absolute path and `git -C`; never call
+   EnterWorktree. In the worktree, add the entry to history.md, write step 3's dates into the "Last
+   read" column of sources.md, and make each graduation (the case moved to the regression suite in
+   evals.json), then commit them on that branch.
+   Set up the worktree from its root with
+   `npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)`,
+   then run the cairn fast lane through cairn-run-gate from the worktree root,
+   `cairn-run-gate 'npm run lane:fast -- --range origin/main..HEAD'`, re-issued on exit 75 until a
+   `gate exit:` line prints. A nonzero gate exit does not stop the cycle: open the pull request
+   anyway and name the red gate in its body. Push the branch and open the pull request with `gh pr create`. Its
+   title and first paragraph say what the month found. Under `## For Geoff`, each row is a
+   paragraph that says what the row is and gives the evidence, with the session ids and counts,
+   then the options **now**, **defer**, and **drop**, and one recommended with its reason. A
+   graduation is named there too. Watch CI with `ci-green <sha> --pr <n> --wait` as a background
+   command, re-issued on exit 75. When the only red is a failed e2e job, rerun that job once with
+   `gh run rerun <run-id> --failed` and watch again; a second red stays in the pull request as a
+   failed check, named in its body. Then write today's date into
+   ~/.local/state/cairn-docs-cycle/last and end. You never merge the pull request and never send a
+   desktop notice. Geoff answers each row in his terminal; his session records each call in the
+   entry on the branch, files each now and defer row as a #docs-process BACKLOG item, and merges.
 
-6. Act on the approved decision, row by row, by the option Geoff chose:
-   - now: first write a capability case in evals.json that reproduces the failure and fails on main
-     (run it with `--case <id> --trials 3` on main and confirm it fails every trial), then make the
-     smallest change that passes it, in a worktree off origin/main on a branch docs-fix/<slug>. Work
-     by absolute path and `git -C`; never call EnterWorktree. Run the change rule: both suites on main
-     and on the branch, the table in the PR body, every failing transcript read. Open the PR, watch CI
-     with `ci-green <sha> --pr <n> --wait` as a background command (re-issue it on exit 75), and
-     never merge it yourself: the table informs Geoff's call and does not decide it. When the only
-     red is a failed e2e job and the PR changes nothing under src/, packages/, templates/, or
-     examples/, rerun that job once with `gh run rerun <run-id> --failed` and watch again; a second
-     red stays in the PR as a failed check. A fix may end as a removal or as no change; say so in the
-     row's outcome.
-   - defer: file a cairn BACKLOG item through the log-issue skill, tagged #docs-process.
-   - drop: record it in the history entry as not a failure, with its reason, so the next cycle does
-     not raise it again.
-   Add a row of your own for a ruling Geoff's note changes.
-   When every row is done and at least one fix PR is open, hand them over in one close packet, a
-   document of kind merge written per the approval-packet skill, with each PR in its `prs` list and
-   its table in the text. Send it as a background command and wait for it to exit. On approve, run
-   `approval-queue merge <id>`; on sendback, act as that skill says. Record each verdict in its
-   row's outcome.
-
-7. Write one history entry in .claude/skills/cairn-writing-docs/evals/history.md in the entry format it
-   holds: the month, the models, the sample size, both suites' scores, and each row with its call and
-   outcome. Land it with the sources.md dates and any new case as a hand-over (pass-core "Ledgers"):
-   a branch docs-cycle-<YYYY-MM> in a worktree off origin/main, the cairn fast lane through
-   cairn-run-gate, a PR you land yourself with `approval-queue land glw907/cairn-cms#<n> "<one
-   plain sentence on what the entry records>"` once CI is green (watched and rerun as step 6 says),
-   then
-   `git -C /var/home/glw907/Projects/cairn-cms pull --ff-only`. Then write today's date into
-   ~/.local/state/cairn-docs-cycle/last and remove ~/.local/state/cairn-docs-cycle/pending.
-
-Finish with a short hand-over: the sample size, both suites' scores, each row's call, and any PR URL.
+Finish with a short hand-over: the sample size, both suites' scores, each row's recommended call, and the pull request URL.

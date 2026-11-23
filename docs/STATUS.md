@@ -11,10 +11,11 @@ from it: the setup rebuild (`cairn new`) forms the next release, and nothing shi
 
 ## Immediate next action
 
-Three reshape tasks run now, each built from the approved spec under `building-from-specs`: rename the process skill
-to `cairn-build`, move the docs process onto `## For Geoff`, and apply the backlog sweep. Dev snapshots (engine
-0.99.0-dev.2) stay on `gate`. Rounds `surface` and `events` wait for specs: each launches as a task only after a
-spec for it is approved.
+The reshape is done: the `cairn-build` skill (#263), the docs process on `## For Geoff` (#264), and the backlog
+sweep (#265) are merged. The next work is the round `surface` spec, BACKLOG #572. Round `events` waits for its own
+spec (#573), and theme-garden G3 for #574. Each launches as a task only after its spec is approved. Dev snapshots
+(engine 0.99.0-dev.2) stay on `gate`. The docs cycle next fires 2026-12-01 at 00:47 AKST and opens one pull request
+for Geoff's session to act on; its dry run passed on 2026-11-23.
 
 The checks round has closed: `scripts/checks/registry.mjs` is the one list of checks, `run.mjs` is its runner, and
 every check script ends in one `<name>: OK` or `<name>: FAIL` line. Pennant 1.0.0 and Waymark 1.2.0 are published, and

@@ -6,6 +6,8 @@
 
 ## Medium
 
+- [ ] **#575** Drop `cairn-implementer` from the component table in `docs-register.md` `#improvement` `#cairn-cms` *(2026-11-23)*
+  `.claude/skills/cairn-writing-docs/references/docs-register.md:287-288` still names the `cairn-implementer` agent, deleted by the reshape's task 1 (pull request 263). A drafter reading the register is sent to an agent that no longer exists. Reword both guidance cells to name `cairn-build`. Found by the cairn-cms reshape's task 1 review. Placement: the next docs pass that edits `docs-register.md`.
 - [ ] **#574** Write the theme-garden G3 spec `#improvement` `#cairn-cms` `#initiative:theme-garden` *(2026-11-22)*
   Write a spec under `building-from-specs` for theme-garden G3. Re-check the plan in `~/Projects/initiatives/theme-garden/` against `main` first. Found by the cairn-cms reshape's backlog sweep. Placement: when Geoff starts the theme work.
 - [ ] **#573** Write the round `events` two spec `#improvement` `#cairn-cms` `#initiative:theme-garden` `#milestone:events` *(2026-11-22)*

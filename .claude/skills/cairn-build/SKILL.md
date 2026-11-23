@@ -33,6 +33,7 @@ Continuous integration on the draft pull request runs the whole suites. The firs
 
 ## Conventions
 
+- Load `cairn-writing-engine-code` before changing code under `src/lib`. Its idiom charter and traps bind every edit there.
 - NodeNext modules: intra-package imports carry a `.js` extension on the `.ts` or component path (`import { x } from '../content/ids.js'`). Tests import the same way.
 - Svelte 5 runes throughout (`$props`, `$state`, `$derived`, `$effect`, `$bindable`). Each component opens with a `<!-- @component -->` comment and carries JSDoc on its `Props` members.
 - Tests live in `src/tests/{unit,integration,component}/<name>.test.ts`. Write the test at the lowest layer that can see the behavior, and extend an existing test before adding a file. An `auth-data` task writes the failing test first and confirms it fails for the right reason.

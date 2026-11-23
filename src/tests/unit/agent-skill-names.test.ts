@@ -6,15 +6,17 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const CLAUDE = join(ROOT, '.claude');
 
-/** The `cairn-*` skill names in backticks that agents and rules mention and that have a skill directory here. */
+/** The `cairn-*` skill names in backticks that agents, rules, and the `cairn-build` skill mention and that have a skill directory here. */
 function namedSkills(): Set<string> {
   const found = new Set<string>();
+  const files = [join(CLAUDE, 'skills', 'cairn-build', 'SKILL.md')];
   for (const dir of ['agents', 'rules']) {
-    for (const file of readdirSync(join(CLAUDE, dir))) {
-      const text = readFileSync(join(CLAUDE, dir, file), 'utf8');
-      for (const m of text.matchAll(/`(cairn-[a-z0-9-]+)`/g)) {
-        if (existsSync(join(CLAUDE, 'skills', m[1], 'SKILL.md'))) found.add(m[1]);
-      }
+    for (const file of readdirSync(join(CLAUDE, dir))) files.push(join(CLAUDE, dir, file));
+  }
+  for (const file of files) {
+    const text = readFileSync(file, 'utf8');
+    for (const m of text.matchAll(/`(cairn-[a-z0-9-]+)`/g)) {
+      if (existsSync(join(CLAUDE, 'skills', m[1], 'SKILL.md'))) found.add(m[1]);
     }
   }
   return found;
